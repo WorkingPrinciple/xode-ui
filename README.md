@@ -11,8 +11,8 @@ ownership, package support and successful Mac gameplay are separate facts.
 ## What the UI can do
 
 These are source-backed capabilities, not a claim that every action is accepted
-on the newest package. [Launch readiness](docs/LAUNCH-READINESS.md) records the
-installed/reference/candidate distinction and remaining gates.
+on the newest package. [Launch readiness](docs/LAUNCH-READINESS.md) separates
+historical deployments, recovered package receipts and current unknowns.
 
 | Area | Available interface | Important boundary |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ replace the credential helper silently. See the [release checklist](docs/LAUNCH-
 
 `main` and this documentation branch do **not** contain the Swift app. Development
 source lives on [`dragoshont-xodus-app-foundation`](https://github.com/dragoshont/xodus-macos-app/tree/dragoshont-xodus-app-foundation).
-For the reproducible candidate described below, use a separate source checkout:
+For the pinned historical package source, use a separate source checkout:
 
 ```sh
 git clone --branch dragoshont-xodus-app-foundation https://github.com/dragoshont/xodus-macos-app.git x-ode-source
@@ -80,6 +80,11 @@ launch a game or produce an admitted release. Shipping packaging requires the
 reviewed engine/provenance hashes, exact source/tree, explicit signing identity
 and helper receipts accepted by [`tools/build_app.sh`](https://github.com/dragoshont/xodus-macos-app/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/tools/build_app.sh);
 do not guess inputs or distribute an unpaired build.
+
+The [immutable package recovery handoff](https://github.com/dragoshont/xodus-macos-app/blob/d60863e8323da6920a0f0650cf0e45e0d2038134/docs/PAUSE-HANDOFF.md)
+records `fac58d6` deployed after `02e67f8`, superseding the early Quit hold.
+The current app's source identity remains unestablished; recovered receipts are
+not a public installer or fresh gameplay qualification.
 
 ## Scope and credits
 
