@@ -40,6 +40,12 @@ Play/Continue Playing observations; they do not certify this candidate or all
 games. Celeste's recorded unsupported-package result is **not** success.
 Cuphead, UWP/EAppx and online multiplayer have no success claim here.
 
+The backend owner lacks current installed CLI/service/broker hashes and the
+complete NMS reference launch-script path/arguments. Historical engine pins are
+not substitutes. Prior Cuphead experiments modified the same CrossOver vendor
+tree used by NMS; historical restoration receipts do not establish isolation or
+fresh NMS qualification. Reconfirm the exact runtime before release acceptance.
+
 ## Release checklist
 
 | State | Gate | Required evidence |
