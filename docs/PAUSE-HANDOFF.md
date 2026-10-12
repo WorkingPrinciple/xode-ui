@@ -90,6 +90,36 @@ No later game run occurred in this recovery pass.
 
 ## Remaining evidence boundaries
 
+A second, separately authorized bounded pass preserved selected **working
+source**, not history, in the owner's private Windows session storage:
+`files/UNREVIEWED-working-backend-20261012.tar.gz` and its adjacent manifest,
+under session `4098b59b-cd96-45b6-b139-41618b3070ff`.
+Archive SHA-256:
+`ff693bbbb295f4783edb38b678dd9694e10e8ebe6c65d81ce2ae36a2fcdad61d`.
+It contains 165 selected source/manifests/scripts (989706 source bytes), plus
+`PRESERVATION-MANIFEST.json` and `SHA256SUMS`. Every selected file was verified
+locally against its manifest after transfer. The exact dirty tracked
+`scripts/macos/private-xodus-generic-wine.sh` is included.
+
+**UNREVIEWED LOCAL / SOURCE-ONLY / DO_NOT_UPSTREAM:** no private GitHub
+preservation commit or immutable remote manifest exists. The text scan found
+16 file-level unexplained-long-literal findings and 28 file-level
+native-reference/proprietary-marker findings. These may include public protocol
+constants or legitimate reference names; they are not proof of secrets or
+infringement, but cannot be silently cleared or redacted. Public-source
+comparison/provenance clearance was not established in this finite pass.
+No literal contents are published. Human review of the private manifest and
+exact source is required before upload. Scripts are preserved locally but are
+not cleared for remote publication. Original notices remain unchanged.
+
+Selection was restricted to tracked Rust crate source/manifests/proto files,
+root Cargo manifests/lock/license/DO_NOT_UPSTREAM and macOS shell/Python scripts.
+Git history, the runtime tree, assets, examples/tests/fixtures, untracked lineage
+and backup files, native binaries, generated outputs, configuration state,
+logs and receipts were excluded. This is not a complete build-input closure,
+portable working runtime, clean history backup or historical a303 reproduction.
+No build, signing, app/game run or deployment accompanied the export.
+
 Current app executable/source identity, full historical a3036bf identity,
 backend build-to-service mapping, dirty-source preservation, paired-inputs
 existence and game-success-bound script digest remain unestablished.
