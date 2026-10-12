@@ -1,9 +1,9 @@
 # X Ode launch readiness
 
 Evidence snapshot: **2026-10-12**. This documentation pass read immutable source,
-tests and GitHub metadata; it did not inspect the installed Mac, sign, package,
-install or launch anything. The owner's [immutable recovery handoff](https://github.com/dragoshont/xodus-macos-app/blob/d60863e8323da6920a0f0650cf0e45e0d2038134/docs/PAUSE-HANDOFF.md)
-records one read-only Mac pass with no game runs. Its recovered identities and
+tests and GitHub metadata; it did not sign, package, install or launch anything.
+The owner's [immutable recovery handoff](https://github.com/dragoshont/xodus-macos-app/blob/00cff3d624ee4ce40c308128eccd3e9d213e0433/docs/PAUSE-HANDOFF.md)
+records bounded read-only recovery and selected-source backup with no game runs. Its recovered identities and
 historical observations below are attributed, not freshly reproduced here.
 
 ## Which version?
@@ -14,7 +14,7 @@ historical observations below are attributed, not freshly reproduced here.
 | Later historical deployment | [`fac58d6`](https://github.com/dragoshont/xodus-macos-app/commit/fac58d6f501c356a0e763d397263e5a0a30b3477), [successful native-fixtures CI](https://github.com/dragoshont/xodus-macos-app/actions/runs/38065402103) | Package and deployment receipts recovered; later installation supersedes the early Quit hold. CI success independently read |
 | Current app | Generic version 0.2.0/build 2 | Current executable/source identity unestablished; Info.plist alone cannot identify its commit |
 | Newer development source | [`87110738`](https://github.com/dragoshont/xodus-macos-app/commit/87110738e4d90449b748f3a8a809f407d41b830f) on `dragoshont-xodus-app-foundation` | Separate from historical deployments; not a release or current-install receipt |
-| Backend source | Mac-local `87ccc73af0811e7bc007a2ad97035d39e8eed96b`, branch `private/ai-hogwarts-runtime` | Dirty source not represented by HEAD alone; no audited portable backup. Historical `a3036bf` full SHA/ancestry unresolved; public API failure does not establish its absence |
+| Backend source | `87ccc73af0811e7bc007a2ad97035d39e8eed96b`, branch `private/ai-hogwarts-runtime`, plus dirty working script | 165 selected working-source files preserved in a private local Windows archive, all hashes verified. Not a full build closure or remote publication: provenance findings need human review. Historical `a3036bf` full SHA/ancestry unresolved |
 | `main` / documentation branch | Initial `45a1596` ancestry plus documentation-only updates | Not the Swift application source; never use the documentation checkout as a packaging input |
 
 GitHub reports [#12](https://github.com/dragoshont/xodus-macos-app/pull/12)
@@ -59,7 +59,7 @@ qualification. Reconfirm the exact runtime before release acceptance.
 | Verified source evidence | Pinned source exists; native-fixtures CI succeeded; minimum OS is declared | Immutable commit, CI run and manifests linked above |
 | Recovered owner evidence | Both historical packages/deployments, management CLI/broker pins, current service hash and NMS launcher delegation | Immutable recovery handoff; not current-app identity or backend/service/game-success pairing |
 | Historical owner report | NMS single-player; bounded earlier UI/game acceptance | Keep title, package/runtime version and observed mode separate from current candidate qualification |
-| Pending | Reproducible backend and exact package pair | Resolve historical `a3036bf` identity; map dirty backend source/build to the service, establish paired-inputs evidence and audit preservation before any upload |
+| Pending | Reproducible backend and exact package pair | Selected working source is backed up locally. Resolve historical `a3036bf` identity; map source/build to the service, establish full build closure and paired-inputs evidence, and review provenance before remote upload |
 | Pending | Current app identity and safe future installation | Identify installed executable/source; do not reinstate the superseded Quit blocker. Future replacement still needs normal Quit, no gameplay/mutation, preserved rollback, authorization and installed-byte verification |
 | Pending | Fresh-Mac prerequisites and UX | Clean Apple Silicon Mac: qualify supported OS, licensed CrossOver, runtime setup, sign-in/Keychain consent, empty/error/recovery states and all advertised operations |
 | Pending | Signing, notarization and distribution | Developer ID/notarization and Gatekeeper evidence for the exact artifact, component/license/source manifest, reviewed installer/update/rollback channel; a local signed candidate is insufficient |
