@@ -109,4 +109,4 @@ product name; bundle identifiers, Keychain identities, signer requirements and
 existing Xodus paths are unchanged.
 
 Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
-(publication pending at this snapshot; destination reserved by the backend owner).
+and [publication precautions](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).

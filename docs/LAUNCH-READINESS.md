@@ -15,7 +15,7 @@ historical observations below are attributed, not freshly reproduced here.
 | Current app | Generic version 0.2.0/build 2 | Current executable/source identity unestablished; Info.plist alone cannot identify its commit |
 | Newer development source | [`87110738`](https://github.com/dragoshont/xodus-macos-app/commit/87110738e4d90449b748f3a8a809f407d41b830f) on `dragoshont-xodus-app-foundation` | Separate from historical deployments; not a release or current-install receipt |
 | Backend source | Mac-local `87ccc73af0811e7bc007a2ad97035d39e8eed96b`, branch `private/ai-hogwarts-runtime` | Dirty source not represented by HEAD alone; no audited portable backup. Historical `a3036bf` full SHA/ancestry unresolved; public API failure does not establish its absence |
-| `main` / this docs branch | `main` remains initial `45a1596`; this branch adds only documentation | Not the Swift application source; never use this README branch as a packaging input |
+| `main` / documentation branch | Initial `45a1596` ancestry plus documentation-only updates | Not the Swift application source; never use the documentation checkout as a packaging input |
 
 GitHub reports [#12](https://github.com/dragoshont/xodus-macos-app/pull/12)
 (M10), [#13](https://github.com/dragoshont/xodus-macos-app/pull/13) and
@@ -74,4 +74,4 @@ packages or third-party runtime binaries without an explicit redistribution
 review. No release, tag, runtime rename or feature gate is created by these docs.
 
 Backend owner: [regrouping and paused scope](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
-(publication pending at this snapshot; reserved destination).
+and [publication precautions](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).
