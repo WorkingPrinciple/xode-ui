@@ -24,6 +24,7 @@ final class LiveSession: ObservableObject {
     @Published private(set) var accountStatusChecking = false
     @Published private(set) var accountStatusCurrent = false
     @Published private(set) var nativeSignInHostAdmitted = false
+    @Published private var connectionFailedAfterAdmission = false
     private var confirmedBeforeStatusRead = false
     @Published private(set) var accountError: String?
     @Published private(set) var accountStatusError: ManagementError?
@@ -202,6 +203,9 @@ final class LiveSession: ObservableObject {
     var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
     var welcomeMessage: String {
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in…" }
+        if connectionFailedAfterAdmission {
+            return "X Ode couldn't connect to its sign-in service. If another copy of X Ode is open, close it normally, then try again."
+        }
         guard isReady, nativeSignInHostAdmitted, supports(.authBegin),
               supports(.authCancel), supports(.authStatus) else {
             return "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required."
@@ -815,6 +819,7 @@ final class LiveSession: ObservableObject {
         authentication = nil
         accountStatusCurrent = false
         nativeSignInHostAdmitted = false
+        connectionFailedAfterAdmission = false
         confirmedBeforeStatusRead = false
         accountError = nil
         accountStatusError = nil
@@ -887,9 +892,16 @@ final class LiveSession: ObservableObject {
     }
 
     private func connectionFailed(_ error: Error) async {
-        let revision = lifecycleRevision + 1
+        let failedClient = client
+        let observedRevision = lifecycleRevision
+        let helperValidated = await failedClient?.nativeAuthHostValidated == true
+        guard observedRevision == lifecycleRevision, client === failedClient else { return }
+        let pairingRejected = error as? ManagementError == .nativeAuthHostUnavailable
+            || error as? ManagementError == .pairedEngineUnavailable
+        let revision = observedRevision + 1
         guard await disconnect(), revision == lifecycleRevision else { return }
         phase = .failed
+        connectionFailedAfterAdmission = helperValidated && !pairingRejected
         errorMessage = Self.describe(error)
     }
 

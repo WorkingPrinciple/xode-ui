@@ -227,6 +227,52 @@ enum NativeChecks {
             let helperBytes = Data("#!/bin/sh\nexit 90\n".utf8)
             try helperBytes.write(to: neutralHelper)
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: neutralHelper.path)
+            let neutralBinding = NativeAuthHostBinding(executable: neutralHelper,
+                sha256: SHA256.hash(data: helperBytes).map { String(format: "%02x", $0) }.joined())
+            let unpairedMessage = "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required."
+            let serviceMessage = "X Ode couldn't connect to its sign-in service. If another copy of X Ode is open, close it normally, then try again."
+            let retryBase = configuration("welcomeretry")
+            let retryConfiguration = BackendConfiguration(executable: retryBase.executable,
+                stateDirectory: retryBase.stateDirectory, nativeAuthHost: neutralBinding)
+            let retryWelcome = LiveSession(configuration: retryConfiguration)
+            await retryWelcome.prepareWelcome()
+            check(retryWelcome.phase == .failed && retryWelcome.welcomeMessage == serviceMessage
+                  && retryWelcome.errorMessage == ManagementError.invalidFrame.localizedDescription
+                  && !retryWelcome.hasConfirmedSignIn && !retryWelcome.nativeSignInHostAdmitted
+                  && !retryWelcome.canStartWelcomeSignIn,
+                  "Admitted-helper hello failure offers service retry, not missing-pair advice or unlocked sign-in")
+            await retryWelcome.prepareWelcome()
+            check(retryWelcome.isReady && retryWelcome.nativeSignInHostAdmitted
+                  && retryWelcome.accountStatusCurrent && retryWelcome.welcomeMessage != serviceMessage,
+                  "The same admitted pair retries through real hello/status and clears the stale connection guidance")
+            await retryWelcome.disconnect()
+            check(retryWelcome.welcomeMessage == unpairedMessage && !retryWelcome.canStartWelcomeSignIn,
+                  "Disconnect clears historical admission failure evidence without enabling sign-in")
+            try cleanLifecycle(retryConfiguration)
+
+            let invalidEngine = neutralHelper.deletingLastPathComponent().appendingPathComponent("invalid-engine")
+            try Data("#!/nonexistent/xodus-neutral-interpreter\nexit 90\n".utf8).write(to: invalidEngine)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: invalidEngine.path)
+            let startupFailure = LiveSession(configuration: BackendConfiguration(
+                executable: invalidEngine, stateDirectory: retryBase.stateDirectory, nativeAuthHost: neutralBinding))
+            await startupFailure.prepareWelcome()
+            check(startupFailure.phase == .failed && startupFailure.welcomeMessage == serviceMessage
+                  && startupFailure.errorMessage == ManagementError.startFailed.localizedDescription
+                  && !startupFailure.hasConfirmedSignIn && !startupFailure.canStartWelcomeSignIn,
+                  "Validated-helper process-start failure uses retry guidance while readiness remains locked")
+            await startupFailure.disconnect()
+
+            let invalidBinding = NativeAuthHostBinding(executable: neutralHelper, sha256: String(repeating: "0", count: 64))
+            let rejectedPair = LiveSession(configuration: BackendConfiguration(executable: retryBase.executable,
+                stateDirectory: retryBase.stateDirectory, nativeAuthHost: invalidBinding))
+            await rejectedPair.prepareWelcome()
+            check(rejectedPair.phase == .failed && rejectedPair.welcomeMessage == unpairedMessage
+                  && rejectedPair.errorMessage == ManagementError.nativeAuthHostUnavailable.localizedDescription
+                  && !rejectedPair.nativeSignInHostAdmitted && !rejectedPair.canStartWelcomeSignIn
+                  && !FileManager.default.fileExists(atPath: retryBase.stateDirectory.path),
+                  "Invalid helper hash keeps missing-pair guidance and cannot start a backend or sign-in")
+            await rejectedPair.disconnect()
+
             let savedConfiguration = BackendConfiguration(
                 executable: savedBase.executable, stateDirectory: savedBase.stateDirectory,
                 nativeAuthHost: NativeAuthHostBinding(executable: neutralHelper,

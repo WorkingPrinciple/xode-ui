@@ -4,6 +4,50 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## Welcome connection recovery and Account menu (2026-10-17)
+
+The native application menu remains X Ode; only the extra menu containing
+Account/Profile/Achievements/My Consoles/Engines is renamed **Account**, without
+changing actions, shortcuts, gates or security identities.
+
+Welcome now distinguishes a genuine startup/hello/connection failure after
+validated helper/engine admission from missing or invalid pairing. The client
+records the validation stage before starting its child; this historical evidence
+changes recovery copy only, never current sign-in or readiness. Typed
+`nativeAuthHostUnavailable`/`pairedEngineUnavailable` rejection still gives
+fail-closed matching-pair guidance. Later connection failure offers plain retry
+guidance and suggests normally closing another open X Ode copy. No stderr
+parsing, process killing, polling, state/lock deletion or admission fallback is
+introduced. Generation fencing prevents a stale failure from retiring a newer
+connection.
+
+Focused regressions use an actual admitted neutral helper plus the existing
+management client/mock child: one hello protocol rejection then successful
+retry/status, a process-start failure after validation, invalid-helper-hash
+rejection before child startup, and unchanged missing-helper/status gates.
+They test the same `prepareWelcome`/`welcomeMessage` path used by native Try
+again. No helper fixture is executed and no real credentials are accessed.
+
+`swift build --jobs 4 --product XodusPreview` and
+`swift build --jobs 4 --product XodusManagementChecks` passed;
+`swift run --skip-build XodusPreview --self-check` passed 189 checks;
+`swift run --skip-build XodusPreview --live-check` passed 1132 checks; and
+`swift run --skip-build XodusManagementChecks` passed 5637 checks, all with zero
+failures. The shipping source build
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` passed, as did the 29 neutral checks from
+`PYTHONDONTWRITEBYTECODE=1 python3 tools/check_shipping_pair.py`.
+
+Parent-reported live evidence was separate: another app/CLI owned the management
+lock, and normally closing that old app followed by Try again in the unchanged
+signed candidate restored sign-in and the broker-backed collection. No exact
+`StateLocked` wire frame was captured, so this correction neither asserts that
+diagnosis nor depends on a particular backend code. This lane performed no
+ordinary app launch, signing, package/install, real account/Keychain or installed
+broker/runtime/game operation. Native menu/AX acceptance remains parent-owned.
+The full shipping XCTest gate still requires unavailable full Xcode; it was not
+rerun, substituted or weakened.
+
 ## Five freeze findings: source correction (2026-10-16)
 
 The source-derived review of `8a6aa359` identified five defects, not five live

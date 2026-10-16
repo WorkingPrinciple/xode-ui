@@ -26,6 +26,8 @@ public actor ManagementClient {
     private let writer = DispatchQueue(label: "Xodus.management.stdin")
     private var process: Process?
     private var admittedConfiguration: BackendConfiguration?
+    // Historical startup stage only; this never establishes a ready connection or current sign-in.
+    public private(set) var nativeAuthHostValidated = false
     private var stdin: FileHandle?
     private var outputTask: Task<Void, Never>?
     private var diagnosticTask: Task<Void, Never>?
@@ -90,6 +92,7 @@ public actor ManagementClient {
             }
             do { _ = try configuration.nativeAuthHost?.validatedArguments() }
             catch { throw ManagementError.nativeAuthHostUnavailable }
+            nativeAuthHostValidated = configuration.nativeAuthHost != nil
             try child.run()
         }
         catch let error as ManagementError { throw error }

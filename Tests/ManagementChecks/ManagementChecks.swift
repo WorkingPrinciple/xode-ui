@@ -926,7 +926,7 @@ enum MockBackend {
             if ["inspection", "inspectionmissing", "inspectionmismatch"].contains(scenario) {
                 supported.insert(.inspectInstallation)
             }
-            if ["expired", "expiredpermission", "savedpermission", "transientauth", "latecancel", "humanwait", "hangmutation", "beginfail", "statuspermission", "deadlinecompleted",
+            if ["expired", "expiredpermission", "savedpermission", "welcomeretry", "transientauth", "latecancel", "humanwait", "hangmutation", "beginfail", "statuspermission", "deadlinecompleted",
                 "failedflow", "failedflownocode", "authgate"].contains(scenario) || scenario.hasPrefix("failedstage-") {
                 supported.formUnion([.authBegin, .authCancel])
             }
@@ -944,6 +944,18 @@ enum MockBackend {
                 let request = try JSONDecoder().decode(JSONValue.self, from: Data(line.utf8))
                 let command = request["command"]?.string ?? ""
                 if command == "hello" {
+                    if scenario == "welcomeretry" {
+                        let marker = lifecycleDirectory.appendingPathComponent("hello-rejected")
+                        if !FileManager.default.fileExists(atPath: marker.path) {
+                            try FileManager.default.createDirectory(at: lifecycleDirectory,
+                                withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+                            try Data("Neutral one-time hello rejection.".utf8).write(to: marker)
+                            var rejected = result(request, data: .object(hello))
+                            rejected["protocol"] = .object(["major": .integer(2), "minor": .integer(0)])
+                            try emit(.object(rejected))
+                            continue
+                        }
+                    }
                     if scenario == "retirehello" {
                         try trace("hello.wait")
                         Thread.sleep(forTimeInterval: 0.4)

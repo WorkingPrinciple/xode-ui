@@ -20,6 +20,15 @@ sign-in requires explicit confirmation before disconnecting it for a fresh
 attempt. Quit stays available through the native app menu, but existing mutation
 holds still refuse termination until their operations settle.
 
+Pairing rejection and later connection failure are distinct. After helper and
+engine identity validation, failure to start the service or negotiate its hello
+offers Try again and suggests normally closing another open X Ode copy first.
+It does not assert that another copy is running or that a lock error was
+received. Missing/invalid pairing retains the matching-app/service requirement.
+Neither message unlocks sign-in, navigation or credentials; successful connection
+and current account status are still required. The dedicated native menu is
+**Account**, distinct from the canonical **X Ode** application menu.
+
 The official `https://www.codeweavers.com/crossover/download` trial handoff is
 shown only for absent/unverified CrossOver. Returning to the active app repeats
 read-only publisher detection. It does not install CrossOver, assert a license

@@ -187,7 +187,7 @@ struct XodusPreviewApp: App {
                 Button("Downloads") { state.navigate(.downloads) }.keyboardShortcut("3")
                     .disabled(!navigationAllowed)
             }
-            CommandMenu("X Ode") {
+            CommandMenu("Account") {
 #if !XODUS_SHIPPING
                 Button("Account") { state.openAccount() }
                     .disabled(state.fixtureMode)
