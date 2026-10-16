@@ -10,6 +10,7 @@ enum NativeUIChecks {
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         let application = NSApplication.shared
         let windows = application.windows.count
+        autoreleasepool { checkWelcomeTerminationPolicy(check: check) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for size in [CGSize(width: 480, height: 480), CGSize(width: 560, height: 620)] {
                 let session = LiveSession()
@@ -443,6 +444,51 @@ enum NativeUIChecks {
         }
         check(NSApplication.shared.windows.count == windows && !session.accountBusy,
               "Retained-history Library layout checks show no window and start no activity load")
+    }
+
+    private static func checkWelcomeTerminationPolicy(check: (Bool, String) -> Void) {
+        let welcomeWindow = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 560, height: 620),
+                                     styleMask: [.titled], backing: .buffered, defer: true)
+        let otherModal = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 480, height: 480),
+                                  styleMask: [.titled], backing: .buffered, defer: true)
+        welcomeWindow.isReleasedWhenClosed = false
+        otherModal.isReleasedWhenClosed = false
+        defer {
+            welcomeWindow.close()
+            otherModal.close()
+        }
+        welcomeWindow.preventsApplicationTerminationWhenModal = true
+        otherModal.preventsApplicationTerminationWhenModal = true
+        let policyHost = NSHostingView(rootView: WelcomeSheetTerminationBridge()
+            .frame(width: 0, height: 0).allowsHitTesting(false).accessibilityHidden(true))
+        policyHost.sizingOptions = []
+        policyHost.frame = CGRect(x: 0, y: 0, width: 10, height: 10)
+        welcomeWindow.contentView?.addSubview(policyHost)
+        policyHost.layoutSubtreeIfNeeded()
+        guard let policyView = descendants(of: policyHost)
+            .compactMap({ $0 as? WelcomeSheetTerminationBridge.WindowPolicyView }).first else {
+            check(false, "XO-010: SwiftUI welcome bridge creates its native window policy view")
+            return
+        }
+        check(policyView.window === welcomeWindow
+              && !welcomeWindow.preventsApplicationTerminationWhenModal
+              && otherModal.preventsApplicationTerminationWhenModal,
+              "XO-010: Actual native window attachment disables only welcome's AppKit modal Quit blocker")
+        policyView.removeFromSuperview()
+        check(welcomeWindow.preventsApplicationTerminationWhenModal,
+              "XO-010: Leaving welcome restores the original native modal policy for later account/installer sheets")
+        otherModal.preventsApplicationTerminationWhenModal = false
+        otherModal.contentView?.addSubview(policyView)
+        WelcomeSheetTerminationBridge.dismantleNSView(policyView, coordinator: ())
+        check(!otherModal.preventsApplicationTerminationWhenModal,
+              "XO-010: SwiftUI dismantling preserves a window's originally nonblocking policy")
+        policyView.removeFromSuperview()
+        welcomeWindow.contentView?.addSubview(policyView)
+        WelcomeSheetTerminationBridge.dismantleNSView(policyView, coordinator: ())
+        check(welcomeWindow.preventsApplicationTerminationWhenModal
+              && !welcomeWindow.isVisible && !otherModal.isVisible,
+              "XO-010: Dismantling restores a blocking policy without presenting, dismissing or terminating an app")
+        policyView.removeFromSuperview()
     }
 
     static func checkOperationFeedback(operations: GameOperationsController,

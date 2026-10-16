@@ -1,5 +1,42 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import AppKit
 import SwiftUI
+
+struct WelcomeSheetTerminationBridge: NSViewRepresentable {
+    func makeNSView(context: Context) -> WindowPolicyView { WindowPolicyView() }
+    func updateNSView(_ view: WindowPolicyView, context: Context) {}
+
+    static func dismantleNSView(_ view: WindowPolicyView, coordinator: ()) {
+        view.restorePolicy()
+    }
+
+    final class WindowPolicyView: NSView {
+        private weak var configuredWindow: NSWindow?
+        private var previousPolicy: Bool?
+
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if configuredWindow !== newWindow { restorePolicy() }
+            super.viewWillMove(toWindow: newWindow)
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window, configuredWindow !== window else { return }
+            configuredWindow = window
+            previousPolicy = window.preventsApplicationTerminationWhenModal
+            // Welcome must let normal Quit reach the delegate's authoritative operation/shutdown checks.
+            window.preventsApplicationTerminationWhenModal = false
+        }
+
+        func restorePolicy() {
+            if let configuredWindow, let previousPolicy {
+                configuredWindow.preventsApplicationTerminationWhenModal = previousPolicy
+            }
+            configuredWindow = nil
+            previousPolicy = nil
+        }
+    }
+}
 
 struct AccountSheetLayout<Header: View, Content: View, Actions: View>: View {
     let header: Header

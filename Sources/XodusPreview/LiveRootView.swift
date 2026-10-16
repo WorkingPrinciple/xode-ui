@@ -207,6 +207,11 @@ struct LiveRootView: View {
         }) {
             if requiresSignIn {
                 LiveWelcomeView(session: session, runtime: state.runtimeSettings, operations: state.gameOperations)
+                    .background {
+                        WelcomeSheetTerminationBridge()
+                            .frame(width: 0, height: 0)
+                            .allowsHitTesting(false).accessibilityHidden(true)
+                    }
             } else {
 #if !XODUS_SHIPPING
             LiveAccountView(refreshStatusOnAppear: !PreviewExporter.liveDataRequested)

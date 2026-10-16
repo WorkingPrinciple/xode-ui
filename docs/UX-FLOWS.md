@@ -20,6 +20,13 @@ sign-in requires explicit confirmation before disconnecting it for a fresh
 attempt. Quit stays available through the native app menu, but existing mutation
 holds still refuse termination until their operations settle.
 
+**XO-010 normal Quit from Welcome:** Only the mandatory welcome presentation
+opts its native sheet window out of AppKit's modal termination blocker, allowing
+normal Quit to reach the existing termination delegate/coordinator. It does not
+dismiss Welcome, unlock content or override operation refusal. The original
+window policy is restored when Welcome leaves or its bridge is dismantled;
+Account, installer and destructive sheets are not globally changed.
+
 Pairing rejection and later connection failure are distinct. After helper and
 engine identity validation, failure to start the service or negotiate its hello
 offers Try again and suggests normally closing another open X Ode copy first.

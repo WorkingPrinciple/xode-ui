@@ -4,6 +4,47 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## XO-010 mandatory Welcome and normal Quit (2026-10-17)
+
+Parent captured AppKit's **App termination blocked by modal sheet** log for a
+signed candidate at Welcome; a bounded sample showed the normal event loop,
+not a synchronous deadlock. A normal terminate request returning true did not
+establish process exit. This lane did not repeat that live observation.
+
+Only the mandatory `LiveRootView` welcome-sheet branch now attaches an existing-
+style `NSViewRepresentable` bridge. Its actual native window sets documented
+[`preventsApplicationTerminationWhenModal`](https://developer.apple.com/documentation/appkit/nswindow/preventsapplicationterminationwhenmodal)
+to false while Welcome owns the bridge, so normal Quit can reach the existing
+delegate/coordinator. Native view removal/window movement and SwiftUI dismantling
+restore the previous value. The shared Account layout, normal Account and
+installer/destructive modal policies are not globally relaxed. Mandatory login,
+interactive-dismiss prevention, current-account/readiness and source-selection
+gates remain; no sign-in or exit success is manufactured. The termination
+delegate and operation/cancellation/Quit holds are unchanged.
+
+`swift build --jobs 4 --product XodusPreview` passed.
+`swift run --skip-build XodusPreview --self-check` passed 193 checks, including
+four actual native-window bridge checks; `swift run --skip-build XodusPreview
+--live-check` passed 1138 checks, all zero failures. The bridge fixture mounts
+the actual SwiftUI representable inside an unshown `NSWindow`, checks its
+window-attachment policy against an unrelated blocking window, and checks
+removal/dismantling restore both originally blocking and nonblocking values.
+Fixture windows are never shown and are closed/released before existing
+no-window layout assertions. Synthetic live checks retain active-operation
+Quit refusal, held cancellation, safe owned-child retirement and idle shutdown.
+
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` passed; `PYTHONDONTWRITEBYTECODE=1 python3
+tools/check_shipping_pair.py` passed 29 neutral admission checks;
+`git diff --check` passed. Full shipping XCTest remains a missing-full-Xcode
+hold and was not replayed, replaced or waived.
+
+This is native property/lifecycle harness evidence, **not** successful normal
+Quit from a real signed SwiftUI sheet. Parent owns that acceptance after console
+unlock. No ordinary app or real modal was presented, no termination request
+was sent to another process, and no accounts/Keychain, installed runtime/broker,
+games, signing/package/install or release actions occurred in this source lane.
+
 ## XO-018 saved game-service identity recovery (2026-10-17)
 
 Parent observed a saved game-service sign-in with no account-binding file and
