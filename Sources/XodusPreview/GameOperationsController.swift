@@ -108,8 +108,20 @@ final class GameOperationsController: ObservableObject {
         operation != nil && operation?.kind != .uninstall && !recoveryRequired && !cancelling
     }
     var serviceLabel: String {
-        serviceStatus?.signedIn == true ? "Signed in for games"
+        if serviceAccountNeedsVerification { return "Game sign-in saved; account not verified" }
+        return serviceStatus?.signedIn == true ? "Signed in for games"
             : serviceStatus == nil ? "Game sign-in hasn't been checked" : "Sign in for games"
+    }
+    var serviceAccountNeedsVerification: Bool {
+        serviceStatus?.signedIn == true && serviceStatus?.accountHash == nil
+    }
+    var serviceSignInActionTitle: String? {
+        if serviceAccountNeedsVerification { return "Verify game account" }
+        return serviceStatus?.signedIn == true ? nil : "Sign in for games"
+    }
+    var serviceAccountSymbol: String {
+        serviceAccountNeedsVerification ? "person.crop.circle.badge.questionmark"
+            : serviceStatus?.signedIn == true ? "checkmark.circle" : "person.crop.circle"
     }
     var gamePassActive: Bool {
         gamePassStatus?.active == true && !gamePassFromCache && !gamePassBusy && gamePassError == nil

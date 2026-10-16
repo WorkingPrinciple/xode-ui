@@ -4,6 +4,42 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## XO-018 saved game-service identity recovery (2026-10-17)
+
+Parent observed a saved game-service sign-in with no account-binding file and
+unavailable Profile/My Consoles, while Account said fully signed in. Source
+permits that valid partial receipt but hid its only recovery action.
+
+The shared service presentation now distinguishes saved-but-unverified sign-in
+from an account-bound result in both Account summaries. Its explicit **Verify
+game account** button uses the unchanged `signInForGames` controller and admitted
+service script path. No verification runs merely from presentation or Check
+status. Existing success/status checks, errors, retry, service/mutation/Quit
+fences and Play eligibility remain unchanged. No account hash is synthesized,
+no account identities are joined, and companion/stats ownership is not relaxed.
+
+`swift build --jobs 4 --product XodusPreview` passed;
+`swift run --skip-build XodusPreview --self-check` passed 189 checks and
+`swift run --skip-build XodusPreview --live-check` passed 1138 checks, zero
+failures. Synthetic fixtures cover signed-out, saved-unbound and bound receipts,
+no automatic verification during status/layout, explicit verification failure,
+visible retry, duplicate-action fencing and subsequent bound status. The actual
+shared Account service view was laid out detached with its shared action title;
+this is not live AX reachability evidence.
+
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` passed. `PYTHONDONTWRITEBYTECODE=1 python3
+tools/check_shipping_pair.py` passed 29 neutral admission checks;
+`git diff --check` passed. The missing full-Xcode/XCTest shipping gate remains
+unchanged and was not rerun or substituted.
+
+This lane did not inspect, edit or execute the installed management/service
+scripts, touch real accounts/Keychain/network, launch an ordinary app or game,
+sign/package/install or change installed runtime/broker state. Parent-reported
+cached-session binding resolution remains installed-runtime evidence, not a
+claim that synthetic source checks performed it. Locked-screen native
+verification and eventual app/profile acceptance remain parent-owned.
+
 ## Welcome connection recovery and Account menu (2026-10-17)
 
 The native application menu remains X Ode; only the extra menu containing

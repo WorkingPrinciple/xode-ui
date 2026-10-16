@@ -55,8 +55,7 @@ struct LiveAccountView: View {
                     GroupBox("Xbox game-service account") {
                         VStack(alignment: .leading, spacing: 8) {
                             Label(state.gameOperations.serviceLabel,
-                                  systemImage: state.gameOperations.serviceStatus?.signedIn == true
-                                      ? "checkmark.circle" : "person.crop.circle")
+                                  systemImage: state.gameOperations.serviceAccountSymbol)
                             Text("Gameplay, Profile, Achievements and My Consoles use this Xbox account. \(XboxCompanionCopy.accountScope)")
                                 .font(.callout).foregroundStyle(.secondary)
                         }

@@ -28,17 +28,22 @@ struct GameServiceAccountView: View {
             }
             GroupBox("Game access") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Label(operations.serviceLabel, systemImage: operations.serviceStatus?.signedIn == true
-                          ? "checkmark.circle" : "person.crop.circle")
+                    Label(operations.serviceLabel, systemImage: operations.serviceAccountSymbol)
                         .accessibilityIdentifier("xodus.games.accountStatus")
                     Text("Required for package checks, downloads and gameplay.")
                         .font(.callout).foregroundStyle(.secondary)
+                    if operations.serviceAccountNeedsVerification {
+                        Text("Your game sign-in is saved, but its Xbox account hasn't been confirmed. Verify it to load Profile, Achievements and My Consoles.")
+                            .font(.callout).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("xodus.games.verifyExplanation")
+                    }
                     HStack {
                         Button("Check status") { operations.refreshService() }
                             .disabled(operations.serviceBusy || operations.setupRepairing)
                             .accessibilityIdentifier("xodus.games.checkSignIn")
-                        if operations.serviceStatus?.signedIn != true {
-                            Button("Sign in for games") { operations.signInForGames() }
+                        if let title = operations.serviceSignInActionTitle {
+                            Button(title) { operations.signInForGames() }
                                 .disabled(!operations.canSignIn)
                                 .accessibilityIdentifier("xodus.games.signIn")
                         }

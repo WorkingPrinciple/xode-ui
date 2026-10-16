@@ -58,6 +58,17 @@ user-directed first-run correction.
 
 ## Freeze correction: operation feedback and library retry (source candidate)
 
+**XO-018 game-service identity recovery:** A saved game-service sign-in without
+an account binding says **Game sign-in saved; account not verified**, without a
+confirmed-account checkmark. Account exposes **Verify game account** explicitly
+through the existing service sign-in action, followed by its fresh service-status
+read. Check status and view presentation never trigger verification automatically.
+Only an actual bound status removes this action; an unbound result leaves it
+available and a failure shows the existing error/retry path. Existing service,
+mutation and Quit fences still govern the action. This does not require profile
+binding to play, change game eligibility, join accounts or relax ownership of
+Profile/Consoles/stats caches. Live verification still needs native acceptance.
+
 Discover keeps the existing operation feedback above its content after a card
 or hero Install action: preparation, progress, cancellation, and exact bounded
 package/account/storage failures. It does not silently hand off to another tab

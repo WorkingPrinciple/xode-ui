@@ -90,12 +90,21 @@ enum GameOperationChecks {
             catch { check(true, "S5 malformed progress is refused") }
         }
         let signed = root.appendingPathComponent("signed-in")
+        let verifiedAccount = root.appendingPathComponent("verified-account")
+        let verificationFails = root.appendingPathComponent("verification-fails")
+        let verificationCalls = root.appendingPathComponent("verification-calls")
+        let fixtureAccountHash = String(repeating: "a", count: 64)
         try script(.serviceStatus, """
             if [ -f '\(signed.path)' ]; then signed=true; else signed=false; fi
-            printf '{"serviceRunning":true,"signedIn":%s}\\n' "$signed" | publish '\(paths.processed.path)'/"$1.result.json"
+            if [ "$signed" = true ] && [ -f '\(verifiedAccount.path)' ]; then account='"\(fixtureAccountHash)"'; else account=null; fi
+            printf '{"serviceRunning":true,"signedIn":%s,"accountHash":%s}\\n' "$signed" "$account" | publish '\(paths.processed.path)'/"$1.result.json"
             printf '0\\n' | publish '\(paths.processed.path)'/"$1.status"
             """)
         try script(.serviceSignIn, """
+            printf 'verification\\n' >> '\(verificationCalls.path)'
+            if [ -f '\(verificationFails.path)' ]; then
+                printf '11\\n' | publish '\(paths.processed.path)'/"$1.status"; exit 11
+            fi
             touch '\(signed.path)'
             printf '0\\n' | publish '\(paths.processed.path)'/"$1.status"
             """)
@@ -237,11 +246,55 @@ enum GameOperationChecks {
         if let error = operations.serviceError { print("NEUTRAL service-status failure: \(error)") }
         check(operations.serviceStatus?.signedIn == false && operations.serviceError == nil,
               "S3 explicit status reads only the service-owned receipt")
+        check(operations.serviceSignInActionTitle == "Sign in for games"
+              && operations.serviceLabel == "Sign in for games" && !operations.serviceAccountNeedsVerification,
+              "XO-018: Signed-out game service offers normal sign-in, not identity verification")
         operations.signInForGames()
         await operations.waitForService()
         if let error = operations.serviceError { print("NEUTRAL service-signin failure: \(error)") }
         check(operations.serviceStatus?.signedIn == true && !installed.serviceSignInActive,
               "S3 explicit sign-in is followed by a fresh status check; no token transfer")
+        let callsBeforeStatus = try String(contentsOf: verificationCalls, encoding: .utf8)
+        operations.refreshService()
+        await operations.waitForService()
+        let callsAfterStatus = try String(contentsOf: verificationCalls, encoding: .utf8)
+        check(operations.serviceStatus?.signedIn == true && operations.serviceStatus?.accountHash == nil
+              && operations.serviceAccountNeedsVerification
+              && operations.serviceLabel == "Game sign-in saved; account not verified"
+              && operations.serviceSignInActionTitle == "Verify game account"
+              && operations.serviceAccountSymbol != "checkmark.circle"
+              && callsAfterStatus == callsBeforeStatus,
+              "XO-018: Unbound saved sign-in stays truthful and exposes explicit verification without auto-executing it")
+        let serviceView = GameServiceAccountView(operations: operations, library: PCGamesController())
+        let serviceHost = NSHostingView(rootView: serviceView.environmentObject(LiveSession()))
+        serviceHost.sizingOptions = []
+        serviceHost.frame = CGRect(x: 0, y: 0, width: 560, height: 900)
+        serviceHost.layoutSubtreeIfNeeded()
+        check(serviceHost.window == nil && operations.serviceSignInActionTitle == "Verify game account"
+              && !operations.serviceBusy,
+              "XO-018: Shared Account service presentation lays out detached without starting verification")
+        try privateFile(verificationFails, "Neutral refused verification.")
+        operations.signInForGames()
+        check(operations.serviceBusy && operations.serviceSigningIn && installed.serviceSignInActive
+              && !operations.canSignIn && !operations.canQuit,
+              "XO-018: Explicit verification uses the existing service/Play/Quit fences")
+        operations.signInForGames()
+        await operations.waitForService()
+        let callsAfterFailure = try String(contentsOf: verificationCalls, encoding: .utf8)
+        check(operations.serviceError == GameScriptError.failed(11).localizedDescription
+              && operations.serviceStatus == nil && operations.serviceSignInActionTitle != nil
+              && !operations.serviceBusy && !installed.serviceSignInActive && operations.canQuit
+              && callsAfterFailure.split(separator: "\n").count == 2,
+              "XO-018: Verification failure is visible, releases joined holds, preserves retry and deduplicates activation")
+        try FileManager.default.removeItem(at: verificationFails)
+        try privateFile(verifiedAccount, "Neutral account-binding receipt switch.")
+        operations.signInForGames()
+        await operations.waitForService()
+        check(operations.serviceStatus?.accountHash == fixtureAccountHash && operations.serviceError == nil
+              && !operations.serviceAccountNeedsVerification && operations.serviceSignInActionTitle == nil
+              && operations.serviceLabel == "Signed in for games" && operations.serviceAccountSymbol == "checkmark.circle"
+              && !installed.serviceSignInActive && operations.canQuit,
+              "XO-018: Explicit retry consumes a fresh bound status and removes the verification action")
         let game = PCGame(id: "FIXTURE00001", title: "Fixture Game", artwork: nil)
         let compatibilityData = """
             {"storeId":"\(game.id)","packageBytes":null,"supported":true,"reason":null,"checkedAt":"2026-10-07T00:00:00.123Z"}
