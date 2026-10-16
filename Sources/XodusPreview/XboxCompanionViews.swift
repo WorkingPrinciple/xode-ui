@@ -371,11 +371,14 @@ struct XboxConsolesView: View {
     }
 }
 
+// Keep property-wrapper state unambiguous with SDKs that also export a State macro.
+private typealias EngineViewState<Value> = SwiftUI.State<Value>
+
 struct EnginesView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var session: LiveSession
-    @State private var defaultEngine: RuntimeProviderKind? = EngineDefaults.defaultEngine()
-    @State private var runnerPaths = EngineDefaults.runnerPaths()
+    @EngineViewState private var defaultEngine: RuntimeProviderKind? = EngineDefaults.defaultEngine()
+    @EngineViewState private var runnerPaths = EngineDefaults.runnerPaths()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {

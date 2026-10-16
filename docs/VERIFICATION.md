@@ -4,6 +4,39 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## Feature-freeze source stabilization: candidate (2026-10-16)
+
+On Apple Silicon with CLT Swift 6.4 and the macOS 27 SDK, the existing
+`sh tools/check.sh` baseline failed compiling the two `EnginesView` stored
+properties: `@State` resolved to the SDK's `SwiftUIMacros.StateMacro`, whose
+plugin is unavailable in CLT. A private alias to the existing `SwiftUI.State`
+property wrapper disambiguates only those two properties; engine defaults,
+bindings, persistence and admission policy are unchanged.
+
+`swift build --jobs 4` and the normal build inside the corrected check script
+passed. Both release shipping products compiled, and the existing neutral
+signing policy and 29 portable packaging admission checks passed. The shipping
+test step remains **blocked**: `swift test --scratch-path .build/shipping
+-c release -Xswiftc -enable-testing --filter ShippingChecks` under
+`XODUS_SHIPPING=1` cannot resolve `XCTest` in this CLT-only installation.
+Full Xcode is unavailable; the shipping test gate was not weakened or replaced.
+The script's eight shipping argument-rejection checks and fixture-resource
+exclusions were executed separately and passed.
+
+The remaining existing checks were run separately with
+`swift run --skip-build`: `XodusFixtureChecks` (15), `XodusManagementChecks`
+(5637), `XodusPreview --self-check` (179), `XodusPreview --live-check` (1056),
+`XodusAuthHost --self-check` (152), and `XodusCredentialChecks --self-check`
+(19). All passed with zero failures. Despite its name, this `--live-check`
+uses mock children and synthetic scripts, not the production runtime.
+Native-host checks use detached synthetic WebKit; credential checks do not
+access Keychain. No real account request, game launch, packaging, installation,
+signing or replacement of the already-open development app occurred.
+
+This is source-build and offline regression evidence only. Independent parent
+verification and the unavailable shipping XCTest gate remain outstanding;
+backend provenance/pairing and public distribution holds remain unchanged.
+
 ## Native finish-script compatibility: candidate
 
 The qualified notification-compatible app was installed with the unchanged
