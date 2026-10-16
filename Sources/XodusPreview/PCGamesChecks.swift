@@ -33,9 +33,24 @@ private actor PCGamesMockStore: PCGamesRefreshStore {
     var retainsLegacy = false
     var legacyWasRetained = false
     private(set) var approvals = 0
+    private(set) var presenceChecks = 0
+    var presenceFailureStage: Int?
+    var presenceDelay = false
 
     init(_ token: String? = nil) { self.token = token }
-    func contains() -> Bool { token != nil }
+    func failPresence(at stage: Int, delayed: Bool = false) {
+        presenceFailureStage = stage
+        presenceDelay = delayed
+    }
+    func contains() async throws -> Bool {
+        presenceChecks += 1
+        if presenceDelay { try await Task.sleep(for: .milliseconds(100)) }
+        if presenceFailureStage == 0 {
+            presenceFailureStage = nil
+            throw PCGamesError.credentialBrokerUnavailable
+        }
+        return token != nil
+    }
     func read() -> String? { reads += 1; return token }
     func save(_ refreshToken: String) throws {
         try Task.checkCancellation()
@@ -54,7 +69,13 @@ private actor PCGamesMockStore: PCGamesRefreshStore {
         approvalWaits = waits
         self.retainsLegacy = retainsLegacy
     }
-    func migrationRequired() -> Bool { requiresApproval }
+    func migrationRequired() throws -> Bool {
+        if presenceFailureStage == 1 {
+            presenceFailureStage = nil
+            throw PCGamesError.credentialBrokerUnavailable
+        }
+        return requiresApproval
+    }
     func migrate() async throws {
         approvals += 1
         if approvalWaits { try await Task.sleep(for: .seconds(60)) }
@@ -63,7 +84,13 @@ private actor PCGamesMockStore: PCGamesRefreshStore {
         requiresApproval = false
         legacyWasRetained = retainsLegacy
     }
-    func legacyRetained() -> Bool { legacyWasRetained }
+    func legacyRetained() throws -> Bool {
+        if presenceFailureStage == 2 {
+            presenceFailureStage = nil
+            throw PCGamesError.credentialBrokerUnavailable
+        }
+        return legacyWasRetained
+    }
 }
 
 private actor PCGamesMockSleeper {
@@ -353,6 +380,51 @@ enum PCGamesChecks {
         let automaticReads = await autoStore.reads
         check(automatic.snapshot?.games.map(\.id) == [first] && automaticReads == 1 && !automatic.busy,
               "Library refresh loads known saved PC games once on appearance, without repeated account refresh")
+        for stage in 0...2 {
+            let retryStore = PCGamesMockStore("neutral-preserved-sign-in")
+            await retryStore.failPresence(at: stage, delayed: true)
+            let retryTransport = PCGamesMockTransport([tokenResponse] + (try authResponses()) + [
+                try page([item(first)]), try response(["Products": [catalogProduct(first)]])])
+            let retry = PCGamesController(store: retryStore, client: PCGamesClient(transport: retryTransport))
+            let restoration = Task { await retry.loadOnAppear() }
+            while !retry.restoringPresence { await Task.yield() }
+            await retry.restorePresence()
+            retry.signIn()
+            retry.refresh()
+            check(!retry.busy && !retry.accessIsCurrent,
+                  "F3: Presence restoration deduplicates reentry and fences sign-in/library work")
+            await restoration.value
+            let failedChecks = await retryStore.presenceChecks
+            let failedReads = await retryStore.reads
+            let failedRequests = await retryTransport.requests
+            check(retry.presenceUnavailable && !retry.hasSavedSignIn && !retry.needsSignIn
+                  && retry.error == PCGamesError.credentialBrokerUnavailable.localizedDescription
+                  && failedChecks == 1 && failedReads == 0 && failedRequests.isEmpty,
+                  "F3: Failed presence/metadata stage \(stage) is unavailable, not signed out or partially admitted")
+            retry.signIn()
+            retry.refresh()
+            check(!retry.busy, "F3: Unavailable presence cannot start OAuth or read a saved token")
+            if stage == 0 { await retry.retryLibraryLoad() }
+            else { await retry.loadOnAppear() }
+            await retry.waitForOperation()
+            let recoveredChecks = await retryStore.presenceChecks
+            let recoveredReads = await retryStore.reads
+            let removed = await retryStore.deletions
+            check(!retry.presenceUnavailable && retry.error == nil && retry.accessIsCurrent
+                  && retry.snapshot?.games.map(\.id) == [first] && recoveredChecks == 2
+                  && recoveredReads == 1 && removed == 0,
+                  "F3: Explicit retry or revisit recovers through the same store without deleting credentials")
+            await retry.loadOnAppear()
+            check(await retryStore.reads == 1, "F3: A recovered library is not automatically loaded twice")
+        }
+        let emptyStore = PCGamesMockStore()
+        let emptyTransport = PCGamesMockTransport([])
+        let emptyLibrary = PCGamesController(store: emptyStore, client: PCGamesClient(transport: emptyTransport))
+        await emptyLibrary.retryLibraryLoad()
+        let emptyRequests = await emptyTransport.requests
+        check(!emptyLibrary.presenceUnavailable && !emptyLibrary.hasSavedSignIn && emptyLibrary.error == nil
+              && !emptyLibrary.busy && emptyRequests.isEmpty,
+              "F3: Confirmed absence remains distinct from unavailable pairing and makes no Microsoft requests")
         let migrationStore = PCGamesMockStore("neutral-legacy-retained")
         await migrationStore.requireApproval()
         let migrationTransport = PCGamesMockTransport([])
@@ -441,6 +513,16 @@ enum PCGamesChecks {
         let rejectedDeletes = await rejectedDirect.deletions
         check(rejectedReads == 0 && rejectedWrites.isEmpty && rejectedDeletes == 0,
               "B6: A rejected installed helper never reads, rotates or deletes via direct fallback")
+        let rejectedLibrary = PCGamesController(store: presentBroker,
+            client: PCGamesClient(transport: PCGamesMockTransport([])))
+        await rejectedLibrary.loadOnAppear()
+        await rejectedLibrary.retryLibraryLoad()
+        let retryRejectedReads = await rejectedDirect.reads
+        let retryRejectedWrites = await rejectedDirect.saved
+        let retryRejectedDeletes = await rejectedDirect.deletions
+        check(rejectedLibrary.presenceUnavailable && rejectedLibrary.error != nil
+              && retryRejectedReads == 0 && retryRejectedWrites.isEmpty && retryRejectedDeletes == 0,
+              "F3: Retrying rejected caller/pair metadata never repairs the broker or bypasses it")
         try JSONEncoder().encode(CredentialBrokerPin(sha256: String(repeating: "0", count: 64),
                                                     bytes: 1)).write(to: manifestPath)
         do {

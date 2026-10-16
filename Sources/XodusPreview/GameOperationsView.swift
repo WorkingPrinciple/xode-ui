@@ -167,16 +167,38 @@ struct AccountTierView: View {
 
 struct GameOperationProgressView: View {
     @ObservedObject var operations: GameOperationsController
+    var privacyRestricted = false
+
+    var preparationTitle: String {
+        operations.directInstallCancelled ? "Stopping preparation" : "Preparing installation…"
+    }
+    var operationTitle: String? {
+        operations.operation.map { privacyRestricted ? "Game operation in progress" : $0.title }
+    }
+    var operationError: String? {
+        operations.error.map {
+            privacyRestricted ? "The game operation needs attention. Sign in to review its details." : $0
+        }
+    }
+    var operationNotice: String? { privacyRestricted ? nil : operations.notice }
+    var preparationCancelTitle: String? { operations.installingDirectly ? "Cancel" : nil }
+    var installCancelTitle: String? { operations.canCancel ? "Cancel installation" : nil }
+    var showsGameSignIn: Bool { !privacyRestricted && operations.failureCode == 11 }
+    var showsLog: Bool { !privacyRestricted && operations.log != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if operations.installingDirectly {
-                ProgressView("Preparing installation…")
+                ProgressView(preparationTitle)
                     .accessibilityIdentifier("xodus.install.preparing")
-                Button("Cancel") { Task { await operations.cancelInstallConsent() } }
+                if let title = preparationCancelTitle {
+                    Button(title) { Task { await operations.cancelInstallConsent() } }
+                        .disabled(operations.directInstallCancelled)
+                        .accessibilityIdentifier("xodus.install.cancelPreparation")
+                }
             }
-            if let operation = operations.operation {
-                Text(operation.title).font(.headline)
+            if let operation = operations.operation, let title = operationTitle {
+                Text(title).font(.headline)
                 if operations.recoveryRequired {
                     Button("Check last operation") { Task { await operations.reconcile() } }
                         .disabled(operations.checkingRecovery)
@@ -198,27 +220,27 @@ struct GameOperationProgressView: View {
                             Text("\(Self.bytes(value.bytesDone)) downloaded").font(.callout).foregroundStyle(.secondary)
                         }
                     }
-                    if operations.canCancel {
-                        Button("Cancel installation") { Task { await operations.cancelInstall() } }
+                    if let title = installCancelTitle {
+                        Button(title) { Task { await operations.cancelInstall() } }
                             .accessibilityIdentifier("xodus.install.cancel")
                     }
                 }
             }
-            if let error = operations.error {
+            if let error = operationError {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.install.error")
-                if operations.failureCode == 11 {
+                if showsGameSignIn {
                     Button("Sign in for games") { operations.signInForGames() }
                         .disabled(!operations.canSignIn)
                         .accessibilityIdentifier("xodus.install.signIn")
                 }
-                if operations.log != nil {
+                if showsLog {
                     Button("Show log") { operations.showLog() }
                         .accessibilityIdentifier("xodus.install.showLog")
                 }
             }
-            if let notice = operations.notice {
+            if let notice = operationNotice {
                 Label(notice, systemImage: "checkmark.circle").foregroundStyle(.secondary)
                     .accessibilityIdentifier("xodus.install.result")
             }

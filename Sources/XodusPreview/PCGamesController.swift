@@ -15,6 +15,8 @@ final class PCGamesController: ObservableObject {
     @Published private(set) var needsKeychainApproval = false
     @Published private(set) var approvingKeychain = false
     @Published private(set) var legacyKeychainRetained = false
+    @Published private(set) var restoringPresence = false
+    @Published private(set) var presenceUnavailable = false
     private let store: any PCGamesRefreshStore
     private let client: PCGamesClient
     private let market: String
@@ -27,7 +29,8 @@ final class PCGamesController: ObservableObject {
 
     var representedGames: [PCGame] { needsSignIn ? [] : snapshot?.games ?? [] }
     var accessIsCurrent: Bool {
-        snapshot != nil && hasSavedSignIn && !needsSignIn && !busy && error == nil && !needsKeychainApproval
+        snapshot != nil && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
+            && !presenceUnavailable && error == nil && !needsKeychainApproval
     }
 
     init(store: any PCGamesRefreshStore = PCGamesCredentialStore(), client: PCGamesClient = PCGamesClient(),
@@ -40,21 +43,26 @@ final class PCGamesController: ObservableObject {
     }
 
     func restorePresence() async {
-        guard !restored, !busy, !terminating else { return }
-        restored = true
+        guard !restored, !restoringPresence, !busy, !terminating else { return }
+        restoringPresence = true
+        defer { restoringPresence = false }
         let token = generation
         do {
             let present = try await store.contains()
             guard generation == token, !terminating else { return }
-            hasSavedSignIn = present
             let approval = try await store.migrationRequired()
             guard generation == token, !terminating else { return }
-            needsKeychainApproval = approval
             let retained = try await store.legacyRetained()
             guard generation == token, !terminating else { return }
+            hasSavedSignIn = present
+            needsKeychainApproval = approval
             legacyKeychainRetained = retained
+            restored = true
+            presenceUnavailable = false
+            error = nil
         } catch {
             guard generation == token, !terminating else { return }
+            presenceUnavailable = true
             self.error = Self.message(error)
         }
 
@@ -62,14 +70,23 @@ final class PCGamesController: ObservableObject {
 
     func loadOnAppear() async {
         guard !attemptedAutomaticLoad, !terminating else { return }
-        attemptedAutomaticLoad = true
         await restorePresence()
+        guard restored else { return }
+        attemptedAutomaticLoad = true
         guard snapshot == nil, hasSavedSignIn, !needsKeychainApproval, !needsSignIn, !busy, error == nil else { return }
         refresh()
     }
 
+    func retryLibraryLoad() async {
+        guard !busy, !restoringPresence, !terminating else { return }
+        restored = false
+        await restorePresence()
+        guard restored, hasSavedSignIn, !needsKeychainApproval, !needsSignIn else { return }
+        refresh()
+    }
+
     func signIn() {
-        guard !busy, !needsKeychainApproval, !terminating else { return }
+        guard !busy, !restoringPresence, !presenceUnavailable, !needsKeychainApproval, !terminating else { return }
         let token = UUID()
         generation = token
         busy = true
@@ -103,7 +120,8 @@ final class PCGamesController: ObservableObject {
     }
 
     func refresh() {
-        guard !busy, hasSavedSignIn, !needsSignIn, !needsKeychainApproval, !terminating else { return }
+        guard !busy, !restoringPresence, !presenceUnavailable, hasSavedSignIn,
+              !needsSignIn, !needsKeychainApproval, !terminating else { return }
         let token = UUID()
         generation = token
         busy = true
@@ -135,7 +153,7 @@ final class PCGamesController: ObservableObject {
     }
 
     func approveKeychain() {
-        guard !busy, needsKeychainApproval, !terminating else { return }
+        guard !busy, !restoringPresence, !presenceUnavailable, needsKeychainApproval, !terminating else { return }
         let token = UUID()
         generation = token
         busy = true
@@ -203,6 +221,8 @@ final class PCGamesController: ObservableObject {
             needsKeychainApproval = false
             legacyKeychainRetained = false
             snapshot = nil
+            restored = true
+            presenceUnavailable = false
             error = nil
         } catch { self.error = Self.message(error) }
         busy = false

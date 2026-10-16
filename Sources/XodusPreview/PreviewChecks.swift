@@ -343,8 +343,8 @@ enum PreviewChecks {
             check(malformedOptional.developer == nil &&
                   malformedOptional.description == "An original synthetic adventure.",
                   "Malformed optional text is omitted without discarding valid About metadata")
-            check(GameDetailFacetCopy.installation(installed: true) == "Ready to play",
-                  "Installed details show readiness without a Mac compatibility claim")
+            check(GameDetailFacetCopy.installation(installed: true) == "Installed on this Mac",
+                  "Registration says installed on this Mac, never ready to play or compatible")
             check(GameDetailFacetCopy.installation(installed: false) == "Not installed",
                   "Uninstalled details show installation state without requesting internal checks")
             let playback = CatalogTrailerPlayback()

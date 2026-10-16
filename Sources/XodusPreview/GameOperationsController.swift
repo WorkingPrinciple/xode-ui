@@ -71,7 +71,7 @@ final class GameOperationsController: ObservableObject {
     private var setupRefreshPending = false
     private var restored = false
     private var terminating = false
-    private var directInstallCancelled = false
+    @Published private(set) var directInstallCancelled = false
     private var queueProgressObserver: ((GameScriptProgress) -> Void)?
     // Queued runs whose stop/cancel arrived while they were still waiting for the
     // mutation slot (so `operation?.id` did not yet match the run). Recorded here

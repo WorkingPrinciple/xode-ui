@@ -17,7 +17,8 @@ primary action. Missing pairing disables it with a short setup-unavailable
 reason. Try again rechecks connection/status; Cancel sign-in waits for the
 existing cancellation result and leaves Welcome locked. Expired/invalid saved
 sign-in requires explicit confirmation before disconnecting it for a fresh
-attempt. Quit stays available through the native app menu.
+attempt. Quit stays available through the native app menu, but existing mutation
+holds still refuse termination until their operations settle.
 
 The official `https://www.codeweavers.com/crossover/download` trial handoff is
 shown only for absent/unverified CrossOver. Returning to the active app repeats
@@ -28,11 +29,45 @@ disconnect or failed status validation returns to Welcome without deleting
 game files, registrations or saves. The explicit fixture/review paths retain
 their existing isolated behavior.
 
+Returning to the foreground also requests bounded management account status
+through the existing admitted connection. A previously confirmed view remains
+visible only while that check is in flight; failed or expired status relocks it.
+Concurrent status reads are deduplicated, and pending sign-in is not interrupted
+by a second status request. There is no polling or account-identity joining.
+
+If relocking occurs during an existing game operation, Welcome keeps generic
+preparation/progress/recovery and cancellation controls. It does not expose the
+game title, product ID, folder, raw error, log or cached game cards. Cancellation
+is acknowledged through the existing controller; mutation and Quit holds remain
+until the owned check/script settles. Full error details remain behind sign-in.
+
 Management sign-in is not a PC-library or game-service identity binding; those
 existing contracts remain separate. This gate does not invent an owned library,
 join different accounts or imply successful live sign-in. The anonymous entry
 behavior elsewhere in this historical specification is superseded by this
 user-directed first-run correction.
+
+## Freeze correction: operation feedback and library retry (source candidate)
+
+Discover keeps the existing operation feedback above its content after a card
+or hero Install action: preparation, progress, cancellation, and exact bounded
+package/account/storage failures. It does not silently hand off to another tab
+or treat an unsupported package as a successful install.
+
+PC-library presence restoration commits its saved-sign-in/approval/retained-item
+flags only after all broker checks succeed. A transient failure says saved
+sign-in is unavailable, not absent; Try again, Refresh Library and a later
+Library visit can retry through the same admitted store. An installed helper
+with rejected caller/pair metadata still fails closed, without direct-Keychain
+fallback, broker replacement or credential removal.
+
+Game detail says **Installed on this Mac** for a registered installation.
+Registration alone is not readiness: existing package, launcher and runner
+validation and their explicit failures still govern Play.
+
+These corrections have synthetic controller/presentation and detached native
+layout coverage, not a new live all-window, account, download or gameplay
+acceptance claim.
 
 ## Navigation and search
 

@@ -99,6 +99,11 @@ struct LiveCatalogView: View {
     var body: some View {
         let results = self.results
         VStack(alignment: .leading, spacing: 28) {
+            if operations.hasDownloadStatus {
+                GameOperationProgressView(operations: operations)
+                    .padding(.horizontal, 56).padding(.top, 24)
+                    .accessibilityIdentifier("xodus.catalog.installStatus")
+            }
             if query.isEmpty, !visible.isEmpty { featuredCarousel }
             VStack(alignment: .leading, spacing: 28) {
                 if query.isEmpty {

@@ -29,7 +29,8 @@ struct PCGamesView: View {
                         Button("Cancel approval") { Task { await library.cancelKeychainApproval() } }
                     } else {
                         Button("Approve Keychain access") { library.approveKeychain() }
-                            .buttonStyle(.borderedProminent).disabled(library.busy)
+                            .buttonStyle(.borderedProminent)
+                            .disabled(library.busy || library.restoringPresence || library.presenceUnavailable)
                             .accessibilityIdentifier("xodus.pcGames.approveKeychain")
                     }
                 }
@@ -41,7 +42,17 @@ struct PCGamesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
-            if !library.hasSavedSignIn || library.needsSignIn {
+            if library.presenceUnavailable {
+                ContentUnavailableView {
+                    Label("Saved sign-in unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
+                } description: {
+                    Text("Your saved PC-library sign-in couldn't be checked. No account was removed.")
+                } actions: {
+                    Button("Try again") { Task { await library.retryLibraryLoad() } }
+                        .disabled(library.busy || library.restoringPresence)
+                        .accessibilityIdentifier("xodus.pcGames.retryPresence")
+                }
+            } else if !library.hasSavedSignIn || library.needsSignIn {
                 ContentUnavailableView {
                     Label("Sign in to see your PC games", systemImage: "gamecontroller")
                 } description: {
@@ -49,7 +60,8 @@ struct PCGamesView: View {
                         .frame(maxWidth: 520)
                 } actions: {
                     Button("Sign in") { library.signIn() }
-                        .buttonStyle(.borderedProminent).disabled(library.busy || library.needsKeychainApproval)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
                         .accessibilityIdentifier("xodus.pcGames.signIn")
                     Button("Browse games", action: browse)
                     Button("Recent activity", action: recentActivity)
@@ -65,7 +77,8 @@ struct PCGamesView: View {
                     }
                     Spacer()
                     Button(library.snapshot == nil ? "Load PC games" : "Refresh") { library.refresh() }
-                        .disabled(library.busy || library.needsKeychainApproval).accessibilityIdentifier("xodus.pcGames.refresh")
+                        .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
+                        .accessibilityIdentifier("xodus.pcGames.refresh")
                     Button("Sign out of PC games") { Task { await library.signOut() } }
                         .disabled(library.busy).accessibilityIdentifier("xodus.pcGames.signOut")
                 } }

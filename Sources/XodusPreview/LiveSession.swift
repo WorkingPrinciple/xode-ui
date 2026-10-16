@@ -221,6 +221,10 @@ final class LiveSession: ObservableObject {
         if !isReady { await connect() }
         if isReady { await refreshAccount() }
     }
+    func revalidateAccountOnForeground() async {
+        guard isReady, !connectionTransitioning, !accountBusy, !signInPending else { return }
+        await refreshAccount()
+    }
     var accountNoticeTitle: String {
         if accountStatusChecking { return "Checking saved sign-in" }
         guard isReady, accountStatusCurrent else { return accountLabel }

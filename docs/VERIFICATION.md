@@ -4,6 +4,53 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## Five freeze findings: source correction (2026-10-16)
+
+The source-derived review of `8a6aa359` identified five defects, not five live
+reproductions. The bounded correction keeps Discover's direct-install feedback
+on the initiating route; preserves privacy-restricted operation status and
+acknowledged cancellation while Welcome is locked; makes failed PC-library
+broker presence checks retryable; describes registration as **Installed on this
+Mac**, not readiness; and revalidates management account status on foreground.
+Existing admission, account-identity separation and operation/Quit holds remain.
+
+Commands and observed results on this CLT-only Mac:
+
+- `swift build --jobs 4 --product XodusPreview`: passed.
+- `swift build --jobs 4 --product XodusManagementChecks`: passed.
+- `swift run --skip-build XodusPreview --self-check`: 189 checks, zero failures.
+- `swift run --skip-build XodusPreview --live-check`: 1127 checks, zero failures.
+- `swift run --skip-build XodusManagementChecks`: 5637 checks, zero failures.
+- `XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+  --product XodusPreview`: passed; the same shipping build for
+  `--product XodusAuthHost` also passed.
+- `PYTHONDONTWRITEBYTECODE=1 python3 tools/check_shipping_pair.py`: 29 neutral
+  packaging admission checks, zero failures.
+- The existing `tools/check_shipping.sh` Python assertions were run separately:
+  all eight shipping argument rejections and both fixture-resource exclusions
+  passed. This does not replace that script's unavailable XCTest gate.
+- `plutil -lint tools/Info.plist` and `git diff --check`: passed.
+
+Focused coverage includes unsupported/account/storage failures before transfer,
+direct preparation and transfer cancellation with real synthetic script
+settlement and no registration, shared feedback/redaction presentation and
+detached Discover/Welcome layout, transient failure at each of the three broker
+presence/metadata steps, retry/revisit recovery, no duplicate presence or
+management status reads, rejected-pair no-fallback behavior, and foreground
+failure/expiry relocking. Existing missing-launcher/package/runner checks remain.
+Detached AX text and native-button-title experiments could not inspect these
+SwiftUI controls reliably without a window; final checks instead exercise the
+shared presentation actually consumed by the views, detached native layout,
+and controller actions. Live AX visibility/reachability is still unverified.
+
+No ordinary app instance was launched, and no real account, Keychain,
+installed broker/runtime or game was used or changed. Shipping executables were invoked only with arguments
+that must be rejected before application startup. No signing, packaging,
+installation, push or publication occurred. The known missing-`XCTest` CLT
+blocker was not rerun or weakened. Parent-owned installed-package qualification,
+real account/pairing checks and live all-window/gameplay acceptance remain
+separate; this source result grants no release or distribution approval.
+
 ## X Ode first-run correction: candidate (2026-10-16)
 
 The live welcome gate uses current management account status, never a persisted

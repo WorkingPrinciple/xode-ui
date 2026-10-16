@@ -539,7 +539,23 @@ enum GameOperationChecks {
                   && operations.error != nil && !installed.mutationActive
                   && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path),
                   "Direct Install refuses \(mode) before transfer and surfaces a real failure without a check sheet")
+            if let error = operations.error {
+                NativeUIChecks.checkOperationFeedback(operations: operations, installed: installed,
+                    game: game, expectedStatus: error, cancelTitle: nil, check: check)
+            }
         }
+        let aliasedGames = root.appendingPathComponent("aliased-games")
+        try FileManager.default.createSymbolicLink(at: aliasedGames, withDestinationURL: paths.games)
+        let unavailableStorage = GameScriptPaths(scripts: paths.scripts, processed: paths.processed,
+            logs: paths.logs, games: aliasedGames, journal: paths.journal)
+        let storageFailure = GameOperationsController(installed: installed, paths: unavailableStorage)
+        await storageFailure.install(game)
+        check(storageFailure.error == GameScriptError.invalidDestination.localizedDescription
+              && storageFailure.hasDownloadStatus && storageFailure.canQuit && !installed.mutationActive,
+              "F1: Unsafe storage fails before scripts and remains visible on the initiating route")
+        NativeUIChecks.checkOperationFeedback(operations: storageFailure, installed: installed,
+            game: game, expectedStatus: GameScriptError.invalidDestination.localizedDescription,
+            cancelTitle: nil, check: check)
         try writeMode("checkslow")
         let checking = Task { await operations.prepareInstall(game) }
         try await wait { operations.checkingCompatibility }
@@ -561,8 +577,16 @@ enum GameOperationChecks {
         check(operations.installingDirectly && operations.presentedInstallConsent == nil
               && operations.hasDownloadStatus && !operations.canQuit,
               "Direct Install has cancellable preparation without presenting an internal-check sheet")
+        NativeUIChecks.checkOperationFeedback(operations: operations, installed: installed,
+            game: game, expectedStatus: "Preparing installation", cancelTitle: "Cancel", check: check)
         await operations.install(game)
-        await operations.cancelInstallConsent()
+        let cancellingPreparation = Task { await operations.cancelInstallConsent() }
+        try await wait { operations.directInstallCancelled }
+        if operations.installingDirectly {
+            check(!operations.canQuit && !operations.canStartMutation,
+                  "F2: Cancellation request cannot release preparation holds before its owned check settles")
+        }
+        await cancellingPreparation.value
         await directCheck.value
         check(!operations.installingDirectly && !installed.mutationActive && operations.installConsent == nil
               && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path),
@@ -594,6 +618,9 @@ enum GameOperationChecks {
         check(operations.isBusy && !operations.canQuit && installed.mutationActive
               && !operations.canStartMutation && !operations.canSignIn,
               "S5 one mutation reserves registration, service restart and normal Quit")
+        NativeUIChecks.checkOperationFeedback(operations: operations, installed: installed,
+            game: game, expectedStatus: operations.progress?.phase.title ?? "Preparing download",
+            cancelTitle: "Cancel installation", check: check)
         let activeID = operations.operation?.id
         await operations.prepareInstall(game)
         operations.signInForGames()
@@ -609,7 +636,13 @@ enum GameOperationChecks {
         check(args[0] == "3" && GameScriptPaths.validRunID(args[1]) && args[2] == game.id
               && args[3] == consent.destination.path && args[4] == "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
               && args[5] == "unset", "S5 script receives exact argv and minimal environment without inherited secrets")
-        await operations.cancelInstall()
+        let cancellingInstall = Task { await operations.cancelInstall() }
+        try await wait { operations.cancelling || operations.operation == nil }
+        if operations.operation != nil {
+            check(!operations.canQuit && installed.mutationActive && !operations.canStartMutation,
+                  "F2: Acknowledging Cancel keeps mutation and Quit holds until the actual stopped receipt")
+        }
+        await cancellingInstall.value
         await operations.waitForMutation()
         check(!operations.isBusy && !installed.mutationActive && operations.error == GameScriptError.failed(14).localizedDescription
               && operations.log != nil && installed.games.isEmpty,

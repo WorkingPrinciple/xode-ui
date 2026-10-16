@@ -109,8 +109,7 @@ struct LiveRootView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button("Refresh Library", systemImage: "arrow.clockwise") {
-                        if state.pcGames.hasSavedSignIn, !state.pcGames.needsKeychainApproval,
-                           !state.pcGames.needsSignIn { state.pcGames.refresh() }
+                        Task { await state.pcGames.retryLibraryLoad() }
                         Task { await refreshXboxStats() }
                         if state.gameOperations.gamePassActive, session.isReady, session.supports(.discover) {
                             Task { await session.refreshCatalog("") }
@@ -118,7 +117,7 @@ struct LiveRootView: View {
                     }
                         .labelStyle(.iconOnly).help(refreshHelp).keyboardShortcut("r")
                         .modifier(NativeToolbarIconStyle())
-                        .disabled(!startupAllowed || state.pcGames.busy)
+                        .disabled(!startupAllowed || state.pcGames.busy || state.pcGames.restoringPresence)
                         .accessibilityIdentifier("xodus.pcGames.refresh")
                 }
             }
@@ -163,6 +162,11 @@ struct LiveRootView: View {
                 await state.runtimeSettings.refreshCrossOverDependency()
             }
         }
+        .task(id: scenePhase == .active) {
+            if startupAllowed, scenePhase == .active {
+                await session.revalidateAccountOnForeground()
+            }
+        }
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
             if accountContentAllowed {
                 await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,
@@ -202,7 +206,7 @@ struct LiveRootView: View {
             state.accountDestination = .account
         }) {
             if requiresSignIn {
-                LiveWelcomeView(session: session, runtime: state.runtimeSettings)
+                LiveWelcomeView(session: session, runtime: state.runtimeSettings, operations: state.gameOperations)
             } else {
 #if !XODUS_SHIPPING
             LiveAccountView(refreshStatusOnAppear: !PreviewExporter.liveDataRequested)

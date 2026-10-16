@@ -14,7 +14,8 @@ enum NativeUIChecks {
             for size in [CGSize(width: 480, height: 480), CGSize(width: 560, height: 620)] {
                 let session = LiveSession()
                 let runtime = RuntimeProviderSettings()
-                let welcome = NSHostingView(rootView: LiveWelcomeView(session: session, runtime: runtime))
+                let welcome = NSHostingView(rootView: LiveWelcomeView(session: session, runtime: runtime,
+                    operations: GameOperationsController(installed: InstalledGamesController())))
                 welcome.sizingOptions = []
                 welcome.appearance = NSAppearance(named: appearance)
                 welcome.frame = CGRect(origin: .zero, size: size)
@@ -442,6 +443,52 @@ enum NativeUIChecks {
         }
         check(NSApplication.shared.windows.count == windows && !session.accountBusy,
               "Retained-history Library layout checks show no window and start no activity load")
+    }
+
+    static func checkOperationFeedback(operations: GameOperationsController,
+                                      installed: InstalledGamesController, game: PCGame,
+                                      expectedStatus: String, cancelTitle: String?,
+                                      check: (Bool, String) -> Void) {
+        let windows = NSApplication.shared.windows.count
+        let session = LiveSession()
+        let catalog = NSHostingView(rootView: LiveCatalogView(
+            library: PCGamesController(), installed: installed, operations: operations, query: "",
+            allowsArtworkLoading: false, allowsStartupTasks: false, allowsHeroAnimation: false,
+            clearSearch: {}).environmentObject(session))
+        catalog.sizingOptions = []
+        catalog.frame = CGRect(x: 0, y: 0, width: 820, height: 720)
+        catalog.layoutSubtreeIfNeeded()
+        let feedback = GameOperationProgressView(operations: operations)
+        let availableCancellation = feedback.preparationCancelTitle ?? feedback.installCancelTitle
+        check(catalog.window == nil && operations.hasDownloadStatus
+              && (cancelTitle.map { availableCancellation == $0 } ?? (feedback.operationError == expectedStatus)),
+              "F1: Detached Discover mounts with shared \(expectedStatus) feedback and applicable cancel presentation")
+        let welcome = NSHostingView(rootView: LiveWelcomeView(session: session,
+            runtime: RuntimeProviderSettings(), operations: operations))
+        welcome.sizingOptions = []
+        welcome.frame = CGRect(x: 0, y: 0, width: 480, height: 620)
+        welcome.layoutSubtreeIfNeeded()
+        let restricted = GameOperationProgressView(operations: operations, privacyRestricted: true)
+        let restrictedCancellation = restricted.preparationCancelTitle ?? restricted.installCancelTitle
+        check(welcome.window == nil
+              && !descendants(of: welcome).compactMap { $0 as? NSScrollView }.isEmpty
+              && (cancelTitle.map { restrictedCancellation == $0 } ?? true)
+              && restricted.operationTitle != game.title && restricted.operationTitle != game.id
+              && !restricted.showsLog && !restricted.showsGameSignIn
+              && restricted.operationNotice == nil,
+              "F2: Detached locked welcome retains cancel presentation without private title/product/log/account actions")
+        if operations.error != nil {
+            check(restricted.operationError == "The game operation needs attention. Sign in to review its details."
+                  && restricted.operationError != expectedStatus,
+                  "F2: Locked failure guidance redacts the underlying operation error")
+        } else {
+            check(operations.installingDirectly ? restricted.preparationTitle.contains(expectedStatus)
+                  : restricted.operationTitle == "Game operation in progress" && operations.progress != nil,
+                  "F2: Locked welcome shows the real preparation/progress state without unlocking browsing")
+        }
+        check(NSApplication.shared.windows.count == windows && !session.accountBusy
+              && !session.hasConfirmedSignIn,
+              "F1/F2: Feedback layouts create no window, management request or sign-in")
     }
 
     private static func ancestors(of view: NSView) -> [NSView] {

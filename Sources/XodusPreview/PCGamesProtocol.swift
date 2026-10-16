@@ -20,7 +20,7 @@ enum PCGamesError: Error, LocalizedError, Equatable {
         case .signInDeclined: "Microsoft sign-in was declined. Start again when you're ready."
         case .signInRequired: "Sign in again to see your PC games."
         case .keychain: "Couldn't access the saved PC-games sign-in. Unlock your Keychain or respond to macOS's permission prompt, then try again."
-        case .credentialBrokerUnavailable: "The saved-sign-in helper couldn't be verified or reached. Repair the approved Xodus credential helper, then try again. Xodus won't switch to direct Keychain access while the helper is installed."
+        case .credentialBrokerUnavailable: "This copy of X Ode couldn't verify or reach the saved-sign-in helper. Try again with the approved app and helper pairing. Your saved sign-in is unchanged; X Ode won't switch to direct Keychain access while the helper is installed."
         case .keychainApprovalRequired: "Xodus needs one-time Keychain approval."
         case .keychainApprovalCancelled: "Keychain approval was cancelled. Your saved sign-in is preserved. Approve access when you're ready."
         case .noXboxProfile: "This Microsoft account needs an Xbox profile. Create one at xbox.com, then sign in again."

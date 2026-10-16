@@ -238,9 +238,9 @@ enum NativeChecks {
             check(saved.currentCredentialState == .credentialPresent
                   && saved.accountSymbol == "person.crop.circle.fill" && saved.canDisconnectAccount,
                   "Neutral saved profile initially displays the current credential result")
-            await saved.refreshAccount()
+            await saved.revalidateAccountOnForeground()
             check(!saved.hasConfirmedSignIn && !saved.canStartWelcomeSignIn,
-                  "Failed Keychain status locks retained cached data instead of trusting a saved snapshot")
+                  "F5: Failed foreground status locks retained cached data instead of trusting a saved snapshot")
             check(saved.isReady && saved.authentication?.state == .credentialPresent
                   && !saved.accountStatusCurrent && saved.currentCredentialState == nil
                   && saved.accountLabel == "Account status needs checking"
@@ -284,7 +284,7 @@ enum NativeChecks {
             let permissionConfiguration = configuration("statuspermission")
             let permission = LiveSession(configuration: permissionConfiguration)
             await permission.connect()
-            let readingPermission = Task { await permission.refreshAccount() }
+            let readingPermission = Task { await permission.revalidateAccountOnForeground() }
             try await wait { permission.accountStatusChecking }
             check(permission.accountBusy && !permission.accountStatusCurrent
                   && !permission.canSignIn && !permission.canDisconnectAccount
@@ -292,24 +292,44 @@ enum NativeChecks {
                   && permission.accountMessage.contains("macOS asks for Keychain access"),
                   "Foreground Keychain check shows native permission guidance and fences account actions")
             await permission.refreshAccount()
+            await permission.revalidateAccountOnForeground()
             await permission.beginSignIn()
             await permission.signOut()
             await readingPermission.value
             check(try trace(permissionConfiguration).filter { $0.hasPrefix("auth.") } == ["auth.status"],
-                  "Two status clicks and gated sign-in/logout issue only one foreground status request")
+                  "F5: Concurrent foreground/status checks and gated mutations issue only one status request")
             check(permission.currentCredentialState == .credentialPresent && !permission.accountBusy
                   && !permission.accountStatusChecking && permission.accountStatusCurrent,
                   "Actual status alone restores saved-state presentation after the bounded permission wait")
-            let retiringRead = Task { await permission.refreshAccount() }
+            let retiringRead = Task { await permission.revalidateAccountOnForeground() }
             try await wait { permission.accountStatusChecking }
             check(permission.hasConfirmedSignIn,
-                  "Rechecking a currently confirmed account does not dismiss its existing Account sheet")
+                  "F5: Foreground revalidation preserves confirmed UI only while its bounded read is in flight")
+            await permission.revalidateAccountOnForeground()
             await permission.disconnect()
             await retiringRead.value
             check(permission.authentication == nil && !permission.accountStatusCurrent
                   && !permission.accountBusy && !permission.accountStatusChecking,
                   "A retired generation's status completion cannot restore credentials or checking state")
             try cleanLifecycle(permissionConfiguration)
+
+            let foregroundConfiguration = configuration("foregroundexpired")
+            let foreground = LiveSession(configuration: foregroundConfiguration)
+            await foreground.revalidateAccountOnForeground()
+            check(foreground.phase == .disconnected && !foreground.accountBusy,
+                  "F5: Foreground revalidation cannot connect an unpaired or disconnected session")
+            await foreground.connect()
+            await foreground.revalidateAccountOnForeground()
+            check(foreground.hasConfirmedSignIn, "F5: Fresh foreground credential status can confirm the account")
+            await foreground.revalidateAccountOnForeground()
+            check(!foreground.hasConfirmedSignIn && foreground.currentCredentialState == .expired
+                  && foreground.accountStatusCurrent,
+                  "F5: A confirmed account that expires on foreground relocks without treating expiry as a read failure")
+            check(try trace(foregroundConfiguration).filter { $0.hasPrefix("auth.") } ==
+                  ["auth.status", "auth.status"],
+                  "F5: Foreground checks use only bounded management status, never PC/game sign-in")
+            await foreground.disconnect()
+            try cleanLifecycle(foregroundConfiguration)
 
             let denied = session("expiredpermission")
             await denied.connect()

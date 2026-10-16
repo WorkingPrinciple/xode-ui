@@ -4,6 +4,7 @@ import SwiftUI
 struct LiveWelcomeView: View {
     @ObservedObject var session: LiveSession
     @ObservedObject var runtime: RuntimeProviderSettings
+    @ObservedObject var operations: GameOperationsController
     @StateObject private var interaction = AccountInteraction()
     @Environment(\.layoutDirection) private var layoutDirection
 
@@ -22,6 +23,11 @@ struct LiveWelcomeView: View {
                     .accessibilityIdentifier("xodus.welcome.status")
                 if session.connectionTransitioning || session.accountBusy {
                     ProgressView("Checking sign-in").controlSize(.small)
+                }
+                if operations.hasDownloadStatus {
+                    Divider()
+                    GameOperationProgressView(operations: operations, privacyRestricted: true)
+                        .accessibilityIdentifier("xodus.welcome.operation")
                 }
                 if runtime.crossOverDependency.offersTrialDownload {
                     Divider()

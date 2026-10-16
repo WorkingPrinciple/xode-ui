@@ -231,10 +231,10 @@ struct XodusPreviewApp: App {
 #if !XODUS_SHIPPING
                 if state.fixtureMode { PreviewSettings() }
                 else if session.hasConfirmedSignIn { LiveSettingsView() }
-                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings) }
+                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings, operations: state.gameOperations) }
 #else
                 if session.hasConfirmedSignIn { LiveSettingsView() }
-                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings) }
+                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings, operations: state.gameOperations) }
 #endif
             }
                 .environmentObject(state)

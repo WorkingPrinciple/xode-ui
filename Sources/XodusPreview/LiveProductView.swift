@@ -4,7 +4,7 @@ import XodusManagement
 
 enum GameDetailFacetCopy {
     static func installation(installed: Bool) -> String {
-        installed ? "Ready to play" : "Not installed"
+        installed ? "Installed on this Mac" : "Not installed"
     }
 
     static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String {

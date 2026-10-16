@@ -889,7 +889,7 @@ enum MockBackend {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
                                      "savedpermission", "startupquery", "uifailures",
-                                     "statuspermission", "deadlinecompleted", "discoverybounded"].contains(scenario) || scenario.hasPrefix("recent")
+                                     "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded"].contains(scenario) || scenario.hasPrefix("recent")
             func trace(_ entry: String) throws {
                 guard lifecycleScenario else { return }
                 try FileManager.default.createDirectory(at: lifecycleDirectory, withIntermediateDirectories: true,
@@ -1064,7 +1064,16 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["savedpermission", "startupquery", "uifailures", "statuspermission"].contains(scenario) { try trace(command) }
+                    if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired"].contains(scenario) { try trace(command) }
+                    if scenario == "foregroundexpired", command == "auth.status" {
+                        profileReads += 1
+                        try emit(.object(result(request, data: .object([
+                            "state": .string(profileReads == 1 ? "credentialPresent" : "expired"),
+                            "credentialStore": .string("macOSKeychain"),
+                            "audience": .null, "expiresAt": .null, "entitlementAuthorized": .bool(false)
+                        ]))))
+                        continue
+                    }
                     if scenario == "statuspermission", command == "auth.status" {
                         let response = result(request, data: .object([
                             "state": .string("credentialPresent"), "credentialStore": .string("macOSKeychain"),
