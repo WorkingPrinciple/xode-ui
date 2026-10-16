@@ -7,6 +7,33 @@ distinguishes those from unfinished inventory/install/play gates. The original
 offline `--fixture` preview labels simulated actions explicitly and never claims
 real Microsoft access or compatibility.
 
+## X Ode first-run gate (16 October, source candidate)
+
+Ordinary startup shows Welcome to X Ode over a neutral background, not installed
+game cards or developer setup diagnostics. Startup connects only through the
+existing management admission path and checks saved account status. A confirmed
+saved sign-in opens the existing app; otherwise Microsoft Sign in remains the
+primary action. Missing pairing disables it with a short setup-unavailable
+reason. Try again rechecks connection/status; Cancel sign-in waits for the
+existing cancellation result and leaves Welcome locked. Expired/invalid saved
+sign-in requires explicit confirmation before disconnecting it for a fresh
+attempt. Quit stays available through the native app menu.
+
+The official `https://www.codeweavers.com/crossover/download` trial handoff is
+shown only for absent/unverified CrossOver. Returning to the active app repeats
+read-only publisher detection. It does not install CrossOver, assert a license
+or certify gameplay. Main navigation, import, Settings' game actions and cached
+installations stay inaccessible without confirmed management sign-in. Sign-out,
+disconnect or failed status validation returns to Welcome without deleting
+game files, registrations or saves. The explicit fixture/review paths retain
+their existing isolated behavior.
+
+Management sign-in is not a PC-library or game-service identity binding; those
+existing contracts remain separate. This gate does not invent an owned library,
+join different accounts or imply successful live sign-in. The anonymous entry
+behavior elsewhere in this historical specification is superseded by this
+user-directed first-run correction.
+
 ## Navigation and search
 
 **SDD-LIB correction (source only):** Your Games, its count, search, filters,

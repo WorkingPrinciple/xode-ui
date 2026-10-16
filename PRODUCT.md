@@ -24,6 +24,22 @@ Develop and verify native code on the user's Mac over trusted SSH, using isolate
 
 ## Capabilities and constraints
 
+**User-directed X Ode first-run correction (16 October, source candidate):**
+the live window opens a native welcome/sign-in sheet before displaying Library,
+Discover, Downloads or cached installations. Current management account status,
+not a remembered welcome flag or local game registration, unlocks those surfaces.
+Pending, cancelled, expired, failed or disconnected sign-in keeps them hidden;
+files, saves and registrations are preserved. Missing app/service pairing disables
+sign-in with a concise unavailable explanation. The only dependency handoff in
+Welcome is the official CodeWeavers trial page when CrossOver is absent or
+unverified; there is no embedded runtime download or installer. Developer setup
+banners are no longer part of the main window. Management saved sign-in,
+PC-library credentials and the Xbox game-service account are still distinct:
+Welcome does not merge their identities or assert ownership/gameplay. Product
+display branding is X Ode; existing bundle, executable, Keychain and security
+identities are unchanged. This first-run privacy gate supersedes the earlier
+anonymous browsing/local-installation entry behavior described below.
+
 **SDD personal-Library slice (9 October, source only):** Your Games is now
 access-qualified from the last complete account-held PC collection, never from
 installation or public discovery alone. Unverified local installations remain

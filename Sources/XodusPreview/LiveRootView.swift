@@ -13,6 +13,14 @@ struct LiveRootView: View {
 #endif
 
     private var scopedQuery: String { state.query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var requiresSignIn: Bool {
+#if !XODUS_SHIPPING
+        if CommandLine.arguments.contains("--export-live") || PreviewExporter.liveDataRequested
+            || LibraryPreviewExporter.requested { return false }
+#endif
+        return !session.hasConfirmedSignIn
+    }
+    private var accountContentAllowed: Bool { startupAllowed && session.hasConfirmedSignIn }
     private var heroAnimationAllowed: Bool {
         startupAllowed && !state.showingAccount && session.selectedProduct == nil
             && !session.signInPending && state.gameOperations.installConsent == nil
@@ -58,16 +66,16 @@ struct LiveRootView: View {
     var body: some View {
         ScrollViewReader { proxy in
         Group {
-            if state.destination == .downloads {
+            if requiresSignIn {
+                Text("X Ode").font(.title.bold()).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(nsColor: .windowBackgroundColor))
+                    .accessibilityIdentifier("xodus.welcome.background")
+            } else if state.destination == .downloads {
                 LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue) { state.navigate(.discover) }
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
-                        GameSetupBannerView(operations: state.gameOperations) {
-                            state.showingSetup = !session.signInPending
-                            state.accountDestination = .account
-                            state.showingAccount = true
-                        }
                         if state.destination == .library { library }
                         else { catalog }
                     }
@@ -79,6 +87,7 @@ struct LiveRootView: View {
             }
         }
         .toolbar {
+            if !requiresSignIn {
             XodusToolbar(selection: state.navigationSelection, searchText: $state.query,
                          searchFocused: Binding(get: { searchFocused }, set: { searchFocused = $0 }),
                          searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,
@@ -124,6 +133,7 @@ struct LiveRootView: View {
                     .accessibilityIdentifier("xodus.catalog.refresh")
                 }
             }
+            }
         }
         .onAppear {
 #if !XODUS_SHIPPING
@@ -139,22 +149,22 @@ struct LiveRootView: View {
         .task {
             if startupAllowed { await state.runtimeSettings.refreshCrossOverDependency() }
         }
-        .task {
-            if startupAllowed {
+        .task(id: accountContentAllowed) {
+            if accountContentAllowed {
                 await state.installedGames.load()
                 await state.gameOperations.restore()
                 await state.gameOperations.loadGamePassCache()
                 state.gameOperations.checkSetupOnce()
             }
         }
-        .task(id: scenePhase == .active) {
+        .task(id: "\(scenePhase == .active):\(session.hasConfirmedSignIn)") {
             if startupAllowed, scenePhase == .active {
-                await refreshXboxStats()
+                if accountContentAllowed { await refreshXboxStats() }
                 await state.runtimeSettings.refreshCrossOverDependency()
             }
         }
-        .task(id: "\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
-            if startupAllowed {
+        .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
+            if accountContentAllowed {
                 await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,
                     signingIn: state.gameOperations.serviceSigningIn)
                 await XboxCompanionController.shared.refresh(
@@ -162,15 +172,14 @@ struct LiveRootView: View {
             }
         }
         .task {
-            if startupAllowed, session.phase == .disconnected, !session.connectionTransitioning,
-               !session.backendPath.isEmpty { await session.connect() }
+            if startupAllowed { await session.prepareWelcome() }
         }
         .task(id: "\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy)") {
-            guard startupAllowed, scenePhase == .active else { return }
+            guard accountContentAllowed, scenePhase == .active else { return }
             await state.loadRecentActivityIfVisible(session: session)
         }
-        .task(id: "\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
-            guard startupAllowed, state.destination == .discover else { return }
+        .task(id: "\(session.hasConfirmedSignIn):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
+            guard accountContentAllowed, state.destination == .discover else { return }
             do { try await Task.sleep(for: .milliseconds(250)) }
             catch { return }
             await session.loadCatalogOnEntry(state.query)
@@ -179,22 +188,37 @@ struct LiveRootView: View {
                 await session.loadGamePassCatalog()
             }
         }
-        .sheet(isPresented: $state.showingAccount, onDismiss: {
+        .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
+            if !confirmed {
+                session.selectedProduct = nil
+                state.showingAccount = false
+                state.showingSetup = false
+                state.accountDestination = .account
+            }
+        }
+        .sheet(isPresented: Binding(get: { requiresSignIn || state.showingAccount },
+                                    set: { state.showingAccount = !requiresSignIn && $0 }), onDismiss: {
             state.showingSetup = false
             state.accountDestination = .account
         }) {
+            if requiresSignIn {
+                LiveWelcomeView(session: session, runtime: state.runtimeSettings)
+            } else {
 #if !XODUS_SHIPPING
             LiveAccountView(refreshStatusOnAppear: !PreviewExporter.liveDataRequested)
 #else
             LiveAccountView()
 #endif
+            }
         }
         .sheet(item: $session.selectedProduct) { product in
             LiveProductView(product: product, library: state.pcGames,
                             installedLibrary: state.installedGames, operations: state.gameOperations,
                             allowsStartupTasks: startupAllowed, allowsArtworkLoading: libraryArtworkAllowed)
         }
-        .background { GameOperationPresentation(operations: state.gameOperations) }
+        .background {
+            if !requiresSignIn { GameOperationPresentation(operations: state.gameOperations) }
+        }
         .background {
             Button("Focus search") { searchFocused = true }.keyboardShortcut("f").hidden()
         }
@@ -202,7 +226,7 @@ struct LiveRootView: View {
     }
 
     private func refreshXboxStats() async {
-        guard startupAllowed else { return }
+        guard accountContentAllowed else { return }
         state.gameOperations.refreshService()
         await state.gameOperations.waitForService()
         await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,

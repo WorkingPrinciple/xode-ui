@@ -4,6 +4,44 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## X Ode first-run correction: candidate (2026-10-16)
+
+The live welcome gate uses current management account status, never a persisted
+welcome-complete flag or installed-game records. Confirmed saved sign-in opens
+the existing app; pending/cancelled/expired/failed/disconnected state hides game
+content and blocks navigation/import/Settings game actions. A bound native helper
+is additionally required to enable Welcome's sign-in button. Account status
+rechecks retain a previously confirmed view while in flight, but failure removes
+that confirmation. Missing pairing shows concise unavailable copy rather than
+developer diagnostics. The official CodeWeavers trial URL appears only after
+CrossOver detection reports absent/unverified. Native window/menu/About/Quit
+display branding is X Ode; bundle, executable, Keychain and security identifiers
+are preserved.
+
+`swift build --jobs 4 --product XodusPreview` passed.
+`swift run --skip-build XodusPreview --self-check` passed 189 checks and
+`swift run --skip-build XodusPreview --live-check` passed 1075 checks, both
+with zero failures. Regressions cover missing-helper/unchecked/expired/pending/
+cancelled/completed/sign-out/disconnect/status-failure/status-retry transitions,
+the exact trial URL and detection states, detached Light/Dark welcome layout,
+and all three signed-out destinations with actual synthetic installed records
+retained unchanged. No backend, credential, provider or installer operation
+is performed by the detached layout checks; session checks use mock children.
+
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` passed. `python3 tools/check_shipping_pair.py` passed
+29 neutral packaging admission checks; all eight existing shipping
+argument-rejection and fixture-resource exclusion assertions passed separately.
+`plutil -lint tools/Info.plist` and `git diff --check` passed. The known CLT-only
+shipping XCTest failure below was not rerun or weakened.
+
+No ordinary app instance was launched/replaced, no sign-in or Keychain operation
+was performed, and nothing was signed, installed or published. Actual native
+app-menu/first-run behavior, user authentication, the separate PC-library and
+game-service identities, and product/gameplay/release acceptance remain parent
+verification or live-evidence gates. This source gate does not join those
+accounts or establish entitlement.
+
 ## Feature-freeze source stabilization: candidate (2026-10-16)
 
 On Apple Silicon with CLT Swift 6.4 and the macOS 27 SDK, the existing

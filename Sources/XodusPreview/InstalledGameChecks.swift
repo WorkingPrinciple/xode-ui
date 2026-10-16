@@ -188,6 +188,7 @@ enum InstalledGameChecks {
               "Absent private list loads as empty without importing or scanning games")
         await library.importGame(folder: folder, launcher: zero)
         guard let game = library.games.first else { throw InstalledGameError.invalidRegistry }
+        NativeUIChecks.checkWelcomePrivacy(installed: library, check: check)
         check(game.publisher == "Fixture Publisher" && game.lastPlayedAt == nil && library.continuingGame == nil,
               "AC1.2/1.4: Import stores publisher but never invents a played session or hero")
         check(game.title == metadata.title && game.identityName == metadata.identityName

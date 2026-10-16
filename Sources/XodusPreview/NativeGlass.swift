@@ -103,13 +103,13 @@ struct XodusToolbar: ToolbarContent {
     }
 
     @ViewBuilder private var navigationControls: some View {
-        navigation.fixedSize().accessibilityLabel("Navigate Xodus").accessibilityIdentifier("xodus.navigation")
+        navigation.fixedSize().accessibilityLabel("Navigate X Ode").accessibilityIdentifier("xodus.navigation")
         NativeToolbarSearch(text: searchText, focused: searchFocused,
                             placeholder: searchPlaceholder, enabled: searchEnabled)
     }
 
     private var picker: some View {
-        Picker("Navigate Xodus", selection: selection) {
+        Picker("Navigate X Ode", selection: selection) {
             ForEach(Destination.allCases) { destination in
                 Text(destination.rawValue).tag(destination)
                     .accessibilityIdentifier("xodus.navigation.\(destination.rawValue.lowercased())")

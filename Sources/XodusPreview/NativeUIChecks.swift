@@ -10,6 +10,26 @@ enum NativeUIChecks {
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         let application = NSApplication.shared
         let windows = application.windows.count
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            for size in [CGSize(width: 480, height: 480), CGSize(width: 560, height: 620)] {
+                let session = LiveSession()
+                let runtime = RuntimeProviderSettings()
+                let welcome = NSHostingView(rootView: LiveWelcomeView(session: session, runtime: runtime))
+                welcome.sizingOptions = []
+                welcome.appearance = NSAppearance(named: appearance)
+                welcome.frame = CGRect(origin: .zero, size: size)
+                welcome.layoutSubtreeIfNeeded()
+                let scrollViews = descendants(of: welcome).compactMap { $0 as? NSScrollView }
+                check(welcome.window == nil && welcome.bounds.size == size && !scrollViews.isEmpty
+                      && scrollViews.allSatisfy {
+                          !$0.hasHorizontalScroller && ($0.documentView?.bounds.width ?? 0) <= size.width + 1
+                      },
+                      "X Ode welcome fits native \(appearance.rawValue) at \(Int(size.width)) points with a scrolling body")
+                check(!session.hasConfirmedSignIn && !session.accountBusy
+                      && !session.canStartWelcomeSignIn && !runtime.checkingDependency,
+                      "Detached welcome layout cannot connect, sign in, inspect credentials or install CrossOver")
+            }
+        }
         let colours: [Color] = [.red, .green, .blue]
         let covers = LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
             ForEach(0..<3) { index in
@@ -292,12 +312,13 @@ enum NativeUIChecks {
                 host.frame = CGRect(origin: .zero, size: size)
                 host.layoutSubtreeIfNeeded()
                 let scrollViews = descendants(of: host).compactMap { $0 as? NSScrollView }
-                check(host.window == nil && host.bounds.size == size && !scrollViews.isEmpty
+                check(host.window == nil && host.bounds.size == size
+                      && (session.hasConfirmedSignIn ? !scrollViews.isEmpty : scrollViews.isEmpty)
                       && scrollViews.allSatisfy {
                           !$0.hasHorizontalScroller
                               && ($0.documentView?.bounds.width ?? 0) <= host.bounds.width + 1
                       },
-                      "Replayed public \(destination.rawValue) and honest unavailable Library fit a bounded native viewport")
+                      "Replayed \(destination.rawValue) fits its viewport, with no game content when sign-in is unconfirmed")
             }
         }
         if let product = session.products.first {
@@ -379,6 +400,28 @@ enum NativeUIChecks {
               && state.gameOperations.setupResult == nil && !state.gameOperations.setupBusy
               && session.authentication == nil && !session.accountBusy,
               "Setup-focused Account allocates native controls without unrelated credentials, scripts or windows")
+    }
+
+    static func checkWelcomePrivacy(installed: InstalledGamesController, check: (Bool, String) -> Void) {
+        let windows = NSApplication.shared.windows.count
+        let state = AppState(installedGames: installed)
+        let session = LiveSession()
+        let savedGames = installed.games
+        check(!savedGames.isEmpty, "Welcome privacy regression starts with actual synthetic installed records")
+        for destination in Destination.allCases {
+            state.navigate(destination)
+            let host = NSHostingView(rootView: LiveRootView(allowsStartupTasks: false)
+                .environmentObject(state).environmentObject(session))
+            host.sizingOptions = []
+            host.frame = CGRect(x: 0, y: 0, width: 820, height: 600)
+            host.layoutSubtreeIfNeeded()
+            check(host.window == nil && !session.hasConfirmedSignIn
+                  && descendants(of: host).allSatisfy { !($0 is NSScrollView) }
+                  && installed.games == savedGames,
+                  "Signed-out \(destination.rawValue) mounts no game/catalog/download content and preserves installed records")
+        }
+        check(NSApplication.shared.windows.count == windows && !session.accountBusy,
+              "Welcome privacy checks create no app window, backend, sign-in or registration mutation")
     }
 
     static func checkMainLibraryWithHistory(session: LiveSession, check: (Bool, String) -> Void) {

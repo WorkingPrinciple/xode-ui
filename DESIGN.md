@@ -17,6 +17,19 @@ to restyle Discover, detail, installation consent or Downloads.
 
 ## Surfaces
 
+**X Ode first run (16 October, user-directed source correction):** one native
+welcome sheet, standard Microsoft sign-in/cancel/retry controls, and an official
+CodeWeavers trial link only after CrossOver detection reports absent/unverified.
+Use the incumbent scrolling Account-sheet body and fixed adaptive footer,
+semantic system text/background and system appearance. No game artwork, cached
+installations, navigation controls or developer setup banner appears behind
+unauthenticated Welcome. A current confirmed management sign-in dismisses the
+sheet; an ordinary recheck preserves the existing confirmed view until its
+result, while a failed recheck locks it again. Missing pairing is unavailable,
+never an invented successful login. The main app/window/About/Quit names are
+X Ode, without changing bundle/security identities. After sign-in, existing
+Library composition and separate access/package/runtime checks remain intact.
+
 **Streamlined gamer flow (10 October, owner-directed):** cards offer Install or
 open details; installed games offer Play. Choosing Install is the user's download
 intent and starts the existing guarded installation without a second confirmation

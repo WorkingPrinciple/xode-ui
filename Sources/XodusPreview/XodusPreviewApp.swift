@@ -60,9 +60,9 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
             }
             if !closed, gameOperations?.canQuit == false {
                 let alert = NSAlert()
-                alert.messageText = "Wait before quitting Xodus"
+                alert.messageText = "Wait before quitting X Ode"
                 alert.informativeText = "Wait for the current game operation to finish. You can cancel an installation first."
-                alert.addButton(withTitle: "Keep Xodus open")
+                alert.addButton(withTitle: "Keep X Ode open")
                 alert.runModal()
             }
             sender.reply(toApplicationShouldTerminate: closed)
@@ -77,7 +77,16 @@ struct XodusPreviewApp: App {
     @StateObject private var state = AppState()
     @StateObject private var session = LiveSession()
 
+    private var navigationAllowed: Bool {
+#if !XODUS_SHIPPING
+        state.fixtureMode || session.hasConfirmedSignIn
+#else
+        session.hasConfirmedSignIn
+#endif
+    }
+
     init() {
+        ProcessInfo.processInfo.processName = "X Ode"
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty {
             FileHandle.standardError.write(Data("This application does not accept preview, test or development arguments.\n".utf8))
@@ -120,7 +129,7 @@ struct XodusPreviewApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Xodus") {
+        WindowGroup("X Ode") {
             Group {
 #if !XODUS_SHIPPING
                 if state.fixtureMode { RootView() }
@@ -149,41 +158,53 @@ struct XodusPreviewApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About X Ode") {
+                    NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "X Ode"])
+                }
+            }
+            CommandGroup(replacing: .appTermination) {
+                Button("Quit X Ode") { NSApp.terminate(nil) }
+                    .keyboardShortcut("q")
+            }
             CommandGroup(after: .newItem) {
                 Button("Import installed Xbox game…") { Task { await state.installedGames.chooseGame() } }
                     .keyboardShortcut("i", modifiers: [.command, .shift])
 #if !XODUS_SHIPPING
-                    .disabled(state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
+                    .disabled(!session.hasConfirmedSignIn || state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
                               state.installedGames.editing || state.installedGames.choosing ||
                               state.installedGames.mutationActive)
 #else
-                    .disabled(!state.installedGames.loaded || state.installedGames.editing ||
+                    .disabled(!session.hasConfirmedSignIn || !state.installedGames.loaded || state.installedGames.editing ||
                               state.installedGames.choosing || state.installedGames.mutationActive)
 #endif
             }
             CommandMenu("Navigate") {
                 Button("Library") { state.navigate(.library) }.keyboardShortcut("1")
+                    .disabled(!navigationAllowed)
                 Button("Discover") { state.navigate(.discover) }.keyboardShortcut("2")
+                    .disabled(!navigationAllowed)
                 Button("Downloads") { state.navigate(.downloads) }.keyboardShortcut("3")
+                    .disabled(!navigationAllowed)
             }
-            CommandMenu("Xodus") {
+            CommandMenu("X Ode") {
 #if !XODUS_SHIPPING
                 Button("Account") { state.openAccount() }
                     .disabled(state.fixtureMode)
                     .keyboardShortcut("a", modifiers: [.command, .shift])
                 Button("Profile") { state.openAccount(.profile) }
-                    .disabled(state.fixtureMode)
+                    .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("p", modifiers: [.command, .shift])
                 Button("Achievements") { state.openAccount(.achievements) }
-                    .disabled(state.fixtureMode)
+                    .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("h", modifiers: [.command, .shift])
                 Button("My Consoles") { state.openAccount(.consoles) }
-                    .disabled(state.fixtureMode)
+                    .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
                 Button("Engines") { state.openAccount(.engines) }
-                    .disabled(state.fixtureMode)
+                    .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("e", modifiers: [.command, .shift])
-                Button("Return to live Xodus") {
+                Button("Return to live X Ode") {
                     state.fixtureMode = false
                     state.navigate(.library)
                 }.disabled(!state.fixtureMode)
@@ -191,12 +212,16 @@ struct XodusPreviewApp: App {
                 Button("Account") { state.openAccount() }
                     .keyboardShortcut("a", modifiers: [.command, .shift])
                 Button("Profile") { state.openAccount(.profile) }
+                    .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("p", modifiers: [.command, .shift])
                 Button("Achievements") { state.openAccount(.achievements) }
+                    .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("h", modifiers: [.command, .shift])
                 Button("My Consoles") { state.openAccount(.consoles) }
+                    .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
                 Button("Engines") { state.openAccount(.engines) }
+                    .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("e", modifiers: [.command, .shift])
 #endif
             }
@@ -205,9 +230,11 @@ struct XodusPreviewApp: App {
             Group {
 #if !XODUS_SHIPPING
                 if state.fixtureMode { PreviewSettings() }
-                else { LiveSettingsView() }
+                else if session.hasConfirmedSignIn { LiveSettingsView() }
+                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings) }
 #else
-                LiveSettingsView()
+                if session.hasConfirmedSignIn { LiveSettingsView() }
+                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings) }
 #endif
             }
                 .environmentObject(state)

@@ -18,6 +18,9 @@ enum CrossOverDependencyState: Equatable, Sendable {
         if case .installed = self { return true }
         return false
     }
+    static let trialDownloadURL = URL(string: "https://www.codeweavers.com/crossover/download")!
+
+    var offersTrialDownload: Bool { self == .absent || self == .unverified }
 
     var title: String {
         switch self {

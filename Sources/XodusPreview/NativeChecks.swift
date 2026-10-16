@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import CoreFoundation
+import CryptoKit
 import Foundation
 import XodusManagement
 
@@ -183,6 +184,9 @@ enum NativeChecks {
             let expired = session("expired")
             await expired.connect()
             check(expired.isReady && !expired.canSignIn, "Unchecked account cannot blindly retry a mutation")
+            check(!expired.hasConfirmedSignIn && !expired.nativeSignInHostAdmitted
+                  && !expired.canStartWelcomeSignIn,
+                  "HELLO alone cannot unlock welcome or enable sign-in without an admitted helper")
             check(expired.authentication == nil && !expired.accountStatusCurrent
                   && expired.currentCredentialState == nil && expired.accountSymbol == "person.crop.circle"
                   && expired.accountLabel == "Account status not checked"
@@ -191,14 +195,19 @@ enum NativeChecks {
                   && expired.accountExplanation.contains("has not been checked"),
                   "HELLO and advertised auth support display connected-but-unchecked, never saved account evidence")
             await expired.refreshAccount()
+            check(!expired.hasConfirmedSignIn, "Expired credentials keep games behind welcome")
             check(expired.authentication?.state == .expired && expired.needsAccountDisconnect
                   && expired.canDisconnectAccount && !expired.canSignIn,
                   "Expired profile exposes confirmed disconnect recovery, not rejected sign-in")
             await expired.signOut()
+            check(!expired.hasConfirmedSignIn && !expired.canStartWelcomeSignIn,
+                  "Signed-out status and advertised capabilities cannot bypass missing helper admission")
             check(expired.authentication?.state == .signedOut && expired.canSignIn,
                   "Confirmed launcher logout establishes signed-out state before sign-in")
             await expired.beginSignIn()
+            check(!expired.hasConfirmedSignIn, "A pending sign-in cannot dismiss welcome")
             try await wait { expired.authentication?.flow?.state == .completed }
+            check(expired.hasConfirmedSignIn, "Only confirmed completion unlocks the existing game surfaces")
             check(expired.authentication?.state == .credentialPresent && !expired.signInPending,
                   "Expired-profile recovery completes through actual mocked native session requests")
             check(expired.currentCredentialState == .credentialPresent
@@ -208,15 +217,30 @@ enum NativeChecks {
                   && expired.accountLibraryTitle == "PC library access is not available yet",
                   "Fresh saved sign-in displays only credential evidence, not an owned or playable library")
             await expired.disconnect()
+            check(!expired.hasConfirmedSignIn, "Disconnect immediately hides retained game surfaces")
 
-            let savedConfiguration = configuration("savedpermission")
+            let savedBase = configuration("savedpermission")
+            let neutralHelper = savedBase.stateDirectory.deletingLastPathComponent().resolvingSymlinksInPath()
+                .appendingPathComponent("neutral-helper")
+            try FileManager.default.createDirectory(at: neutralHelper.deletingLastPathComponent(),
+                                                     withIntermediateDirectories: true)
+            let helperBytes = Data("#!/bin/sh\nexit 90\n".utf8)
+            try helperBytes.write(to: neutralHelper)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: neutralHelper.path)
+            let savedConfiguration = BackendConfiguration(
+                executable: savedBase.executable, stateDirectory: savedBase.stateDirectory,
+                nativeAuthHost: NativeAuthHostBinding(executable: neutralHelper,
+                    sha256: SHA256.hash(data: helperBytes).map { String(format: "%02x", $0) }.joined()))
             let saved = LiveSession(configuration: savedConfiguration)
-            await saved.connect()
-            await saved.refreshAccount()
+            await saved.prepareWelcome()
+            check(saved.hasConfirmedSignIn && saved.nativeSignInHostAdmitted,
+                  "Welcome preparation restores only confirmed saved status through the admitted neutral pair")
             check(saved.currentCredentialState == .credentialPresent
                   && saved.accountSymbol == "person.crop.circle.fill" && saved.canDisconnectAccount,
                   "Neutral saved profile initially displays the current credential result")
             await saved.refreshAccount()
+            check(!saved.hasConfirmedSignIn && !saved.canStartWelcomeSignIn,
+                  "Failed Keychain status locks retained cached data instead of trusting a saved snapshot")
             check(saved.isReady && saved.authentication?.state == .credentialPresent
                   && !saved.accountStatusCurrent && saved.currentCredentialState == nil
                   && saved.accountLabel == "Account status needs checking"
@@ -232,6 +256,7 @@ enum NativeChecks {
                   && saved.accountError == ManagementError.credentialStoreUnavailable.localizedDescription,
                   "Blocked Keychain status has a typed cause and visible recovery, not an unexplained gray sign-in")
             await saved.refreshAccount()
+            check(saved.hasConfirmedSignIn, "A successful status retry restores access without fabricated ownership")
             check(saved.accountStatusCurrent && saved.currentCredentialState == .credentialPresent
                   && saved.accountLabel == "Microsoft sign-in saved" && saved.canDisconnectAccount
                   && saved.authentication?.entitlementAuthorized == false,
@@ -241,6 +266,15 @@ enum NativeChecks {
             check(try trace(savedConfiguration).filter { $0.hasPrefix("auth.") } ==
                   ["auth.status", "auth.status", "auth.status"],
                   "Account display recovery performs only neutral requested status reads, no sign-in or logout mutation")
+            await saved.signOut()
+            check(!saved.hasConfirmedSignIn && saved.canStartWelcomeSignIn,
+                  "Explicit sign-out returns to welcome and admits a new sign-in only with the bound helper")
+            await saved.beginSignIn()
+            check(!saved.hasConfirmedSignIn && !saved.canStartWelcomeSignIn,
+                  "Welcome sign-in immediately fences duplicate activation and keeps games hidden")
+            try await wait { saved.authentication?.flow?.state == .completed }
+            check(saved.hasConfirmedSignIn && saved.authentication?.entitlementAuthorized == false,
+                  "Welcome completion unlocks navigation without claiming game entitlement")
             check(await saved.disconnect(), "Account presentation regression retires its owned neutral child")
             check(saved.currentCredentialState == nil && saved.accountSymbol == "person.crop.circle"
                   && saved.accountLabel == "Connect Xodus" && saved.accountStatusError == nil,
@@ -268,6 +302,8 @@ enum NativeChecks {
                   "Actual status alone restores saved-state presentation after the bounded permission wait")
             let retiringRead = Task { await permission.refreshAccount() }
             try await wait { permission.accountStatusChecking }
+            check(permission.hasConfirmedSignIn,
+                  "Rechecking a currently confirmed account does not dismiss its existing Account sheet")
             await permission.disconnect()
             await retiringRead.value
             check(permission.authentication == nil && !permission.accountStatusCurrent
@@ -476,6 +512,7 @@ enum NativeChecks {
                   && gated.accountLabel == "Sign in with Microsoft"
                   && gated.accountExplanation.contains("no saved launcher sign-in"),
                   "Confirmed cancellation returns signed-out presentation without a saved-account badge")
+            check(!gated.hasConfirmedSignIn, "Confirmed cancellation keeps welcome locked without deleting games")
             let cancelledFlow = gated.authentication?.flow?.flowID
             check(gated.canSignIn && !gated.accountBusy,
                   "Confirmed cancellation enables an explicit next sign-in without deleting credentials")

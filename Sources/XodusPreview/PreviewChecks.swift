@@ -82,6 +82,22 @@ enum PreviewChecks {
         }
 
         let state = AppState()
+        let welcomeSession = LiveSession()
+        welcomeSession.errorMessage = "Xcode not configured: private developer-path sentinel"
+        check(!welcomeSession.hasConfirmedSignIn && !welcomeSession.canStartWelcomeSignIn
+              && welcomeSession.welcomeMessage ==
+                "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required.",
+              "Unconfigured welcome is locked and never exposes developer setup details")
+        check(CrossOverDependencyState.absent.offersTrialDownload
+              && CrossOverDependencyState.unverified.offersTrialDownload
+              && !CrossOverDependencyState.notChecked.offersTrialDownload
+              && !CrossOverDependencyState.checking.offersTrialDownload
+              && !CrossOverDependencyState.installed(.init(
+                location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
+                version: "26.3", buildVersion: "neutral")).offersTrialDownload
+              && CrossOverDependencyState.trialDownloadURL.absoluteString ==
+                "https://www.codeweavers.com/crossover/download",
+              "Only missing or unverified CrossOver offers the exact official trial URL")
         check(!DevelopmentArguments.accepts(["--check-native"]) &&
               !DevelopmentArguments.accepts(["--live-check", "--unknown"]),
               "Unknown or conflicting development check arguments fail closed before ordinary startup")

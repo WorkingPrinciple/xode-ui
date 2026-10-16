@@ -23,6 +23,8 @@ final class LiveSession: ObservableObject {
     @Published private(set) var recentLibraryBootstrapRunning = false
     @Published private(set) var accountStatusChecking = false
     @Published private(set) var accountStatusCurrent = false
+    @Published private(set) var nativeSignInHostAdmitted = false
+    private var confirmedBeforeStatusRead = false
     @Published private(set) var accountError: String?
     @Published private(set) var accountStatusError: ManagementError?
     @Published private(set) var recentLibrary: RecentLibrarySnapshot?
@@ -192,6 +194,32 @@ final class LiveSession: ObservableObject {
     var canSignIn: Bool {
         isReady && supports(.authBegin) && supports(.authCancel) && supports(.authStatus)
             && accountStatusCurrent && authentication?.state == .signedOut && !accountBusy && !signInPending
+    }
+    var hasConfirmedSignIn: Bool {
+        isReady && !signInPending && authentication?.state == .credentialPresent
+            && (accountStatusCurrent || (accountStatusChecking && confirmedBeforeStatusRead))
+    }
+    var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
+    var welcomeMessage: String {
+        if connectionTransitioning || accountStatusChecking { return "Checking your sign-in…" }
+        guard isReady, nativeSignInHostAdmitted, supports(.authBegin),
+              supports(.authCancel), supports(.authStatus) else {
+            return "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required."
+        }
+        if signInPending { return "Finish signing in in Microsoft's window, or cancel to try later." }
+        if accountError != nil {
+            return "Your sign-in couldn't be confirmed. Try again. If macOS asks for Keychain access, respond in its permission window."
+        }
+        if needsAccountDisconnect { return "Your saved sign-in needs to be reconnected." }
+        if authentication?.flow?.state == .failed { return "Sign-in didn't finish. Try again when you're ready." }
+        if authentication?.flow?.state == .cancelled { return "Sign-in was cancelled. Your games stay hidden until you sign in." }
+        return "Sign in with Microsoft to get started. Game access is checked separately."
+    }
+
+    func prepareWelcome() async {
+        guard !connectionTransitioning, !accountBusy, !signInPending else { return }
+        if !isReady { await connect() }
+        if isReady { await refreshAccount() }
     }
     var accountNoticeTitle: String {
         if accountStatusChecking { return "Checking saved sign-in" }
@@ -712,6 +740,7 @@ final class LiveSession: ObservableObject {
             let negotiated = try await connection.connect(admittedTarget)
             guard token == generation, revision == lifecycleRevision, client === connection else { return }
             hello = negotiated
+            nativeSignInHostAdmitted = admittedTarget.nativeAuthHost != nil
             let startupQueryRevision = queryGeneration
             phase = .ready
             if supports(.jobs) { try await reconcileActivity() }
@@ -781,6 +810,8 @@ final class LiveSession: ObservableObject {
         hello = nil
         authentication = nil
         accountStatusCurrent = false
+        nativeSignInHostAdmitted = false
+        confirmedBeforeStatusRead = false
         accountError = nil
         accountStatusError = nil
         failedAccountAction = nil
@@ -888,6 +919,7 @@ final class LiveSession: ObservableObject {
     }
 
     private func readAccountStatus(using client: ManagementClient, generation token: Int) async throws -> AuthenticationStatus {
+        confirmedBeforeStatusRead = accountStatusCurrent && authentication?.state == .credentialPresent
         accountOperationBusy = true
         accountStatusChecking = true
         accountStatusCurrent = false
@@ -895,6 +927,7 @@ final class LiveSession: ObservableObject {
             if token == generation {
                 accountOperationBusy = false
                 accountStatusChecking = false
+                confirmedBeforeStatusRead = false
             }
         }
         return try await client.request(.authStatus).decode(AuthenticationStatus.self)
