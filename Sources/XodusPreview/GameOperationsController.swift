@@ -558,6 +558,7 @@ final class GameOperationsController: ObservableObject {
     func confirmInstall(_ consent: GameInstallConsent) {
         guard installConsent?.id == consent.id, canConfirmInstall, !recoveryRequired,
               consent.compatibility?.supported == true else { return }
+        resetFeedback(productID: consent.game.id)
         installConsent = nil
         let record = GameOperationRecord(id: InstalledGamesController.runID(),
             kind: consent.installedID == nil ? .install : .repair, productID: consent.game.id,

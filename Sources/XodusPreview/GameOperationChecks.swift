@@ -1027,5 +1027,84 @@ enum GameOperationChecks {
               && privateFailure.operationTitle == nil && !privateFailure.showsLog,
               "XO-022: Unknown/global recovery retains welcome privacy redaction")
         installed.releaseMutation()
+        for repairing in [true, false] {
+            let label = repairing ? "changed-entry" : "occupied-destination"
+            let consentStore = InstalledGameStore(file: root.appendingPathComponent("registry/\(label).json"))
+            let consentLibrary = InstalledGamesController(store: consentStore, defaultEngine: { nil },
+                detectAvailability: { RunnerAvailability([.crossover]) })
+            await consentLibrary.load()
+            let consentPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed,
+                logs: paths.logs, games: paths.games,
+                journal: root.appendingPathComponent("\(label)/operation.json"))
+            let controller = GameOperationsController(installed: consentLibrary, paths: consentPaths)
+            let a = PCGame(id: "FIXTURE00004", title: "Consent A", artwork: nil)
+            let b = PCGame(id: "FIXTURE00005", title: "Queued B", artwork: nil)
+            let aFolder = try paths.destination(title: a.title, productID: a.id)
+            func queuedRecord(_ game: PCGame) throws -> GameOperationRecord {
+                GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+                    productID: game.id, title: game.title,
+                    destination: try paths.destination(title: game.title, productID: game.id).path, installedID: nil)
+            }
+            try writeMode("success")
+            if repairing {
+                check(await controller.runQueuedOperation(try queuedRecord(a), onProgress: { _ in }) == .complete,
+                      "XO-022 consent: Fixture A registration succeeds through the real queued-operation path")
+            }
+            await controller.prepareInstall(a, repairing: repairing ? consentLibrary.games.first : nil)
+            guard let retained = controller.installConsent else { throw GameScriptError.invalidDestination }
+            check(retained.compatibility?.supported == true && controller.canConfirmInstall,
+                  "XO-022 consent: A has an admitted reviewed consent before B starts")
+            try writeMode(repairing ? "success" : "11")
+            let outcome = await controller.runQueuedOperation(try queuedRecord(b), onProgress: { _ in })
+            check(outcome == (repairing ? .complete : .fail(code: 11))
+                  && controller.installConsent?.id == retained.id && controller.feedbackProductID == b.id
+                  && controller.log != nil
+                  && (repairing ? controller.notice != nil : controller.failureCode == 11),
+                  "XO-022 consent: Accepted B completes with real terminal metadata while reviewed A consent survives")
+            if repairing {
+                guard let original = consentLibrary.games.first(where: { $0.storeId == a.id }) else {
+                    throw GameScriptError.invalidReceipt
+                }
+                await consentLibrary.remove(original)
+            } else {
+                try FileManager.default.createDirectory(at: aFolder, withIntermediateDirectories: true)
+                try privateFile(aFolder.appendingPathComponent("MicrosoftGame.config"),
+                    "<Game><Identity Name=\"Fixture.ConsentA\" Version=\"1.2.3.4\"/><StoreId>\(a.id)</StoreId></Game>")
+                await consentLibrary.importGame(folder: aFolder, launcher: launcher)
+            }
+            let previousError = controller.error
+            let previousNotice = controller.notice
+            let previousLog = controller.log
+            let previousCode = controller.failureCode
+            try consentLibrary.reserveMutation(gameID: nil)
+            controller.confirmInstall(retained)
+            check(controller.installConsent?.id == retained.id && controller.feedbackProductID == b.id
+                  && controller.error == previousError && controller.notice == previousNotice
+                  && controller.log == previousLog && controller.failureCode == previousCode,
+                  "XO-022 consent: Mutation-rejected confirmation preserves B feedback and A consent unchanged")
+            consentLibrary.releaseMutation()
+            check(controller.canConfirmInstall
+                  && (repairing ? !consentLibrary.games.contains(where: { $0.storeId == a.id })
+                      : consentLibrary.games.contains(where: { $0.storeId == a.id && $0.folder == retained.destination.path })),
+                  "XO-022 consent: A's \(label) validation failure is reachable after normal admission")
+            controller.confirmInstall(retained)
+            let expected = repairing ? "This game's installed entry changed. Choose it again."
+                : GameScriptError.invalidDestination.localizedDescription
+            check(controller.error == expected && controller.feedbackProductID == a.id
+                  && controller.notice == nil && controller.log == nil && controller.failureCode == nil
+                  && controller.operation == nil && controller.installConsent == nil,
+                  "XO-022 consent: Admitted \(label) failure belongs to A without B's stale notice/log/code")
+            check(GameOperationProgressView(operations: controller, productID: a.id).operationError == expected
+                  && GameOperationProgressView(operations: controller).operationError == expected,
+                  "XO-022 consent: Matching A and global presentation retain the genuine validation failure")
+            checkUnrelatedDetail(controller, owner: a.id, stage: "consent \(label) failure")
+            let bFeedback = GameOperationProgressView(operations: controller, productID: b.id)
+            check(bFeedback.operationError == nil && bFeedback.operationNotice == nil
+                  && !bFeedback.showsGameSignIn && !bFeedback.showsLog,
+                  "XO-022 consent: B does not receive A's validation failure or its own stale recovery controls")
+            controller.confirmInstall(retained)
+            check(controller.feedbackProductID == a.id && controller.error == expected,
+                  "XO-022 consent: Rejected replay of consumed consent does not reset genuine feedback")
+        }
     }
 }

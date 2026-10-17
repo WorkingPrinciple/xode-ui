@@ -46,6 +46,39 @@ or installed runtime/broker/game mutation occurred. Parent owns signed-native
 verification and eventual release admission; this repair does not claim a game
 can download or launch.
 
+### Reviewed-consent admission follow-up
+
+Independent review found that reviewed A consent can survive a queued B
+operation. On unchanged `94a1ea3` controller source, deterministic fixtures
+reproduced both early confirmation failures: a removed A repair registration
+and an occupied A installation destination. B actually ran through
+`runQueuedOperation`, leaving a successful notice/log or a code-11 error/log.
+The retained A consent then passed confirmation admission but its validation
+error retained B's owner and metadata. The focused command
+`swift run --skip-build XodusPreview --game-operation-check` produced
+**357 checks, 8 failures** before the controller fix.
+
+`confirmInstall` now resets the feedback bundle to `consent.game.id` immediately
+after its existing admission guards, before either early validation error.
+Rejected/protected calls and consumed-consent replays do not reset feedback.
+Queue admission and mutation behavior are unchanged. Regression fixtures verify
+both reachable failures, A/global error visibility, absence on B, removal of
+B's stale notice/log/code, and feedback preservation while a mutation hold
+rejects confirmation.
+
+After this one-line controller correction, `swift build --jobs 4 --product
+XodusPreview` passed; `swift run --skip-build XodusPreview
+--game-operation-check` passed 357 checks; `swift run --skip-build XodusPreview
+--self-check` passed 193 checks; and `swift run --skip-build XodusPreview
+--live-check` passed 1191 checks, all zero failures.
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` passed; `PYTHONDONTWRITEBYTECODE=1 python3
+tools/check_shipping_pair.py` passed 29 neutral admission checks;
+`git diff --check` passed. Logs are retained as `xo022-consent-*.log` in the
+source session's artifacts. These are synthetic controller/presentation
+results, not signed-native acceptance. The local full-Xcode XCTest hold and
+all source-only authorization boundaries above remain unchanged.
+
 ## XO-010 mandatory Welcome and normal Quit (2026-10-17)
 
 Parent captured AppKit's **App termination blocked by modal sheet** log for a
