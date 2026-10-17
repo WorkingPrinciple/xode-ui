@@ -1,0 +1,69 @@
+<?xml version="1.0" ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-labelledby="title description">
+  <title id="title">Xodus onboarding-cancelled fixture concept</title>
+  <desc id="description">Original editable concept. Invented games, account states and progress; no live integration.</desc>
+  <g font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif">
+    <rect x="0" y="0" width="1440" height="980" rx="18" fill="#f7f7f9"/>
+    <rect x="0" y="0" width="1440" height="72" rx="18" fill="#eeeff2"/>
+    <rect x="0" y="54" width="1440" height="18" rx="0" fill="#eeeff2"/>
+    <circle cx="28" cy="35" r="7" fill="#fa625a"/>
+    <circle cx="52" cy="35" r="7" fill="#f5bf50"/>
+    <circle cx="76" cy="35" r="7" fill="#53bd69"/>
+    <text x="108" y="41" font-size="18" font-weight="600" fill="#202126" text-anchor="start">Xodus</text>
+    <rect x="505" y="16" width="430" height="40" rx="9" fill="#e0e2e7"/>
+    <rect x="510" y="20" width="139" height="32" rx="7" fill="#ffffff"/>
+    <text x="579" y="42" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Library</text>
+    <text x="720" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Discover</text>
+    <text x="861" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Downloads</text>
+    <circle cx="1347" cy="35" r="16" fill="#d3d8e1"/>
+    <text x="1347" y="41" font-size="15" font-weight="600" fill="#202126" text-anchor="middle">F</text>
+    <text x="1375" y="41" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Fixture</text>
+    <text x="56" y="105" font-size="15" font-weight="600" fill="#202126" text-anchor="start">Fixture preview</text>
+    <text x="174" y="105" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Invented games, access and progress. No real sign-in, downloads or gameplay.</text>
+    <path d="M0 123H1440" stroke="#d8dbe0"/>
+    <defs>
+      <linearGradient id="sky-welcome" x2="0" y2="1">
+        <stop stop-color="#83b0ae"/>
+        <stop offset="1" stop-color="#244f5c"/>
+      </linearGradient>
+      <linearGradient id="shade-welcome">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-welcome">
+        <rect x="56" y="160" width="560" height="700" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-welcome)" aria-label="Original harbor landscape">
+      <rect x="56" y="160" width="560" height="700" rx="0" fill="url(#sky-welcome)"/>
+      <circle cx="487.2" cy="335.0" r="84.0" fill="#f1d29d"/>
+      <path d="M56 566.0 C179.2 251.0 313.6 706.0 425.6 482.0 S560.0 356.0 616 545.0 V860 H56Z" fill="#244f5c" opacity="0.38"/>
+      <path d="M56 671.0 C179.2 356.0 313.6 811.0 425.6 587.0 S560.0 461.0 616 650.0 V860 H56Z" fill="#244f5c" opacity="0.62"/>
+      <path d="M56 775.9999999999999 C179.2 460.9999999999999 313.6 915.9999999999999 425.6 691.9999999999999 S560.0 565.9999999999999 616 754.9999999999999 V860 H56Z" fill="#244f5c" opacity="0.86"/>
+      <path d="M456.4 664.0 L463.68 412.0 L476.0 412.0 L486.08 664.0Z" fill="#f1d29d"/>
+      <rect x="459.2" y="398.0" width="22.400000000000002" height="31.5" rx="2" fill="#244f5c"/>
+      <path d="M464.8 401.5 L268.8 265.0 L464.8 426.0Z" fill="#f1d29d" opacity=".16"/>
+      <path d="M414.40000000000003 727.0h95.2" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M414.40000000000003 765.5000000000001h81.2" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M414.40000000000003 804.0h67.2" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="160" width="560" height="700" rx="0" fill="url(#shade-welcome)"/>
+    </g>
+    <text x="650" y="258" font-size="44" font-weight="700" fill="#202126" text-anchor="start">Your games.</text>
+    <text x="650" y="315" font-size="44" font-weight="700" fill="#202126" text-anchor="start">A more native way home.</text>
+    <text x="650" y="378" font-size="20" font-weight="400" fill="#5a5e68" text-anchor="start">Connect legitimate PC access to a carefully paired</text>
+    <text x="650" y="411" font-size="20" font-weight="400" fill="#5a5e68" text-anchor="start">Xodus runtime. No Terminal or runtime selection.</text>
+    <path d="M650 452H1356" stroke="#d8dbe0"/>
+    <text x="650" y="500" font-size="24" font-weight="600" fill="#202126" text-anchor="start">This is a fixture-only preview</text>
+    <text x="650" y="543" font-size="19" font-weight="400" fill="#5a5e68" text-anchor="start">No real Microsoft sign-in is implemented.</text>
+    <text x="650" y="577" font-size="19" font-weight="400" fill="#5a5e68" text-anchor="start">All games, progress and compatibility are invented.</text>
+    <rect x="650" y="620" width="706" height="90" rx="10" fill="#eeeff2"/>
+    <text x="674" y="655" font-size="19" font-weight="600" fill="#202126" text-anchor="start">Cancelled sign-in scenario</text>
+    <text x="674" y="686" font-size="17" font-weight="400" fill="#5a5e68" text-anchor="start">No credentials created. You can retry or close safely.</text>
+    <rect x="650" y="753" width="256" height="42" rx="8" fill="#225dc2"/>
+    <text x="778.0" y="780" font-size="16" font-weight="600" fill="#ffffff" text-anchor="middle">Simulate connection</text>
+    <rect x="925" y="753" width="234" height="42" rx="8" fill="#ffffff" stroke="#d8dbe0"/>
+    <text x="1042.0" y="780" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Close preview flow</text>
+    <text x="650" y="848" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Proposed production auth: approved consent + Keychain.</text>
+    <text x="650" y="879" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">GPL-3.0-only app. Runtime redistribution and APIs remain gated.</text>
+  </g>
+</svg>

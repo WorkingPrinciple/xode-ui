@@ -1,0 +1,217 @@
+<?xml version="1.0" ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-labelledby="title description">
+  <title id="title">Xodus library fixture concept</title>
+  <desc id="description">Original editable concept. Invented games, account states and progress; no live integration.</desc>
+  <g font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif">
+    <rect x="0" y="0" width="1440" height="980" rx="18" fill="#f7f7f9"/>
+    <rect x="0" y="0" width="1440" height="72" rx="18" fill="#eeeff2"/>
+    <rect x="0" y="54" width="1440" height="18" rx="0" fill="#eeeff2"/>
+    <circle cx="28" cy="35" r="7" fill="#fa625a"/>
+    <circle cx="52" cy="35" r="7" fill="#f5bf50"/>
+    <circle cx="76" cy="35" r="7" fill="#53bd69"/>
+    <text x="108" y="41" font-size="18" font-weight="600" fill="#202126" text-anchor="start">Xodus</text>
+    <rect x="505" y="16" width="430" height="40" rx="9" fill="#e0e2e7"/>
+    <rect x="510" y="20" width="139" height="32" rx="7" fill="#ffffff"/>
+    <text x="579" y="42" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Library</text>
+    <text x="720" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Discover</text>
+    <text x="861" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Downloads</text>
+    <circle cx="1347" cy="35" r="16" fill="#d3d8e1"/>
+    <text x="1347" y="41" font-size="15" font-weight="600" fill="#202126" text-anchor="middle">F</text>
+    <text x="1375" y="41" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Fixture</text>
+    <text x="56" y="105" font-size="15" font-weight="600" fill="#202126" text-anchor="start">Fixture preview</text>
+    <text x="174" y="105" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Invented games, access and progress. No real sign-in, downloads or gameplay.</text>
+    <path d="M0 123H1440" stroke="#d8dbe0"/>
+    <rect x="420" y="242" width="600" height="44" rx="9" fill="#ffffff" stroke="#d8dbe0"/>
+    <circle cx="444" cy="262" r="6" fill="none" stroke="#5a5e68" stroke-width="1.5"/>
+    <path d="M449 267l5 5" stroke="#5a5e68" stroke-width="1.5"/>
+    <text x="465" y="270" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Search Library</text>
+    <text x="56" y="181" font-size="36" font-weight="700" fill="#202126" text-anchor="start">Your library</text>
+    <text x="56" y="217" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Access, compatibility and your next adventure.</text>
+    <text x="56" y="343" font-size="24" font-weight="700" fill="#202126" text-anchor="start">Continue Playing</text>
+    <defs>
+      <linearGradient id="sky-continue" x2="0" y2="1">
+        <stop stop-color="#83b0ae"/>
+        <stop offset="1" stop-color="#244f5c"/>
+      </linearGradient>
+      <linearGradient id="shade-continue">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-continue">
+        <rect x="56" y="365" width="62" height="62" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-continue)" aria-label="Original harbor landscape">
+      <rect x="56" y="365" width="62" height="62" rx="0" fill="url(#sky-continue)"/>
+      <circle cx="103.74000000000001" cy="380.5" r="7.4399999999999995" fill="#f1d29d"/>
+      <path d="M56 400.96 C69.64 373.06 84.52 413.35999999999996 96.92 393.52 S111.80000000000001 382.35999999999996 118 399.09999999999997 V427 H56Z" fill="#244f5c" opacity="0.38"/>
+      <path d="M56 410.26 C69.64 382.36 84.52 422.65999999999997 96.92 402.82 S111.80000000000001 391.65999999999997 118 408.4 V427 H56Z" fill="#244f5c" opacity="0.62"/>
+      <path d="M56 419.56 C69.64 391.66 84.52 431.96 96.92 412.12 S111.80000000000001 400.96 118 417.7 V427 H56Z" fill="#244f5c" opacity="0.86"/>
+      <path d="M100.33 409.64 L101.136 387.32 L102.5 387.32 L103.616 409.64Z" fill="#f1d29d"/>
+      <rect x="100.64" y="386.08" width="2.48" height="2.79" rx="2" fill="#244f5c"/>
+      <path d="M101.25999999999999 386.39 L79.56 374.3 L101.25999999999999 388.56Z" fill="#f1d29d" opacity=".16"/>
+      <path d="M95.68 415.22h10.540000000000001" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M95.68 418.63h8.99" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M95.68 422.04h7.440000000000001" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="365" width="62" height="62" rx="0" fill="url(#shade-continue)"/>
+    </g>
+    <text x="138" y="389" font-size="18" font-weight="600" fill="#202126" text-anchor="start">Lumen Harbor</text>
+    <text x="138" y="417" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Simulate play  /  Installed fixture</text>
+    <path d="M56 456H1384" stroke="#d8dbe0"/>
+    <text x="56" y="508" font-size="28" font-weight="700" fill="#202126" text-anchor="start">Your Games</text>
+    <text x="227" y="508" font-size="22" font-weight="400" fill="#5a5e68" text-anchor="start">4</text>
+    <rect x="1036" y="478" width="150" height="42" rx="8" fill="#ffffff" stroke="#d8dbe0"/>
+    <text x="1111.0" y="505" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">All access</text>
+    <rect x="1204" y="478" width="180" height="42" rx="8" fill="#ffffff" stroke="#d8dbe0"/>
+    <text x="1294.0" y="505" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Sort by title</text>
+    <defs>
+      <linearGradient id="sky-entry-0" x2="0" y2="1">
+        <stop stop-color="#83b0ae"/>
+        <stop offset="1" stop-color="#244f5c"/>
+      </linearGradient>
+      <linearGradient id="shade-entry-0">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-entry-0">
+        <rect x="56" y="550" width="72" height="72" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-entry-0)" aria-label="Original harbor landscape">
+      <rect x="56" y="550" width="72" height="72" rx="0" fill="url(#sky-entry-0)"/>
+      <circle cx="111.44" cy="568.0" r="8.64" fill="#f1d29d"/>
+      <path d="M56 591.76 C71.84 559.36 89.12 606.16 103.52000000000001 583.12 S120.8 570.16 128 589.6 V622 H56Z" fill="#244f5c" opacity="0.38"/>
+      <path d="M56 602.56 C71.84 570.16 89.12 616.9599999999999 103.52000000000001 593.92 S120.8 580.9599999999999 128 600.4 V622 H56Z" fill="#244f5c" opacity="0.62"/>
+      <path d="M56 613.36 C71.84 580.96 89.12 627.76 103.52000000000001 604.72 S120.8 591.76 128 611.2 V622 H56Z" fill="#244f5c" opacity="0.86"/>
+      <path d="M107.47999999999999 601.84 L108.416 575.92 L110.0 575.92 L111.29599999999999 601.84Z" fill="#f1d29d"/>
+      <rect x="107.84" y="574.48" width="2.88" height="3.2399999999999998" rx="2" fill="#244f5c"/>
+      <path d="M108.56 574.84 L83.36 560.8 L108.56 577.36Z" fill="#f1d29d" opacity=".16"/>
+      <path d="M102.08 608.32h12.24" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M102.08 612.28h10.44" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M102.08 616.24h8.64" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="550" width="72" height="72" rx="0" fill="url(#shade-entry-0)"/>
+    </g>
+    <text x="146" y="570" font-size="19" font-weight="600" fill="#202126" text-anchor="start">Lumen Harbor</text>
+    <text x="146" y="596" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Purchased</text>
+    <text x="146" y="622" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Verified (fixture)</text>
+    <text x="146" y="645" font-size="13" font-weight="400" fill="#5a5e68" text-anchor="start">Added in demo</text>
+    <rect x="421" y="554" width="62" height="28" rx="14" fill="#eeeff2"/>
+    <text x="452" y="573" font-size="14" font-weight="400" fill="#202126" text-anchor="middle">View</text>
+    <defs>
+      <linearGradient id="sky-entry-1" x2="0" y2="1">
+        <stop stop-color="#667796"/>
+        <stop offset="1" stop-color="#222f4c"/>
+      </linearGradient>
+      <linearGradient id="shade-entry-1">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-entry-1">
+        <rect x="508" y="550" width="72" height="72" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-entry-1)" aria-label="Original orbit landscape">
+      <rect x="508" y="550" width="72" height="72" rx="0" fill="url(#sky-entry-1)"/>
+      <circle cx="563.44" cy="568.0" r="8.64" fill="#dbb5a0"/>
+      <circle cx="508.0" cy="550.0" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="534.64" cy="566.56" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="561.28" cy="583.12" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="518.08" cy="562.96" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="544.72" cy="579.52" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="571.36" cy="559.36" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="528.16" cy="575.92" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="554.8" cy="555.76" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="511.6" cy="572.32" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="538.24" cy="552.16" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="564.88" cy="568.72" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="521.68" cy="585.28" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="548.32" cy="565.12" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="574.96" cy="581.68" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="531.76" cy="561.52" r="1.5" fill="#ffffff" opacity=".7"/>
+      <ellipse cx="558.4" cy="571.6" rx="18.72" ry="8.64" fill="none" stroke="#dbb5a0" opacity=".6" transform="rotate(-18 558.4 571.6)"/>
+      <path d="M508 591.76 C523.84 559.36 541.12 606.16 555.52 583.12 S572.8 570.16 580 589.6 V622 H508Z" fill="#222f4c" opacity="0.38"/>
+      <path d="M508 602.56 C523.84 570.16 541.12 616.9599999999999 555.52 593.92 S572.8 580.9599999999999 580 600.4 V622 H508Z" fill="#222f4c" opacity="0.62"/>
+      <path d="M508 613.36 C523.84 580.96 541.12 627.76 555.52 604.72 S572.8 591.76 580 611.2 V622 H508Z" fill="#222f4c" opacity="0.86"/>
+      <path d="M554.08 608.32h12.24" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M554.08 612.28h10.44" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M554.08 616.24h8.64" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <rect x="508" y="550" width="72" height="72" rx="0" fill="url(#shade-entry-1)"/>
+    </g>
+    <text x="598" y="570" font-size="19" font-weight="600" fill="#202126" text-anchor="start">Orbit Almanac</text>
+    <text x="598" y="596" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Subscription access</text>
+    <text x="598" y="622" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Experimental</text>
+    <text x="598" y="645" font-size="13" font-weight="400" fill="#5a5e68" text-anchor="start">Added in demo</text>
+    <rect x="873" y="554" width="62" height="28" rx="14" fill="#eeeff2"/>
+    <text x="904" y="573" font-size="14" font-weight="400" fill="#202126" text-anchor="middle">View</text>
+    <defs>
+      <linearGradient id="sky-entry-2" x2="0" y2="1">
+        <stop stop-color="#b9cbc8"/>
+        <stop offset="1" stop-color="#426578"/>
+      </linearGradient>
+      <linearGradient id="shade-entry-2">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-entry-2">
+        <rect x="960" y="550" width="72" height="72" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-entry-2)" aria-label="Original ridge landscape">
+      <rect x="960" y="550" width="72" height="72" rx="0" fill="url(#sky-entry-2)"/>
+      <circle cx="1015.44" cy="568.0" r="8.64" fill="#eed8b1"/>
+      <path d="M960 591.76 C975.84 559.36 993.12 606.16 1007.52 583.12 S1024.8 570.16 1032 589.6 V622 H960Z" fill="#426578" opacity="0.38"/>
+      <path d="M960 602.56 C975.84 570.16 993.12 616.9599999999999 1007.52 593.92 S1024.8 580.9599999999999 1032 600.4 V622 H960Z" fill="#426578" opacity="0.62"/>
+      <path d="M960 613.36 C975.84 580.96 993.12 627.76 1007.52 604.72 S1024.8 591.76 1032 611.2 V622 H960Z" fill="#426578" opacity="0.86"/>
+      <path d="M1011.48 601.84 L1012.4159999999999 575.92 L1014.0 575.92 L1015.296 601.84Z" fill="#eed8b1"/>
+      <rect x="1011.84" y="574.48" width="2.88" height="3.2399999999999998" rx="2" fill="#426578"/>
+      <path d="M1012.56 574.84 L987.36 560.8 L1012.56 577.36Z" fill="#eed8b1" opacity=".16"/>
+      <path d="M1006.08 608.32h12.24" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <path d="M1006.08 612.28h10.44" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <path d="M1006.08 616.24h8.64" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <rect x="960" y="550" width="72" height="72" rx="0" fill="url(#shade-entry-2)"/>
+    </g>
+    <text x="1050" y="570" font-size="19" font-weight="600" fill="#202126" text-anchor="start">Paper Ridge</text>
+    <text x="1050" y="596" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Purchased</text>
+    <text x="1050" y="622" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Verified (fixture)</text>
+    <text x="1050" y="645" font-size="13" font-weight="400" fill="#5a5e68" text-anchor="start">Added in demo</text>
+    <rect x="1325" y="554" width="62" height="28" rx="14" fill="#eeeff2"/>
+    <text x="1356" y="573" font-size="14" font-weight="400" fill="#202126" text-anchor="middle">View</text>
+    <defs>
+      <linearGradient id="sky-entry-3" x2="0" y2="1">
+        <stop stop-color="#d8925d"/>
+        <stop offset="1" stop-color="#873f33"/>
+      </linearGradient>
+      <linearGradient id="shade-entry-3">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-entry-3">
+        <rect x="56" y="678" width="72" height="72" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-entry-3)" aria-label="Original signal landscape">
+      <rect x="56" y="678" width="72" height="72" rx="0" fill="url(#sky-entry-3)"/>
+      <circle cx="111.44" cy="696.0" r="8.64" fill="#ffe0ac"/>
+      <path d="M56 719.76 C71.84 687.36 89.12 734.16 103.52000000000001 711.12 S120.8 698.16 128 717.6 V750 H56Z" fill="#873f33" opacity="0.38"/>
+      <path d="M56 730.56 C71.84 698.16 89.12 744.9599999999999 103.52000000000001 721.92 S120.8 708.9599999999999 128 728.4 V750 H56Z" fill="#873f33" opacity="0.62"/>
+      <path d="M56 741.36 C71.84 708.96 89.12 755.76 103.52000000000001 732.72 S120.8 719.76 128 739.2 V750 H56Z" fill="#873f33" opacity="0.86"/>
+      <path d="M107.47999999999999 729.84 L108.416 703.92 L110.0 703.92 L111.29599999999999 729.84Z" fill="#ffe0ac"/>
+      <rect x="107.84" y="702.48" width="2.88" height="3.2399999999999998" rx="2" fill="#873f33"/>
+      <path d="M108.56 702.84 L83.36 688.8 L108.56 705.36Z" fill="#ffe0ac" opacity=".16"/>
+      <path d="M102.08 736.32h12.24" stroke="#ffe0ac" stroke-width="1.5" opacity=".3"/>
+      <path d="M102.08 740.28h10.44" stroke="#ffe0ac" stroke-width="1.5" opacity=".3"/>
+      <path d="M102.08 744.24h8.64" stroke="#ffe0ac" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="678" width="72" height="72" rx="0" fill="url(#shade-entry-3)"/>
+    </g>
+    <text x="146" y="698" font-size="19" font-weight="600" fill="#202126" text-anchor="start">The Last Signal</text>
+    <text x="146" y="724" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Purchased</text>
+    <text x="146" y="750" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Not supported on this configuration</text>
+    <text x="146" y="773" font-size="13" font-weight="400" fill="#5a5e68" text-anchor="start">Added in demo</text>
+    <rect x="421" y="682" width="62" height="28" rx="14" fill="#eeeff2"/>
+    <text x="452" y="701" font-size="14" font-weight="400" fill="#202126" text-anchor="middle">View</text>
+    <path d="M56 801H1384" stroke="#d8dbe0"/>
+    <text x="56" y="847" font-size="24" font-weight="600" fill="#202126" text-anchor="start">Access is not the same as compatibility.</text>
+    <text x="56" y="886" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Purchased titles can still have unavailable packages or unsupported configurations.</text>
+    <text x="56" y="939" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Complete fixture snapshot  /  Fixed scenario time  /  No real account connected</text>
+  </g>
+</svg>

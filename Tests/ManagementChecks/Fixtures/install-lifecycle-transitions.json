@@ -1,0 +1,452 @@
+[
+  {
+    "from": "queued",
+    "event": "start",
+    "to": "preparing"
+  },
+  {
+    "from": "queued",
+    "event": "report:preparing",
+    "to": null
+  },
+  {
+    "from": "queued",
+    "event": "report:downloading",
+    "to": null
+  },
+  {
+    "from": "queued",
+    "event": "report:verifying",
+    "to": null
+  },
+  {
+    "from": "queued",
+    "event": "report:configuring",
+    "to": null
+  },
+  {
+    "from": "queued",
+    "event": "pause",
+    "to": null
+  },
+  {
+    "from": "queued",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "queued",
+    "event": "cancel",
+    "to": "cancelled"
+  },
+  {
+    "from": "queued",
+    "event": "complete",
+    "to": null
+  },
+  {
+    "from": "queued",
+    "event": "fail",
+    "to": null
+  },
+  {
+    "from": "preparing",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "preparing",
+    "event": "report:preparing",
+    "to": "preparing"
+  },
+  {
+    "from": "preparing",
+    "event": "report:downloading",
+    "to": "downloading"
+  },
+  {
+    "from": "preparing",
+    "event": "report:verifying",
+    "to": "verifying"
+  },
+  {
+    "from": "preparing",
+    "event": "report:configuring",
+    "to": "configuring"
+  },
+  {
+    "from": "preparing",
+    "event": "pause",
+    "to": "paused"
+  },
+  {
+    "from": "preparing",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "preparing",
+    "event": "cancel",
+    "to": "cancelled"
+  },
+  {
+    "from": "preparing",
+    "event": "complete",
+    "to": "completed"
+  },
+  {
+    "from": "preparing",
+    "event": "fail",
+    "to": "failed"
+  },
+  {
+    "from": "downloading",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "downloading",
+    "event": "report:preparing",
+    "to": "preparing"
+  },
+  {
+    "from": "downloading",
+    "event": "report:downloading",
+    "to": "downloading"
+  },
+  {
+    "from": "downloading",
+    "event": "report:verifying",
+    "to": "verifying"
+  },
+  {
+    "from": "downloading",
+    "event": "report:configuring",
+    "to": "configuring"
+  },
+  {
+    "from": "downloading",
+    "event": "pause",
+    "to": "paused"
+  },
+  {
+    "from": "downloading",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "downloading",
+    "event": "cancel",
+    "to": "cancelled"
+  },
+  {
+    "from": "downloading",
+    "event": "complete",
+    "to": "completed"
+  },
+  {
+    "from": "downloading",
+    "event": "fail",
+    "to": "failed"
+  },
+  {
+    "from": "paused",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "paused",
+    "event": "report:preparing",
+    "to": null
+  },
+  {
+    "from": "paused",
+    "event": "report:downloading",
+    "to": null
+  },
+  {
+    "from": "paused",
+    "event": "report:verifying",
+    "to": null
+  },
+  {
+    "from": "paused",
+    "event": "report:configuring",
+    "to": null
+  },
+  {
+    "from": "paused",
+    "event": "pause",
+    "to": null
+  },
+  {
+    "from": "paused",
+    "event": "resume",
+    "to": "queued"
+  },
+  {
+    "from": "paused",
+    "event": "cancel",
+    "to": "cancelled"
+  },
+  {
+    "from": "paused",
+    "event": "complete",
+    "to": "completed"
+  },
+  {
+    "from": "paused",
+    "event": "fail",
+    "to": "failed"
+  },
+  {
+    "from": "verifying",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "verifying",
+    "event": "report:preparing",
+    "to": "preparing"
+  },
+  {
+    "from": "verifying",
+    "event": "report:downloading",
+    "to": "downloading"
+  },
+  {
+    "from": "verifying",
+    "event": "report:verifying",
+    "to": "verifying"
+  },
+  {
+    "from": "verifying",
+    "event": "report:configuring",
+    "to": "configuring"
+  },
+  {
+    "from": "verifying",
+    "event": "pause",
+    "to": "paused"
+  },
+  {
+    "from": "verifying",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "verifying",
+    "event": "cancel",
+    "to": "cancelled"
+  },
+  {
+    "from": "verifying",
+    "event": "complete",
+    "to": "completed"
+  },
+  {
+    "from": "verifying",
+    "event": "fail",
+    "to": "failed"
+  },
+  {
+    "from": "configuring",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "configuring",
+    "event": "report:preparing",
+    "to": "preparing"
+  },
+  {
+    "from": "configuring",
+    "event": "report:downloading",
+    "to": "downloading"
+  },
+  {
+    "from": "configuring",
+    "event": "report:verifying",
+    "to": "verifying"
+  },
+  {
+    "from": "configuring",
+    "event": "report:configuring",
+    "to": "configuring"
+  },
+  {
+    "from": "configuring",
+    "event": "pause",
+    "to": "paused"
+  },
+  {
+    "from": "configuring",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "configuring",
+    "event": "cancel",
+    "to": "cancelled"
+  },
+  {
+    "from": "configuring",
+    "event": "complete",
+    "to": "completed"
+  },
+  {
+    "from": "configuring",
+    "event": "fail",
+    "to": "failed"
+  },
+  {
+    "from": "completed",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "report:preparing",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "report:downloading",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "report:verifying",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "report:configuring",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "pause",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "cancel",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "complete",
+    "to": null
+  },
+  {
+    "from": "completed",
+    "event": "fail",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "report:preparing",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "report:downloading",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "report:verifying",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "report:configuring",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "pause",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "cancel",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "complete",
+    "to": null
+  },
+  {
+    "from": "cancelled",
+    "event": "fail",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "start",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "report:preparing",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "report:downloading",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "report:verifying",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "report:configuring",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "pause",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "resume",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "cancel",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "complete",
+    "to": null
+  },
+  {
+    "from": "failed",
+    "event": "fail",
+    "to": null
+  }
+]

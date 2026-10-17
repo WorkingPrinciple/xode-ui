@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:xodus:runtime-provider-configuration:1",
+  "title": "Runtime provider configuration and generation plan, version 1",
+  "description": "Source-only nonsecret configuration/planning contract. Not a management C95 endpoint, observed installation, device/game verification, license grant or launch authorization. Configuration inputs are 1..16384 UTF-8 bytes.",
+  "oneOf": [{"$ref": "#/$defs/configuration"}, {"$ref": "#/$defs/plan"}],
+  "$defs": {
+    "version": {"oneOf": [{"type": "null"}, {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[!-~](?:[ -~]{0,62}[!-~])?$", "not": {"pattern": "[^ -~]"}}]},
+    "digest": {"oneOf": [{"type": "null"}, {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[0-9a-f]{64}$"}]},
+    "generation": {"type": "string", "minLength": 36, "maxLength": 36, "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+    "engine": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "provenance", "version", "artifactSha256"],
+      "properties": {
+        "kind": {"const": "wine"},
+        "provenance": {"enum": ["appleToolkit", "userInstalledCrossOver", "userSelectedWine", "userSelectedSourceBuild"]},
+        "version": {"$ref": "#/$defs/version"}, "artifactSha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "graphics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["backend", "provenance", "version", "artifactSha256"],
+      "properties": {
+        "backend": {"enum": [null, "d3dMetal", "dxvk", "wineD3d"]},
+        "provenance": {"enum": [null, "appleToolkit", "crossOverBundled", "engineBundled", "userSelected"]},
+        "version": {"$ref": "#/$defs/version"}, "artifactSha256": {"$ref": "#/$defs/digest"}
+      },
+      "if": {"properties": {"backend": {"type": "null"}}},
+      "then": {"properties": {"provenance": {"type": "null"}, "version": {"type": "null"}, "artifactSha256": {"type": "null"}}},
+      "else": {"properties": {"provenance": {"type": "string"}}}
+    },
+    "configuration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "provider", "providerVersion", "engine", "graphics"],
+      "properties": {
+        "version": {"const": 1},
+        "provider": {"enum": ["gptk3", "gptk4", "crossover", "standaloneWine"]},
+        "providerVersion": {"$ref": "#/$defs/version"},
+        "engine": {"$ref": "#/$defs/engine"}, "graphics": {"$ref": "#/$defs/graphics"}
+      },
+      "allOf": [
+        {"if": {"properties": {"provider": {"enum": ["gptk3", "gptk4"]}}}, "then": {"properties": {"engine": {"properties": {"provenance": {"const": "appleToolkit"}}}}}},
+        {"if": {"properties": {"provider": {"const": "crossover"}}}, "then": {"properties": {"engine": {"properties": {"provenance": {"const": "userInstalledCrossOver"}}}}}},
+        {"if": {"properties": {"provider": {"const": "standaloneWine"}}}, "then": {"properties": {"engine": {"properties": {"provenance": {"enum": ["userSelectedWine", "userSelectedSourceBuild"]}}}}}}
+      ]
+    },
+    "plan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "configuration", "generationID", "prefixRelativePath", "installation", "devicePreflight", "gameVerification", "launchable"],
+      "properties": {
+        "version": {"const": 1}, "configuration": {"$ref": "#/$defs/configuration"},
+        "generationID": {"$ref": "#/$defs/generation"},
+        "prefixRelativePath": {"type": "string", "minLength": 121, "maxLength": 121, "pattern": "^runtime-prefixes/v1/[0-9a-f]{64}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+        "installation": {"const": "notInspected"}, "devicePreflight": {"const": "notPerformed"},
+        "gameVerification": {"const": "notVerified"}, "launchable": {"const": false}
+      }
+    }
+  }
+}

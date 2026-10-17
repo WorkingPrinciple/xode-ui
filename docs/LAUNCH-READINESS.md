@@ -1,5 +1,41 @@
 # X Ode launch readiness
 
+## Private source-adoption addendum (2026-10-17)
+
+The draft integration adopts the complete native app history through
+`784dedf517845e0caf4cdedcd032444cddaa3d2a` (tree
+`bb986a806defa63d07a9c3f58e33a19841601c03`) while preserving the seven
+documentation/bootstrap commits through `7d627d60288b310310ae9bf2487f4d1f3425b922`.
+The documentation-only `main` description below is the **2026-10-12 snapshot**,
+not a description of this integration checkout or proof that adoption is merged.
+No default-branch change or release is performed.
+
+The [issue ledger](ISSUE-LEDGER.md) and [game-test ledger](GAME-TEST-LEDGER.md)
+are imported byte-for-byte from `eb07537dc9cd1bead01780b66366f1664492eb22`.
+They record later parent-observed signed-package identity, native UI/account
+recovery and Play/Stop evidence. This source-adoption lane did not repeat any
+runtime, account, Keychain, signing, installation or gameplay action.
+Management authentication, PC-library entitlement and game-service identity
+remain separate.
+
+Unchanged full-Xcode 27 [run 39013367846](https://github.com/dragoshont/xodus-macos-app/actions/runs/39013367846)
+passed for exact `784dedf`, including real shipping XCTest, native checks and SVG
+reproduction. That result does **not** certify the integration commit; its fresh
+run and exact head are reported separately in the adoption PR.
+No app code, tests, package manifest, tools, design or workflow content changes
+are intended by the merge.
+
+Component acquisition, backend-source/build provenance and legal/redistribution
+holds [#28](https://github.com/dragoshont/xodus-macos-app/issues/28) and
+[#38](https://github.com/dragoshont/xodus-macos-app/issues/38) remain unresolved.
+Preserved GPL/SPDX/notices do not clear third-party rights. No component
+binaries, Wine/CrossOver/Windows code or XCurl adapter are added. Fresh-Mac,
+distribution/signing/notarization, exact paired-input and title-specific
+qualification requirements below remain independent. There is no public release
+or multiplayer acceptance claim.
+
+## Historical recovery snapshot (2026-10-12)
+
 Evidence snapshot: **2026-10-12**. This documentation pass read immutable source,
 tests and GitHub metadata; it did not sign, package, install or launch anything.
 The owner's [immutable recovery handoff](https://github.com/dragoshont/xodus-macos-app/blob/00cff3d624ee4ce40c308128eccd3e9d213e0433/docs/PAUSE-HANDOFF.md)

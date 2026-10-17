@@ -1,0 +1,25 @@
+{
+  "qualification": "Declared configuration and pure prefix planning only. No installed-provider, device, per-game, license, distribution or launch proof.",
+  "configurations": [
+    {"version":1,"provider":"gptk3","providerVersion":null,"engine":{"kind":"wine","provenance":"appleToolkit","version":null,"artifactSha256":null},"graphics":{"backend":"d3dMetal","provenance":"appleToolkit","version":null,"artifactSha256":null}},
+    {"version":1,"provider":"gptk4","providerVersion":null,"engine":{"kind":"wine","provenance":"appleToolkit","version":null,"artifactSha256":null},"graphics":{"backend":"d3dMetal","provenance":"appleToolkit","version":null,"artifactSha256":null}},
+    {"version":1,"provider":"crossover","providerVersion":null,"engine":{"kind":"wine","provenance":"userInstalledCrossOver","version":null,"artifactSha256":null},"graphics":{"backend":null,"provenance":null,"version":null,"artifactSha256":null}},
+    {"version":1,"provider":"standaloneWine","providerVersion":null,"engine":{"kind":"wine","provenance":"userSelectedWine","version":null,"artifactSha256":null},"graphics":{"backend":null,"provenance":null,"version":null,"artifactSha256":null}},
+    {"version":1,"provider":"standaloneWine","providerVersion":null,"engine":{"kind":"wine","provenance":"userSelectedSourceBuild","version":"11.0","artifactSha256":null},"graphics":{"backend":"d3dMetal","provenance":"userSelected","version":"4.0","artifactSha256":null}}
+  ],
+  "plans": [
+    {
+      "version":1,
+      "configuration":{"version":1,"provider":"standaloneWine","providerVersion":null,"engine":{"kind":"wine","provenance":"userSelectedSourceBuild","version":"11.0","artifactSha256":null},"graphics":{"backend":"d3dMetal","provenance":"userSelected","version":"4.0","artifactSha256":null}},
+      "generationID":"00000000-0000-4000-8000-000000000001",
+      "prefixRelativePath":"runtime-prefixes/v1/1db702dead8f09d31d472d171910185758cd8c197e91d35d3dc78aabae745830/00000000-0000-4000-8000-000000000001",
+      "installation":"notInspected","devicePreflight":"notPerformed","gameVerification":"notVerified","launchable":false
+    }
+  ],
+  "invalidConfigurations": [
+    {"version":2,"provider":"gptk4","providerVersion":null,"engine":{"kind":"wine","provenance":"appleToolkit","version":null,"artifactSha256":null},"graphics":{"backend":null,"provenance":null,"version":null,"artifactSha256":null}},
+    {"version":1,"provider":"crossover","providerVersion":null,"engine":{"kind":"wine","provenance":"appleToolkit","version":null,"artifactSha256":null},"graphics":{"backend":null,"provenance":null,"version":null,"artifactSha256":null}},
+    {"version":1,"provider":"standaloneWine","providerVersion":null,"engine":{"kind":"wine","provenance":"userSelectedWine","version":null,"artifactSha256":null},"graphics":{"backend":null,"provenance":null,"version":"4.0","artifactSha256":null}},
+    {"version":1,"provider":"gptk4","engine":{"kind":"wine","provenance":"appleToolkit","version":null,"artifactSha256":null},"graphics":{"backend":null,"provenance":null,"version":null,"artifactSha256":null}}
+  ]
+}

@@ -1,0 +1,29 @@
+name: Native app and management checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native-fixtures:
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify the macOS 27 SDK and isolated runner
+        run: |
+          xcodebuild -version
+          sdk=$(xcrun --sdk macosx --show-sdk-version)
+          printf 'Selected macOS SDK: %s\n' "$sdk"
+          sw_vers
+          test "${sdk%%.*}" -ge 27
+          runtime=$(sw_vers -productVersion)
+          test "${runtime%%.*}" -ge 27
+      - name: Check native models, management interoperability and presentation
+        run: sh tools/check.sh
+      - name: Check editable SVG reproducibility
+        run: |
+          python3 tools/generate_mockups.py
+          git diff --exit-code -- design/screens

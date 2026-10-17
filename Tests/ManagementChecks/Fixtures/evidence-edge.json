@@ -1,0 +1,119 @@
+[
+  {
+    "productID": "FIXTURE00001",
+    "editionID": "fixture-edition",
+    "entitlement": {
+      "kind": "purchase",
+      "source": "fixture",
+      "checkedAt": "2026-10-03T12:00:00Z"
+    },
+    "installability": {
+      "kind": "blocked",
+      "reason": "Purchased but no available package."
+    },
+    "compatibility": {
+      "kind": "unknown",
+      "source": "notCertified",
+      "checkedAt": null
+    },
+    "installation": {
+      "kind": "notInstalled"
+    },
+    "inventory": {
+      "completeness": "unknown",
+      "checkedAt": null,
+      "lastCompleteAt": null,
+      "source": "notQueried",
+      "reason": "No complete entitlement source."
+    }
+  },
+  {
+    "productID": "FIXTURE00001",
+    "editionID": "fixture-edition",
+    "entitlement": {
+      "kind": "subscription",
+      "source": "fixture",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "expiresAt": "2026-01-01T00:00:00Z"
+    },
+    "installability": {
+      "kind": "unknown",
+      "reason": "Package authorization not established."
+    },
+    "compatibility": {
+      "kind": "unknown",
+      "source": "notCertified",
+      "checkedAt": null
+    },
+    "installation": {
+      "kind": "notInstalled"
+    },
+    "inventory": {
+      "completeness": "unknown",
+      "checkedAt": null,
+      "lastCompleteAt": null,
+      "source": "notQueried",
+      "reason": "No complete entitlement source."
+    }
+  },
+  {
+    "productID": "FIXTURE00001",
+    "editionID": "fixture-edition",
+    "entitlement": {
+      "kind": "none",
+      "source": "fixture",
+      "checkedAt": "2026-10-03T12:00:00Z"
+    },
+    "installability": {
+      "kind": "unknown",
+      "reason": "Package authorization not established."
+    },
+    "compatibility": {
+      "kind": "unknown",
+      "source": "notCertified",
+      "checkedAt": null
+    },
+    "installation": {
+      "kind": "installed",
+      "installationID": "fixture-revoked"
+    },
+    "inventory": {
+      "completeness": "unknown",
+      "checkedAt": null,
+      "lastCompleteAt": null,
+      "source": "notQueried",
+      "reason": "No complete entitlement source."
+    }
+  },
+  {
+    "productID": "FIXTURE00001",
+    "editionID": "fixture-edition",
+    "entitlement": {
+      "kind": "unknown",
+      "source": "notQueried",
+      "checkedAt": null
+    },
+    "installability": {
+      "kind": "unknown",
+      "reason": "Package authorization not established."
+    },
+    "compatibility": {
+      "kind": "experimental",
+      "source": "fixture",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "os": "fixture-os",
+      "architecture": "arm64",
+      "runtimeFingerprint": "fixture-runtime"
+    },
+    "installation": {
+      "kind": "notInstalled"
+    },
+    "inventory": {
+      "completeness": "unknown",
+      "checkedAt": null,
+      "lastCompleteAt": null,
+      "source": "notQueried",
+      "reason": "No complete entitlement source."
+    }
+  }
+]

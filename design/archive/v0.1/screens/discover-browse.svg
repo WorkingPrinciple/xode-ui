@@ -1,0 +1,204 @@
+<?xml version="1.0" ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-labelledby="title description">
+  <title id="title">Xodus discover-browse fixture concept</title>
+  <desc id="description">Original editable concept. Invented games, account states and progress; no live integration.</desc>
+  <g font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif">
+    <rect x="0" y="0" width="1440" height="980" rx="18" fill="#f7f7f9"/>
+    <rect x="0" y="0" width="1440" height="72" rx="18" fill="#eeeff2"/>
+    <rect x="0" y="54" width="1440" height="18" rx="0" fill="#eeeff2"/>
+    <circle cx="28" cy="35" r="7" fill="#fa625a"/>
+    <circle cx="52" cy="35" r="7" fill="#f5bf50"/>
+    <circle cx="76" cy="35" r="7" fill="#53bd69"/>
+    <text x="108" y="41" font-size="18" font-weight="600" fill="#202126" text-anchor="start">Xodus</text>
+    <rect x="505" y="16" width="430" height="40" rx="9" fill="#e0e2e7"/>
+    <text x="579" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Library</text>
+    <rect x="651" y="20" width="139" height="32" rx="7" fill="#ffffff"/>
+    <text x="720" y="42" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Discover</text>
+    <text x="861" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Downloads</text>
+    <circle cx="1347" cy="35" r="16" fill="#d3d8e1"/>
+    <text x="1347" y="41" font-size="15" font-weight="600" fill="#202126" text-anchor="middle">F</text>
+    <text x="1375" y="41" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Fixture</text>
+    <text x="56" y="105" font-size="15" font-weight="600" fill="#202126" text-anchor="start">Fixture preview</text>
+    <text x="174" y="105" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Invented games, access and progress. No real sign-in, downloads or gameplay.</text>
+    <path d="M0 123H1440" stroke="#d8dbe0"/>
+    <rect x="420" y="242" width="600" height="44" rx="9" fill="#ffffff" stroke="#d8dbe0"/>
+    <circle cx="444" cy="262" r="6" fill="none" stroke="#5a5e68" stroke-width="1.5"/>
+    <path d="M449 267l5 5" stroke="#5a5e68" stroke-width="1.5"/>
+    <text x="465" y="270" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Search Discover</text>
+    <text x="56" y="181" font-size="36" font-weight="700" fill="#202126" text-anchor="start">Find your next world</text>
+    <text x="56" y="217" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Browse imagined worlds. This catalog does not establish ownership.</text>
+    <defs>
+      <linearGradient id="sky-browse" x2="0" y2="1">
+        <stop stop-color="#667796"/>
+        <stop offset="1" stop-color="#222f4c"/>
+      </linearGradient>
+      <linearGradient id="shade-browse">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-browse">
+        <rect x="56" y="317" width="1328" height="310" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-browse)" aria-label="Original orbit landscape">
+      <rect x="56" y="317" width="1328" height="310" rx="0" fill="url(#sky-browse)"/>
+      <circle cx="1078.56" cy="394.5" r="37.199999999999996" fill="#dbb5a0"/>
+      <circle cx="56.0" cy="317.0" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="547.36" cy="388.3" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="1038.72" cy="459.6" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="241.92000000000002" cy="372.8" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="733.28" cy="444.1" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="1224.64" cy="357.3" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="427.84000000000003" cy="428.6" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="919.2" cy="341.8" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="122.4" cy="413.1" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="613.76" cy="326.3" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="1105.1200000000001" cy="397.6" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="308.32" cy="468.9" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="799.6800000000001" cy="382.1" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="1291.04" cy="453.4" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="494.24" cy="366.6" r="1.5" fill="#ffffff" opacity=".7"/>
+      <ellipse cx="985.5999999999999" cy="410.0" rx="345.28000000000003" ry="37.199999999999996" fill="none" stroke="#dbb5a0" opacity=".6" transform="rotate(-18 985.5999999999999 410.0)"/>
+      <path d="M56 496.79999999999995 C348.16 357.29999999999995 666.88 558.8 932.48 459.59999999999997 S1251.2 403.79999999999995 1384 487.49999999999994 V627 H56Z" fill="#222f4c" opacity="0.38"/>
+      <path d="M56 543.3 C348.16 403.79999999999995 666.88 605.3 932.48 506.09999999999997 S1251.2 450.29999999999995 1384 534.0 V627 H56Z" fill="#222f4c" opacity="0.62"/>
+      <path d="M56 589.8 C348.16 450.29999999999995 666.88 651.8 932.48 552.5999999999999 S1251.2 496.79999999999995 1384 580.5 V627 H56Z" fill="#222f4c" opacity="0.86"/>
+      <path d="M905.9200000000001 568.1h225.76000000000002" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M905.9200000000001 585.1500000000001h192.56" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M905.9200000000001 602.2h159.36" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="317" width="1328" height="310" rx="0" fill="url(#shade-browse)"/>
+    </g>
+    <text x="90" y="444" font-size="52" font-weight="700" fill="#ffffff" text-anchor="start">Orbit Almanac</text>
+    <text x="90" y="488" font-size="22" font-weight="400" fill="#ffffff" text-anchor="start">Find a new rhythm among the stars.</text>
+    <text x="90" y="532" font-size="17" font-weight="400" fill="#ffffff" text-anchor="start">Subscription access  /  Experimental fixture</text>
+    <rect x="90" y="558" width="188" height="42" rx="8" fill="#ffffff" stroke="#d8dbe0"/>
+    <text x="184.0" y="585" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Explore fixture</text>
+    <text x="56" y="682" font-size="24" font-weight="700" fill="#202126" text-anchor="start">Browse fixture worlds</text>
+    <text x="56" y="721" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Choose a category, or search Discover above.</text>
+    <defs>
+      <linearGradient id="sky-genre-0" x2="0" y2="1">
+        <stop stop-color="#95c6cb"/>
+        <stop offset="1" stop-color="#245e77"/>
+      </linearGradient>
+      <linearGradient id="shade-genre-0">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-genre-0">
+        <rect x="56" y="750" width="314" height="148" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-genre-0)" aria-label="Original tide landscape">
+      <rect x="56" y="750" width="314" height="148" rx="0" fill="url(#sky-genre-0)"/>
+      <circle cx="297.78" cy="787.0" r="17.759999999999998" fill="#f5d59b"/>
+      <path d="M56 835.84 C125.08 769.24 200.44 865.44 263.24 818.08 S338.6 791.44 370 831.4 V898 H56Z" fill="#245e77" opacity="0.38"/>
+      <path d="M56 858.04 C125.08 791.4399999999999 200.44 887.64 263.24 840.28 S338.6 813.64 370 853.5999999999999 V898 H56Z" fill="#245e77" opacity="0.62"/>
+      <path d="M56 880.24 C125.08 813.64 200.44 909.84 263.24 862.48 S338.6 835.84 370 875.8 V898 H56Z" fill="#245e77" opacity="0.86"/>
+      <path d="M280.51 856.56 L284.592 803.28 L291.5 803.28 L297.15200000000004 856.56Z" fill="#f5d59b"/>
+      <rect x="282.08" y="800.32" width="12.56" height="6.66" rx="2" fill="#245e77"/>
+      <path d="M285.22 801.06 L175.32 772.2 L285.22 806.24Z" fill="#f5d59b" opacity=".16"/>
+      <path d="M256.96000000000004 869.88h53.38" stroke="#f5d59b" stroke-width="1.5" opacity=".3"/>
+      <path d="M256.96000000000004 878.02h45.53" stroke="#f5d59b" stroke-width="1.5" opacity=".3"/>
+      <path d="M256.96000000000004 886.16h37.68" stroke="#f5d59b" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="750" width="314" height="148" rx="0" fill="url(#shade-genre-0)"/>
+    </g>
+    <text x="76" y="854" font-size="22" font-weight="600" fill="#ffffff" text-anchor="start">All worlds</text>
+    <defs>
+      <linearGradient id="sky-genre-1" x2="0" y2="1">
+        <stop stop-color="#83b0ae"/>
+        <stop offset="1" stop-color="#244f5c"/>
+      </linearGradient>
+      <linearGradient id="shade-genre-1">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-genre-1">
+        <rect x="394" y="750" width="314" height="148" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-genre-1)" aria-label="Original harbor landscape">
+      <rect x="394" y="750" width="314" height="148" rx="0" fill="url(#sky-genre-1)"/>
+      <circle cx="635.78" cy="787.0" r="17.759999999999998" fill="#f1d29d"/>
+      <path d="M394 835.84 C463.08 769.24 538.44 865.44 601.24 818.08 S676.6 791.44 708 831.4 V898 H394Z" fill="#244f5c" opacity="0.38"/>
+      <path d="M394 858.04 C463.08 791.4399999999999 538.44 887.64 601.24 840.28 S676.6 813.64 708 853.5999999999999 V898 H394Z" fill="#244f5c" opacity="0.62"/>
+      <path d="M394 880.24 C463.08 813.64 538.44 909.84 601.24 862.48 S676.6 835.84 708 875.8 V898 H394Z" fill="#244f5c" opacity="0.86"/>
+      <path d="M618.51 856.56 L622.592 803.28 L629.5 803.28 L635.152 856.56Z" fill="#f1d29d"/>
+      <rect x="620.0799999999999" y="800.32" width="12.56" height="6.66" rx="2" fill="#244f5c"/>
+      <path d="M623.22 801.06 L513.32 772.2 L623.22 806.24Z" fill="#f1d29d" opacity=".16"/>
+      <path d="M594.96 869.88h53.38" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M594.96 878.02h45.53" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <path d="M594.96 886.16h37.68" stroke="#f1d29d" stroke-width="1.5" opacity=".3"/>
+      <rect x="394" y="750" width="314" height="148" rx="0" fill="url(#shade-genre-1)"/>
+    </g>
+    <text x="414" y="854" font-size="22" font-weight="600" fill="#ffffff" text-anchor="start">Quiet adventures</text>
+    <defs>
+      <linearGradient id="sky-genre-2" x2="0" y2="1">
+        <stop stop-color="#667796"/>
+        <stop offset="1" stop-color="#222f4c"/>
+      </linearGradient>
+      <linearGradient id="shade-genre-2">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-genre-2">
+        <rect x="732" y="750" width="314" height="148" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-genre-2)" aria-label="Original orbit landscape">
+      <rect x="732" y="750" width="314" height="148" rx="0" fill="url(#sky-genre-2)"/>
+      <circle cx="973.78" cy="787.0" r="17.759999999999998" fill="#dbb5a0"/>
+      <circle cx="732.0" cy="750.0" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="848.18" cy="784.04" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="964.36" cy="818.08" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="775.96" cy="776.64" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="892.14" cy="810.68" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="1008.3199999999999" cy="769.24" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="819.92" cy="803.28" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="936.1" cy="761.84" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="747.7" cy="795.88" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="863.88" cy="754.44" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="980.06" cy="788.48" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="791.66" cy="822.52" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="907.84" cy="781.08" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="1024.02" cy="815.12" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="835.62" cy="773.68" r="1.5" fill="#ffffff" opacity=".7"/>
+      <ellipse cx="951.8" cy="794.4" rx="81.64" ry="17.759999999999998" fill="none" stroke="#dbb5a0" opacity=".6" transform="rotate(-18 951.8 794.4)"/>
+      <path d="M732 835.84 C801.08 769.24 876.44 865.44 939.24 818.08 S1014.6 791.44 1046 831.4 V898 H732Z" fill="#222f4c" opacity="0.38"/>
+      <path d="M732 858.04 C801.08 791.4399999999999 876.44 887.64 939.24 840.28 S1014.6 813.64 1046 853.5999999999999 V898 H732Z" fill="#222f4c" opacity="0.62"/>
+      <path d="M732 880.24 C801.08 813.64 876.44 909.84 939.24 862.48 S1014.6 835.84 1046 875.8 V898 H732Z" fill="#222f4c" opacity="0.86"/>
+      <path d="M932.96 869.88h53.38" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M932.96 878.02h45.53" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M932.96 886.16h37.68" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <rect x="732" y="750" width="314" height="148" rx="0" fill="url(#shade-genre-2)"/>
+    </g>
+    <text x="752" y="854" font-size="22" font-weight="600" fill="#ffffff" text-anchor="start">Space</text>
+    <defs>
+      <linearGradient id="sky-genre-3" x2="0" y2="1">
+        <stop stop-color="#b9cbc8"/>
+        <stop offset="1" stop-color="#426578"/>
+      </linearGradient>
+      <linearGradient id="shade-genre-3">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-genre-3">
+        <rect x="1070" y="750" width="314" height="148" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-genre-3)" aria-label="Original ridge landscape">
+      <rect x="1070" y="750" width="314" height="148" rx="0" fill="url(#sky-genre-3)"/>
+      <circle cx="1311.78" cy="787.0" r="17.759999999999998" fill="#eed8b1"/>
+      <path d="M1070 835.84 C1139.08 769.24 1214.44 865.44 1277.24 818.08 S1352.6 791.44 1384 831.4 V898 H1070Z" fill="#426578" opacity="0.38"/>
+      <path d="M1070 858.04 C1139.08 791.4399999999999 1214.44 887.64 1277.24 840.28 S1352.6 813.64 1384 853.5999999999999 V898 H1070Z" fill="#426578" opacity="0.62"/>
+      <path d="M1070 880.24 C1139.08 813.64 1214.44 909.84 1277.24 862.48 S1352.6 835.84 1384 875.8 V898 H1070Z" fill="#426578" opacity="0.86"/>
+      <path d="M1294.51 856.56 L1298.592 803.28 L1305.5 803.28 L1311.152 856.56Z" fill="#eed8b1"/>
+      <rect x="1296.08" y="800.32" width="12.56" height="6.66" rx="2" fill="#426578"/>
+      <path d="M1299.22 801.06 L1189.32 772.2 L1299.22 806.24Z" fill="#eed8b1" opacity=".16"/>
+      <path d="M1270.96 869.88h53.38" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <path d="M1270.96 878.02h45.53" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <path d="M1270.96 886.16h37.68" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <rect x="1070" y="750" width="314" height="148" rx="0" fill="url(#shade-genre-3)"/>
+    </g>
+    <text x="1090" y="854" font-size="22" font-weight="600" fill="#ffffff" text-anchor="start">Puzzles</text>
+    <text x="56" y="941" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Empty query: category browse, not search results. Original art; no real account.</text>
+  </g>
+</svg>
