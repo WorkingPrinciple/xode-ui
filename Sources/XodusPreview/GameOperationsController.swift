@@ -48,6 +48,8 @@ final class GameOperationsController: ObservableObject {
     @Published private(set) var notice: String?
     @Published private(set) var log: URL?
     @Published private(set) var failureCode: Int?
+    @Published private(set) var feedbackProductID: String?
+    @Published private(set) var directInstallProductID: String?
     private let installed: InstalledGamesController
     private let paths: GameScriptPaths
     private let mutationRunner: GameScriptRunner
@@ -165,6 +167,7 @@ final class GameOperationsController: ObservableObject {
         restored = true
         do {
             guard let record = try await journal.load() else { return }
+            resetFeedback(productID: record.productID)
             try installed.reserveMutation(gameID: record.installedID)
             operation = record
             recoveryRequired = true
@@ -342,7 +345,11 @@ final class GameOperationsController: ObservableObject {
         guard canStartMutation, installConsent == nil, uninstallConsent == nil else { return }
         let token: UUID
         do { token = try installed.reserveStop(game) }
-        catch { self.error = Self.message(error); return }
+        catch {
+            resetFeedback(productID: game.storeId)
+            self.error = Self.message(error)
+            return
+        }
         let runID = InstalledGamesController.runID()
         stopTask = Task {
             defer {
@@ -438,9 +445,10 @@ final class GameOperationsController: ObservableObject {
 
     func install(_ game: PCGame) async {
         guard canStartMutation, !installingDirectly else { return }
+        directInstallProductID = game.id
         installingDirectly = true
         directInstallCancelled = false
-        defer { installingDirectly = false }
+        defer { installingDirectly = false; directInstallProductID = nil }
         await prepareInstall(game)
         guard !directInstallCancelled else { installConsent = nil; return }
         guard let consent = installConsent else { return }
@@ -497,6 +505,7 @@ final class GameOperationsController: ObservableObject {
             guard repairing.storeId == game.id, installed.games.contains(repairing),
                   installed.runningGameID != repairing.id else { return }
         }
+        resetFeedback(productID: game.id)
         preparingConsent = true
         defer { preparingConsent = false }
         do {
@@ -608,6 +617,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     private func begin(_ record: GameOperationRecord) {
+        resetFeedback(productID: record.productID)
         do { try installed.reserveMutation(gameID: record.installedID) }
         catch { self.error = Self.message(error); return }
         operation = record
@@ -649,6 +659,14 @@ final class GameOperationsController: ObservableObject {
             mutationTask = nil
             cancelling = false
         }
+    }
+
+    private func resetFeedback(productID: String?) {
+        feedbackProductID = productID
+        error = nil
+        notice = nil
+        log = nil
+        failureCode = nil
     }
 
     private func complete(_ record: GameOperationRecord, outcome: GameScriptOutcome) async throws {

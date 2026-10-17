@@ -4,6 +4,48 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## XO-022 operation feedback ownership (source candidate)
+
+Parent reproduced an earlier Minecraft Launcher preparation refusal appearing
+in No Man's Sky detail on signed `784dedf`. This source lane did not repeat
+the live observation or investigate the separate NMS SDK refusal.
+
+The controller now retains the accepted feedback product ID through preparation,
+terminal outcomes and restored operations, plus the direct-preparation owner.
+Detail passes its exact product ID to the existing shared progress presentation.
+Known unrelated progress, errors/notices and log/sign-in/recovery/cancellation
+controls are filtered without navigation clearing retained feedback. Global
+Library/Discover/Downloads presentation is unchanged. A new accepted action
+resets the feedback bundle before assigning its owner; unknown corrupt-journal
+storage errors remain global. Privacy and mutation/cancellation/Quit gates are
+unchanged.
+
+`swift build --jobs 4 --product XodusPreview` passed;
+`swift run --skip-build XodusPreview --self-check` passed 193 checks;
+`swift run --skip-build XodusPreview --live-check` passed 1170 checks, zero
+failures. The synthetic game harness exercises failed A preparation then B
+detail and return to A/global feedback, the exact code-11 recovery/log controls,
+accepted B preparation resetting A's metadata, direct preparation/cancellation,
+active download, terminal installation notice, restored known recovery and
+unbound corrupt-journal recovery. It uses the actual shared presentation
+properties/body, including detached native layout without showing a window;
+it is not live signed-app navigation or AX acceptance.
+
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` passed. `PYTHONDONTWRITEBYTECODE=1 python3
+tools/check_shipping_pair.py` passed 29 neutral admission checks;
+the existing shipping-binary assertions also rejected all six development flags
+with exit 64 and confirmed absence of the preview resource bundle.
+`git diff --check` passed. Frozen `784dedf` retains its separate successful
+full-Xcode CI run 39013367846; that evidence does not cover this new candidate.
+Local full shipping XCTest still requires unavailable full Xcode and was not
+replayed, substituted or weakened. No remote CI or push was performed here.
+
+No ordinary app, real account/Keychain/network operation, signing/package/install
+or installed runtime/broker/game mutation occurred. Parent owns signed-native
+verification and eventual release admission; this repair does not claim a game
+can download or launch.
+
 ## XO-010 mandatory Welcome and normal Quit (2026-10-17)
 
 Parent captured AppKit's **App termination blocked by modal sheet** log for a

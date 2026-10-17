@@ -173,27 +173,39 @@ struct AccountTierView: View {
 struct GameOperationProgressView: View {
     @ObservedObject var operations: GameOperationsController
     var privacyRestricted = false
+    var productID: String?
+
+    private func includes(_ owner: String?) -> Bool {
+        productID == nil || owner == nil || owner == productID
+    }
+    var showsPreparation: Bool {
+        operations.installingDirectly && includes(operations.directInstallProductID)
+    }
+    var presentedOperation: GameOperationRecord? {
+        operations.operation.flatMap { includes($0.productID) ? $0 : nil }
+    }
+    private var includesFeedback: Bool { includes(operations.feedbackProductID) }
 
     var preparationTitle: String {
         operations.directInstallCancelled ? "Stopping preparation" : "Preparing installation…"
     }
     var operationTitle: String? {
-        operations.operation.map { privacyRestricted ? "Game operation in progress" : $0.title }
+        presentedOperation.map { privacyRestricted ? "Game operation in progress" : $0.title }
     }
     var operationError: String? {
-        operations.error.map {
+        (includesFeedback ? operations.error : nil).map {
             privacyRestricted ? "The game operation needs attention. Sign in to review its details." : $0
         }
     }
-    var operationNotice: String? { privacyRestricted ? nil : operations.notice }
-    var preparationCancelTitle: String? { operations.installingDirectly ? "Cancel" : nil }
-    var installCancelTitle: String? { operations.canCancel ? "Cancel installation" : nil }
-    var showsGameSignIn: Bool { !privacyRestricted && operations.failureCode == 11 }
-    var showsLog: Bool { !privacyRestricted && operations.log != nil }
+    var operationNotice: String? { privacyRestricted || !includesFeedback ? nil : operations.notice }
+    var preparationCancelTitle: String? { showsPreparation ? "Cancel" : nil }
+    var installCancelTitle: String? { presentedOperation != nil && operations.canCancel ? "Cancel installation" : nil }
+    var showsGameSignIn: Bool { includesFeedback && !privacyRestricted && operations.failureCode == 11 }
+    var showsLog: Bool { includesFeedback && !privacyRestricted && operations.log != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if operations.installingDirectly {
+            if showsPreparation {
                 ProgressView(preparationTitle)
                     .accessibilityIdentifier("xodus.install.preparing")
                 if let title = preparationCancelTitle {
@@ -202,7 +214,7 @@ struct GameOperationProgressView: View {
                         .accessibilityIdentifier("xodus.install.cancelPreparation")
                 }
             }
-            if let operation = operations.operation, let title = operationTitle {
+            if let operation = presentedOperation, let title = operationTitle {
                 Text(title).font(.headline)
                 if operations.recoveryRequired {
                     Button("Check last operation") { Task { await operations.reconcile() } }

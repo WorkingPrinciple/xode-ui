@@ -296,6 +296,22 @@ enum GameOperationChecks {
               && !installed.serviceSignInActive && operations.canQuit,
               "XO-018: Explicit retry consumes a fresh bound status and removes the verification action")
         let game = PCGame(id: "FIXTURE00001", title: "Fixture Game", artwork: nil)
+        func checkUnrelatedDetail(_ controller: GameOperationsController, owner: String, stage: String) {
+            let unrelatedID = owner == "FIXTURE00001" ? "FIXTURE00002" : "FIXTURE00001"
+            let unrelated = GameOperationProgressView(operations: controller, productID: unrelatedID)
+            check(unrelated.operationError == nil && unrelated.operationNotice == nil
+                  && unrelated.presentedOperation == nil && unrelated.operationTitle == nil
+                  && !unrelated.showsPreparation && unrelated.preparationCancelTitle == nil
+                  && unrelated.installCancelTitle == nil && !unrelated.showsLog && !unrelated.showsGameSignIn,
+                  "XO-022: Unrelated detail hides title-owned \(stage), including recovery/log/cancel/sign-in controls")
+            let windows = NSApplication.shared.windows.count
+            let host = NSHostingView(rootView: unrelated)
+            host.sizingOptions = []
+            host.frame = CGRect(x: 0, y: 0, width: 560, height: 300)
+            host.layoutSubtreeIfNeeded()
+            check(host.window == nil && NSApplication.shared.windows.count == windows,
+                  "XO-022: Scoped \(stage) presentation mounts detached without a window or navigation mutation")
+        }
         let compatibilityData = """
             {"storeId":"\(game.id)","packageBytes":null,"supported":true,"reason":null,"checkedAt":"2026-10-07T00:00:00.123Z"}
             """
@@ -595,6 +611,28 @@ enum GameOperationChecks {
             if let error = operations.error {
                 NativeUIChecks.checkOperationFeedback(operations: operations, installed: installed,
                     game: game, expectedStatus: error, cancelTitle: nil, check: check)
+                let ownerView = GameOperationProgressView(operations: operations, productID: game.id)
+                let globalView = GameOperationProgressView(operations: operations)
+                let retainedLog = operations.log
+                checkUnrelatedDetail(operations, owner: game.id, stage: "failed preparation")
+                check(operations.feedbackProductID == game.id && ownerView.operationError == error
+                      && globalView.operationError == error && operations.error == error
+                      && operations.log == retainedLog && ownerView.showsLog == globalView.showsLog
+                      && ownerView.showsGameSignIn == globalView.showsGameSignIn,
+                      "XO-022: Returning to A or global status preserves A's genuine failure and matching recovery controls")
+                if mode == "check11" {
+                    check(ownerView.showsGameSignIn && ownerView.showsLog && operations.failureCode == 11,
+                          "XO-022: Exact account-download refusal remains actionable only for its owner and global status")
+                    try writeMode("checkslow")
+                    let next = PCGame(id: "FIXTURE00002", title: "Second Fixture", artwork: nil)
+                    let nextCheck = Task { await operations.prepareInstall(next) }
+                    try await wait { operations.checkingCompatibility }
+                    check(operations.feedbackProductID == next.id && operations.error == nil
+                          && operations.failureCode == nil && operations.log == nil && operations.notice == nil,
+                          "XO-022: A new accepted B action resets A's feedback together rather than relabeling its account failure/log")
+                    await operations.cancelInstallConsent()
+                    await nextCheck.value
+                }
             }
         }
         let aliasedGames = root.appendingPathComponent("aliased-games")
@@ -609,6 +647,7 @@ enum GameOperationChecks {
         NativeUIChecks.checkOperationFeedback(operations: storageFailure, installed: installed,
             game: game, expectedStatus: GameScriptError.invalidDestination.localizedDescription,
             cancelTitle: nil, check: check)
+        checkUnrelatedDetail(storageFailure, owner: game.id, stage: "known-title storage failure")
         try writeMode("checkslow")
         let checking = Task { await operations.prepareInstall(game) }
         try await wait { operations.checkingCompatibility }
@@ -630,6 +669,10 @@ enum GameOperationChecks {
         check(operations.installingDirectly && operations.presentedInstallConsent == nil
               && operations.hasDownloadStatus && !operations.canQuit,
               "Direct Install has cancellable preparation without presenting an internal-check sheet")
+        checkUnrelatedDetail(operations, owner: game.id, stage: "direct preparation")
+        check(GameOperationProgressView(operations: operations, productID: game.id).showsPreparation
+              && GameOperationProgressView(operations: operations, productID: game.id).preparationCancelTitle == "Cancel",
+              "XO-022: Matching detail retains direct preparation and cancellation ownership before an operation exists")
         NativeUIChecks.checkOperationFeedback(operations: operations, installed: installed,
             game: game, expectedStatus: "Preparing installation", cancelTitle: "Cancel", check: check)
         await operations.install(game)
@@ -671,6 +714,10 @@ enum GameOperationChecks {
         check(operations.isBusy && !operations.canQuit && installed.mutationActive
               && !operations.canStartMutation && !operations.canSignIn,
               "S5 one mutation reserves registration, service restart and normal Quit")
+        checkUnrelatedDetail(operations, owner: game.id, stage: "active download")
+        check(GameOperationProgressView(operations: operations, productID: game.id).presentedOperation?.productID == game.id
+              && GameOperationProgressView(operations: operations, productID: game.id).installCancelTitle != nil,
+              "XO-022: Matching active detail retains real progress and acknowledged cancellation")
         NativeUIChecks.checkOperationFeedback(operations: operations, installed: installed,
             game: game, expectedStatus: operations.progress?.phase.title ?? "Preparing download",
             cancelTitle: "Cancel installation", check: check)
@@ -728,6 +775,12 @@ enum GameOperationChecks {
               && imported.folder == consent.destination.path && imported.launcher == launcher.path
               && operations.error == nil && installed.launchableIDs.contains(imported.id),
               "S5 status zero ignores extra result fields and registers only from config validation and durable save")
+        checkUnrelatedDetail(operations, owner: game.id, stage: "completed download")
+        check(operations.feedbackProductID == game.id
+              && GameOperationProgressView(operations: operations, productID: game.id).operationNotice == operations.notice
+              && GameOperationProgressView(operations: operations).operationNotice == operations.notice
+              && operations.notice != nil,
+              "XO-022: Terminal installation notice retains its owner after the active operation is cleared")
         let reloaded = try await store.load()
         check(reloaded == installed.games, "S5 validated installation survives a registry reload")
         check(installed.runningGameID == nil && !installed.launchStarted,
@@ -883,6 +936,10 @@ enum GameOperationChecks {
         await recovered.restore()
         check(recovered.recoveryRequired && recovered.operation?.id == saved?.id && !recovered.canStartMutation,
               "S5 reopening a pending operation does not replay scripts or silently permit another mutation")
+        checkUnrelatedDetail(recovered, owner: other.id, stage: "restored recovery")
+        check(recovered.feedbackProductID == other.id
+              && GameOperationProgressView(operations: recovered, productID: other.id).presentedOperation?.id == saved?.id,
+              "XO-022: Valid journal recovery restores its exact product ownership without replay")
         let recoveredFolder = try paths.destination(title: other.title, productID: other.id)
         try privateFile(recoveredFolder.appendingPathComponent("MicrosoftGame.config"),
             "<Game><Identity Name=\"Fixture.Second\" Version=\"1.2.3.4\"/><StoreId>\(other.id)</StoreId></Game>")
@@ -952,6 +1009,23 @@ enum GameOperationChecks {
                   && recovered.setupResult == nil && !recovered.setupBusy,
                   "B8 setup layout itself never runs a check, repair, sign-in or window presentation")
         }
+        installed.releaseMutation()
+        try privateFile(paths.journal, "Neutral invalid journal, no recoverable product identity.")
+        let unknownRecovery = GameOperationsController(installed: installed, paths: paths)
+        await unknownRecovery.restore()
+        for scope in [Optional<String>.none, game.id, other.id] {
+            let feedback = GameOperationProgressView(operations: unknownRecovery, productID: scope)
+            check(unknownRecovery.recoveryRequired && unknownRecovery.feedbackProductID == nil
+                  && unknownRecovery.operation == nil && !unknownRecovery.canStartMutation
+                  && feedback.operationError == GameScriptError.storage.localizedDescription
+                  && !feedback.showsGameSignIn && !feedback.showsLog,
+                  "XO-022: Unbound corrupt-journal storage failure remains visible globally and on either detail without invented ownership")
+        }
+        let privateFailure = GameOperationProgressView(operations: unknownRecovery, privacyRestricted: true,
+                                                       productID: game.id)
+        check(privateFailure.operationError == "The game operation needs attention. Sign in to review its details."
+              && privateFailure.operationTitle == nil && !privateFailure.showsLog,
+              "XO-022: Unknown/global recovery retains welcome privacy redaction")
         installed.releaseMutation()
     }
 }

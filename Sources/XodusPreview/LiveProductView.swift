@@ -53,7 +53,7 @@ struct LiveProductView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header
                     VStack(alignment: .leading, spacing: 28) {
-                        GameOperationProgressView(operations: operations)
+                        GameOperationProgressView(operations: operations, productID: product.id)
                         evidence
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
                             HStack {

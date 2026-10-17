@@ -81,6 +81,19 @@ or hero Install action: preparation, progress, cancellation, and exact bounded
 package/account/storage failures. It does not silently hand off to another tab
 or treat an unsupported package as a successful install.
 
+**XO-022 title-scoped operation feedback:** Game detail shows preparation,
+active progress, recovery, terminal errors/notices and their log/sign-in/cancel
+controls only for the matching product when ownership is known. Navigating to
+another title does not clear the original failure: returning to its detail or
+using Library, Discover or Downloads retains the existing global feedback.
+Ownership follows the accepted preparation, operation record and restored
+journal, not error wording or the selected screen. A new accepted action resets
+the previous feedback together rather than attaching its old log or account
+failure to a different game. Unbound storage/recovery failures remain visible
+without inventing a title owner; Welcome still redacts private details and
+retains generic operation/cancellation status. This corrects cross-title
+presentation, not package authorization or a game's separate launch/SDK failure.
+
 PC-library presence restoration commits its saved-sign-in/approval/retained-item
 flags only after all broker checks succeed. A transient failure says saved
 sign-in is unavailable, not absent; Try again, Refresh Library and a later
