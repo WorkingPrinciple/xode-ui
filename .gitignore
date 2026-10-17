@@ -1,0 +1,8 @@
+.build/
+.swiftpm/
+.DS_Store
+*.xcuserstate
+*.tar
+*.tar.gz
+dist/
+integration-state/

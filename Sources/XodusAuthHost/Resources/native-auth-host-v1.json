@@ -1,0 +1,30 @@
+{
+  "qualification": "Synthetic issuer stand-ins only; not credentials, provider grammar, live authentication, or passkey capability evidence.",
+  "commands": [
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 1, "message": {"kind": "open", "remainingMillis": 599000, "url": "https://login.live.com/ppsecure/InlineLogin.srf?id=80604&scid=3&mkt=en-US&Platform=Windows10&clientid=000000004424da1f&hosted=1", "headers": {"cxh-capabilities": "{\"PrivatePropertyBag\":1,\"PasswordlessConnect\":1,\"PreferAssociate\":1,\"ChromelessUI\":0}", "cxh-correlationid": "00000000-0000-0000-0000-000000000000", "cxh-msabinaryversion": "55", "cxh-identityclientbinaryversion": "3", "cxh-osversioninfo": "{\"platformId\":2,\"majorVersion\":10,\"minorVersion\":0,\"buildNumber\":26100}", "cxh-platform": "CloudExperienceHost.Platform.DESKTOP", "cxh-protocol": "TokenBroker", "cxh-source": "TokenBroker", "hostapp": "CloudExperienceHost"}, "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; MSAppHost/3.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.26100"}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 2, "message": {"kind": "navigate", "url": "https://login.live.com/fixture-continuation"}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 3, "message": {"kind": "close", "disposition": "completed"}}
+  ],
+  "results": [
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 1, "replyTo": 1, "message": {"kind": "ready"}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 2, "replyTo": 1, "message": {"kind": "da", "property": {"sDAToken": "fixture-opaque-issuer-ticket", "sDASessionKey": "fixture-not-a-secret", "sDAStartTime": "2026-01-01T00:00:00Z", "sDAExpires": "2099-01-01T00:00:00Z", "sSTSInlineFlowToken": "fixture-inline", "sSigninName": "fixture@example.invalid", "K": "fixture-identity"}}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 3, "replyTo": 2, "message": {"kind": "ready"}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 4, "replyTo": 3, "message": {"kind": "closed", "disposition": "completed"}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 1, "replyTo": 1, "message": {"kind": "cancelled"}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 1, "replyTo": 1, "message": {"kind": "failed", "reason": "popupUnsupported"}}
+  ],
+  "invalidResults": [
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 1, "replyTo": 1, "message": {"kind": "ready"}, "providerPayload": "fixture-forbidden"},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 1, "replyTo": 1, "message": {"kind": "failed", "reason": "unknownReason"}},
+    {"version": 1, "flowID": "00000000-0000-0000-0000-000000000000", "sessionID": 1, "sequence": 1, "replyTo": 1, "message": {"kind": "da", "property": {"sDAToken": "fixture"}}}
+  ],
+  "invalidState": [
+    {"case": "wrongVersion", "mutation": {"version": 2}},
+    {"case": "wrongFlow", "mutation": {"flowID": "00000000-0000-0000-0000-000000000001"}},
+    {"case": "wrongSession", "mutation": {"sessionID": 2}},
+    {"case": "duplicateSequence", "mutation": {"sequence": 1}},
+    {"case": "wrongCorrelation", "mutation": {"replyTo": 2}},
+    {"case": "DAWithoutReady", "mutation": {"message": {"kind": "da"}}},
+    {"case": "lateDAAfterTerminal", "mutation": {"message": {"kind": "da"}}}
+  ]
+}

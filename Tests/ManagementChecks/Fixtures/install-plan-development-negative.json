@@ -1,0 +1,4783 @@
+[
+  {
+    "name": "planTuple0code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-0",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "Install planning requires a current saved launcher account.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple0message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-0",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple0retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-0",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "Install planning requires a current saved launcher account.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple0Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-0",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "Install planning requires a current saved launcher account.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "unavailable",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple1code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-1",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The launcher account changed during install planning. Select the edition again.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple1message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-1",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple1retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-1",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "The launcher account changed during install planning. Select the edition again.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple1Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-1",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "The launcher account changed during install planning. Select the edition again.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "profileChanged",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple2code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-2",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The package metadata provider rejected this account. No license was acquired.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "rejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple2message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-2",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "rejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple2retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-2",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "message": "The package metadata provider rejected this account. No license was acquired.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "rejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple2Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-2",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "message": "The package metadata provider rejected this account. No license was acquired.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "rejected",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple3code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-3",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The selected edition does not resolve to exactly one PC package.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "ambiguous"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple3message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-3",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_AMBIGUOUS",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "ambiguous"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple3retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-3",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_AMBIGUOUS",
+        "message": "The selected edition does not resolve to exactly one PC package.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "ambiguous"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple3Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-3",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_AMBIGUOUS",
+        "message": "The selected edition does not resolve to exactly one PC package.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "ambiguous",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple4code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-4",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The selected edition has no available matching PC base package.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "package",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple4message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-4",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "package",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple4retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-4",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "message": "The selected edition has no available matching PC base package.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "package",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple4Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-4",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "message": "The selected edition has no available matching PC base package.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "package",
+          "reason": "unavailable",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple5code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-5",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "Package architecture, language and dependency applicability are not established by the available metadata.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "applicabilityUnproven"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple5message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-5",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "applicabilityUnproven"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple5retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-5",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "Package architecture, language and dependency applicability are not established by the available metadata.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "applicabilityUnproven"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple5Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-5",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "Package architecture, language and dependency applicability are not established by the available metadata.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "applicabilityUnproven",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple6code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-6",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The selected edition has no package declared for the requested architecture and language.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple6message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-6",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple6retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-6",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "The selected edition has no package declared for the requested architecture and language.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple6Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-6",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "The selected edition has no package declared for the requested architecture and language.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "unsupported",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple7code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-7",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "A supported authenticated pre-key package format has not been established.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "format",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple7message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-7",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "format",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple7retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-7",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "A supported authenticated pre-key package format has not been established.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "format",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple7Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-7",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "A supported authenticated pre-key package format has not been established.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "format",
+          "reason": "unsupported",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple8code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-8",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The provider digest algorithm, encoding and coverage are not established.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "integrity",
+          "reason": "unproven"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple8message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-8",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "integrity",
+          "reason": "unproven"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple8retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-8",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "message": "The provider digest algorithm, encoding and coverage are not established.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "integrity",
+          "reason": "unproven"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple8Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-8",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "message": "The provider digest algorithm, encoding and coverage are not established.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "integrity",
+          "reason": "unproven",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple9code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-9",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The pre-key expanded layout, padded file sizes and scratch bound are incomplete.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "layout",
+          "reason": "incomplete"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple9message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-9",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "layout",
+          "reason": "incomplete"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple9retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-9",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "message": "The pre-key expanded layout, padded file sizes and scratch bound are incomplete.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "layout",
+          "reason": "incomplete"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple9Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-9",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "message": "The pre-key expanded layout, padded file sizes and scratch bound are incomplete.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "layout",
+          "reason": "incomplete",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple10code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-10",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "Further planning would require a separately authorized license or key operation.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "license",
+          "reason": "acquisitionRequired"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple10message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-10",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_UNKNOWN",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "license",
+          "reason": "acquisitionRequired"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple10retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-10",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_UNKNOWN",
+        "message": "Further planning would require a separately authorized license or key operation.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "license",
+          "reason": "acquisitionRequired"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple10Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-10",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_UNKNOWN",
+        "message": "Further planning would require a separately authorized license or key operation.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "license",
+          "reason": "acquisitionRequired",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple11code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-11",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "Install planning currently supports only the existing private managed state root.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple11message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-11",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple11retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-11",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "Install planning currently supports only the existing private managed state root.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "unsupported"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple11Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-11",
+      "ok": false,
+      "error": {
+        "code": "UNSUPPORTED_CONFIGURATION",
+        "message": "Install planning currently supports only the existing private managed state root.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "unsupported",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple12code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-12",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The managed destination changed during install planning. No files were created.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "changed"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple12message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-12",
+      "ok": false,
+      "error": {
+        "code": "PLAN_CHANGED",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "changed"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple12retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-12",
+      "ok": false,
+      "error": {
+        "code": "PLAN_CHANGED",
+        "message": "The managed destination changed during install planning. No files were created.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "changed"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple12Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-12",
+      "ok": false,
+      "error": {
+        "code": "PLAN_CHANGED",
+        "message": "The managed destination changed during install planning. No files were created.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "destination",
+          "reason": "changed",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple13code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-13",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The selected volume has insufficient space for the established peak allocation.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "space",
+          "reason": "insufficient"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple13message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-13",
+      "ok": false,
+      "error": {
+        "code": "INSUFFICIENT_SPACE",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "space",
+          "reason": "insufficient"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple13retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-13",
+      "ok": false,
+      "error": {
+        "code": "INSUFFICIENT_SPACE",
+        "message": "The selected volume has insufficient space for the established peak allocation.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "space",
+          "reason": "insufficient"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple13Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-13",
+      "ok": false,
+      "error": {
+        "code": "INSUFFICIENT_SPACE",
+        "message": "The selected volume has insufficient space for the established peak allocation.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "space",
+          "reason": "insufficient",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple14code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-14",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The bounded package metadata read did not complete. No license or payload was requested.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple14message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-14",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple14retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-14",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "message": "The bounded package metadata read did not complete. No license or payload was requested.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple14Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-14",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "message": "The bounded package metadata read did not complete. No license or payload was requested.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "unavailable",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple15code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-15",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "Required package metadata is malformed or inconsistent.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "invalidResponse"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple15message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-15",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "invalidResponse"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple15retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-15",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "message": "Required package metadata is malformed or inconsistent.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "invalidResponse"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple15Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-15",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "message": "Required package metadata is malformed or inconsistent.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "provider",
+          "reason": "invalidResponse",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple16code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-16",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "The in-memory install planning observation expired. Resolve the selected edition again.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "expired"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple16message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-16",
+      "ok": false,
+      "error": {
+        "code": "PLAN_EXPIRED",
+        "message": "PRIVATE_SENTINEL",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "expired"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple16retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-16",
+      "ok": false,
+      "error": {
+        "code": "PLAN_EXPIRED",
+        "message": "The in-memory install planning observation expired. Resolve the selected edition again.",
+        "retryable": true,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "expired"
+        }
+      }
+    }
+  },
+  {
+    "name": "planTuple16Extra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-16",
+      "ok": false,
+      "error": {
+        "code": "PLAN_EXPIRED",
+        "message": "The in-memory install planning observation expired. Resolve the selected edition again.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "selection",
+          "reason": "expired",
+          "planID": "unready-plan"
+        }
+      }
+    }
+  },
+  {
+    "name": "planDetailsInvalidcategory",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-0",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "Install planning requires a current saved launcher account.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planDetailsInvalidstage",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-0",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "Install planning requires a current saved launcher account.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "unknown",
+          "reason": "unavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "planDetailsInvalidreason",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-install-plan-error-0",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "message": "Install planning requires a current saved launcher account.",
+        "retryable": false,
+        "details": {
+          "category": "installPlanFailure",
+          "stage": "credentials",
+          "reason": "unknown"
+        }
+      }
+    }
+  },
+  {
+    "name": "planIncompleteCannotSucceed",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-plan-incomplete",
+      "ok": true,
+      "data": {
+        "readiness": "readyForConfirmation",
+        "planID": "unready-plan",
+        "downloadBytes": 0,
+        "runtimeFingerprint": null,
+        "launchable": false
+      }
+    }
+  },
+  {
+    "name": "installedRuntimeWrongType",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-result-19",
+      "ok": true,
+      "data": {
+        "registryVersion": {
+          "major": 1,
+          "minor": 0
+        },
+        "scope": "managementRegistryOnly",
+        "completeness": "complete",
+        "installations": [
+          {
+            "installationID": "fixture-installation",
+            "revision": 1,
+            "productID": "fixture-product",
+            "editionID": "fixture-edition",
+            "packageID": "fixture-package",
+            "packageVersion": "fixture-version",
+            "packageDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "runtimeFingerprint": 42,
+            "managedRoot": "/fixture/versions/fixture-version",
+            "savePolicy": "preserve",
+            "health": "verified"
+          }
+        ],
+        "watermark": 2
+      }
+    }
+  },
+  {
+    "name": "installedHealthUnknown",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-result-19",
+      "ok": true,
+      "data": {
+        "registryVersion": {
+          "major": 1,
+          "minor": 0
+        },
+        "scope": "managementRegistryOnly",
+        "completeness": "complete",
+        "installations": [
+          {
+            "installationID": "fixture-installation",
+            "revision": 1,
+            "productID": "fixture-product",
+            "editionID": "fixture-edition",
+            "packageID": "fixture-package",
+            "packageVersion": "fixture-version",
+            "packageDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "runtimeFingerprint": "fixture-runtime",
+            "managedRoot": "/fixture/versions/fixture-version",
+            "savePolicy": "preserve",
+            "health": "launchable"
+          }
+        ],
+        "watermark": 2
+      }
+    }
+  },
+  {
+    "name": "installedRuntimeMissing",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-result-19",
+      "ok": true,
+      "data": {
+        "registryVersion": {
+          "major": 1,
+          "minor": 0
+        },
+        "scope": "managementRegistryOnly",
+        "completeness": "complete",
+        "installations": [
+          {
+            "installationID": "fixture-installation",
+            "revision": 1,
+            "productID": "fixture-product",
+            "editionID": "fixture-edition",
+            "packageID": "fixture-package",
+            "packageVersion": "fixture-version",
+            "packageDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "managedRoot": "/fixture/versions/fixture-version",
+            "savePolicy": "preserve",
+            "health": "verified"
+          }
+        ],
+        "watermark": 2
+      }
+    }
+  },
+  {
+    "name": "verifyNotUUID",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-6",
+      "command": "auth.verify",
+      "params": {
+        "contentID": "FIXTURE00001"
+      }
+    }
+  },
+  {
+    "name": "verifyNoncanonical",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-6",
+      "command": "auth.verify",
+      "params": {
+        "contentID": "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+      }
+    }
+  },
+  {
+    "name": "verifyNil",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-6",
+      "command": "auth.verify",
+      "params": {
+        "contentID": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  },
+  {
+    "name": "verifyExtra",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-6",
+      "command": "auth.verify",
+      "params": {
+        "contentID": "00000000-0000-0000-0000-000000000001",
+        "token": "PRIVATE_SENTINEL"
+      }
+    }
+  },
+  {
+    "name": "verifyFalse",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-invalid",
+      "ok": true,
+      "data": {
+        "verified": false
+      }
+    }
+  },
+  {
+    "name": "verifyExtraSuccess",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-invalid",
+      "ok": true,
+      "data": {
+        "verified": true,
+        "token": "PRIVATE_SENTINEL"
+      }
+    }
+  },
+  {
+    "name": "wrongMajor",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 2,
+        "minor": 0
+      },
+      "requestID": "fixture-1",
+      "command": "hello",
+      "params": {
+        "client": "fixture-client",
+        "clientVersion": "1.0"
+      }
+    }
+  },
+  {
+    "name": "wrongMinor",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 1
+      },
+      "requestID": "fixture-1",
+      "command": "hello",
+      "params": {
+        "client": "fixture-client",
+        "clientVersion": "1.0"
+      }
+    }
+  },
+  {
+    "name": "emptyID",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "",
+      "command": "hello",
+      "params": {
+        "client": "fixture-client",
+        "clientVersion": "1.0"
+      }
+    }
+  },
+  {
+    "name": "oversizedID",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "command": "hello",
+      "params": {
+        "client": "fixture-client",
+        "clientVersion": "1.0"
+      }
+    }
+  },
+  {
+    "name": "unknownCommand",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-1",
+      "command": "unsafe.execute",
+      "params": {
+        "client": "fixture-client",
+        "clientVersion": "1.0"
+      }
+    }
+  },
+  {
+    "name": "credentialField",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-1",
+      "command": "hello",
+      "params": {
+        "client": "fixture-client",
+        "clientVersion": "1.0"
+      },
+      "credential": "fixture-not-a-token"
+    }
+  },
+  {
+    "name": "unknownParams",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-1",
+      "command": "hello",
+      "params": {
+        "client": "fixture",
+        "clientVersion": "1",
+        "token": "fixture"
+      }
+    }
+  },
+  {
+    "name": "negativeSequence",
+    "frame": {
+      "kind": "event",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "sessionID": "fixture-session",
+      "sequence": -1,
+      "requestID": "fixture-enqueue",
+      "jobID": "fixture-job",
+      "revision": 2,
+      "event": "job.changed",
+      "data": {
+        "jobID": "fixture-job",
+        "revision": 2,
+        "kind": "catalogRefresh",
+        "state": "cancelled",
+        "requestID": "fixture-enqueue",
+        "createdAt": "2026-10-03T12:00:00Z",
+        "updatedAt": "2026-10-03T12:00:00Z",
+        "product": {
+          "productID": "FIXTURE00001",
+          "market": "US",
+          "language": "en-US",
+          "refresh": "network"
+        },
+        "attempt": 1,
+        "error": {
+          "code": "CANCELLED",
+          "message": "Refresh cancelled.",
+          "retryable": false
+        }
+      }
+    }
+  },
+  {
+    "name": "bothSuccessAndFailure",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-result-0",
+      "ok": true,
+      "data": {
+        "verified": true
+      },
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "fixture",
+        "retryable": false
+      }
+    }
+  },
+  {
+    "name": "secretFieldInFlow",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-auth-failed",
+      "ok": true,
+      "data": {
+        "state": "signedOut",
+        "credentialStore": "macOSKeychain",
+        "audience": null,
+        "expiresAt": null,
+        "entitlementAuthorized": false,
+        "flow": {
+          "flowID": "fixture-flow",
+          "state": "failed",
+          "error": {
+            "code": "AUTH_INVALID",
+            "message": "Sanitized fixture consent outcome.",
+            "retryable": false
+          },
+          "token": "fixture-not-a-token"
+        }
+      }
+    }
+  },
+  {
+    "name": "discoveryPageLimit",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-10",
+      "command": "catalog.discover",
+      "params": {
+        "market": "US",
+        "language": "en-US",
+        "limit": 17,
+        "cursor": null
+      }
+    }
+  },
+  {
+    "name": "queryPageLimit",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-11",
+      "command": "catalog.query",
+      "params": {
+        "query": "Fixture Harbor",
+        "market": "US",
+        "language": "en-US",
+        "limit": 17,
+        "cursor": null
+      }
+    }
+  },
+  {
+    "name": "queryEmpty",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-11",
+      "command": "catalog.query",
+      "params": {
+        "query": "",
+        "market": "US",
+        "language": "en-US",
+        "limit": 8,
+        "cursor": null
+      }
+    }
+  },
+  {
+    "name": "queryUntrustedCursor",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-11",
+      "command": "catalog.query",
+      "params": {
+        "query": "Fixture Harbor",
+        "market": "US",
+        "language": "en-US",
+        "limit": 8,
+        "cursor": "https://attacker.invalid/"
+      }
+    }
+  },
+  {
+    "name": "consoleOnlyQueryProduct",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-result-11",
+      "ok": true,
+      "data": {
+        "corpus": "publicMicrosoftStoreSearch",
+        "completeness": "partial",
+        "source": "MicrosoftStoreEdge:v9.0/searchResults",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "query": "Fixture Harbor",
+        "products": [
+          {
+            "productID": "FIXTURE00001",
+            "title": "Fixture Harbor",
+            "market": "US",
+            "language": "en-US",
+            "source": "fixture",
+            "checkedAt": "2026-10-03T12:00:00Z",
+            "freshness": "live",
+            "editions": [
+              {
+                "productID": "FIXTURE00001",
+                "editionID": "fixture-edition",
+                "entitlement": {
+                  "kind": "unknown",
+                  "source": "notQueried",
+                  "checkedAt": null
+                },
+                "installability": {
+                  "kind": "unknown",
+                  "reason": "Package authorization not established."
+                },
+                "compatibility": {
+                  "kind": "unknown",
+                  "source": "notCertified",
+                  "checkedAt": null
+                },
+                "installation": {
+                  "kind": "notInstalled"
+                },
+                "inventory": {
+                  "completeness": "unknown",
+                  "checkedAt": null,
+                  "lastCompleteAt": null,
+                  "source": "notQueried",
+                  "reason": "No complete entitlement source."
+                }
+              }
+            ],
+            "pcCatalogCandidate": false,
+            "artwork": [],
+            "artworkStatus": "notQueried",
+            "resolvedLanguage": "en"
+          }
+        ],
+        "failures": [
+          {
+            "productID": "FIXTURE00002",
+            "error": {
+              "code": "NETWORK_UNAVAILABLE",
+              "message": "Sanitized fixture lookup failure.",
+              "retryable": true
+            }
+          }
+        ],
+        "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2266623666313762313664626463306135653861626361333438366234323261633963363461303332383634636530653762336561613465366635333963663334222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f70616765732f736561726368526573756c74733f6d61726b65743d5553266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466978747572652b486172626f72266d65646961547970653d67616d6573222c226f6666736574223a382c227265766973696f6e223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161227d"
+      }
+    }
+  },
+  {
+    "name": "relativeInspectionDirectory",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-22",
+      "command": "installed.inspect",
+      "params": {
+        "directory": "relative"
+      }
+    }
+  },
+  {
+    "name": "unsafeInspectionregistered",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-unsafe-inspection",
+      "ok": true,
+      "data": {
+        "scope": "userSelectedDirectory",
+        "completeness": "partial",
+        "freshness": "live",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "directory": "/fixture/selected",
+        "marker": {
+          "relativePath": ".xodus-streaming.msixvc",
+          "bytes": 4096,
+          "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
+          "format": "msft-xvd",
+          "formatVersion": 2,
+          "xvdType": 0,
+          "contentTypeRaw": 1,
+          "volumeFlagsRaw": 0,
+          "contentID": "00000000-0000-0000-0000-000000000001",
+          "headerProductGUID": "00000000-0000-0000-0000-000000000002",
+          "headerPDUID": "00000000-0000-0000-0000-000000000003",
+          "observedPackageVersion": "1.2.3.4"
+        },
+        "assessment": {
+          "kind": "externalMarkerDetected",
+          "registered": true,
+          "retailIdentity": "unknown",
+          "fileVerification": "notPerformed",
+          "entitlement": "unknown",
+          "compatibility": "unknown",
+          "launchable": false,
+          "reason": "Marker metadata is not verified files, retail identity, authorization or a certified runtime."
+        }
+      }
+    }
+  },
+  {
+    "name": "unsafeInspectionfileVerification",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-unsafe-inspection",
+      "ok": true,
+      "data": {
+        "scope": "userSelectedDirectory",
+        "completeness": "partial",
+        "freshness": "live",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "directory": "/fixture/selected",
+        "marker": {
+          "relativePath": ".xodus-streaming.msixvc",
+          "bytes": 4096,
+          "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
+          "format": "msft-xvd",
+          "formatVersion": 2,
+          "xvdType": 0,
+          "contentTypeRaw": 1,
+          "volumeFlagsRaw": 0,
+          "contentID": "00000000-0000-0000-0000-000000000001",
+          "headerProductGUID": "00000000-0000-0000-0000-000000000002",
+          "headerPDUID": "00000000-0000-0000-0000-000000000003",
+          "observedPackageVersion": "1.2.3.4"
+        },
+        "assessment": {
+          "kind": "externalMarkerDetected",
+          "registered": false,
+          "retailIdentity": "unknown",
+          "fileVerification": "verified",
+          "entitlement": "unknown",
+          "compatibility": "unknown",
+          "launchable": false,
+          "reason": "Marker metadata is not verified files, retail identity, authorization or a certified runtime."
+        }
+      }
+    }
+  },
+  {
+    "name": "unsafeInspectionlaunchable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-unsafe-inspection",
+      "ok": true,
+      "data": {
+        "scope": "userSelectedDirectory",
+        "completeness": "partial",
+        "freshness": "live",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "directory": "/fixture/selected",
+        "marker": {
+          "relativePath": ".xodus-streaming.msixvc",
+          "bytes": 4096,
+          "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
+          "format": "msft-xvd",
+          "formatVersion": 2,
+          "xvdType": 0,
+          "contentTypeRaw": 1,
+          "volumeFlagsRaw": 0,
+          "contentID": "00000000-0000-0000-0000-000000000001",
+          "headerProductGUID": "00000000-0000-0000-0000-000000000002",
+          "headerPDUID": "00000000-0000-0000-0000-000000000003",
+          "observedPackageVersion": "1.2.3.4"
+        },
+        "assessment": {
+          "kind": "externalMarkerDetected",
+          "registered": false,
+          "retailIdentity": "unknown",
+          "fileVerification": "notPerformed",
+          "entitlement": "unknown",
+          "compatibility": "unknown",
+          "launchable": true,
+          "reason": "Marker metadata is not verified files, retail identity, authorization or a certified runtime."
+        }
+      }
+    }
+  },
+  {
+    "name": "inspectionHeaderNotRetailProductID",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-retail-id",
+      "ok": true,
+      "data": {
+        "scope": "userSelectedDirectory",
+        "completeness": "partial",
+        "freshness": "live",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "directory": "/fixture/selected",
+        "marker": {
+          "relativePath": ".xodus-streaming.msixvc",
+          "bytes": 4096,
+          "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
+          "format": "msft-xvd",
+          "formatVersion": 2,
+          "xvdType": 0,
+          "contentTypeRaw": 1,
+          "volumeFlagsRaw": 0,
+          "contentID": "00000000-0000-0000-0000-000000000001",
+          "headerProductGUID": "00000000-0000-0000-0000-000000000002",
+          "headerPDUID": "00000000-0000-0000-0000-000000000003",
+          "observedPackageVersion": "1.2.3.4",
+          "productID": "FIXTURE00001"
+        },
+        "assessment": {
+          "kind": "externalMarkerDetected",
+          "registered": false,
+          "retailIdentity": "unknown",
+          "fileVerification": "notPerformed",
+          "entitlement": "unknown",
+          "compatibility": "unknown",
+          "launchable": false,
+          "reason": "Marker metadata is not verified files, retail identity, authorization or a certified runtime."
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-credentialUnavailable-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "credentialUnavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-credentialUnavailable-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Authenticated read failed: credentialUnavailable.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "credentialUnavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-credentialUnavailable-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "Authenticated read failed: credentialUnavailable.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "credentialUnavailable",
+          "token": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-profileChanged-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-profileChanged-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Authenticated read failed: profileChanged.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-profileChanged-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "Authenticated read failed: profileChanged.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "profileChanged",
+          "token": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-authExchangeFailed-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": true,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "authExchangeFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-authExchangeFailed-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": true,
+        "message": "Authenticated read failed: authExchangeFailed.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "authExchangeFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-authExchangeFailed-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": true,
+        "message": "Authenticated read failed: authExchangeFailed.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "authExchangeFailed",
+          "token": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-authRejected-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "authRejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-authRejected-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Authenticated read failed: authRejected.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "authRejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-authRejected-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "retryable": false,
+        "message": "Authenticated read failed: authRejected.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "authRejected",
+          "token": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-transportFailed-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "retryable": true,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "transportFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-transportFailed-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": true,
+        "message": "Authenticated read failed: transportFailed.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "transportFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-transportFailed-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "retryable": true,
+        "message": "Authenticated read failed: transportFailed.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "transportFailed",
+          "token": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-responseInvalid-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "responseInvalid"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-responseInvalid-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Authenticated read failed: responseInvalid.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "responseInvalid"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-responseInvalid-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "retryable": false,
+        "message": "Authenticated read failed: responseInvalid.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "responseInvalid",
+          "token": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-packageUnavailable-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "packageUnavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-packageUnavailable-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Authenticated read failed: packageUnavailable.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "packageUnavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "verify-packageUnavailable-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-verify-error",
+      "ok": false,
+      "error": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "retryable": false,
+        "message": "Authenticated read failed: packageUnavailable.",
+        "details": {
+          "category": "authenticatedReadFailure",
+          "stage": "packageUnavailable",
+          "token": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-credentialUnavailable-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "credentialUnavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-credentialUnavailable-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Recent library read failed: credentialUnavailable.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "credentialUnavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-credentialUnavailable-retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": true,
+        "message": "Recent library read failed: credentialUnavailable.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "credentialUnavailable"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-credentialUnavailable-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "Recent library read failed: credentialUnavailable.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "credentialUnavailable",
+          "xuid": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-profileChanged-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-profileChanged-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Recent library read failed: profileChanged.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-profileChanged-retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": true,
+        "message": "Recent library read failed: profileChanged.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "profileChanged"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-profileChanged-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "Recent library read failed: profileChanged.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "profileChanged",
+          "xuid": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authExchangeFailed-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": true,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authExchangeFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authExchangeFailed-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": true,
+        "message": "Recent library read failed: authExchangeFailed.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authExchangeFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authExchangeFailed-retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": false,
+        "message": "Recent library read failed: authExchangeFailed.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authExchangeFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authExchangeFailed-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "AUTH_INVALID",
+        "retryable": true,
+        "message": "Recent library read failed: authExchangeFailed.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authExchangeFailed",
+          "xuid": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authRejected-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authRejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authRejected-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Recent library read failed: authRejected.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authRejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authRejected-retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "retryable": true,
+        "message": "Recent library read failed: authRejected.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authRejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-authRejected-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "ACCESS_REVOKED",
+        "retryable": false,
+        "message": "Recent library read failed: authRejected.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "authRejected",
+          "xuid": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-transportFailed-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "retryable": true,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "transportFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-transportFailed-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": true,
+        "message": "Recent library read failed: transportFailed.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "transportFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-transportFailed-retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "retryable": false,
+        "message": "Recent library read failed: transportFailed.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "transportFailed"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-transportFailed-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "NETWORK_UNAVAILABLE",
+        "retryable": true,
+        "message": "Recent library read failed: transportFailed.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "transportFailed",
+          "xuid": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-responseInvalid-message",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "retryable": false,
+        "message": "PRIVATE_SENTINEL",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "responseInvalid"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-responseInvalid-code",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "retryable": false,
+        "message": "Recent library read failed: responseInvalid.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "responseInvalid"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-responseInvalid-retryable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "retryable": true,
+        "message": "Recent library read failed: responseInvalid.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "responseInvalid"
+        }
+      }
+    }
+  },
+  {
+    "name": "recent-responseInvalid-details",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-error",
+      "ok": false,
+      "error": {
+        "code": "INTEGRITY_FAILED",
+        "retryable": false,
+        "message": "Recent library read failed: responseInvalid.",
+        "details": {
+          "category": "recentLibraryFailure",
+          "stage": "responseInvalid",
+          "xuid": "PRIVATE_SENTINEL"
+        }
+      }
+    }
+  },
+  {
+    "name": "recentZeroLimit",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-7",
+      "command": "library.recent",
+      "params": {
+        "limit": 0
+      }
+    }
+  },
+  {
+    "name": "recentOverLimit",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-7",
+      "command": "library.recent",
+      "params": {
+        "limit": 101
+      }
+    }
+  },
+  {
+    "name": "recentCursor",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-7",
+      "command": "library.recent",
+      "params": {
+        "limit": 100,
+        "cursor": "PRIVATE_SENTINEL"
+      }
+    }
+  },
+  {
+    "name": "recentUserID",
+    "frame": {
+      "kind": "request",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-7",
+      "command": "library.recent",
+      "params": {
+        "limit": 100,
+        "xuid": "PRIVATE_SENTINEL"
+      }
+    }
+  },
+  {
+    "name": "recentOwnership",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-invalid",
+      "ok": true,
+      "data": {
+        "scope": "owned",
+        "source": "XboxTitleHub:v2",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "completeness": "partial",
+        "nextCursor": null,
+        "titles": [
+          {
+            "titleID": "1",
+            "name": "Fixture Harbor",
+            "lastPlayedAt": "2026-10-03T12:00:00Z",
+            "devices": [
+              "PC",
+              "Win32"
+            ],
+            "platform": "pc",
+            "productID": null,
+            "artwork": [
+              {
+                "role": "tile",
+                "url": "https://store-images.s-microsoft.com/image/fixture-tile",
+                "width": null,
+                "height": null,
+                "source": "XboxTitleHub:v2"
+              }
+            ],
+            "artworkStatus": "available"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "recentComplete",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-invalid",
+      "ok": true,
+      "data": {
+        "scope": "recentlyPlayed",
+        "source": "XboxTitleHub:v2",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "completeness": "complete",
+        "nextCursor": null,
+        "titles": [
+          {
+            "titleID": "1",
+            "name": "Fixture Harbor",
+            "lastPlayedAt": "2026-10-03T12:00:00Z",
+            "devices": [
+              "PC",
+              "Win32"
+            ],
+            "platform": "pc",
+            "productID": null,
+            "artwork": [
+              {
+                "role": "tile",
+                "url": "https://store-images.s-microsoft.com/image/fixture-tile",
+                "width": null,
+                "height": null,
+                "source": "XboxTitleHub:v2"
+              }
+            ],
+            "artworkStatus": "available"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "recentCursorResult",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-invalid",
+      "ok": true,
+      "data": {
+        "scope": "recentlyPlayed",
+        "source": "XboxTitleHub:v2",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "completeness": "partial",
+        "nextCursor": "PRIVATE_SENTINEL",
+        "titles": [
+          {
+            "titleID": "1",
+            "name": "Fixture Harbor",
+            "lastPlayedAt": "2026-10-03T12:00:00Z",
+            "devices": [
+              "PC",
+              "Win32"
+            ],
+            "platform": "pc",
+            "productID": null,
+            "artwork": [
+              {
+                "role": "tile",
+                "url": "https://store-images.s-microsoft.com/image/fixture-tile",
+                "width": null,
+                "height": null,
+                "source": "XboxTitleHub:v2"
+              }
+            ],
+            "artworkStatus": "available"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "recentCached",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-invalid",
+      "ok": true,
+      "data": {
+        "scope": "recentlyPlayed",
+        "source": "XboxTitleHub:v2",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "cached",
+        "completeness": "partial",
+        "nextCursor": null,
+        "titles": [
+          {
+            "titleID": "1",
+            "name": "Fixture Harbor",
+            "lastPlayedAt": "2026-10-03T12:00:00Z",
+            "devices": [
+              "PC",
+              "Win32"
+            ],
+            "platform": "pc",
+            "productID": null,
+            "artwork": [
+              {
+                "role": "tile",
+                "url": "https://store-images.s-microsoft.com/image/fixture-tile",
+                "width": null,
+                "height": null,
+                "source": "XboxTitleHub:v2"
+              }
+            ],
+            "artworkStatus": "available"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "recentIdentity",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-invalid",
+      "ok": true,
+      "data": {
+        "scope": "recentlyPlayed",
+        "source": "XboxTitleHub:v2",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "completeness": "partial",
+        "nextCursor": null,
+        "titles": [
+          {
+            "titleID": "1",
+            "name": "Fixture Harbor",
+            "lastPlayedAt": "2026-10-03T12:00:00Z",
+            "devices": [
+              "PC",
+              "Win32"
+            ],
+            "platform": "pc",
+            "productID": null,
+            "artwork": [
+              {
+                "role": "tile",
+                "url": "https://store-images.s-microsoft.com/image/fixture-tile",
+                "width": null,
+                "height": null,
+                "source": "XboxTitleHub:v2"
+              }
+            ],
+            "artworkStatus": "available"
+          }
+        ],
+        "xuid": "PRIVATE_SENTINEL"
+      }
+    }
+  },
+  {
+    "name": "artUnsafeHost",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://attacker.invalid/image/fixture",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artHTTP",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "http://store-images.s-microsoft.com/image/fixture",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artQuery",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture?token=PRIVATE_SENTINEL",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artUserInfo",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://PRIVATE_SENTINEL@store-images.s-microsoft.com/image/fixture",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artPort",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com:443/image/fixture",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artZero",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": 0,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artTooWide",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": 8193,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artUnpairedDimensions",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": null,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artExtra",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0",
+              "token": "PRIVATE_SENTINEL"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artDuplicateRole",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artEmptyAvailable",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [],
+          "artworkStatus": "available"
+        }
+      }
+    }
+  },
+  {
+    "name": "artNonemptyAbsent",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "absent"
+        }
+      }
+    }
+  },
+  {
+    "name": "artNonemptyRejected",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-invalid",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "rejected"
+        }
+      }
+    }
+  },
+  {
+    "name": "artRequired-artwork",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-required",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artworkStatus": "notQueried"
+        }
+      }
+    }
+  },
+  {
+    "name": "artRequired-artworkStatus",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-art-required",
+      "ok": true,
+      "data": {
+        "product": {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": []
+        }
+      }
+    }
+  },
+  {
+    "name": "recentGuessedProduct",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-recent-mapped",
+      "ok": true,
+      "data": {
+        "scope": "recentlyPlayed",
+        "source": "XboxTitleHub:v2",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "completeness": "partial",
+        "nextCursor": null,
+        "titles": [
+          {
+            "titleID": "1",
+            "name": "Fixture Harbor",
+            "lastPlayedAt": "2026-10-03T12:00:00Z",
+            "devices": [
+              "PC",
+              "Win32"
+            ],
+            "platform": "pc",
+            "productID": "FIXTURE00001",
+            "artwork": [
+              {
+                "role": "tile",
+                "url": "https://store-images.s-microsoft.com/image/fixture-tile",
+                "width": null,
+                "height": null,
+                "source": "XboxTitleHub:v2"
+              }
+            ],
+            "artworkStatus": "available"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "reservedReadyPlanNotLiveSuccess",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-reserved-plan",
+      "ok": true,
+      "data": {
+        "readiness": "readyForConfirmation",
+        "planID": "fixture-reserved-not-enqueueable",
+        "planDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "expiresAt": "2026-10-03T12:10:00Z",
+        "productID": "FIXTURE00001",
+        "editionID": "fixture-edition",
+        "packageID": "fixture-package",
+        "contentID": "00000000-0000-0000-0000-000000000001",
+        "versionID": "fixture-version",
+        "packageVersion": "1.0.0.0",
+        "architecture": "x86_64",
+        "language": "en-US",
+        "market": "US",
+        "packageFormat": "msixvc",
+        "formatVersion": "fixture-unimplemented-format",
+        "integrity": {
+          "algorithm": "sha256",
+          "encoding": "hexLowercase",
+          "coverage": "completeBasePayload",
+          "source": "authenticatedProvider",
+          "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "downloadBytes": 4096,
+        "stagedVersionBytes": 8192,
+        "scratchBytes": 4096,
+        "peakAdditionalBytes": 16384,
+        "destinationBinding": "fixture-private-binding",
+        "licenseOperation": {
+          "operation": "contentLicenseIssuance",
+          "concurrencyMode": "Rude",
+          "needKey": true,
+          "keyOnly": true,
+          "requiresConfirmation": true
+        },
+        "licenseState": "notAcquired",
+        "compatibility": {
+          "kind": "unknown",
+          "source": "reservedFixtureOnly",
+          "checkedAt": null
+        },
+        "runtimeFingerprint": null,
+        "launchable": false
+      }
+    }
+  }
+]

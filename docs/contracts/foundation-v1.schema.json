@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:xodus:management:1.0",
+  "title": "Proposed Xodus launcher management protocol 1.0",
+  "description": "Contract artifact, not an implemented backend. JSON/JSONL stdin requests and stdout results/events; secrets use a separate credential channel.",
+  "oneOf": [
+    {"$ref": "#/$defs/request"},
+    {"$ref": "#/$defs/success"},
+    {"$ref": "#/$defs/failure"},
+    {"$ref": "#/$defs/event"}
+  ],
+  "$defs": {
+    "identifier": {"type": "string", "minLength": 1, "maxLength": 128},
+    "protocol": {
+      "type": "object",
+      "required": ["major", "minor"],
+      "properties": {"major": {"const": 1}, "minor": {"const": 0}},
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "required": ["kind", "protocol", "requestID", "command", "params"],
+      "properties": {
+        "kind": {"const": "request"},
+        "protocol": {"$ref": "#/$defs/protocol"},
+        "requestID": {"$ref": "#/$defs/identifier"},
+        "command": {
+          "enum": [
+            "hello", "auth.begin", "auth.cancel", "auth.status", "inventory.snapshot",
+            "catalog.search", "product.detail", "install.plan", "jobs.enqueue",
+            "jobs.pause", "jobs.resume", "jobs.cancel", "jobs.retry", "jobs.snapshot",
+            "events.replay", "installed.snapshot", "game.launch", "game.update",
+            "game.rollback", "game.remove", "diagnostics.export"
+          ]
+        },
+        "params": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "success": {
+      "type": "object",
+      "required": ["kind", "protocol", "requestID", "ok", "data"],
+      "properties": {
+        "kind": {"const": "result"},
+        "protocol": {"$ref": "#/$defs/protocol"},
+        "requestID": {"$ref": "#/$defs/identifier"},
+        "ok": {"const": true},
+        "data": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "failure": {
+      "type": "object",
+      "required": ["kind", "protocol", "requestID", "ok", "error"],
+      "properties": {
+        "kind": {"const": "result"},
+        "protocol": {"$ref": "#/$defs/protocol"},
+        "requestID": {"$ref": "#/$defs/identifier"},
+        "ok": {"const": false},
+        "error": {"$ref": "#/$defs/error"}
+      },
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {
+          "enum": [
+            "PROTOCOL_MISMATCH", "CAPABILITY_MISSING", "AUTH_CANCELLED", "AUTH_EXPIRED",
+            "AUTH_INVALID", "INVENTORY_PARTIAL", "ACCESS_UNKNOWN", "ACCESS_REVOKED",
+            "PACKAGE_AMBIGUOUS", "PACKAGE_UNAVAILABLE", "PLAN_EXPIRED", "PLAN_CHANGED",
+            "INSUFFICIENT_SPACE", "NETWORK_UNAVAILABLE", "INTEGRITY_FAILED",
+            "RUNTIME_MISMATCH", "UNSUPPORTED_CONFIGURATION", "REVISION_CONFLICT",
+            "EVENTS_EXPIRED", "CANCELLED", "REGISTRY_RECOVERY_REQUIRED", "LAUNCH_FAILED",
+            "INTERNAL_ERROR"
+          ]
+        },
+        "message": {"type": "string", "minLength": 1},
+        "retryable": {"type": "boolean"},
+        "details": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "required": ["kind", "protocol", "sessionID", "sequence", "event", "data"],
+      "properties": {
+        "kind": {"const": "event"},
+        "protocol": {"$ref": "#/$defs/protocol"},
+        "sessionID": {"$ref": "#/$defs/identifier"},
+        "sequence": {"type": "integer", "minimum": 0},
+        "requestID": {"$ref": "#/$defs/identifier"},
+        "jobID": {"$ref": "#/$defs/identifier"},
+        "revision": {"type": "integer", "minimum": 0},
+        "event": {"enum": ["job.changed", "inventory.changed", "registry.changed", "session.changed"]},
+        "data": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "fingerprint": {
+      "type": "object",
+      "required": ["os", "architecture", "runtimeFingerprint"],
+      "properties": {
+        "os": {"type": "string", "minLength": 1},
+        "architecture": {"enum": ["arm64", "x86_64"]},
+        "runtimeFingerprint": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "entitlement": {
+      "type": "object",
+      "required": ["kind", "source", "checkedAt"],
+      "properties": {
+        "kind": {"enum": ["purchase", "subscription", "none", "unknown"]},
+        "source": {"type": "string", "minLength": 1},
+        "checkedAt": {"type": ["string", "null"], "format": "date-time"},
+        "expiresAt": {"type": ["string", "null"], "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "installability": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["downloadable", "blocked", "unknown"]},
+        "packageID": {"type": ["string", "null"]},
+        "packageVersion": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "downloadable"}}},
+          "then": {
+            "required": ["packageID", "packageVersion"],
+            "properties": {
+              "packageID": {"type": "string", "minLength": 1},
+              "packageVersion": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "compatibility": {
+      "type": "object",
+      "required": ["kind", "source", "checkedAt"],
+      "properties": {
+        "kind": {"enum": ["verified", "experimental", "unsupported", "unknown"]},
+        "source": {"type": "string", "minLength": 1},
+        "checkedAt": {"type": ["string", "null"], "format": "date-time"},
+        "os": {"type": "string"},
+        "architecture": {"enum": ["arm64", "x86_64"]},
+        "runtimeFingerprint": {"type": "string"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"enum": ["verified", "experimental"]}}},
+          "then": {
+            "required": ["os", "architecture", "runtimeFingerprint"],
+            "properties": {
+              "checkedAt": {"type": "string", "format": "date-time"},
+              "os": {"minLength": 1},
+              "runtimeFingerprint": {"minLength": 1}
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "installation": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["notInstalled", "installed", "updating", "broken"]},
+        "installationID": {"type": ["string", "null"]},
+        "packageVersion": {"type": ["string", "null"]},
+        "runtimeFingerprint": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "inventoryMetadata": {
+      "type": "object",
+      "required": ["completeness", "checkedAt", "lastCompleteAt"],
+      "properties": {
+        "completeness": {"enum": ["complete", "partial", "unknown"]},
+        "checkedAt": {"type": ["string", "null"], "format": "date-time"},
+        "lastCompleteAt": {"type": ["string", "null"], "format": "date-time"},
+        "source": {"type": "string"},
+        "reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "productEvidence": {
+      "type": "object",
+      "required": ["productID", "editionID", "entitlement", "installability", "compatibility", "installation", "inventory"],
+      "properties": {
+        "productID": {"$ref": "#/$defs/identifier"},
+        "editionID": {"$ref": "#/$defs/identifier"},
+        "entitlement": {"$ref": "#/$defs/entitlement"},
+        "installability": {"$ref": "#/$defs/installability"},
+        "compatibility": {"$ref": "#/$defs/compatibility"},
+        "installation": {"$ref": "#/$defs/installation"},
+        "inventory": {"$ref": "#/$defs/inventoryMetadata"}
+      },
+      "additionalProperties": false
+    }
+  }
+}
