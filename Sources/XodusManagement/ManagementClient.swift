@@ -34,6 +34,7 @@ public actor ManagementClient {
     private var framer = JSONLineFramer()
     private var diagnosticBytes = 0
     private var stopped = false
+    private var exitStatus: Int32?
     private var hello: ManagementHello?
     private var pending: [String: Pending] = [:]
     private var usedIDs = Set<String>()
@@ -229,6 +230,16 @@ public actor ManagementClient {
     }
 
     private func receiveResult(_ value: JSONValue) throws {
+        // The sealed producer cannot correlate a state-lock failure before its request loop starts.
+        if hello == nil, pending.count == 1, pending.values.first?.command == .hello,
+           value["requestID"] == .string("invalid-0"), value["ok"] == .bool(false),
+           value["error"] == .object([
+               "code": .string("STATE_LOCKED"),
+               "message": .string("Another management process owns this state directory."),
+               "retryable": .bool(true)
+           ]) {
+            throw ManagementError.stateLocked
+        }
         guard let id = value["requestID"]?.string, let waiter = pending[id] else {
             throw ManagementError.unexpectedResult
         }
@@ -291,12 +302,14 @@ public actor ManagementClient {
         do { try framer.finish() }
         catch { fail(Self.safeError(error)); return }
         // EOF never supplies a missing terminal result, even when the exit status is zero.
-        fail(.disconnected)
+        fail(exitStatus.map { $0 == 0 ? .disconnected : .backendStopped($0) } ?? .disconnected)
     }
 
     private func ended(status: Int32) {
         guard !stopped else { return }
-        if status != 0 { fail(.backendStopped(status)) }
+        exitStatus = status
+        if status != 0, hello != nil { fail(.backendStopped(status)) }
+        // Drain a pre-HELLO startup error before exit can erase its typed recovery.
         // A clean exit is drained by outputEnded(), so buffered terminal frames are not lost.
     }
 

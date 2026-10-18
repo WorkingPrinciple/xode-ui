@@ -211,7 +211,7 @@ enum NativeChecks {
                   && expired.accountExplanation.contains("has not been checked"),
                   "HELLO and advertised auth support display connected-but-unchecked, never saved account evidence")
             check(expired.accountJourneyTitle == "Sign-in hasn't been checked"
-                  && expired.accountJourneyMessage.contains("Try again"),
+                  && expired.accountJourneyMessage.contains("Sign in with Xbox Live"),
                   "Unchecked account copy names the next action without presenting saved sign-in")
             await expired.refreshAccount()
             check(!expired.hasConfirmedSignIn, "Expired credentials keep games behind welcome")
@@ -252,7 +252,7 @@ enum NativeChecks {
             let neutralBinding = NativeAuthHostBinding(executable: neutralHelper,
                 sha256: SHA256.hash(data: helperBytes).map { String(format: "%02x", $0) }.joined())
             let unpairedMessage = "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required."
-            let serviceMessage = "X Ode couldn't connect to its sign-in service. If another copy of X Ode is open, close it normally, then try again."
+            let serviceMessage = "X Ode couldn't connect to its sign-in service. If another copy of X Ode is open, close it normally, then sign in again."
             let retryBase = configuration("welcomeretry")
             let retryConfiguration = BackendConfiguration(executable: retryBase.executable,
                 stateDirectory: retryBase.stateDirectory, nativeAuthHost: neutralBinding)

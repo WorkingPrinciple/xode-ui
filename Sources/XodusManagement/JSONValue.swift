@@ -78,7 +78,7 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
     case invalidFrame, invalidPayload, invalidRequest, frameTooLarge, truncatedFrame, unsupportedSchema
     case backendUnavailable, nativeAuthHostUnavailable, pairedEngineUnavailable, startFailed, alreadyConnected, disconnected, outputOverflow, credentialStoreUnavailable
     case requestTimedOut, unexpectedResult, writeFailed, capabilityMissing(String)
-    case shutdownFailed
+    case shutdownFailed, stateLocked
     case backendStopped(Int32), backendError(String, retryable: Bool), invalidEvent
     case discoveryFailed(CatalogDiscovery)
     case queryFailed(CatalogQuery)
@@ -109,6 +109,8 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
         case .unexpectedResult: "Xodus returned a response for an unexpected request. The connection was stopped."
         case .writeFailed: "The request could not reach Xodus. Reconnect before retrying."
         case .shutdownFailed: "Xodus has not finished shutting down. Wait, then reconnect or try closing again; another engine was not started."
+        case .stateLocked:
+            "Another copy of X Ode is using its sign-in service. Close that copy normally, then sign in again."
         case .capabilityMissing(let command): "This engine does not provide \(command)."
         case .backendStopped(let status): "The Xodus engine stopped (exit \(status)). Reconnect to recover."
         case .backendError(let code, _): "Xodus reported \(code). No success was assumed."

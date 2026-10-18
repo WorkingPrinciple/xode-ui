@@ -9,14 +9,17 @@ real Microsoft access or compatibility.
 
 ## X Ode first-run gate (16 October, source candidate)
 
-Ordinary startup shows Welcome to X Ode over a neutral background, not installed
-game cards or developer setup diagnostics. Startup connects only through the
+Ordinary startup shows the standalone green X logo with **Ode** below it over
+a neutral background, not installed game cards or developer setup diagnostics.
+Startup connects only through the
 existing management admission path and checks saved account status. A confirmed
 saved sign-in starts account verification; the app stays gated until the app,
 PC library, game service and returned Xbox profile identify the same account.
-Welcome has one contextual action: **Sign in with Xbox Live**, **Try again**,
-or **Cancel sign-in**. Missing pairing cannot enable sign-in. Try again rechecks
-connection/status; Cancel sign-in waits for the existing cancellation result
+Welcome has one **Sign in with Xbox Live** button, replaced only by
+**Cancel sign-in** during an active flow. There is no separate Check status,
+Sign out or Try again button. The same login action rechecks connection/status
+before starting an explicitly requested sign-in; missing pairing cannot enable
+consent. Cancel sign-in waits for the existing cancellation result
 and leaves Welcome locked. Choosing sign-in recovery for an expired/invalid
 saved sign-in first completes the existing guarded removal stages.
 Quit stays available through the native app menu, but existing mutation
@@ -31,9 +34,14 @@ Account, installer and destructive sheets are not globally changed.
 
 Pairing rejection and later connection failure are distinct. After helper and
 engine identity validation, failure to start the service or negotiate its hello
-offers Try again and suggests normally closing another open X Ode copy first.
+offers recovery through that same login button and suggests normally closing another open X Ode copy first.
 It does not assert that another copy is running or that a lock error was
 received. Missing/invalid pairing retains the matching-app/service requirement.
+An exact validated pre-HELLO `invalid-0` / `STATE_LOCKED` failure identifies the
+separate already-owned-state case, without treating other uncorrelated responses
+as valid. The login screen shows this actionable connection error instead of
+hiding it behind a generic saved-sign-in failure. Startup exit handling drains
+the typed pre-HELLO error before reporting process exit.
 Neither message unlocks sign-in, navigation or credentials; successful connection
 and current account status are still required. The dedicated native menu is
 **Account**, distinct from the canonical **X Ode** application menu.

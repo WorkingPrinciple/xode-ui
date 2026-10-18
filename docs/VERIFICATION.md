@@ -4,6 +4,34 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## Single-button login and actual connection recovery (2026-10-19)
+
+The login surface uses the proposed standalone green X with **Ode** below it
+and one **Sign in with Xbox Live** button. That action checks connection and
+current saved status before explicit consent; an active flow replaces it with
+Cancel sign-in. The existing backend remains responsible for validated,
+atomic macOS Keychain persistence. No credential file or simulated login was
+introduced.
+
+The signed `06bec592` candidate's exact engine
+`1cd04d4d6d54257fa2e10e44030a81416bf787479cec57c26daa9288a8ce5bcd`
+(22,064,496 bytes) was exercised using only HELLO in a new private temporary
+state directory. A second actual engine returned the exact pre-HELLO
+`invalid-0` / `STATE_LOCKED` frame and exit 1. The unchanged client
+misclassified eight such attempts as `unexpectedResult`. The corrected Release
+client classified eight as `stateLocked`, then connected successfully after
+the first owner's normal stdin-EOF shutdown. Both owners exited 0. This is
+real process/protocol evidence, not a mock or a saved-account check.
+
+The source also stops hiding connection-recovery guidance behind the generic
+saved-sign-in failure. Only the exact schema-validated startup-lock failure is
+recognized without a request correlation; unknown IDs remain invalid.
+The shipping Release app compiles locally. This does not admit a new signed
+package or prove Microsoft login, same-account library/profile access or saved
+credentials across restart. Signing-Keychain permission, exact package
+admission and human-present login/persistence remain separate gates. The
+manually disabled GitHub Actions workflow is not re-enabled for this work.
+
 ## Unavailable catalog release date (source candidate, 2026-10-18)
 
 Parent captured **Release date / 30 Dec 9998** in Minecraft: Java Edition

@@ -27,6 +27,7 @@ final class LiveSession: ObservableObject {
     @Published private(set) var accountStatusCurrent = false
     @Published private(set) var nativeSignInHostAdmitted = false
     @Published private var connectionFailedAfterAdmission = false
+    @Published private var managementStateLocked = false
     private var confirmedBeforeStatusRead = false
     @Published private(set) var accountError: String?
     @Published private(set) var accountStatusError: ManagementError?
@@ -224,16 +225,16 @@ final class LiveSession: ObservableObject {
         if signingOut { return "Removing X Ode's saved sign-ins from this Mac. Please wait." }
         if connectionTransitioning || accountStatusChecking { return "Checking whether your Microsoft sign-in is saved." }
         if failedAccountAction == .signOut, accountError != nil {
-            return "Sign-out didn't finish. Some Xbox Live details may remain on this Mac. Choose Try again."
+            return "Sign-out didn't finish. Some Xbox Live details may remain on this Mac. Choose Sign in with Xbox Live to try again."
         }
         if !isReady {
-            return "Your Xbox Live sign-in couldn't be checked. Choose Try again."
+            return welcomeMessage
         }
         if signInPending { return "Continue in the Microsoft window, or choose Cancel sign-in." }
         if accountError != nil {
             return accountStatusError == .credentialStoreUnavailable
-                ? "Your saved Xbox Live sign-in couldn't be read. Approve the macOS Keychain prompt, then choose Try again."
-                : "Your Xbox Live sign-in couldn't be confirmed. Choose Try again."
+                ? "Your saved Xbox Live sign-in couldn't be read. Respond to the macOS Keychain prompt, then sign in again."
+                : "Your Xbox Live sign-in couldn't be confirmed. Choose Sign in with Xbox Live to try again."
         }
         if hasConfirmedSignIn {
             return "Your Xbox Live sign-in is saved."
@@ -247,15 +248,16 @@ final class LiveSession: ObservableObject {
         if canStartWelcomeSignIn {
             return "Sign in with Xbox Live to see your games."
         }
-        return "Sign-in isn't available right now. Choose Try again."
+        return "Choose Sign in with Xbox Live to check your saved sign-in or connect your account."
     }
     static let signOutConfirmationMessage = "Remove this Xbox account from X Ode on this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, X Ode will tell you which step failed."
     var welcomeMessage: String {
         if signingOut { return "Signing out of X Ode. Waiting for saved sign-in removal to finish." }
         if failedAccountAction == .signOut, let accountError { return accountError }
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in…" }
+        if managementStateLocked { return ManagementError.stateLocked.localizedDescription }
         if connectionFailedAfterAdmission {
-            return "X Ode couldn't connect to its sign-in service. If another copy of X Ode is open, close it normally, then try again."
+            return "X Ode couldn't connect to its sign-in service. If another copy of X Ode is open, close it normally, then sign in again."
         }
         guard isReady, nativeSignInHostAdmitted, supports(.authBegin),
               supports(.authCancel), supports(.authStatus) else {
@@ -876,6 +878,7 @@ final class LiveSession: ObservableObject {
         accountStatusCurrent = false
         nativeSignInHostAdmitted = false
         connectionFailedAfterAdmission = false
+        managementStateLocked = false
         confirmedBeforeStatusRead = false
         accountError = nil
         accountStatusError = nil
@@ -959,6 +962,7 @@ final class LiveSession: ObservableObject {
         let revision = observedRevision + 1
         guard await disconnect(), revision == lifecycleRevision else { return }
         phase = .failed
+        managementStateLocked = error as? ManagementError == .stateLocked
         connectionFailedAfterAdmission = helperValidated && !pairingRejected
         errorMessage = Self.describe(error)
     }

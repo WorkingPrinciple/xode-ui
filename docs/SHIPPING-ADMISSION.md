@@ -34,8 +34,10 @@ plaintext/debug/console feature changes or mismatched sealed identity reject
 the input. These claims are accepted only under the operator's independent
 external pins, not because the JSON asserts them.
 
-The current source producer is `d00a8b97501a2ce1045d579e62568c5feb017ca8`,
-tree `2d8e43151b3824bd485090d905a8fdf22a17fc9f`. Required Cargo profile
+The current source producer is `28f737df46b29cc195145425e3fd1397ebc09be3`,
+tree `1273ddaa50a6b3e77647aabb5bb170b1b525c922`, matching the compiled admission
+gate and independently sealed account-bound input. Earlier producer identities
+in integration history are not current packaging approval. Required Cargo profile
 is opt3/debug0, no debug assertions/overflow
 checks/test. Exact features are xodus/CLI empty, management live, native Keychain
 and security-framework. The old e7/304 engine cannot satisfy this gate.
