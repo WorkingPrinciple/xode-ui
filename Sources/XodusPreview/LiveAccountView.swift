@@ -78,6 +78,7 @@ struct LiveAccountView: View {
                         }
                     }
                     .keyboardShortcut(session.hasConfirmedSignIn ? .defaultAction : .cancelAction)
+                    .modifier(XboxProminentButton(enabled: session.hasConfirmedSignIn))
                     .disabled(session.accountBusy)
                     .accessibilityLabel(session.signInPending ? "Cancel sign-in" : "Close account")
                     .accessibilityIdentifier(session.signInPending ? "xodus.account.cancelSignIn" : "xodus.account.close")

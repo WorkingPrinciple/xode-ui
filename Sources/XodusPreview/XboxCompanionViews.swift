@@ -18,6 +18,13 @@ enum XboxBrand {
     static let gradient = LinearGradient(colors: [lightGreen, green], startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 
+struct XboxProminentButton: ViewModifier {
+    let enabled: Bool
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled { content.buttonStyle(.borderedProminent).tint(XboxBrand.green) } else { content }
+    }
+}
+
 struct AccountHubDestinations: View {
     @EnvironmentObject private var state: AppState
 
@@ -353,7 +360,7 @@ struct XboxAccountSummaryView: View {
                     .frame(maxWidth: 360)
                 }
                 Button("See all achievements") { state.accountDestination = .achievements }
-                    .buttonStyle(.link)
+                    .buttonStyle(.plain).foregroundStyle(XboxBrand.green).font(.callout.weight(.medium))
                     .accessibilityIdentifier("xodus.account.achievements")
                 if let friends = cache.friends.value, cache.friends.available, !friends.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -375,7 +382,7 @@ struct XboxAccountSummaryView: View {
                         }
                         if friends.count > 5 {
                             Button("See all \(friends.count.formatted()) friends") { state.accountDestination = .profile }
-                                .buttonStyle(.link)
+                                .buttonStyle(.plain).foregroundStyle(XboxBrand.green).font(.callout.weight(.medium))
                         }
                     }
                     .frame(maxWidth: 360)
@@ -389,31 +396,41 @@ struct XboxAccountSummaryView: View {
         .frame(maxWidth: .infinity)
     }
 
-    @ViewBuilder private var libraryAndGamePass: some View {
-        let library = state.pcGames
+    private var libraryAndGamePass: some View {
+        XboxLibraryAccessSummary(library: state.pcGames, operations: state.gameOperations,
+                                 gamePassCatalogCount: session.gamePassProducts.count)
+    }
+}
+
+private struct XboxLibraryAccessSummary: View {
+    @ObservedObject var library: PCGamesController
+    @ObservedObject var operations: GameOperationsController
+    let gamePassCatalogCount: Int
+
+    var body: some View {
         let games = library.representedGames
-        let purchased = games.filter { $0.acquisitionKind == .purchased }.count
-        let subscription = games.filter { $0.acquisitionKind == .subscription }.count
-        let operations = state.gameOperations
+        let fromGamePass = games.filter { $0.acquisitionKind == .subscription }.count
+        let owned = games.count - fromGamePass
         VStack(spacing: 6) {
             if !games.isEmpty {
-                Text("\(purchased.formatted()) purchased · \(subscription.formatted()) from Game Pass")
-                    .font(.callout)
+                Text("\(owned.formatted()) owned · \(fromGamePass.formatted()) from Game Pass")
+                    .font(.callout.weight(.medium))
                     .accessibilityIdentifier("xodus.account.libraryCounts")
             }
-            if operations.gamePassActive, let status = operations.gamePassStatus {
+            if let status = operations.gamePassStatus, status.active == true {
                 let plan = status.planLabel ?? "Game Pass"
                 let expiry = status.expiryDate.map { " · renews or ends \($0.formatted(date: .abbreviated, time: .omitted))" } ?? ""
-                Label("\(plan)\(expiry)", systemImage: "checkmark.seal.fill")
+                Label("\(plan) active\(expiry)", systemImage: "checkmark.seal.fill")
                     .font(.callout.weight(.medium)).foregroundStyle(XboxBrand.green)
+                if gamePassCatalogCount > 0 {
+                    Text("\(gamePassCatalogCount.formatted()) PC games available with Game Pass")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             } else if operations.gamePassStatus?.active == false {
                 Text("No Game Pass membership").font(.callout).foregroundStyle(.secondary)
             }
-            if operations.gamePassActive, !session.gamePassProducts.isEmpty {
-                Text("\(session.gamePassProducts.count.formatted()) PC games available with Game Pass")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
         }
+        .task { if operations.gamePassStatus == nil { await operations.loadGamePassCache() } }
     }
 }
 
