@@ -11,8 +11,12 @@ real Microsoft access or compatibility.
 
 Ordinary startup shows the standalone green X logo with **Ode** below it over
 a neutral background, not installed game cards or developer setup diagnostics.
-Startup connects only through the
-existing management admission path and checks saved account status. A confirmed
+Welcome, Account and the packaged app icon share one native vector X: standalone
+on Welcome, a dark-green tile on Account, and a white tile in Finder and the Dock.
+The wordmark is **Ode**; the accessible app name and security identifiers remain
+X Ode and the existing Xodus identifiers. The icon renderer compiles the same
+geometry as the native views, rather than maintaining a separate logo drawing.
+Startup connects only through the existing management admission path and checks saved account status. A confirmed
 saved sign-in starts account verification; the app stays gated until the app,
 PC library, game service and returned Xbox profile identify the same account.
 Welcome has one **Sign in with Xbox Live** button, replaced only by

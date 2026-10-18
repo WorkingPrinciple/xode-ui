@@ -2,6 +2,12 @@
 import SwiftUI
 import XodusCore
 
+struct XOdeLogo: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(XOdeMark.path(in: rect))
+    }
+}
+
 enum XboxCompanionCopy {
     static let accountScope =
         "Your Xbox account can differ from the Microsoft account used to buy PC games."

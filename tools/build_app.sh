@@ -167,7 +167,8 @@ pathlib.Path(sys.argv[2]).write_text(json.dumps({
     "version": 1, "sha256": record["signedHelper"]["sha256"],
     "sourceCommit": record["approvedAppSourceCommit"]}, sort_keys=True) + "\n", encoding="utf-8")
 PY
-swift tools/RenderAppIcon.swift "$app/Contents/Resources/Xodus.iconset"
+swiftc Sources/XodusCore/XOdeMark.swift tools/RenderAppIcon.swift -o "$stage/RenderAppIcon"
+"$stage/RenderAppIcon" "$app/Contents/Resources/Xodus.iconset"
 iconutil -c icns "$app/Contents/Resources/Xodus.iconset" -o "$app/Contents/Resources/Xodus.icns"
 if [ -n "$launch_association_capsule" ]; then
     python3 tools/launch_association_capsule.py "$launch_association_capsule" \

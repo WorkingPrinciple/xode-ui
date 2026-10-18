@@ -35,13 +35,21 @@ struct LiveAccountView: View {
                 accountDestination
             } else {
                 VStack(spacing: 24) {
+                    VStack(spacing: 8) {
+                        XOdeLogo().fill(XboxBrand.lightGreen)
+                            .frame(width: 48, height: 48).padding(14)
+                            .background(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255),
+                                        in: RoundedRectangle(cornerRadius: 18))
+                            .accessibilityHidden(true)
+                        Text("Ode").font(.title2.weight(.medium))
+                            .accessibilityLabel("X Ode")
+                            .accessibilityAddTraits(.isHeader)
+                    }
                     if session.hasConfirmedSignIn {
                         XboxAccountSummaryView(companion: companion)
                     } else {
-                        Image(systemName: "person.crop.circle.fill").font(.system(size: 48)).foregroundStyle(XboxBrand.gradient)
-                            .accessibilityHidden(true)
                         VStack(spacing: 8) {
-                            Text("X Ode account").font(.title2.bold())
+                            Text("Account").font(.title2.bold())
                                 .accessibilityIdentifier("xodus.account.status")
                             Text(session.accountJourneyTitle)
                                 .font(.headline).foregroundStyle(.secondary)

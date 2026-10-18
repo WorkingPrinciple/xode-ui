@@ -10,6 +10,12 @@ enum NativeUIChecks {
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         let application = NSApplication.shared
         let windows = application.windows.count
+        for size in [CGFloat(16), 48, 112, 1024] {
+            let rect = CGRect(x: 7, y: 11, width: size, height: size)
+            let mark = XOdeMark.path(in: rect)
+            check(!mark.isEmpty && rect.contains(mark.boundingBoxOfPath),
+                  "The shared Ode mark stays inside its native \(Int(size))-point icon bounds")
+        }
         autoreleasepool { checkWelcomeTerminationPolicy(check: check) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for width in [CGFloat(480), 560] {
