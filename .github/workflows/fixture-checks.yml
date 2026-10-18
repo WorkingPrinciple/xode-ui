@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   native-fixtures:
-    runs-on: xcode-27
+    runs-on: ${{ vars.XODUS_CI_RUNNER || 'xcode-27' }}
     steps:
       - uses: actions/checkout@v4
       - name: Verify the macOS 27 SDK and isolated runner
