@@ -235,17 +235,17 @@ final class LiveSession: ObservableObject {
             return "Your Microsoft sign-in is saved."
         }
         if needsAccountDisconnect {
-            return "Your saved sign-in needs reconnecting. Choose Sign out of X Ode, then sign in again."
+            return "Your saved sign-in needs reconnecting. Choose Sign out of Xbox account, then sign in again."
         }
         if appSignOutComplete, currentCredentialState == .signedOut {
-            return "You're signed out of X Ode on this Mac. Your games and saves are still here."
+            return "You're signed out of Xbox in X Ode on this Mac. Your games and saves are still here."
         }
         if canStartWelcomeSignIn {
             return "Sign in with Microsoft to see your games."
         }
         return "Sign-in isn't available right now. Choose Check status to try again."
     }
-    static let signOutConfirmationMessage = "Remove X Ode's saved sign-ins from this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, X Ode will tell you which step failed."
+    static let signOutConfirmationMessage = "Remove this Xbox account from X Ode on this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, X Ode will tell you which step failed."
     var welcomeMessage: String {
         if signingOut { return "Signing out of X Ode. Waiting for saved sign-in removal to finish." }
         if failedAccountAction == .signOut, let accountError { return accountError }
@@ -266,7 +266,7 @@ final class LiveSession: ObservableObject {
         if authentication?.flow?.state == .cancelled { return "Sign-in was cancelled. Your games stay hidden until you sign in." }
         if authentication?.state == .signedOut, accountStatusCurrent {
             return appSignOutComplete
-                ? "You're signed out of X Ode on this Mac. Sign in to X Ode with Microsoft when you're ready. Other apps and Microsoft browser sessions weren't changed."
+                ? "You're signed out of Xbox in X Ode on this Mac. Sign in with your Microsoft account when you're ready. Other apps and Microsoft browser sessions weren't changed."
                 : "You're signed out of the X Ode launcher. Game-service sign-out hasn't been confirmed. Sign in to X Ode with Microsoft when you're ready."
         }
         return "Sign in to X Ode using your Microsoft account. Microsoft controls its own sign-in and permission pages; game download access is checked when needed."
@@ -321,7 +321,7 @@ final class LiveSession: ObservableObject {
             ? "Your saved sign-in is available."
             : "Your game library isn't available yet."
         case .expired, .invalid: return "Disconnect this sign-in, then sign in again."
-        case .signedOut: return "You are signed out of X Ode. Sign in using your Microsoft account to see your games."
+        case .signedOut: return "You are signed out of Xbox in X Ode. Sign in with your Microsoft account to see your games."
         case nil: return "Check status to see whether you're signed in."
         }
     }

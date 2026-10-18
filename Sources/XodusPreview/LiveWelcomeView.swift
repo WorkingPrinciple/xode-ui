@@ -45,7 +45,7 @@ struct LiveWelcomeView: View {
                     Button("Check status") { Task { await session.prepareWelcome() } }
                         .disabled(session.connectionTransitioning || session.accountBusy)
                         .accessibilityIdentifier("xodus.welcome.retry")
-                    Button("Sign out of X Ode") { interaction.confirmingSignOut = true }
+                    Button("Sign out of Xbox account") { interaction.confirmingSignOut = true }
                         .disabled(!state.canSignOut(session: session))
                         .accessibilityIdentifier("xodus.welcome.reconnect")
                     if !session.needsAccountDisconnect {
@@ -59,8 +59,8 @@ struct LiveWelcomeView: View {
             }
         }
         .interactiveDismissDisabled(!session.hasConfirmedSignIn)
-        .confirmationDialog("Sign out of X Ode on this Mac?", isPresented: $interaction.confirmingSignOut) {
-            Button("Sign out of X Ode", role: .destructive) {
+        .confirmationDialog("Sign out of Xbox account on this Mac?", isPresented: $interaction.confirmingSignOut) {
+            Button("Sign out of Xbox account", role: .destructive) {
                 Task { await state.signOut(session: session) }
             }
             Button("Cancel", role: .cancel) {}

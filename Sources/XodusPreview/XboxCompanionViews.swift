@@ -319,17 +319,20 @@ struct XboxAccountSummaryView: View {
     @ObservedObject var companion: XboxCompanionController
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 20) {
             if let cache = companion.cache {
                 if let profile = cache.profile.value, cache.profile.available {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         if let reference = XboxCompanionArtwork.reference(profile.avatarURL) {
                             CatalogArtworkView(reference: reference, status: .available)
-                                .frame(width: 72, height: 72).clipShape(Circle())
+                                .frame(width: 88, height: 88).clipShape(Circle())
                                 .overlay(Circle().strokeBorder(XboxBrand.gradient, lineWidth: 3))
                                 .accessibilityLabel("\(profile.gamertag) gamer picture")
                         }
-                        Text(profile.gamertag).font(.title3.weight(.semibold))
+                        Text(profile.gamertag).font(.title2.bold())
+                        if let name = profile.displayName, name != profile.gamertag {
+                            Text(name).font(.callout).foregroundStyle(.secondary)
+                        }
                         if let score = profile.gamerscore {
                             Label("\(score.formatted()) G", systemImage: "trophy.fill")
                                 .font(.callout.weight(.semibold)).foregroundStyle(.white)
@@ -339,61 +342,78 @@ struct XboxAccountSummaryView: View {
                     }
                 }
                 if let games = cache.recentGames.value, cache.recentGames.available, !games.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(games.prefix(3)) { game in
-                            HStack(spacing: 10) {
-                                if let reference = XboxCompanionArtwork.reference(game.artworkURL) {
-                                    CatalogArtworkView(reference: reference, status: .available)
-                                        .frame(width: 36, height: 36).clipShape(RoundedRectangle(cornerRadius: 6))
-                                } else {
-                                    Image(systemName: "gamecontroller").frame(width: 36, height: 36)
-                                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                    accountSection("Achievements", symbol: "trophy.fill") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(games.prefix(3)) { game in
+                                HStack(spacing: 10) {
+                                    if let reference = XboxCompanionArtwork.reference(game.artworkURL) {
+                                        CatalogArtworkView(reference: reference, status: .available)
+                                            .frame(width: 36, height: 36).clipShape(RoundedRectangle(cornerRadius: 6))
+                                    } else {
+                                        Image(systemName: "gamecontroller").frame(width: 36, height: 36)
+                                            .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                                    }
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(game.name).font(.callout.weight(.medium)).lineLimit(1)
+                                        XboxAchievementSummary(game: game)
+                                    }
+                                    Spacer(minLength: 0)
                                 }
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(game.name).font(.callout.weight(.medium)).lineLimit(1)
-                                    XboxAchievementSummary(game: game)
-                                }
-                                Spacer(minLength: 0)
                             }
-                        }
-                    }
-                    .frame(maxWidth: 360)
-                }
-                Button("See all achievements") { state.accountDestination = .achievements }
-                    .buttonStyle(.plain).foregroundStyle(XboxBrand.green).font(.callout.weight(.medium))
-                    .accessibilityIdentifier("xodus.account.achievements")
-                if let friends = cache.friends.value, cache.friends.available, !friends.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Friends").font(.callout.weight(.semibold))
-                        ForEach(friends.prefix(5)) { friend in
-                            HStack(spacing: 8) {
-                                if let reference = XboxCompanionArtwork.reference(friend.avatarURL) {
-                                    CatalogArtworkView(reference: reference, status: .available)
-                                        .frame(width: 24, height: 24).clipShape(Circle())
-                                } else {
-                                    Image(systemName: "person.crop.circle").foregroundStyle(.secondary)
-                                }
-                                Text(friend.gamertag).font(.callout)
-                                if let presence = friend.presenceText ?? friend.presenceState {
-                                    Text(presence).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                                }
-                                Spacer(minLength: 0)
-                            }
-                        }
-                        if friends.count > 5 {
-                            Button("See all \(friends.count.formatted()) friends") { state.accountDestination = .profile }
+                            Button("See all achievements") { state.accountDestination = .achievements }
                                 .buttonStyle(.plain).foregroundStyle(XboxBrand.green).font(.callout.weight(.medium))
+                                .accessibilityIdentifier("xodus.account.achievements")
                         }
                     }
-                    .frame(maxWidth: 360)
+                }
+                if let friends = cache.friends.value, cache.friends.available, !friends.isEmpty {
+                    accountSection("Friends", symbol: "person.2.fill") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(friends.prefix(5)) { friend in
+                                HStack(spacing: 8) {
+                                    if let reference = XboxCompanionArtwork.reference(friend.avatarURL) {
+                                        CatalogArtworkView(reference: reference, status: .available)
+                                            .frame(width: 24, height: 24).clipShape(Circle())
+                                    } else {
+                                        Image(systemName: "person.crop.circle").foregroundStyle(.secondary)
+                                    }
+                                    Text(friend.gamertag).font(.callout)
+                                    if let presence = friend.presenceText ?? friend.presenceState {
+                                        Text(presence).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                            }
+                            if friends.count > 5 {
+                                Button("See all \(friends.count.formatted()) friends") { state.accountDestination = .profile }
+                                    .buttonStyle(.plain).foregroundStyle(XboxBrand.green).font(.callout.weight(.medium))
+                            }
+                        }
+                    }
                 }
             } else if companion.refreshing {
                 ProgressView().controlSize(.small).accessibilityLabel("Loading Xbox profile")
             }
-            libraryAndGamePass
+            accountSection("Membership", symbol: "checkmark.seal.fill") {
+                libraryAndGamePass
+            }
         }
         .tint(XboxBrand.green)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: 420)
+    }
+
+    private func accountSection<Content: View>(
+        _ title: String,
+        symbol: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        GroupBox {
+            content().frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            Label(title, systemImage: symbol)
+                .font(.headline)
+                .foregroundStyle(XboxBrand.green)
+        }
     }
 
     private var libraryAndGamePass: some View {

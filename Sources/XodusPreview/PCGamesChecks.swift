@@ -227,10 +227,10 @@ enum PCGamesChecks {
         await session.revalidateAccountOnForeground()
         check(!reopenedLibrary.hasSavedSignIn && !reopenedLibrary.busy
               && session.currentCredentialState == .signedOut && !session.hasConfirmedSignIn
-              && session.welcomeMessage.contains("signed out of X Ode on this Mac"),
+              && session.welcomeMessage.contains("signed out of Xbox in X Ode on this Mac"),
               "Recreated library and fresh launcher status remain signed out after all three confirmed removals")
         check(session.accountJourneyTitle == "Signed out of X Ode"
-              && session.accountJourneyMessage == "You're signed out of X Ode on this Mac. Your games and saves are still here."
+              && session.accountJourneyMessage == "You're signed out of Xbox in X Ode on this Mac. Your games and saves are still here."
               && LiveSession.signOutConfirmationMessage.contains("other apps and Microsoft browser sessions stay unchanged"),
               "Confirmed sign-out copy is concise and keeps the before-action privacy boundary explicit")
     }

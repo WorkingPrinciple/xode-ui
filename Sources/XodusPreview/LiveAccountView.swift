@@ -35,6 +35,9 @@ struct LiveAccountView: View {
                 accountDestination
             } else {
                 VStack(spacing: 24) {
+                    if session.hasConfirmedSignIn {
+                        XboxAccountSummaryView(companion: companion)
+                    } else {
                         Image(systemName: "person.crop.circle.fill").font(.system(size: 48)).foregroundStyle(XboxBrand.gradient)
                             .accessibilityHidden(true)
                         VStack(spacing: 8) {
@@ -51,8 +54,6 @@ struct LiveAccountView: View {
                         .foregroundStyle(.secondary).multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true).frame(maxWidth: 360)
                         .accessibilityIdentifier("xodus.account.statusExplanation")
-                    if session.hasConfirmedSignIn {
-                        XboxAccountSummaryView(companion: companion)
                     }
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 32)
@@ -88,7 +89,7 @@ struct LiveAccountView: View {
                             .accessibilityLabel("Check account status")
                             .accessibilityIdentifier("xodus.account.checkStatus")
                     } else { Button("Settings", action: openSettings.callAsFunction) }
-                    Button("Sign out of X Ode") {
+                    Button("Sign out of Xbox account") {
                         interaction.confirmingSignOut = true
                     }
                         .disabled(!state.canSignOut(session: session))
@@ -126,8 +127,8 @@ struct LiveAccountView: View {
         }
         .tint(XboxBrand.green)
         .interactiveDismissDisabled(session.accountBusy || session.signInPending)
-        .confirmationDialog("Sign out of X Ode on this Mac?", isPresented: $interaction.confirmingSignOut) {
-            Button("Sign out of X Ode", role: .destructive) { Task { await state.signOut(session: session) } }
+        .confirmationDialog("Sign out of Xbox account on this Mac?", isPresented: $interaction.confirmingSignOut) {
+            Button("Sign out of Xbox account", role: .destructive) { Task { await state.signOut(session: session) } }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(LiveSession.signOutConfirmationMessage)

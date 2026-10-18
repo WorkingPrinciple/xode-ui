@@ -203,7 +203,7 @@ enum NativeChecks {
                   && expired.canDisconnectAccount && !expired.canSignIn,
                   "Expired profile exposes confirmed disconnect recovery, not rejected sign-in")
             check(expired.accountJourneyTitle == "Sign-in needs reconnecting"
-                  && expired.accountJourneyMessage == "Your saved sign-in needs reconnecting. Choose Sign out of X Ode, then sign in again.",
+                  && expired.accountJourneyMessage == "Your saved sign-in needs reconnecting. Choose Sign out of Xbox account, then sign in again.",
                   "Expired account copy explains the existing sign-out then sign-in recovery in plain language")
             await expired.signOut()
             check(!expired.hasConfirmedSignIn && !expired.canStartWelcomeSignIn,
