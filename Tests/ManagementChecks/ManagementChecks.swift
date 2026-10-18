@@ -246,7 +246,7 @@ actor Checks {
                   "Helper recovery copy does not claim passkey support or diagnose a provider prompt")
         }
         let negative = try fixture("negative").array ?? []
-        check(negative.count == 96, "Pinned producer corpus contains 96 negative frames")
+        check(negative.count == 99, "Pinned producer corpus contains 99 negative frames")
         for item in negative {
             do {
                 guard let frame = item["frame"] else { throw ManagementError.invalidPayload }
@@ -885,6 +885,7 @@ enum MockBackend {
         guard let index = CommandLine.arguments.firstIndex(of: "--state-dir"),
               CommandLine.arguments.indices.contains(index + 1) else { exit(2) }
         let scenario = URL(fileURLWithPath: CommandLine.arguments[index + 1]).lastPathComponent
+        let fixtureAccountHash = String(repeating: "a", count: 64)
         do {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
@@ -901,6 +902,14 @@ enum MockBackend {
                 let written = bytes.withUnsafeBytes { write(descriptor, $0.baseAddress, $0.count) }
                 let closed = Darwin.close(descriptor)
                 guard written == bytes.count, closed == 0 else { throw ManagementError.writeFailed }
+            }
+            func authStatus(_ state: String) -> JSONValue {
+                var value: [String: JSONValue] = [
+                    "state": .string(state), "credentialStore": .string("macOSKeychain"),
+                    "audience": .null, "expiresAt": .null, "entitlementAuthorized": .bool(false)
+                ]
+                if state == "credentialPresent" { value["accountHash"] = .string(fixtureAccountHash) }
+                return .object(value)
             }
             try trace("started")
             let frames: [JSONValue]
@@ -975,14 +984,11 @@ enum MockBackend {
                                 try emitFailure(request, code: "AUTH_INVALID", category: "credentialStoreUnavailable")
                                 continue
                             }
-                            let response = result(request, data: .object([
-                                "state": .string(loggedOut ? "signedOut"
-                                    : scenario == "recentbootstrapsignedout" ? "signedOut"
-                                    : scenario == "recentbootstrapexpired" ? "expired"
-                                    : scenario == "recentbootstrapinvalid" ? "invalid" : "credentialPresent"),
-                                "credentialStore": .string("macOSKeychain"), "audience": .null,
-                                "expiresAt": .null, "entitlementAuthorized": .bool(false)
-                            ]))
+                            let state = loggedOut ? "signedOut"
+                                : scenario == "recentbootstrapsignedout" ? "signedOut"
+                                : scenario == "recentbootstrapexpired" ? "expired"
+                                : scenario == "recentbootstrapinvalid" ? "invalid" : "credentialPresent"
+                            let response = result(request, data: authStatus(state))
                             if (scenario == "recentstatusslow" && profileReads > 1)
                                 || scenario == "recentbootstrapstatusslow" {
                                 DispatchQueue.global().async {
@@ -1079,18 +1085,12 @@ enum MockBackend {
                     if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired"].contains(scenario) { try trace(command) }
                     if scenario == "foregroundexpired", command == "auth.status" {
                         profileReads += 1
-                        try emit(.object(result(request, data: .object([
-                            "state": .string(profileReads == 1 ? "credentialPresent" : "expired"),
-                            "credentialStore": .string("macOSKeychain"),
-                            "audience": .null, "expiresAt": .null, "entitlementAuthorized": .bool(false)
-                        ]))))
+                        try emit(.object(result(request, data: authStatus(
+                            profileReads == 1 ? "credentialPresent" : "expired"))))
                         continue
                     }
                     if scenario == "statuspermission", command == "auth.status" {
-                        let response = result(request, data: .object([
-                            "state": .string("credentialPresent"), "credentialStore": .string("macOSKeychain"),
-                            "audience": .null, "expiresAt": .null, "entitlementAuthorized": .bool(false)
-                        ]))
+                        let response = result(request, data: authStatus("credentialPresent"))
                         DispatchQueue.global().async {
                             Thread.sleep(forTimeInterval: 0.5)
                             do { try emit(.object(response)) } catch { exit(3) }
@@ -1347,6 +1347,9 @@ enum MockBackend {
                             if flowStarted {
                                 status["flow"] = .object(["flowID": .string("fixture-native-flow"),
                                     "state": .string(completed ? "completed" : "pending"), "error": .null])
+                            }
+                            if status["state"]?.string == "credentialPresent" {
+                                status["accountHash"] = .string(fixtureAccountHash)
                             }
                             try emit(.object(result(request, data: .object(status))))
                             continue

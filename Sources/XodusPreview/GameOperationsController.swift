@@ -288,10 +288,9 @@ final class GameOperationsController: ObservableObject {
                 let status = try await serviceRunner.run(command: .serviceStatus, runID: evidenceRunID)
                 guard status.code == 0, let data = status.result else { throw GameScriptError.invalidReceipt }
                 let value = try GameServiceStatus.parse(data)
-                guard value.signedIn else { throw GameScriptError.failed(11) }
+                guard value.signedIn, value.accountHash != nil else { throw GameScriptError.failed(11) }
                 serviceStatus = value
                 if game != nil {
-                    guard value.accountHash != nil else { throw GameScriptError.invalidReceipt }
                     resume = true
                 } else { clearRecoveredDownloadSignIn() }
                 if setupCheckedOnce, !resume { refreshSetup() }

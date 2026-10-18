@@ -2108,11 +2108,38 @@
         "entitlementAuthorized": {
           "const": false
         },
+        "accountHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
         "flow": {
           "$ref": "#/$defs/authFlow"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "credentialPresent"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "accountHash"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "accountHash"
+              ]
+            }
+          }
+        }
+      ]
     },
     "authFlow": {
       "type": "object",

@@ -76,6 +76,7 @@ public struct AuthenticationStatus: Codable, Equatable, Sendable {
     public let expiresAt: String?
     public let entitlementAuthorized: Bool
     public let flow: AuthenticationFlow?
+    public let accountHash: String?
 }
 
 public struct AuthenticationVerification: Codable, Equatable, Sendable {

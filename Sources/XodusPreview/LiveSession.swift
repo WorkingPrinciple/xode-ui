@@ -201,7 +201,11 @@ final class LiveSession: ObservableObject {
     }
     var hasConfirmedSignIn: Bool {
         isReady && !signInPending && authentication?.state == .credentialPresent
+            && authentication?.accountHash.map(XboxAccountBinding.valid) == true
             && (accountStatusCurrent || (accountStatusChecking && confirmedBeforeStatusRead))
+    }
+    var accountHash: String? {
+        authentication?.accountHash.flatMap { XboxAccountBinding.valid($0) ? $0 : nil }
     }
     var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
     var accountJourneyTitle: String {
@@ -1236,6 +1240,7 @@ final class LiveSession: ObservableObject {
         defer { MicrosoftSignInGate.shared.release(signOutOwner) }
         let launcherAlreadySignedOut = authentication?.state == .signedOut
         clearRecentLibrary()
+        invalidateCatalogScope()
         authenticationGeneration += 1
         accountOperationBusy = true
         signingOut = true
@@ -1244,9 +1249,6 @@ final class LiveSession: ObservableObject {
         failedAccountAction = nil
         authTask?.cancel()
         accountStatusCurrent = false
-        selectedProduct = nil
-        products = []
-        nextCursor = nil
         let token = generation
         defer {
             if token == generation {
@@ -1271,7 +1273,6 @@ final class LiveSession: ObservableObject {
             }
             accountStatusCurrent = true
             diagnosticPreview = nil
-            await refreshCatalog(currentQuery)
             return true
         } catch {
             guard token == generation else { return false }

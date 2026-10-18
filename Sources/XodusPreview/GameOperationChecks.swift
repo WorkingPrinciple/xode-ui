@@ -66,7 +66,8 @@ enum GameOperationChecks {
               == "Gamestitle42-Xbox", "S5 destination title is ASCII letters/digits only")
         check(try paths.destination(title: String(repeating: "a", count: 200), productID: "FIXTURE00001")
               .lastPathComponent.count == 101, "S5 destination is bounded")
-        let parsed = try GameServiceStatus.parse(Data(#"{"serviceRunning":true,"signedIn":true,"extra":1}"#.utf8))
+        let parsed = try GameServiceStatus.parse(Data(
+            #"{"serviceRunning":true,"signedIn":true,"accountHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","extra":1}"#.utf8))
         check(parsed.signedIn, "S3 status ignores unrelated fields")
         _ = try GameServiceSignOutResult.parse(Data(
             #"{"serviceRunning":false,"signedIn":false,"credentialsRemoved":true}"#.utf8))
@@ -131,7 +132,7 @@ enum GameOperationChecks {
             if [ -f '\(verificationFails.path)' ]; then
                 printf '11\\n' | publish '\(paths.processed.path)'/"$1.status"; exit 11
             fi
-            touch '\(signed.path)'
+            touch '\(signed.path)' '\(verifiedAccount.path)'
             printf '0\\n' | publish '\(paths.processed.path)'/"$1.status"
             """)
         try script(.check, """
@@ -282,29 +283,28 @@ enum GameOperationChecks {
         operations.signInForGames()
         await operations.waitForService()
         if let error = operations.serviceError { print("NEUTRAL service-signin failure: \(error)") }
-        check(operations.serviceStatus?.signedIn == true && !installed.serviceSignInActive,
-              "S3 explicit sign-in is followed by a fresh status check; no token transfer")
+        check(operations.serviceStatus?.signedIn == true
+              && operations.serviceStatus?.accountHash == fixtureAccountHash
+              && !installed.serviceSignInActive,
+              "S3 explicit sign-in is followed by a fresh account-bound status check; no token transfer")
         let callsBeforeStatus = try String(contentsOf: verificationCalls, encoding: .utf8)
         operations.refreshService()
         await operations.waitForService()
         let callsAfterStatus = try String(contentsOf: verificationCalls, encoding: .utf8)
-        check(operations.serviceStatus?.signedIn == true && operations.serviceStatus?.accountHash == nil
-              && operations.serviceAccountNeedsVerification
-              && operations.serviceLabel == "Game sign-in saved; account not verified"
-              && operations.serviceSignInActionTitle == "Verify game account"
-              && operations.serviceAccountSymbol != "checkmark.circle"
+        check(operations.serviceStatus?.signedIn == true
+              && operations.serviceStatus?.accountHash == fixtureAccountHash
+              && !operations.serviceAccountNeedsVerification
+              && operations.serviceLabel == "Signed in for games"
+              && operations.serviceSignInActionTitle == nil
+              && operations.serviceAccountSymbol == "checkmark.circle"
               && callsAfterStatus == callsBeforeStatus,
-              "XO-018: Unbound saved sign-in stays truthful and exposes explicit verification without auto-executing it")
-        let serviceView = GameServiceAccountView(operations: operations, library: PCGamesController())
-        let serviceHost = NSHostingView(rootView: serviceView.environmentObject(LiveSession()))
-        serviceHost.sizingOptions = []
-        serviceHost.frame = CGRect(x: 0, y: 0, width: 560, height: 900)
-        serviceHost.layoutSubtreeIfNeeded()
-        check(serviceHost.window == nil && operations.serviceSignInActionTitle == "Verify game account"
-              && !operations.serviceBusy,
-              "XO-018: Shared Account service presentation lays out detached without starting verification")
-        check(serviceView.accountStatusText == "Xbox account hasn't been confirmed",
-              "Plain Xbox status distinguishes saved sign-in from a confirmed account without claiming download access")
+              "XO-018: Bound saved sign-in remains ready without another user-visible account action")
+        try FileManager.default.removeItem(at: verifiedAccount)
+        operations.refreshService()
+        await operations.waitForService()
+        check(operations.serviceStatus == nil && operations.serviceError != nil
+              && !operations.serviceAccountNeedsVerification,
+              "XO-018: signedIn without an account binding is rejected, never exposed as a partial login state")
         try privateFile(verificationFails, "Neutral refused verification.")
         operations.signInForGames()
         check(operations.serviceBusy && operations.serviceSigningIn && installed.serviceSignInActive
@@ -319,7 +319,6 @@ enum GameOperationChecks {
               && callsAfterFailure.split(separator: "\n").count == 2,
               "XO-018: Verification failure is visible, releases joined holds, preserves retry and deduplicates activation")
         try FileManager.default.removeItem(at: verificationFails)
-        try privateFile(verifiedAccount, "Neutral account-binding receipt switch.")
         operations.signInForGames()
         await operations.waitForService()
         check(operations.serviceStatus?.accountHash == fixtureAccountHash && operations.serviceError == nil
@@ -739,15 +738,16 @@ enum GameOperationChecks {
                     try FileManager.default.removeItem(at: verifiedAccount)
                     operations.recoverDownload(productID: game.id)
                     await operations.waitForService()
-                    let checkBeforeUnbound = try String(contentsOf: root.appendingPathComponent("check-arguments"), encoding: .utf8)
-                    operations.recoverDownload(productID: game.id)
-                    await operations.waitForService()
-                    let checkAfterUnbound = try String(contentsOf: root.appendingPathComponent("check-arguments"), encoding: .utf8)
-                    check(operations.error?.contains("has not resumed") == true
-                          && checkAfterUnbound == checkBeforeUnbound && operations.failureCode == 11,
+                    let callsAfterUnbound = try String(contentsOf: verificationCalls, encoding: .utf8)
+                    check(operations.serviceStatus == nil
+                          && operations.error?.contains("No new sign-in was started") == true
+                          && callsAfterUnbound == callsBeforeBadStatus && operations.failureCode == 11,
                           "An unbound service result cannot resume an initiating install")
+                    try FileManager.default.removeItem(at: signed)
                     operations.recoverDownload(productID: game.id)
                     await operations.waitForService()
+                    check(operations.downloadNeedsSignIn && operations.canRecoverDownload,
+                          "Confirmed unavailable credentials request one bounded continuation")
                     try privateFile(verificationCancels, "Synthetic Microsoft-window cancellation.")
                     operations.recoverDownload(productID: game.id)
                     await operations.waitForService()
@@ -757,6 +757,7 @@ enum GameOperationChecks {
                           && MicrosoftSignInGate.shared.available,
                           "Cancelled consent never resumes or leaves a held prompt or stale Continue demand")
                     try FileManager.default.removeItem(at: verificationCancels)
+                    try privateFile(signed, "Restored synthetic saved sign-in.")
                     try privateFile(verifiedAccount, "Restored synthetic binding.")
                     operations.refreshService()
                     await operations.waitForService()

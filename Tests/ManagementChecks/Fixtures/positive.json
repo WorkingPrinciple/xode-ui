@@ -1200,6 +1200,7 @@
       "audience": "http://xboxlive.com",
       "expiresAt": "2099-01-01T00:00:00Z",
       "entitlementAuthorized": false,
+      "accountHash": "5db230bf666cec36ca36bc9b181b6fb103b940ad6dc0a8df9e57229fa1affb1e",
       "flow": {
         "flowID": "fixture-flow",
         "state": "completed",

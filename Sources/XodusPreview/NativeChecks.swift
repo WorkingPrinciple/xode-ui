@@ -1156,7 +1156,8 @@ enum NativeChecks {
             check(diagnostics.diagnosticExportError != nil && !diagnostics.diagnosticSaved,
                   "Disconnect invalidates diagnostic preview before another export")
         } catch {
-            check(false, (error as? ManagementError)?.localizedDescription ?? "Native fixture regression did not complete.")
+            check(false, (error as? LocalizedError)?.errorDescription
+                  ?? "Native fixture regression did not complete: \(String(describing: error))")
         }
         print("\(count) native session checks, \(failures) failures. Mock children only; no Keychain or Microsoft operation.")
         return failures == 0

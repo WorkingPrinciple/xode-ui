@@ -99,7 +99,7 @@ def main():
                 for layout in layouts if layout != selected for name in schemas),
             "Mixed or duplicate SwiftPM management resources")
     for name, expected in [
-        ("management-v1.schema.json", "6945db01df88eeaf80f495f6b9d7240e270a879851c2c830fc5548ba20d32192"),
+        ("management-v1.schema.json", "d2f4222e952f732396018a4c4576da24729bdbddde7dd1f95df3b84d7a6d324d"),
         ("runtime-providers-v1.schema.json", "90c094e4585af059b5ebcfc3201260362e88aa642b50ec0388a03427260d55e9"),
     ]:
         owned_bytes(selected / name, expected)

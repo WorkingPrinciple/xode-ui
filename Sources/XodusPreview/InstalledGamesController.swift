@@ -212,6 +212,19 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    func suspendAccountView() {
+        guard runningGameID == nil, stoppingGameID == nil, !mutationActive else { return }
+        games = []
+        launchableIDs = []
+        placeholderIDs = []
+        updateStatuses = [:]
+        playErrors = [:]
+        playLogs = [:]
+        playNotices = [:]
+        packageErrors = [:]
+        loaded = false
+    }
+
     func play(_ game: InstalledGame) async {
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,

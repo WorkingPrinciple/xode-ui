@@ -127,11 +127,15 @@ final class AppState: ObservableObject {
             return nil
         }
         if result {
+            installedGames.suspendAccountView()
             session.confirmAppSignOut()
         } else {
+            let application = session.accountHash
+            let library = pcGames.accountHash
+            let service = gameOperations.serviceStatus?.accountHash
             installedGames.setAccountAccessAllowed(
-                session.hasConfirmedSignIn && pcGames.hasSavedSignIn && !pcGames.needsSignIn
-                    && gameOperations.serviceStatus?.signedIn == true
+                session.hasConfirmedSignIn && application != nil
+                    && application == library && library == service
             )
         }
         return result

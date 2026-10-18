@@ -1,5 +1,74 @@
 [
   {
+    "name": "credentialPresentRequiresAccountHash",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-auth-completed",
+      "ok": true,
+      "data": {
+        "state": "credentialPresent",
+        "credentialStore": "macOSKeychain",
+        "audience": "http://xboxlive.com",
+        "expiresAt": "2099-01-01T00:00:00Z",
+        "entitlementAuthorized": false,
+        "flow": {
+          "flowID": "fixture-flow",
+          "state": "completed",
+          "error": null
+        }
+      }
+    }
+  },
+  {
+    "name": "accountHashMustBeLowercaseSHA256",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-auth-completed",
+      "ok": true,
+      "data": {
+        "state": "credentialPresent",
+        "credentialStore": "macOSKeychain",
+        "audience": "http://xboxlive.com",
+        "expiresAt": "2099-01-01T00:00:00Z",
+        "entitlementAuthorized": false,
+        "accountHash": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "flow": {
+          "flowID": "fixture-flow",
+          "state": "completed",
+          "error": null
+        }
+      }
+    }
+  },
+  {
+    "name": "signedOutForbidsAccountHash",
+    "frame": {
+      "kind": "result",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestID": "fixture-result-7",
+      "ok": true,
+      "data": {
+        "state": "signedOut",
+        "credentialStore": "macOSKeychain",
+        "audience": null,
+        "expiresAt": null,
+        "entitlementAuthorized": false,
+        "accountHash": "5db230bf666cec36ca36bc9b181b6fb103b940ad6dc0a8df9e57229fa1affb1e"
+      }
+    }
+  },
+  {
     "name": "verifyNotUUID",
     "frame": {
       "kind": "request",

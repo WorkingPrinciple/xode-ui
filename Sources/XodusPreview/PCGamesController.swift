@@ -30,6 +30,7 @@ final class PCGamesController: ObservableObject {
     private let signInOwner = UUID()
 
     var representedGames: [PCGame] { needsSignIn ? [] : snapshot?.games ?? [] }
+    var accountHash: String? { snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var accessIsCurrent: Bool {
         snapshot != nil && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
             && !presenceUnavailable && error == nil && !needsKeychainApproval

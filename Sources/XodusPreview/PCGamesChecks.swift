@@ -136,7 +136,9 @@ enum PCGamesChecks {
         }
         let state = AppState(installedGames: installed, pcGames: library, gameScriptPaths: paths)
         if launcherAlreadySignedOut {
-            try signOutScript(#"{"serviceRunning":true,"signedIn":true}"#, command: .serviceStatus)
+            try signOutScript(
+                #"{"serviceRunning":true,"signedIn":true,"accountHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}"#,
+                command: .serviceStatus)
             state.gameOperations.refreshService()
             await state.gameOperations.waitForService()
             check(session.currentCredentialState == .signedOut && library.hasSavedSignIn

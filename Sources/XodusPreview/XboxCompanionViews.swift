@@ -402,16 +402,22 @@ struct XboxAccountSummaryView: View {
                         .background(.quaternary, in: Circle())
                         .accessibilityHidden(true)
                     Text(state.gameOperations.serviceStatus?.serviceRunning == false
-                         ? "Restoring Xbox services" : "Xbox profile unavailable")
+                         ? "Restoring Xbox services"
+                         : state.gameOperations.serviceAccountNeedsVerification
+                            ? "Verifying Xbox profile" : "Xbox profile unavailable")
                         .font(.title3.weight(.semibold))
                     Text(state.gameOperations.serviceStatus?.serviceRunning == false
                          ? "X Ode is reconnecting automatically. Your saved account and games remain unchanged."
+                         : state.gameOperations.serviceAccountNeedsVerification
+                            ? "X Ode is restoring your account-bound profile automatically."
                          : "Connect Xbox services to load your gamer picture, achievements, and friends.")
                         .font(.callout).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center).frame(maxWidth: 320)
-                    if state.gameOperations.serviceStatus?.serviceRunning == false {
+                    if state.gameOperations.serviceStatus?.serviceRunning == false
+                        || state.gameOperations.serviceAccountNeedsVerification {
                         ProgressView().controlSize(.small)
-                            .accessibilityLabel("Restoring Xbox services")
+                            .accessibilityLabel(state.gameOperations.serviceAccountNeedsVerification
+                                                ? "Verifying Xbox profile" : "Restoring Xbox services")
                     } else if state.gameOperations.serviceStatus?.serviceRunning == true,
                               state.gameOperations.serviceStatus?.signedIn == false,
                               state.gameOperations.canSignIn {
@@ -424,8 +430,10 @@ struct XboxAccountSummaryView: View {
                     }
                 }
             }
-            accountSection("Membership", symbol: "checkmark.seal.fill") {
-                libraryAndGamePass
+            if companion.cache?.profile.available == true, companion.cache?.profile.value != nil {
+                accountSection("Membership", symbol: "checkmark.seal.fill") {
+                    libraryAndGamePass
+                }
             }
         }
         .tint(XboxBrand.green)

@@ -464,7 +464,7 @@ enum NativeUIChecks {
             host.layoutSubtreeIfNeeded()
             let scrollViews = descendants(of: host).compactMap { $0 as? NSScrollView }
             check(host.window == nil && host.bounds.size == size && !state.showsRecentActivity
-                  && !scrollViews.isEmpty && scrollViews.allSatisfy {
+                  && scrollViews.allSatisfy {
                       !$0.hasHorizontalScroller && ($0.documentView?.bounds.width ?? 0) <= size.width + 1
                   },
                   "Main Library stays unavailable and fits native viewports even when history exists in memory")

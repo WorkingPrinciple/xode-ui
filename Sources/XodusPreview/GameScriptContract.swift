@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
+import CryptoKit
 import Foundation
 import XodusManagement
 
@@ -65,7 +66,7 @@ struct GameServiceStatus: Codable, Equatable, Sendable {
         let value = try JSONDecoder().decode(Self.self, from: data)
         guard (value.serviceRunning || !value.signedIn),
               value.accountHash.map(XboxAccountBinding.valid) ?? true,
-              value.signedIn || value.accountHash == nil else { throw GameScriptError.invalidReceipt }
+              value.signedIn == (value.accountHash != nil) else { throw GameScriptError.invalidReceipt }
         return value
     }
 }
@@ -87,6 +88,13 @@ struct GameServiceSignOutResult: Decodable, Sendable {
 enum XboxAccountBinding {
     static func valid(_ value: String) -> Bool {
         value.utf8.count == 64 && value.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
+    }
+
+    static func hash(xuid: String) -> String? {
+        guard !xuid.isEmpty, xuid.utf8.count <= 32,
+              xuid.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
+        return SHA256.hash(data: Data(("xodus-account-v1\u{0}" + xuid).utf8))
+            .map { String(format: "%02x", $0) }.joined()
     }
 }
 

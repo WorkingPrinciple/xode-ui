@@ -130,8 +130,8 @@ final class ShippingChecks: XCTestCase {
             guard let bundle = Bundle(url: app) else { throw ManagementError.invalidPayload }
             let pins = ShippingPairIdentity(schemaVersion: 1, appSourceCommit: source,
                 appSourceTree: String(repeating: "b", count: 40),
-                producerCommit: "c1073100ce8936a751b962b1401ddb641c8be38a",
-                producerTree: "7a808c0e6a8a909455d07eb463379ab55bdf138c",
+                producerCommit: "28f737df46b29cc195145425e3fd1397ebc09be3",
+                producerTree: "1273ddaa50a6b3e77647aabb5bb170b1b525c922",
                 engineSHA256: hash(engineData), engineBytes: Int64(engineData.count),
                 helperSHA256: hash(helperData), helperBytes: Int64(helperData.count),
                 helperVersion: 1, helperSourceCommit: source)
@@ -162,7 +162,7 @@ final class ShippingChecks: XCTestCase {
                 } catch { check(error as? ManagementError == .pairedEngineUnavailable, name) }
             }
             func altered(engineBytes: Int64? = nil, helperVersion: Int = 1,
-                         producer: String = "c1073100ce8936a751b962b1401ddb641c8be38a") -> ShippingPairIdentity {
+                         producer: String = "28f737df46b29cc195145425e3fd1397ebc09be3") -> ShippingPairIdentity {
                 ShippingPairIdentity(schemaVersion: 1, appSourceCommit: pins.appSourceCommit,
                     appSourceTree: pins.appSourceTree, producerCommit: producer, producerTree: pins.producerTree,
                     engineSHA256: pins.engineSHA256, engineBytes: engineBytes ?? pins.engineBytes,

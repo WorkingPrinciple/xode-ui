@@ -8,6 +8,8 @@ struct LiveRootView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var searchFocused: Bool
+    @State private var serviceAccountRecoveryAttempted = false
+    @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
 #endif
@@ -20,7 +22,23 @@ struct LiveRootView: View {
 #endif
         return !session.hasConfirmedSignIn
     }
-    private var accountContentAllowed: Bool { startupAllowed && session.hasConfirmedSignIn }
+    private var accountRecoveryAllowed: Bool { startupAllowed && session.hasConfirmedSignIn }
+    private var unifiedAccountVerified: Bool {
+        guard session.hasConfirmedSignIn, state.pcGames.accessIsCurrent,
+              let application = session.accountHash,
+              let library = state.pcGames.accountHash,
+              let service = state.gameOperations.serviceStatus?.accountHash,
+              let companionBinding = companion.cache?.accountHash else { return false }
+        return application == library && library == service && service == companionBinding
+            && companion.cache?.profile.available == true && companion.cache?.profile.value != nil
+    }
+    private var accountBindingMismatch: Bool {
+        let values = [session.accountHash, state.pcGames.accountHash,
+                      state.gameOperations.serviceStatus?.accountHash].compactMap { $0 }
+        return values.count >= 2 && Set(values).count > 1
+    }
+    private var requiresAccountGate: Bool { !unifiedAccountVerified }
+    private var accountContentAllowed: Bool { startupAllowed && unifiedAccountVerified }
     private var heroAnimationAllowed: Bool {
         startupAllowed && !state.showingAccount && session.selectedProduct == nil
             && !session.signInPending && state.gameOperations.installConsent == nil
@@ -66,7 +84,7 @@ struct LiveRootView: View {
     var body: some View {
         ScrollViewReader { proxy in
         Group {
-            if requiresSignIn {
+            if requiresAccountGate {
                 Text("X Ode").font(.title.bold()).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(nsColor: .windowBackgroundColor))
@@ -87,7 +105,7 @@ struct LiveRootView: View {
             }
         }
         .toolbar {
-            if !requiresSignIn {
+            if !requiresAccountGate {
             XodusToolbar(selection: state.navigationSelection, searchText: $state.query,
                          searchFocused: Binding(get: { searchFocused }, set: { searchFocused = $0 }),
                          searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,
@@ -148,13 +166,27 @@ struct LiveRootView: View {
         .task {
             if startupAllowed { await state.runtimeSettings.refreshCrossOverDependency() }
         }
-        .task(id: accountContentAllowed) {
-            if accountContentAllowed {
+        .task(id: accountRecoveryAllowed) {
+            if accountRecoveryAllowed {
+                await state.pcGames.loadOnAppear()
                 await state.installedGames.load()
                 await state.gameOperations.restore()
                 await state.gameOperations.loadGamePassCache()
                 state.gameOperations.checkSetupOnce()
+                state.gameOperations.refreshService()
+                await state.gameOperations.waitForService()
+                if state.gameOperations.serviceStatus?.accountHash != nil {
+                    await companion.refresh(for: state.gameOperations.serviceStatus)
+                }
             }
+        }
+        .task(id: "\(session.accountHash ?? ""):\(state.pcGames.accountHash ?? ""):\(state.gameOperations.serviceStatus?.accountHash ?? "")") {
+            guard accountBindingMismatch else { return }
+            state.installedGames.setAccountAccessAllowed(false,
+                message: "Account identity changed. Sign in again before accessing games.")
+            companion.invalidateBinding()
+            LibraryXboxStats.shared.invalidateBinding()
+            _ = await state.signOut(session: session)
         }
         .task(id: "\(scenePhase == .active):\(session.hasConfirmedSignIn)") {
             if startupAllowed, scenePhase == .active {
@@ -179,10 +211,21 @@ struct LiveRootView: View {
                 accessMessage = "Sign in to Xbox services to play this game."
             }
             state.installedGames.setAccountAccessAllowed(
-                session.hasConfirmedSignIn && state.pcGames.hasSavedSignIn && !state.pcGames.needsSignIn
-                    && state.gameOperations.serviceStatus?.signedIn == true,
+                unifiedAccountVerified,
                 message: accessMessage
             )
+            if state.gameOperations.serviceStatus?.accountHash != nil {
+                serviceAccountRecoveryAttempted = false
+            } else if accountRecoveryAllowed,
+                      state.gameOperations.serviceStatus?.serviceRunning == true,
+                      state.gameOperations.serviceStatus?.signedIn == true,
+                      state.gameOperations.serviceAccountNeedsVerification,
+                      !state.gameOperations.serviceSigningIn,
+                      !serviceAccountRecoveryAttempted,
+                      state.gameOperations.canSignIn {
+                serviceAccountRecoveryAttempted = true
+                state.gameOperations.signInForGames()
+            }
             if accountContentAllowed {
                 await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,
                     signingIn: state.gameOperations.serviceSigningIn)
@@ -224,8 +267,8 @@ struct LiveRootView: View {
                 state.accountDestination = .account
             }
         }
-        .sheet(isPresented: Binding(get: { requiresSignIn || state.showingAccount },
-                                    set: { state.showingAccount = !requiresSignIn && $0 }), onDismiss: {
+        .sheet(isPresented: Binding(get: { requiresAccountGate || state.showingAccount },
+                                    set: { state.showingAccount = !requiresAccountGate && $0 }), onDismiss: {
             state.showingSetup = false
             state.accountDestination = .account
         }) {
