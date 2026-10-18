@@ -19,6 +19,7 @@ final class GameOperationsController: ObservableObject {
     @Published private(set) var serviceStatus: GameServiceStatus?
     @Published private(set) var serviceBusy = false
     @Published private(set) var serviceSigningIn = false
+    @Published private(set) var serviceSignOutConfirmed = false
     @Published private(set) var serviceError: String?
     @Published private(set) var serviceLog: URL?
     @Published private(set) var gamePassStatus: GamePassStatusResult?
@@ -95,16 +96,65 @@ final class GameOperationsController: ObservableObject {
     }
     var canSignIn: Bool {
         !serviceBusy && !isBusy && !recoveryRequired && !installed.mutationActive
-            && !preparingConsent && !installingDirectly && installed.runningGameID == nil && !terminating
+            && !preparingConsent && !installingDirectly && !installed.accountDisconnecting
+            && installed.runningGameID == nil && !terminating
     }
     var canStartMutation: Bool {
         !isBusy && !recoveryRequired && !installed.mutationActive && !serviceBusy && !preparingConsent && installed.loaded
-            && !installed.editing && !installed.choosing && !terminating
+            && !installed.editing && !installed.choosing && !installed.accountDisconnecting && !terminating
     }
     var canQuit: Bool {
         !installingDirectly && !preparingConsent
             && mutationTask == nil && compatibilityTask == nil && gamePassTask == nil && stopTask == nil
             && setupTask == nil && !serviceBusy
+            && !installed.accountDisconnecting
+    }
+    var canDisconnectAccount: Bool {
+        canQuit && !recoveryRequired && !installed.mutationActive && !installed.editing
+            && !installed.choosing && installed.runningGameID == nil && installed.stoppingGameID == nil
+            && installConsent == nil && uninstallConsent == nil && !terminating
+    }
+
+    func beginAccountDisconnect() -> Bool {
+        guard canDisconnectAccount else { return false }
+        installed.accountDisconnecting = true
+        resetFeedback(productID: nil)
+        return true
+    }
+
+    func finishAccountDisconnect() { installed.accountDisconnecting = false }
+
+    func signOutForApp() async -> Bool {
+        guard installed.accountDisconnecting, !serviceBusy, !terminating else { return false }
+        serviceBusy = true
+        serviceSignOutConfirmed = false
+        serviceError = nil
+        serviceLog = nil
+        serviceStatus = nil
+        gamePassGeneration += 1
+        gamePassStatus = nil
+        gamePassError = nil
+        gamePassFailureCode = nil
+        gamePassFromCache = false
+        LibraryXboxStats.shared.invalidateBinding()
+        XboxCompanionController.shared.invalidateBinding()
+        defer { serviceBusy = false }
+        let runID = InstalledGamesController.runID()
+        do {
+            let outcome = try await serviceRunner.run(command: .serviceSignOut, runID: runID)
+            guard outcome.code == 0, let data = outcome.result else { throw GameScriptError.failed(outcome.code) }
+            _ = try GameServiceSignOutResult.parse(data)
+            guard !terminating else { throw CancellationError() }
+            serviceStatus = GameServiceStatus(serviceRunning: false, signedIn: false, accountHash: nil)
+            serviceSignOutConfirmed = true
+            return true
+        } catch {
+            serviceLog = await scriptLog(runID)
+            serviceError = error as? GameScriptError == .unavailable
+                ? "X Ode couldn't use this runtime's game-service sign-out helper. A matching runtime with sign-out support is required. No PC-library or launcher sign-in was removed."
+                : "X Ode couldn't confirm game-service sign-out. That service may have stopped, but credential removal isn't confirmed. No PC-library or launcher sign-in was removed. Check the sign-out log before retrying."
+            return false
+        }
     }
     var canConfirmInstall: Bool {
         canStartMutation && installConsent?.compatibility?.supported == true
@@ -185,7 +235,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     func refreshService() {
-        guard !serviceBusy, !gamePassBusy, !setupRepairing, !terminating else { return }
+        guard !serviceBusy, !gamePassBusy, !setupRepairing, !installed.accountDisconnecting, !terminating else { return }
         serviceBusy = true
         gamePassStatus = nil
         gamePassFromCache = false
@@ -464,7 +514,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     private func refreshSetup() {
-        guard !terminating else { return }
+        guard !terminating, !installed.accountDisconnecting else { return }
         if setupBusy {
             if !setupRepairing { setupRefreshPending = true }
             return

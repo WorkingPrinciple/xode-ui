@@ -39,9 +39,10 @@ struct LiveAccountView: View {
                         Image(systemName: "person.crop.circle").font(.largeTitle).foregroundStyle(.secondary)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 5) {
-                            Text("Account").font(.title2.bold())
+                            Text("X Ode account").font(.title2.bold())
                                 .accessibilityIdentifier("xodus.account.status")
-                            Text(session.accountNoticeTitle).font(.headline).foregroundStyle(.secondary)
+                            Text(session.hasConfirmedSignIn ? "Signed in to X Ode" : session.accountNoticeTitle)
+                                .font(.headline).foregroundStyle(.secondary)
                         }
                         Spacer()
                         if session.accountBusy || session.signInPending {
@@ -166,12 +167,14 @@ struct LiveAccountView: View {
                             .accessibilityIdentifier("xodus.account.checkStatus")
                     } else { Button("Settings", action: openSettings.callAsFunction) }
                     if session.needsAccountDisconnect {
-                        Button(session.currentCredentialState == .expired ? "Disconnect expired sign-in" : "Sign out") {
+                        Button("Sign out of X Ode") {
                             interaction.confirmingSignOut = true
                         }
-                            .disabled(!session.canDisconnectAccount)
+                            .disabled(!state.canSignOut(session: session))
+                            .help("Finish any running game, installation or account action before signing out.")
+                            .accessibilityIdentifier("xodus.account.signOut")
                     } else {
-                        Button("Sign in with Microsoft") { Task { await session.beginSignIn() } }
+                        Button("Sign in to X Ode") { Task { await session.beginSignIn() } }
                             .disabled(!session.canSignIn)
                             .accessibilityIdentifier("xodus.account.signIn")
                             .buttonStyle(.borderedProminent)
@@ -195,11 +198,11 @@ struct LiveAccountView: View {
             await session.refreshAccount()
         }
         .interactiveDismissDisabled(session.accountBusy || session.signInPending)
-        .confirmationDialog("Sign out of Xodus on this Mac?", isPresented: $interaction.confirmingSignOut) {
-            Button("Disconnect sign-in", role: .destructive) { Task { await session.signOut() } }
+        .confirmationDialog("Sign out of X Ode on this Mac?", isPresented: $interaction.confirmingSignOut) {
+            Button("Sign out of X Ode", role: .destructive) { Task { await state.signOut(session: session) } }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Xodus removes its launcher sign-in and invalidates account-bound evidence. Other apps' credentials and game saves are not removed.")
+            Text("X Ode first signs out its game service, then removes its saved PC-library sign-in and disconnects its launcher profile. If any step fails, some sign-in data may remain and X Ode reports where it stopped. Game files, saves, other apps and Microsoft browser sessions are unchanged.")
         }
     }
 

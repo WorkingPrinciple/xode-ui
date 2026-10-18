@@ -27,6 +27,7 @@ private actor PCGamesMockStore: PCGamesRefreshStore {
     private(set) var reads = 0
     private(set) var deletions = 0
     var deletionFails = false
+    var deletionWaits = false
     var requiresApproval = false
     var approvalFails = false
     var approvalWaits = false
@@ -57,12 +58,15 @@ private actor PCGamesMockStore: PCGamesRefreshStore {
         token = refreshToken
         saved.append(refreshToken)
     }
-    func delete() throws {
+    func delete() async throws {
         deletions += 1
+        if deletionWaits { try await Task.sleep(for: .milliseconds(150)) }
         if deletionFails { throw PCGamesError.keychain(-1) }
         token = nil
     }
+    func delayDeletion() { deletionWaits = true }
     func refuseDeletion() { deletionFails = true }
+    func allowDeletion() { deletionFails = false }
     func requireApproval(fails: Bool = false, waits: Bool = false, retainsLegacy: Bool = false) {
         requiresApproval = true
         approvalFails = fails
@@ -100,6 +104,118 @@ private actor PCGamesMockSleeper {
 
 @MainActor
 enum PCGamesChecks {
+    static func checkAppSignOut(session: LiveSession, check: (Bool, String) -> Void) async throws {
+        let root = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent(".xodus-app-signout-checks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = PCGamesMockStore("neutral-app-sign-out")
+        let library = PCGamesController(store: store, client: PCGamesClient(transport: PCGamesMockTransport([])))
+        await library.restorePresence()
+        let installed = InstalledGamesController(store: InstalledGameStore(file: root.appendingPathComponent("installed.json")))
+        await installed.load()
+        let paths = GameScriptPaths(scripts: root.appendingPathComponent("scripts"),
+            processed: root.appendingPathComponent("processed"), logs: root.appendingPathComponent("logs"),
+            games: root.appendingPathComponent("games"), journal: root.appendingPathComponent("operation.json"))
+        for directory in [paths.scripts, paths.processed, paths.logs, paths.games] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                                    attributes: [.posixPermissions: 0o700])
+        }
+        func signOutScript(_ receipt: String) throws {
+            let script = paths.scripts.appendingPathComponent(GameScriptCommand.serviceSignOut.file)
+            let body = """
+            #!/bin/bash
+            umask 077
+            printf '%s\\n' '\(receipt)' > '\(paths.processed.path)'/"$1.result.json"
+            printf '0\\n' > '\(paths.processed.path)'/"$1.status"
+            """
+            try Data(body.utf8).write(to: script)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: script.path)
+            _ = try GameScriptFiles.script(.serviceSignOut, paths: paths)
+        }
+        let state = AppState(installedGames: installed, pcGames: library, gameScriptPaths: paths)
+        try installed.reserveMutation(gameID: nil)
+        let heldResult = await state.signOut(session: session)
+        let heldDeletions = await store.deletions
+        check(!heldResult && heldDeletions == 0 && session.hasConfirmedSignIn,
+              "App sign-out refuses active game mutation before touching either credential owner")
+        installed.releaseMutation()
+        let unsupported = await state.signOut(session: session)
+        let unsupportedDeletions = await store.deletions
+        check(!unsupported && unsupportedDeletions == 0 && !session.appSignOutComplete
+              && session.accountError?.contains("sign-out support is required") == true,
+              "An older runtime without the admitted helper cannot claim logout or remove downstream sign-ins")
+        await session.refreshAccount()
+        try signOutScript(#"{"serviceRunning":false,"signedIn":false,"credentialsRemoved":false}"#)
+        let indeterminate = await state.signOut(session: session)
+        let indeterminateDeletions = await store.deletions
+        check(!indeterminate && indeterminateDeletions == 0 && !session.appSignOutComplete
+              && session.accountError?.contains("credential removal isn't confirmed") == true,
+              "A stopped service without confirmed removal never clears the broker or launcher or claims full sign-out")
+        await session.refreshAccount()
+        try signOutScript(#"{"serviceRunning":false,"signedIn":false,"credentialsRemoved":true}"#)
+        await store.refuseDeletion()
+        let failed = await state.signOut(session: session)
+        let retained = await store.token
+        check(!failed && retained != nil && library.hasSavedSignIn
+              && state.gameOperations.serviceSignOutConfirmed
+              && session.accountError?.contains("launcher profile was not disconnected") == true
+              && !installed.accountDisconnecting && !session.signingOut,
+              "Broker deletion failure never claims launcher logout and releases joined sign-out holds")
+        await session.refreshAccount()
+        check(session.hasConfirmedSignIn,
+              "A failed app sign-out requires fresh status rather than pretending the launcher profile was removed")
+        await store.allowDeletion()
+        await store.delayDeletion()
+        let signingOut = Task { await state.signOut(session: session) }
+        for _ in 0..<100 {
+            if session.signingOut { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        check(session.signingOut && installed.accountDisconnecting && !session.hasConfirmedSignIn
+              && library.accountDisconnecting
+              && !state.gameOperations.canStartMutation && !state.gameOperations.canSignIn
+              && !state.gameOperations.canQuit && !state.canSignOut(session: session),
+              "Awaited sign-out holds account, install, Play and Quit admission until both credential operations settle")
+        library.refresh()
+        library.signIn()
+        check(!library.sheetPresented && library.accountDisconnecting,
+              "The held library gate refuses refresh and sign-in before credential removal settles")
+        for _ in 0..<100 {
+            if await store.deletions == 2 { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let competing = PCGamesController(store: PCGamesMockStore(),
+            client: PCGamesClient(transport: PCGamesMockTransport([])))
+        competing.signIn()
+        state.gameOperations.signInForGames()
+        state.gameOperations.refreshService()
+        check(!competing.sheetPresented && competing.error != nil && !state.gameOperations.serviceBusy,
+              "Sign-out's shared gate prevents another Microsoft prompt or game-service request during awaited removal")
+        do {
+            try installed.reserveMutation(gameID: nil)
+            check(false, "An installation cannot reserve mutation while account disconnect is held")
+        } catch { check(true, "An installation cannot reserve mutation while account disconnect is held") }
+        let duplicate = await state.signOut(session: session)
+        let duplicateLauncher = await session.signOut()
+        let result = await signingOut.value
+        let deletions = await store.deletions
+        let removed = await store.token
+        check(result && !duplicate && !duplicateLauncher && deletions == 2 && removed == nil
+              && !library.hasSavedSignIn && !session.hasConfirmedSignIn && session.accountError == nil
+              && session.appSignOutComplete && state.gameOperations.serviceSignOutConfirmed
+              && !installed.accountDisconnecting && !library.accountDisconnecting
+              && MicrosoftSignInGate.shared.available,
+              "One explicit app sign-out coordinates broker then launcher removal; duplicate requests neither delete twice nor restore auth")
+        let reopenedLibrary = PCGamesController(store: store, client: PCGamesClient(transport: PCGamesMockTransport([])))
+        await reopenedLibrary.loadOnAppear()
+        await session.revalidateAccountOnForeground()
+        check(!reopenedLibrary.hasSavedSignIn && !reopenedLibrary.busy
+              && session.currentCredentialState == .signedOut && !session.hasConfirmedSignIn
+              && session.welcomeMessage.contains("signed out of X Ode on this Mac"),
+              "Recreated library and fresh launcher status remain signed out after all three confirmed removals")
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         func response(_ value: [String: Any], status: Int = 200) throws -> PCGamesHTTPResponse {
             PCGamesHTTPResponse(status: status, data: try JSONSerialization.data(withJSONObject: value))

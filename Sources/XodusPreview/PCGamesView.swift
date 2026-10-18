@@ -79,8 +79,7 @@ struct PCGamesView: View {
                     Button(library.snapshot == nil ? "Load PC games" : "Refresh") { library.refresh() }
                         .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
                         .accessibilityIdentifier("xodus.pcGames.refresh")
-                    Button("Sign out of PC games") { Task { await library.signOut() } }
-                        .disabled(library.busy).accessibilityIdentifier("xodus.pcGames.signOut")
+                    Text("Manage sign-in in Account").font(.callout).foregroundStyle(.secondary)
                 } }
                 if library.busy && !library.approvingKeychain {
                     ProgressView("Loading your PC games").controlSize(.small)

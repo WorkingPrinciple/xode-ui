@@ -3,7 +3,7 @@ import Darwin
 import Foundation
 
 enum GameScriptCommand: String, Codable, Sendable {
-    case serviceStatus, serviceSignIn, check, gamePassStatus, gameStats, stop, setup, install, uninstall
+    case serviceStatus, serviceSignIn, serviceSignOut, check, gamePassStatus, gameStats, stop, setup, install, uninstall
     case xboxCompanion = "xbox-companion"
     case xboxAchievements = "xbox-achievements"
 
@@ -11,6 +11,7 @@ enum GameScriptCommand: String, Codable, Sendable {
         switch self {
         case .serviceStatus: "private-xodus-service-status.sh"
         case .serviceSignIn: "private-xodus-service-signin.sh"
+        case .serviceSignOut: "private-xodus-service-signout.sh"
         case .check: "private-xodus-check.sh"
         case .gamePassStatus: "private-xodus-gamepass-status.sh"
         case .gameStats, .xboxCompanion, .xboxAchievements: "private-xodus-manage.py"
@@ -64,6 +65,20 @@ struct GameServiceStatus: Codable, Equatable, Sendable {
         guard (value.serviceRunning || !value.signedIn),
               value.accountHash.map(XboxAccountBinding.valid) ?? true,
               value.signedIn || value.accountHash == nil else { throw GameScriptError.invalidReceipt }
+        return value
+    }
+}
+
+struct GameServiceSignOutResult: Decodable, Sendable {
+    let serviceRunning: Bool
+    let signedIn: Bool
+    let credentialsRemoved: Bool
+    let accountHash: String?
+
+    static func parse(_ data: Data) throws -> Self {
+        let value = try JSONDecoder().decode(Self.self, from: data)
+        guard !value.serviceRunning, !value.signedIn, value.credentialsRemoved,
+              value.accountHash == nil else { throw GameScriptError.invalidReceipt }
         return value
     }
 }
@@ -428,7 +443,7 @@ actor GameScriptRunner {
         process = child
         if cancellationRequested, child.isRunning { child.terminate() }
         let deadline = ContinuousClock.now.advanced(by: command == .serviceStatus ? .seconds(30)
-            : [.check, .gamePassStatus, .gameStats, .xboxCompanion, .xboxAchievements,
+            : [.serviceSignOut, .check, .gamePassStatus, .gameStats, .xboxCompanion, .xboxAchievements,
                .stop, .setup].contains(command) ? .seconds(120) : .seconds(1800))
         var lastProgress: GameScriptProgress?
         var observationError: GameScriptError?
@@ -444,7 +459,7 @@ actor GameScriptRunner {
                     if child.isRunning { child.terminate() }
                 }
             }
-            if [.serviceStatus, .serviceSignIn, .check, .gamePassStatus, .gameStats,
+            if [.serviceStatus, .serviceSignIn, .serviceSignOut, .check, .gamePassStatus, .gameStats,
                 .xboxCompanion, .xboxAchievements, .stop, .setup].contains(command) {
                 if ContinuousClock.now >= deadline, observationError == nil {
                     observationError = .timeout
@@ -472,7 +487,7 @@ actor GameScriptRunner {
             let value = try GameScriptProgress.parse(data)
             if value.phase == .failed { await progress(value) }
         }
-        let result = code == 0 && [.install, .serviceStatus, .check, .gamePassStatus, .gameStats,
+        let result = code == 0 && [.install, .serviceStatus, .serviceSignOut, .check, .gamePassStatus, .gameStats,
                                    .xboxCompanion, .xboxAchievements, .stop, .setup].contains(command)
             ? try GameScriptFiles.read(paths.receipt(runID, suffix: "result.json")) : nil
         return GameScriptOutcome(code: code, result: result, log: GameScriptFiles.log(runID: runID, paths: paths))

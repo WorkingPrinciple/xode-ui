@@ -15,9 +15,9 @@ struct GameServiceAccountView: View {
                         HStack {
                             Label("PC Library sign-in saved", systemImage: "checkmark.circle")
                             Spacer()
-                            Button("Sign out") { Task { await library.signOut() } }
-                                .disabled(library.busy).accessibilityIdentifier("xodus.pcGames.signOut")
                         }
+                        Text("Use Sign out of X Ode below to remove this app's saved library sign-in.")
+                            .font(.callout).foregroundStyle(.secondary)
                     } else {
                         Text("Use the main Microsoft sign-in to load your PC game library.")
                             .foregroundStyle(.secondary)

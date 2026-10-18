@@ -48,8 +48,9 @@ final class SheetInteraction: ObservableObject {
 final class AppState: ObservableObject {
     let runtimeSettings = RuntimeProviderSettings()
     let installedGames: InstalledGamesController
-    let pcGames = PCGamesController()
-    lazy var gameOperations = GameOperationsController(installed: installedGames)
+    let pcGames: PCGamesController
+    private let gameScriptPaths: GameScriptPaths
+    lazy var gameOperations = GameOperationsController(installed: installedGames, paths: gameScriptPaths)
     lazy var downloadQueue = DownloadQueueController(
         driver: GameOperationsInstallDriver(operations: gameOperations))
 #if !XODUS_SHIPPING
@@ -75,8 +76,36 @@ final class AppState: ObservableObject {
     private var destinationQueries: [Destination: String] = [:]
     @Published private(set) var liveLibraryScope: LiveLibraryScope = .games
 
-    init(installedGames: InstalledGamesController = InstalledGamesController()) {
+    init(installedGames: InstalledGamesController = InstalledGamesController(),
+         pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production) {
         self.installedGames = installedGames
+        self.pcGames = pcGames
+        self.gameScriptPaths = gameScriptPaths
+    }
+
+    func canSignOut(session: LiveSession) -> Bool {
+        session.canDisconnectAccount && gameOperations.canDisconnectAccount
+            && !pcGames.busy && !pcGames.restoringPresence && !runtimeSettings.planning
+    }
+
+    @discardableResult
+    func signOut(session: LiveSession) async -> Bool {
+        guard canSignOut(session: session), gameOperations.beginAccountDisconnect() else { return false }
+        defer { gameOperations.finishAccountDisconnect() }
+        guard pcGames.beginAccountDisconnect() else { return false }
+        defer { pcGames.finishAccountDisconnect() }
+        let result = await session.signOut {
+            await self.gameOperations.cancelPrecheck()
+            guard await self.gameOperations.signOutForApp() else {
+                return self.gameOperations.serviceError ?? "X Ode couldn't start game-service sign-out. No other sign-in was removed."
+            }
+            guard await self.pcGames.signOut() else {
+                return "Game-service sign-out was confirmed, but X Ode couldn't remove its saved PC-library sign-in. The launcher profile was not disconnected. Check account status before retrying."
+            }
+            return nil
+        }
+        if result { session.confirmAppSignOut() }
+        return result
     }
 
     var showsRecentActivity: Bool {

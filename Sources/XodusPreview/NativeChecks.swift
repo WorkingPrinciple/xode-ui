@@ -312,7 +312,7 @@ enum NativeChecks {
             check(try trace(savedConfiguration).filter { $0.hasPrefix("auth.") } ==
                   ["auth.status", "auth.status", "auth.status"],
                   "Account display recovery performs only neutral requested status reads, no sign-in or logout mutation")
-            await saved.signOut()
+            try await PCGamesChecks.checkAppSignOut(session: saved, check: check)
             check(!saved.hasConfirmedSignIn && saved.canStartWelcomeSignIn,
                   "Explicit sign-out returns to welcome and admits a new sign-in only with the bound helper")
             await saved.beginSignIn()
@@ -838,10 +838,16 @@ enum NativeChecks {
             check(visibleFailures.accountError == nil && visibleFailures.currentCredentialState == .credentialPresent
                   && visibleFailures.catalogError == catalogFailure,
                   "Account recovery restores only credential evidence and never erases a catalog failure")
-            await visibleFailures.signOut()
+            var signOutPreparationFinished = false
+            await visibleFailures.signOut {
+                signOutPreparationFinished = true
+                return nil
+            }
             check(visibleFailures.authentication?.state == .credentialPresent
                   && !visibleFailures.accountStatusCurrent && visibleFailures.currentCredentialState == nil
                   && !visibleFailures.canSignIn && !visibleFailures.canDisconnectAccount
+                  && signOutPreparationFinished && !visibleFailures.appSignOutComplete
+                  && visibleFailures.accountError?.contains("Some app sign-in data may already have been removed") == true
                   && visibleFailures.accountMessage == "Sign-out couldn't be confirmed. Check status before trying again.",
                   "Failed logout preserves the previous snapshot but never presents signed-out or current-saved success")
             await visibleFailures.refreshAccount()

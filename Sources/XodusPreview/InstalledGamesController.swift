@@ -36,6 +36,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var availableVersions: [String: String] = [:]
     @Published var serviceSignInActive = false
     @Published var runtimeRepairActive = false
+    @Published var accountDisconnecting = false
     var applicationTerminating = false {
         didSet { if applicationTerminating { foregroundHandoff?.cancel() } }
     }
@@ -92,7 +93,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func importGame(folder: URL, launcher: URL) async {
-        guard loaded, !editing, !mutationActive, !applicationTerminating else { return }
+        guard loaded, !editing, !mutationActive, !accountDisconnecting, !applicationTerminating else { return }
         editing = true
         defer { editing = false }
         do {
@@ -106,7 +107,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func chooseGame() async {
-        guard loaded, !editing, !choosing, !mutationActive, !applicationTerminating else { return }
+        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating else { return }
         choosing = true
         defer { choosing = false }
         let folderPanel = NSOpenPanel()
@@ -134,7 +135,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func remove(_ game: InstalledGame) async {
-        guard loaded, !editing, !choosing, !mutationActive, !applicationTerminating, runningGameID != game.id else { return }
+        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating, runningGameID != game.id else { return }
         editing = true
         inspectionGeneration = UUID()
         defer { editing = false }
@@ -196,7 +197,7 @@ final class InstalledGamesController: ObservableObject {
 
     func play(_ game: InstalledGame) async {
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
-              mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive,
+              mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
               games.contains(game) else { return }
         let interpreter: URL?
         do { interpreter = try LaunchAssociationAssets.bundledInterpreter() }
@@ -330,7 +331,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func canStop(_ game: InstalledGame) -> Bool {
-        loaded && !editing && !choosing && !mutationActive && !serviceSignInActive
+        loaded && !editing && !choosing && !mutationActive && !serviceSignInActive && !accountDisconnecting
             && !applicationTerminating && stoppingGameID == nil && runningGameID == game.id
             && launchStarted && process?.isRunning == true && games.contains(where: {
                 $0.id == game.id && $0.storeId == game.storeId && $0.launcher == game.launcher
@@ -406,7 +407,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func reserveMutation(gameID: UUID?) throws {
-        guard loaded, !editing, !choosing, !mutationActive, !serviceSignInActive, !applicationTerminating,
+        guard loaded, !editing, !choosing, !mutationActive, !serviceSignInActive, !accountDisconnecting, !applicationTerminating,
               gameID == nil || runningGameID != gameID else { throw GameScriptError.busy }
         mutationActive = true
         mutationGameID = gameID
@@ -420,7 +421,7 @@ final class InstalledGamesController: ObservableObject {
     /// Persist (or clear with `nil`) a per-game engine override. Routing consumes
     /// this on the next launch; a selected-but-missing engine refuses launch.
     func setEngineOverride(_ override: RuntimeProviderKind?, for game: InstalledGame) async {
-        guard loaded, !editing, !choosing, !mutationActive, !applicationTerminating,
+        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating,
               runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
         editing = true
         inspectionGeneration = UUID()

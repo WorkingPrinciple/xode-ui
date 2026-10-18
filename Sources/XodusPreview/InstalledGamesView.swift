@@ -237,7 +237,7 @@ struct InstalledPlayButton: View {
         .disabled(canStop ? !library.canStop(game) || !operations.canStartMutation
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
-                  || library.placeholderIDs.contains(game.id))
+                  || library.accountDisconnecting || library.placeholderIDs.contains(game.id))
         .accessibilityLabel(canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
             : library.placeholderIDs.contains(game.id) ? "\(game.title): installation incomplete" : "Play \(game.title)")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")

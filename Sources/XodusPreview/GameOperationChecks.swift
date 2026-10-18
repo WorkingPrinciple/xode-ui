@@ -68,6 +68,23 @@ enum GameOperationChecks {
               .lastPathComponent.count == 101, "S5 destination is bounded")
         let parsed = try GameServiceStatus.parse(Data(#"{"serviceRunning":true,"signedIn":true,"extra":1}"#.utf8))
         check(parsed.signedIn, "S3 status ignores unrelated fields")
+        _ = try GameServiceSignOutResult.parse(Data(
+            #"{"serviceRunning":false,"signedIn":false,"credentialsRemoved":true}"#.utf8))
+        for value in [
+            #"{"serviceRunning":true,"signedIn":false,"credentialsRemoved":true}"#,
+            #"{"serviceRunning":false,"signedIn":true,"credentialsRemoved":true}"#,
+            #"{"serviceRunning":false,"signedIn":false,"credentialsRemoved":false}"#,
+            #"{"serviceRunning":false,"signedIn":false}"#,
+            #"{"serviceRunning":false,"signedIn":false,"credentialsRemoved":1}"#,
+            #"{"serviceRunning":false,"signedIn":false,"credentialsRemoved":true,"accountHash":"retained"}"#
+        ] {
+            do {
+                _ = try GameServiceSignOutResult.parse(Data(value.utf8))
+                check(false, "Service sign-out requires stopped service, signed-out state and confirmed credential removal")
+            } catch {
+                check(true, "Service sign-out requires stopped service, signed-out state and confirmed credential removal")
+            }
+        }
         for value in [#"{"serviceRunning":false,"signedIn":true}"#, #"{"serviceRunning":true}"#, #"{"serviceRunning":1,"signedIn":true}"#] {
             do { _ = try GameServiceStatus.parse(Data(value.utf8)); check(false, "S3 incomplete/inconsistent status is not signed in") }
             catch { check(true, "S3 incomplete/inconsistent status is not signed in") }

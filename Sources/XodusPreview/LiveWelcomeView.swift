@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct LiveWelcomeView: View {
+    @EnvironmentObject private var state: AppState
     @ObservedObject var session: LiveSession
     @ObservedObject var runtime: RuntimeProviderSettings
     @ObservedObject var operations: GameOperationsController
@@ -21,6 +22,9 @@ struct LiveWelcomeView: View {
                 Text(session.welcomeMessage)
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.welcome.status")
+                Text("Sign out of X Ode removes this app's game-service, PC-library and launcher sign-in only when each step is confirmed. A matching game runtime is required. Other apps and Microsoft browser sessions are unaffected.")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 if session.connectionTransitioning || session.accountBusy {
                     ProgressView("Checking sign-in").controlSize(.small)
                 }
@@ -53,11 +57,11 @@ struct LiveWelcomeView: View {
                         .disabled(session.connectionTransitioning || session.accountBusy)
                         .accessibilityIdentifier("xodus.welcome.retry")
                     if session.needsAccountDisconnect {
-                        Button("Reconnect sign-in") { interaction.confirmingSignOut = true }
-                            .disabled(!session.canDisconnectAccount || !session.nativeSignInHostAdmitted)
+                        Button("Sign out of X Ode") { interaction.confirmingSignOut = true }
+                            .disabled(!state.canSignOut(session: session) || !session.nativeSignInHostAdmitted)
                             .accessibilityIdentifier("xodus.welcome.reconnect")
                     } else {
-                        Button("Sign in with Microsoft") { Task { await session.beginSignIn() } }
+                        Button("Sign in to X Ode") { Task { await session.beginSignIn() } }
                             .buttonStyle(.borderedProminent)
                             .keyboardShortcut(.defaultAction)
                             .disabled(!session.canStartWelcomeSignIn)
@@ -67,13 +71,13 @@ struct LiveWelcomeView: View {
             }
         }
         .interactiveDismissDisabled(!session.hasConfirmedSignIn)
-        .confirmationDialog("Reconnect your X Ode sign-in?", isPresented: $interaction.confirmingSignOut) {
-            Button("Disconnect saved sign-in", role: .destructive) {
-                Task { await session.signOut() }
+        .confirmationDialog("Sign out of X Ode on this Mac?", isPresented: $interaction.confirmingSignOut) {
+            Button("Sign out of X Ode", role: .destructive) {
+                Task { await state.signOut(session: session) }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Only this app's launcher sign-in is disconnected. Game files, saves and other accounts are kept. Then choose Sign in with Microsoft.")
+            Text("X Ode first signs out its game service, then removes its saved PC-library sign-in and disconnects its launcher profile. If any step fails, some sign-in data may remain and X Ode reports where it stopped. Game files, saves, other apps and Microsoft browser sessions are unchanged.")
         }
         .accessibilityIdentifier("xodus.welcome")
     }

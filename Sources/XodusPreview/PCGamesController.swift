@@ -17,6 +17,7 @@ final class PCGamesController: ObservableObject {
     @Published private(set) var legacyKeychainRetained = false
     @Published private(set) var restoringPresence = false
     @Published private(set) var presenceUnavailable = false
+    private(set) var accountDisconnecting = false
     private let store: any PCGamesRefreshStore
     private let client: PCGamesClient
     private let market: String
@@ -44,7 +45,7 @@ final class PCGamesController: ObservableObject {
     }
 
     func restorePresence() async {
-        guard !restored, !restoringPresence, !busy, !terminating else { return }
+        guard !restored, !restoringPresence, !busy, !accountDisconnecting, !terminating else { return }
         restoringPresence = true
         defer { restoringPresence = false }
         let token = generation
@@ -70,7 +71,7 @@ final class PCGamesController: ObservableObject {
     }
 
     func loadOnAppear() async {
-        guard !attemptedAutomaticLoad, !terminating else { return }
+        guard !attemptedAutomaticLoad, !accountDisconnecting, !terminating else { return }
         await restorePresence()
         guard restored else { return }
         attemptedAutomaticLoad = true
@@ -79,7 +80,7 @@ final class PCGamesController: ObservableObject {
     }
 
     func retryLibraryLoad() async {
-        guard !busy, !restoringPresence, !terminating else { return }
+        guard !busy, !restoringPresence, !accountDisconnecting, !terminating else { return }
         restored = false
         await restorePresence()
         guard restored, hasSavedSignIn, !needsKeychainApproval, !needsSignIn else { return }
@@ -87,7 +88,8 @@ final class PCGamesController: ObservableObject {
     }
 
     func signIn() {
-        guard !busy, !restoringPresence, !presenceUnavailable, !needsKeychainApproval, !terminating else { return }
+        guard !busy, !restoringPresence, !presenceUnavailable, !needsKeychainApproval,
+              !accountDisconnecting, !terminating else { return }
         guard MicrosoftSignInGate.shared.acquire(signInOwner) else {
             error = "Finish or cancel the current Microsoft sign-in before starting another."
             return
@@ -127,7 +129,7 @@ final class PCGamesController: ObservableObject {
 
     func refresh() {
         guard !busy, !restoringPresence, !presenceUnavailable, hasSavedSignIn,
-              !needsSignIn, !needsKeychainApproval, !terminating else { return }
+              !needsSignIn, !needsKeychainApproval, !accountDisconnecting, !terminating else { return }
         let token = UUID()
         generation = token
         busy = true
@@ -159,7 +161,8 @@ final class PCGamesController: ObservableObject {
     }
 
     func approveKeychain() {
-        guard !busy, !restoringPresence, !presenceUnavailable, needsKeychainApproval, !terminating else { return }
+        guard !busy, !restoringPresence, !presenceUnavailable, needsKeychainApproval,
+              !accountDisconnecting, !terminating else { return }
         let token = UUID()
         generation = token
         busy = true
@@ -210,8 +213,19 @@ final class PCGamesController: ObservableObject {
         error = nil
     }
 
-    func signOut() async {
-        guard !terminating else { return }
+    @discardableResult
+    func beginAccountDisconnect() -> Bool {
+        guard !busy, !restoringPresence, !accountDisconnecting, !terminating else { return false }
+        accountDisconnecting = true
+        generation = UUID()
+        return true
+    }
+
+    func finishAccountDisconnect() { accountDisconnecting = false }
+
+    @discardableResult
+    func signOut() async -> Bool {
+        guard !terminating, !busy, !restoringPresence else { return false }
         let old = operation
         generation = UUID()
         old?.cancel()
@@ -233,6 +247,7 @@ final class PCGamesController: ObservableObject {
         } catch { self.error = Self.message(error) }
         busy = false
         approvingKeychain = false
+        return error == nil
     }
 
     func openVerification() {
@@ -256,7 +271,7 @@ final class PCGamesController: ObservableObject {
 
 #if !XODUS_SHIPPING
     func loadReadOnlyLibraryPreview(broker: CredentialBrokerClient) async throws {
-        guard !busy, !terminating else { throw PCGamesError.credentialBrokerUnavailable }
+        guard !busy, !accountDisconnecting, !terminating else { throw PCGamesError.credentialBrokerUnavailable }
         busy = true
         defer { busy = false }
         let response = try await broker.send(CredentialRequest(operation: .read))

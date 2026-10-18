@@ -63,6 +63,43 @@ join different accounts or imply successful live sign-in. The anonymous entry
 behavior elsewhere in this historical specification is superseded by this
 user-directed first-run correction.
 
+### Branded account actions and coordinated sign-out (18 October, source candidate)
+
+Welcome and Account use **Sign in to X Ode** and **Sign out of X Ode**.
+The app-owned Microsoft browser window is titled **Sign in to X Ode with
+Microsoft**. Microsoft-hosted pages, publisher/consent text and registered client
+IDs are unchanged: provider-page branding requires the properly owned, approved
+Microsoft app registration, not a native label or substituted client ID.
+
+The confirmation describes removal in order: game-service credentials, saved
+PC-library credentials through the admitted broker, then the launcher profile.
+It explains partial failure before the user commits. Running games, pending
+install/repair/removal and account actions prevent sign-out. Once admitted, held
+mutation, library and interactive-consent gates prevent new work or duplicate
+prompts throughout every awaited stage. Pending product recovery is discarded;
+management auth generations are fenced before removal so stale completions cannot
+restore the profile.
+
+The game-service stage requires the admitted
+`private-xodus-service-signout.sh RUN_ID` helper and its private, process-matched
+receipt. Success requires `serviceRunning:false`, `signedIn:false` and
+`credentialsRemoved:true`, without an account binding. No status boolean alone
+proves removal. An older runtime without that helper stops before broker or
+launcher deletion; a failed or indeterminate helper reports that service state
+and removal are unconfirmed. Broker failure after service removal reports that
+the launcher was not disconnected; failed launcher logout reports that earlier
+removals may already have occurred. Neither partial outcome claims full logout.
+Only all three confirmed stages say **You're signed out of X Ode on this Mac**.
+A later launcher-only signed-out receipt does not independently prove game-service
+logout. Game files, saves, device licences, other apps and Microsoft browser
+sessions are not removal targets.
+
+The helper is a separately coordinated backend capability, not deployed by this
+native source change. Synthetic checks exercise receipts, held gates, failure
+stages and reconstructed saved-state clients without actual credential deletion.
+Live restart, logout, consent and install acceptance remain separate runtime
+qualification; this does not establish a unified Microsoft session.
+
 ## Freeze correction: operation feedback and library retry (source candidate)
 
 **Single-entry download recovery (18 October, source candidate):** The main
