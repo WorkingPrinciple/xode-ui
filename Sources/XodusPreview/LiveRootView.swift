@@ -168,6 +168,10 @@ struct LiveRootView: View {
             }
         }
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
+            state.installedGames.setAccountAccessAllowed(
+                session.hasConfirmedSignIn && state.pcGames.hasSavedSignIn && !state.pcGames.needsSignIn
+                    && state.gameOperations.serviceStatus?.signedIn == true
+            )
             if accountContentAllowed {
                 await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,
                     signingIn: state.gameOperations.serviceSigningIn)
@@ -193,7 +197,16 @@ struct LiveRootView: View {
             }
         }
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
-            if !confirmed {
+            if confirmed, state.consumeUnifiedSignInRequest() {
+                Task {
+                    state.gameOperations.refreshService()
+                    await state.gameOperations.waitForService()
+                    if state.gameOperations.serviceStatus?.signedIn != true {
+                        state.gameOperations.signInForGames()
+                    }
+                }
+            } else if !confirmed {
+                state.installedGames.setAccountAccessAllowed(false)
                 session.selectedProduct = nil
                 state.showingAccount = false
                 state.showingSetup = false

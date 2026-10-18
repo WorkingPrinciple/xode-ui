@@ -127,12 +127,41 @@ struct GameInstallResult: Decodable, Sendable {
     let storeId: String
 }
 
+enum GameCompatibilityCategory: String, Decodable, Equatable, Sendable {
+    case packageTypeUnsupported, noPcPackage, notAvailable, antiCheatUnsupported, runtimeUnsupported
+}
+
 struct GameCompatibilityResult: Decodable, Equatable, Sendable {
     let storeId: String
     let packageBytes: Int64?
     let supported: Bool
     let reason: String?
     let checkedAt: String
+    let category: GameCompatibilityCategory?
+
+    private enum CodingKeys: String, CodingKey {
+        case storeId, packageBytes, supported, reason, checkedAt, category
+    }
+
+    init(storeId: String, packageBytes: Int64?, supported: Bool, reason: String?,
+         checkedAt: String, category: GameCompatibilityCategory? = nil) {
+        self.storeId = storeId
+        self.packageBytes = packageBytes
+        self.supported = supported
+        self.reason = reason
+        self.checkedAt = checkedAt
+        self.category = category
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        storeId = try values.decode(String.self, forKey: .storeId)
+        packageBytes = try values.decodeIfPresent(Int64.self, forKey: .packageBytes)
+        supported = try values.decode(Bool.self, forKey: .supported)
+        reason = try values.decodeIfPresent(String.self, forKey: .reason)
+        checkedAt = try values.decode(String.self, forKey: .checkedAt)
+        category = try values.decodeIfPresent(GameCompatibilityCategory.self, forKey: .category)
+    }
 
     var badge: String { supported ? "Available to install" : "Installation unavailable" }
     var explanation: String {
@@ -154,7 +183,8 @@ struct GameCompatibilityResult: Decodable, Equatable, Sendable {
               value.packageBytes.map({ $0 >= 0 }) ?? true, value.checkedAt.utf8.count <= 64,
               value.checkedDate != nil,
               value.reason.map({ !$0.isEmpty && $0.utf8.count <= 4096
-                  && $0.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) } }) ?? true else {
+                  && $0.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) } }) ?? true,
+              !value.supported || value.category == nil else {
             throw GameScriptError.invalidReceipt
         }
         return value

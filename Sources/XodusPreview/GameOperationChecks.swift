@@ -926,6 +926,7 @@ enum GameOperationChecks {
         check(reloaded == installed.games, "S5 validated installation survives a registry reload")
         check(installed.runningGameID == nil && !installed.launchStarted,
               "Library Install completes registration without automatically calling Play")
+        installed.setAccountAccessAllowed(true)
         await installed.play(imported)
         check(installed.runningGameID == imported.id && !operations.canSignIn,
               "S3 game-service restart is disabled while a game is running")

@@ -157,8 +157,10 @@ struct LibraryGame: Identifiable {
 
 struct LibraryControls: View {
     let count: Int
+    let hiddenUnsupportedCount: Int
     @Binding var filter: LibraryFilter
     @Binding var sort: LibrarySort
+    @Binding var showsUnsupportedGames: Bool
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -166,11 +168,12 @@ struct LibraryControls: View {
                 heading
                 Spacer()
                 filters
+                supportFilter
                 sorting
             }
             VStack(alignment: .leading, spacing: 14) {
                 HStack { heading; Spacer(); sorting }
-                filters
+                HStack { filters; supportFilter }
             }
         }
     }
@@ -188,6 +191,9 @@ struct LibraryControls: View {
         .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 400)
         .accessibilityIdentifier("xodus.library.filter")
     }
+    private var supportFilter: some View {
+        LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount, showsUnsupportedGames: $showsUnsupportedGames)
+    }
     private var sorting: some View {
         Menu {
             Picker("Sort games", selection: $sort) {
@@ -197,6 +203,50 @@ struct LibraryControls: View {
         .menuStyle(.borderlessButton).fixedSize()
         .accessibilityLabel("Sort games by \(sort.rawValue)")
         .accessibilityIdentifier("xodus.library.sort")
+    }
+}
+
+private struct LibrarySupportMenu: View {
+    let hiddenCount: Int
+    @Binding var showsUnsupportedGames: Bool
+
+    var body: some View {
+        Menu {
+            Toggle("Show unsupported games", isOn: $showsUnsupportedGames)
+            if hiddenCount > 0, !showsUnsupportedGames {
+                Text("\(hiddenCount.formatted()) hidden")
+            }
+        } label: {
+            Label("Compatibility", systemImage: showsUnsupportedGames
+                  ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Shows uninstalled EAppx/UWP games and titles rejected by compatibility checks, including known anti-cheat blockers.")
+        .accessibilityIdentifier("xodus.library.showUnsupported")
+    }
+}
+
+enum LibrarySupportVisibility {
+    static func unsupportedReason(installed: Bool, packageFormat: String?,
+                                  compatibility: GameCompatibilityResult?) -> String? {
+        guard !installed else { return nil }
+        if let compatibility, !compatibility.supported {
+            return compatibility.reason ?? "This game isn't supported on Mac yet."
+        }
+        let families = packageFormat?.split(separator: "/").map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        }.filter { !$0.isEmpty } ?? []
+        if !families.isEmpty, families.allSatisfy({ ["eappx", "eappxbundle", "uwp"].contains($0) }) {
+            return "This Store package uses EAppx/UWP, which X Ode can't install yet."
+        }
+        return nil
+    }
+
+    static func isVisible(installed: Bool, packageFormat: String?,
+                          compatibility: GameCompatibilityResult?, showsUnsupportedGames: Bool) -> Bool {
+        showsUnsupportedGames || unsupportedReason(installed: installed, packageFormat: packageFormat,
+                                                   compatibility: compatibility) == nil
     }
 }
 
@@ -446,15 +496,16 @@ struct LibraryUnsupportedLabel: View {
     let reason: String
     var heroStyle = false
     var body: some View {
-        Label("Not on Mac yet", systemImage: "laptopcomputer.slash")
+        Label("Not supported on Mac", systemImage: "exclamationmark.triangle.fill")
             .font(heroStyle ? .body.weight(.semibold) : .callout)
-            .foregroundStyle(heroStyle ? Color.white.opacity(0.92) : .secondary)
+            .foregroundStyle(heroStyle ? Color.white : Color.orange)
             .shadow(color: heroStyle ? .black.opacity(0.5) : .clear, radius: 3, y: 1)
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .modifier(LibraryBadgeMaterial())
+            .background(heroStyle ? Color.orange.opacity(0.88) : Color.orange.opacity(0.14), in: Capsule())
+            .overlay(Capsule().stroke(Color.orange.opacity(heroStyle ? 0.9 : 0.4), lineWidth: 1))
             .help(reason)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Not on Mac yet. \(reason)")
+            .accessibilityLabel("Not supported on Mac. \(reason)")
             .accessibilityIdentifier("xodus.library.unsupported")
     }
 }
@@ -463,6 +514,38 @@ struct LibraryBackgroundExtension: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 26, *) { content.backgroundExtensionEffect() }
         else { content }
+    }
+}
+
+struct LibraryAmbientBackdrop: View {
+    let references: [CatalogArtworkReference]
+    let installed: InstalledGame?
+    var allowsLoading = true
+    var height: CGFloat = 820
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            Color(nsColor: .windowBackgroundColor)
+            LibraryLandscapeView(references: references, installed: installed, allowsLoading: allowsLoading)
+                .scaleEffect(1.12)
+                .blur(radius: 58)
+                .saturation(1.25)
+                .opacity(colorScheme == .dark ? 0.52 : 0.34)
+            LinearGradient(
+                colors: [
+                    Color.clear,
+                    Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.35 : 0.25),
+                    Color(nsColor: .windowBackgroundColor)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .frame(height: height)
+        .clipped()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

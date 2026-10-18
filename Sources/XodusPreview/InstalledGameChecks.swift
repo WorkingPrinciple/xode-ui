@@ -244,6 +244,11 @@ enum InstalledGameChecks {
         check(library.games.count == 1 && library.games.first?.id == game.id,
               "Reimport updates one local folder entry rather than duplicating it")
         guard let failedGame = library.games.first else { throw InstalledGameError.invalidRegistry }
+        library.setAccountAccessAllowed(false)
+        await library.play(failedGame)
+        check(library.runningGameID == nil && library.playErrors[failedGame.id]?.contains("Sign in to Xbox") == true,
+              "Signed-out account state blocks an installed game before its launcher starts")
+        library.setAccountAccessAllowed(true)
         func wait(_ condition: () -> Bool) async throws {
             let deadline = ContinuousClock.now.advanced(by: .seconds(5))
             while !condition() {
@@ -387,6 +392,7 @@ enum InstalledGameChecks {
                                                 defaultEngine: { nil },
                                                 detectAvailability: { RunnerAvailability([.crossover]) })
         await resilient.load()
+        resilient.setAccountAccessAllowed(true)
         await resilient.importGame(folder: folder, launcher: slow)
         guard let resilientGame = resilient.games.first else { throw InstalledGameError.invalidRegistry }
         await resilient.play(resilientGame)
@@ -482,6 +488,7 @@ enum InstalledGameChecks {
             logDirectory: routingRoot, defaultEngine: { nil },
             detectAvailability: { RunnerAvailability([.crossover]) })
         await routing.load()
+        routing.setAccountAccessAllowed(true)
         await routing.importGame(folder: routingFolder, launcher: routingLauncher)
         guard let routed = routing.games.first else { throw InstalledGameError.invalidRegistry }
         check(routed.packageType == .msixvc,
@@ -542,6 +549,7 @@ enum InstalledGameChecks {
                 RunnerAvailabilityDetector.detect(crossOver: .absent, runnerPaths: declaredPaths)
             })
         await nonDefault.load()
+        nonDefault.setAccountAccessAllowed(true)
         await nonDefault.importGame(folder: routingFolder, launcher: selectorLauncher)
         guard let selected = nonDefault.games.first else { throw InstalledGameError.invalidRegistry }
         await nonDefault.play(selected)

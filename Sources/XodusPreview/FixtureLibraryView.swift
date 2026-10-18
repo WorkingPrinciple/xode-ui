@@ -5,6 +5,7 @@ import XodusCore
 struct FixtureLibraryView: View {
     @EnvironmentObject private var state: AppState
     @StateObject private var selection = LibrarySelection()
+    @State private var showsUnsupportedGames = false
     private var filter: LibraryFilter {
         get { selection.filter }
         nonmutating set { selection.filter = newValue }
@@ -83,7 +84,9 @@ struct FixtureLibraryView: View {
                             }.scrollIndicators(.hidden).scrollTargetBehavior(.viewAligned)
                         }
                     }
-                    LibraryControls(count: games.count, filter: $selection.filter, sort: $selection.sort)
+                    LibraryControls(count: games.count, hiddenUnsupportedCount: 0,
+                                    filter: $selection.filter, sort: $selection.sort,
+                                    showsUnsupportedGames: $showsUnsupportedGames)
                         .id("library-games")
                     if games.isEmpty {
                         ContentUnavailableView {

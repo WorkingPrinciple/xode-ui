@@ -37,6 +37,7 @@ final class InstalledGamesController: ObservableObject {
     @Published var serviceSignInActive = false
     @Published var runtimeRepairActive = false
     @Published var accountDisconnecting = false
+    @Published private(set) var accountAccessAllowed = false
     var applicationTerminating = false {
         didSet { if applicationTerminating { foregroundHandoff?.cancel() } }
     }
@@ -195,16 +196,30 @@ final class InstalledGamesController: ObservableObject {
         if let url = playLogs[game.id] { NSWorkspace.shared.activateFileViewerSelecting([url]) }
     }
 
+    func setAccountAccessAllowed(_ allowed: Bool) {
+        accountAccessAllowed = allowed
+        if !allowed {
+            for game in games where runningGameID != game.id {
+                playErrors[game.id] = "Sign in to Xbox in X Ode to play this game."
+            }
+        } else {
+            for game in games where playErrors[game.id] == "Sign in to Xbox in X Ode to play this game." {
+                playErrors[game.id] = nil
+            }
+        }
+    }
+
     func play(_ game: InstalledGame) async {
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
-              games.contains(game) else { return }
+              accountAccessAllowed, games.contains(game) else { return }
         let interpreter: URL?
         do { interpreter = try LaunchAssociationAssets.bundledInterpreter() }
         catch {
             playErrors[game.id] = "The bundled game runtime could not be verified. Reinstall the approved app."
             return
         }
+
         let token = UUID()
         runToken = token
         runningGameID = game.id

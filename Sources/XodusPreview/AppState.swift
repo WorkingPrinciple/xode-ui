@@ -73,6 +73,7 @@ final class AppState: ObservableObject {
     @Published var showingSetup = false
     @Published var destination: Destination = .library
     @Published var query = ""
+    @Published private(set) var unifiedSignInRequested = false
     private var destinationQueries: [Destination: String] = [:]
     @Published private(set) var liveLibraryScope: LiveLibraryScope = .games
 
@@ -88,9 +89,30 @@ final class AppState: ObservableObject {
             && !pcGames.busy && !pcGames.restoringPresence && !runtimeSettings.planning
     }
 
+    func beginUnifiedSignIn(session: LiveSession) async {
+        guard !unifiedSignInRequested else { return }
+        unifiedSignInRequested = true
+        await session.beginSignIn()
+        if !session.signInPending, !session.hasConfirmedSignIn {
+            unifiedSignInRequested = false
+        }
+    }
+
+    func cancelUnifiedSignIn(session: LiveSession) async {
+        unifiedSignInRequested = false
+        await session.cancelSignIn()
+    }
+
+    func consumeUnifiedSignInRequest() -> Bool {
+        guard unifiedSignInRequested else { return false }
+        unifiedSignInRequested = false
+        return true
+    }
+
     @discardableResult
     func signOut(session: LiveSession) async -> Bool {
         guard canSignOut(session: session), gameOperations.beginAccountDisconnect() else { return false }
+        installedGames.setAccountAccessAllowed(false)
         defer { gameOperations.finishAccountDisconnect() }
         guard pcGames.beginAccountDisconnect() else { return false }
         defer { pcGames.finishAccountDisconnect() }
@@ -104,7 +126,14 @@ final class AppState: ObservableObject {
             }
             return nil
         }
-        if result { session.confirmAppSignOut() }
+        if result {
+            session.confirmAppSignOut()
+        } else {
+            installedGames.setAccountAccessAllowed(
+                session.hasConfirmedSignIn && pcGames.hasSavedSignIn && !pcGames.needsSignIn
+                    && gameOperations.serviceStatus?.signedIn == true
+            )
+        }
         return result
     }
 

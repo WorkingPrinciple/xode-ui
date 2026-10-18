@@ -37,7 +37,7 @@ struct LiveWelcomeView: View {
         } actions: {
             AccountActionsLayout(layoutDirection: layoutDirection) {
                 if session.signInPending {
-                    Button("Cancel sign-in") { Task { await session.cancelSignIn() } }
+                    Button("Cancel sign-in") { Task { await state.cancelUnifiedSignIn(session: session) } }
                         .keyboardShortcut(.cancelAction)
                         .disabled(session.accountBusy)
                         .accessibilityIdentifier("xodus.welcome.cancel")
@@ -49,7 +49,7 @@ struct LiveWelcomeView: View {
                         .disabled(!state.canSignOut(session: session))
                         .accessibilityIdentifier("xodus.welcome.reconnect")
                     if !session.needsAccountDisconnect {
-                        Button("Sign in to X Ode") { Task { await session.beginSignIn() } }
+                        Button("Sign in to X Ode") { Task { await state.beginUnifiedSignIn(session: session) } }
                             .buttonStyle(.borderedProminent)
                             .keyboardShortcut(.defaultAction)
                             .disabled(!session.canStartWelcomeSignIn)

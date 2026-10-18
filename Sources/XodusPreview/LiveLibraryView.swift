@@ -18,6 +18,7 @@ struct LiveLibraryView: View {
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
     private var filter: LibraryFilter {
         get { selection.filter }
@@ -33,9 +34,15 @@ struct LiveLibraryView: View {
                                products: session.products, gamePass: session.gamePassProducts,
                                active: operations.gamePassActive, accessIsCurrent: library.accessIsCurrent)
     }
-    private var visible: [LibraryGame] {
+    private var visibleCandidates: [LibraryGame] {
         LibraryGame.visible(filter == .gamePass ? gamePassCatalog : collection,
                             query: query, filter: filter, sort: sort)
+    }
+    private var visible: [LibraryGame] {
+        visibleCandidates.filter(isVisible)
+    }
+    private var hiddenUnsupportedCount: Int {
+        visibleCandidates.count - visible.count
     }
     private var gamePassCatalog: [LibraryGame] {
         LibraryGame.gamePassCatalog(installed: installed.games,
@@ -51,7 +58,9 @@ struct LiveLibraryView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        ZStack(alignment: .top) {
+            ambientBackdrop
+            VStack(alignment: .leading, spacing: 0) {
             if query.isEmpty, !heroGames.isEmpty {
                 heroCarousel
                 if let game = heroGames.first(where: { $0.id == selection.heroID })?.installed {
@@ -74,7 +83,9 @@ struct LiveLibraryView: View {
                 PCGamesView(library: library, installed: installed, operations: operations,
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
-                LibraryControls(count: visible.count, filter: $selection.filter, sort: $selection.sort)
+                LibraryControls(count: visible.count, hiddenUnsupportedCount: hiddenUnsupportedCount,
+                                filter: $selection.filter, sort: $selection.sort,
+                                showsUnsupportedGames: $showsUnsupportedGames)
                     .id("library-games")
                 if installed.loading { ProgressView("Loading installed games") }
                 if visible.isEmpty {
@@ -154,6 +165,7 @@ struct LiveLibraryView: View {
                     market: session.market, language: session.language)
             }
             .padding(.horizontal, 56).padding(.vertical, 22)
+            }
         }
         .task { if allowsStartupTasks { await library.loadOnAppear() } }
         .task(id: "\(precheckIDs.joined(separator: ",")):\(operations.canStartMutation)") {
@@ -182,7 +194,7 @@ struct LiveLibraryView: View {
     // Apple TV pattern: recently played first, then the rest of the installed and owned collection.
     private var heroGames: [LibraryGame] {
         let order = Dictionary(continuing.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let ranked = collection.sorted {
+        let ranked = collection.filter(isVisible).sorted {
             let left = $0.installed.flatMap { order[$0.id] } ?? ($0.installed == nil ? 2_000 : 1_000)
             let right = $1.installed.flatMap { order[$0.id] } ?? ($1.installed == nil ? 2_000 : 1_000)
             return left == right ? $0.title.localizedStandardCompare($1.title) == .orderedAscending : left < right
@@ -285,14 +297,44 @@ struct LiveLibraryView: View {
     }
 
     private func unsupportedReason(_ game: LibraryGame) -> String? {
-        guard game.installed == nil, let result = operations.compatibility[game.id], !result.supported else { return nil }
-        return result.reason ?? "This game isn't supported on Mac yet."
+        LibrarySupportVisibility.unsupportedReason(
+            installed: game.installed != nil,
+            packageFormat: art.images[game.id]?.facts.packageFormat,
+            compatibility: operations.compatibility[game.id]
+        )
+    }
+
+    private func isVisible(_ game: LibraryGame) -> Bool {
+        LibrarySupportVisibility.isVisible(
+            installed: game.installed != nil,
+            packageFormat: art.images[game.id]?.facts.packageFormat,
+            compatibility: operations.compatibility[game.id],
+            showsUnsupportedGames: showsUnsupportedGames
+        )
+    }
+
+    @ViewBuilder private var ambientBackdrop: some View {
+        if let game = heroGames.first(where: { $0.id == selection.heroID }) ?? heroGames.first {
+            let id = game.installed?.storeId ?? game.id
+            LibraryAmbientBackdrop(references: art.images[id]?.landscape ?? [],
+                                   installed: game.installed, allowsLoading: artworkAllowed)
+        } else {
+            Color(nsColor: .windowBackgroundColor).frame(height: 820)
+        }
     }
 
     private var precheckIDs: [String] {
-        let shown = heroGames + (filter == .gamePass ? [] : Array(visible.prefix(12)))
+        let shown = heroGames + (filter == .gamePass ? [] : Array(visibleCandidates.prefix(24)))
         var seen = Set<String>()
-        return shown.filter { $0.installed == nil && $0.pc != nil && seen.insert($0.id).inserted }.map(\.id)
+        return shown.filter {
+            $0.installed == nil && $0.pc != nil
+                && LibrarySupportVisibility.unsupportedReason(
+                    installed: false,
+                    packageFormat: art.images[$0.id]?.facts.packageFormat,
+                    compatibility: operations.compatibility[$0.id]
+                ) == nil
+                && seen.insert($0.id).inserted
+        }.map(\.id)
     }
 
     private var continuePlaying: some View {
@@ -391,7 +433,7 @@ struct LiveLibraryView: View {
                         Label("Access not verified", systemImage: "questionmark.circle")
                     }
                 } else if let reason = unsupportedReason(game) {
-                    Label("Not on Mac yet", systemImage: "laptopcomputer.slash").help(reason)
+                    LibraryUnsupportedLabel(reason: reason)
                 } else {
                     LibraryGameSizeView(installed: nil, downloadBytes: art.images[artworkID]?.facts.downloadBytes,
                                         packageFormat: art.images[artworkID]?.facts.packageFormat,
@@ -406,7 +448,7 @@ struct LiveLibraryView: View {
                     InstalledPlayButton(library: installed, operations: operations, game: match,
                                         usesGlass: true, prominent: false)
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
-                } else if game.pc != nil, unsupportedReason(game) != nil {
+                } else if unsupportedReason(game) != nil {
                     EmptyView()
                 } else if game.pc != nil {
                     Button {

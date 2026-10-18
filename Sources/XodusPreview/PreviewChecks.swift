@@ -551,6 +551,24 @@ enum PreviewChecks {
             check(formats.pcPackageFormat == "EAppx" && packages.pcPackageFormat == nil &&
                   PCGamesCatalog.Product.packageFamily("MSIXVC") == "MSIXVC",
                   "Package format label uses PC package families only, ignores console and unknown formats")
+            let antiCheat = try GameCompatibilityResult.parse(Data("""
+                {"storeId":"FIXTURE00003","packageBytes":1000,"supported":false,
+                 "reason":"Easy Anti-Cheat is not supported by this runtime.",
+                 "category":"antiCheatUnsupported","checkedAt":"2026-10-18T16:00:00Z"}
+                """.utf8), productID: "FIXTURE00003")
+            check(antiCheat.category == .antiCheatUnsupported &&
+                  !LibrarySupportVisibility.isVisible(installed: false, packageFormat: nil,
+                    compatibility: antiCheat, showsUnsupportedGames: false) &&
+                  LibrarySupportVisibility.isVisible(installed: false, packageFormat: nil,
+                    compatibility: antiCheat, showsUnsupportedGames: true),
+                  "Unsupported anti-cheat games are hidden by default and restored by the explicit toggle")
+            check(!LibrarySupportVisibility.isVisible(installed: false, packageFormat: "EAppx",
+                    compatibility: nil, showsUnsupportedGames: false) &&
+                  LibrarySupportVisibility.isVisible(installed: true, packageFormat: "EAppx",
+                    compatibility: antiCheat, showsUnsupportedGames: false) &&
+                  LibrarySupportVisibility.isVisible(installed: false, packageFormat: "MSIXVC / EAppx",
+                    compatibility: nil, showsUnsupportedGames: false),
+                  "EAppx-only games hide before install, while installed and mixed-format titles remain reachable")
             check(LibraryGameInformation.playTimeLabel(seconds: 43_200)?.hasPrefix("12 h") == true &&
                   LibraryGameInformation.playTimeLabel(seconds: 120)?.hasPrefix("2 min") == true &&
                   LibraryGameInformation.playTimeLabel(seconds: nil) == nil &&

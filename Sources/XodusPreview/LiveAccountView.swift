@@ -73,7 +73,7 @@ struct LiveAccountView: View {
                     Button(session.signInPending ? "Cancel sign-in" : "Close") {
                         Task {
                             let cancelling = session.signInPending
-                            if cancelling { await session.cancelSignIn() }
+                            if cancelling { await state.cancelUnifiedSignIn(session: session) }
                             if !session.signInPending,
                                !cancelling || session.authentication?.flow?.state != .completed { dismiss() }
                         }
@@ -96,7 +96,7 @@ struct LiveAccountView: View {
                         .help("Finish any running game, installation or account action before signing out.")
                         .accessibilityIdentifier("xodus.account.signOut")
                     if !session.needsAccountDisconnect {
-                        Button("Sign in to X Ode") { Task { await session.beginSignIn() } }
+                        Button("Sign in to X Ode") { Task { await state.beginUnifiedSignIn(session: session) } }
                             .disabled(!session.canSignIn)
                             .accessibilityIdentifier("xodus.account.signIn")
                             .buttonStyle(.borderedProminent)

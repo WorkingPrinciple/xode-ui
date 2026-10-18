@@ -45,14 +45,24 @@ struct LiveProductView: View {
     private var landscape: [CatalogArtworkReference] {
         art?.landscape ?? product.artwork.filter { $0.role == .hero }
     }
+    private var unsupportedReason: String? {
+        LibrarySupportVisibility.unsupportedReason(
+            installed: installed != nil,
+            packageFormat: art?.facts.packageFormat,
+            compatibility: operations.compatibility[product.id]
+        )
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    header
+            ZStack(alignment: .top) {
+                LibraryAmbientBackdrop(references: landscape, installed: installed,
+                                       allowsLoading: allowsArtworkLoading, height: 900)
+                ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
+                        header
+                        VStack(alignment: .leading, spacing: 28) {
                         GameOperationProgressView(operations: operations, productID: product.id)
                         if owned != nil, installed == nil {
                             Text("Your library record is separate from download access. X Ode checks this edition's package and authorization when you install.")
@@ -83,9 +93,10 @@ struct LiveProductView: View {
                             gameInfo(details)
                             requirements(details)
                         }
-                    }.padding(.horizontal, 40).padding(.bottom, 72)
+                        }.padding(.horizontal, 40).padding(.bottom, 72)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
 #if !XODUS_SHIPPING
             .onReceive(LibraryPreviewExporter.presentation.$showDetailInformation) { show in
@@ -106,13 +117,18 @@ struct LiveProductView: View {
                 await catalog.loadDetail(id: product.id, market: product.market, language: product.language)
             }
         }
+        .task(id: "\(product.id):\(installed == nil):\(operations.canStartMutation)") {
+            guard allowsStartupTasks, installed == nil, operations.canStartMutation,
+                  operations.compatibility[product.id] == nil else { return }
+            operations.precheck([product.id])
+        }
     }
 
     private var header: some View {
         ZStack(alignment: .bottomLeading) {
             LibraryLandscapeView(references: landscape, installed: installed, allowsLoading: allowsArtworkLoading)
-            LinearGradient(colors: [.clear, Color(nsColor: .windowBackgroundColor).opacity(0.55),
-                                    Color(nsColor: .windowBackgroundColor)],
+            LinearGradient(colors: [.clear, .black.opacity(0.12),
+                                    Color(nsColor: .windowBackgroundColor).opacity(0.18)],
                            startPoint: .top, endPoint: .bottom)
             HStack(alignment: .bottom, spacing: 24) {
                 if let cover = art?.cover ?? CatalogArtworkReference.preferred(in: product.artwork, roles: [.boxArt, .poster]) {
@@ -138,6 +154,11 @@ struct LiveProductView: View {
                                                 game: installed, usesGlass: true, prominent: true)
                             InstalledGameActions(library: installedLibrary, operations: operations,
                                                  game: installed, usesGlass: true)
+                        } else if let unsupportedReason {
+                            LibraryUnsupportedLabel(reason: unsupportedReason, heroStyle: true)
+                            Link("View in Microsoft Store",
+                                 destination: URL(string: "https://apps.microsoft.com/detail/\(product.id)")!)
+                                .modifier(LibraryActionStyle(primary: false))
                         } else if let owned {
                             Button {
                                 Task { await operations.install(owned) }
@@ -145,7 +166,8 @@ struct LiveProductView: View {
                                 Label("Install", systemImage: "icloud.and.arrow.down")
                             }
                                 .modifier(LibraryActionStyle())
-                                .disabled(!allowsStartupTasks || !library.accessIsCurrent || !operations.canStartMutation)
+                                .disabled(!allowsStartupTasks || !library.accessIsCurrent || !operations.canStartMutation
+                                          || operations.compatibility[product.id]?.supported != true)
                                 .help("Install \(product.title)")
                                 .accessibilityLabel("Install \(product.title)")
                         } else if canReviewGamePass {
@@ -155,7 +177,8 @@ struct LiveProductView: View {
                                 Label("Install", systemImage: "icloud.and.arrow.down")
                             }
                             .modifier(LibraryActionStyle())
-                            .disabled(!allowsStartupTasks || !operations.canStartMutation || !canReviewGamePass)
+                            .disabled(!allowsStartupTasks || !operations.canStartMutation || !canReviewGamePass
+                                      || operations.compatibility[product.id]?.supported != true)
                             .help("Install \(product.title)")
                             .accessibilityLabel("Install \(product.title)")
                         } else {
@@ -164,6 +187,9 @@ struct LiveProductView: View {
                                 .modifier(LibraryActionStyle())
                         }
                     }.controlSize(.large)
+                    if installed == nil, operations.precheckingProductID == product.id {
+                        ProgressView("Checking Mac compatibility").controlSize(.small)
+                    }
                     if let installed { InstalledPlayError(library: installedLibrary, game: installed) }
                 }
                 Spacer(minLength: 0)
