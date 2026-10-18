@@ -45,12 +45,20 @@ struct LiveProductView: View {
     private var landscape: [CatalogArtworkReference] {
         art?.landscape ?? product.artwork.filter { $0.role == .hero }
     }
-    private var unsupportedReason: String? {
-        LibrarySupportVisibility.unsupportedReason(
+    private var unsupportedIssues: [LibraryCompatibilityIssue] {
+        LibrarySupportVisibility.issues(
+            productID: product.id,
             installed: installed != nil,
             packageFormat: art?.facts.packageFormat,
             compatibility: operations.compatibility[product.id]
         )
+    }
+    private var compatibilitySummary: String {
+        if installed != nil { return "Installed package detected" }
+        if !unsupportedIssues.isEmpty { return unsupportedIssues.map(\.title).joined(separator: " + ") }
+        if operations.precheckingProductID == product.id { return "Checking" }
+        if operations.compatibility[product.id]?.supported == true { return "Current runtime check passed" }
+        return "Not checked"
     }
 
     var body: some View {
@@ -58,7 +66,7 @@ struct LiveProductView: View {
             ScrollViewReader { proxy in
             ZStack(alignment: .top) {
                 LibraryAmbientBackdrop(references: landscape, installed: installed,
-                                       allowsLoading: allowsArtworkLoading, height: 900)
+                                       allowsLoading: allowsArtworkLoading)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         header
@@ -154,8 +162,8 @@ struct LiveProductView: View {
                                                 game: installed, usesGlass: true, prominent: true)
                             InstalledGameActions(library: installedLibrary, operations: operations,
                                                  game: installed, usesGlass: true)
-                        } else if let unsupportedReason {
-                            LibraryUnsupportedLabel(reason: unsupportedReason, heroStyle: true)
+                        } else if !unsupportedIssues.isEmpty {
+                            LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: true)
                             Link("View in Microsoft Store",
                                  destination: URL(string: "https://apps.microsoft.com/detail/\(product.id)")!)
                                 .modifier(LibraryActionStyle(primary: false))
@@ -181,6 +189,20 @@ struct LiveProductView: View {
                                       || operations.compatibility[product.id]?.supported != true)
                             .help("Install \(product.title)")
                             .accessibilityLabel("Install \(product.title)")
+                        } else if gamePass {
+                            Button {
+                                operations.checkGamePass(
+                                    discoveryProducts: session.gamePassProducts,
+                                    ownedGames: library.accessIsCurrent ? library.representedGames : nil
+                                )
+                            } label: {
+                                Label("Check Game Pass access", systemImage: "checkmark.shield")
+                            }
+                            .modifier(LibraryActionStyle())
+                            .disabled(!allowsStartupTasks || !operations.canStartMutation || !library.accessIsCurrent)
+                            .help(library.accessIsCurrent
+                                  ? "Verify this account's current PC Game Pass download access."
+                                  : "Refresh your PC library before checking Game Pass access.")
                         } else {
                             Link("View in Microsoft Store",
                                  destination: URL(string: "https://apps.microsoft.com/detail/\(product.id)")!)
@@ -204,6 +226,7 @@ struct LiveProductView: View {
                                                       current: library.accessIsCurrent))
             if gamePass { facet("Game Pass catalog", "PC catalogue member - account access checked separately") }
             facet("Installation", GameDetailFacetCopy.installation(installed: installed != nil))
+            facet("Mac compatibility", compatibilitySummary)
         }
         .font(.callout).frame(maxWidth: .infinity, alignment: .leading)
     }

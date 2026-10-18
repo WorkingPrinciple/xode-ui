@@ -49,6 +49,9 @@ struct LiveLibraryView: View {
                                     owned: library.accessIsCurrent ? library.representedGames : [],
                                     products: session.gamePassProducts)
     }
+    private var gamePassHighlights: [LibraryGame] {
+        Array(gamePassCatalog.filter(isVisible).prefix(10))
+    }
     private var continuing: [InstalledGame] {
         LibraryGame.continuing(LibraryGame.visible(collection, query: query, filter: filter, sort: sort),
                               launchableIDs: installed.launchableIDs)
@@ -69,6 +72,7 @@ struct LiveLibraryView: View {
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
+                if query.isEmpty, !gamePassHighlights.isEmpty { gamePassHighlightsSection }
                 GameOperationProgressView(operations: operations)
                 if let error = installed.error {
                     ContentUnavailableView {
@@ -158,10 +162,12 @@ struct LiveLibraryView: View {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
             }
-            .task(id: (collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id)).sorted().joined(separator: ",")) {
+            .task(id: (collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id)
+                + gamePassHighlights.map(\.id)).sorted().joined(separator: ",")) {
                 guard artworkAllowed else { return }
                 await art.load(ids: collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
-                    .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID),
+                    .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
+                    + gamePassHighlights.map(\.id).filter(PCGamesClient.validProductID),
                     market: session.market, language: session.language)
             }
             .padding(.horizontal, 56).padding(.vertical, 22)
@@ -176,6 +182,10 @@ struct LiveLibraryView: View {
         }
         .task(id: "\(filter.rawValue):\(session.isReady):\(session.market):\(session.language)") {
             guard allowsStartupTasks, filter == .gamePass else { return }
+            await session.loadGamePassCatalog()
+        }
+        .task(id: "\(session.isReady):\(session.market):\(session.language):\(query.isEmpty)") {
+            guard allowsStartupTasks, session.isReady, query.isEmpty, session.gamePassProducts.isEmpty else { return }
             await session.loadGamePassCatalog()
         }
         .onChange(of: session.isReady) { _, ready in
@@ -279,8 +289,8 @@ struct LiveLibraryView: View {
                                     usesGlass: true, heroStyle: true)
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
-            } else if let reason = unsupportedReason(game) {
-                LibraryUnsupportedLabel(reason: reason, heroStyle: true)
+            } else if !unsupportedIssues(game).isEmpty {
+                LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true)
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else {
                 Button {
@@ -298,6 +308,16 @@ struct LiveLibraryView: View {
 
     private func unsupportedReason(_ game: LibraryGame) -> String? {
         LibrarySupportVisibility.unsupportedReason(
+            productID: game.id,
+            installed: game.installed != nil,
+            packageFormat: art.images[game.id]?.facts.packageFormat,
+            compatibility: operations.compatibility[game.id]
+        )
+    }
+
+    private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
+        LibrarySupportVisibility.issues(
+            productID: game.id,
             installed: game.installed != nil,
             packageFormat: art.images[game.id]?.facts.packageFormat,
             compatibility: operations.compatibility[game.id]
@@ -306,6 +326,7 @@ struct LiveLibraryView: View {
 
     private func isVisible(_ game: LibraryGame) -> Bool {
         LibrarySupportVisibility.isVisible(
+            productID: game.id,
             installed: game.installed != nil,
             packageFormat: art.images[game.id]?.facts.packageFormat,
             compatibility: operations.compatibility[game.id],
@@ -329,6 +350,7 @@ struct LiveLibraryView: View {
         return shown.filter {
             $0.installed == nil && $0.pc != nil
                 && LibrarySupportVisibility.unsupportedReason(
+                    productID: $0.id,
                     installed: false,
                     packageFormat: art.images[$0.id]?.facts.packageFormat,
                     compatibility: operations.compatibility[$0.id]
@@ -345,6 +367,7 @@ struct LiveLibraryView: View {
                 Button("See All") { filter = .installed; sort = .recentlyPlayed }
                     .accessibilityLabel("Show installed games by last played")
             }
+
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 20) {
                     ForEach(continuing) { game in
@@ -381,6 +404,50 @@ struct LiveLibraryView: View {
                     selection.recentGameID = ids.first
                 }
             }
+        }
+    }
+
+    private var gamePassHighlightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("PC Game Pass highlights").font(.title2.weight(.semibold))
+                    Text("Current PC catalog; account access is checked separately.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("See All") { filter = .gamePass; sort = .title }
+                    .accessibilityLabel("Show the full PC Game Pass catalog")
+            }
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 20) {
+                    ForEach(gamePassHighlights) { game in
+                        Button { open(game) } label: {
+                            VStack(alignment: .leading, spacing: 9) {
+                                LibraryLandscapeView(references: art.images[game.id]?.landscape ?? [],
+                                                     installed: game.installed, allowsLoading: artworkAllowed)
+                                    .frame(width: 260, height: 130).clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                HStack {
+                                    Text(game.title).font(.headline).lineLimit(1)
+                                    Spacer(minLength: 4)
+                                    if !unsupportedIssues(game).isEmpty {
+                                        LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
+                                    }
+                                }
+                                Text(game.owned ? "In your library" : "Game Pass catalog")
+                                    .font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            .frame(width: 260, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.viewAligned)
         }
     }
 
@@ -423,17 +490,14 @@ struct LiveLibraryView: View {
             HStack(spacing: 8) {
                 if let match = game.installed {
                     InstalledPackageTypeLabel(game: match)
-                } else if let format = art.images[artworkID]?.facts.packageFormat,
-                   unsupportedReason(game) != nil {
-                    LibraryPackageFormatLabel(format: format)
                 }
                 if game.installed != nil {
                     Label("Installed", systemImage: "internaldrive")
                     if game.eligibility == .installedUnknown {
                         Label("Access not verified", systemImage: "questionmark.circle")
                     }
-                } else if let reason = unsupportedReason(game) {
-                    LibraryUnsupportedLabel(reason: reason)
+                } else if !unsupportedIssues(game).isEmpty {
+                    LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
                 } else {
                     LibraryGameSizeView(installed: nil, downloadBytes: art.images[artworkID]?.facts.downloadBytes,
                                         packageFormat: art.images[artworkID]?.facts.packageFormat,

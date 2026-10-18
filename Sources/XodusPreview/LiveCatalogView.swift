@@ -87,7 +87,8 @@ struct LiveCatalogView: View {
             || (query.isEmpty ? session.supports(.discover) : session.supports(.query)))
     }
     private var storeHeading: String {
-        query.isEmpty ? "Explore games" : "More games"
+        if !query.isEmpty { return "More games" }
+        return session.catalogCorpus == "pcGamePassDiscovery" ? "PC Game Pass catalog" : "Explore games"
     }
     private var validEmptySearch: Bool {
         !query.isEmpty && session.catalogMatches(query: query) && !session.searching &&

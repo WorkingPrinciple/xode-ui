@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import AppKit
 import SwiftUI
 import XodusManagement
 
@@ -228,25 +229,46 @@ private struct LibrarySupportMenu: View {
 }
 
 enum LibrarySupportVisibility {
-    static func unsupportedReason(installed: Bool, packageFormat: String?,
-                                  compatibility: GameCompatibilityResult?) -> String? {
-        guard !installed else { return nil }
-        if let compatibility, !compatibility.supported {
-            return compatibility.reason ?? "This game isn't supported on Mac yet."
-        }
+    static func issues(productID: String, installed: Bool, packageFormat: String?,
+                       compatibility: GameCompatibilityResult?) -> [LibraryCompatibilityIssue] {
+        guard !installed else { return [] }
+        var issues = LibraryCompatibilityRegistry.issues(productID: productID)
         let families = packageFormat?.split(separator: "/").map {
             $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }.filter { !$0.isEmpty } ?? []
         if !families.isEmpty, families.allSatisfy({ ["eappx", "eappxbundle", "uwp"].contains($0) }) {
-            return "This Store package uses EAppx/UWP, which X Ode can't install yet."
+            issues.append(LibraryCompatibilityIssue(
+                kind: .packageType,
+                title: packageFormat ?? "EAppx/UWP",
+                detail: "This Store package uses EAppx/UWP, which X Ode can't install yet.",
+                source: nil
+            ))
         }
-        return nil
+        if let compatibility, !compatibility.supported {
+            let kind: LibraryCompatibilityIssueKind = compatibility.category == .antiCheatUnsupported
+                ? .antiCheat : compatibility.category == .packageTypeUnsupported ? .packageType : .runtime
+            let issue = LibraryCompatibilityIssue(
+                kind: kind,
+                title: kind == .antiCheat ? "Anti-cheat" : kind == .packageType ? "Package type" : "Runtime",
+                detail: compatibility.reason ?? "This game isn't supported on Mac yet.",
+                source: nil
+            )
+            if !issues.contains(where: { $0.kind == issue.kind }) { issues.append(issue) }
+        }
+        return issues
     }
 
-    static func isVisible(installed: Bool, packageFormat: String?,
+    static func unsupportedReason(productID: String, installed: Bool, packageFormat: String?,
+                                  compatibility: GameCompatibilityResult?) -> String? {
+        let issues = issues(productID: productID, installed: installed, packageFormat: packageFormat,
+                            compatibility: compatibility)
+        return issues.isEmpty ? nil : issues.map(\.detail).joined(separator: " ")
+    }
+
+    static func isVisible(productID: String, installed: Bool, packageFormat: String?,
                           compatibility: GameCompatibilityResult?, showsUnsupportedGames: Bool) -> Bool {
-        showsUnsupportedGames || unsupportedReason(installed: installed, packageFormat: packageFormat,
-                                                   compatibility: compatibility) == nil
+        showsUnsupportedGames || issues(productID: productID, installed: installed, packageFormat: packageFormat,
+                                       compatibility: compatibility).isEmpty
     }
 }
 
@@ -491,22 +513,23 @@ struct LibraryActionStyle: ViewModifier {
     }
 }
 
-/// Shown instead of Install when the Mac-support check already knows the game can't run.
-struct LibraryUnsupportedLabel: View {
-    let reason: String
+struct LibraryCompatibilityIndicators: View {
+    let issues: [LibraryCompatibilityIssue]
     var heroStyle = false
+
     var body: some View {
-        Label("Not supported on Mac", systemImage: "exclamationmark.triangle.fill")
-            .font(heroStyle ? .body.weight(.semibold) : .callout)
-            .foregroundStyle(heroStyle ? Color.white : Color.orange)
-            .shadow(color: heroStyle ? .black.opacity(0.5) : .clear, radius: 3, y: 1)
-            .padding(.horizontal, 12).padding(.vertical, 6)
-            .background(heroStyle ? Color.orange.opacity(0.88) : Color.orange.opacity(0.14), in: Capsule())
-            .overlay(Capsule().stroke(Color.orange.opacity(heroStyle ? 0.9 : 0.4), lineWidth: 1))
-            .help(reason)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Not supported on Mac. \(reason)")
-            .accessibilityIdentifier("xodus.library.unsupported")
+        HStack(spacing: 6) {
+            ForEach(issues) { issue in
+                Image(systemName: issue.kind.symbol)
+                    .font(heroStyle ? .title3.weight(.semibold) : .callout.weight(.medium))
+                    .foregroundStyle(heroStyle ? Color.white.opacity(0.92) : .secondary)
+                    .shadow(color: heroStyle ? .black.opacity(0.5) : .clear, radius: 3, y: 1)
+                    .frame(width: 28, height: 28)
+                    .help("\(issue.title): \(issue.detail)")
+                    .accessibilityLabel("\(issue.title). \(issue.detail)")
+            }
+        }
+        .accessibilityIdentifier("xodus.library.unsupported")
     }
 }
 
@@ -517,35 +540,122 @@ struct LibraryBackgroundExtension: ViewModifier {
     }
 }
 
+private struct LibraryAmbientPalette {
+    let primary: NSColor
+    let accent: NSColor
+
+    static func extract(_ image: NSImage) -> Self? {
+        guard let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let size = 28
+        var pixels = [UInt8](repeating: 0, count: size * size * 4)
+        guard let context = CGContext(data: &pixels, width: size, height: size, bitsPerComponent: 8,
+            bytesPerRow: size * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else {
+            return nil
+        }
+        context.interpolationQuality = .medium
+        context.draw(source, in: CGRect(x: 0, y: 0, width: size, height: size))
+        var red = 0.0, green = 0.0, blue = 0.0, total = 0.0
+        var accent = (score: 0.0, red: 0.0, green: 0.0, blue: 0.0)
+        for offset in stride(from: 0, to: pixels.count, by: 4) {
+            let alpha = Double(pixels[offset + 3]) / 255
+            guard alpha > 0.1 else { continue }
+            let r = min(1, Double(pixels[offset]) / 255 / alpha)
+            let g = min(1, Double(pixels[offset + 1]) / 255 / alpha)
+            let b = min(1, Double(pixels[offset + 2]) / 255 / alpha)
+            let maximum = max(r, g, b), minimum = min(r, g, b)
+            let brightness = (maximum + minimum) / 2
+            guard brightness > 0.05, brightness < 0.97 else { continue }
+            let saturation = maximum == minimum ? 0 : (maximum - minimum)
+                / (brightness > 0.5 ? 2 - maximum - minimum : maximum + minimum)
+            let weight = alpha * (0.3 + saturation)
+            red += r * weight
+            green += g * weight
+            blue += b * weight
+            total += weight
+            let score = saturation * alpha * (1 - abs(brightness - 0.55))
+            if score > accent.score { accent = (score, r, g, b) }
+        }
+        guard total > 0 else { return nil }
+        return Self(
+            primary: NSColor(deviceRed: red / total, green: green / total, blue: blue / total, alpha: 1),
+            accent: NSColor(deviceRed: accent.red, green: accent.green, blue: accent.blue, alpha: 1)
+        )
+    }
+}
+
+@MainActor
+private final class LibraryAmbientPresentation: ObservableObject {
+    @Published var image: NSImage?
+    @Published var palette: LibraryAmbientPalette?
+
+    func load(_ references: [CatalogArtworkReference], installed: InstalledGame?, allowed: Bool) async {
+        image = nil
+        palette = nil
+        guard allowed else { return }
+        for reference in references {
+            if let loaded = try? await CatalogArtworkStore.shared.image(for: reference) {
+                guard !Task.isCancelled else { return }
+                image = loaded
+                palette = LibraryAmbientPalette.extract(loaded)
+                return
+            }
+        }
+        if let installed {
+            let loaded = await InstalledArtworkStore.shared.image(game: installed, splash: true)
+            guard !Task.isCancelled else { return }
+            image = loaded
+            palette = loaded.flatMap(LibraryAmbientPalette.extract)
+        }
+    }
+}
+
 struct LibraryAmbientBackdrop: View {
     let references: [CatalogArtworkReference]
     let installed: InstalledGame?
     var allowsLoading = true
-    var height: CGFloat = 820
     @Environment(\.colorScheme) private var colorScheme
+    @StateObject private var presentation = LibraryAmbientPresentation()
 
     var body: some View {
-        ZStack {
-            Color(nsColor: .windowBackgroundColor)
-            LibraryLandscapeView(references: references, installed: installed, allowsLoading: allowsLoading)
-                .scaleEffect(1.12)
-                .blur(radius: 58)
-                .saturation(1.25)
-                .opacity(colorScheme == .dark ? 0.52 : 0.34)
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    Color(nsColor: .windowBackgroundColor).opacity(colorScheme == .dark ? 0.35 : 0.25),
-                    Color(nsColor: .windowBackgroundColor)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+        GeometryReader { geometry in
+            let base = Color(nsColor: .windowBackgroundColor)
+            let primary = presentation.palette.map { Color(nsColor: $0.primary) } ?? base
+            let accent = presentation.palette.map { Color(nsColor: $0.accent) } ?? primary
+            ZStack {
+                base
+                LinearGradient(
+                    colors: [
+                        primary.opacity(colorScheme == .dark ? 0.72 : 0.56),
+                        accent.opacity(colorScheme == .dark ? 0.50 : 0.36),
+                        primary.opacity(colorScheme == .dark ? 0.34 : 0.22),
+                        base.opacity(0.96)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                if let image = presentation.image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width,
+                               height: min(max(geometry.size.height * 0.58, 640), 1_100))
+                        .clipped()
+                        .scaleEffect(1.08)
+                        .blur(radius: 72)
+                        .saturation(1.35)
+                        .opacity(colorScheme == .dark ? 0.30 : 0.22)
+                        .mask(LinearGradient(colors: [.black, .black.opacity(0.5), .clear],
+                                             startPoint: .top, endPoint: .bottom))
+                }
+            }
         }
-        .frame(height: height)
         .clipped()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+        .task(id: references.map(\.url).joined(separator: "|") + (installed?.id.uuidString ?? "")) {
+            await presentation.load(references, installed: installed, allowed: allowsLoading)
+        }
     }
 }
 

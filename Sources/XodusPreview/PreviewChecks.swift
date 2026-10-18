@@ -557,18 +557,26 @@ enum PreviewChecks {
                  "category":"antiCheatUnsupported","checkedAt":"2026-10-18T16:00:00Z"}
                 """.utf8), productID: "FIXTURE00003")
             check(antiCheat.category == .antiCheatUnsupported &&
-                  !LibrarySupportVisibility.isVisible(installed: false, packageFormat: nil,
+                  !LibrarySupportVisibility.isVisible(productID: "FIXTURE00003", installed: false, packageFormat: nil,
                     compatibility: antiCheat, showsUnsupportedGames: false) &&
-                  LibrarySupportVisibility.isVisible(installed: false, packageFormat: nil,
+                  LibrarySupportVisibility.isVisible(productID: "FIXTURE00003", installed: false, packageFormat: nil,
                     compatibility: antiCheat, showsUnsupportedGames: true),
                   "Unsupported anti-cheat games are hidden by default and restored by the explicit toggle")
-            check(!LibrarySupportVisibility.isVisible(installed: false, packageFormat: "EAppx",
+            check(!LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: false,
+                    packageFormat: "EAppx",
                     compatibility: nil, showsUnsupportedGames: false) &&
-                  LibrarySupportVisibility.isVisible(installed: true, packageFormat: "EAppx",
+                  LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: true,
+                    packageFormat: "EAppx",
                     compatibility: antiCheat, showsUnsupportedGames: false) &&
-                  LibrarySupportVisibility.isVisible(installed: false, packageFormat: "MSIXVC / EAppx",
+                  LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: false,
+                    packageFormat: "MSIXVC / EAppx",
                     compatibility: nil, showsUnsupportedGames: false),
                   "EAppx-only games hide before install, while installed and mixed-format titles remain reachable")
+            check(LibraryCompatibilityRegistry.issues(productID: "C2KDNLT2H7DM")
+                    .map(\.kind) == [.antiCheat]
+                  && !LibrarySupportVisibility.isVisible(productID: "C2KDNLT2H7DM", installed: false,
+                    packageFormat: "MSIXVC", compatibility: nil, showsUnsupportedGames: false),
+                  "Officially sourced Gears 5 Easy Anti-Cheat evidence blocks Install without guessing from its title")
             check(LibraryGameInformation.playTimeLabel(seconds: 43_200)?.hasPrefix("12 h") == true &&
                   LibraryGameInformation.playTimeLabel(seconds: 120)?.hasPrefix("2 min") == true &&
                   LibraryGameInformation.playTimeLabel(seconds: nil) == nil &&
