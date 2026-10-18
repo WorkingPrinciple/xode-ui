@@ -54,6 +54,11 @@ struct LiveProductView: View {
                     header
                     VStack(alignment: .leading, spacing: 28) {
                         GameOperationProgressView(operations: operations, productID: product.id)
+                        if owned != nil, installed == nil {
+                            Text("Your library record is separate from download access. X Ode checks this edition's package and authorization when you install.")
+                                .font(.callout).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         evidence
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
                             HStack {

@@ -102,6 +102,7 @@ final class LiveSession: ObservableObject {
     private let configuration: BackendConfiguration?
     private let signInPollingBudget: Duration
     private var signInDeadline: ContinuousClock.Instant?
+    private let signInOwner = UUID()
     private var catalogTask: Task<Void, Never>?
     private var catalogWorkerID: UUID?
     private var queuedCatalog: CatalogRequest?
@@ -879,6 +880,7 @@ final class LiveSession: ObservableObject {
         if closingOperation?.id == operation.id {
             closingOperation = nil
             if closed {
+                MicrosoftSignInGate.shared.release(signInOwner)
                 client = nil
                 phase = .disconnected
             } else {
@@ -960,6 +962,9 @@ final class LiveSession: ObservableObject {
             lastSignInFailure = nil
         }
         authentication = status
+        if status.flow?.state != .pending {
+            MicrosoftSignInGate.shared.release(signInOwner)
+        }
         accountStatusCurrent = true
         accountStatusError = nil
     }
@@ -1038,6 +1043,10 @@ final class LiveSession: ObservableObject {
 
     func beginSignIn() async {
         guard canSignIn, let client else { return }
+        guard MicrosoftSignInGate.shared.acquire(signInOwner) else {
+            accountError = "Finish or cancel the current Microsoft sign-in before starting another."
+            return
+        }
         clearRecentLibrary()
         authenticationGeneration += 1
         accountOperationBusy = true

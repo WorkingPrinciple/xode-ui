@@ -26,6 +26,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var stoppingGameID: UUID?
     @Published private(set) var launchStarted = false
     @Published private(set) var launchableIDs: Set<UUID> = []
+    @Published private(set) var placeholderIDs: Set<UUID> = []
     @Published private(set) var mutationGameID: UUID?
     @Published private(set) var mutationActive = false
     /// Per-game update availability, recomputed from installed versions vs. `availableVersions`.
@@ -141,6 +142,7 @@ final class InstalledGamesController: ObservableObject {
             let updated = try await store.remove(id: game.id)
             applySavedGames(updated)
             launchableIDs.remove(game.id)
+            placeholderIDs.remove(game.id)
             playErrors[game.id] = nil
             playLogs[game.id] = nil
             runIDs[game.id] = nil
@@ -240,6 +242,7 @@ final class InstalledGamesController: ObservableObject {
             let child = try await Task.detached(priority: .userInitiated) { [weak self] in
                 try InstalledGameFiles.checkFolder(URL(fileURLWithPath: folder))
                 try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: launcher))
+                try InstalledGameFiles.checkPlayableContent(URL(fileURLWithPath: folder))
                 let child = Process()
                 child.executableURL = URL(fileURLWithPath: "/bin/bash")
                 child.arguments = [launcher, runID, runner.rawValue]
@@ -511,6 +514,7 @@ final class InstalledGamesController: ObservableObject {
             var publishers: [UUID: String] = [:]
             var packageTypes: [UUID: PackageType] = [:]
             var failures: [UUID: String] = [:]
+            var placeholders: Set<UUID> = []
             for game in entries {
                 let folder = URL(fileURLWithPath: game.folder)
                 if game.publisher == nil, let publisher = (try? MicrosoftGameConfig.read(folder: folder))?.publisher {
@@ -523,14 +527,24 @@ final class InstalledGamesController: ObservableObject {
                 do {
                     try InstalledGameFiles.checkFolder(folder)
                     try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: game.launcher))
+                    let config = try MicrosoftGameConfig.read(folder: folder)
+                    if config.placeholderOnly {
+                        placeholders.insert(game.id)
+                        failures[game.id] = InstalledGameError.placeholderContent.localizedDescription
+                        continue
+                    }
                     launchable.insert(game.id)
-                } catch { continue }
+                } catch {
+                    failures[game.id] = (error as? InstalledGameError)?.localizedDescription
+                        ?? "Game readiness couldn't be checked. Reconnect its drive or reimport the installed game."
+                }
             }
-            return (launchable, publishers, packageTypes, failures)
+            return (launchable, publishers, packageTypes, failures, placeholders)
         }.value
         guard inspectionGeneration == generation, !applicationTerminating else { return }
         launchableIDs = result.0.intersection(games.map(\.id))
         packageErrors = result.3
+        placeholderIDs = result.4.intersection(games.map(\.id))
         var latestSaved: [InstalledGame]?
         for (id, detected) in result.2 where games.contains(where: { $0.id == id && $0.packageType != detected }) {
             guard inspectionGeneration == generation else { return }

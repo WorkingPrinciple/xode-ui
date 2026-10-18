@@ -92,9 +92,15 @@ enum GameOperationChecks {
         let signed = root.appendingPathComponent("signed-in")
         let verifiedAccount = root.appendingPathComponent("verified-account")
         let verificationFails = root.appendingPathComponent("verification-fails")
+        let verificationCancels = root.appendingPathComponent("verification-cancels")
+        let statusFails = root.appendingPathComponent("status-fails")
         let verificationCalls = root.appendingPathComponent("verification-calls")
         let fixtureAccountHash = String(repeating: "a", count: 64)
         try script(.serviceStatus, """
+            if [ -f '\(statusFails.path)' ]; then
+                printf '{"serviceRunning":true}\\n' | publish '\(paths.processed.path)'/"$1.result.json"
+                printf '0\\n' | publish '\(paths.processed.path)'/"$1.status"; exit 0
+            fi
             if [ -f '\(signed.path)' ]; then signed=true; else signed=false; fi
             if [ "$signed" = true ] && [ -f '\(verifiedAccount.path)' ]; then account='"\(fixtureAccountHash)"'; else account=null; fi
             printf '{"serviceRunning":true,"signedIn":%s,"accountHash":%s}\\n' "$signed" "$account" | publish '\(paths.processed.path)'/"$1.result.json"
@@ -102,6 +108,9 @@ enum GameOperationChecks {
             """)
         try script(.serviceSignIn, """
             printf 'verification\\n' >> '\(verificationCalls.path)'
+            if [ -f '\(verificationCancels.path)' ]; then
+                printf '14\\n' | publish '\(paths.processed.path)'/"$1.status"; exit 14
+            fi
             if [ -f '\(verificationFails.path)' ]; then
                 printf '11\\n' | publish '\(paths.processed.path)'/"$1.status"; exit 11
             fi
@@ -111,6 +120,7 @@ enum GameOperationChecks {
         try script(.check, """
             r="$1"; product="$2"; receipts='\(paths.processed.path)'
             printf '%s\\n' "$#" "$r" "$product" > '\(root.path)/check-arguments'
+            printf '%s\\n' "$r" "$product" >> '\(root.path)/check-calls'
             printf 'Synthetic check log\\n' > '\(paths.logs.path)'/"$r.stderr.log"
             mode="$(cat '\(root.path)/mode')"
             trap 'printf "14\\n" | publish "$receipts/$r.status"; exit 14' TERM
@@ -281,7 +291,7 @@ enum GameOperationChecks {
         operations.signInForGames()
         await operations.waitForService()
         let callsAfterFailure = try String(contentsOf: verificationCalls, encoding: .utf8)
-        check(operations.serviceError == GameScriptError.failed(11).localizedDescription
+        check(operations.serviceError?.contains("authorization wasn't confirmed") == true
               && operations.serviceStatus == nil && operations.serviceSignInActionTitle != nil
               && !operations.serviceBusy && !installed.serviceSignInActive && operations.canQuit
               && callsAfterFailure.split(separator: "\n").count == 2,
@@ -395,6 +405,10 @@ enum GameOperationChecks {
             } else {
                 check(!operations.gamePassActive && operations.gamePassError != nil && operations.gamePassLog != nil,
                       "B5 wrong identity/type/status or failed probe yields Unknown and Show log")
+                if mode == "pass11" {
+                    check(operations.gamePassError?.contains("doesn't establish") == true,
+                         "An ambiguous Game Pass acquisition failure does not claim expired sign-in or subscription")
+                }
             }
             check(!installed.mutationActive && operations.canQuit,
                   "B5 joined probe releases the one-mutation and normal-Quit fences")
@@ -593,7 +607,7 @@ enum GameOperationChecks {
                 check(operations.installConsent?.checkError != nil && operations.log != nil,
                       "B3: Failed/mismatched check surfaces failure and generated-run Show log")
                 if mode == "check11" {
-                    check(operations.installConsent?.checkError?.contains("account") == true
+                    check(operations.installConsent?.checkError?.contains("doesn't establish") == true
                           && operations.compatibility[game.id] == priorSupport
                           && game.acquisitionKind == .unknown,
                           "SDD-LIB-07: actual package refusal preserves collection and prior support facts")
@@ -621,8 +635,113 @@ enum GameOperationChecks {
                       && ownerView.showsGameSignIn == globalView.showsGameSignIn,
                       "XO-022: Returning to A or global status preserves A's genuine failure and matching recovery controls")
                 if mode == "check11" {
-                    check(ownerView.showsGameSignIn && ownerView.showsLog && operations.failureCode == 11,
-                          "XO-022: Exact account-download refusal remains actionable only for its owner and global status")
+                    check(!ownerView.showsGameSignIn && ownerView.showsDownloadRecovery && ownerView.showsLog
+                          && operations.failureCode == 11,
+                          "Download acquisition refusal offers a status-first recovery, not another sign-in")
+                    let signInsBeforeRecovery = try String(contentsOf: verificationCalls, encoding: .utf8)
+                    operations.recoverDownload(productID: "FIXTURE00002")
+                    check(!operations.serviceBusy, "Another product cannot recover this download attempt")
+                    let consentOwner = UUID()
+                    check(MicrosoftSignInGate.shared.acquire(consentOwner), "Interactive consent gate starts unowned")
+                    let duplicateLibrary = PCGamesController()
+                    duplicateLibrary.signIn()
+                    operations.signInForGames()
+                    check(!duplicateLibrary.busy && !duplicateLibrary.sheetPresented
+                          && duplicateLibrary.error != nil && !operations.serviceBusy
+                          && !MicrosoftSignInGate.shared.acquire(UUID()),
+                          "One Microsoft interaction blocks both PC-library and game-service duplicate prompts")
+                    MicrosoftSignInGate.shared.release(UUID())
+                    check(!MicrosoftSignInGate.shared.available, "An unrelated owner cannot release Microsoft consent")
+                    MicrosoftSignInGate.shared.release(consentOwner)
+                    try writeMode("checkunsupported")
+                    operations.recoverDownload(productID: game.id)
+                    operations.recoverDownload(productID: game.id)
+                    check(operations.serviceBusy && !operations.canStartMutation && !operations.canQuit,
+                          "Download access recovery deduplicates activation and retains mutation/Quit holds")
+                    await operations.waitForService()
+                    let signInsAfterSavedRecovery = try String(contentsOf: verificationCalls, encoding: .utf8)
+                    check(operations.error == "Neutral package is not supported."
+                          && operations.failureCode == nil && !operations.downloadNeedsSignIn
+                          && signInsAfterSavedRecovery == signInsBeforeRecovery,
+                          "A fresh bound saved session retries the exact product check without interactive sign-in or stale authorization error")
+                    try writeMode("check11")
+                    await operations.install(game)
+                    let attemptsBeforeRetry = try String(contentsOf: root.appendingPathComponent("check-calls"), encoding: .utf8)
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    let attemptsAfterRetry = try String(contentsOf: root.appendingPathComponent("check-calls"), encoding: .utf8)
+                    check(attemptsAfterRetry.split(separator: "\n").count == attemptsBeforeRetry.split(separator: "\n").count + 2
+                          && operations.failureCode == 11 && !operations.downloadNeedsSignIn
+                          && operations.error == GameScriptError.failed(11).localizedDescription
+                          && !operations.serviceBusy && !operations.installingDirectly,
+                          "A saved-session acquisition rejection stops after exactly one explicit product retry, without a retry or login loop")
+                    try FileManager.default.removeItem(at: signed)
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    let signInsAfterStatusRecovery = try String(contentsOf: verificationCalls, encoding: .utf8)
+                    check(operations.downloadNeedsSignIn
+                          && GameOperationProgressView(operations: operations, productID: game.id).showsGameSignIn
+                          && signInsAfterStatusRecovery == signInsBeforeRecovery,
+                          "Unconfirmed service status offers explicit authorization review without claiming sign-out or starting consent")
+                    try privateFile(verificationFails, "Refused synthetic consent.")
+                    operations.recoverDownload(productID: game.id)
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    check(!operations.downloadNeedsSignIn && operations.error?.contains("has not resumed") == true
+                          && operations.failureCode == 11 && !operations.serviceBusy
+                          && MicrosoftSignInGate.shared.available,
+                          "Failed authorization never resumes installation and releases only its joined consent hold")
+                    try FileManager.default.removeItem(at: verificationFails)
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    try writeMode("checkunsupported")
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    check(operations.serviceStatus?.accountHash == fixtureAccountHash
+                          && operations.error == "Neutral package is not supported."
+                          && operations.failureCode == nil && !operations.downloadNeedsSignIn
+                          && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path),
+                          "Confirmed explicit authorization resumes the initiating package check, never bypassing its unsupported verdict")
+                    try writeMode("check11")
+                    await operations.install(game)
+                    try privateFile(statusFails, "Malformed status, not a signed-out receipt.")
+                    let callsBeforeBadStatus = try String(contentsOf: verificationCalls, encoding: .utf8)
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    let callsAfterBadStatus = try String(contentsOf: verificationCalls, encoding: .utf8)
+                    check(operations.serviceStatus == nil && !operations.downloadNeedsSignIn
+                          && operations.error?.contains("No new sign-in was started") == true
+                          && callsAfterBadStatus == callsBeforeBadStatus,
+                          "Malformed or unavailable status never becomes signed-out evidence or automatic consent")
+                    try FileManager.default.removeItem(at: statusFails)
+                    try FileManager.default.removeItem(at: verifiedAccount)
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    let checkBeforeUnbound = try String(contentsOf: root.appendingPathComponent("check-arguments"), encoding: .utf8)
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    let checkAfterUnbound = try String(contentsOf: root.appendingPathComponent("check-arguments"), encoding: .utf8)
+                    check(operations.error?.contains("has not resumed") == true
+                          && checkAfterUnbound == checkBeforeUnbound && operations.failureCode == 11,
+                          "An unbound service result cannot resume an initiating install")
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    try privateFile(verificationCancels, "Synthetic Microsoft-window cancellation.")
+                    operations.recoverDownload(productID: game.id)
+                    await operations.waitForService()
+                    check(operations.serviceError?.contains("cancelled") == true
+                          && operations.error?.contains("has not resumed") == true
+                          && !operations.downloadNeedsSignIn && !operations.serviceBusy
+                          && MicrosoftSignInGate.shared.available,
+                          "Cancelled consent never resumes or leaves a held prompt or stale Continue demand")
+                    try FileManager.default.removeItem(at: verificationCancels)
+                    try privateFile(verifiedAccount, "Restored synthetic binding.")
+                    operations.refreshService()
+                    await operations.waitForService()
+                    await operations.waitForSetup()
+                    check(!operations.downloadNeedsSignIn && operations.error?.contains("was confirmed") == true
+                          && operations.failureCode == 11 && operations.canRecoverDownload,
+                          "A separate confirmed status recovery replaces stale sign-in copy without claiming a successful download")
                     try writeMode("checkslow")
                     let next = PCGame(id: "FIXTURE00002", title: "Second Fixture", artwork: nil)
                     let nextCheck = Task { await operations.prepareInstall(next) }

@@ -50,6 +50,9 @@ final class GameOperationsController: ObservableObject {
     @Published private(set) var failureCode: Int?
     @Published private(set) var feedbackProductID: String?
     @Published private(set) var directInstallProductID: String?
+    @Published private(set) var downloadNeedsSignIn = false
+    private var downloadRetry: PCGame?
+    private let signInOwner = UUID()
     private let installed: InstalledGamesController
     private let paths: GameScriptPaths
     private let mutationRunner: GameScriptRunner
@@ -92,16 +95,16 @@ final class GameOperationsController: ObservableObject {
     }
     var canSignIn: Bool {
         !serviceBusy && !isBusy && !recoveryRequired && !installed.mutationActive
-            && installed.runningGameID == nil && !terminating
+            && !preparingConsent && !installingDirectly && installed.runningGameID == nil && !terminating
     }
     var canStartMutation: Bool {
-        !isBusy && !recoveryRequired && !installed.mutationActive && !serviceSigningIn && !preparingConsent && installed.loaded
+        !isBusy && !recoveryRequired && !installed.mutationActive && !serviceBusy && !preparingConsent && installed.loaded
             && !installed.editing && !installed.choosing && !terminating
     }
     var canQuit: Bool {
         !installingDirectly && !preparingConsent
             && mutationTask == nil && compatibilityTask == nil && gamePassTask == nil && stopTask == nil
-            && setupTask == nil && !serviceSigningIn
+            && setupTask == nil && !serviceBusy
     }
     var canConfirmInstall: Bool {
         canStartMutation && installConsent?.compatibility?.supported == true
@@ -196,6 +199,7 @@ final class GameOperationsController: ObservableObject {
                 guard !terminating else { return }
                 guard outcome.code == 0, let data = outcome.result else { throw GameScriptError.failed(outcome.code) }
                 serviceStatus = try GameServiceStatus.parse(data)
+                clearRecoveredDownloadSignIn()
                 serviceLog = nil
                 if serviceStatus?.signedIn == true, setupCheckedOnce { refreshSetup() }
             } catch {
@@ -207,8 +211,13 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
-    func signInForGames() {
+    func signInForGames(resuming game: PCGame? = nil) {
         guard canSignIn else { return }
+        guard MicrosoftSignInGate.shared.acquire(signInOwner) else {
+            serviceError = "Finish or cancel the current Microsoft sign-in before starting another."
+            if game != nil { error = serviceError }
+            return
+        }
         LibraryXboxStats.shared.invalidateBinding()
         gamePassGeneration += 1
         gamePassStatus = nil
@@ -220,25 +229,103 @@ final class GameOperationsController: ObservableObject {
         serviceLog = nil
         let runID = InstalledGamesController.runID()
         serviceTask = Task {
-            defer {
-                serviceBusy = false
-                serviceSigningIn = false
-                installed.serviceSignInActive = false
-                serviceTask = nil
-            }
+            var resume = false
+            var evidenceRunID = runID
             do {
                 let signedIn = try await serviceRunner.run(command: .serviceSignIn, runID: runID)
                 guard signedIn.code == 0 else { throw GameScriptError.failed(signedIn.code) }
-                let status = try await serviceRunner.run(command: .serviceStatus, runID: InstalledGamesController.runID())
+                evidenceRunID = InstalledGamesController.runID()
+                let status = try await serviceRunner.run(command: .serviceStatus, runID: evidenceRunID)
                 guard status.code == 0, let data = status.result else { throw GameScriptError.invalidReceipt }
                 let value = try GameServiceStatus.parse(data)
                 guard value.signedIn else { throw GameScriptError.failed(11) }
                 serviceStatus = value
-                if setupCheckedOnce { refreshSetup() }
+                if game != nil {
+                    guard value.accountHash != nil else { throw GameScriptError.invalidReceipt }
+                    resume = true
+                } else { clearRecoveredDownloadSignIn() }
+                if setupCheckedOnce, !resume { refreshSetup() }
+            } catch {
+                serviceStatus = nil
+                serviceError = error as? GameScriptError == .failed(14)
+                    ? "Microsoft sign-in was cancelled. No installation was resumed."
+                    : "Microsoft game authorization wasn't confirmed. Check game access status before trying again."
+                serviceLog = await scriptLog(evidenceRunID)
+                if let game, feedbackProductID == game.id {
+                    self.error = "Microsoft game authorization wasn't confirmed. The installation has not resumed. Check download access to try again."
+                    log = serviceLog
+                    downloadNeedsSignIn = false
+                }
+            }
+            serviceBusy = false
+            serviceSigningIn = false
+            installed.serviceSignInActive = false
+            serviceTask = nil
+            MicrosoftSignInGate.shared.release(signInOwner)
+            if resume, let game, !terminating, feedbackProductID == game.id {
+                installConsent = nil
+                await install(game)
+            }
+        }
+    }
+
+    var canRecoverDownload: Bool {
+        failureCode == 11 && downloadRetry != nil && canSignIn
+    }
+    var hasDownloadRecovery: Bool { failureCode == 11 && downloadRetry != nil }
+
+    private func clearRecoveredDownloadSignIn() {
+        guard failureCode == 11, serviceStatus?.signedIn == true,
+              serviceStatus?.accountHash != nil else { return }
+        downloadNeedsSignIn = false
+        error = "Saved Microsoft game access was confirmed. Check download access to retry this game's package; the earlier download did not complete."
+        installConsent?.checkError = error
+    }
+
+    /// A failed acquisition is not evidence that interactive consent is required.
+    func recoverDownload(productID: String?) {
+        guard canRecoverDownload, let game = downloadRetry,
+              productID == nil || productID == game.id, feedbackProductID == game.id else { return }
+        if downloadNeedsSignIn {
+            signInForGames(resuming: game)
+            return
+        }
+        serviceBusy = true
+        serviceError = nil
+        serviceLog = nil
+        let runID = InstalledGamesController.runID()
+        serviceTask = Task {
+            var resume = false
+            do {
+                let outcome = try await serviceRunner.run(command: .serviceStatus, runID: runID)
+                guard outcome.code == 0, let data = outcome.result else { throw GameScriptError.failed(outcome.code) }
+                let status = try GameServiceStatus.parse(data)
+                guard !terminating, feedbackProductID == game.id else { throw CancellationError() }
+                serviceStatus = status
+                if status.signedIn, status.accountHash != nil {
+                    resume = true
+                } else {
+                    downloadNeedsSignIn = true
+                    error = status.signedIn
+                        ? "Your saved game sign-in needs account verification before retrying this download. Continue with Microsoft; installation resumes only after confirmation."
+                        : "X Ode couldn't confirm saved game access. This can also happen when the service is unavailable. Continue with Microsoft to check authorization; installation resumes only after confirmation."
+                    installConsent?.checkError = error
+                }
             } catch {
                 serviceStatus = nil
                 serviceError = Self.message(error)
                 serviceLog = await scriptLog(runID)
+                if !terminating, feedbackProductID == game.id {
+                    self.error = "X Ode couldn't check download access. No new sign-in was started. Check download access to retry, or show the log."
+                    installConsent?.checkError = self.error
+                    log = serviceLog
+                }
+            }
+            serviceBusy = false
+            serviceTask = nil
+            if resume, !terminating, feedbackProductID == game.id {
+                installConsent = nil
+                await install(game)
             }
         }
     }
@@ -335,7 +422,9 @@ final class GameOperationsController: ObservableObject {
             } catch {
                 gamePassStatus = nil
                 gamePassFromCache = false
-                gamePassError = Self.message(error)
+                gamePassError = gamePassFailureCode == 11
+                    ? "X Ode couldn't verify PC Game Pass download access. Check game access status or try the check again. This result doesn't establish that your subscription or sign-in expired."
+                    : Self.message(error)
                 gamePassLog = await scriptLog(runID)
             }
         }
@@ -506,6 +595,7 @@ final class GameOperationsController: ObservableObject {
                   installed.runningGameID != repairing.id else { return }
         }
         resetFeedback(productID: game.id)
+        if repairing == nil { downloadRetry = game }
         preparingConsent = true
         defer { preparingConsent = false }
         do {
@@ -668,6 +758,8 @@ final class GameOperationsController: ObservableObject {
         notice = nil
         log = nil
         failureCode = nil
+        downloadNeedsSignIn = false
+        downloadRetry = nil
     }
 
     private func complete(_ record: GameOperationRecord, outcome: GameScriptOutcome) async throws {
@@ -695,6 +787,9 @@ final class GameOperationsController: ObservableObject {
             }
         } else {
             failureCode = outcome.code
+            if outcome.code == 11, record.kind == .install {
+                downloadRetry = PCGame(id: record.productID, title: record.title, artwork: nil)
+            }
             if outcome.code == 12 { await loadCompatibility(productID: record.productID) }
             let unsupportedReason = compatibility[record.productID].flatMap { $0.supported ? nil : $0.reason }
                 ?? (progress?.phase == .failed ? progress?.message : nil)

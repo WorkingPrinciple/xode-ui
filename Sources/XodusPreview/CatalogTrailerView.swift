@@ -143,14 +143,14 @@ struct CatalogTrailerView: View {
                         CatalogArtworkView(reference: allowsLoading ? trailer.preview : nil,
                                            status: trailer.preview == nil ? .absent : .available)
                             .aspectRatio(16.0 / 9.0, contentMode: .fit)
-                        Label("Play \(trailer.caption)", systemImage: "play.fill")
+                        Label("Watch trailer: \(trailer.caption)", systemImage: "play.fill")
                             .font(.headline).padding(14).modifier(NativeToolbarMaterial())
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .contentShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain).disabled(!allowsPlayback)
-                .accessibilityLabel("Play \(trailer.caption). Streams video.")
+                .accessibilityLabel("Watch trailer: \(trailer.caption). Streams video, not the game.")
             }
         }
         .onDisappear(perform: playback.stop)

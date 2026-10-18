@@ -25,13 +25,14 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
 }
 
 enum InstalledGameError: Error, LocalizedError {
-    case invalidConfig, missingFolder, missingLauncher, invalidRegistry, storage, launch
+    case invalidConfig, missingFolder, missingLauncher, placeholderContent, invalidRegistry, storage, launch
 
     var errorDescription: String? {
         switch self {
         case .invalidConfig: "This folder doesn't contain a valid MicrosoftGame.config. Choose the installed Xbox game folder."
         case .missingFolder: "The game folder is no longer available. Reconnect its drive or import the game again."
         case .missingLauncher: "The launch script is missing or isn't an executable file. Import the game again to choose its script."
+        case .placeholderContent: "This installation contains only Minecraft's placeholder, not a playable game. Install the full Minecraft Launcher package before playing. Signing in again won't replace these files."
         case .invalidRegistry: "The installed games list couldn't be read. Your game files haven't been changed."
         case .storage: "The installed games list couldn't be saved. Check access to Application Support and try again."
         case .launch: "The game couldn't start. Check its launch script and try again."
@@ -47,6 +48,14 @@ struct MicrosoftGameConfig: Equatable, Sendable {
     let publisher: String?
     let tileArt: [String]
     let splashArt: String?
+    var executables: [String] = []
+
+    var placeholderOnly: Bool {
+        !executables.isEmpty && executables.allSatisfy {
+            $0.replacingOccurrences(of: "\\", with: "/").split(separator: "/").last?.lowercased()
+                == "mcplaceholderstub.exe"
+        }
+    }
 
     static func read(folder: URL) throws -> Self {
         try InstalledGameFiles.checkFolder(folder)
@@ -88,7 +97,7 @@ struct MicrosoftGameConfig: Equatable, Sendable {
                     },
                     tileArt: ["Square480x480Logo", "Square150x150Logo", "StoreLogo"].compactMap {
                         reader.visuals[$0]
-                    }, splashArt: reader.visuals["SplashScreenImage"])
+                    }, splashArt: reader.visuals["SplashScreenImage"], executables: reader.executables)
     }
 }
 
@@ -100,6 +109,7 @@ private final class ConfigReader: NSObject, XMLParserDelegate {
     var storeId: String?
     var invalid = false
     var visuals: [String: String] = [:]
+    var executables: [String] = []
     private var path: [String] = []
     private var text = ""
 
@@ -119,6 +129,9 @@ private final class ConfigReader: NSObject, XMLParserDelegate {
             title = attributes["DefaultDisplayName"]?.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         if path == ["Game", "StoreId"] { text = "" }
+        if path == ["Game", "ExecutableList", "Executable"], let name = attributes["Name"] {
+            executables.append(name)
+        }
     }
 
     func parser(_ parser: XMLParser, foundCharacters string: String) {
@@ -147,6 +160,12 @@ private final class ConfigReader: NSObject, XMLParserDelegate {
 }
 
 enum InstalledGameFiles {
+    static func checkPlayableContent(_ folder: URL) throws {
+        if try MicrosoftGameConfig.read(folder: folder).placeholderOnly {
+            throw InstalledGameError.placeholderContent
+        }
+    }
+
     static func checkFolder(_ url: URL) throws {
         let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
         guard url.isFileURL, values?.isDirectory == true else { throw InstalledGameError.missingFolder }

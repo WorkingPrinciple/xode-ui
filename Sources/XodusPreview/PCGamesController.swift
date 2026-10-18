@@ -26,6 +26,7 @@ final class PCGamesController: ObservableObject {
     private var restored = false
     private var terminating = false
     private var attemptedAutomaticLoad = false
+    private let signInOwner = UUID()
 
     var representedGames: [PCGame] { needsSignIn ? [] : snapshot?.games ?? [] }
     var accessIsCurrent: Bool {
@@ -87,6 +88,10 @@ final class PCGamesController: ObservableObject {
 
     func signIn() {
         guard !busy, !restoringPresence, !presenceUnavailable, !needsKeychainApproval, !terminating else { return }
+        guard MicrosoftSignInGate.shared.acquire(signInOwner) else {
+            error = "Finish or cancel the current Microsoft sign-in before starting another."
+            return
+        }
         let token = UUID()
         generation = token
         busy = true
@@ -95,6 +100,7 @@ final class PCGamesController: ObservableObject {
         snapshot = nil
         sheetPresented = true
         operation = Task {
+            defer { MicrosoftSignInGate.shared.release(signInOwner) }
             defer { finish(token) }
             do {
                 let code = try await client.deviceCode()

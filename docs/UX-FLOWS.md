@@ -65,6 +65,53 @@ user-directed first-run correction.
 
 ## Freeze correction: operation feedback and library retry (source candidate)
 
+**Single-entry download recovery (18 October, source candidate):** The main
+Microsoft entry remains the welcome flow. Management, PC-library and game-service
+interactive entry points share one in-process consent slot, without sharing
+tokens or treating their identities as interchangeable. A pending or unobserved
+management outcome retains that slot until a terminal status or observed
+connection retirement; cancellation does not optimistically unlock another prompt.
+The PC collection continues to use its existing admitted credential broker.
+
+An Owned collection record is not a successful package acquisition. Ambiguous
+check/install exit 11 no longer claims lost entitlement or demands sign-in.
+Its exact product's **Check download access** explicitly checks the existing
+service receipt. A fresh signed-in, account-bound result retries that product's
+normal package/licence checks without opening consent. An unconfirmed or unbound
+result offers **Continue with Microsoft**, explaining the uncertainty rather than
+calling a transport failure signed-out. Only that explicit action invokes the
+existing service sign-in route (which may reuse its saved session); a subsequent
+fresh bound receipt is required before resuming the initiating install. Failed,
+cancelled, malformed or unbound results never resume it. Other products cannot
+consume this recovery. A new accepted attempt replaces the old error/log together.
+A separate confirmed account recovery replaces the stale sign-in demand, but
+does not claim that a download finished. Repair retains its existing protected
+consent and is not automatically converted into a fresh installation.
+The Game Pass probe's same ambiguous acquisition failure offers a status check,
+not a sign-in instruction or a claim that the subscription expired.
+
+**Remaining contract dependency:** This is not proof of one interactive consent
+across Microsoft audiences. The admitted management status, collection broker and
+game-service receipt do not establish a common authorized account. The existing
+game status boolean cannot distinguish unavailable/socket/parse failure from no
+saved user; acquisition exit 11 cannot distinguish interaction-required, expiry,
+licence rejection and other preparation failures. The backend needs classified,
+account-bound saved-session authorization and acquisition outcomes, with explicit
+interaction-required/cancelled/expired/unavailable results and current
+product/attempt attribution. The app must not transfer credentials, restart the
+service automatically, consent silently or infer authorization from an Owned
+badge. Source checks do not establish live sign-in or installer acceptance.
+
+Trailer actions say **Watch trailer**, visibly and to VoiceOver, rather than
+**Play** plus the game title. A package whose MicrosoftGame.config explicitly
+declares only `MCPlaceholderStub.exe` remains registered but says **Installation
+incomplete**, explains that the full Launcher package is needed and is excluded
+from Play/Continue Playing. Prelaunch rechecks the manifest before spawning.
+Missing executable metadata, a Minecraft title, or a mixed placeholder/full
+executable list alone does not establish a placeholder-only package. This
+does not diagnose which control was clicked in a running app or repair the
+separate Launcher acquisition failure.
+
 **XO-018 game-service identity recovery:** A saved game-service sign-in without
 an account binding says **Game sign-in saved; account not verified**, without a
 confirmed-account checkmark. Account exposes **Verify game account** explicitly

@@ -22,6 +22,15 @@ enum InstalledGameChecks {
         let fallback = try MicrosoftGameConfig.parse(Data(config.replacingOccurrences(
             of: "<ShellVisuals DefaultDisplayName=\"Fixture Installed Game\"/>", with: "").utf8))
         check(fallback.title == fallback.identityName, "Missing display name falls back to exact Identity Name")
+        let placeholderConfig = config.replacingOccurrences(of: "</Game>", with:
+            #"<ExecutableList><Executable Name="MCPlaceholderStub.exe"/></ExecutableList></Game>"#)
+        check(try MicrosoftGameConfig.parse(Data(placeholderConfig.utf8)).placeholderOnly,
+              "An explicitly declared Minecraft placeholder is not playable content")
+        let mixedConfig = placeholderConfig.replacingOccurrences(of: "</ExecutableList>",
+            with: #"<Executable Name="MinecraftLauncher.exe"/></ExecutableList>"#)
+        check(try !MicrosoftGameConfig.parse(Data(mixedConfig.utf8)).placeholderOnly
+              && !metadata.placeholderOnly,
+              "Placeholder detection never guesses from the title, missing executable metadata or a mixed full package")
         for xml in ["", "<Game>", "<Other/>", config.replacingOccurrences(of: "Version=\"1.2.3.4\"", with: ""),
                     config.replacingOccurrences(of: "<StoreId>FIXTURE00001</StoreId>", with: ""),
                     config.replacingOccurrences(of: "1.2.3.4", with: "not-a-version"),
@@ -197,6 +206,25 @@ enum InstalledGameChecks {
               && game.folder == folder.path && game.launcher == zero.path,
               "Explicit selected folder and launcher persist only their imported identity")
         check(try await store.load() == [game], "Private installed-game JSON round-trips exact fields")
+        let configFile = folder.appendingPathComponent("MicrosoftGame.Config")
+        let savedConfig = try Data(contentsOf: configFile)
+        try Data(placeholderConfig.utf8).write(to: configFile)
+        let placeholderLibrary = InstalledGamesController(store: store, defaultEngine: { nil },
+            detectAvailability: { RunnerAvailability([.crossover]) })
+        await placeholderLibrary.load()
+        check(placeholderLibrary.placeholderIDs.contains(game.id)
+              && !placeholderLibrary.launchableIDs.contains(game.id)
+              && placeholderLibrary.packageErrors[game.id] == InstalledGameError.placeholderContent.localizedDescription
+              && placeholderLibrary.games.count == 1,
+              "Known placeholder registration remains intact but cannot advertise Play or Continue Playing")
+        do {
+            try InstalledGameFiles.checkPlayableContent(folder)
+            check(false, "The live prelaunch content check refuses a declared placeholder before spawning")
+        } catch {
+            check(error as? InstalledGameError == .placeholderContent,
+                  "The live prelaunch content check refuses a declared placeholder before spawning")
+        }
+        try savedConfig.write(to: configFile)
         let legacyData = try JSONEncoder().encode([game])
         guard var legacy = try JSONSerialization.jsonObject(with: legacyData) as? [[String: Any]] else {
             throw InstalledGameError.invalidRegistry

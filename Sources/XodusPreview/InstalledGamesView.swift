@@ -214,6 +214,7 @@ struct InstalledPlayButton: View {
     }
     private var title: String {
         library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : canStop ? "Stop"
+            : library.placeholderIDs.contains(game.id) ? "Installation incomplete"
             : library.playErrors[game.id] == nil ? "Play" : "Try again"
     }
 
@@ -235,8 +236,10 @@ struct InstalledPlayButton: View {
         .modifier(LibraryHeroControlSize(enabled: heroStyle))
         .disabled(canStop ? !library.canStop(game) || !operations.canStartMutation
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
-                  || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive)
-        .accessibilityLabel(canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)" : "Play \(game.title)")
+                  || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
+                  || library.placeholderIDs.contains(game.id))
+        .accessibilityLabel(canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
+            : library.placeholderIDs.contains(game.id) ? "\(game.title): installation incomplete" : "Play \(game.title)")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
         .accessibilityIdentifier(canStop ? "xodus.installed.stop" : "xodus.installed.play")
         if library.stoppingGameID == game.id || launching {

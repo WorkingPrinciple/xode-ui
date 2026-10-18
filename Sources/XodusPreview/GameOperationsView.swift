@@ -118,8 +118,8 @@ struct GamePassAccountView: View {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if operations.gamePassFailureCode == 11 {
-                    Button("Sign in for games") { operations.signInForGames() }
-                        .disabled(!operations.canSignIn)
+                    Button("Check game access status") { operations.refreshService() }
+                        .disabled(operations.serviceBusy || operations.setupRepairing)
                 }
                 if operations.gamePassLog != nil {
                     Button("Show log") { operations.showGamePassLog() }
@@ -200,7 +200,12 @@ struct GameOperationProgressView: View {
     var operationNotice: String? { privacyRestricted || !includesFeedback ? nil : operations.notice }
     var preparationCancelTitle: String? { showsPreparation ? "Cancel" : nil }
     var installCancelTitle: String? { presentedOperation != nil && operations.canCancel ? "Cancel installation" : nil }
-    var showsGameSignIn: Bool { includesFeedback && !privacyRestricted && operations.failureCode == 11 }
+    var showsGameSignIn: Bool {
+        includesFeedback && !privacyRestricted && operations.failureCode == 11 && operations.downloadNeedsSignIn
+    }
+    var showsDownloadRecovery: Bool {
+        includesFeedback && !privacyRestricted && operations.hasDownloadRecovery
+    }
     var showsLog: Bool { includesFeedback && !privacyRestricted && operations.log != nil }
 
     var body: some View {
@@ -247,10 +252,16 @@ struct GameOperationProgressView: View {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.install.error")
-                if showsGameSignIn {
-                    Button("Sign in for games") { operations.signInForGames() }
-                        .disabled(!operations.canSignIn)
-                        .accessibilityIdentifier("xodus.install.signIn")
+                if showsDownloadRecovery {
+                    Button(showsGameSignIn ? "Continue with Microsoft" : "Check download access") {
+                        operations.recoverDownload(productID: productID)
+                    }
+                    .disabled(!operations.canRecoverDownload)
+                    .accessibilityIdentifier("xodus.install.checkAccess")
+                    if operations.serviceBusy {
+                        ProgressView(operations.serviceSigningIn ? "Waiting for Microsoft authorization" : "Checking download access")
+                            .controlSize(.small)
+                    }
                 }
                 if showsLog {
                     Button("Show log") { operations.showLog() }
@@ -312,11 +323,10 @@ struct GameInstallConsentView: View {
                     } else if let error = consent.checkError {
                         Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        if operations.failureCode == 11 {
-                            Button("Sign in for games") {
-                                operations.installConsent = nil
-                                operations.signInForGames()
-                            }.disabled(!operations.canSignIn)
+                        if operations.hasDownloadRecovery {
+                            Button(operations.downloadNeedsSignIn ? "Continue with Microsoft" : "Check download access") {
+                                operations.recoverDownload(productID: consent.game.id)
+                            }.disabled(!operations.canRecoverDownload)
                         }
                         if operations.log != nil { Button("Show log") { operations.showLog() } }
                     }

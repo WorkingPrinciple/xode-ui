@@ -553,6 +553,14 @@ enum NativeChecks {
             let gated = LiveSession(configuration: gateConfiguration)
             await gated.connect()
             await gated.refreshAccount()
+            let otherConsent = UUID()
+            check(MicrosoftSignInGate.shared.acquire(otherConsent),
+                  "A separate Microsoft consent owner can reserve the interactive slot")
+            await gated.beginSignIn()
+            check(try !gated.signInPending && !gated.accountBusy && gated.accountError != nil
+                  && trace(gateConfiguration).filter { $0 == "auth.begin" }.isEmpty,
+                  "Management sign-in cannot start while another service owns interactive consent")
+            MicrosoftSignInGate.shared.release(otherConsent)
             let beginning = Task { await gated.beginSignIn() }
             try await wait { gated.accountBusy }
             await gated.beginSignIn()
@@ -561,6 +569,11 @@ enum NativeChecks {
             check(try gated.signInPending && !gated.canSignIn && gated.accountFailureSummary == nil
                   && trace(gateConfiguration).filter { $0 == "auth.begin" }.count == 1,
                   "Busy and pending state reject duplicate native sign-in activation before any second mutation")
+            let competingLibrary = PCGamesController()
+            competingLibrary.signIn()
+            check(!competingLibrary.sheetPresented && competingLibrary.error != nil
+                  && !MicrosoftSignInGate.shared.available,
+                  "A pending native flow retains the shared consent slot against the PC-library entry point")
             check(gated.accountLabel == "Sign-in pending" && gated.currentCredentialState == nil
                   && gated.accountSymbol == "person.crop.circle"
                   && gated.accountExplanation.contains("If Microsoft has opened a sign-in window")
@@ -579,6 +592,8 @@ enum NativeChecks {
                   && gated.accountExplanation.contains("no saved launcher sign-in"),
                   "Confirmed cancellation returns signed-out presentation without a saved-account badge")
             check(!gated.hasConfirmedSignIn, "Confirmed cancellation keeps welcome locked without deleting games")
+            check(MicrosoftSignInGate.shared.available,
+                  "Only confirmed management cancellation releases the shared Microsoft consent slot")
             let cancelledFlow = gated.authentication?.flow?.flowID
             check(gated.canSignIn && !gated.accountBusy,
                   "Confirmed cancellation enables an explicit next sign-in without deleting credentials")

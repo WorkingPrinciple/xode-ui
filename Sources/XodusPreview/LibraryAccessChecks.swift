@@ -100,10 +100,10 @@ enum LibraryAccessChecks {
               && GameDetailFacetCopy.access(acquisition: nil, current: true) == "Access not verified",
               "M10: detail facets never relabel subscription, stale or absent access as current Owned")
         let refusal = GameScriptError.failed(11).localizedDescription
-        check(refusal.contains("account") && refusal.contains("sign-in")
-              && refusal.contains("try again")
+        check(refusal.contains("download") && refusal.contains("doesn't establish")
+              && refusal.contains("Check download access")
               && !refusal.contains("don't own") && !refusal.contains("isn't supported"),
-              "SDD-LIB-07: authorization failure is distinct from ownership and unsupported package")
+              "SDD-LIB-07: ambiguous acquisition failure is not ownership loss or a demand to sign in")
         check(GameScriptError.failed(12).localizedDescription != refusal,
               "SDD-LIB-07: package incompatibility retains a separate failure")
         check(LibraryAccess.summary(owned: false, catalogMembership: true, current: true)

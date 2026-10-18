@@ -41,7 +41,7 @@ enum GameScriptError: Error, LocalizedError, Equatable {
         case .failed(let code):
             switch code {
             case 10: "There isn't enough free space. Free up storage and try again."
-            case 11: "This account couldn't download the game. Check your game sign-in and subscription, then try again."
+            case 11: "X Ode couldn't prepare this download. This result doesn't establish whether access or sign-in failed. Check download access to retry; your library record is unchanged."
             case 12: "This game can't be installed with Xodus yet."
             case 13: "The download couldn't be verified. Try installing again."
             case 14: "Installation cancelled. Partial files are kept; installing again resumes the download."
