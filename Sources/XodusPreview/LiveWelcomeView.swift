@@ -6,7 +6,6 @@ struct LiveWelcomeView: View {
     @ObservedObject var session: LiveSession
     @ObservedObject var runtime: RuntimeProviderSettings
     @ObservedObject var operations: GameOperationsController
-    @StateObject private var interaction = AccountInteraction()
     @Environment(\.layoutDirection) private var layoutDirection
 
     var body: some View {
@@ -25,7 +24,7 @@ struct LiveWelcomeView: View {
                     .frame(maxWidth: 360)
                     .accessibilityIdentifier("xodus.welcome.status")
                 if session.connectionTransitioning || session.accountBusy {
-                    ProgressView("Checking sign-in").controlSize(.small)
+                    ProgressView("Checking Xbox Live").controlSize(.small)
                 }
                 if operations.hasDownloadStatus {
                     Divider()
@@ -41,32 +40,26 @@ struct LiveWelcomeView: View {
                         .keyboardShortcut(.cancelAction)
                         .disabled(session.accountBusy)
                         .accessibilityIdentifier("xodus.welcome.cancel")
-                } else {
-                    Button("Check status") { Task { await session.prepareWelcome() } }
-                        .disabled(session.connectionTransitioning || session.accountBusy)
-                        .accessibilityIdentifier("xodus.welcome.retry")
-                    Button("Sign out of Xbox account") { interaction.confirmingSignOut = true }
-                        .disabled(!state.canSignOut(session: session))
-                        .accessibilityIdentifier("xodus.welcome.reconnect")
-                    if !session.needsAccountDisconnect {
-                        Button("Sign in to X Ode") { Task { await state.beginUnifiedSignIn(session: session) } }
-                            .buttonStyle(.borderedProminent)
-                            .keyboardShortcut(.defaultAction)
-                            .disabled(!session.canStartWelcomeSignIn)
-                            .accessibilityIdentifier("xodus.welcome.signIn")
+                } else if session.connectionTransitioning || session.accountBusy {
+                    Button("Checking Xbox Live") {}
+                        .buttonStyle(.borderedProminent)
+                        .disabled(true)
+                        .accessibilityIdentifier("xodus.welcome.checking")
+                } else if session.needsAccountDisconnect || session.canStartWelcomeSignIn {
+                    Button("Sign in with Xbox Live") {
+                        Task { await state.recoverUnifiedSignIn(session: session) }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
+                    .accessibilityIdentifier("xodus.welcome.signIn")
+                } else {
+                    Button("Try again") { Task { await session.prepareWelcome() } }
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("xodus.welcome.retry")
                 }
             }
         }
         .interactiveDismissDisabled(!session.hasConfirmedSignIn)
-        .confirmationDialog("Sign out of Xbox account on this Mac?", isPresented: $interaction.confirmingSignOut) {
-            Button("Sign out of Xbox account", role: .destructive) {
-                Task { await state.signOut(session: session) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(LiveSession.signOutConfirmationMessage)
-        }
         .accessibilityIdentifier("xodus.welcome")
     }
 }

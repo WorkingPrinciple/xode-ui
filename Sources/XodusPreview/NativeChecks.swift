@@ -181,6 +181,22 @@ enum NativeChecks {
             try await RecentLibraryChecks.run(check: check)
             try await CatalogMediaChecks.run(check: check)
             try await LibraryStatsChecks.run(check: check)
+            let boundAccount = String(repeating: "a", count: 64)
+            let otherAccount = String(repeating: "b", count: 64)
+            let boundService = GameServiceStatus(serviceRunning: true, signedIn: true, accountHash: boundAccount)
+            check(XboxAccountBinding.matching(application: boundAccount, library: boundAccount,
+                  service: boundService) == boundAccount,
+                  "Matching application, library and service identities admit profile bootstrap without an existing profile")
+            check(XboxAccountBinding.matching(application: boundAccount, library: otherAccount,
+                  service: boundService) == nil
+                  && XboxAccountBinding.matching(application: nil, library: boundAccount, service: boundService) == nil
+                  && XboxAccountBinding.matching(application: boundAccount, library: nil, service: boundService) == nil
+                  && XboxAccountBinding.matching(application: boundAccount, library: boundAccount, service: nil) == nil
+                  && XboxAccountBinding.matching(application: boundAccount, library: boundAccount,
+                    service: GameServiceStatus(serviceRunning: true, signedIn: true, accountHash: otherAccount)) == nil
+                  && XboxAccountBinding.matching(application: boundAccount, library: boundAccount,
+                    service: GameServiceStatus(serviceRunning: false, signedIn: false, accountHash: nil)) == nil,
+                  "Missing, signed-out or mismatched identities cannot bootstrap another Xbox profile")
             let expired = session("expired")
             await expired.connect()
             check(expired.isReady && !expired.canSignIn, "Unchecked account cannot blindly retry a mutation")
@@ -195,7 +211,7 @@ enum NativeChecks {
                   && expired.accountExplanation.contains("has not been checked"),
                   "HELLO and advertised auth support display connected-but-unchecked, never saved account evidence")
             check(expired.accountJourneyTitle == "Sign-in hasn't been checked"
-                  && expired.accountJourneyMessage.contains("Check status"),
+                  && expired.accountJourneyMessage.contains("Try again"),
                   "Unchecked account copy names the next action without presenting saved sign-in")
             await expired.refreshAccount()
             check(!expired.hasConfirmedSignIn, "Expired credentials keep games behind welcome")
@@ -203,7 +219,7 @@ enum NativeChecks {
                   && expired.canDisconnectAccount && !expired.canSignIn,
                   "Expired profile exposes confirmed disconnect recovery, not rejected sign-in")
             check(expired.accountJourneyTitle == "Sign-in needs reconnecting"
-                  && expired.accountJourneyMessage == "Your saved sign-in needs reconnecting. Choose Sign out of Xbox account, then sign in again.",
+                  && expired.accountJourneyMessage == "Your saved Xbox Live sign-in needs to be refreshed. Choose Sign in with Xbox Live.",
                   "Expired account copy explains the existing sign-out then sign-in recovery in plain language")
             await expired.signOut()
             check(!expired.hasConfirmedSignIn && !expired.canStartWelcomeSignIn,
@@ -287,8 +303,8 @@ enum NativeChecks {
             await saved.prepareWelcome()
             check(saved.hasConfirmedSignIn && saved.nativeSignInHostAdmitted,
                   "Welcome preparation restores only confirmed saved status through the admitted neutral pair")
-            check(saved.accountJourneyTitle == "Signed in to X Ode"
-                  && saved.accountJourneyMessage == "Your Microsoft sign-in is saved.",
+            check(saved.accountJourneyTitle == "Signed in with Xbox Live"
+                  && saved.accountJourneyMessage == "Your Xbox Live sign-in is saved.",
                   "Login shows only saved identity, without download or gameplay claims")
             check(saved.currentCredentialState == .credentialPresent
                   && saved.accountSymbol == "person.crop.circle.fill" && saved.canDisconnectAccount,

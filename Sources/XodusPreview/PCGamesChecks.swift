@@ -144,7 +144,7 @@ enum PCGamesChecks {
             check(session.currentCredentialState == .signedOut && library.hasSavedSignIn
                   && state.gameOperations.serviceStatus?.signedIn == true && state.canSignOut(session: session),
                   "Confirmed signed-out launcher with saved library and game sign-ins admits the UI's consolidated removal action")
-            check(session.accountJourneyTitle == "Not signed in to the app",
+            check(session.accountJourneyTitle == "Not signed in to Xbox Live",
                   "App-only signed-out copy does not claim remaining Xbox and library sign-ins were removed")
         }
         try installed.reserveMutation(gameID: nil)
@@ -176,7 +176,8 @@ enum PCGamesChecks {
               && !installed.accountDisconnecting && !session.signingOut,
               "Broker deletion failure never claims launcher logout and releases joined sign-out holds")
         check(session.accountJourneyMessage.contains("Sign-out didn't finish")
-              && session.accountJourneyMessage.contains("Some sign-in details may remain")
+              && session.accountJourneyMessage.contains("Some Xbox Live details may remain")
+              && session.accountJourneyMessage.contains("Choose Try again")
               && session.accountError?.contains("launcher profile was not disconnected") == true,
               "Plain-language partial sign-out keeps its next action while retaining exact failure detail")
         await session.refreshAccount()
@@ -229,10 +230,10 @@ enum PCGamesChecks {
         await session.revalidateAccountOnForeground()
         check(!reopenedLibrary.hasSavedSignIn && !reopenedLibrary.busy
               && session.currentCredentialState == .signedOut && !session.hasConfirmedSignIn
-              && session.welcomeMessage.contains("signed out of Xbox in X Ode on this Mac"),
+              && session.welcomeMessage.contains("signed out of Xbox Live on this Mac"),
               "Recreated library and fresh launcher status remain signed out after all three confirmed removals")
-        check(session.accountJourneyTitle == "Signed out of X Ode"
-              && session.accountJourneyMessage == "You're signed out of Xbox in X Ode on this Mac. Your games and saves are still here."
+        check(session.accountJourneyTitle == "Signed out of Xbox Live"
+              && session.accountJourneyMessage == "You're signed out of Xbox Live on this Mac. Your installed games and saves remain."
               && LiveSession.signOutConfirmationMessage.contains("other apps and Microsoft browser sessions stay unchanged"),
               "Confirmed sign-out copy is concise and keeps the before-action privacy boundary explicit")
     }

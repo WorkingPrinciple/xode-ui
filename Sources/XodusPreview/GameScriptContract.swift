@@ -86,6 +86,13 @@ struct GameServiceSignOutResult: Decodable, Sendable {
 }
 
 enum XboxAccountBinding {
+    static func matching(application: String?, library: String?, service: GameServiceStatus?) -> String? {
+        guard let application, valid(application), application == library,
+              service?.serviceRunning == true, service?.signedIn == true,
+              service?.accountHash == application else { return nil }
+        return application
+    }
+
     static func valid(_ value: String) -> Bool {
         value.utf8.count == 64 && value.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
     }

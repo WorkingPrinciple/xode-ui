@@ -98,6 +98,13 @@ final class AppState: ObservableObject {
         }
     }
 
+    func recoverUnifiedSignIn(session: LiveSession) async {
+        if session.needsAccountDisconnect {
+            guard await signOut(session: session) else { return }
+        }
+        await beginUnifiedSignIn(session: session)
+    }
+
     func cancelUnifiedSignIn(session: LiveSession) async {
         unifiedSignInRequested = false
         await session.cancelSignIn()

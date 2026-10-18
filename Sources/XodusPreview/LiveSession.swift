@@ -213,9 +213,9 @@ final class LiveSession: ObservableObject {
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in" }
         if signInPending { return "Finish signing in" }
         if accountError != nil { return "Your account needs attention" }
-        if hasConfirmedSignIn { return "Signed in to X Ode" }
+        if hasConfirmedSignIn { return "Signed in with Xbox Live" }
         if currentCredentialState == .signedOut {
-            return appSignOutComplete ? "Signed out of X Ode" : "Not signed in to the app"
+            return appSignOutComplete ? "Signed out of Xbox Live" : "Not signed in to Xbox Live"
         }
         if needsAccountDisconnect { return "Sign-in needs reconnecting" }
         return "Sign-in hasn't been checked"
@@ -224,30 +224,30 @@ final class LiveSession: ObservableObject {
         if signingOut { return "Removing X Ode's saved sign-ins from this Mac. Please wait." }
         if connectionTransitioning || accountStatusChecking { return "Checking whether your Microsoft sign-in is saved." }
         if failedAccountAction == .signOut, accountError != nil {
-            return "Sign-out didn't finish. Some sign-in details may remain on this Mac. Choose Check status before trying again."
+            return "Sign-out didn't finish. Some Xbox Live details may remain on this Mac. Choose Try again."
         }
         if !isReady {
-            return "Your sign-in couldn't be checked. Choose Check status to try again."
+            return "Your Xbox Live sign-in couldn't be checked. Choose Try again."
         }
         if signInPending { return "Continue in the Microsoft window, or choose Cancel sign-in." }
         if accountError != nil {
             return accountStatusError == .credentialStoreUnavailable
-                ? "Your saved sign-in couldn't be read. If macOS asks for permission, respond in that window, then choose Check status."
-                : "Your sign-in couldn't be confirmed. Choose Check status to try again."
+                ? "Your saved Xbox Live sign-in couldn't be read. Approve the macOS Keychain prompt, then choose Try again."
+                : "Your Xbox Live sign-in couldn't be confirmed. Choose Try again."
         }
         if hasConfirmedSignIn {
-            return "Your Microsoft sign-in is saved."
+            return "Your Xbox Live sign-in is saved."
         }
         if needsAccountDisconnect {
-            return "Your saved sign-in needs reconnecting. Choose Sign out of Xbox account, then sign in again."
+            return "Your saved Xbox Live sign-in needs to be refreshed. Choose Sign in with Xbox Live."
         }
         if appSignOutComplete, currentCredentialState == .signedOut {
-            return "You're signed out of Xbox in X Ode on this Mac. Your games and saves are still here."
+            return "You're signed out of Xbox Live on this Mac. Your installed games and saves remain."
         }
         if canStartWelcomeSignIn {
-            return "Sign in with Microsoft to see your games."
+            return "Sign in with Xbox Live to see your games."
         }
-        return "Sign-in isn't available right now. Choose Check status to try again."
+        return "Sign-in isn't available right now. Choose Try again."
     }
     static let signOutConfirmationMessage = "Remove this Xbox account from X Ode on this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, X Ode will tell you which step failed."
     var welcomeMessage: String {
@@ -270,10 +270,10 @@ final class LiveSession: ObservableObject {
         if authentication?.flow?.state == .cancelled { return "Sign-in was cancelled. Your games stay hidden until you sign in." }
         if authentication?.state == .signedOut, accountStatusCurrent {
             return appSignOutComplete
-                ? "You're signed out of Xbox in X Ode on this Mac. Sign in with your Microsoft account when you're ready. Other apps and Microsoft browser sessions weren't changed."
-                : "You're signed out of the X Ode launcher. Game-service sign-out hasn't been confirmed. Sign in to X Ode with Microsoft when you're ready."
+                ? "You're signed out of Xbox Live on this Mac. Sign in when you're ready. Other apps and Microsoft browser sessions weren't changed."
+                : "Xbox Live sign-out hasn't been confirmed. Sign in again when you're ready."
         }
-        return "Sign in to X Ode using your Microsoft account. Microsoft controls its own sign-in and permission pages; game download access is checked when needed."
+        return "Sign in with Xbox Live. Your library, profile, downloads, and games use this one account."
     }
 
     func prepareWelcome() async {

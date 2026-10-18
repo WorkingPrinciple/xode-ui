@@ -12,12 +12,14 @@ real Microsoft access or compatibility.
 Ordinary startup shows Welcome to X Ode over a neutral background, not installed
 game cards or developer setup diagnostics. Startup connects only through the
 existing management admission path and checks saved account status. A confirmed
-saved sign-in opens the existing app; otherwise Microsoft Sign in remains the
-primary action. Missing pairing disables it with a short setup-unavailable
-reason. Try again rechecks connection/status; Cancel sign-in waits for the
-existing cancellation result and leaves Welcome locked. Expired/invalid saved
-sign-in requires explicit confirmation before disconnecting it for a fresh
-attempt. Quit stays available through the native app menu, but existing mutation
+saved sign-in starts account verification; the app stays gated until the app,
+PC library, game service and returned Xbox profile identify the same account.
+Welcome has one contextual action: **Sign in with Xbox Live**, **Try again**,
+or **Cancel sign-in**. Missing pairing cannot enable sign-in. Try again rechecks
+connection/status; Cancel sign-in waits for the existing cancellation result
+and leaves Welcome locked. Choosing sign-in recovery for an expired/invalid
+saved sign-in first completes the existing guarded removal stages.
+Quit stays available through the native app menu, but existing mutation
 holds still refuse termination until their operations settle.
 
 **XO-010 normal Quit from Welcome:** Only the mandatory welcome presentation
@@ -65,7 +67,7 @@ user-directed first-run correction.
 
 ### Branded account actions and coordinated sign-out (18 October, source candidate)
 
-Welcome and Account use **Sign in to X Ode** and **Sign out of X Ode**.
+Welcome uses **Sign in with Xbox Live**; Account uses **Sign out of Xbox Live**.
 The app-owned Microsoft browser window is titled **Sign in to X Ode with
 Microsoft**. Microsoft-hosted pages, publisher/consent text and registered client
 IDs are unchanged: provider-page branding requires the properly owned, approved
@@ -109,7 +111,15 @@ The normal account flow uses system type, centered identity/state, generous
 whitespace and only sign-in/out/cancel/status recovery actions. Login contains no
 setup, cache, diagnostic, compatibility or technical disclosure. Saved sign-in
 never promises that a game can download or run. Welcome and Account retain
-**Sign in to X Ode** / **Sign out of X Ode** and the explicit sign-out confirmation.
+**Sign in with Xbox Live** / **Sign out of Xbox Live** and the explicit sign-out confirmation.
+
+Profile bootstrap does not depend on a profile already being cached: only
+confirmed matching app/library/service identities admit the existing bound
+profile refresh. Missing or mismatched identities do not. Account content and
+game access remain closed until an available returned profile matches that
+binding. Library/service updates trigger verification, and a newly verified
+profile triggers game-access and visible-content loading without another login.
+These source checks do not establish signed-app or live-account acceptance.
 Sign-in support and exact partial-failure details live in Settings, including
 while signed out; game/account data and advanced controls still require confirmed
 sign-in. Achievements remain a separate Account-menu/Settings destination backed

@@ -89,18 +89,12 @@ struct LiveAccountView: View {
                             .accessibilityLabel("Check account status")
                             .accessibilityIdentifier("xodus.account.checkStatus")
                     } else { Button("Settings", action: openSettings.callAsFunction) }
-                    Button("Sign out of Xbox account") {
+                    Button("Sign out of Xbox Live") {
                         interaction.confirmingSignOut = true
                     }
                         .disabled(!state.canSignOut(session: session))
                         .help("Finish any running game, installation or account action before signing out.")
                         .accessibilityIdentifier("xodus.account.signOut")
-                    if !session.needsAccountDisconnect {
-                        Button("Sign in to X Ode") { Task { await state.beginUnifiedSignIn(session: session) } }
-                            .disabled(!session.canSignIn)
-                            .accessibilityIdentifier("xodus.account.signIn")
-                            .buttonStyle(.borderedProminent)
-                    }
                 }
                 .controlSize(.regular)
             }
@@ -127,8 +121,8 @@ struct LiveAccountView: View {
         }
         .tint(XboxBrand.green)
         .interactiveDismissDisabled(session.accountBusy || session.signInPending)
-        .confirmationDialog("Sign out of Xbox account on this Mac?", isPresented: $interaction.confirmingSignOut) {
-            Button("Sign out of Xbox account", role: .destructive) { Task { await state.signOut(session: session) } }
+        .confirmationDialog("Sign out of Xbox Live on this Mac?", isPresented: $interaction.confirmingSignOut) {
+            Button("Sign out of Xbox Live", role: .destructive) { Task { await state.signOut(session: session) } }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(LiveSession.signOutConfirmationMessage)

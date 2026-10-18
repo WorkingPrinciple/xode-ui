@@ -23,14 +23,17 @@ struct LiveRootView: View {
         return !session.hasConfirmedSignIn
     }
     private var accountRecoveryAllowed: Bool { startupAllowed && session.hasConfirmedSignIn }
+    private var boundAccountHash: String? {
+        guard accountRecoveryAllowed, state.pcGames.accessIsCurrent,
+              !state.installedGames.accountDisconnecting else { return nil }
+        return XboxAccountBinding.matching(application: session.accountHash,
+            library: state.pcGames.accountHash, service: state.gameOperations.serviceStatus)
+    }
+    private var profileBootstrapBinding: String? {
+        session.accountBusy || state.gameOperations.serviceBusy ? nil : boundAccountHash
+    }
     private var unifiedAccountVerified: Bool {
-        guard session.hasConfirmedSignIn, state.pcGames.accessIsCurrent,
-              let application = session.accountHash,
-              let library = state.pcGames.accountHash,
-              let service = state.gameOperations.serviceStatus?.accountHash,
-              let companionBinding = companion.cache?.accountHash else { return false }
-        return application == library && library == service && service == companionBinding
-            && companion.cache?.profile.available == true && companion.cache?.profile.value != nil
+        companion.cache?.confirmsAccount(boundAccountHash) == true
     }
     private var accountBindingMismatch: Bool {
         let values = [session.accountHash, state.pcGames.accountHash,
@@ -158,6 +161,9 @@ struct LiveRootView: View {
             LibraryPreviewExporter.start(state: state, session: session)
 #endif
         }
+        .onReceive(state.pcGames.objectWillChange) { _ in state.objectWillChange.send() }
+        .onReceive(state.gameOperations.objectWillChange) { _ in state.objectWillChange.send() }
+        .onReceive(state.installedGames.objectWillChange) { _ in state.objectWillChange.send() }
 #if !XODUS_SHIPPING
         .onReceive(LibraryPreviewExporter.presentation.$showGrid) { show in
             if show { proxy.scrollTo("library-games", anchor: .top) }
@@ -175,10 +181,15 @@ struct LiveRootView: View {
                 state.gameOperations.checkSetupOnce()
                 state.gameOperations.refreshService()
                 await state.gameOperations.waitForService()
-                if state.gameOperations.serviceStatus?.accountHash != nil {
-                    await companion.refresh(for: state.gameOperations.serviceStatus)
-                }
             }
+        }
+        .task(id: profileBootstrapBinding) {
+            guard profileBootstrapBinding != nil else { return }
+            await companion.refresh(for: state.gameOperations.serviceStatus)
+        }
+        .task(id: unifiedAccountVerified) {
+            state.installedGames.setAccountAccessAllowed(unifiedAccountVerified,
+                message: "Your Xbox Live account is being checked. Try again when it finishes.")
         }
         .task(id: "\(session.accountHash ?? ""):\(state.pcGames.accountHash ?? ""):\(state.gameOperations.serviceStatus?.accountHash ?? "")") {
             guard accountBindingMismatch else { return }
@@ -202,7 +213,7 @@ struct LiveRootView: View {
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
             let accessMessage: String
             if !session.hasConfirmedSignIn {
-                accessMessage = "Sign in to X Ode to play this game."
+                accessMessage = "Sign in with Xbox Live to play this game."
             } else if !state.pcGames.hasSavedSignIn || state.pcGames.needsSignIn {
                 accessMessage = "Reconnect your Xbox library to play this game."
             } else if state.gameOperations.serviceStatus?.serviceRunning != true {
@@ -236,11 +247,11 @@ struct LiveRootView: View {
         .task {
             if startupAllowed { await session.prepareWelcome() }
         }
-        .task(id: "\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy)") {
+        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy)") {
             guard accountContentAllowed, scenePhase == .active else { return }
             await state.loadRecentActivityIfVisible(session: session)
         }
-        .task(id: "\(session.hasConfirmedSignIn):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
+        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
             guard accountContentAllowed, state.destination == .discover else { return }
             do { try await Task.sleep(for: .milliseconds(250)) }
             catch { return }

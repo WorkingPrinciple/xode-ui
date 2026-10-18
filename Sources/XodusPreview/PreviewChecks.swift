@@ -206,6 +206,19 @@ enum PreviewChecks {
                 "productIds":["9MT5NJ5W7B8Z"]}]}}
                 """.utf8)
             let companion = try XboxCompanionCache.decode(companionData)
+            check(companion.confirmsAccount(hash) && !companion.confirmsAccount(nil)
+                  && !companion.confirmsAccount(String(repeating: "b", count: 64)),
+                  "Profile admission still requires the returned identity to match the independently bound account")
+            let unavailableProfile = try XboxCompanionCache.decode(
+                JSONSerialization.data(withJSONObject: [
+                    "ok": true, "accountHash": hash, "checkedAt": "2026-10-09T00:00:00Z",
+                    "profile": ["state": "unavailable", "error": ["reason": "unavailable"]],
+                    "friends": ["state": "unavailable", "error": ["reason": "unavailable"]],
+                    "consoles": ["state": "unavailable", "error": ["reason": "unavailable"]],
+                    "recentGames": ["state": "unavailable", "error": ["reason": "unavailable"]]
+                ]))
+            check(!unavailableProfile.confirmsAccount(hash),
+                  "A matching cache identity without an available profile does not admit account content or games")
             check(companion.profile.value?.gamertag == "OriginalGamer" &&
                   companion.friends.value?.count == 1 && companion.consoles.value?.count == 1 &&
                   companion.recentGames.value?.first?.titleId == "1693340366",
