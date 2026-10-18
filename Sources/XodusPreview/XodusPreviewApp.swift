@@ -159,14 +159,12 @@ struct XodusPreviewApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
         .commands {
-            CommandGroup(after: .appInfo) {
-                Button("Licenses") { openWindow(id: "licenses") }
-                Button("Acknowledgments") { openWindow(id: "acknowledgments") }
-            }
             CommandGroup(replacing: .appInfo) {
                 Button("About X Ode") {
                     NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "X Ode"])
                 }
+                Button("Licenses") { openWindow(id: "licenses") }
+                Button("Acknowledgments") { openWindow(id: "acknowledgments") }
             }
             CommandGroup(replacing: .appTermination) {
                 Button("Quit X Ode") { NSApp.terminate(nil) }
