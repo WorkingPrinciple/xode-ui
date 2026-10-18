@@ -325,6 +325,21 @@ enum NativeChecks {
             check(saved.currentCredentialState == nil && saved.accountSymbol == "person.crop.circle"
                   && saved.accountLabel == "Connect Xodus" && saved.accountStatusError == nil,
                   "Disconnect removes current account presentation evidence")
+            let mixedBase = configuration("recentbootstrapsignedout")
+            let mixedConfiguration = BackendConfiguration(executable: mixedBase.executable,
+                stateDirectory: mixedBase.stateDirectory, nativeAuthHost: neutralBinding)
+            let mixed = LiveSession(configuration: mixedConfiguration)
+            await mixed.connect()
+            check(!mixed.canDisconnectAccount,
+                  "Mixed-state cleanup remains disabled until launcher status is current")
+            await mixed.refreshAccount()
+            try await PCGamesChecks.checkAppSignOut(session: mixed, launcherAlreadySignedOut: true, check: check)
+            let mixedAuthTrace = try trace(mixedConfiguration).filter { $0.hasPrefix("auth.") }
+            check(!mixedAuthTrace.isEmpty && mixedAuthTrace.allSatisfy { $0 == "auth.status" },
+                  "Mixed-state cleanup uses confirmed signed-out launcher status without auth.begin or redundant auth.logout")
+            check(await mixed.disconnect(), "Mixed-state cleanup retires only its synthetic management child")
+            check(!mixed.canDisconnectAccount, "Disconnected launcher cannot admit further mixed-state cleanup")
+            try cleanLifecycle(mixedConfiguration)
             try cleanLifecycle(savedConfiguration)
 
             let permissionConfiguration = configuration("statuspermission")

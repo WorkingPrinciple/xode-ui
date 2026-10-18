@@ -16,7 +16,8 @@ enum NativeUIChecks {
                 let session = LiveSession()
                 let runtime = RuntimeProviderSettings()
                 let welcome = NSHostingView(rootView: LiveWelcomeView(session: session, runtime: runtime,
-                    operations: GameOperationsController(installed: InstalledGamesController())))
+                    operations: GameOperationsController(installed: InstalledGamesController()))
+                    .environmentObject(AppState()))
                 welcome.sizingOptions = []
                 welcome.appearance = NSAppearance(named: appearance)
                 welcome.frame = CGRect(origin: .zero, size: size)
@@ -510,7 +511,8 @@ enum NativeUIChecks {
               && (cancelTitle.map { availableCancellation == $0 } ?? (feedback.operationError == expectedStatus)),
               "F1: Detached Discover mounts with shared \(expectedStatus) feedback and applicable cancel presentation")
         let welcome = NSHostingView(rootView: LiveWelcomeView(session: session,
-            runtime: RuntimeProviderSettings(), operations: operations))
+            runtime: RuntimeProviderSettings(), operations: operations)
+            .environmentObject(AppState(installedGames: installed)))
         welcome.sizingOptions = []
         welcome.frame = CGRect(x: 0, y: 0, width: 480, height: 620)
         welcome.layoutSubtreeIfNeeded()

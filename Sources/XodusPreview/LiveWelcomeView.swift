@@ -56,11 +56,10 @@ struct LiveWelcomeView: View {
                     Button("Try again") { Task { await session.prepareWelcome() } }
                         .disabled(session.connectionTransitioning || session.accountBusy)
                         .accessibilityIdentifier("xodus.welcome.retry")
-                    if session.needsAccountDisconnect {
-                        Button("Sign out of X Ode") { interaction.confirmingSignOut = true }
-                            .disabled(!state.canSignOut(session: session) || !session.nativeSignInHostAdmitted)
-                            .accessibilityIdentifier("xodus.welcome.reconnect")
-                    } else {
+                    Button("Sign out of X Ode") { interaction.confirmingSignOut = true }
+                        .disabled(!state.canSignOut(session: session))
+                        .accessibilityIdentifier("xodus.welcome.reconnect")
+                    if !session.needsAccountDisconnect {
                         Button("Sign in to X Ode") { Task { await session.beginSignIn() } }
                             .buttonStyle(.borderedProminent)
                             .keyboardShortcut(.defaultAction)

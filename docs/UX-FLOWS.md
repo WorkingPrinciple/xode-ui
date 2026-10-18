@@ -91,7 +91,12 @@ the launcher was not disconnected; failed launcher logout reports that earlier
 removals may already have occurred. Neither partial outcome claims full logout.
 Only all three confirmed stages say **You're signed out of X Ode on this Mac**.
 A later launcher-only signed-out receipt does not independently prove game-service
-logout. Game files, saves, device licences, other apps and Microsoft browser
+logout. Welcome and Account keep explicit sign-out available for remaining or
+unchecked service credentials even when the launcher is already signed out.
+Fresh confirmed launcher status and the same busy/work/auth gates still apply.
+In that mixed state, game-service and broker removal run normally; the already
+confirmed launcher stage needs neither a new login nor a redundant logout request.
+Game files, saves, device licences, other apps and Microsoft browser
 sessions are not removal targets.
 
 The helper is a separately coordinated backend capability, not deployed by this

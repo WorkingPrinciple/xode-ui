@@ -166,14 +166,13 @@ struct LiveAccountView: View {
                             .accessibilityLabel("Check account status")
                             .accessibilityIdentifier("xodus.account.checkStatus")
                     } else { Button("Settings", action: openSettings.callAsFunction) }
-                    if session.needsAccountDisconnect {
-                        Button("Sign out of X Ode") {
-                            interaction.confirmingSignOut = true
-                        }
-                            .disabled(!state.canSignOut(session: session))
-                            .help("Finish any running game, installation or account action before signing out.")
-                            .accessibilityIdentifier("xodus.account.signOut")
-                    } else {
+                    Button("Sign out of X Ode") {
+                        interaction.confirmingSignOut = true
+                    }
+                        .disabled(!state.canSignOut(session: session))
+                        .help("Finish any running game, installation or account action before signing out.")
+                        .accessibilityIdentifier("xodus.account.signOut")
+                    if !session.needsAccountDisconnect {
                         Button("Sign in to X Ode") { Task { await session.beginSignIn() } }
                             .disabled(!session.canSignIn)
                             .accessibilityIdentifier("xodus.account.signIn")

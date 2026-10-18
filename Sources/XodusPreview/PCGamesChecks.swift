@@ -104,7 +104,8 @@ private actor PCGamesMockSleeper {
 
 @MainActor
 enum PCGamesChecks {
-    static func checkAppSignOut(session: LiveSession, check: (Bool, String) -> Void) async throws {
+    static func checkAppSignOut(session: LiveSession, launcherAlreadySignedOut: Bool = false,
+                               check: (Bool, String) -> Void) async throws {
         let root = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
             .appendingPathComponent(".xodus-app-signout-checks-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
@@ -121,8 +122,8 @@ enum PCGamesChecks {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
                                                     attributes: [.posixPermissions: 0o700])
         }
-        func signOutScript(_ receipt: String) throws {
-            let script = paths.scripts.appendingPathComponent(GameScriptCommand.serviceSignOut.file)
+        func signOutScript(_ receipt: String, command: GameScriptCommand = .serviceSignOut) throws {
+            let script = paths.scripts.appendingPathComponent(command.file)
             let body = """
             #!/bin/bash
             umask 077
@@ -131,13 +132,21 @@ enum PCGamesChecks {
             """
             try Data(body.utf8).write(to: script)
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: script.path)
-            _ = try GameScriptFiles.script(.serviceSignOut, paths: paths)
+            _ = try GameScriptFiles.script(command, paths: paths)
         }
         let state = AppState(installedGames: installed, pcGames: library, gameScriptPaths: paths)
+        if launcherAlreadySignedOut {
+            try signOutScript(#"{"serviceRunning":true,"signedIn":true}"#, command: .serviceStatus)
+            state.gameOperations.refreshService()
+            await state.gameOperations.waitForService()
+            check(session.currentCredentialState == .signedOut && library.hasSavedSignIn
+                  && state.gameOperations.serviceStatus?.signedIn == true && state.canSignOut(session: session),
+                  "Confirmed signed-out launcher with saved library and game sign-ins admits the UI's consolidated removal action")
+        }
         try installed.reserveMutation(gameID: nil)
         let heldResult = await state.signOut(session: session)
         let heldDeletions = await store.deletions
-        check(!heldResult && heldDeletions == 0 && session.hasConfirmedSignIn,
+        check(!heldResult && heldDeletions == 0 && session.hasConfirmedSignIn == !launcherAlreadySignedOut,
               "App sign-out refuses active game mutation before touching either credential owner")
         installed.releaseMutation()
         let unsupported = await state.signOut(session: session)
@@ -163,7 +172,7 @@ enum PCGamesChecks {
               && !installed.accountDisconnecting && !session.signingOut,
               "Broker deletion failure never claims launcher logout and releases joined sign-out holds")
         await session.refreshAccount()
-        check(session.hasConfirmedSignIn,
+        check(session.hasConfirmedSignIn == !launcherAlreadySignedOut && state.canSignOut(session: session),
               "A failed app sign-out requires fresh status rather than pretending the launcher profile was removed")
         await store.allowDeletion()
         await store.delayDeletion()

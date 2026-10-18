@@ -473,8 +473,8 @@ final class LiveSession: ObservableObject {
         return [.credentialPresent, .expired, .invalid].contains(state)
     }
     var canDisconnectAccount: Bool {
-        isReady && supports(.authLogout) && accountStatusCurrent && needsAccountDisconnect
-            && !accountBusy && !signInPending
+        isReady && accountStatusCurrent && !accountBusy && !signInPending
+            && (authentication?.state == .signedOut || (supports(.authLogout) && needsAccountDisconnect))
     }
     var canLoadMoreCatalog: Bool { nextCursor != nil && !searching }
     var catalogEmptyTitle: String {
@@ -1192,6 +1192,7 @@ final class LiveSession: ObservableObject {
             return false
         }
         defer { MicrosoftSignInGate.shared.release(signOutOwner) }
+        let launcherAlreadySignedOut = authentication?.state == .signedOut
         clearRecentLibrary()
         authenticationGeneration += 1
         accountOperationBusy = true
@@ -1220,10 +1221,12 @@ final class LiveSession: ObservableObject {
         }
         guard token == generation else { return false }
         do {
-            let status = try await client.request(.authLogout).decode(AuthenticationStatus.self)
-            guard token == generation else { return false }
-            guard status.state == .signedOut else { throw ManagementError.invalidPayload }
-            authentication = status
+            if !launcherAlreadySignedOut {
+                let status = try await client.request(.authLogout).decode(AuthenticationStatus.self)
+                guard token == generation else { return false }
+                guard status.state == .signedOut else { throw ManagementError.invalidPayload }
+                authentication = status
+            }
             accountStatusCurrent = true
             diagnosticPreview = nil
             await refreshCatalog(currentQuery)

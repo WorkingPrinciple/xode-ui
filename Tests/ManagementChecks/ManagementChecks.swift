@@ -927,7 +927,7 @@ enum MockBackend {
                 supported.insert(.inspectInstallation)
             }
             if ["expired", "expiredpermission", "savedpermission", "welcomeretry", "transientauth", "latecancel", "humanwait", "hangmutation", "beginfail", "statuspermission", "deadlinecompleted",
-                "failedflow", "failedflownocode", "authgate"].contains(scenario) || scenario.hasPrefix("failedstage-") {
+                "failedflow", "failedflownocode", "authgate", "recentbootstrapsignedout"].contains(scenario) || scenario.hasPrefix("failedstage-") {
                 supported.formUnion([.authBegin, .authCancel])
             }
             var loggedOut = false, flowStarted = false, cancelledLate = false
