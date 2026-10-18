@@ -14,6 +14,7 @@ import tempfile
 from shipping_pair import COMMAND, FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, main as generate_pair, swift_pins, verify_input
 from verify_shipping_package import main as verify_package
 from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_capsule
+from python_runtime import approved_pin, inventory
 
 count = 0
 with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
@@ -263,6 +264,62 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     try:
         package_check()
         raise AssertionError("Changed packaged private capsule accepted")
+    except ValueError:
+        count += 1
+    (packaged_capsule / "adapter.py").write_bytes(adapter)
+    packaged_manifest = packaged_capsule / "manifest.json"
+    manifest["enabled"] = True
+    packaged_manifest.write_text(json.dumps(manifest))
+    paired = json.loads((stage / "paired-inputs.json").read_bytes())
+    paired["privateLaunchAssociation"] = verify_capsule(packaged_capsule)
+    (stage / "paired-inputs.json").write_text(json.dumps(paired))
+    try:
+        package_check()
+        raise AssertionError("Enabled capsule accepted without a packaged interpreter")
+    except ValueError:
+        count += 1
+    python_root = resources / "XodusPython"
+    python_manifest = resources / "XodusPython.json"
+    python_manifest.write_text("{}")
+    try:
+        package_check()
+        raise AssertionError("Unstaged interpreter metadata accepted")
+    except ValueError:
+        count += 1
+    (python_root / "bin").mkdir(parents=True)
+    (python_root / "lib/python3.14").mkdir(parents=True)
+    (python_root / "bin/python3").write_bytes(neutral)
+    (python_root / "bin/python3").chmod(0o755)
+    (python_root / "lib/python3.14/LICENSE.txt").write_bytes(b"Neutral license fixture; not an actual license.")
+    (python_root / "lib/python3.14/empty.py").write_bytes(b"")
+    pin = approved_pin()
+    python_metadata = {"version": 1, "pythonVersion": pin["pythonVersion"], "archiveSHA256": pin["sha256"],
+                       "files": inventory(python_root)}
+    python_manifest.write_text(json.dumps(python_metadata))
+    paired["privatePythonRuntime"] = python_metadata
+    (stage / "paired-inputs.json").write_text(json.dumps(paired))
+    package_check()
+    count += 1
+    (stage / "package-receipt.json").unlink()
+    for path, bad_data in [
+        (python_root / "bin/python3", b"Changed interpreter"),
+        (python_root / "lib/python3.14/empty.py", b"Changed import"),
+        (python_manifest, b'{"version":1}'),
+    ]:
+        original = path.read_bytes()
+        path.write_bytes(bad_data)
+        try:
+            package_check()
+            raise AssertionError("Changed interpreter package accepted")
+        except (ValueError, KeyError):
+            count += 1
+        finally:
+            path.write_bytes(original)
+    del paired["privatePythonRuntime"]
+    (stage / "paired-inputs.json").write_text(json.dumps(paired))
+    try:
+        package_check()
+        raise AssertionError("Unstaged interpreter tree accepted")
     except ValueError:
         count += 1
 print(f"{count} portable packaging admission checks, 0 failures. Neutral bytes only.")

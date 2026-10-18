@@ -23,12 +23,13 @@ enum GameScriptCommand: String, Codable, Sendable {
 }
 
 enum GameScriptError: Error, LocalizedError, Equatable {
-    case unavailable, invalidReceipt, invalidProgress, storage, busy, timeout, invalidDestination, missingStatus, statusMismatch
+    case unavailable, runtimeUnavailable, invalidReceipt, invalidProgress, storage, busy, timeout, invalidDestination, missingStatus, statusMismatch
     case failed(Int)
 
     var errorDescription: String? {
         switch self {
         case .unavailable: "This Mac isn't ready for this game operation. Check Xodus setup and try again."
+        case .runtimeUnavailable: "The bundled game runtime could not be verified. Reinstall the approved app."
         case .invalidReceipt: "Xodus couldn't confirm how the operation finished. Your installed list wasn't changed. Check the log before trying again."
         case .missingStatus: "The operation stopped without a result. Your installed list wasn't changed. Check the log before trying again."
         case .statusMismatch: "The operation returned conflicting results. Your installed list wasn't changed. Check the log before trying again."
@@ -406,7 +407,11 @@ actor GameScriptRunner {
                 throw GameScriptError.invalidReceipt
             }
         }
-        let env = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment)
+        let interpreter: URL?
+        do { interpreter = try LaunchAssociationAssets.bundledInterpreter() }
+        catch { throw GameScriptError.runtimeUnavailable }
+        let env = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment,
+                                                              interpreter: interpreter)
         let child = try await Task.detached(priority: .userInitiated) {
             let child = Process()
             let managed = [.gameStats, .xboxCompanion, .xboxAchievements].contains(command)

@@ -158,12 +158,16 @@ final class InstalledGamesController: ObservableObject {
     }
 
     nonisolated static func launchEnvironment(_ inherited: [String: String],
-                                              engine: RuntimeProviderKind? = nil) -> [String: String] {
+                                              engine: RuntimeProviderKind? = nil,
+                                              interpreter: URL? = nil) -> [String: String] {
         var environment = inherited.filter { ["HOME", "USER", "LANG"].contains($0.key) }
         environment["PATH"] = "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         // The resolved runner is passed to the launch script as an explicit, neutral
         // selector so the launch path consumes the routing decision, not config only.
         if let engine { environment["XODUS_ENGINE"] = engine.rawValue }
+        if let interpreter {
+            environment.merge(LaunchAssociationAssets.interpreterEnvironment(interpreter)) { _, new in new }
+        }
         return environment
     }
 
@@ -192,6 +196,12 @@ final class InstalledGamesController: ObservableObject {
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive,
               games.contains(game) else { return }
+        let interpreter: URL?
+        do { interpreter = try LaunchAssociationAssets.bundledInterpreter() }
+        catch {
+            playErrors[game.id] = "The bundled game runtime could not be verified. Reinstall the approved app."
+            return
+        }
         let token = UUID()
         runToken = token
         runningGameID = game.id
@@ -222,7 +232,8 @@ final class InstalledGamesController: ObservableObject {
             return
         }
         do {
-            var environment = Self.launchEnvironment(ProcessInfo.processInfo.environment, engine: runner)
+            var environment = Self.launchEnvironment(ProcessInfo.processInfo.environment, engine: runner,
+                                                     interpreter: interpreter)
             if let handoff = foregroundHandoff { environment.merge(handoff.environment) { _, new in new } }
             let launcher = game.launcher
             let folder = game.folder

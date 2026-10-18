@@ -8,7 +8,7 @@ from pathlib import Path
 import tempfile
 from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE
 from signing_identity import (COMPARISON_RESULT, IDENTIFIERS, compare, preflight, reuse_cli, sign,
-                              verify_designated_requirement)
+                              PACKAGE_RECEIPT_LIMIT, package_receipt, verify_designated_requirement)
 
 fingerprint = "A" * 40
 calls = []
@@ -169,6 +169,22 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
     attempt(base_receipt, identity=fingerprint, command_run=metadata)
     assert destination.read_bytes() == signed_data and first.read_bytes() == signed_data
     destination.unlink()
+
+    runtime_receipt = copy.deepcopy(base_receipt)
+    runtime_receipt["finalPackageFiles"].update({
+        f"Contents/Resources/XodusPython/lib/neutral-{index}.py":
+            {"sha256": "d" * 64, "bytes": 12} for index in range(2000)})
+    encoded = json.dumps(runtime_receipt, sort_keys=True).encode()
+    assert 65536 < len(encoded) < PACKAGE_RECEIPT_LIMIT
+    attempt(runtime_receipt)
+    assert destination.read_bytes() == signed_data and all("--sign" not in call for call in calls)
+    assert package_receipt(receipt, hashlib.sha256(encoded).hexdigest(), len(encoded))[1] == encoded
+    receipt.write_bytes(encoded + b"\n")
+    rejected(lambda: package_receipt(receipt, hashlib.sha256(encoded).hexdigest(), len(encoded)))
+    destination.unlink()
+    oversized = {**base_receipt, "padding": "x" * PACKAGE_RECEIPT_LIMIT}
+    rejected(lambda: attempt(oversized))
+    assert not destination.exists() and not calls
 
     def changed_receipt(arguments):
         calls.append(arguments)

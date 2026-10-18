@@ -114,6 +114,14 @@ termination cancel it. This optional source path does not add a setting, force
 activation, inject input or claim foreground success from an accepted request.
 Without the capsule, existing Play behavior is unchanged.
 
+An explicitly packaged private Python runtime is separately admitted by the
+signed app. It supplies the adapter, launcher and operation scripts, not a
+system developer-tool prerequisite or a user-selected executable. A present
+invalid runtime fails the operation with a fixed reinstall diagnostic; it
+does not silently select another interpreter. No runtime/capsule is enabled
+by these source changes, and signed-app/clean-Mac/game qualification is still
+required.
+
 These corrections have synthetic controller/presentation and detached native
 layout coverage, not a new live all-window, account, download or gameplay
 acceptance claim.

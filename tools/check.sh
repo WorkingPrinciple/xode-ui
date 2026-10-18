@@ -8,6 +8,7 @@ sh -n tools/build_app.sh
 python3 tools/check_signing_identity.py
 swift build
 python3 tools/check_shipping_pair.py
+python3 tools/check_python_runtime.py
 sh tools/check_shipping.sh
 swift run XodusFixtureChecks
 swift run XodusManagementChecks

@@ -10,6 +10,7 @@ import sys
 import tarfile
 from shipping_pair import hex_value, owned_bytes, require, swift_pins, unique_object
 from launch_association_capsule import verify_capsule
+from python_runtime import verify_runtime
 
 
 def main():
@@ -71,6 +72,20 @@ def main():
                 "Private capsule differs from explicit packaging input")
     else:
         require(not capsule.exists() and not capsule.is_symlink(), "Unreviewed private capsule")
+    python_root = resources / "XodusPython"
+    python_manifest = resources / "XodusPython.json"
+    if "privatePythonRuntime" in record:
+        _, data = owned_bytes(python_manifest, bounded=4 * 1024 * 1024)
+        metadata = json.loads(data, object_pairs_hook=unique_object)
+        require(verify_runtime(python_root, metadata) == record["privatePythonRuntime"],
+                "Interpreter differs from explicit packaging input")
+    else:
+        require(not python_root.exists() and not python_root.is_symlink()
+                and not python_manifest.exists() and not python_manifest.is_symlink(),
+                "Unreviewed private interpreter")
+        if "privateLaunchAssociation" in record:
+            _, data = owned_bytes(capsule / "manifest.json", bounded=4096)
+            require(not json.loads(data)["enabled"], "Enabled capsule requires a packaged interpreter")
     require(not (resources / "XodusAppFoundation_XodusPreview.bundle").exists()
             and not (resources / "XodusAppFoundation_XodusAuthHost.bundle").exists(),
             "Shipping package contains preview/private check resources")

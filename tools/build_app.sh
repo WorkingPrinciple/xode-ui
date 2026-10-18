@@ -4,7 +4,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 if [ "$#" -lt 9 ]; then
-    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path]' >&2
+    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path] [--python-runtime-archive path]' >&2
     exit 2
 fi
 engine=$1
@@ -21,6 +21,7 @@ local_ad_hoc=false
 signed_cli=
 credential_broker=
 launch_association_capsule=
+python_runtime_archive=
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --signing-identity)
@@ -53,6 +54,11 @@ while [ "$#" -gt 0 ]; do
             test "$#" -ge 2
             test -z "$launch_association_capsule"
             launch_association_capsule=$2
+            shift 2 ;;
+        --python-runtime-archive)
+            test "$#" -ge 2
+            test -z "$python_runtime_archive"
+            python_runtime_archive=$2
             shift 2 ;;
         *) printf '%s\n' 'Unknown signing option; no fallback.' >&2; exit 2 ;;
     esac
@@ -167,6 +173,10 @@ if [ -n "$launch_association_capsule" ]; then
     python3 tools/launch_association_capsule.py "$launch_association_capsule" \
         "$app/Contents/Resources/LaunchAssociation" "$stage/paired-inputs.json"
 fi
+if [ -n "$python_runtime_archive" ]; then
+    python3 tools/python_runtime.py "$python_runtime_archive" \
+        "$app/Contents/Resources/XodusPython" "$stage/paired-inputs.json" "$@"
+fi
 python3 tools/signing_identity.py sign --kind app --path "$app" "$@"
 codesign --verify --deep --strict "$app"
 plutil -lint "$app/Contents/Info.plist"
@@ -181,9 +191,10 @@ if [ -n "$signed_cli" ]; then
         "$prior_receipt" "$prior_receipt_hash" "$prior_receipt_bytes" <<'PY'
 import sys
 from tools.shipping_pair import owned_bytes
+from tools.signing_identity import package_receipt
 for path in sys.argv[1:3]:
     owned_bytes(path, sys.argv[3], int(sys.argv[4]))
-owned_bytes(sys.argv[5], sys.argv[6], int(sys.argv[7]), 65536)
+package_receipt(sys.argv[5], sys.argv[6], int(sys.argv[7]))
 PY
     if [ "$local_ad_hoc" != true ]; then
         python3 tools/signing_identity.py verify --kind cli \

@@ -19,6 +19,7 @@ COMPARISON_RESULT = (
     "Different signed artifacts share the fixed certificate-bound designated requirement. "
     "Independent-build qualification requires two separately approved build receipts/runs; "
     "it is not established by this comparison.")
+PACKAGE_RECEIPT_LIMIT = 4 * 1024 * 1024
 
 
 def command(arguments):
@@ -87,8 +88,12 @@ def verify_designated_requirement(path, kind, identity, run=command):
     return requirement
 
 
+def package_receipt(path, digest, size):
+    return owned_bytes(path, digest, size, PACKAGE_RECEIPT_LIMIT)
+
+
 def validate_reuse_cli(source, digest, size, receipt, receipt_hash, receipt_size, approved_input):
-    _, data = owned_bytes(receipt, receipt_hash, receipt_size, 65536)
+    _, data = package_receipt(receipt, receipt_hash, receipt_size)
     record = json.loads(data, object_pairs_hook=unique_object)
     require(type(record) is dict and type(approved_input) is dict, "Expected prior package and sealed-input approval")
     signed = {"sha256": hex_value(digest, 64), "bytes": positive(size)}

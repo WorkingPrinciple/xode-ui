@@ -274,6 +274,15 @@ enum InstalledGameChecks {
                     "PATH": "/wrong", "TOKEN": "secret"], engine: .crossover).keys.sorted()
                 == ["HOME", "LANG", "PATH", "USER", "XODUS_ENGINE"],
               "Launch environment excludes unrelated secrets, overrides PATH and adds only the routed engine")
+        let runtime = URL(fileURLWithPath: "/approved app/XodusPython/bin/python3")
+        let runtimeEnvironment = InstalledGamesController.launchEnvironment(
+            ["HOME": "/home", "PATH": "/untrusted", "PYTHONPATH": "/untrusted"], engine: .crossover,
+            interpreter: runtime)
+        check(runtimeEnvironment["PATH"] == "/approved app/XodusPython/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+              && runtimeEnvironment["PYTHONPATH"] == nil
+              && runtimeEnvironment["PYTHONNOUSERSITE"] == "1"
+              && runtimeEnvironment["PYTHONDONTWRITEBYTECODE"] == "1",
+              "Admitted bundled interpreter takes precedence for launcher/bridge without Homebrew or user modules")
         let fixedID = InstalledGamesController.runID(date: Date(timeIntervalSince1970: 0),
             nonce: UUID(uuidString: "abcdef01-2345-6789-abcd-ef0123456789")!)
         check(fixedID == "xodus-19700101T000000Z-abcdef01", "runID uses fixed UTC/POSIX date and lowercase eight-hex nonce")

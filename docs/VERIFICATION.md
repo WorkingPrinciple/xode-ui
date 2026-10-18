@@ -104,6 +104,67 @@ or frozen credential-broker path. The adapter invocation includes
 `XODUS_LAUNCH_TRUSTED_BROKER_PATH` and
 `XODUS_LAUNCH_EXPECTED_BROKER_SHA256` alongside the four private run options.
 
+### Bundled interpreter admission
+
+An enabled capsule now also requires an independently staged interpreter; it
+never uses `/usr/bin/python3` or a Homebrew fallback in the shipping consumer.
+The exact three-file capsule and its pinned library bytes are unchanged.
+`--python-runtime-archive PATH` accepts only the archive pinned by
+`tools/python-runtime.json`: python-build-standalone CPython 3.14.8, arm64,
+release 20261013. The build never downloads or installs Python globally.
+The operator must supply the exact approved archive.
+
+Staging validates archive digest/length before unpacking. It rejects traversal,
+duplicate names, special files and escaping/cyclic aliases, materializes
+internal file aliases without links, normalizes permissions, retains upstream
+license files, bounds expanded size/count, and signs the staged Mach-O files
+before making runtime resources read-only and sealing their final identities
+and the app. The runtime and manifest
+live separately at `Contents/Resources/XodusPython{,.json}`. Final package
+verification rejects unstaged/changed runtime files, metadata and modes, and
+enabled capsules without the interpreter. This does not establish completeness
+of third-party license notices or Developer ID/notarization acceptance.
+
+Native admission requires valid app/resource/nested-code signatures, the pinned
+runtime version/archive identity, and the exact executable digest. A present
+invalid runtime fails Play or the operation explicitly instead of invoking a
+different Python. Absence retains legacy source behavior and is not clean-Mac
+production acceptance. The admitted bin directory is first on the owned
+launcher and operation-script PATH, including without an active foreground
+handoff. User modules are excluded; bytecode writes are disabled. The adapter
+executes that exact binary with `-I -B`, because `-I` ignores the environment's
+`PYTHONDONTWRITEBYTECODE` flag. No developer selection, Xcode license agreement
+or account state is changed.
+
+`tools/check_python_runtime.py` covers neutral extraction, inventory, link,
+permission and input-pin failures without executing neutral code. Packaging
+checks cover the integrated enabled-capsule/runtime/tamper boundary. Native
+fixtures select an explicit owned interpreter wrapper and assert that it was
+used, rather than accidentally passing through the old hardcoded system path.
+Actual relocatable interpreter smoke/producer checks, exact-head native build,
+signed actual-app admission, hardened-runtime/notarization and clean-Mac/game
+qualification remain distinct evidence gates; none implies the others.
+
+Runtime inventories expand final package receipts beyond the previous 64 KiB
+ceiling. Preserved-CLI admission and final repinning now share the same bounded
+4 MiB reader; exact external receipt digest/length, producer, profile, features
+and signed CLI identity checks are unchanged. Neutral coverage includes a
+runtime-sized receipt, tampering and an oversized otherwise-valid receipt.
+The pinned CLI is copied byte-identically, not re-signed to evade reuse.
+
+The first actual standalone producer suite passed functionally, but its test
+helper's isolated child omitted `-B`, allowing four bytecode inventory changes.
+That negative comparison is retained, not counted as seal preservation.
+An independent read-only-resource probe then preserved its full inventory
+through the same unchanged producer suite, standalone pinned-helper ctypes
+configuration and a bounded consumer refusal. Its enclosing neutral app
+resource signature remained valid after execution and rejected an intentional
+owned stdlib-file mutation. No X Ode/game was launched by those probes.
+They do not establish actual signed-X-Ode admission or gameplay.
+
+**Historical foreground-candidate checks (`2bc5c6be`, before the catalog and
+interpreter corrections):**
+
 `swift build --jobs 4 --product XodusPreview` passed;
 `swift run --skip-build XodusPreview --self-check` passed 193 checks;
 `swift run --skip-build XodusPreview --live-check` passed 1224 checks,

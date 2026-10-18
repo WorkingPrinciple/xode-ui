@@ -18,6 +18,7 @@ struct LaunchProcessIdentity: Decodable, Equatable {
 struct LaunchAssociationAssets {
     let adapter: URL
     let library: URL
+    let interpreter: URL
     static let broker = "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/CrossOver-Hosted Application/wineserver"
     static let brokerSHA256 = "f9c4ed146c7d6dfc94334255907d4e0658218585085ca2107a5181b4deb474fc"
 
@@ -29,14 +30,22 @@ struct LaunchAssociationAssets {
         let brokerSHA256: String
     }
 
+    private struct PythonRuntime: Decodable {
+        struct FileIdentity: Decodable {
+            let sha256: String
+            let bytes: Int
+            let executable: Bool
+        }
+        let version: Int
+        let pythonVersion: String
+        let archiveSHA256: String
+        let files: [String: FileIdentity]
+    }
+
     static func bundled(_ bundle: Bundle = .main) throws -> Self? {
         let root = bundle.bundleURL.appendingPathComponent("Contents/Resources/LaunchAssociation")
         guard FileManager.default.fileExists(atPath: root.path) else { return nil }
-        var code: SecStaticCode?
-        guard bundle.bundleURL.pathExtension == "app",
-              SecStaticCodeCreateWithPath(bundle.bundleURL as CFURL, [], &code) == errSecSuccess,
-              let code, SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSCheckAllArchitectures
-                | kSecCSStrictValidate), nil) == errSecSuccess else { throw AssociationError.unavailable }
+        try requireSignature(bundle)
         let manifest = try JSONDecoder().decode(Manifest.self,
             from: checkedFile(root.appendingPathComponent("manifest.json"), maximum: 4096))
         guard manifest.version == 1 else { throw AssociationError.unavailable }
@@ -63,7 +72,50 @@ struct LaunchAssociationAssets {
                 throw AssociationError.unavailable
             }
         }
-        return Self(adapter: adapter, library: library)
+        guard let interpreter = try bundledInterpreter(bundle) else { throw AssociationError.unavailable }
+        return Self(adapter: adapter, library: library, interpreter: interpreter)
+    }
+
+    static func bundledInterpreter(_ bundle: Bundle = .main) throws -> URL? {
+        let pythonRoot = bundle.bundleURL.appendingPathComponent("Contents/Resources/XodusPython")
+        let metadata = pythonRoot.appendingPathExtension("json")
+        guard FileManager.default.fileExists(atPath: pythonRoot.path)
+                || FileManager.default.fileExists(atPath: metadata.path)
+                || (try? pythonRoot.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
+                || (try? metadata.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true else {
+            return nil
+        }
+        try requireSignature(bundle)
+        let python = try JSONDecoder().decode(PythonRuntime.self, from: checkedFile(
+            metadata, maximum: 4 * 1024 * 1024))
+        let interpreter = pythonRoot.appendingPathComponent("bin/python3")
+        guard python.version == 1, python.pythonVersion == "3.14.8",
+              python.archiveSHA256 == "994adadc202c5df0b4570192cc9a70e3f2c131e512f4a125c56efa8562f44b28",
+              let executable = python.files["bin/python3"], executable.executable,
+              !interpreter.deletingLastPathComponent().path.contains(":"),
+              FileManager.default.isExecutableFile(atPath: interpreter.path) else {
+            throw AssociationError.unavailable
+        }
+        let executableData = try checkedFile(interpreter, maximum: 64 * 1024 * 1024)
+        guard executableData.count == executable.bytes,
+              SHA256.hash(data: executableData).map({ String(format: "%02x", $0) }).joined()
+                == executable.sha256 else { throw AssociationError.unavailable }
+        return interpreter
+    }
+
+    static func interpreterEnvironment(_ interpreter: URL) -> [String: String] {
+        ["PATH": interpreter.deletingLastPathComponent().path + ":/usr/bin:/bin:/usr/sbin:/sbin",
+         "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1"]
+    }
+
+    private static func requireSignature(_ bundle: Bundle) throws {
+        var code: SecStaticCode?
+        guard bundle.bundleURL.pathExtension == "app",
+              SecStaticCodeCreateWithPath(bundle.bundleURL as CFURL, [], &code) == errSecSuccess,
+              let code, SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSCheckAllArchitectures
+                | kSecCSStrictValidate | kSecCSCheckNestedCode), nil) == errSecSuccess else {
+            throw AssociationError.unavailable
+        }
     }
 
     private static func checkedFile(_ url: URL, maximum: Int) throws -> Data {
@@ -123,6 +175,7 @@ final class LaunchAssociationHandoff {
                        "XODUS_LAUNCH_RUN_NONCE": nonce, "XODUS_LAUNCH_PEER_LIBRARY": assets.library.path,
                        "XODUS_LAUNCH_TRUSTED_BROKER_PATH": LaunchAssociationAssets.broker,
                        "XODUS_LAUNCH_EXPECTED_BROKER_SHA256": LaunchAssociationAssets.brokerSHA256]
+            .merging(LaunchAssociationAssets.interpreterEnvironment(assets.interpreter)) { _, new in new }
         observer = NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification,
             object: NSApp, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.cancel() }
@@ -175,8 +228,8 @@ final class LaunchAssociationHandoff {
         guard command?.isRunning != true else { return nil }
         let child = Process()
         let pipe = Pipe()
-        child.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        child.arguments = ["-I", assets.adapter.path, "--association",
+        child.executableURL = assets.interpreter
+        child.arguments = ["-I", "-B", assets.adapter.path, "--association",
             root.appendingPathComponent(runID).appendingPathComponent("bridge.json").path,
             "--run-id", runID, "--run-nonce-env", "XODUS_LAUNCH_RUN_NONCE", "--peer-library", assets.library.path,
             "--trusted-broker-path", LaunchAssociationAssets.broker,

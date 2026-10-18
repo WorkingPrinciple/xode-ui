@@ -28,7 +28,18 @@ enum LaunchAssociationChecks {
               && !LaunchProcessIdentity(pid: identity.pid, start_sec: seconds, start_usec: 1_000_000).matchesKernel(),
               "Foreground typed kernel shim rejects stale/invalid PID and invalid microseconds")
         let adapter = root.appendingPathComponent("adapter.py")
-        let assets = LaunchAssociationAssets(adapter: adapter, library: root.appendingPathComponent("peer.dylib"))
+        let interpreter = root.appendingPathComponent("bin/python3")
+        try FileManager.default.createDirectory(at: interpreter.deletingLastPathComponent(),
+                                               withIntermediateDirectories: false)
+        try Data("""
+            #!/bin/sh
+            export XODUS_FIXTURE_INTERPRETER_SELECTED=1
+            exec /usr/bin/python3 "$@"
+
+            """.utf8).write(to: interpreter)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: interpreter.path)
+        let assets = LaunchAssociationAssets(adapter: adapter, library: root.appendingPathComponent("peer.dylib"),
+                                            interpreter: interpreter)
         let valid = #"{"pid":\#(identity.pid),"start_sec":\#(seconds),"start_usec":\#(micros)}"#
         var active = true
         var current = true
@@ -45,6 +56,8 @@ enum LaunchAssociationChecks {
             import json, os, sys
             assert '--run-nonce' not in sys.argv
             assert len(os.environ['XODUS_LAUNCH_RUN_NONCE']) == 64
+            assert os.environ['XODUS_FIXTURE_INTERPRETER_SELECTED'] == '1'
+            assert sys.dont_write_bytecode
             assert '--run-nonce-env' in sys.argv
             assert sys.argv[sys.argv.index('--trusted-broker-path') + 1] == '\(LaunchAssociationAssets.broker)'
             assert os.environ['XODUS_LAUNCH_EXPECTED_BROKER_SHA256'] == '\(LaunchAssociationAssets.brokerSHA256)'
@@ -55,6 +68,10 @@ enum LaunchAssociationChecks {
               && first.environment["XODUS_LAUNCH_RUN_ID"] != nil
               && first.environment["XODUS_LAUNCH_PEER_LIBRARY"] == assets.library.path,
               "Foreground per-launch options bind fresh private nonce, exact run and pinned helper library")
+        check(first.environment["PATH"] == interpreter.deletingLastPathComponent().path + ":/usr/bin:/bin:/usr/sbin:/sbin"
+              && first.environment["PYTHONDONTWRITEBYTECODE"] == "1"
+              && first.environment["PYTHONNOUSERSITE"] == "1",
+              "Foreground owned launcher uses the admitted interpreter bin first without user site or bytecode writes")
         first.start(current: { current }, diagnostic: { diagnostics += 1 }, duration: .seconds(2))
         for _ in 0..<40 {
             if requests > 0 { break }
@@ -126,6 +143,13 @@ enum LaunchAssociationChecks {
         if let bundle = Bundle(url: absent) {
             check(try LaunchAssociationAssets.bundled(bundle) == nil,
                   "Foreground absent optional capsule leaves ordinary Play unchanged")
+            check(try LaunchAssociationAssets.bundledInterpreter(bundle) == nil,
+                  "Absent optional interpreter preserves the legacy source path")
+            let python = absent.appendingPathComponent("Contents/Resources/XodusPython")
+            try FileManager.default.createDirectory(at: python, withIntermediateDirectories: true)
+            do { _ = try LaunchAssociationAssets.bundledInterpreter(bundle)
+                check(false, "Unsigned or incomplete opted-in interpreter fails before execution")
+            } catch { check(true, "Unsigned or incomplete opted-in interpreter fails before execution") }
             let capsule = absent.appendingPathComponent("Contents/Resources/LaunchAssociation")
             try FileManager.default.createDirectory(at: capsule, withIntermediateDirectories: true)
             do { _ = try LaunchAssociationAssets.bundled(bundle)
