@@ -16,15 +16,16 @@ struct AccountHubDestinations: View {
     @EnvironmentObject private var state: AppState
 
     var body: some View {
-        GroupBox("Xbox") {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 16) {
                 destination(.profile, symbol: "person.crop.circle", detail: "Gamer profile and friends")
-                destination(.achievements, symbol: "trophy", detail: "Per-game Xbox achievements")
-                destination(.consoles, symbol: "xbox.logo", detail: "Your cached Xbox consoles")
+                Divider()
+                destination(.achievements, symbol: "trophy", detail: "Your game progress")
+                Divider()
+                destination(.consoles, symbol: "xbox.logo", detail: "Your Xbox consoles")
+                Divider()
                 destination(.engines, symbol: "gearshape.2", detail: "Mac runtime configuration")
             }
             .padding(.top, 2)
-        }
     }
 
     private func destination(_ value: AccountDestination, symbol: String, detail: String) -> some View {
@@ -191,7 +192,7 @@ struct XboxAchievementsView: View {
     private var games: [XboxRecentGame] { companion.cache?.recentGames.value ?? [] }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 24) {
             HStack {
                 if selection.titleID != nil {
                     Button("All games", systemImage: "chevron.left") { selection.titleID = nil }
@@ -204,11 +205,11 @@ struct XboxAchievementsView: View {
             if let titleID = selection.titleID, let game = games.first(where: { $0.titleId == titleID }) {
                 achievementList(game)
             } else if games.isEmpty {
-                ContentUnavailableView("No Xbox activity loaded", systemImage: "trophy",
+                ContentUnavailableView("No achievements to show", systemImage: "trophy",
                     description: Text(companion.cache?.recentGames.error?.reason
-                                      ?? "Refresh the Xbox game-service account to load recent games."))
+                                      ?? "Check Xbox access in Settings to load your recent games."))
             } else {
-                LazyVStack(alignment: .leading, spacing: 10) {
+                LazyVStack(alignment: .leading, spacing: 16) {
                     ForEach(games) { game in
                         Button {
                             selection.titleID = game.titleId
@@ -238,6 +239,10 @@ struct XboxAchievementsView: View {
         } else if let cache = companion.achievements[game.titleId] {
             if !cache.complete, let reason = cache.error?.reason {
                 Label(reason, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+            }
+            if cache.achievements.isEmpty {
+                ContentUnavailableView("No achievements returned", systemImage: "trophy",
+                    description: Text("Xbox hasn't provided any achievements for this game."))
             }
             LazyVStack(alignment: .leading, spacing: 12) {
                 ForEach(cache.achievements) { achievement in
@@ -277,6 +282,7 @@ struct XboxAchievementsView: View {
                         }
                         Spacer()
                     }
+                    Divider()
                 }
             }
         } else {
@@ -411,7 +417,7 @@ struct EnginesView: View {
                                 }))
                             .accessibilityIdentifier("xodus.engine.path.\(kind.rawValue)")
                         }
-                        Text("Register each provider's absolute runner path separately, not the Xodus management build. File availability is checked; toolkit identity and version are your declarations. These Experimental paths are not compatibility or gameplay proof.")
+                        Text("Register each provider's absolute runner path separately, not the app engine. File availability is checked; toolkit identity and version are your declarations. These Experimental paths are not compatibility or gameplay proof.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }

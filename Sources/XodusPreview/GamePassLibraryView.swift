@@ -28,7 +28,7 @@ struct GamePassLibraryView: View {
                     if session.gamePassProducts.isEmpty {
                         if session.searching { ProgressView("Loading Game Pass games").controlSize(.small) }
                         else {
-                            Text(session.catalogError ?? "Connect Xodus and refresh to load Game Pass games.")
+                            Text(session.catalogError ?? "Connect X Ode and refresh to load Game Pass games.")
                                 .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                         }
                     } else if visibleProducts.isEmpty {

@@ -346,8 +346,8 @@ struct GameInstallConsentView: View {
                 if consent.compatibility?.supported == true {
                     Section {
                         Text(consent.installedID == nil
-                             ? "Xodus verifies free space again before download. Additional working space can be required while package files are staged and expanded."
-                             : "Xodus checks changed or missing files in this folder. Your saves and installed entry are kept.")
+                             ? "X Ode verifies free space again before download. Additional working space can be required while package files are staged and expanded."
+                             : "X Ode checks changed or missing files in this folder. Your saves and installed entry are kept.")
                             .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }

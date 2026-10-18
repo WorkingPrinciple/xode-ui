@@ -125,7 +125,7 @@ final class InstalledGamesController: ObservableObject {
         }
         let scriptPanel = NSOpenPanel()
         scriptPanel.title = "Choose the launch script for this game"
-        scriptPanel.message = "Use the Xodus launch script you already use for this game."
+        scriptPanel.message = "Use the launch script you already use for this game."
         scriptPanel.prompt = "Choose launch script"
         scriptPanel.canChooseDirectories = false
         scriptPanel.canChooseFiles = true

@@ -28,102 +28,31 @@ struct LiveAccountView: View {
         } content: {
             if state.showingSetup {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Xodus setup").font(.title2.bold())
+                    Text("Game setup").font(.title2.bold())
                     GameSetupView(operations: state.gameOperations)
                 }
             } else if state.accountDestination != .account {
                 accountDestination
             } else {
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "person.crop.circle").font(.largeTitle).foregroundStyle(.secondary)
+                VStack(spacing: 24) {
+                        Image(systemName: "person.crop.circle").font(.system(size: 48)).foregroundStyle(.secondary)
                             .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 5) {
+                        VStack(spacing: 8) {
                             Text("X Ode account").font(.title2.bold())
                                 .accessibilityIdentifier("xodus.account.status")
                             Text(session.accountJourneyTitle)
                                 .font(.headline).foregroundStyle(.secondary)
                         }
-                        Spacer()
                         if session.accountBusy || session.signInPending {
                             ProgressView().controlSize(.small)
                                 .accessibilityLabel(session.signInPending ? "Sign-in in progress" : "Checking account status")
                         }
-                    }
                     Text(session.accountJourneyMessage)
-                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true).frame(maxWidth: 360)
                         .accessibilityIdentifier("xodus.account.statusExplanation")
-                    AccountHubDestinations()
-                    GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
-                    DisclosureGroup("Downloaded artwork") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Xodus keeps a bounded cache of public covers, screenshots and the last \(TrailerCache.limit) trailers you've watched.")
-                                .font(.callout).foregroundStyle(.secondary)
-                            HStack {
-                                Button("Clear artwork cache") {
-                                    interaction.clearingArtwork = true
-                                    interaction.artworkNotice = nil
-                                    interaction.artworkError = nil
-                                    TrailerCache.shared.clear()
-                                    Task {
-                                        do {
-                                            try await CatalogArtworkStore.shared.clearCache()
-                                            interaction.artworkNotice = "Downloaded artwork cleared."
-                                        } catch {
-                                            interaction.artworkError = "Artwork couldn't be cleared. Try again."
-                                        }
-                                        interaction.clearingArtwork = false
-                                    }
-                                }
-                                .disabled(interaction.clearingArtwork)
-                                if interaction.clearingArtwork {
-                                    ProgressView().controlSize(.small).accessibilityLabel("Clearing downloaded artwork")
-                                }
-                            }
-                            if let notice = interaction.artworkNotice {
-                                Label(notice, systemImage: "checkmark.circle").foregroundStyle(.secondary)
-                            }
-                            if let error = interaction.artworkError {
-                                Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.top, 2)
-                    }
-                    Divider()
-                    DisclosureGroup("Technical details") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(session.accountMessage)
-                                .fixedSize(horizontal: false, vertical: true)
-                            if let error = session.accountError {
-                                Label(error, systemImage: "exclamationmark.circle")
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("xodus.account.error")
-                            }
-                            if let summary = session.accountFailureSummary {
-                                Text("Last sign-in error").font(.headline)
-                                Text(summary).fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("xodus.account.failureSummary")
-                            }
-                            if let details = session.accountFailureDetails {
-                                Text(details).fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("xodus.account.failureDetails")
-                                if let observation = session.accountFailureObservation {
-                                    Text(observation).fixedSize(horizontal: false, vertical: true)
-                                        .accessibilityIdentifier("xodus.account.failureObservation")
-                                }
-                            }
-                            if session.isReady && !session.supports(.authBegin) {
-                                Text("Sign-in isn't available in this build.")
-                            }
-                            Text(session.accountExplanation)
-                            Text("Saved sign-ins are protected by macOS Keychain.")
-                            Text("macOS may ask for Keychain access again after an app update. Respond in its permission window; a new Microsoft sign-in is not required to check saved sign-in.")
-                            Text(XboxCompanionCopy.accountScope)
-                        }
-                        .foregroundStyle(.secondary).textSelection(.enabled).padding(.top, 12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
                 }
+                .frame(maxWidth: .infinity).padding(.vertical, 32)
             }
         } actions: {
             if state.showingSetup || state.accountDestination != .account {
@@ -145,7 +74,8 @@ struct LiveAccountView: View {
                                !cancelling || session.authentication?.flow?.state != .completed { dismiss() }
                         }
                     }
-                    .keyboardShortcut(.cancelAction).disabled(session.accountBusy)
+                    .keyboardShortcut(session.hasConfirmedSignIn ? .defaultAction : .cancelAction)
+                    .disabled(session.accountBusy)
                     .accessibilityLabel(session.signInPending ? "Cancel sign-in" : "Close account")
                     .accessibilityIdentifier(session.signInPending ? "xodus.account.cancelSignIn" : "xodus.account.close")
                     if session.isReady {
@@ -212,16 +142,43 @@ struct LiveAccountView: View {
 struct LiveSettingsView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var session: LiveSession
+    @Environment(\.openWindow) private var openWindow
+    @StateObject private var artwork = AccountInteraction()
     @AppStorage("Xodus.heroAnimationsEnabled") private var heroAnimationsEnabled = true
 
     var body: some View {
         Form {
+            Section("Account") {
+                LabeledContent("Status", value: session.accountJourneyTitle)
+                Button("Open account") { state.openAccount() }
+                if session.hasConfirmedSignIn { AccountHubDestinations() }
+            }
+            if session.hasConfirmedSignIn {
             Section("Artwork") {
                 Toggle("Animate featured game artwork", isOn: $heroAnimationsEnabled)
                 Text("Trailers start when you point at the featured artwork and keep playing while it's visible. Use the speaker button to unmute. Reduce Motion and Low Power Mode use the poster instead.")
                     .foregroundStyle(.secondary)
+                Button("Clear downloaded artwork") {
+                    artwork.clearingArtwork = true
+                    artwork.artworkNotice = nil
+                    artwork.artworkError = nil
+                    TrailerCache.shared.clear()
+                    Task {
+                        do {
+                            try await CatalogArtworkStore.shared.clearCache()
+                            artwork.artworkNotice = "Downloaded artwork cleared."
+                        } catch {
+                            artwork.artworkError = "Artwork couldn't be cleared. Try again."
+                        }
+                        artwork.clearingArtwork = false
+                    }
+                }
+                .disabled(artwork.clearingArtwork)
+                if artwork.clearingArtwork { ProgressView("Clearing downloaded artwork") }
+                if let notice = artwork.artworkNotice { Text(notice).foregroundStyle(.secondary) }
+                if let error = artwork.artworkError { Text(error).foregroundStyle(.secondary) }
             }
-            Section("Xodus engine") {
+            Section("App connection") {
 #if XODUS_SHIPPING
                 Text("Only this app's approved bundled engine and sign-in helper can be used. Gameplay runtime certification is separate.")
                     .foregroundStyle(.secondary)
@@ -232,7 +189,7 @@ struct LiveSettingsView: View {
                 LabeledContent("Build", value: session.backendPath.isEmpty ? "Not selected" : URL(fileURLWithPath: session.backendPath).lastPathComponent)
                 HStack {
 #if !XODUS_SHIPPING
-                    Button("Choose Xodus build") { session.chooseBackend() }.disabled(session.connectionTransitioning)
+                    Button("Choose app engine") { session.chooseBackend() }.disabled(session.connectionTransitioning)
 #endif
                     Spacer()
                     Button(session.isReady ? "Reconnect" : "Connect") { Task { await session.connect() } }
@@ -256,11 +213,8 @@ struct LiveSettingsView: View {
                     .foregroundStyle(.secondary)
                 Button("Open Engines") { state.openAccount(.engines) }
             }
-            Section("Account") {
+            Section("Game access") {
                 GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
-                LabeledContent("Status", value: session.accountLabel)
-                Button("Open account") { state.showingAccount = true }
-                DisclosureGroup("Account info") { Text(session.accountExplanation).foregroundStyle(.secondary) }
             }
             Section("Advanced public catalog") {
                 Text(session.supports(.query)
@@ -312,9 +266,40 @@ struct LiveSettingsView: View {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
             }
+            }
+            Section("Sign-in support") {
+                Text(session.accountMessage).foregroundStyle(.secondary)
+                if let error = session.accountError {
+                    Text(error).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.error")
+                }
+                if let summary = session.accountFailureSummary {
+                    Text(summary).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.failureSummary")
+                }
+                if let details = session.accountFailureDetails {
+                    Text(details).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.failureDetails")
+                }
+                if let observation = session.accountFailureObservation {
+                    Text(observation).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.failureObservation")
+                }
+                Text(session.accountExplanation).foregroundStyle(.secondary)
+                Text("If macOS asks for permission to read a saved sign-in, respond in that window. Checking a saved sign-in doesn't start a new Microsoft login.")
+                    .foregroundStyle(.secondary)
+                Button("Check status") { Task { await session.prepareWelcome() } }
+                    .disabled(session.connectionTransitioning || session.accountBusy)
+            }
+            Section("About X Ode") {
+                Button("Licenses") { openWindow(id: "licenses") }
+                Button("Acknowledgments") { openWindow(id: "acknowledgments") }
+            }
         }
         .formStyle(.grouped).padding()
         .frame(width: 560)
-        .task { await state.runtimeSettings.refreshCrossOverDependency() }
+        .task {
+            if session.hasConfirmedSignIn { await state.runtimeSettings.refreshCrossOverDependency() }
+        }
     }
 }

@@ -8,10 +8,10 @@ struct GameSetupBannerView: View {
     var body: some View {
         if operations.setupNeedsAttention {
             HStack(spacing: 14) {
-                Label("Xodus needs setup", systemImage: "wrench.and.screwdriver")
+                Label("Game setup needs attention", systemImage: "wrench.and.screwdriver")
                 Spacer()
                 Button("Setup", action: openSetup)
-                    .accessibilityLabel("Open Xodus setup")
+                    .accessibilityLabel("Open game setup")
                     .accessibilityIdentifier("xodus.setup.open")
             }
         }
@@ -26,7 +26,7 @@ struct GameSetupView: View {
         VStack(alignment: .leading, spacing: 12) {
             if showsTitle { Text("Setup").font(.headline) }
             if operations.setupBusy {
-                ProgressView(operations.setupRepairing ? "Repairing Xodus" : "Checking Xodus setup")
+                ProgressView(operations.setupRepairing ? "Repairing game setup" : "Checking game setup")
                     .controlSize(.small)
             }
             if let result = operations.setupResult {
@@ -49,7 +49,7 @@ struct GameSetupView: View {
                         .accessibilityIdentifier("xodus.setup.showLog")
                 }
             }
-            Button("Repair Xodus") { operations.repairSetup() }
+            Button("Repair game setup") { operations.repairSetup() }
                 .disabled(!operations.canRepairSetup)
                 .accessibilityIdentifier("xodus.setup.repair")
             if operations.setupResult?.needsSignIn == true {

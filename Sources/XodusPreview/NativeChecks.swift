@@ -288,9 +288,8 @@ enum NativeChecks {
             check(saved.hasConfirmedSignIn && saved.nativeSignInHostAdmitted,
                   "Welcome preparation restores only confirmed saved status through the admitted neutral pair")
             check(saved.accountJourneyTitle == "Signed in to X Ode"
-                  && saved.accountJourneyMessage.contains("Find your games in Library")
-                  && saved.accountJourneyMessage.contains("Download access is checked when you choose Install"),
-                  "Signed-in account copy offers Library without promising download or gameplay readiness")
+                  && saved.accountJourneyMessage == "Your Microsoft sign-in is saved.",
+                  "Login shows only saved identity, without download or gameplay claims")
             check(saved.currentCredentialState == .credentialPresent
                   && saved.accountSymbol == "person.crop.circle.fill" && saved.canDisconnectAccount,
                   "Neutral saved profile initially displays the current credential result")
@@ -336,7 +335,7 @@ enum NativeChecks {
                   "Welcome completion unlocks navigation without claiming game entitlement")
             check(await saved.disconnect(), "Account presentation regression retires its owned neutral child")
             check(saved.currentCredentialState == nil && saved.accountSymbol == "person.crop.circle"
-                  && saved.accountLabel == "Connect Xodus" && saved.accountStatusError == nil,
+                  && saved.accountLabel == "Connect X Ode" && saved.accountStatusError == nil,
                   "Disconnect removes current account presentation evidence")
             let mixedBase = configuration("recentbootstrapsignedout")
             let mixedConfiguration = BackendConfiguration(executable: mixedBase.executable,
@@ -833,7 +832,7 @@ enum NativeChecks {
             await localEmpty.connect()
             check(localEmpty.installedSnapshot?.installations.isEmpty == true
                   && localEmpty.libraryTitle == "Your PC library isn't available yet"
-                  && localEmpty.libraryMessage == "Xodus can't yet verify which PC games you own.",
+                  && localEmpty.libraryMessage == "X Ode can't yet verify which PC games you own.",
                   "A constant-empty registry response never advertises an implemented registry or an empty Mac")
             await localEmpty.disconnect()
             let localUnavailable = session("registryunavailable")

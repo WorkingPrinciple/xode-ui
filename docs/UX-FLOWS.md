@@ -105,15 +105,24 @@ stages and reconstructed saved-state clients without actual credential deletion.
 Live restart, logout, consent and install acceptance remain separate runtime
 qualification; this does not establish a unified Microsoft session.
 
-The normal account flow uses short, gamer-readable status and one next step:
-continue in Microsoft's window, open Library, check status, or reconnect an expired
-sign-in. Saved sign-in never promises that a game can download or run. Welcome
-and Account retain **Sign in to X Ode** / **Sign out of X Ode** and the explicit
-sign-out confirmation. Detailed account failures, identity scope and setup
-troubleshooting are collapsed instead of explaining internal account plumbing
-before the user can act. A partial sign-out remains an attention state with
-Check status as recovery; its exact stopped stage remains in Technical details.
-These are presentation changes only, not new authorization or consent behavior.
+The normal account flow uses system type, centered identity/state, generous
+whitespace and only sign-in/out/cancel/status recovery actions. Login contains no
+setup, cache, diagnostic, compatibility or technical disclosure. Saved sign-in
+never promises that a game can download or run. Welcome and Account retain
+**Sign in to X Ode** / **Sign out of X Ode** and the explicit sign-out confirmation.
+Sign-in support and exact partial-failure details live in Settings, including
+while signed out; game/account data and advanced controls still require confirmed
+sign-in. Achievements remain a separate Account-menu/Settings destination backed
+by real Xbox data, including truthful empty/unavailable states.
+
+Licenses and Acknowledgments are separate native windows available from the app
+menu and Settings without login. The app's GPL-3.0-only grant is not a grant for
+games, CrossOver, Microsoft or other components. Acknowledgments credits upstream
+Xodus and the packaged CPython 3.14.8; existing bundled notices are unchanged.
+App-owned display copy uses X Ode elsewhere. Internal paths/identifiers and
+genuine Microsoft consent/registered-client text remain unchanged. No organization
+or new source URL is invented. These are presentation changes only, not new
+authorization, licensing or consent behavior.
 
 ## Freeze correction: operation feedback and library retry (source candidate)
 

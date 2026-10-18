@@ -59,7 +59,7 @@ struct InstalledGamesView: View {
             if library.loading {
                 ProgressView("Loading installed games").controlSize(.small)
             } else if library.loaded, library.games.isEmpty {
-                Text("Add a game you've already installed with Xodus.")
+                Text("Add a game you've already installed with X Ode.")
                     .foregroundStyle(.secondary)
                 importButton
             }

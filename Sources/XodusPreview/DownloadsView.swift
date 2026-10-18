@@ -82,7 +82,7 @@ struct WelcomeView: View {
             GameArtwork(kind: "harbor").frame(height: 180)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             Text("Your games. A more native way home.").font(.title.bold())
-            Text("The proposed app connects legitimate PC access to a carefully paired Xodus runtime. This preview uses invented games and never opens Microsoft sign-in.")
+            Text("The proposed app connects legitimate PC access to a carefully paired game runtime. This preview uses invented games and never opens Microsoft sign-in.")
                 .foregroundStyle(.secondary)
             if interaction.cancelled {
                 Label("Simulated sign-in cancelled. No credentials were created.",

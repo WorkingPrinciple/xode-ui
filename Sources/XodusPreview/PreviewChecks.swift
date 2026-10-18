@@ -170,7 +170,7 @@ enum PreviewChecks {
         check(live.products.isEmpty, "Live catalog never starts with invented titles")
         check(live.authentication == nil, "Live account does not start with simulated sign-in")
         check(live.currentCredentialState == nil && live.accountSymbol == "person.crop.circle"
-              && live.accountLabel == "Connect Xodus",
+              && live.accountLabel == "Connect X Ode",
               "Disconnected live account presentation never borrows the fixture's connection or profile badge")
         check(live.activity.jobs.isEmpty, "Live activity does not start with simulated jobs")
         check(!live.canSignIn, "Sign-in is disabled until backend capability negotiation")

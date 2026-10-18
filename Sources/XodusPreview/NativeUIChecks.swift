@@ -12,6 +12,27 @@ enum NativeUIChecks {
         let windows = application.windows.count
         autoreleasepool { checkWelcomeTerminationPolicy(check: check) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            for width in [CGFloat(480), 560] {
+                for (name, view) in [
+                    ("Licenses", AnyView(AppLicensesView())),
+                    ("Acknowledgments", AnyView(AppAcknowledgmentsView()))
+                ] {
+                    let host = NSHostingView(rootView: view)
+                    host.sizingOptions = []
+                    host.appearance = NSAppearance(named: appearance)
+                    host.frame = CGRect(x: 0, y: 0, width: width, height: 480)
+                    host.layoutSubtreeIfNeeded()
+                    check(host.window == nil && descendants(of: host).compactMap { $0 as? NSScrollView }
+                        .allSatisfy { !$0.hasHorizontalScroller },
+                        "\(name) uses a detached native legal surface at \(Int(width)) points in \(appearance.rawValue)")
+                }
+            }
+        }
+        check(AppLegalCopy.license.contains("GPL-3.0-only")
+              && AppLegalCopy.acknowledgment.contains("Xodus")
+              && AppLegalCopy.source.absoluteString == "https://github.com/dragoshont/xodus-macos-app",
+              "Legal destinations retain the app's exact license and existing upstream attribution without an invented organization")
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for size in [CGSize(width: 480, height: 480), CGSize(width: 560, height: 620)] {
                 let session = LiveSession()
                 let runtime = RuntimeProviderSettings()
@@ -71,7 +92,7 @@ enum NativeUIChecks {
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for reduceTransparency in [false, true] {
                 let chrome = NSHostingView(rootView: HStack {
-                    Picker("Navigate Xodus", selection: .constant(Destination.library)) {
+                    Picker("Navigate X Ode", selection: .constant(Destination.library)) {
                         Text("Library").tag(Destination.library)
                     }.pickerStyle(.segmented)
                     NativeToolbarSearch(text: .constant(""), focused: .constant(false), placeholder: "Search Library")
@@ -380,6 +401,11 @@ enum NativeUIChecks {
         check(account.window == nil && NSApplication.shared.windows.count == windows
               && session.authentication == nil && !session.accountBusy && !session.signInPending,
               "Lean Account and live-data layouts create no window or credential request")
+        let accountButtons = descendants(of: account).compactMap { $0 as? NSButton }
+        check(!accountButtons.isEmpty && accountButtons.allSatisfy {
+            !["Technical details", "Downloaded artwork", "Troubleshoot game setup", "Achievements", "Licenses", "Acknowledgments"]
+                .contains($0.title)
+        }, "Login keeps support, artwork and separate account destinations out of its action surface")
         for route in [AccountDestination.profile, .achievements, .consoles, .engines] {
             state.accountDestination = route
             let destination = NSHostingView(rootView: LiveAccountView(refreshStatusOnAppear: false)

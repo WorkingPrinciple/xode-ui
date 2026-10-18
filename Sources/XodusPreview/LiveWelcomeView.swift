@@ -13,14 +13,16 @@ struct LiveWelcomeView: View {
         AccountSheetLayout(showsHeader: false) {
             EmptyView()
         } content: {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(spacing: 24) {
                 Image(systemName: "person.crop.circle")
                     .font(.system(size: 48)).foregroundStyle(.secondary)
                     .accessibilityHidden(true)
                 Text("Welcome to X Ode").font(.largeTitle.bold())
                     .accessibilityAddTraits(.isHeader)
                 Text(session.accountJourneyMessage)
-                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 360)
                     .accessibilityIdentifier("xodus.welcome.status")
                 if session.connectionTransitioning || session.accountBusy {
                     ProgressView("Checking sign-in").controlSize(.small)
@@ -30,25 +32,8 @@ struct LiveWelcomeView: View {
                     GameOperationProgressView(operations: operations, privacyRestricted: true)
                         .accessibilityIdentifier("xodus.welcome.operation")
                 }
-                if runtime.crossOverDependency.offersTrialDownload {
-                    Divider()
-                    Text("CrossOver runs Windows games on your Mac.")
-                        .fixedSize(horizontal: false, vertical: true)
-                    Link("Download the CrossOver trial",
-                         destination: CrossOverDependencyState.trialDownloadURL)
-                        .accessibilityIdentifier("xodus.welcome.crossover")
-                    Text("Download and install it from CodeWeavers. X Ode checks again when you return.")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                DisclosureGroup("Technical details") {
-                    Text(session.welcomeMessage)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Sign-out removes X Ode's game, library and app sign-ins only after each removal is confirmed. It requires a compatible game runtime.")
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .font(.callout).foregroundStyle(.secondary)
             }
+            .frame(maxWidth: .infinity).padding(.vertical, 32)
         } actions: {
             AccountActionsLayout(layoutDirection: layoutDirection) {
                 if session.signInPending {

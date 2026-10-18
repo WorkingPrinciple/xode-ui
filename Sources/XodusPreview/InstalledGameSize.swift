@@ -142,7 +142,7 @@ struct LibraryPackageFormatLabel: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(.quaternary, in: Capsule())
-            .help("PC package format from the public Microsoft catalog. MSIXVC is the GDK format Xodus installs today; EAppx/Appx are Store app packages.")
+            .help("PC package format from the public Microsoft catalog. MSIXVC is the GDK format X Ode installs today; EAppx/Appx are Store app packages.")
             .accessibilityLabel("Package format \(format)")
     }
 }

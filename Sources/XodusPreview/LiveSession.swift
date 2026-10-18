@@ -184,7 +184,7 @@ final class LiveSession: ObservableObject {
         } else if Bundle.main.bundleURL.pathExtension == "app" {
             backendPath = bundledPath ?? ""
             if bundledPath == nil {
-                errorMessage = "This app's included Xodus engine is missing or not executable. Rebuild or reinstall the matching development app; Advanced Settings can explicitly select a trusted development engine."
+                errorMessage = "This app's included engine is missing or not executable. Rebuild or reinstall the matching development app; Advanced Settings can explicitly select a trusted development engine."
             }
         } else {
             backendPath = bundledPath ?? UserDefaults.standard.string(forKey: "Xodus.developerBackendPath") ?? ""
@@ -223,16 +223,16 @@ final class LiveSession: ObservableObject {
             return "Sign-out didn't finish. Some sign-in details may remain on this Mac. Choose Check status before trying again."
         }
         if !isReady {
-            return "X Ode couldn't connect to check your sign-in. Try again. If it still doesn't connect, check Technical details."
+            return "Your sign-in couldn't be checked. Choose Check status to try again."
         }
         if signInPending { return "Continue in the Microsoft window, or choose Cancel sign-in." }
         if accountError != nil {
             return accountStatusError == .credentialStoreUnavailable
-                ? "X Ode couldn't read your saved sign-in. If macOS asks for Keychain access, respond in that window, then choose Check status."
+                ? "Your saved sign-in couldn't be read. If macOS asks for permission, respond in that window, then choose Check status."
                 : "Your sign-in couldn't be confirmed. Choose Check status to try again."
         }
         if hasConfirmedSignIn {
-            return "Your Microsoft sign-in is saved. Find your games in Library. Download access is checked when you choose Install."
+            return "Your Microsoft sign-in is saved."
         }
         if needsAccountDisconnect {
             return "Your saved sign-in needs reconnecting. Choose Sign out of X Ode, then sign in again."
@@ -241,9 +241,9 @@ final class LiveSession: ObservableObject {
             return "You're signed out of X Ode on this Mac. Your games and saves are still here."
         }
         if canStartWelcomeSignIn {
-            return "Sign in with Microsoft to see your games. You can also remove sign-ins saved by X Ode on this Mac."
+            return "Sign in with Microsoft to see your games."
         }
-        return "X Ode isn't ready to sign you in. Choose Check status, or open Technical details for help."
+        return "Sign-in isn't available right now. Choose Check status to try again."
     }
     static let signOutConfirmationMessage = "Remove X Ode's saved sign-ins from this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, X Ode will tell you which step failed."
     var welcomeMessage: String {
@@ -289,14 +289,14 @@ final class LiveSession: ObservableObject {
         return accountLabel
     }
     var accountMessage: String {
-        if phase == .connecting { return "Connecting to Xodus." }
-        guard isReady else { return "Xodus couldn't connect. Open Settings to reconnect." }
+        if phase == .connecting { return "Connecting to X Ode." }
+        guard isReady else { return "X Ode couldn't connect. Open Settings to reconnect." }
         if accountStatusChecking {
             return "If macOS asks for Keychain access, respond in its permission window. Your saved sign-in is not being replaced."
         }
         if accountError != nil {
             if failedAccountAction == .status && accountStatusError == .credentialStoreUnavailable {
-                return "Your saved sign-in couldn't be checked because Xodus cannot access Keychain. Sign-in stays disabled until access is confirmed. After resolving Keychain access, choose Check status."
+                return "Your saved sign-in couldn't be checked because X Ode cannot access Keychain. Sign-in stays disabled until access is confirmed. After resolving Keychain access, choose Check status."
             }
             switch failedAccountAction {
             case .status: return "Account status couldn't be checked. Choose Check status to try again."
@@ -329,7 +329,7 @@ final class LiveSession: ObservableObject {
         "Your PC library isn't available yet"
     }
     var libraryMessage: String {
-        "Xodus can't yet verify which PC games you own."
+        "X Ode can't yet verify which PC games you own."
     }
     var canRefreshRecentLibrary: Bool {
         recentLibraryReadAllowed && !recentLibraryBootstrapRunning
@@ -528,8 +528,8 @@ final class LiveSession: ObservableObject {
     }
     func catalogEmptyExplanation(query: String, canRefresh: Bool) -> String {
         if searching { return "Checking public products in this scope. Results are not available yet." }
-        if !isReady { return "Connect Xodus in Settings to load public product metadata." }
-        if !canRefresh { return "This engine does not provide this catalog operation. Update the paired Xodus build." }
+        if !isReady { return "Connect X Ode in Settings to load public product metadata." }
+        if !canRefresh { return "This engine does not provide this catalog operation. Update the paired app build." }
         if catalogStopped { return "Run a new search or refresh this scope when you are ready." }
         if catalogError != nil || !discoveryFailures.isEmpty {
             return "The public catalog could not be fully checked. Refresh to try again; no empty owned library is inferred."
@@ -551,9 +551,9 @@ final class LiveSession: ObservableObject {
     }
 
     var accountLabel: String {
-        if phase == .connecting { return "Connecting to Xodus" }
-        if phase == .disconnecting { return "Disconnecting from Xodus" }
-        guard isReady else { return "Connect Xodus" }
+        if phase == .connecting { return "Connecting to X Ode" }
+        if phase == .disconnecting { return "Disconnecting from X Ode" }
+        guard isReady else { return "Connect X Ode" }
         if signInPending {
             return accountStatusCurrent ? "Sign-in pending" : "Sign-in status needs checking"
         }
@@ -577,7 +577,7 @@ final class LiveSession: ObservableObject {
             if !accountStatusCurrent {
                 return "The last sign-in result was pending, but its current outcome could not be confirmed. Check status or request cancellation; no completion or cancellation is assumed."
             }
-            return "Xodus reports a pending sign-in, not a completed account connection. If Microsoft has opened a sign-in window, continue there yourself or use Cancel sign-in."
+            return "X Ode reports a pending sign-in, not a completed account connection. If Microsoft has opened a sign-in window, continue there yourself or use Cancel sign-in."
         }
         guard accountStatusCurrent else {
             return authentication == nil
@@ -590,14 +590,14 @@ final class LiveSession: ObservableObject {
         case .expired, .invalid:
             return "Disconnect this saved launcher sign-in first, then connect again. Other apps' accounts are not changed."
         case .signedOut:
-            return "Xodus reports no saved launcher sign-in. Advertised sign-in support does not verify a paired engine and helper, PC ownership or permission to play."
+            return "X Ode reports no saved launcher sign-in. Advertised sign-in support does not verify a paired engine and helper, PC ownership or permission to play."
         case nil:
             return "Account status has not been checked. No saved sign-in or PC access is assumed."
         }
     }
 
     var accountLibraryTitle: String {
-        guard isReady else { return "Connect your Xodus engine" }
+        guard isReady else { return "Connect the app engine" }
         if signInPending { return accountLabel }
         guard accountStatusCurrent else { return accountLabel }
         return currentCredentialState == .credentialPresent
@@ -750,13 +750,13 @@ final class LiveSession: ObservableObject {
             return
         }
         let panel = NSOpenPanel()
-        panel.title = "Choose a trusted Xodus management build"
+        panel.title = "Choose a trusted app engine"
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         guard FileManager.default.isExecutableFile(atPath: url.path) else {
-            errorMessage = "That file is not executable. Choose the Xodus management engine."
+            errorMessage = "That file is not executable. Choose the app engine."
             return
         }
         backendPath = url.path
@@ -767,7 +767,7 @@ final class LiveSession: ObservableObject {
     func connect() async {
         guard !applicationTerminating else { return }
         guard !connectionTransitioning, !backendPath.isEmpty else {
-            if backendPath.isEmpty { errorMessage = "Choose your trusted Xodus build in Settings first." }
+            if backendPath.isEmpty { errorMessage = "Choose your trusted app engine in Settings first." }
             return
         }
         let operationID = UUID()
@@ -1053,7 +1053,7 @@ final class LiveSession: ObservableObject {
         guard isReady, supports(.inspectInstallation), !inspectionBusy else { return }
         let panel = NSOpenPanel()
         panel.title = "Inspect a game folder"
-        panel.message = "Choose one exact folder. Xodus reads only its streaming marker metadata; it will not scan, register, modify or launch the game."
+        panel.message = "Choose one exact folder. X Ode reads only its streaming marker metadata; it will not scan, register, modify or launch the game."
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
@@ -1084,7 +1084,7 @@ final class LiveSession: ObservableObject {
             guard token == generation else { return }
             switch error {
             case ManagementError.backendError("NOT_FOUND", _):
-                inspectionError = "This folder has no Xodus streaming marker. Nothing was added to your Library."
+                inspectionError = "This folder has no supported streaming marker. Nothing was added to your Library."
             case ManagementError.backendError("INTEGRITY_FAILED", _):
                 inspectionError = "The marker could not be safely interpreted. No files were changed."
             case ManagementError.backendError("UNSUPPORTED_CONFIGURATION", _):
@@ -1723,7 +1723,7 @@ final class LiveSession: ObservableObject {
         diagnosticExportError = nil
         let panel = NSSavePanel()
         panel.title = "Save reviewed diagnostic summary"
-        panel.nameFieldStringValue = "Xodus-diagnostics.txt"
+        panel.nameFieldStringValue = "X-Ode-diagnostics.txt"
         panel.allowedContentTypes = [.plainText]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         Task { await saveDiagnosticSummary(to: url) }

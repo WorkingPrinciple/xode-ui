@@ -270,9 +270,9 @@ struct LiveRootView: View {
                         selectedFolderInspection
                         Divider()
                         Text("Your PC games uses a separate Microsoft sign-in to read this account's game library. It shows active, non-trial games whose Store packages declare PC support.")
-                        Text("Installed shows games you've imported or installed with Xodus. It doesn't scan your Mac.")
-                        Text("Import an installed Xbox game and choose its working Xodus launch script to play. Removing it from the list keeps its game files and saves.")
-                        Text("Inspect a game folder checks its Xodus marker only. This check doesn't import the game or enable Play.")
+                        Text("Installed shows games you've imported or installed with X Ode. It doesn't scan your Mac.")
+                        Text("Import an installed Xbox game and choose its working launch script to play. Removing it from the list keeps its game files and saves.")
+                        Text("Inspect a game folder checks its installation marker only. This check doesn't import the game or enable Play.")
                     }
                     .padding(.horizontal, 56).padding(.bottom, 28)
                     .foregroundStyle(.secondary)
@@ -299,7 +299,7 @@ struct LiveRootView: View {
                 Spacer()
             }
             Text(session.supports(.inspectInstallation)
-                 ? "Choose a folder to check for an existing Xodus marker."
+                 ? "Choose a folder to check for an existing installation marker."
                  : "This build can't inspect a selected game folder.")
                 .font(.callout).foregroundStyle(.secondary)
             if let error = session.inspectionError {
@@ -309,7 +309,7 @@ struct LiveRootView: View {
             if let inspection = session.inspection {
                 LabeledContent("Selected folder",
                                value: URL(fileURLWithPath: inspection.directory).lastPathComponent)
-                Text("An external Xodus marker was observed. Retail identity, game-file integrity, access and compatibility remain unknown. No registered entry was created; this game cannot be launched from this result.")
+                Text("An external installation marker was observed. Retail identity, game-file integrity, access and compatibility remain unknown. No registered entry was created; this game cannot be launched from this result.")
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 DisclosureGroup("Selected folder info") {
                     VStack(alignment: .leading, spacing: 8) {

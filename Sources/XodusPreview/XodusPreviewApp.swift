@@ -76,6 +76,7 @@ struct XodusPreviewApp: App {
     @NSApplicationDelegateAdaptor(PreviewDelegate.self) private var delegate
     @StateObject private var state = AppState()
     @StateObject private var session = LiveSession()
+    @Environment(\.openWindow) private var openWindow
 
     private var navigationAllowed: Bool {
 #if !XODUS_SHIPPING
@@ -158,6 +159,10 @@ struct XodusPreviewApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Licenses") { openWindow(id: "licenses") }
+                Button("Acknowledgments") { openWindow(id: "acknowledgments") }
+            }
             CommandGroup(replacing: .appInfo) {
                 Button("About X Ode") {
                     NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "X Ode"])
@@ -230,11 +235,9 @@ struct XodusPreviewApp: App {
             Group {
 #if !XODUS_SHIPPING
                 if state.fixtureMode { PreviewSettings() }
-                else if session.hasConfirmedSignIn { LiveSettingsView() }
-                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings, operations: state.gameOperations) }
+                else { LiveSettingsView() }
 #else
-                if session.hasConfirmedSignIn { LiveSettingsView() }
-                else { LiveWelcomeView(session: session, runtime: state.runtimeSettings, operations: state.gameOperations) }
+                LiveSettingsView()
 #endif
             }
                 .environmentObject(state)
@@ -247,5 +250,9 @@ struct XodusPreviewApp: App {
                     delegate.gameOperations = state.gameOperations
                 }
         }
+        Window("Licenses", id: "licenses") { AppLicensesView() }
+            .defaultSize(width: 560, height: 420)
+        Window("Acknowledgments", id: "acknowledgments") { AppAcknowledgmentsView() }
+            .defaultSize(width: 560, height: 420)
     }
 }
