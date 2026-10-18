@@ -35,7 +35,7 @@ struct LiveAccountView: View {
                 accountDestination
             } else {
                 VStack(spacing: 24) {
-                        Image(systemName: "person.crop.circle").font(.system(size: 48)).foregroundStyle(.secondary)
+                        Image(systemName: "person.crop.circle.fill").font(.system(size: 48)).foregroundStyle(XboxBrand.gradient)
                             .accessibilityHidden(true)
                         VStack(spacing: 8) {
                             Text("X Ode account").font(.title2.bold())
@@ -51,6 +51,9 @@ struct LiveAccountView: View {
                         .foregroundStyle(.secondary).multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true).frame(maxWidth: 360)
                         .accessibilityIdentifier("xodus.account.statusExplanation")
+                    if session.hasConfirmedSignIn {
+                        XboxAccountSummaryView(companion: companion)
+                    }
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 32)
             }
@@ -113,7 +116,13 @@ struct LiveAccountView: View {
             if !refreshStatusOnAppear { return }
 #endif
             await session.refreshAccount()
+            if session.hasConfirmedSignIn {
+                state.gameOperations.refreshService()
+                await state.gameOperations.waitForService()
+                await companion.refresh(for: state.gameOperations.serviceStatus)
+            }
         }
+        .tint(XboxBrand.green)
         .interactiveDismissDisabled(session.accountBusy || session.signInPending)
         .confirmationDialog("Sign out of X Ode on this Mac?", isPresented: $interaction.confirmingSignOut) {
             Button("Sign out of X Ode", role: .destructive) { Task { await state.signOut(session: session) } }

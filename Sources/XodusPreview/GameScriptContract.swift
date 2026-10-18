@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
 import Foundation
+import XodusManagement
 
 enum GameScriptCommand: String, Codable, Sendable {
     case serviceStatus, serviceSignIn, serviceSignOut, check, gamePassStatus, gameStats, stop, setup, install, uninstall
@@ -164,20 +165,29 @@ struct GamePassStatusResult: Decodable, Equatable, Sendable {
     let active: Bool?
     let probeProductId: String?
     let checkedAt: String?
+    let plan: String?
+    let expiresAt: String?
 
-    private enum CodingKeys: String, CodingKey { case active, probeProductId, checkedAt }
+    private enum CodingKeys: String, CodingKey { case active, probeProductId, checkedAt, plan, expiresAt }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         active = try values.decode(Bool?.self, forKey: .active)
         probeProductId = try values.decodeIfPresent(String.self, forKey: .probeProductId)
         checkedAt = try values.decodeIfPresent(String.self, forKey: .checkedAt)
+        plan = try values.decodeIfPresent(String.self, forKey: .plan)
+        expiresAt = try values.decodeIfPresent(String.self, forKey: .expiresAt)
     }
+
+    var planLabel: String? { plan.flatMap(GamePassPlan.init(rawValue:))?.label }
+    var expiryDate: Date? { expiresAt.flatMap(GameCompatibilityResult.parseDate) }
 
     static func parse(_ data: Data, productID: String? = nil) throws -> Self {
         let value = try JSONDecoder().decode(Self.self, from: data)
         guard value.probeProductId.map(PCGamesClient.validProductID) ?? true,
               value.checkedAt.map({ $0.utf8.count <= 64 && GameCompatibilityResult.parseDate($0) != nil }) ?? true,
+              value.plan.map({ GamePassPlan(rawValue: $0) != nil }) ?? true,
+              value.expiresAt.map({ $0.utf8.count <= 64 && GameCompatibilityResult.parseDate($0) != nil }) ?? true,
               productID.map({ PCGamesClient.validProductID($0) && value.probeProductId == $0
                   && value.checkedAt != nil }) ?? true else { throw GameScriptError.invalidReceipt }
         return value

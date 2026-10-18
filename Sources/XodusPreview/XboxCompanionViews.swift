@@ -12,6 +12,12 @@ enum XboxCompanionCopy {
     static let connectionsTitle = "Friends and following"
 }
 
+enum XboxBrand {
+    static let green = Color(red: 16 / 255, green: 124 / 255, blue: 16 / 255)
+    static let lightGreen = Color(red: 82 / 255, green: 176 / 255, blue: 67 / 255)
+    static let gradient = LinearGradient(colors: [lightGreen, green], startPoint: .topLeading, endPoint: .bottomTrailing)
+}
+
 struct AccountHubDestinations: View {
     @EnvironmentObject private var state: AppState
 
@@ -300,9 +306,130 @@ struct XboxAchievementsView: View {
     }
 }
 
+struct XboxAccountSummaryView: View {
+    @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var session: LiveSession
+    @ObservedObject var companion: XboxCompanionController
+
+    var body: some View {
+        VStack(spacing: 18) {
+            if let cache = companion.cache {
+                if let profile = cache.profile.value, cache.profile.available {
+                    VStack(spacing: 6) {
+                        if let reference = XboxCompanionArtwork.reference(profile.avatarURL) {
+                            CatalogArtworkView(reference: reference, status: .available)
+                                .frame(width: 72, height: 72).clipShape(Circle())
+                                .overlay(Circle().strokeBorder(XboxBrand.gradient, lineWidth: 3))
+                                .accessibilityLabel("\(profile.gamertag) gamer picture")
+                        }
+                        Text(profile.gamertag).font(.title3.weight(.semibold))
+                        if let score = profile.gamerscore {
+                            Label("\(score.formatted()) G", systemImage: "trophy.fill")
+                                .font(.callout.weight(.semibold)).foregroundStyle(.white)
+                                .padding(.horizontal, 12).padding(.vertical, 4)
+                                .background(XboxBrand.gradient, in: Capsule())
+                        }
+                    }
+                }
+                if let games = cache.recentGames.value, cache.recentGames.available, !games.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(games.prefix(3)) { game in
+                            HStack(spacing: 10) {
+                                if let reference = XboxCompanionArtwork.reference(game.artworkURL) {
+                                    CatalogArtworkView(reference: reference, status: .available)
+                                        .frame(width: 36, height: 36).clipShape(RoundedRectangle(cornerRadius: 6))
+                                } else {
+                                    Image(systemName: "gamecontroller").frame(width: 36, height: 36)
+                                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(game.name).font(.callout.weight(.medium)).lineLimit(1)
+                                    XboxAchievementSummary(game: game)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: 360)
+                }
+                Button("See all achievements") { state.accountDestination = .achievements }
+                    .buttonStyle(.link)
+                    .accessibilityIdentifier("xodus.account.achievements")
+                if let friends = cache.friends.value, cache.friends.available, !friends.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Friends").font(.callout.weight(.semibold))
+                        ForEach(friends.prefix(5)) { friend in
+                            HStack(spacing: 8) {
+                                if let reference = XboxCompanionArtwork.reference(friend.avatarURL) {
+                                    CatalogArtworkView(reference: reference, status: .available)
+                                        .frame(width: 24, height: 24).clipShape(Circle())
+                                } else {
+                                    Image(systemName: "person.crop.circle").foregroundStyle(.secondary)
+                                }
+                                Text(friend.gamertag).font(.callout)
+                                if let presence = friend.presenceText ?? friend.presenceState {
+                                    Text(presence).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        if friends.count > 5 {
+                            Button("See all \(friends.count.formatted()) friends") { state.accountDestination = .profile }
+                                .buttonStyle(.link)
+                        }
+                    }
+                    .frame(maxWidth: 360)
+                }
+            } else if companion.refreshing {
+                ProgressView().controlSize(.small).accessibilityLabel("Loading Xbox profile")
+            }
+            libraryAndGamePass
+        }
+        .tint(XboxBrand.green)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder private var libraryAndGamePass: some View {
+        let library = state.pcGames
+        let games = library.representedGames
+        let purchased = games.filter { $0.acquisitionKind == .purchased }.count
+        let subscription = games.filter { $0.acquisitionKind == .subscription }.count
+        let operations = state.gameOperations
+        VStack(spacing: 6) {
+            if !games.isEmpty {
+                Text("\(purchased.formatted()) purchased · \(subscription.formatted()) from Game Pass")
+                    .font(.callout)
+                    .accessibilityIdentifier("xodus.account.libraryCounts")
+            }
+            if operations.gamePassActive, let status = operations.gamePassStatus {
+                let plan = status.planLabel ?? "Game Pass"
+                let expiry = status.expiryDate.map { " · renews or ends \($0.formatted(date: .abbreviated, time: .omitted))" } ?? ""
+                Label("\(plan)\(expiry)", systemImage: "checkmark.seal.fill")
+                    .font(.callout.weight(.medium)).foregroundStyle(XboxBrand.green)
+            } else if operations.gamePassStatus?.active == false {
+                Text("No Game Pass membership").font(.callout).foregroundStyle(.secondary)
+            }
+            if operations.gamePassActive, !session.gamePassProducts.isEmpty {
+                Text("\(session.gamePassProducts.count.formatted()) PC games available with Game Pass")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
 private struct XboxAchievementSummary: View {
     let game: XboxRecentGame
     var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if let unlocked = game.achievementsUnlocked, let total = game.achievementsTotal, total > 0 {
+                ProgressView(value: Double(min(unlocked, total)), total: Double(total))
+                    .tint(XboxBrand.green).accessibilityHidden(true)
+            }
+            details
+        }
+    }
+
+    private var details: some View {
         HStack(spacing: 10) {
             if let unlocked = game.achievementsUnlocked {
                 Text(game.achievementsTotal.map { "\(unlocked.formatted()) of \($0.formatted()) achievements" }
