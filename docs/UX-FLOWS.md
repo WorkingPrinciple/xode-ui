@@ -136,6 +136,13 @@ for account/selected-edition resolution, separately from Mac package support.
 The approved Figma composition, toolbar and existing protected actions remain;
 no native walkthrough of this source correction has occurred.
 
+**Unavailable release metadata:** Detail omits the release-date row for the
+observed Microsoft catalog placeholder `9998-12-30T00:00:00.0000000Z`
+(including equivalent timestamp representations), absent/malformed timestamps
+or impossible civil dates. Other product facts remain available. This is an
+exact marker rule, not a maximum release year: historical dates and legitimate
+future dates remain visible. No replacement release date is invented.
+
 **Game Pass review affordance:** Discover and game detail keep **Check Game Pass
 access** for a PC catalogue member when subscription status is active. The shared
 frontend policy opens the existing package/compatibility/storage review only;

@@ -155,7 +155,7 @@ struct CatalogDetailFacts: Sendable {
         developer = Self.text(localized?.DeveloperName, maximum: 512)
         publisher = Self.text(localized?.PublisherName, maximum: 512)
         let scopedMarket = product.MarketProperties?.first { $0.Markets?.contains(market) == true }
-        releaseDate = scopedMarket?.OriginalReleaseDate.flatMap(GameCompatibilityResult.parseDate)
+        releaseDate = scopedMarket?.OriginalReleaseDate.flatMap(Self.parseReleaseDate)
         if let usage = scopedMarket?.UsageData?.first(where: { $0.AggregateTimeSpan == "AllTime" }),
            let average = usage.AverageRating, average.isFinite, average > 0, average <= 5,
            let count = usage.RatingCount, (1...1_000_000_000).contains(count) {
@@ -196,6 +196,24 @@ struct CatalogDetailFacts: Sendable {
         }
         requirements = hardware.count == 1 ? hardware.first : nil
         requirementsVaryByEdition = hardware.count > 1
+    }
+
+    private static let unavailableReleaseDate =
+        GameCompatibilityResult.parseDate("9998-12-30T00:00:00.0000000Z")
+
+    private static func parseReleaseDate(_ value: String) -> Date? {
+        guard value.utf8.count <= 64,
+              value.range(of: #"^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$"#,
+                          options: .regularExpression) != nil else { return nil }
+        let parts = value.prefix(10).split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3, parts[0] > 0, (1...12).contains(parts[1]) else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        guard let first = calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: 1)),
+              let days = calendar.range(of: .day, in: .month, for: first), days.contains(parts[2]),
+              let date = GameCompatibilityResult.parseDate(value) else { return nil }
+        // Exact public catalog placeholder observed for Minecraft: Java Edition, not a future-year limit.
+        return date == unavailableReleaseDate ? nil : date
     }
 
     private static func text(_ value: String?, maximum: Int, multiline: Bool = false) -> String? {

@@ -4,6 +4,48 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## Unavailable catalog release date (source candidate, 2026-10-18)
+
+Parent captured **Release date / 30 Dec 9998** in Minecraft: Java Edition
+detail on signed `2bc5c6b`. Its text artifact did not bind the raw response or
+requested market. A separately authorized, unauthenticated public lookup used
+the source's native defaults US/en-US:
+`https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PJ8266BHFWN&market=US&languages=en-US`.
+It returned product `9PJ8266BHFWN`, market `["US"]`, and
+`OriginalReleaseDate: "9998-12-30T00:00:00.0000000Z"`. The response is retained
+in source-session artifacts as `minecraft-public-us-release-date.json`.
+This independently corroborates the exact displayed marker, not the identity
+of the earlier native cached response. No broader catalog sentinel range is
+claimed.
+
+Only `CatalogDetailFacts` release-field parsing changes. The exact parsed
+marker instant becomes unavailable, including equivalent zero-fraction/offset
+representations. Invalid timestamp syntax, impossible days and hour 24 are
+omitted instead of Foundation's silent civil-date normalization. The shared
+script-receipt date parser, requested-market selection, timezone formatting,
+and all other product facts are unchanged. No date cap, guessed replacement
+date or title-specific exception is introduced. The existing optional-date
+view branch consequently omits the row.
+
+The actual detail metadata regressions were run before the fix against
+`2bc5c6b` behavior: **211 preview checks, 6 failures**, reproducing the exact
+marker and normalized invalid-date cases. After the fix,
+`swift build --jobs 4 --product XodusPreview` passed and
+`swift run --skip-build XodusPreview --self-check` passed **211 checks,
+zero failures**. Eighteen added checks cover absent/malformed/invalid/leap
+dates, the exact marker and equivalent offsets, unaffected neighboring
+far-future dates (including year 9999), historical and ordinary future dates,
+and preservation of other metadata.
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` and `git diff --check` passed. Logs are retained as
+`release-date-*.log` in source-session artifacts.
+
+No ordinary app/account/cache/game/VM operation, packaging, signing, install,
+activation, push or CI action was performed. Parent owns native confirmation
+and the subsequent exact-source shipping gate. The separate `2bc5c6b` CI run
+does not establish acceptance of this follow-up; local full-Xcode XCTest
+availability and external distribution/provenance holds are unchanged.
+
 ## Optional private cooperative game handoff (source candidate, 2026-10-18)
 
 The existing launch token owns the launcher shell, not a Wine GUI process.

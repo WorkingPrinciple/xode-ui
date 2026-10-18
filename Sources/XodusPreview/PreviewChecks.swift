@@ -281,6 +281,32 @@ enum PreviewChecks {
                   "D3 About prefers the general product description and never substitutes SKU copy")
             check(facts.publisher == "Original Publisher" && facts.releaseDate != nil,
                   "D3 public publisher/release metadata accepts the observed seven-digit ISO date shape")
+            func releaseFacts(_ release: String?) throws -> CatalogDetailFacts {
+                let market = CatalogDetailPayload.Product.Market(Markets: ["US"],
+                    OriginalReleaseDate: release, UsageData: product.MarketProperties?.first?.UsageData,
+                    ContentRatings: product.MarketProperties?.first?.ContentRatings)
+                let candidate = CatalogDetailPayload.Product(ProductId: product.ProductId,
+                    LocalizedProperties: product.LocalizedProperties, MarketProperties: [market],
+                    DisplaySkuAvailabilities: product.DisplaySkuAvailabilities)
+                return try CatalogDetailFacts(product: candidate, images: [], market: "US", language: "en-US")
+            }
+            for value: String? in [nil, "", "not-a-date", "2026-02-30T00:00:00Z", "2025-02-29T00:00:00Z",
+                                   "2026-13-01T00:00:00Z", "2026-01-02T24:00:00Z",
+                                   "9998-12-30T00:00:00.0000000Z", "9998-12-30T00:00:00Z",
+                                   "9998-12-30T01:00:00+01:00"] {
+                let unavailable = try releaseFacts(value)
+                check(unavailable.releaseDate == nil && unavailable.publisher == facts.publisher
+                      && unavailable.description == facts.description
+                      && unavailable.storeRating?.count == facts.storeRating?.count,
+                      "Release metadata omits unavailable/invalid/exact catalog marker \(value ?? "absent") without dropping other facts")
+            }
+            for value in ["1985-09-13T00:00:00Z", "2024-02-29T00:00:00.0000000Z",
+                          "2099-12-31T12:30:00Z", "9998-12-29T00:00:00Z",
+                          "9998-12-31T00:00:00Z", "9999-01-01T00:00:00Z",
+                          "9998-12-30T12:00:00Z", "2026-01-02T01:00:00+01:00"] {
+                check(try releaseFacts(value).releaseDate == GameCompatibilityResult.parseDate(value),
+                      "Release metadata preserves exact historical/future/leap/offset date \(value) without a year cap")
+            }
             check(facts.storeRating?.average == 4.5 && facts.storeRating?.count == 20,
                   "Store rating uses only actual all-time average/count, never a short-period score or Metascore")
             check(facts.contentRating?.label == "ESRB Teen" &&
