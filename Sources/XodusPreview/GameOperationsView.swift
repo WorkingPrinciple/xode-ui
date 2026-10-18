@@ -6,34 +6,40 @@ struct GameServiceAccountView: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject var library: PCGamesController
 
+    var accountStatusText: String {
+        if operations.serviceSignOutConfirmed, operations.serviceStatus?.signedIn == false {
+            return "Signed out of Xbox in X Ode"
+        }
+        if operations.serviceAccountNeedsVerification { return "Xbox account hasn't been confirmed" }
+        if operations.serviceStatus?.signedIn == true { return "Xbox sign-in confirmed" }
+        return operations.serviceStatus == nil ? "Xbox sign-in hasn't been checked" : "Xbox sign-in couldn't be confirmed"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            AccountTierView(entitlements: operations.accountEntitlements(library: library))
-            GroupBox("Microsoft PC games") {
+            GroupBox("Your game library") {
                 VStack(alignment: .leading, spacing: 10) {
                     if library.hasSavedSignIn {
                         HStack {
-                            Label("PC Library sign-in saved", systemImage: "checkmark.circle")
+                            Label("Microsoft sign-in saved for your library", systemImage: "checkmark.circle")
                             Spacer()
                         }
-                        Text("Use Sign out of X Ode below to remove this app's saved library sign-in.")
-                            .font(.callout).foregroundStyle(.secondary)
                     } else {
-                        Text("Use the main Microsoft sign-in to load your PC game library.")
+                        Text("Open Library to check your games and saved sign-in.")
                             .foregroundStyle(.secondary)
                     }
-                    Text("Library access and game-service access are checked separately.")
+                    Text("A game in your library may still need a download access check.")
                         .font(.callout).foregroundStyle(.secondary)
                 }
             }
-            GroupBox("Game access") {
+            GroupBox("Xbox access") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Label(operations.serviceLabel, systemImage: operations.serviceAccountSymbol)
+                    Label(accountStatusText, systemImage: operations.serviceAccountSymbol)
                         .accessibilityIdentifier("xodus.games.accountStatus")
-                    Text("Required for package checks, downloads and gameplay.")
+                    Text("X Ode checks Xbox access for downloads and Xbox account features. A saved sign-in doesn't guarantee a game can download.")
                         .font(.callout).foregroundStyle(.secondary)
                     if operations.serviceAccountNeedsVerification {
-                        Text("Your game sign-in is saved, but its Xbox account hasn't been confirmed. Verify it to load Profile, Achievements and My Consoles.")
+                        Text("Confirm your Xbox account to load your profile, achievements and consoles.")
                             .font(.callout).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("xodus.games.verifyExplanation")
@@ -42,8 +48,8 @@ struct GameServiceAccountView: View {
                         Button("Check status") { operations.refreshService() }
                             .disabled(operations.serviceBusy || operations.setupRepairing)
                             .accessibilityIdentifier("xodus.games.checkSignIn")
-                        if let title = operations.serviceSignInActionTitle {
-                            Button(title) { operations.signInForGames() }
+                        if operations.serviceSignInActionTitle != nil {
+                            Button(operations.serviceAccountNeedsVerification ? "Verify Xbox account" : "Continue with Microsoft") { operations.signInForGames() }
                                 .disabled(!operations.canSignIn)
                                 .accessibilityIdentifier("xodus.games.signIn")
                         }
@@ -56,12 +62,15 @@ struct GameServiceAccountView: View {
                         Text("Finish signing in in the Microsoft window.").foregroundStyle(.secondary)
                     }
                     if let error = operations.serviceError {
-                        Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                        Label("Xbox access couldn't be confirmed. Check status to try again, or open Technical details.", systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("xodus.games.signInError")
-                        if operations.serviceLog != nil {
-                            Button("Show log") { operations.showServiceLog() }
-                                .accessibilityIdentifier("xodus.games.signInLog")
+                        DisclosureGroup("Technical details") {
+                            Text(error).fixedSize(horizontal: false, vertical: true)
+                            if operations.serviceLog != nil {
+                                Button("Show log") { operations.showServiceLog() }
+                                    .accessibilityIdentifier("xodus.games.signInLog")
+                            }
                         }
                     }
                 }
@@ -70,7 +79,10 @@ struct GameServiceAccountView: View {
                 GamePassAccountView(operations: operations, library: library)
                     .padding(.top, 2)
             }
-            GroupBox("Xodus setup") {
+            DisclosureGroup("Library and subscription details") {
+                AccountTierView(entitlements: operations.accountEntitlements(library: library))
+            }
+            DisclosureGroup("Troubleshoot game setup") {
                 GameSetupView(operations: operations, showsTitle: false)
                     .padding(.top, 2)
             }
@@ -134,7 +146,7 @@ struct AccountTierView: View {
     let entitlements: AccountEntitlements
 
     var body: some View {
-        GroupBox("Account tier") {
+        GroupBox("Library access") {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Text(entitlements.summary).font(.headline)
@@ -152,14 +164,14 @@ struct AccountTierView: View {
                     }
                 }
                 if entitlements.gamePassPlanUndetermined {
-                    Text("Your PC library contains a current subscription grant. Its provider and plan aren't identified by the collection.")
+                    Text("Your library includes subscription games, but the subscription plan hasn't been confirmed.")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 if !entitlements.accessIsCurrent, entitlements.signedIn {
-                    Text("Load or refresh your PC library to verify account access. Saved sign-in and stale library data don't establish a tier.")
+                    Text("Refresh Library to check your current game access.")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 } else if entitlements.signedIn, entitlements.gamePass == .unknown {
-                    Text("The PC-library account's subscription status isn't verified. The separate game-service probe doesn't identify the same account.")
+                    Text("Your library's subscription status hasn't been confirmed. The Xbox access check may use a different account.")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Text("Owned games stay in your library. Game Pass access requires an active subscription and is checked separately.")

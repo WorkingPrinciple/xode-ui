@@ -276,6 +276,9 @@ enum GameOperationChecks {
         check(operations.serviceSignInActionTitle == "Sign in for games"
               && operations.serviceLabel == "Sign in for games" && !operations.serviceAccountNeedsVerification,
               "XO-018: Signed-out game service offers normal sign-in, not identity verification")
+        check(GameServiceAccountView(operations: operations, library: PCGamesController()).accountStatusText
+              == "Xbox sign-in couldn't be confirmed",
+              "Plain Xbox status does not treat an unconfirmed backend boolean as proven credential removal")
         operations.signInForGames()
         await operations.waitForService()
         if let error = operations.serviceError { print("NEUTRAL service-signin failure: \(error)") }
@@ -300,6 +303,8 @@ enum GameOperationChecks {
         check(serviceHost.window == nil && operations.serviceSignInActionTitle == "Verify game account"
               && !operations.serviceBusy,
               "XO-018: Shared Account service presentation lays out detached without starting verification")
+        check(serviceView.accountStatusText == "Xbox account hasn't been confirmed",
+              "Plain Xbox status distinguishes saved sign-in from a confirmed account without claiming download access")
         try privateFile(verificationFails, "Neutral refused verification.")
         operations.signInForGames()
         check(operations.serviceBusy && operations.serviceSigningIn && installed.serviceSignInActive

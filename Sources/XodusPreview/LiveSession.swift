@@ -204,6 +204,48 @@ final class LiveSession: ObservableObject {
             && (accountStatusCurrent || (accountStatusChecking && confirmedBeforeStatusRead))
     }
     var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
+    var accountJourneyTitle: String {
+        if signingOut { return "Signing out of X Ode" }
+        if connectionTransitioning || accountStatusChecking { return "Checking your sign-in" }
+        if signInPending { return "Finish signing in" }
+        if accountError != nil { return "Your account needs attention" }
+        if hasConfirmedSignIn { return "Signed in to X Ode" }
+        if currentCredentialState == .signedOut {
+            return appSignOutComplete ? "Signed out of X Ode" : "Not signed in to the app"
+        }
+        if needsAccountDisconnect { return "Sign-in needs reconnecting" }
+        return "Sign-in hasn't been checked"
+    }
+    var accountJourneyMessage: String {
+        if signingOut { return "Removing X Ode's saved sign-ins from this Mac. Please wait." }
+        if connectionTransitioning || accountStatusChecking { return "Checking whether your Microsoft sign-in is saved." }
+        if failedAccountAction == .signOut, accountError != nil {
+            return "Sign-out didn't finish. Some sign-in details may remain on this Mac. Choose Check status before trying again."
+        }
+        if !isReady {
+            return "X Ode couldn't connect to check your sign-in. Try again. If it still doesn't connect, check Technical details."
+        }
+        if signInPending { return "Continue in the Microsoft window, or choose Cancel sign-in." }
+        if accountError != nil {
+            return accountStatusError == .credentialStoreUnavailable
+                ? "X Ode couldn't read your saved sign-in. If macOS asks for Keychain access, respond in that window, then choose Check status."
+                : "Your sign-in couldn't be confirmed. Choose Check status to try again."
+        }
+        if hasConfirmedSignIn {
+            return "Your Microsoft sign-in is saved. Find your games in Library. Download access is checked when you choose Install."
+        }
+        if needsAccountDisconnect {
+            return "Your saved sign-in needs reconnecting. Choose Sign out of X Ode, then sign in again."
+        }
+        if appSignOutComplete, currentCredentialState == .signedOut {
+            return "You're signed out of X Ode on this Mac. Your games and saves are still here."
+        }
+        if canStartWelcomeSignIn {
+            return "Sign in with Microsoft to see your games. You can also remove sign-ins saved by X Ode on this Mac."
+        }
+        return "X Ode isn't ready to sign you in. Choose Check status, or open Technical details for help."
+    }
+    static let signOutConfirmationMessage = "Remove X Ode's saved sign-ins from this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, X Ode will tell you which step failed."
     var welcomeMessage: String {
         if signingOut { return "Signing out of X Ode. Waiting for saved sign-in removal to finish." }
         if failedAccountAction == .signOut, let accountError { return accountError }

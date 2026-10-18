@@ -41,7 +41,7 @@ struct LiveAccountView: View {
                         VStack(alignment: .leading, spacing: 5) {
                             Text("X Ode account").font(.title2.bold())
                                 .accessibilityIdentifier("xodus.account.status")
-                            Text(session.hasConfirmedSignIn ? "Signed in to X Ode" : session.accountNoticeTitle)
+                            Text(session.accountJourneyTitle)
                                 .font(.headline).foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -50,21 +50,12 @@ struct LiveAccountView: View {
                                 .accessibilityLabel(session.signInPending ? "Sign-in in progress" : "Checking account status")
                         }
                     }
-                    Text(session.accountMessage)
+                    Text(session.accountJourneyMessage)
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("xodus.account.statusExplanation")
-                    GroupBox("Xbox game-service account") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label(state.gameOperations.serviceLabel,
-                                  systemImage: state.gameOperations.serviceAccountSymbol)
-                            Text("Gameplay, Profile, Achievements and My Consoles use this Xbox account. \(XboxCompanionCopy.accountScope)")
-                                .font(.callout).foregroundStyle(.secondary)
-                        }
-                        .padding(.top, 2)
-                    }
                     AccountHubDestinations()
                     GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
-                    GroupBox("Downloaded artwork") {
+                    DisclosureGroup("Downloaded artwork") {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Xodus keeps a bounded cache of public covers, screenshots and the last \(TrailerCache.limit) trailers you've watched.")
                                 .font(.callout).foregroundStyle(.secondary)
@@ -99,38 +90,35 @@ struct LiveAccountView: View {
                         .padding(.top, 2)
                     }
                     Divider()
-                    if let error = session.accountError {
-                        Label(error, systemImage: "exclamationmark.circle")
-                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("xodus.account.error")
-                    }
-                    if let summary = session.accountFailureSummary {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("Last sign-in error").font(.headline)
-                            Text(summary).fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("xodus.account.failureSummary")
-                        }
-                        .foregroundStyle(.secondary).textSelection(.enabled)
-                    }
-                    if let details = session.accountFailureDetails {
-                        DisclosureGroup("Sign-in details") {
-                            Text(details).fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("xodus.account.failureDetails")
-                            if let observation = session.accountFailureObservation {
-                                Text(observation).fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("xodus.account.failureObservation")
-                            }
-                        }
-                        .foregroundStyle(.secondary).textSelection(.enabled)
-                    }
-                    if session.isReady && !session.supports(.authBegin) {
-                        Text("Sign-in isn't available in this build.").foregroundStyle(.secondary)
-                    }
-                    DisclosureGroup("Account info") {
+                    DisclosureGroup("Technical details") {
                         VStack(alignment: .leading, spacing: 12) {
+                            Text(session.accountMessage)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let error = session.accountError {
+                                Label(error, systemImage: "exclamationmark.circle")
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("xodus.account.error")
+                            }
+                            if let summary = session.accountFailureSummary {
+                                Text("Last sign-in error").font(.headline)
+                                Text(summary).fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("xodus.account.failureSummary")
+                            }
+                            if let details = session.accountFailureDetails {
+                                Text(details).fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("xodus.account.failureDetails")
+                                if let observation = session.accountFailureObservation {
+                                    Text(observation).fixedSize(horizontal: false, vertical: true)
+                                        .accessibilityIdentifier("xodus.account.failureObservation")
+                                }
+                            }
+                            if session.isReady && !session.supports(.authBegin) {
+                                Text("Sign-in isn't available in this build.")
+                            }
                             Text(session.accountExplanation)
-                            Text("Credentials stay in the native Keychain.")
+                            Text("Saved sign-ins are protected by macOS Keychain.")
                             Text("macOS may ask for Keychain access again after an app update. Respond in its permission window; a new Microsoft sign-in is not required to check saved sign-in.")
+                            Text(XboxCompanionCopy.accountScope)
                         }
                         .foregroundStyle(.secondary).textSelection(.enabled).padding(.top, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -201,7 +189,7 @@ struct LiveAccountView: View {
             Button("Sign out of X Ode", role: .destructive) { Task { await state.signOut(session: session) } }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("X Ode first signs out its game service, then removes its saved PC-library sign-in and disconnects its launcher profile. If any step fails, some sign-in data may remain and X Ode reports where it stopped. Game files, saves, other apps and Microsoft browser sessions are unchanged.")
+            Text(LiveSession.signOutConfirmationMessage)
         }
     }
 

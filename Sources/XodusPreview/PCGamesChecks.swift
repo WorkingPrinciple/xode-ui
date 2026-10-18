@@ -142,6 +142,8 @@ enum PCGamesChecks {
             check(session.currentCredentialState == .signedOut && library.hasSavedSignIn
                   && state.gameOperations.serviceStatus?.signedIn == true && state.canSignOut(session: session),
                   "Confirmed signed-out launcher with saved library and game sign-ins admits the UI's consolidated removal action")
+            check(session.accountJourneyTitle == "Not signed in to the app",
+                  "App-only signed-out copy does not claim remaining Xbox and library sign-ins were removed")
         }
         try installed.reserveMutation(gameID: nil)
         let heldResult = await state.signOut(session: session)
@@ -171,6 +173,10 @@ enum PCGamesChecks {
               && session.accountError?.contains("launcher profile was not disconnected") == true
               && !installed.accountDisconnecting && !session.signingOut,
               "Broker deletion failure never claims launcher logout and releases joined sign-out holds")
+        check(session.accountJourneyMessage.contains("Sign-out didn't finish")
+              && session.accountJourneyMessage.contains("Some sign-in details may remain")
+              && session.accountError?.contains("launcher profile was not disconnected") == true,
+              "Plain-language partial sign-out keeps its next action while retaining exact failure detail")
         await session.refreshAccount()
         check(session.hasConfirmedSignIn == !launcherAlreadySignedOut && state.canSignOut(session: session),
               "A failed app sign-out requires fresh status rather than pretending the launcher profile was removed")
@@ -223,6 +229,10 @@ enum PCGamesChecks {
               && session.currentCredentialState == .signedOut && !session.hasConfirmedSignIn
               && session.welcomeMessage.contains("signed out of X Ode on this Mac"),
               "Recreated library and fresh launcher status remain signed out after all three confirmed removals")
+        check(session.accountJourneyTitle == "Signed out of X Ode"
+              && session.accountJourneyMessage == "You're signed out of X Ode on this Mac. Your games and saves are still here."
+              && LiveSession.signOutConfirmationMessage.contains("other apps and Microsoft browser sessions stay unchanged"),
+              "Confirmed sign-out copy is concise and keeps the before-action privacy boundary explicit")
     }
 
     static func run(check: (Bool, String) -> Void) async throws {

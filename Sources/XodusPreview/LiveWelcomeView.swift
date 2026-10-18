@@ -19,12 +19,9 @@ struct LiveWelcomeView: View {
                     .accessibilityHidden(true)
                 Text("Welcome to X Ode").font(.largeTitle.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text(session.welcomeMessage)
+                Text(session.accountJourneyMessage)
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.welcome.status")
-                Text("Sign out of X Ode removes this app's game-service, PC-library and launcher sign-in only when each step is confirmed. A matching game runtime is required. Other apps and Microsoft browser sessions are unaffected.")
-                    .font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
                 if session.connectionTransitioning || session.accountBusy {
                     ProgressView("Checking sign-in").controlSize(.small)
                 }
@@ -44,6 +41,13 @@ struct LiveWelcomeView: View {
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                DisclosureGroup("Technical details") {
+                    Text(session.welcomeMessage)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Sign-out removes X Ode's game, library and app sign-ins only after each removal is confirmed. It requires a compatible game runtime.")
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.callout).foregroundStyle(.secondary)
             }
         } actions: {
             AccountActionsLayout(layoutDirection: layoutDirection) {
@@ -53,7 +57,7 @@ struct LiveWelcomeView: View {
                         .disabled(session.accountBusy)
                         .accessibilityIdentifier("xodus.welcome.cancel")
                 } else {
-                    Button("Try again") { Task { await session.prepareWelcome() } }
+                    Button("Check status") { Task { await session.prepareWelcome() } }
                         .disabled(session.connectionTransitioning || session.accountBusy)
                         .accessibilityIdentifier("xodus.welcome.retry")
                     Button("Sign out of X Ode") { interaction.confirmingSignOut = true }
@@ -76,7 +80,7 @@ struct LiveWelcomeView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("X Ode first signs out its game service, then removes its saved PC-library sign-in and disconnects its launcher profile. If any step fails, some sign-in data may remain and X Ode reports where it stopped. Game files, saves, other apps and Microsoft browser sessions are unchanged.")
+            Text(LiveSession.signOutConfirmationMessage)
         }
         .accessibilityIdentifier("xodus.welcome")
     }

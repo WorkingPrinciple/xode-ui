@@ -194,11 +194,17 @@ enum NativeChecks {
                   && expired.accountExplanation.contains("engine is connected")
                   && expired.accountExplanation.contains("has not been checked"),
                   "HELLO and advertised auth support display connected-but-unchecked, never saved account evidence")
+            check(expired.accountJourneyTitle == "Sign-in hasn't been checked"
+                  && expired.accountJourneyMessage.contains("Check status"),
+                  "Unchecked account copy names the next action without presenting saved sign-in")
             await expired.refreshAccount()
             check(!expired.hasConfirmedSignIn, "Expired credentials keep games behind welcome")
             check(expired.authentication?.state == .expired && expired.needsAccountDisconnect
                   && expired.canDisconnectAccount && !expired.canSignIn,
                   "Expired profile exposes confirmed disconnect recovery, not rejected sign-in")
+            check(expired.accountJourneyTitle == "Sign-in needs reconnecting"
+                  && expired.accountJourneyMessage == "Your saved sign-in needs reconnecting. Choose Sign out of X Ode, then sign in again.",
+                  "Expired account copy explains the existing sign-out then sign-in recovery in plain language")
             await expired.signOut()
             check(!expired.hasConfirmedSignIn && !expired.canStartWelcomeSignIn,
                   "Signed-out status and advertised capabilities cannot bypass missing helper admission")
@@ -281,6 +287,10 @@ enum NativeChecks {
             await saved.prepareWelcome()
             check(saved.hasConfirmedSignIn && saved.nativeSignInHostAdmitted,
                   "Welcome preparation restores only confirmed saved status through the admitted neutral pair")
+            check(saved.accountJourneyTitle == "Signed in to X Ode"
+                  && saved.accountJourneyMessage.contains("Find your games in Library")
+                  && saved.accountJourneyMessage.contains("Download access is checked when you choose Install"),
+                  "Signed-in account copy offers Library without promising download or gameplay readiness")
             check(saved.currentCredentialState == .credentialPresent
                   && saved.accountSymbol == "person.crop.circle.fill" && saved.canDisconnectAccount,
                   "Neutral saved profile initially displays the current credential result")
@@ -316,6 +326,9 @@ enum NativeChecks {
             check(!saved.hasConfirmedSignIn && saved.canStartWelcomeSignIn,
                   "Explicit sign-out returns to welcome and admits a new sign-in only with the bound helper")
             await saved.beginSignIn()
+            check(saved.accountJourneyTitle == "Finish signing in"
+                  && saved.accountJourneyMessage == "Continue in the Microsoft window, or choose Cancel sign-in.",
+                  "Pending account copy directs the user to the real Microsoft window and cancellation")
             check(!saved.hasConfirmedSignIn && !saved.canStartWelcomeSignIn,
                   "Welcome sign-in immediately fences duplicate activation and keeps games hidden")
             try await wait { saved.authentication?.flow?.state == .completed }

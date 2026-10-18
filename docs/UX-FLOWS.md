@@ -105,6 +105,16 @@ stages and reconstructed saved-state clients without actual credential deletion.
 Live restart, logout, consent and install acceptance remain separate runtime
 qualification; this does not establish a unified Microsoft session.
 
+The normal account flow uses short, gamer-readable status and one next step:
+continue in Microsoft's window, open Library, check status, or reconnect an expired
+sign-in. Saved sign-in never promises that a game can download or run. Welcome
+and Account retain **Sign in to X Ode** / **Sign out of X Ode** and the explicit
+sign-out confirmation. Detailed account failures, identity scope and setup
+troubleshooting are collapsed instead of explaining internal account plumbing
+before the user can act. A partial sign-out remains an attention state with
+Check status as recovery; its exact stopped stage remains in Technical details.
+These are presentation changes only, not new authorization or consent behavior.
+
 ## Freeze correction: operation feedback and library retry (source candidate)
 
 **Single-entry download recovery (18 October, source candidate):** The main
