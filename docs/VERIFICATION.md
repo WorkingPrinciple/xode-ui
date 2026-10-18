@@ -4,6 +4,91 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## Optional private cooperative game handoff (source candidate, 2026-10-18)
+
+The existing launch token owns the launcher shell, not a Wine GUI process.
+Shell ancestry, process names and empty/nonempty bundle identifiers are not
+accepted ownership substitutes. The optional native consumer instead requires
+the separately implemented private backend's live current-run socket
+attestation, returning exactly PID/start seconds/start microseconds.
+
+The opt-in input is an app-signed resource capsule at
+`Contents/Resources/LaunchAssociation`: `manifest.json`, standalone stdlib-only
+`adapter.py` and source-built `peer.dylib`. Manifest version 1 contains `enabled`,
+`adapterSHA256`, `peerSHA256`, and `brokerSHA256`. No capsule preserves ordinary
+Play unchanged. A present capsule requires valid app resource/code signature
+and pinned payload hashes; invalid input gives only **Game foreground handoff
+unavailable.**, without blocking the existing launch. Keep `enabled:false`
+until independent actual-Wine association proof and explicit private capsule
+admission. No settings toggle, installed runtime modification or capsule is
+provided by this source candidate.
+
+The broker is fixed to the standard CrossOver hosted-application wineserver
+path, SHA256 `f9c4ed146c7d6dfc94334255907d4e0658218585085ca2107a5181b4deb474fc`,
+CodeWeavers team `9C6B7X7Z8E`, identifier
+`com.codeweavers.CrossOver.bin.wineserver`. This is a pinned backend
+co-owner exception, not native discovery of a game or permission to select a
+broker as the GUI. Updated broker bytes require separate qualification.
+
+At explicit Play the app generates a fresh 32-byte random nonce and owner-only
+0700 root bound to the existing run ID/token. Only its owned launcher inherits
+the private options; the backend must remove them before creating the game.
+The adapter receives the nonce through its dedicated environment variable,
+never command-line arguments or logs. Each owned command has a three-second
+bound and a 1024-byte output limit, with a 120-second total
+lifecycle bound.
+Cancellation closes only that exact owned consumer. The bridge owns its live
+descriptor and run directory; native cleanup does not delete them.
+
+Before any request, a typed C/libproc check verifies the same effective-user
+PID/start instance. The exact PID must have an on-screen ordinary-layer usable
+window and a finished, nonterminated `NSRunningApplication`; an empty bundle
+identifier is allowed. Only an active X Ode donor can call ordinary
+`yieldActivation(to:)` then `activate(options:[])`, once per launch.
+App deactivation permanently abandons that handoff, including during launch
+preparation; Stop, termination, shell exit and run replacement fence pending
+callbacks. No force activation, AX, input automation, title matching or focus
+reclamation is used. An accepted activation request is not foreground proof.
+
+Source checks and actual-Wine/signed-native integration are separate gates.
+Parent owns the matched backend/SDK capsule and actual foreground acceptance.
+Controlled packaging accepts explicit `--launch-association-capsule PATH`:
+it validates exactly the three pinned files, stages them before app signing,
+and seals their identities in paired inputs/final package verification.
+No option means no capsule. This does not change the existing signed-CLI reuse
+or frozen credential-broker path. The adapter invocation includes
+`--run-nonce-env XODUS_LAUNCH_RUN_NONCE`, `--trusted-broker-path` and
+`--expected-broker-sha256`; only the owned launcher receives
+`XODUS_LAUNCH_TRUSTED_BROKER_PATH` and
+`XODUS_LAUNCH_EXPECTED_BROKER_SHA256` alongside the four private run options.
+
+`swift build --jobs 4 --product XodusPreview` passed;
+`swift run --skip-build XodusPreview --self-check` passed 193 checks;
+`swift run --skip-build XodusPreview --live-check` passed 1224 checks,
+zero failures. New checks execute the actual isolated adapter-command path with
+an owned neutral process and typed kernel start identity, not a game or backend
+registration. They cover private nonce/env arguments, stale PID, extra/duplicate
+identity, oversized/error output, once-only dispatch, current-run replacement,
+Stop/termination cancellation, active-donor loss and joined command retirement.
+The real AppKit/window readiness path rejects the attested neutral sleep process
+without a GUI. The successful request path is injected, so no activation is
+performed or claimed. Absent/unsigned capsule admission is also exercised.
+
+`XODUS_SHIPPING=1 swift build --jobs 4 --scratch-path .build/shipping -c release
+--product XodusPreview` passed; `PYTHONDONTWRITEBYTECODE=1 python3
+tools/check_shipping_pair.py` passed 38 checks, including nine new neutral
+capsule admission/staging/tamper checks. `sh -n tools/build_app.sh` and
+`git diff --check` passed. The C shim also passed
+`xcrun clang -Wall -Wextra -Werror -fsyntax-only -I
+Sources/XodusProcessIdentity/include Sources/XodusProcessIdentity/ProcessIdentity.c`.
+The release executable rejected all six existing development arguments with
+exit 64 and had no preview resource bundle. Full local shipping XCTest still requires unavailable
+full Xcode; no substitute, waiver or remote CI run was performed.
+Build/check logs are retained as `foreground-verified-*.log` in this source
+session's artifacts. The release binary has no configured capsule and is only
+an integration candidate. Parent-reported Wine broker/SDK association proofs
+are separate from these source tests and from actual game foreground acceptance.
+
 ## XO-022 operation feedback ownership (source candidate)
 
 Parent reproduced an earlier Minecraft Launcher preparation refusal appearing

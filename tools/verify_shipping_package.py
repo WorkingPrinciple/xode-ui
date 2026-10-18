@@ -9,6 +9,7 @@ import struct
 import sys
 import tarfile
 from shipping_pair import hex_value, owned_bytes, require, swift_pins, unique_object
+from launch_association_capsule import verify_capsule
 
 
 def main():
@@ -64,6 +65,12 @@ def main():
             and info.get("LSMinimumSystemVersion") == "14.0",
             "Unexpected packaged executable/deployment baseline")
     resources = app / "Contents/Resources"
+    capsule = resources / "LaunchAssociation"
+    if "privateLaunchAssociation" in record:
+        require(verify_capsule(capsule) == record["privateLaunchAssociation"],
+                "Private capsule differs from explicit packaging input")
+    else:
+        require(not capsule.exists() and not capsule.is_symlink(), "Unreviewed private capsule")
     require(not (resources / "XodusAppFoundation_XodusPreview.bundle").exists()
             and not (resources / "XodusAppFoundation_XodusAuthHost.bundle").exists(),
             "Shipping package contains preview/private check resources")

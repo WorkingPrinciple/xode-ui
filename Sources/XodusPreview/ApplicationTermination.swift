@@ -19,8 +19,9 @@ final class ApplicationTerminationCoordinator {
         let pending = Task {
             async let runtimeClosed = runtime?.shutdownForApplicationTermination() ?? true
             async let managementClosed = session?.disconnect() ?? true
-            let results = await (runtimeClosed, managementClosed)
-            return results.0 && results.1
+            async let foregroundClosed = installedGames?.shutdownForegroundHandoff() ?? true
+            let results = await (runtimeClosed, managementClosed, foregroundClosed)
+            return results.0 && results.1 && results.2
         }
         operation = pending
         let closed = await pending.value

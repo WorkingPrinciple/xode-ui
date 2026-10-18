@@ -105,6 +105,15 @@ Game detail says **Installed on this Mac** for a registered installation.
 Registration alone is not readiness: existing package, launcher and runner
 validation and their explicit failures still govern Play.
 
+An independently admitted private launch-association capsule may request one
+ordinary foreground handoff after explicit Play. It requires live current-run
+PID/start-instance attestation and a usable window of that exact PID, not
+launcher ancestry or title/process-name guessing. X Ode must remain active;
+switching apps permanently abandons the request. Stop, launch failure and
+termination cancel it. This optional source path does not add a setting, force
+activation, inject input or claim foreground success from an accepted request.
+Without the capsule, existing Play behavior is unchanged.
+
 These corrections have synthetic controller/presentation and detached native
 layout coverage, not a new live all-window, account, download or gameplay
 acceptance claim.

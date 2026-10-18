@@ -35,7 +35,9 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var availableVersions: [String: String] = [:]
     @Published var serviceSignInActive = false
     @Published var runtimeRepairActive = false
-    var applicationTerminating = false
+    var applicationTerminating = false {
+        didSet { if applicationTerminating { foregroundHandoff?.cancel() } }
+    }
     private let store: InstalledGameStore
     private let launchingDuration: Duration
     private let defaultEngine: @Sendable () -> RuntimeProviderKind?
@@ -50,6 +52,8 @@ final class InstalledGamesController: ObservableObject {
     private var sessionPersistence: Task<Void, Never>?
     private var runIDs: [UUID: String] = [:]
     private let logDirectory: URL
+    private var foregroundHandoff: LaunchAssociationHandoff?
+    private var foregroundCleanup: Task<Bool, Never>?
 
     var continuingGame: InstalledGame? {
         games.filter { $0.lastPlayedAt != nil && launchableIDs.contains($0.id) }
@@ -195,6 +199,17 @@ final class InstalledGamesController: ObservableObject {
         playErrors[game.id] = nil
         playLogs[game.id] = nil
         playNotices[game.id] = nil
+        let runID = Self.runID()
+        runIDs[game.id] = runID
+        foregroundHandoff?.cancel()
+        foregroundHandoff = nil
+        do {
+            if let assets = try LaunchAssociationAssets.bundled(), NSApp.isActive {
+                let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+                    .appendingPathComponent("xodus-association-\(UUID().uuidString)")
+                foregroundHandoff = try LaunchAssociationHandoff(assets: assets, runID: runID, root: root)
+            }
+        } catch { playNotices[game.id] = LaunchAssociationHandoff.diagnostic }
         let availability = await detectAvailability()
         guard runToken == token else { return }
         let outcome = EngineRouting.decide(.init(packageType: game.packageType ?? .unknown,
@@ -207,9 +222,8 @@ final class InstalledGamesController: ObservableObject {
             return
         }
         do {
-            let environment = Self.launchEnvironment(ProcessInfo.processInfo.environment, engine: runner)
-            let runID = Self.runID()
-            runIDs[game.id] = runID
+            var environment = Self.launchEnvironment(ProcessInfo.processInfo.environment, engine: runner)
+            if let handoff = foregroundHandoff { environment.merge(handoff.environment) { _, new in new } }
             let launcher = game.launcher
             let folder = game.folder
             let child = try await Task.detached(priority: .userInitiated) { [weak self] in
@@ -242,6 +256,15 @@ final class InstalledGamesController: ObservableObject {
             guard runToken == token else { return }
             process = child.0
             launchStarted = true
+            foregroundHandoff?.start(current: { [weak self] in
+                guard let self else { return false }
+                return self.runToken == token && self.runIDs[game.id] == runID
+                    && self.runningGameID == game.id && self.process?.isRunning == true
+                    && self.stoppingGameID == nil && !self.applicationTerminating
+            }, diagnostic: { [weak self] in
+                guard let self, self.runToken == token else { return }
+                self.playNotices[game.id] = LaunchAssociationHandoff.diagnostic
+            })
             recordSession(gameID: game.id, startedAt: child.1, seconds: nil)
             playingTask = Task { [weak self] in
                 guard let self else { return }
@@ -261,6 +284,17 @@ final class InstalledGamesController: ObservableObject {
 
     @discardableResult private func finished(token: UUID, gameID: UUID, status: Int32) -> Bool {
         guard runToken == token else { return false }
+        if let handoff = foregroundHandoff {
+            handoff.cancel()
+            foregroundHandoff = nil
+            let previous = foregroundCleanup
+            foregroundCleanup = Task {
+                let previousClosed = await previous?.value ?? true
+                let closed = await handoff.cancelAndWait()
+                handoff.releaseRootAfterLauncherExit()
+                return previousClosed && closed
+            }
+        }
         playingTask?.cancel()
         playingTask = nil
         process = nil
@@ -291,6 +325,7 @@ final class InstalledGamesController: ObservableObject {
 
     func reserveStop(_ game: InstalledGame) throws -> UUID {
         guard canStop(game), let token = runToken else { throw GameScriptError.busy }
+        foregroundHandoff?.cancel()
         mutationActive = true
         mutationGameID = game.id
         stoppingGameID = game.id
@@ -344,6 +379,12 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func waitForSessionPersistence() async { await sessionPersistence?.value }
+
+    func shutdownForegroundHandoff() async -> Bool {
+        let activeClosed = await foregroundHandoff?.cancelAndWait() ?? true
+        let retiredClosed = await foregroundCleanup?.value ?? true
+        return activeClosed && retiredClosed
+    }
 
     func refreshAfterSetupRepair() async {
         guard mutationActive, runtimeRepairActive else { return }

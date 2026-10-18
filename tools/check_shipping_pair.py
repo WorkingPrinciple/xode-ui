@@ -13,6 +13,7 @@ import tarfile
 import tempfile
 from shipping_pair import COMMAND, FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, main as generate_pair, swift_pins, verify_input
 from verify_shipping_package import main as verify_package
+from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_capsule
 
 count = 0
 with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
@@ -219,4 +220,49 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         finally:
             native_schema.unlink()
             native_schema.write_bytes(original)
+    capsule = root / "private-capsule"
+    capsule.mkdir(mode=0o700)
+    adapter = b"Neutral adapter bytes. Never executed.\n"
+    peer = b"Neutral source library bytes. Never loaded.\n"
+    manifest = {"version": 1, "enabled": False,
+                "adapterSHA256": hashlib.sha256(adapter).hexdigest(),
+                "peerSHA256": hashlib.sha256(peer).hexdigest(), "brokerSHA256": BROKER_SHA256}
+    for name, data in [("adapter.py", adapter), ("peer.dylib", peer)]:
+        (capsule / name).write_bytes(data)
+        (capsule / name).chmod(0o600)
+    manifest_path = capsule / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest))
+    manifest_path.chmod(0o600)
+    approved_capsule = verify_capsule(capsule)
+    count += 1
+    for key, value in [("version", 2), ("enabled", 1), ("brokerSHA256", "0" * 64),
+                       ("adapterSHA256", "0" * 64), ("peerSHA256", "0" * 64)]:
+        bad = {**manifest, key: value}
+        manifest_path.write_text(json.dumps(bad))
+        try:
+            verify_capsule(capsule)
+            raise AssertionError("Invalid private capsule accepted")
+        except ValueError:
+            count += 1
+    manifest_path.write_text(json.dumps(manifest))
+    extra = capsule / "unreviewed.py"
+    extra.write_bytes(b"Never executed.")
+    try:
+        verify_capsule(capsule)
+        raise AssertionError("Unreviewed adapter dependency accepted")
+    except ValueError:
+        count += 1
+    extra.unlink()
+    packaged_capsule = app / "Contents/Resources/LaunchAssociation"
+    stage_capsule(capsule, packaged_capsule, stage / "paired-inputs.json")
+    assert verify_capsule(packaged_capsule) == approved_capsule
+    package_check()
+    count += 1
+    (stage / "package-receipt.json").unlink()
+    (packaged_capsule / "adapter.py").write_bytes(b"Changed after staging.")
+    try:
+        package_check()
+        raise AssertionError("Changed packaged private capsule accepted")
+    except ValueError:
+        count += 1
 print(f"{count} portable packaging admission checks, 0 failures. Neutral bytes only.")

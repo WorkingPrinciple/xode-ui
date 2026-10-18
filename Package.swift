@@ -6,7 +6,7 @@ import Foundation
 let shipping = ProcessInfo.processInfo.environment["XODUS_SHIPPING"] == "1"
 let previewOnly = ["Artwork.swift", "RootView.swift", "FixtureLibraryView.swift", "DetailView.swift", "DownloadsView.swift",
                    "PreviewExporter.swift", "LibraryPreviewExporter.swift", "PreviewChecks.swift", "NativeChecks.swift",
-                   "NativeUIChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift",
+                   "NativeUIChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift", "LaunchAssociationChecks.swift",
                    "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "Resources"]
 let shippingSettings: [SwiftSetting] = shipping ? [.define("XODUS_SHIPPING")] : []
 
@@ -32,8 +32,9 @@ let package = Package(
                 resources: [.copy("Resources/management-v1.schema.json"),
                             .copy("Resources/runtime-providers-v1.schema.json")]),
         .target(name: "XodusCredentials"),
+        .target(name: "XodusProcessIdentity"),
         .executableTarget(name: "XodusCredentialBroker", dependencies: ["XodusCredentials"]),
-        .executableTarget(name: "XodusPreview", dependencies: ["XodusCore", "XodusManagement", "XodusCredentials"],
+        .executableTarget(name: "XodusPreview", dependencies: ["XodusCore", "XodusManagement", "XodusCredentials", "XodusProcessIdentity"],
                           exclude: shipping ? previewOnly : [],
                           resources: shipping ? [] : [.copy("Resources/Artwork")],
                           swiftSettings: shippingSettings),

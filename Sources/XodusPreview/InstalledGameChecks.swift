@@ -9,6 +9,7 @@ import XodusCore
 @MainActor
 enum InstalledGameChecks {
     static func run(check: (Bool, String) -> Void) async throws {
+        try await LaunchAssociationChecks.run(check: check)
         let config = """
         <?xml version="1.0"?>
         <Game><Identity Name="Fixture.Game" Version="1.2.3.4"/>

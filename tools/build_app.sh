@@ -4,7 +4,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 if [ "$#" -lt 9 ]; then
-    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes]' >&2
+    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path]' >&2
     exit 2
 fi
 engine=$1
@@ -20,6 +20,7 @@ signer=
 local_ad_hoc=false
 signed_cli=
 credential_broker=
+launch_association_capsule=
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --signing-identity)
@@ -48,6 +49,11 @@ while [ "$#" -gt 0 ]; do
             credential_broker_hash=$3
             credential_broker_bytes=$4
             shift 4 ;;
+        --launch-association-capsule)
+            test "$#" -ge 2
+            test -z "$launch_association_capsule"
+            launch_association_capsule=$2
+            shift 2 ;;
         *) printf '%s\n' 'Unknown signing option; no fallback.' >&2; exit 2 ;;
     esac
 done
@@ -157,6 +163,10 @@ pathlib.Path(sys.argv[2]).write_text(json.dumps({
 PY
 swift tools/RenderAppIcon.swift "$app/Contents/Resources/Xodus.iconset"
 iconutil -c icns "$app/Contents/Resources/Xodus.iconset" -o "$app/Contents/Resources/Xodus.icns"
+if [ -n "$launch_association_capsule" ]; then
+    python3 tools/launch_association_capsule.py "$launch_association_capsule" \
+        "$app/Contents/Resources/LaunchAssociation" "$stage/paired-inputs.json"
+fi
 python3 tools/signing_identity.py sign --kind app --path "$app" "$@"
 codesign --verify --deep --strict "$app"
 plutil -lint "$app/Contents/Info.plist"
