@@ -120,6 +120,7 @@ struct LiveAccountView: View {
             if session.hasConfirmedSignIn {
                 state.gameOperations.refreshService()
                 await state.gameOperations.waitForService()
+                if state.gameOperations.gamePassStatus == nil { await state.gameOperations.loadGamePassCache() }
                 await companion.refresh(for: state.gameOperations.serviceStatus)
             }
         }
