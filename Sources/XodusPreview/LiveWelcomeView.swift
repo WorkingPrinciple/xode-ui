@@ -7,6 +7,8 @@ struct LiveWelcomeView: View {
     @ObservedObject var runtime: RuntimeProviderSettings
     @ObservedObject var operations: GameOperationsController
     var body: some View {
+        GeometryReader { geometry in
+        ScrollView {
         VStack(spacing: 24) {
             Spacer(minLength: 24)
             VStack(spacing: 16) {
@@ -56,7 +58,10 @@ struct LiveWelcomeView: View {
             }
             Spacer(minLength: 24)
         }
+        .frame(maxWidth: .infinity, minHeight: max(0, geometry.size.height - 80))
         .padding(40)
+        }
+        }
         .frame(minWidth: 440, idealWidth: 480, maxWidth: 600,
                minHeight: 400, idealHeight: 480, maxHeight: 600)
         .interactiveDismissDisabled(!session.hasConfirmedSignIn)
