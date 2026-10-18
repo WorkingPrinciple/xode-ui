@@ -104,7 +104,7 @@ struct LaunchAssociationAssets {
     }
 
     static func interpreterEnvironment(_ interpreter: URL) -> [String: String] {
-        ["PATH": interpreter.deletingLastPathComponent().path + ":/usr/bin:/bin:/usr/sbin:/sbin",
+        ["PATH": interpreter.deletingLastPathComponent().path + ":/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
          "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1"]
     }
 

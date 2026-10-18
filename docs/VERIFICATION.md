@@ -131,7 +131,11 @@ invalid runtime fails Play or the operation explicitly instead of invoking a
 different Python. Absence retains legacy source behavior and is not clean-Mac
 production acceptance. The admitted bin directory is first on the owned
 launcher and operation-script PATH, including without an active foreground
-handoff. User modules are excluded; bytecode writes are disabled. The adapter
+handoff, while retaining the legacy non-Python tool search directories.
+The private generic-Wine wrapper must capture that Python executable before
+its own legacy PATH reset and use the captured absolute binary for the bridge;
+merely prepending the native PATH does not qualify an unchanged old wrapper.
+User modules are excluded; bytecode writes are disabled. The adapter
 executes that exact binary with `-I -B`, because `-I` ignores the environment's
 `PYTHONDONTWRITEBYTECODE` flag. No developer selection, Xcode license agreement
 or account state is changed.

@@ -68,7 +68,7 @@ enum LaunchAssociationChecks {
               && first.environment["XODUS_LAUNCH_RUN_ID"] != nil
               && first.environment["XODUS_LAUNCH_PEER_LIBRARY"] == assets.library.path,
               "Foreground per-launch options bind fresh private nonce, exact run and pinned helper library")
-        check(first.environment["PATH"] == interpreter.deletingLastPathComponent().path + ":/usr/bin:/bin:/usr/sbin:/sbin"
+        check(first.environment["PATH"] == interpreter.deletingLastPathComponent().path + ":/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
               && first.environment["PYTHONDONTWRITEBYTECODE"] == "1"
               && first.environment["PYTHONNOUSERSITE"] == "1",
               "Foreground owned launcher uses the admitted interpreter bin first without user site or bytecode writes")
