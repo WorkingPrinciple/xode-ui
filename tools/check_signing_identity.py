@@ -5,6 +5,8 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE
 from signing_identity import (COMPARISON_RESULT, IDENTIFIERS, compare, preflight, reuse_cli, sign,
@@ -179,8 +181,21 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
     attempt(runtime_receipt)
     assert destination.read_bytes() == signed_data and all("--sign" not in call for call in calls)
     assert package_receipt(receipt, hashlib.sha256(encoded).hexdigest(), len(encoded))[1] == encoded
+    build_script = Path(__file__).with_name("build_app.sh").read_text()
+    repin_marker = '        "$prior_receipt" "$prior_receipt_hash" "$prior_receipt_bytes" <<\'PY\'\n'
+    assert build_script.count(repin_marker) == 1
+    repin_script = build_script.split(repin_marker, 1)[1].split("\nPY\n", 1)[0]
+    repin_arguments = [
+        sys.executable, "-E", "-B", "-", str(first), str(destination), signed["sha256"],
+        str(signed["bytes"]), str(receipt), hashlib.sha256(encoded).hexdigest(), str(len(encoded))]
+    repin = subprocess.run(repin_arguments, input=repin_script, text=True, capture_output=True,
+                           cwd=Path(__file__).resolve().parent.parent, timeout=10)
+    assert repin.returncode == 0, repin.stderr
     receipt.write_bytes(encoded + b"\n")
     rejected(lambda: package_receipt(receipt, hashlib.sha256(encoded).hexdigest(), len(encoded)))
+    repin = subprocess.run(repin_arguments, input=repin_script, text=True, capture_output=True,
+                           cwd=Path(__file__).resolve().parent.parent, timeout=10)
+    assert repin.returncode != 0
     destination.unlink()
     oversized = {**base_receipt, "padding": "x" * PACKAGE_RECEIPT_LIMIT}
     rejected(lambda: attempt(oversized))

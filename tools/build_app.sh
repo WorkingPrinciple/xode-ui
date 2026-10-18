@@ -190,8 +190,9 @@ if [ -n "$signed_cli" ]; then
     python3 - "$signed_cli" "$app/Contents/Resources/XodusEngine/xodus-cli" "$signed_cli_hash" "$signed_cli_bytes" \
         "$prior_receipt" "$prior_receipt_hash" "$prior_receipt_bytes" <<'PY'
 import sys
-from tools.shipping_pair import owned_bytes
-from tools.signing_identity import package_receipt
+sys.path.insert(0, "tools")
+from shipping_pair import owned_bytes
+from signing_identity import package_receipt
 for path in sys.argv[1:3]:
     owned_bytes(path, sys.argv[3], int(sys.argv[4]))
 package_receipt(sys.argv[5], sys.argv[6], int(sys.argv[7]))

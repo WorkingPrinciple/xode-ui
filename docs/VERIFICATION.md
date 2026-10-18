@@ -154,6 +154,10 @@ ceiling. Preserved-CLI admission and final repinning now share the same bounded
 4 MiB reader; exact external receipt digest/length, producer, profile, features
 and signed CLI identity checks are unchanged. Neutral coverage includes a
 runtime-sized receipt, tampering and an oversized otherwise-valid receipt.
+The signing checks also execute the actual final-repin heredoc from the build
+script in a fresh interpreter at the repository root, without inherited Python
+search paths, against a large valid receipt and a changed receipt. This covers
+the tool import context as well as the shared reader.
 The pinned CLI is copied byte-identically, not re-signed to evade reuse.
 
 The first actual standalone producer suite passed functionally, but its test
