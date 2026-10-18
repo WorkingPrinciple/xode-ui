@@ -120,6 +120,7 @@ struct LiveProductView: View {
         }
         .frame(minWidth: 820, idealWidth: 1040, maxWidth: 1200,
                minHeight: 600, idealHeight: 780, maxHeight: 850)
+        .environment(\.colorScheme, .dark)
         .task(id: "\(product.id):\(product.market):\(product.language)") {
             if allowsArtworkLoading {
                 await catalog.loadDetail(id: product.id, market: product.market, language: product.language)
@@ -135,9 +136,18 @@ struct LiveProductView: View {
     private var header: some View {
         ZStack(alignment: .bottomLeading) {
             LibraryLandscapeView(references: landscape, installed: installed, allowsLoading: allowsArtworkLoading)
-            LinearGradient(colors: [.clear, .black.opacity(0.12),
-                                    Color(nsColor: .windowBackgroundColor).opacity(0.18)],
-                           startPoint: .top, endPoint: .bottom)
+                .mask(LinearGradient(stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black, location: 0.78),
+                    .init(color: .black.opacity(0.72), location: 0.90),
+                    .init(color: .clear, location: 1)
+                ], startPoint: .top, endPoint: .bottom))
+            LinearGradient(stops: [
+                .init(color: .clear, location: 0),
+                .init(color: .black.opacity(0.10), location: 0.50),
+                .init(color: .black.opacity(0.34), location: 0.78),
+                .init(color: .clear, location: 1)
+            ], startPoint: .top, endPoint: .bottom)
             HStack(alignment: .bottom, spacing: 24) {
                 if let cover = art?.cover ?? CatalogArtworkReference.preferred(in: product.artwork, roles: [.boxArt, .poster]) {
                     CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil, status: .available)
@@ -158,8 +168,19 @@ struct LiveProductView: View {
                     }
                     LibraryGlassCluster {
                         if let installed {
-                            InstalledPlayButton(library: installedLibrary, operations: operations,
-                                                game: installed, usesGlass: true, prominent: true)
+                            if installedLibrary.placeholderIDs.contains(installed.id), let owned {
+                                Button {
+                                    Task { await operations.repair(owned, installed: installed) }
+                                } label: {
+                                    Label("Download full game", systemImage: "icloud.and.arrow.down")
+                                }
+                                .modifier(LibraryActionStyle())
+                                .disabled(!allowsStartupTasks || !library.accessIsCurrent
+                                          || !operations.canStartMutation)
+                            } else {
+                                InstalledPlayButton(library: installedLibrary, operations: operations,
+                                                    game: installed, usesGlass: true, prominent: true)
+                            }
                             InstalledGameActions(library: installedLibrary, operations: operations,
                                                  game: installed, usesGlass: true)
                         } else if !unsupportedIssues.isEmpty {
@@ -216,8 +237,11 @@ struct LiveProductView: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 40).padding(.bottom, 24)
-        }.frame(height: 340).clipped().accessibilityElement(children: .contain)
+            .padding(.horizontal, 40).padding(.bottom, 48)
+        }
+        .frame(height: 388).clipped()
+        .padding(.bottom, -42)
+        .accessibilityElement(children: .contain)
     }
 
     private var evidence: some View {

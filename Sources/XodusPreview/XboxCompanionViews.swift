@@ -393,6 +393,36 @@ struct XboxAccountSummaryView: View {
                 }
             } else if companion.refreshing {
                 ProgressView().controlSize(.small).accessibilityLabel("Loading Xbox profile")
+            } else {
+                VStack(spacing: 9) {
+                    Image(systemName: "xbox.logo")
+                        .font(.system(size: 46, weight: .medium))
+                        .foregroundStyle(XboxBrand.green)
+                        .frame(width: 88, height: 88)
+                        .background(.quaternary, in: Circle())
+                        .accessibilityHidden(true)
+                    Text(state.gameOperations.serviceStatus?.serviceRunning == false
+                         ? "Restoring Xbox services" : "Xbox profile unavailable")
+                        .font(.title3.weight(.semibold))
+                    Text(state.gameOperations.serviceStatus?.serviceRunning == false
+                         ? "X Ode is reconnecting automatically. Your saved account and games remain unchanged."
+                         : "Connect Xbox services to load your gamer picture, achievements, and friends.")
+                        .font(.callout).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center).frame(maxWidth: 320)
+                    if state.gameOperations.serviceStatus?.serviceRunning == false {
+                        ProgressView().controlSize(.small)
+                            .accessibilityLabel("Restoring Xbox services")
+                    } else if state.gameOperations.serviceStatus?.serviceRunning == true,
+                              state.gameOperations.serviceStatus?.signedIn == false,
+                              state.gameOperations.canSignIn {
+                        Button("Continue with Microsoft") {
+                            state.gameOperations.signInForGames()
+                        }
+                        .buttonStyle(.borderedProminent).tint(XboxBrand.green)
+                    } else if state.gameOperations.serviceError != nil {
+                        Button("Try again") { state.gameOperations.refreshService() }
+                    }
+                }
             }
             accountSection("Membership", symbol: "checkmark.seal.fill") {
                 libraryAndGamePass

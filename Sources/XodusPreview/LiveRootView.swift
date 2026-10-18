@@ -168,9 +168,20 @@ struct LiveRootView: View {
             }
         }
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
+            let accessMessage: String
+            if !session.hasConfirmedSignIn {
+                accessMessage = "Sign in to X Ode to play this game."
+            } else if !state.pcGames.hasSavedSignIn || state.pcGames.needsSignIn {
+                accessMessage = "Reconnect your Xbox library to play this game."
+            } else if state.gameOperations.serviceStatus?.serviceRunning != true {
+                accessMessage = "Xbox services are reconnecting automatically."
+            } else {
+                accessMessage = "Sign in to Xbox services to play this game."
+            }
             state.installedGames.setAccountAccessAllowed(
                 session.hasConfirmedSignIn && state.pcGames.hasSavedSignIn && !state.pcGames.needsSignIn
-                    && state.gameOperations.serviceStatus?.signedIn == true
+                    && state.gameOperations.serviceStatus?.signedIn == true,
+                message: accessMessage
             )
             if accountContentAllowed {
                 await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,

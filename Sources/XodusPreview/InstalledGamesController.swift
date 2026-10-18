@@ -38,6 +38,7 @@ final class InstalledGamesController: ObservableObject {
     @Published var runtimeRepairActive = false
     @Published var accountDisconnecting = false
     @Published private(set) var accountAccessAllowed = false
+    @Published private(set) var accountAccessMessage = "Reconnect Xbox services to play this game."
     var applicationTerminating = false {
         didSet { if applicationTerminating { foregroundHandoff?.cancel() } }
     }
@@ -196,14 +197,16 @@ final class InstalledGamesController: ObservableObject {
         if let url = playLogs[game.id] { NSWorkspace.shared.activateFileViewerSelecting([url]) }
     }
 
-    func setAccountAccessAllowed(_ allowed: Bool) {
+    func setAccountAccessAllowed(_ allowed: Bool, message: String? = nil) {
         accountAccessAllowed = allowed
+        if let message { accountAccessMessage = message }
         if !allowed {
             for game in games where runningGameID != game.id {
-                playErrors[game.id] = "Sign in to Xbox in X Ode to play this game."
+                playErrors[game.id] = accountAccessMessage
             }
         } else {
-            for game in games where playErrors[game.id] == "Sign in to Xbox in X Ode to play this game." {
+            for game in games where playErrors[game.id] == accountAccessMessage
+                || playErrors[game.id]?.contains("to play this game") == true {
                 playErrors[game.id] = nil
             }
         }

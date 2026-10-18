@@ -59,13 +59,22 @@ struct AccountSheetLayout<Header: View, Content: View, Actions: View>: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        let height = Self.headerHeight(for: geometry.size.height)
-                        if showsHeader && height > 0 { header.frame(height: height).clipped() }
-                        content.padding(.horizontal, 28).padding(.vertical, 24)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 22) {
+                            Color.clear.frame(height: 0).id("account-sheet-top")
+                            let height = Self.headerHeight(for: geometry.size.height)
+                            if showsHeader && height > 0 { header.frame(height: height).clipped() }
+                            content.padding(.horizontal, 28).padding(.vertical, 24)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onAppear {
+                        Task { @MainActor in
+                            await Task.yield()
+                            proxy.scrollTo("account-sheet-top", anchor: .top)
+                        }
+                    }
                 }
                 Divider()
                 actions.padding(20)

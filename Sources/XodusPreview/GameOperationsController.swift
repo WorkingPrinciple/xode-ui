@@ -600,6 +600,25 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
+    func repair(_ game: PCGame, installed installedGame: InstalledGame) async {
+        guard canStartMutation, !installingDirectly, installed.games.contains(installedGame),
+              installedGame.storeId == game.id else { return }
+        directInstallProductID = game.id
+        installingDirectly = true
+        directInstallCancelled = false
+        defer { installingDirectly = false; directInstallProductID = nil }
+        await prepareInstall(game, repairing: installedGame)
+        guard !directInstallCancelled else { installConsent = nil; return }
+        guard let consent = installConsent else { return }
+        if consent.compatibility?.supported == true {
+            confirmInstall(consent)
+        } else {
+            error = consent.checkError ?? consent.compatibility?.explanation
+                ?? "The full game couldn't be downloaded. Try again."
+            installConsent = nil
+        }
+    }
+
     /// Answers "can this play on Mac?" before the user presses Install. Reads cached verdicts, then
     /// checks uncached games one at a time while idle. Any user action cancels it first.
     func precheck(_ productIDs: [String]) {

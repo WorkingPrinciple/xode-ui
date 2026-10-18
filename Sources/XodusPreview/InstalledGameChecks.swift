@@ -244,10 +244,11 @@ enum InstalledGameChecks {
         check(library.games.count == 1 && library.games.first?.id == game.id,
               "Reimport updates one local folder entry rather than duplicating it")
         guard let failedGame = library.games.first else { throw InstalledGameError.invalidRegistry }
-        library.setAccountAccessAllowed(false)
+        library.setAccountAccessAllowed(false, message: "Xbox services are reconnecting automatically.")
         await library.play(failedGame)
-        check(library.runningGameID == nil && library.playErrors[failedGame.id]?.contains("Sign in to Xbox") == true,
-              "Signed-out account state blocks an installed game before its launcher starts")
+        check(library.runningGameID == nil
+              && library.playErrors[failedGame.id] == "Xbox services are reconnecting automatically.",
+              "Unavailable Xbox services block an installed game before its launcher starts")
         library.setAccountAccessAllowed(true)
         func wait(_ condition: () -> Bool) async throws {
             let deadline = ContinuousClock.now.advanced(by: .seconds(5))

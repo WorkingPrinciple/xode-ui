@@ -285,9 +285,19 @@ struct LibraryHero<Artwork: View, Poster: View, Information: View, Actions: View
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             artwork()
-            LinearGradient(colors: [.clear, .black.opacity(0.15), .black.opacity(0.8)],
-                           startPoint: .top, endPoint: .bottom)
-                .frame(height: height > 340 ? height * 0.7 : 210).allowsHitTesting(false)
+                .mask(LinearGradient(stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black, location: 0.88),
+                    .init(color: .clear, location: 1)
+                ], startPoint: .top, endPoint: .bottom))
+            LinearGradient(stops: [
+                .init(color: .clear, location: 0),
+                .init(color: .black.opacity(0.16), location: 0.38),
+                .init(color: .black.opacity(0.72), location: 0.76),
+                .init(color: .black.opacity(0.18), location: 0.91),
+                .init(color: .clear, location: 1)
+            ], startPoint: .top, endPoint: .bottom)
+                .frame(height: height > 340 ? height * 0.72 : 230).allowsHitTesting(false)
             if height > 340 {
                 LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .leading, endPoint: .center)
                     .allowsHitTesting(false)
@@ -484,7 +494,8 @@ struct LibraryImmersion: ViewModifier {
     var enabled = true
     func body(content: Content) -> some View {
         if enabled {
-            content.ignoresSafeArea(.container, edges: .top)
+            content.environment(\.colorScheme, .dark)
+                .ignoresSafeArea(.container, edges: .top)
                 .toolbarBackground(.hidden, for: .windowToolbar)
         } else { content }
     }

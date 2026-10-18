@@ -285,8 +285,20 @@ struct LiveLibraryView: View {
         } actions: {
             if let match = game.installed {
                 InstalledEngineOverride(library: installed, game: match)
-                InstalledPlayButton(library: installed, operations: operations, game: match,
-                                    usesGlass: true, heroStyle: true)
+                if installed.placeholderIDs.contains(match.id), let pc = game.pc {
+                    Button {
+                        Task { await operations.repair(pc, installed: match) }
+                    } label: {
+                        Label("Download full game", systemImage: "icloud.and.arrow.down")
+                            .font(.title3.weight(.semibold)).frame(minHeight: 28).padding(.horizontal, 12)
+                    }
+                    .modifier(LibraryActionStyle(primary: true, usesGlass: true))
+                    .modifier(LibraryHeroControlSize())
+                    .disabled(!allowsStartupTasks || !operations.canStartMutation || !library.accessIsCurrent)
+                } else {
+                    InstalledPlayButton(library: installed, operations: operations, game: match,
+                                        usesGlass: true, heroStyle: true)
+                }
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else if !unsupportedIssues(game).isEmpty {
@@ -509,8 +521,20 @@ struct LiveLibraryView: View {
             LibraryGlassCluster {
                 if let match = game.installed {
                     InstalledEngineOverride(library: installed, game: match)
-                    InstalledPlayButton(library: installed, operations: operations, game: match,
-                                        usesGlass: true, prominent: false)
+                    if installed.placeholderIDs.contains(match.id), let pc = game.pc {
+                        Button {
+                            Task { await operations.repair(pc, installed: match) }
+                        } label: {
+                            Label("Download full game", systemImage: "icloud.and.arrow.down")
+                        }
+                        .labelStyle(.iconOnly)
+                        .help("Download the full \(game.title) installation")
+                        .modifier(LibraryActionStyle(primary: false, usesGlass: true))
+                        .disabled(!allowsStartupTasks || !operations.canStartMutation || !library.accessIsCurrent)
+                    } else {
+                        InstalledPlayButton(library: installed, operations: operations, game: match,
+                                            usesGlass: true, prominent: false)
+                    }
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
                 } else if unsupportedReason(game) != nil {
                     EmptyView()
