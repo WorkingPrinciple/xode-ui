@@ -275,7 +275,7 @@ final class LiveSession: ObservableObject {
                 ? "You're signed out of Xbox Live on this Mac. Sign in when you're ready. Other apps and Microsoft browser sessions weren't changed."
                 : "Xbox Live sign-out hasn't been confirmed. Sign in again when you're ready."
         }
-        return "Sign in with Xbox Live. Your library, profile, downloads, and games use this one account."
+        return "This signs you in to X Ode. Game downloads and Xbox features may ask for a separate Microsoft sign-in when you use them."
     }
 
     func prepareWelcome() async {

@@ -116,6 +116,11 @@ final class AppState: ObservableObject {
         return true
     }
 
+    func refreshGameServiceStatusAfterSignIn() async {
+        gameOperations.refreshService()
+        await gameOperations.waitForService()
+    }
+
     @discardableResult
     func signOut(session: LiveSession) async -> Bool {
         guard canSignOut(session: session), gameOperations.beginAccountDisconnect() else { return false }

@@ -33,47 +33,14 @@ struct GameServiceAccountView: View {
                 }
             }
             GroupBox("Xbox access") {
-                VStack(alignment: .leading, spacing: 10) {
-                    Label(accountStatusText, systemImage: operations.serviceAccountSymbol)
-                        .accessibilityIdentifier("xodus.games.accountStatus")
-                    Text("X Ode checks Xbox access for downloads and Xbox account features. A saved sign-in doesn't guarantee a game can download.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    if operations.serviceAccountNeedsVerification {
-                        Text("Confirm your Xbox account to load your profile, achievements and consoles.")
-                            .font(.callout).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("xodus.games.verifyExplanation")
-                    }
-                    HStack {
-                        Button("Check status") { operations.refreshService() }
-                            .disabled(operations.serviceBusy || operations.setupRepairing)
-                            .accessibilityIdentifier("xodus.games.checkSignIn")
-                        if operations.serviceSignInActionTitle != nil {
-                            Button(operations.serviceAccountNeedsVerification ? "Verify Xbox account" : "Continue with Microsoft") { operations.signInForGames() }
-                                .disabled(!operations.canSignIn)
-                                .accessibilityIdentifier("xodus.games.signIn")
-                        }
-                        if operations.serviceBusy {
-                            ProgressView().controlSize(.small)
-                                .accessibilityLabel(operations.serviceSigningIn ? "Signing in for games" : "Checking game access")
-                        }
-                    }
-                    if operations.serviceSigningIn {
-                        Text("Finish signing in in the Microsoft window.").foregroundStyle(.secondary)
-                    }
-                    if let error = operations.serviceError {
-                        Label("Xbox access couldn't be confirmed. Check status to try again, or open Technical details.", systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("xodus.games.signInError")
-                        DisclosureGroup("Technical details") {
-                            Text(error).fixedSize(horizontal: false, vertical: true)
-                            if operations.serviceLog != nil {
-                                Button("Show log") { operations.showServiceLog() }
-                                    .accessibilityIdentifier("xodus.games.signInLog")
-                            }
-                        }
-                    }
-                }
+                GameServiceSignInActions(operations: operations, statusText: accountStatusText,
+                    statusIdentifier: "xodus.games.accountStatus",
+                    checkIdentifier: "xodus.games.checkSignIn",
+                    signInIdentifier: "xodus.games.signIn",
+                    errorIdentifier: "xodus.games.signInError",
+                    logIdentifier: "xodus.games.signInLog",
+                    verifyIdentifier: "xodus.games.verifyExplanation",
+                    setupRepairing: operations.setupRepairing)
             }
             GroupBox("PC Game Pass") {
                 GamePassAccountView(operations: operations, library: library)
@@ -85,6 +52,65 @@ struct GameServiceAccountView: View {
             DisclosureGroup("Troubleshoot game setup") {
                 GameSetupView(operations: operations, showsTitle: false)
                     .padding(.top, 2)
+            }
+        }
+    }
+}
+
+struct GameServiceSignInActions: View {
+    @ObservedObject var operations: GameOperationsController
+    var statusText: String
+    var statusIdentifier: String
+    var checkIdentifier: String
+    var signInIdentifier: String
+    var errorIdentifier: String
+    var logIdentifier: String
+    var verifyIdentifier: String
+    var setupRepairing = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(statusText, systemImage: operations.serviceAccountSymbol)
+                .accessibilityIdentifier(statusIdentifier)
+            Text("X Ode sign-in and Xbox game-service sign-in are separate. Continue with Microsoft here only when a game download or Xbox feature needs it; X Ode won't open this second sign-in automatically.")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if operations.serviceAccountNeedsVerification {
+                Text("Confirm your Xbox account to load your profile, achievements and consoles.")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier(verifyIdentifier)
+            }
+            HStack {
+                Button("Check status") { operations.refreshService() }
+                    .disabled(operations.serviceBusy || setupRepairing)
+                    .accessibilityIdentifier(checkIdentifier)
+                if operations.serviceSignInActionTitle != nil {
+                    Button(operations.serviceAccountNeedsVerification ? "Verify Xbox account" : "Continue with Microsoft") {
+                        operations.signInForGames()
+                    }
+                    .disabled(!operations.canSignIn)
+                    .accessibilityIdentifier(signInIdentifier)
+                }
+                if operations.serviceBusy {
+                    ProgressView().controlSize(.small)
+                        .accessibilityLabel(operations.serviceSigningIn ? "Signing in for games" : "Checking game access")
+                }
+            }
+            if operations.serviceSigningIn {
+                Text("Finish signing in in the Microsoft window.").foregroundStyle(.secondary)
+            }
+            if let error = operations.serviceError {
+                Label("Xbox access couldn't be confirmed. Check status to try again, or open Technical details.", systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier(errorIdentifier)
+                DisclosureGroup("Technical details") {
+                    Text(error).fixedSize(horizontal: false, vertical: true)
+                    if operations.serviceLog != nil {
+                        Button("Show log") { operations.showServiceLog() }
+                            .accessibilityIdentifier(logIdentifier)
+                    }
+                }
             }
         }
     }

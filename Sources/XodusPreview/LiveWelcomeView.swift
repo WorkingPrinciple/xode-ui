@@ -18,14 +18,11 @@ struct LiveWelcomeView: View {
                             .accessibilityLabel("X Ode")
                             .accessibilityAddTraits(.isHeader)
                     }
-                    if session.phase == .failed || session.accountError != nil
-                        || session.needsAccountDisconnect || session.signInPending {
-                        Text(session.accountJourneyMessage)
-                            .foregroundStyle(.secondary).multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: 360)
-                            .accessibilityIdentifier("xodus.welcome.status")
-                    }
+                    Text(session.accountJourneyMessage)
+                        .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: 360)
+                        .accessibilityIdentifier("xodus.welcome.status")
                     if session.signInPending {
                         Button("Cancel sign-in") { Task { await state.cancelUnifiedSignIn(session: session) } }
                             .keyboardShortcut(.cancelAction)
@@ -51,6 +48,10 @@ struct LiveWelcomeView: View {
                     }
                     if session.connectionTransitioning || session.accountBusy {
                         ProgressView("Checking Xbox Live").controlSize(.small)
+                        Text("If macOS asks for Keychain access, the request is to check or save this X Ode sign-in.")
+                            .font(.callout).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: 360)
                     }
                     if operations.hasDownloadStatus {
                         GameOperationProgressView(operations: operations, privacyRestricted: true)

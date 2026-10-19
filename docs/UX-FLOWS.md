@@ -26,6 +26,14 @@ before starting an explicitly requested sign-in; missing pairing cannot enable
 consent. Cancel sign-in waits for the existing cancellation result
 and leaves Welcome locked. Choosing sign-in recovery for an expired/invalid
 saved sign-in first completes the existing guarded removal stages.
+The welcome copy distinguishes the X Ode sign-in from game-service consent.
+Finishing launcher sign-in only refreshes game-service status; it never opens a
+second Microsoft flow automatically. When a game or Xbox feature needs that
+separate service identity, Account presents an explicit action and explains why
+it may require another Microsoft sign-in. An unverified game-service account
+also requires an explicit verification action; startup never retries consent.
+During saved-status checks, Welcome identifies an expected macOS Keychain
+request as checking or saving this X Ode sign-in.
 Quit stays available through the native app menu, but existing mutation
 holds still refuse termination until their operations settle.
 

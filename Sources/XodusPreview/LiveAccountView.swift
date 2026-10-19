@@ -47,6 +47,17 @@ struct LiveAccountView: View {
                     }
                     if session.hasConfirmedSignIn {
                         XboxAccountSummaryView(companion: companion)
+                        GroupBox("Xbox access") {
+                            GameServiceSignInActions(operations: state.gameOperations,
+                                statusText: state.gameOperations.serviceLabel,
+                                statusIdentifier: "xodus.account.gameServiceStatus",
+                                checkIdentifier: "xodus.account.checkGameService",
+                                signInIdentifier: "xodus.account.signInForGames",
+                                errorIdentifier: "xodus.account.gameServiceError",
+                                logIdentifier: "xodus.account.gameServiceLog",
+                                verifyIdentifier: "xodus.account.verifyGameService",
+                                setupRepairing: state.gameOperations.setupRepairing)
+                        }
                     } else {
                         VStack(spacing: 8) {
                             Text("Account").font(.title2.bold())

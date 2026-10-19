@@ -412,6 +412,20 @@ enum NativeUIChecks {
             !["Technical details", "Downloaded artwork", "Troubleshoot game setup", "Achievements", "Licenses", "Acknowledgments"]
                 .contains($0.title)
         }, "Login keeps support, artwork and separate account destinations out of its action surface")
+        let gameAccess = NSHostingView(rootView: GameServiceSignInActions(
+            operations: state.gameOperations, statusText: state.gameOperations.serviceLabel,
+            statusIdentifier: "xodus.check.gameServiceStatus",
+            checkIdentifier: "xodus.check.gameServiceStatusAction",
+            signInIdentifier: "xodus.check.gameServiceSignIn",
+            errorIdentifier: "xodus.check.gameServiceError",
+            logIdentifier: "xodus.check.gameServiceLog",
+            verifyIdentifier: "xodus.check.gameServiceVerify"))
+        gameAccess.sizingOptions = []
+        gameAccess.frame = CGRect(x: 0, y: 0, width: 520, height: 300)
+        gameAccess.layoutSubtreeIfNeeded()
+        check(gameAccess.window == nil && !state.gameOperations.serviceBusy
+              && state.gameOperations.serviceStatus == nil,
+              "Detached Xbox game-service actions create no window or authentication request")
         for route in [AccountDestination.profile, .achievements, .consoles, .engines] {
             state.accountDestination = route
             let destination = NSHostingView(rootView: LiveAccountView(refreshStatusOnAppear: false)

@@ -8,7 +8,6 @@ struct LiveRootView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var searchFocused: Bool
-    @State private var serviceAccountRecoveryAttempted = false
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
@@ -225,18 +224,6 @@ struct LiveRootView: View {
                 unifiedAccountVerified,
                 message: accessMessage
             )
-            if state.gameOperations.serviceStatus?.accountHash != nil {
-                serviceAccountRecoveryAttempted = false
-            } else if accountRecoveryAllowed,
-                      state.gameOperations.serviceStatus?.serviceRunning == true,
-                      state.gameOperations.serviceStatus?.signedIn == true,
-                      state.gameOperations.serviceAccountNeedsVerification,
-                      !state.gameOperations.serviceSigningIn,
-                      !serviceAccountRecoveryAttempted,
-                      state.gameOperations.canSignIn {
-                serviceAccountRecoveryAttempted = true
-                state.gameOperations.signInForGames()
-            }
             if accountContentAllowed {
                 await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,
                     signingIn: state.gameOperations.serviceSigningIn)
@@ -263,13 +250,7 @@ struct LiveRootView: View {
         }
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
             if confirmed, state.consumeUnifiedSignInRequest() {
-                Task {
-                    state.gameOperations.refreshService()
-                    await state.gameOperations.waitForService()
-                    if state.gameOperations.serviceStatus?.signedIn != true {
-                        state.gameOperations.signInForGames()
-                    }
-                }
+                Task { await state.refreshGameServiceStatusAfterSignIn() }
             } else if !confirmed {
                 state.installedGames.setAccountAccessAllowed(false)
                 session.selectedProduct = nil

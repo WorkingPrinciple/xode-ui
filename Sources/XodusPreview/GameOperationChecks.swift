@@ -269,6 +269,12 @@ enum GameOperationChecks {
               "S3/S5 installed-state changes invalidate computed game-service and consent controls")
         observation.cancel()
         await operations.restore()
+        let signInState = AppState(installedGames: installed, gameScriptPaths: paths)
+        await signInState.refreshGameServiceStatusAfterSignIn()
+        check(signInState.gameOperations.serviceStatus?.signedIn == false
+              && signInState.gameOperations.serviceError == nil
+              && !FileManager.default.fileExists(atPath: verificationCalls.path),
+              "Completing launcher sign-in refreshes game-service status without starting a second Microsoft sign-in")
         operations.refreshService()
         await operations.waitForService()
         if let error = operations.serviceError { print("NEUTRAL service-status failure: \(error)") }
