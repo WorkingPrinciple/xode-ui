@@ -425,7 +425,7 @@ struct LiveLibraryView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("PC Game Pass highlights").font(.title2.weight(.semibold))
-                    Text("Current PC catalog; account access is checked separately.")
+                    Text("Explore the PC Game Pass catalogue.")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
