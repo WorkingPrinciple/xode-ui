@@ -46,14 +46,16 @@ struct LiveAccountView: View {
                             .accessibilityAddTraits(.isHeader)
                     }
                     if session.hasConfirmedSignIn {
-                        XboxAccountSummaryView(companion: companion)
                         if state.pcGames.usesUnifiedAccount {
                             if let reason = state.pcGames.error ?? state.gameOperations.serviceError {
                                 Text(reason).font(.callout).foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("xodus.account.unifiedAccessIssue")
                             }
-                        } else { GroupBox("Xbox access") {
+                        }
+                        XboxAccountSummaryView(companion: companion)
+                        if !state.pcGames.usesUnifiedAccount { GroupBox("Xbox access") {
                             GameServiceSignInActions(operations: state.gameOperations,
                                 statusText: state.gameOperations.serviceLabel,
                                 statusIdentifier: "xodus.account.gameServiceStatus",

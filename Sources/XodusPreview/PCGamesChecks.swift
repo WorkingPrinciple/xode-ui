@@ -286,6 +286,19 @@ enum PCGamesChecks {
                     operations.signInForGames()
                     check(!operations.canSignIn && !operations.canStartMutation && !operations.serviceSigningIn,
                           "An unpaired runtime cannot trigger legacy consent or authorize game mutations")
+                    let state = AppState(pcGames: library)
+                    state.gameOperations.useUnifiedAccount()
+                    for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                        let host = NSHostingView(rootView: LiveAccountView(refreshStatusOnAppear: false)
+                            .environmentObject(state).environmentObject(session))
+                        host.sizingOptions = []
+                        host.appearance = NSAppearance(named: appearance)
+                        host.frame = CGRect(x: 0, y: 0, width: 480, height: 480)
+                        host.layoutSubtreeIfNeeded()
+                        check(host.window == nil && !state.gameOperations.serviceBusy
+                              && !session.accountBusy && !library.sheetPresented,
+                              "The 480-point unified Account lays out without startup, legacy login or a detached window")
+                    }
                 } else {
                     check(library.snapshot == nil && library.error != nil && !library.accessIsCurrent,
                           "Rejected or mismatched unified data cannot become a successful empty library")
