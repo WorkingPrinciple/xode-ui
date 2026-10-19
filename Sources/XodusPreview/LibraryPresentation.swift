@@ -304,12 +304,8 @@ struct LibraryHero<Artwork: View, Poster: View, Information: View, Actions: View
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
+            ZStack(alignment: .bottom) {
             artwork()
-                .mask(LinearGradient(stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.88),
-                    .init(color: .clear, location: 1)
-                ], startPoint: .top, endPoint: .bottom))
             LinearGradient(stops: [
                 .init(color: .clear, location: 0),
                 .init(color: .black.opacity(0.16), location: 0.38),
@@ -322,6 +318,15 @@ struct LibraryHero<Artwork: View, Poster: View, Information: View, Actions: View
                 LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .leading, endPoint: .center)
                     .allowsHitTesting(false)
             }
+            }
+            .mask(LinearGradient(stops: [
+                .init(color: .black, location: 0),
+                .init(color: .black, location: 0.40),
+                .init(color: .black.opacity(0.97), location: 0.60),
+                .init(color: .black.opacity(0.82), location: 0.76),
+                .init(color: .black.opacity(0.40), location: 0.90),
+                .init(color: .clear, location: 1)
+            ], startPoint: .top, endPoint: .bottom))
             HStack(alignment: .bottom, spacing: 24) {
                 poster().frame(width: 100, height: 150).clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -507,6 +512,26 @@ struct LibraryHeroControlSize: ViewModifier {
     func body(content: Content) -> some View {
         if enabled { content.controlSize(.large) }
         else { content }
+    }
+}
+
+struct HeroPageSnap: ScrollTargetBehavior {
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        guard context.axes.contains(.horizontal) else { return }
+        target.rect.origin.x = Self.offset(original: context.originalTarget.rect.minX,
+            proposed: target.rect.minX, pageWidth: context.containerSize.width,
+            contentWidth: context.contentSize.width)
+        target.anchor = .leading
+    }
+
+    static func offset(original: CGFloat, proposed: CGFloat, pageWidth: CGFloat, contentWidth: CGFloat) -> CGFloat {
+        guard pageWidth > 0, pageWidth.isFinite, contentWidth.isFinite,
+              original.isFinite, proposed.isFinite else { return original }
+        let current = (original / pageWidth).rounded() * pageWidth
+        let threshold = pageWidth * 0.2
+        let next = proposed >= current + threshold ? current + pageWidth
+            : proposed <= current - threshold ? current - pageWidth : current
+        return min(max(0, next), max(0, contentWidth - pageWidth))
     }
 }
 
@@ -725,7 +750,8 @@ struct LibraryCover<Artwork: View, Actions: View, Status: View>: View {
                         .contentShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain).accessibilityLabel("\(openLabel) \(title)")
-                actions().controlSize(.small).buttonBorderShape(.capsule).padding(12)
+                actions().controlSize(.small).buttonBorderShape(.capsule)
+                    .fixedSize(horizontal: false, vertical: true).padding(12)
                     .opacity(showsActions ? 1 : 0)
                     .allowsHitTesting(showsActions)
             }

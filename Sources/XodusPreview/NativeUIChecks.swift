@@ -15,6 +15,23 @@ enum NativeUIChecks {
         check(!hasHero, "A plain Library has no artwork underlap preference")
         LibraryHeroPresenceKey.reduce(value: &hasHero) { true }
         check(hasHero, "Actual hero artwork explicitly opts into toolbar underlap")
+        for width in [CGFloat(320), 650, 1200] {
+            let start = width
+            check(HeroPageSnap.offset(original: start, proposed: start + width * 0.199,
+                                     pageWidth: width, contentWidth: width * 5) == start,
+                  "Hero stays on its current page below twenty percent at \(Int(width)) points")
+            check(HeroPageSnap.offset(original: start, proposed: start + width * 0.2,
+                                     pageWidth: width, contentWidth: width * 5) == width * 2,
+                  "Hero advances at exactly twenty percent at \(Int(width)) points")
+            check(HeroPageSnap.offset(original: start, proposed: start - width * 0.2,
+                                     pageWidth: width, contentWidth: width * 5) == 0,
+                  "Hero retreats at exactly twenty percent at \(Int(width)) points")
+            check(HeroPageSnap.offset(original: 0, proposed: -width,
+                                     pageWidth: width, contentWidth: width * 5) == 0
+                  && HeroPageSnap.offset(original: width * 4, proposed: width * 5,
+                                         pageWidth: width, contentWidth: width * 5) == width * 4,
+                  "Hero paging clamps the first and last pages at \(Int(width)) points")
+        }
         for size in [CGFloat(16), 48, 112, 1024] {
             let rect = CGRect(x: 7, y: 11, width: size, height: size)
             let mark = XOdeMark.path(in: rect)

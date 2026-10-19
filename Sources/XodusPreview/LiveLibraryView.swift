@@ -232,7 +232,7 @@ struct LiveLibraryView: View {
                     }
                     .scrollTargetLayout()
                 }
-                .scrollIndicators(.never).scrollTargetBehavior(.paging)
+                .scrollIndicators(.never).scrollTargetBehavior(HeroPageSnap())
                 .scrollPosition(id: $selection.heroID, anchor: .leading)
                 if heroGames.count > 1 {
                     HStack(spacing: 4) {
@@ -240,7 +240,7 @@ struct LiveLibraryView: View {
                             Button {
                                 withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) { selection.heroID = game.id }
                             } label: {
-                                Circle().fill(selection.heroID == game.id ? Color.white : Color.white.opacity(0.45))
+                                Circle().fill(selection.heroID == game.id ? Color.primary : Color.secondary.opacity(0.55))
                                     .frame(width: 8, height: 8).frame(width: 22, height: 22)
                                     .contentShape(Rectangle())
                             }
@@ -289,9 +289,7 @@ struct LiveLibraryView: View {
                  : game.pc != nil ? "In your library" : "PC Game Pass catalogue")
                 .font(.callout.weight(.medium))
             information(id: id)
-            if let match = game.installed { InstalledPackageTypeLabel(game: match) }
             LibraryGameSizeView(installed: game.installed, downloadBytes: art.images[id]?.facts.downloadBytes,
-                                packageFormat: art.images[id]?.facts.packageFormat,
                                 allowsMeasurement: artworkAllowed)
         } actions: {
             if game.pc == nil {

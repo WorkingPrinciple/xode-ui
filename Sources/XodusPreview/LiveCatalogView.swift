@@ -223,8 +223,8 @@ struct LiveCatalogView: View {
                     }
                     .scrollTargetLayout()
                 }
-                .scrollIndicators(.never).scrollTargetBehavior(.paging)
-                .scrollPosition(id: $selection.featuredID)
+                .scrollIndicators(.never).scrollTargetBehavior(HeroPageSnap())
+                .scrollPosition(id: $selection.featuredID, anchor: .leading)
                 if featuredGames.count > 1 {
                     HStack(spacing: 10) {
                         ForEach(featuredGames) { product in
@@ -233,7 +233,7 @@ struct LiveCatalogView: View {
                                     selection.featuredID = product.id
                                 }
                             } label: {
-                                Circle().fill(selection.featuredID == product.id ? Color.white : Color.white.opacity(0.55))
+                                Circle().fill(selection.featuredID == product.id ? Color.primary : Color.secondary.opacity(0.55))
                                     .frame(width: 7, height: 7)
                                     .frame(width: 24, height: 24)
                                     .contentShape(Rectangle())

@@ -20,6 +20,9 @@ All/Installed counts include known local installations without inventing ownersh
 Keep covers clean: title, Play or Needs attention, and the existing action menu.
 Do not compress package/ownership diagnostics into columns below covers. Recovery
 belongs in the normal detail sheet, with concise reasons and real actions.
+Hero artwork and readability scrims fade together into the ambient content
+background; text/actions remain crisp. Library and Discover snap to the adjacent
+hero after twenty percent of a page, with first/last-page clamping.
 
 ## User-directed visual contract
 
