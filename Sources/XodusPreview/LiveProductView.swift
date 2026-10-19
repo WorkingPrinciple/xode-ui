@@ -219,7 +219,7 @@ struct LiveProductView: View {
                                       || operations.compatibility[product.id]?.supported != true)
                             .help("Install \(product.title)")
                             .accessibilityLabel("Install \(product.title)")
-                        } else if gamePass {
+                        } else if gamePass, !operations.usesUnifiedAccount {
                             Button {
                                 operations.checkGamePass(
                                     discoveryProducts: session.gamePassProducts,

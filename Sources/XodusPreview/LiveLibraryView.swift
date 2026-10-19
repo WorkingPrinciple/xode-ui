@@ -14,6 +14,7 @@ struct LiveLibraryView: View {
     var allowsHeroAnimation = true
     let browse: () -> Void
     let recentActivity: () -> Void
+    var showCollection: () -> Void = {}
     @StateObject private var selection = LibrarySelection()
     @StateObject private var passCollections = GamePassCollections()
     @State private var selectedPassCollection: String?
@@ -73,6 +74,15 @@ struct LiveLibraryView: View {
     }
     private var editorialGames: [LibraryGame] {
         passCollections.collections.flatMap { Array(games(in: $0).prefix(10)) }
+    }
+    private var selectedPreviewCollection: GamePassCollection? {
+        guard filter == .gamePass else { return nil }
+        return passCollections.collections.first {
+            $0.key == selectedPassCollection && ($0.isUpcoming || $0.isBenefits)
+        }
+    }
+    private var cataloguePreviewIDs: [String] {
+        passCollections.collections.filter { $0.isUpcoming || $0.isBenefits }.flatMap { $0.products.map(\.id) }
     }
     private var continuing: [InstalledGame] {
         LibraryGame.continuing(LibraryGame.visible(collection, query: query, filter: filter, sort: sort),
@@ -142,9 +152,11 @@ struct LiveLibraryView: View {
                 PCGamesView(library: library, installed: installed, operations: operations,
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
-                LibraryControls(count: visible.count, hiddenUnsupportedCount: hiddenUnsupportedCount,
+                LibraryControls(count: selectedPreviewCollection?.products.count ?? visible.count,
+                                hiddenUnsupportedCount: hiddenUnsupportedCount,
                                 filter: $selection.filter, sort: $selection.sort,
-                                showsUnsupportedGames: $showsUnsupportedGames)
+                                showsUnsupportedGames: $showsUnsupportedGames,
+                                allowsSorting: selectedPreviewCollection == nil)
                     .id("library-games")
                 if filter == .gamePass {
                     Picker("Collection", selection: $selectedPassCollection) {
@@ -155,7 +167,9 @@ struct LiveLibraryView: View {
                     }.frame(maxWidth: 360)
                 }
                 if installed.loading { ProgressView("Loading installed games") }
-                if visible.isEmpty {
+                if let category = selectedPreviewCollection {
+                    cataloguePreviewShelf(category)
+                } else if visible.isEmpty {
                     if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         ContentUnavailableView.search(text: query)
                     } else if filter == .gamePass {
@@ -232,7 +246,9 @@ struct LiveLibraryView: View {
                     ForEach(passCollections.collections.filter {
                     !["pcgaVTaz", "pdoPC", "XGPPMPRecentlyAdded"].contains($0.key)
                     }) { category in
-                    if !games(in: category).isEmpty {
+                    if (category.isUpcoming || category.isBenefits), !category.products.isEmpty {
+                        cataloguePreviewShelf(category)
+                    } else if !games(in: category).isEmpty {
                         gamePassShelf(title: category.title,
                             subtitle: category.isBenefits ? "Games with subscription benefits. Eligibility is checked separately."
                                 : category.isUpcoming ? "Upcoming PC catalogue. Release dates and access are not inferred."
@@ -263,12 +279,13 @@ struct LiveLibraryView: View {
                 }
             }
             .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id)
-                + gamePassHighlights.map(\.id) + editorialGames.map(\.id)).sorted().joined(separator: ",")) {
+                + gamePassHighlights.map(\.id) + editorialGames.map(\.id)
+                + cataloguePreviewIDs).sorted().joined(separator: ",")) {
                 guard artworkAllowed else { return }
                 await art.load(ids: heroGames.map(\.id) + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
                     .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
                     + gamePassHighlights.map(\.id).filter(PCGamesClient.validProductID)
-                    + editorialGames.map(\.id),
+                    + editorialGames.map(\.id) + cataloguePreviewIDs,
                     market: session.market, language: session.language)
             }
             .padding(.horizontal, 56).padding(.vertical, 22)
@@ -525,6 +542,42 @@ struct LiveLibraryView: View {
             subtitle: "Explore the PC Game Pass catalogue.", games: gamePassHighlights)
     }
 
+    private func cataloguePreviewShelf(_ category: GamePassCollection) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(category.title).font(.title2.weight(.semibold))
+                    Text(category.isUpcoming
+                         ? "Upcoming announcements. PC packages and availability may not be published yet."
+                         : "Games with subscription benefits. This is not a list of owned or installable games.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+                if filter != .gamePass || selectedPassCollection != category.key {
+                    Button("See All") { selectCollection(category.key) }
+                }
+            }
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 20) {
+                    ForEach(category.products) { product in
+                        Button { session.selectedProduct = product } label: {
+                            VStack(alignment: .leading, spacing: 9) {
+                                LibraryLandscapeView(references: art.images[product.id]?.landscape
+                                    ?? product.artwork.filter { $0.role == .hero },
+                                    installed: nil, allowsLoading: artworkAllowed)
+                                    .frame(width: 260, height: 130).clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                Text(product.title).font(.headline).lineLimit(1)
+                                Text(category.isUpcoming ? "Coming soon" : "Subscription benefits")
+                                    .font(.subheadline).foregroundStyle(.secondary)
+                            }.frame(width: 260, alignment: .leading).contentShape(Rectangle())
+                        }.buttonStyle(.plain)
+                    }
+                }.scrollTargetLayout()
+            }.scrollIndicators(.hidden).scrollTargetBehavior(.viewAligned)
+        }
+    }
+
     private func gamePassShelf(title: String, subtitle: String, games: [LibraryGame],
                                collection: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -535,7 +588,7 @@ struct LiveLibraryView: View {
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("See All") { selectedPassCollection = collection; filter = .gamePass; sort = .title }
+                Button("See All") { selectCollection(collection) }
                     .accessibilityLabel("Show all \(title) games")
             }
             ScrollView(.horizontal) {
@@ -578,6 +631,7 @@ struct LiveLibraryView: View {
                 else { session.errorMessage = "Game details couldn't be opened." }
                 return
             }
+
             let product = try game.product ?? art.images[productID]?.product ??
                 LibraryGame.details(id: productID, title: game.title, market: session.market, language: session.language,
                                     source: game.owned ? "AccountPCLibrary:identityOnly" : "LocalInstalledRegistry:identityOnly",
@@ -586,6 +640,16 @@ struct LiveLibraryView: View {
                 selection.localDetail = InstalledGameDetailSelection(game: local, product: product)
             } else { session.selectedProduct = product }
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
+    }
+
+    private func selectCollection(_ key: String?) {
+        selectedPassCollection = key
+        filter = .gamePass
+        sort = .title
+        Task { @MainActor in
+            await Task.yield()
+            showCollection()
+        }
     }
 
     private func information(id: String, compact: Bool = false) -> some View {

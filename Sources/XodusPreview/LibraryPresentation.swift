@@ -182,6 +182,7 @@ struct LibraryControls: View {
     @Binding var filter: LibraryFilter
     @Binding var sort: LibrarySort
     @Binding var showsUnsupportedGames: Bool
+    var allowsSorting = true
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -224,6 +225,7 @@ struct LibraryControls: View {
         .menuStyle(.borderlessButton).fixedSize()
         .accessibilityLabel("Sort games by \(sort.rawValue)")
         .accessibilityIdentifier("xodus.library.sort")
+        .disabled(!allowsSorting)
     }
 }
 

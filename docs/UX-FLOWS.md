@@ -60,6 +60,11 @@ Each list has independent loading/failure recovery; opening the full collection
 automatically resolves more catalogue records. Known package/anti-cheat blockers
 also remain visible for installed games, which are never hidden by the unsupported
 filter. Missing compatibility evidence stays explicitly unverified.
+Coming-soon announcements and in-game benefit lists have separate preview shelves,
+including when a playable PC package has not yet been published. They never enter
+the qualified game grid or enable installation by virtue of editorial membership.
+See All moves to the selected collection rather than silently changing a filter
+elsewhere on the page.
 
 Welcome and Settings show automatically observed CrossOver version/signature
 status and link missing/unverified installs to CodeWeavers' trial download.

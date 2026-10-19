@@ -109,7 +109,9 @@ struct LiveRootView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
-                        if state.destination == .library { library }
+                        if state.destination == .library {
+                            library { proxy.scrollTo("library-games", anchor: .top) }
+                        }
                         else { catalog }
                     }
                     .padding(immersiveDestination ? 0 : 30)
@@ -341,7 +343,7 @@ struct LiveRootView: View {
         (state.destination == .library && !state.showsRecentActivity) || state.destination == .discover
     }
 
-    private var library: some View {
+    private func library(showCollection: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             if state.showsRecentActivity {
                 Button("Back to Library", systemImage: "chevron.left") { state.navigate(.library) }
@@ -357,7 +359,8 @@ struct LiveRootView: View {
                                 allowsArtworkLoading: libraryArtworkAllowed,
                                 allowsHeroAnimation: heroAnimationAllowed,
                                 browse: { state.navigate(.discover) },
-                                recentActivity: { state.openRecentActivity() })
+                                recentActivity: { state.openRecentActivity() },
+                                showCollection: showCollection)
             }
         }
     }
