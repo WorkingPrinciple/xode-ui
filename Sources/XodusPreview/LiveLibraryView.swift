@@ -411,6 +411,10 @@ struct LiveLibraryView: View {
                 .font(.callout.weight(.medium))
             information(id: id)
             LibraryGameSizeView(installed: game.installed, downloadBytes: art.images[id]?.facts.downloadBytes,
+                                productID: id,
+                                pcPackageListed: LibraryPCPackageEvidence.listed(
+                                    observed: art.images[id]?.facts.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
+                                packageFormat: art.images[id]?.facts.packageFormat,
                                 allowsMeasurement: artworkAllowed)
         } actions: {
             if game.pc == nil {
@@ -675,15 +679,22 @@ struct LiveLibraryView: View {
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
         } status: {
             if !unsupportedIssues(game).isEmpty {
-                    LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
-            } else if let evidence = OfflineGameCompatibility.publisherEvidence(for: artworkID) {
+                LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
+            }
+            if let evidence = OfflineGameCompatibility.publisherEvidence(for: artworkID) {
                 Label(evidence.technologies.joined(separator: ", "), systemImage: "shield")
                     .help(evidence.scope)
-            } else if game.installed == nil {
-                    LibraryGameSizeView(installed: nil, downloadBytes: art.images[artworkID]?.facts.downloadBytes,
-                                        packageFormat: art.images[artworkID]?.facts.packageFormat,
-                                        allowsMeasurement: artworkAllowed)
-            } else {
+            }
+            LibraryGameSizeView(installed: game.installed,
+                                downloadBytes: art.images[artworkID]?.facts.downloadBytes,
+                                productID: artworkID,
+                                pcPackageListed: LibraryPCPackageEvidence.listed(
+                                    observed: art.images[artworkID]?.facts.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
+                                packageFormat: game.installed?.packageType?.label
+                                    ?? art.images[artworkID]?.facts.packageFormat,
+                                allowsMeasurement: artworkAllowed)
+            if game.installed != nil && unsupportedIssues(game).isEmpty
+                && OfflineGameCompatibility.publisherEvidence(for: artworkID) == nil {
                 Label("Mac support unverified", systemImage: "questionmark.circle")
                     .help("The package is inspected automatically. No verified game/runtime or Microsoft Store anti-cheat clearance is available yet.")
             }

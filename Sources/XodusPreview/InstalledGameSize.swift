@@ -103,14 +103,32 @@ final class InstalledGameSizeStore: ObservableObject {
 struct LibraryGameSizeView: View {
     let installed: InstalledGame?
     let downloadBytes: Int64?
+    var productID: String? = nil
+    var pcPackageListed: Bool? = nil
     var packageFormat: String? = nil
     var allowsMeasurement = true
     @ObservedObject private var sizes = InstalledGameSizeStore.shared
 
+    private var packageListing: Bool? {
+        pcPackageListed
+    }
+
     var body: some View {
-        HStack(spacing: 8) {
-            if let packageFormat {
-                LibraryPackageFormatLabel(format: packageFormat)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Label(packageListing == true ? "PC package found"
+                      : packageListing == false ? "No PC package found" : "PC package unverified",
+                      systemImage: packageListing == true ? "checkmark.circle"
+                      : packageListing == false ? "xmark.circle" : "questionmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .help("A public Microsoft catalog listing does not confirm this account can download the game or that it can be installed on this Mac.")
+                    .accessibilityLabel(packageListing == true ? "Windows PC package found"
+                        : packageListing == false ? "No Windows PC package found"
+                        : "Windows PC package not verified")
+                if let packageFormat {
+                    LibraryPackageFormatLabel(format: packageFormat)
+                }
             }
             sizeLabel
         }

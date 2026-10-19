@@ -36,6 +36,10 @@ struct LiveProductView: View {
     }
     private var art: LibraryCatalogArtwork.Images? { catalog.images[product.id] }
     private var details: CatalogDetailFacts? { art?.detail }
+    private var pcPackageListed: Bool? {
+        LibraryPCPackageEvidence.listed(observed: art?.facts.pcPackageListed,
+                                       candidate: product.pcCatalogCandidate)
+    }
     private var access: LibraryAccess? {
         (library.accessIsCurrent ? owned : nil)
             .map { $0.acquisitionKind == .subscription ? .subscription : .owned } ?? (gamePass ? .gamePass : nil)
@@ -64,11 +68,11 @@ struct LiveProductView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
+            LibraryAmbientBackdrop(references: landscape, installed: installed,
+                                   allowsLoading: allowsArtworkLoading)
+            VStack(spacing: 0) {
             ScrollViewReader { proxy in
-            ZStack(alignment: .top) {
-                LibraryAmbientBackdrop(references: landscape, installed: installed,
-                                       allowsLoading: allowsArtworkLoading)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         header
@@ -80,6 +84,7 @@ struct LiveProductView: View {
                                 close: dismiss.callAsFunction)
                         }
                         GameCompatibilityFacts(productID: product.id,
+                            pcPackageListed: pcPackageListed,
                             packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat,
                             compatibility: operations.compatibility[product.id],
                             checking: operations.precheckingProductID == product.id)
@@ -111,11 +116,10 @@ struct LiveProductView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-            }
 #if !XODUS_SHIPPING
-            .onReceive(LibraryPreviewExporter.presentation.$showDetailInformation) { show in
-                if show { proxy.scrollTo("detail-information", anchor: .top) }
-            }
+                .onReceive(LibraryPreviewExporter.presentation.$showDetailInformation) { show in
+                    if show { proxy.scrollTo("detail-information", anchor: .top) }
+                }
 #endif
             }
             Divider()
@@ -123,6 +127,7 @@ struct LiveProductView: View {
                 Spacer()
                 Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(20)
+            }
         }
         .frame(minWidth: 820, idealWidth: 1040, maxWidth: 1200,
                minHeight: 600, idealHeight: 780, maxHeight: 850)
@@ -169,6 +174,7 @@ struct LiveProductView: View {
                     LibraryGameInformation(access: access, gamePass: gamePass,
                                            facts: art?.facts, xbox: stats.cache?.games[product.id])
                     LibraryGameSizeView(installed: installed, downloadBytes: art?.facts.downloadBytes,
+                                        productID: product.id, pcPackageListed: pcPackageListed,
                                         packageFormat: art?.facts.packageFormat,
                                         allowsMeasurement: allowsArtworkLoading)
                     if let date = installed?.lastPlayedAt {

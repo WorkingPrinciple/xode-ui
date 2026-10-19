@@ -352,6 +352,19 @@ struct PCGamesCatalog: Decodable {
             }
         }
 
+        var pcPackageListing: Bool? {
+            if isPC { return true }
+            guard let availabilities = DisplaySkuAvailabilities, !availabilities.isEmpty,
+                  availabilities.allSatisfy({ availability in
+                      guard let packages = availability.Sku?.Properties?.Packages, !packages.isEmpty else { return false }
+                      return packages.allSatisfy { package in
+                          guard let platforms = package.PlatformDependencies, !platforms.isEmpty else { return false }
+                          return platforms.allSatisfy { $0.PlatformName?.isEmpty == false }
+                      }
+                  }) else { return nil }
+            return false
+        }
+
         var pcDownloadBytes: Int64? {
             (DisplaySkuAvailabilities ?? []).flatMap { $0.Sku?.Properties?.Packages ?? [] }
                 .filter { ($0.PlatformDependencies ?? []).contains { $0.PlatformName == "Windows.Desktop" } }

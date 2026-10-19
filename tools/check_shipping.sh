@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 set -eu
 cd "$(dirname "$0")/.."
+swift build --product XodusManagementChecks
 neutral="$(swift build --show-bin-path)/XodusManagementChecks"
 XODUS_SHIPPING=1 swift build --scratch-path .build/shipping -c release --product XodusPreview
 XODUS_SHIPPING=1 swift build --scratch-path .build/shipping -c release --product XodusAuthHost

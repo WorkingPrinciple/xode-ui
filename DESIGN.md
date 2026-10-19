@@ -239,8 +239,10 @@ admission. No proprietary cover, account record or capture is committed.
 **Detail (Operate, D3 source candidate; visual review pending):** retain the
 original detail flow in a native resizable sheet: a 340-point landscape header,
 optional genuine title logo/portrait cover, existing native glass actions and
-four visible independent Access / PC download / Mac compatibility / On this Mac
-rows. Only a registered installed entry has Play/Stop. An uninstalled entitled
+visible independent Access / Windows PC package listing / Ode install check /
+On this Mac evidence. Package listing and estimated size come from the public
+Microsoft catalog; neither grants account download access nor establishes Mac
+installability. Only a registered installed entry has Play/Stop. An uninstalled entitled
 entry has Install; dismissal hands off to the existing protected package,
 space and consent sheet, never download-and-play. Unknown access is explicit.
 Public approximate size never becomes a verified package or support check.

@@ -294,13 +294,24 @@ enum LibrarySupportVisibility {
     }
 }
 
+enum LibraryPCPackageEvidence {
+    static func listed(observed: Bool?, candidate: Bool?) -> Bool? {
+        if let observed { return observed }
+        return candidate == true ? true : nil
+    }
+}
+
 struct GameCompatibilityFacts: View {
     let productID: String
+    var pcPackageListed: Bool? = nil
     let packageFormat: String?
     let compatibility: GameCompatibilityResult?
     let checking: Bool
     private var database: OfflineGameCompatibility? { OfflineGameCompatibility.snapshot }
     private var offline: OfflineGameCompatibility.Entry? { database?.products[productID] }
+    private var packageListing: Bool? {
+        pcPackageListed ?? (offline?.pcPackageIdentified == true ? true : nil)
+    }
     private var publisherEvidence: OfflineGameCompatibility.PublisherEvidence? {
         OfflineGameCompatibility.publisherEvidence(for: productID)
     }
@@ -313,12 +324,15 @@ struct GameCompatibilityFacts: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Compatibility").font(.headline)
+            LabeledContent("Windows PC package",
+                           value: packageListing == true ? "Found in Microsoft catalog"
+                           : packageListing == false ? "Not found in catalog data" : "Not verified")
             LabeledContent("Package", value: packageFormat ?? offline?.packageFormat ?? "Not identified")
             LabeledContent("Anti-cheat", value: issues.first(where: { $0.kind == .antiCheat })?.title
                            ?? publisherEvidence?.technologies.joined(separator: ", ") ?? "Not verified")
-            LabeledContent("Mac runtime", value: !issues.isEmpty ? "Known blocker"
+            LabeledContent("Ode install check", value: !issues.isEmpty ? "Known blocker"
                            : checking ? "Checking" : compatibility?.supported == true
-                           ? "Saved installation check passed" : "Not verified")
+                           ? "Passed; install review still required" : "Not verified")
             ForEach(issues) { issue in
                 Text(issue.detail).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -351,6 +365,8 @@ struct GameCompatibilityFacts: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Text("Package inspection and known blockers are checked automatically. An unknown anti-cheat result is not clearance, and an installation check does not prove a game runs.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Text("A PC package listing is not account download access or proof this Mac can install or run the game.")
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityIdentifier("xodus.game.compatibility")

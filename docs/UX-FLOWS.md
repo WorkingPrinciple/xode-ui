@@ -488,7 +488,13 @@ failed/cancelled flow results retain their existing static diagnostics.
 
 "Purchased" means purchase entitlement evidence, not "found in catalog". "Included with subscription" carries checked time and expiry when available. "Access unverified" is not an error-free fallback. "Download unavailable" states the reason (PC package absent, market, architecture, access, API or unknown). "Verified on [OS/runtime]" must match current fingerprint. "Experimental" explains what is untested. "Unsupported" is not equivalent to "not owned".
 
-Detail presents access -> downloadability -> compatibility -> local install, then a disclosure of provenance/time/fingerprint. Installed state never bypasses revoked access policy. When multiple reasons block an action, present the most actionable primary reason and retain all facets.
+Detail presents account access, public Windows PC package listing/format, the separate Ode install check, and local installation state, then a disclosure of provenance/time/fingerprint. A catalog-listed package is not account download access or proof the Mac can install or run it. Installed state never bypasses revoked access policy. When multiple reasons block an action, present the most actionable primary reason and retain all facets.
+Fresh public package observations take precedence over older candidate flags.
+An identity-only record's false candidate flag means no package evidence was
+supplied, not that Microsoft has no PC package. Cards retain an unknown state
+without affirmative candidate or package observations; only details use positive
+offline identification alongside the snapshot date and market. Omitted or
+incomplete catalog package/platform fields never establish package absence.
 
 ## Fixture interactions
 

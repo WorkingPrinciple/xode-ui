@@ -166,6 +166,7 @@ struct PCGameTile: View {
     let game: PCGame
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
+    @ObservedObject private var catalog = LibraryCatalogArtwork.shared
     var allowsArtworkLoading = true
     var badge: CatalogAccessBadge?
     var viewDetails: (() -> Void)?
@@ -200,6 +201,14 @@ struct PCGameTile: View {
                     .accessibilityLabel("Install \(game.title)")
                     .accessibilityIdentifier("xodus.pcGames.download")
             }
+            LibraryGameSizeView(installed: PCGamesController.installedMatch(game, in: installed.games),
+                                downloadBytes: catalog.images[game.id]?.facts.downloadBytes,
+                                productID: game.id,
+                                pcPackageListed: LibraryPCPackageEvidence.listed(
+                                    observed: catalog.images[game.id]?.facts.pcPackageListed,
+                                    candidate: catalog.images[game.id]?.product.pcCatalogCandidate),
+                                packageFormat: catalog.images[game.id]?.facts.packageFormat,
+                                allowsMeasurement: allowsArtworkLoading)
             if let viewDetails { Button("View game", action: viewDetails) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

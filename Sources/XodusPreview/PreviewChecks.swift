@@ -551,6 +551,28 @@ enum PreviewChecks {
                 """.utf8))
             check(packages.pcDownloadBytes == 5_300_000_000 && packages.isPC,
                   "Public size uses positive PC package maxima, not console sizes or malformed metadata")
+            check(packages.pcPackageListing == true && console.pcPackageListing == nil
+                  && metadata.pcPackageListing == nil && malformed.pcPackageListing == nil,
+                  "PC package presence requires package evidence; missing fields and console capabilities remain unknown")
+            let consolePackages = try JSONDecoder().decode(PCGamesCatalog.Product.self, from: Data("""
+                {"ProductId":"FIXTURE00002","DisplaySkuAvailabilities":[{"Sku":{"Properties":{"Packages":[
+                 {"PlatformDependencies":[{"PlatformName":"Windows.Xbox"}]}
+                ]}}}]}
+                """.utf8))
+            let incompletePackages = try JSONDecoder().decode(PCGamesCatalog.Product.self, from: Data("""
+                {"ProductId":"FIXTURE00002","DisplaySkuAvailabilities":[{"Sku":{"Properties":{"Packages":[
+                 {"PlatformDependencies":[{"PlatformName":"Windows.Xbox"}]},{}
+                ]}}}]}
+                """.utf8))
+            check(consolePackages.pcPackageListing == false && incompletePackages.pcPackageListing == nil,
+                  "Only complete returned package platform evidence establishes no PC package in catalog data")
+            check(LibraryPCPackageEvidence.listed(observed: true, candidate: false) == true
+                  && LibraryPCPackageEvidence.listed(observed: false, candidate: true) == false,
+                  "Fresh package observations override older catalog candidate flags")
+            check(LibraryPCPackageEvidence.listed(observed: nil, candidate: false) == nil
+                  && LibraryPCPackageEvidence.listed(observed: nil, candidate: nil) == nil
+                  && LibraryPCPackageEvidence.listed(observed: nil, candidate: true) == true,
+                  "Identity-only records never turn missing PC package evidence into an absence claim")
             check(metadata.pcDownloadBytes == nil && malformed.pcDownloadBytes == nil,
                   "Missing public size stays unknown and never becomes a zero-byte download")
             let formats = try JSONDecoder().decode(PCGamesCatalog.Product.self, from: Data("""

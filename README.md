@@ -405,6 +405,9 @@ before the old child exits.
 portable packaging negatives, actual shipping release compilation and separate
 shipping XCTest admission checks. The latter require full Xcode's test framework,
 not only Command Line Tools; they never become application entrypoints.
+For only the shipping checks, run `sh tools/check_shipping.sh`: it builds the
+neutral engine and supplies its fixture paths. Invoking the shipping XCTest
+directly without those inputs is not an admission result.
 The existing GitHub-hosted `xcode-27` job checks actual SDK/runtime versions and
 SVG regeneration. A workflow definition is not evidence of a passing revision.
 

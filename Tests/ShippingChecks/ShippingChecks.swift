@@ -99,7 +99,8 @@ final class ShippingChecks: XCTestCase {
         do {
             guard let neutralEngine = ProcessInfo.processInfo.environment["XODUS_NEUTRAL_ENGINE"],
                   let neutralFixture = ProcessInfo.processInfo.environment["XODUS_NEUTRAL_FIXTURE"] else {
-                throw ManagementError.invalidRequest
+                XCTFail("Missing XODUS_NEUTRAL_ENGINE or XODUS_NEUTRAL_FIXTURE. Run sh tools/check_shipping.sh.")
+                return
             }
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
                                                      attributes: [.posixPermissions: 0o700])
