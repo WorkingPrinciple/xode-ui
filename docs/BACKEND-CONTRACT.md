@@ -4,6 +4,11 @@
 
 Stable handoff: **protocol 1.0**, [canonical scoped JSON Schema](contracts/management-v1.schema.json), [implementation ledger](IMPLEMENTATION-LEDGER.md). The [original foundation proposal](contracts/foundation-v1.schema.json) is preserved. The producer fills strict operation schemas for implemented public-catalog/registry/activity/diagnostic operations and explicitly gates game lifecycle success. Native clients validate the expected command's result, not any success-shaped object. A future minor/operation extension needs its own agreed schema/consumer pin; never guess forward compatibility.
 
+The proposed [Ode to X unified-account specification](UNIFIED-ACCOUNT-SPEC.md)
+defines the forked-producer/native-app split and acceptance gates for replacing
+the current separate launcher, PC-library and game-service sign-ins. It is not
+implemented by the current protocol or admitted producer.
+
 ## Transport and negotiation
 
 Current scoped entry: `xodus-cli manage --protocol 1 --state-dir <absolute-private-directory>`, one JSON request per stdin line, one JSON response/event per stdout line (UTF-8, LF). stderr is redacted human diagnostics, never machine results; the native client drains/discards it. No interactive prompts. Max frame size 1 MiB; strict 1.0 rejects unknown envelope/parameter fields and incompatible versions. Never place credentials in argv/stdout/stderr. Backend-owned native authentication keeps its credential handoff separate.

@@ -1,0 +1,255 @@
+# Ode to X: unified account implementation specification
+
+Status: proposed, not implemented or shipping-admitted. Scope: one interactive
+Microsoft sign-in for games, PC library, Xbox profile and achievements where the
+provider authorizes those capabilities. This document does not promise ownership,
+downloadability, compatibility or gameplay merely because authentication succeeds.
+
+## Decision and repository boundary
+
+Changes are required in **both repositories**. Ode to X is the native product in
+`xodus-macos-app`; its forked Xodus Rust producer is the authentication/runtime
+implementation. Authentication unification belongs primarily in that fork, not
+in Swift views, and does not require changing upstream Xodus itself.
+
+The proposed smallest durable architecture extends the existing management
+credential owner and authenticated-read pattern. Do not create a fourth vault,
+an independent login server or a new browser-based frontend.
+
+| Owner | Required changes | Existing seams |
+| --- | --- | --- |
+| Forked Xodus, `crates/xodus` | Account-session authority, audience-specific authorization, refresh, account/generation fencing and service credential access | `tokens/manager.rs`, `tokens/backend/keychain.rs`, `auth.rs`, `api/xbox` |
+| Forked Xodus, `crates/xodus-management` | Negotiated account/capability snapshot, operation authorization, explicit recovery and coordinated logout contract | `adapter.rs`, `wire.rs`, `auth_verify.rs` |
+| Forked Xodus, `crates/xodus-cli` | Library/profile/achievement adapters using that authority; retain existing native issuance and lifecycle controls | `management_auth.rs`, `provider_credentials.rs`, `recent_library.rs`, `commands/login.rs` |
+| Forked Xodus runtime/service and private-script producer | Consume scoped authorization for the selected account; report unavailable/expired/transport failures distinctly; retire independent interactive login in the paired route | Current `xodus-service` IPC and `private-xodus-manage.py`; exact producer module for installed social helper remains to be located |
+| Ode to X, `Sources/XodusManagement` and contracts | Typed consumer of the new negotiated contract, no credentials | `WireModels.swift`, `ManagementClient.swift`, `ContractValidator.swift`, canonical schema/resources |
+| Ode to X, `Sources/XodusPreview` | One account coordinator, capability-based access, honest partial states, accessible layout and branding | `AppState`, `LiveSession`, `LiveRootView`, `PCGamesController`, `GameOperationsController`, `XboxCompanionController`, Account/Welcome views |
+| Ode to X packaging | New exact producer pairing, component identities and admission evidence | `tools/build_app.sh`, shipping pins, helper/broker manifests, shipping documentation |
+
+The sealed producer snapshot `28f737df46b29cc195145425e3fd1397ebc09be3`
+is read-only evidence, not an implementation checkout. Implement Rust changes
+in a writable fork worktree; seal a new producer only after verification. The
+current app baseline is `8586a38dc98833f761201db8b5690ecb6ebc3a63`.
+An unchanged preserved CLI can package UI fixes, but cannot deliver this contract.
+
+## Adversarial correction of the audit
+
+| Finding or assumption | Evidence and qualification | Consequence |
+| --- | --- | --- |
+| Three authentication paths exist | Management uses an isolated management store; PC library uses client `1f907974-e22b-4810-a9de-d9647380c97e` and its broker; service login uses a separately installed CLI and global store | A successful management login does not initialize the other paths |
+| A bootstrap cycle can strand first-time users | `LiveRootView` requires matching management/library/service plus a returned profile; `PCGamesView` owns missing-library sign-in inside gated content | Prove reachability from empty stores; do not merely remove the visible second button |
+| One saved session can serve everything | Not established. `recent_library.rs` demonstrates a management-owned authenticated TitleHub read in source; it is not a live proof of full collections, profile, achievements or runtime audiences | Audience feasibility is the first implementation gate |
+| Same client ID means credentials can be shared | False. Client IDs do not establish storage authority, matching account, token audience or consent | No opaque-token copying or fallback to unrelated global credentials |
+| Service says false, therefore user signed out | Not established. Installed `service_signed_in()` maps transport/parse failures to false | Preserve failure cause; do not respond to a connection fault by launching consent |
+| The service account hash proves the consuming service identity | Not fully established: installed status obtains identity using a separate social helper/cache | Trace that helper's credential owner and bind the actual consumer; cache identity alone cannot authorize games |
+| Profile failure means authentication failure | False. The current root gate requires profile availability in addition to identity | Profile/network/privacy failures must be separate from verified account identity |
+| Removing the profile gate solves login | False. It could expose cross-account cache or operations without authorization | Replace with per-capability authorization and account-scoped data fences, not an unconditional unlock |
+| One login eliminates macOS prompts | False. Keychain access approval and Microsoft consent are separate; rebuilt self-signed code can prompt again | Preserve native approval; qualify stable-owner persistence separately |
+| Layout alone explains every hidden item | Only the inspected 480-point sheet and its below-fold controls are confirmed | Verify the corrected screen and keyboard/VoiceOver paths, not just frame constants |
+
+The previous explicit-service-action patch was a stopgap, not an implementation
+of one login. The existing `do_sisu` machinery is a feasibility lead, not a
+ready-made universal exchange: it reads particular token roles, can persist
+tokens, and contains failure paths unsuitable for blind production reuse.
+
+## Product contract
+
+1. An initially signed-out user chooses **Sign in with Xbox Live** once.
+   Microsoft may require multiple pages, MFA or consent within that one owned
+   flow. The app must not initiate independent library/service login flows.
+2. After identity establishment, the backend silently prepares only authorized,
+   approved audiences. A provider request for additional consent is an explicit
+   capability state, not a hidden browser launch or successful completion.
+3. Readiness is reported per capability. If a required audience cannot be
+   obtained from the selected session, the single-login requirement is unmet;
+   do not call the result unified or production-ready.
+4. Games/library may open once their account identity and applicable read
+   authorization are verified. Optional profile, friends, gamer picture or
+   achievement failure must not lock the entire shell. This intentionally
+   supersedes the all-identities-plus-profile gate in `UX-FLOWS.md` only when
+   the replacement backend contract and data fences are implemented.
+5. Install and launch retain their separate entitlement, package, runtime,
+   compatibility and operation guards. A signed-in account never implies access.
+6. Display name is **Ode to X** throughout app-owned surfaces. Keep bundle,
+   executable, signing, Keychain, filesystem and protocol identifiers unchanged.
+   Do not alter Microsoft-hosted branding or substitute client registrations.
+
+## Backend session and authorization contract
+
+Extend the existing management protocol through an explicitly negotiated,
+schema-pinned revision. Names below describe proposed semantics, not commands
+that the present producer accepts. Set the exact wire names/version and update
+both canonical schemas before implementation; old strict 1.0 clients must not
+receive new fields they reject.
+
+The account snapshot carries:
+
+| Field | Requirement |
+| --- | --- |
+| `state` | `signedOut`, `authenticating`, `establishing`, `active`, `reauthRequired`, `signingOut`, `removalIncomplete` |
+| `sessionID` / `generation` | Nonsecret opaque session identity and monotonic account-lifecycle generation; distinct from transport session/request sequencing |
+| `accountHash` | Existing validated domain-separated account hash, absent until backend identity verification; never an email-based join |
+| `capabilities` | Separate entries for PC collection read, profile read, achievements read and runtime authorization; each has `unavailable`, `checking`, `ready`, `consentRequired`, `reauthRequired` or `failed` |
+| freshness | Per-entry observation time and expiry when known; unknown expiry is not infinite freshness |
+| reason | Bounded typed stage/category, retryability and recovery action; no tokens, signed URLs, raw provider bodies or personal identifiers |
+
+The snapshot is advisory for presentation, not a bearer capability. Every
+authenticated operation rechecks the current generation, account, audience,
+expiry and relevant authorization before execution and before publishing data.
+Status reads never initiate consent. Coalesce refresh per session/audience;
+bound deadlines and retries; authentication rejection, network failure,
+rate-limit and malformed response remain distinguishable.
+
+Reuse `ProviderCredentials::read`, its bounded credential IO, and
+`verify_current`/publication-witness pattern where appropriate. Extend this
+pattern to profile and collection results instead of trusting cached equality.
+All provider adapters must validate returned subject against the selected account.
+Each audience has a documented endpoint, client registration, scopes/relying
+party, subject extraction, refresh mechanism and provider-policy basis. No
+generic caller-supplied audience, arbitrary URL or token-export operation.
+
+### Runtime boundary
+
+The runtime consumes a least-privilege account-bound authorization through a
+private authenticated local channel. Choose the minimal extension of the
+existing service IPC after tracing its producer; authenticate the intended
+consumer, not merely a socket pathname or claimed account hash.
+The socket server's exact producer module and peer-authentication/lifecycle
+behavior also remain to be traced; the installed client script alone does not
+establish those properties.
+
+The durable credential remains owned by the backend credential authority.
+The native UI never receives access/refresh/STS/XSTS tokens, device secrets or
+raw credential handoffs. Retain the existing isolated native auth host boundary.
+If the runtime requires tokens in memory, restrict them to the necessary
+audience/consumer and lifetime. No argv, logs, world-readable files, generic
+token socket or Swift cache.
+
+Fence runtime refresh/publication with account generation. Logout/account
+switch invalidates issued grants and fences old requests; obtain consumer
+acknowledgement or stop/reconcile the consumer before claiming removal.
+After a crash/restart, a retained service session must be reconciled with the
+current authority before use. An old in-memory token must not resurrect a
+retired account. Preserve current running-game/mutation holds.
+
+### Persistence and migration
+
+Retain one authority for new sessions. Use the existing management storage seam;
+do not silently broaden the PC-library broker, which currently owns only one
+library refresh token. If stable credential-helper ownership is required for
+update persistence, specify and independently qualify its narrowly scoped
+signed-peer contract before extending that component.
+
+Legacy stores are not imported merely because account hashes or emails appear
+equal. A legacy user may need one explicit sign-in to establish the new session.
+Until it succeeds, leave old stores untouched and report upgrade requirements.
+No background credential reads, migration or deletion under this specification's
+documentation work; live qualification requires the user's credential actions.
+
+Migration is staged and idempotent. Persist a nonsecret phase/generation record
+for crash recovery; never secrets in that record. Establish the new authority,
+verify required capability subjects, then retire only app-owned legacy sessions
+through existing acknowledged removal paths. Failure retains a truthful partial
+state and retry point. Switching or signing out fences data immediately even if
+credential deletion fails. Full logout requires all applicable credential and
+consumer-removal acknowledgements. Device licences, games, saves and other apps
+are not deletion targets.
+
+Rollback must preserve recoverable credentials and prevent dual authorities:
+do not run old and new producers concurrently or allow the old service to
+consume a retired session. If an older version cannot reconcile the new state,
+require explicit recovery rather than silently presenting stale login success.
+
+## Native implementation
+
+`AppState` coordinates user intent and one observed backend account snapshot;
+`LiveSession` owns connection and typed account lifecycle. This is not a new
+credential manager in Swift. `MicrosoftSignInGate` and existing mutation/Quit
+holds continue to serialize explicit interactive work.
+
+Replace independent OAuth initiation/refresh in the shipping PC-library path
+with the management collection operation once it exists. Retain paging,
+completeness, market/language, product identity and stale-data semantics; never
+replace a full PC collection with TitleHub recent history. Replace
+`GameOperationsController.signInForGames()` in the paired route with scoped
+backend preparation/status, not installed CLI `login`. Move companion fetches
+onto the same verified account contract or a paired bound backend adapter.
+
+`LiveRootView` derives shell/data access from account and relevant capability,
+not profile existence. Fence caches, in-flight tasks, installed-game disclosure
+and operation admission on account switch/logout/failure. Cached content may be
+shown only under explicit same-account stale-read policy; it never authorizes
+new mutations. Preserve generic recovery for an already-running operation.
+
+Account/Welcome requirements:
+
+- One brand mark, app name **Ode to X**, one primary sign-in/recovery action.
+- No Xbox-logo placeholder beneath the app logo; gamer picture only when real.
+- During establishment: say what is loading without claiming all access ready.
+- Missing/failed profile: distinguish loading, offline, privacy/authorization and
+  request failure; do not say the Xbox profile does not exist without evidence.
+- Required action and current problem visible at the minimum supported sheet
+  size, including the observed 480 x 480 points. Put optional detail in scrolling
+  content; keep primary action/cancel in the fixed reachable action area.
+- Native keyboard navigation, VoiceOver order, wrapping, light/dark appearance,
+  safe resizing and normal Quit remain usable.
+
+## Delivery gates and acceptance
+
+### 1. Audience feasibility before broad refactoring
+
+Build a bounded producer-side vertical slice for the existing management
+session: verify account identity, full PC collection (not recent history),
+profile, one achievement read and runtime authorization. Record only redacted
+stage/result/subject-match evidence. Exercise the real runtime consumer, not
+just a helper's independent credential cache.
+
+Use synthetic/saved-response tests first. Human-assisted live testing uses one
+explicit sign-in, no automated credential entry, Keychain approval or game
+launch. If a required provider audience needs a separate incompatible login,
+stop and revise the architecture with that exact evidence. Do not hide it behind
+a second "Continue" button. Confirm client-registration/endpoint-policy
+eligibility; technical exchange success alone is not distribution permission.
+
+### 2. Contract and implementation
+
+Land paired producer/schema/client changes locally, preserving existing native
+auth lifecycle and bounded IO. Remove the old interactive paths only after the
+new vertical slice passes parity. Add per-capability state and update
+`UX-FLOWS.md`, `BACKEND-CONTRACT.md`, `NATIVE-INTEGRATION.md` and shipping pins
+at implementation time; historical docs must not claim the proposal shipped.
+
+### 3. Required adversarial cases
+
+| Case | Required result |
+| --- | --- |
+| Empty stores, normal login | Exactly one app-initiated interactive flow; matching real PC library/profile/achievement/runtime authorization, no service/library login |
+| Restart with saved session | No interactive Microsoft flow when refresh is allowed; current same-account reads work; Keychain approval counted separately |
+| Expired/revoked account | Correct typed recovery; no repeated consent loop or false signed-out classification from a transport failure |
+| Profile unavailable, library authorized | Library remains usable; profile shows its actual partial failure |
+| Library audience denied | No fabricated owned list; explicit scoped failure; single-login acceptance fails if this requires independent login |
+| Provider no-games response / paged failure | Empty collection distinct from incomplete read; no replacement by recent activity |
+| Account A -> B during refresh | A results/caches never publish into B; old grants and runtime requests fenced |
+| Logout during refresh / partial removal / process death | No resurrection; restart reconciles partial state; no success until required acknowledgements |
+| Old service or missing negotiated contract | Truthful update-required state; no fallback to separate interactive login |
+| Offline, timeout, throttled or malformed response | Bounded retry policy and specific stage; no new consent or destruction of unrelated state |
+| Concurrent clicks/windows/foreground events | One flow and coalesced preparation; cancellation joins owned children |
+| Update across independently built signed engines | Saved-credential access qualified without assuming equal signing requirements eliminate Keychain prompts |
+| 480-point sheet, keyboard and VoiceOver | Primary action and failure visible/reachable; no duplicate mark or clipped mandatory controls |
+
+### 4. Local delivery and readiness claims
+
+Commit locally; do not push or enable/dispatch the manually disabled Actions
+workflow. Run existing targeted native/protocol/producer checks and a shipping
+compile; add deterministic regressions for the cases above. Package with a newly
+sealed verified producer and exact paired approved inputs, preserving signing,
+provenance, credential-host and runtime checks. A changed producer cannot reuse
+the old sealed engine identity or be described as a UI-only preserved-CLI build.
+Open the fresh local app for user testing, without clicking consent or launching
+games. Record the exact app path and what remains unverified.
+
+One-login acceptance requires observed human-assisted completion and restart
+on the exact paired build. It is separate from full production admission,
+distribution signing/notarization, provider eligibility and gameplay acceptance.
+No compile result, synthetic check count or successful package substitutes for
+those outcomes.
