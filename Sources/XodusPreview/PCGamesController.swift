@@ -238,6 +238,7 @@ final class PCGamesController: ObservableObject {
     }
 
     func approveKeychain() {
+        guard !usesUnifiedAccount else { return }
         guard !busy, !restoringPresence, !presenceUnavailable, needsKeychainApproval,
               !accountDisconnecting, !terminating else { return }
         let token = UUID()
@@ -302,6 +303,10 @@ final class PCGamesController: ObservableObject {
 
     @discardableResult
     func signOut() async -> Bool {
+        guard !usesUnifiedAccount else {
+            error = "Use Account to sign out of Xbox Live."
+            return false
+        }
         guard !terminating, !busy, !restoringPresence else { return false }
         let old = operation
         generation = UUID()

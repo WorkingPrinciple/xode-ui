@@ -277,6 +277,10 @@ enum PCGamesChecks {
                           && companion.cache?.accountHash == library.accountHash,
                           "Profile loads from the same management account without a game-service session")
                     await companion.shutdown()
+                    check(await library.signOut() == false,
+                          "Unified library cannot independently remove legacy credentials or claim account logout")
+                    check(await store.deletions == 0,
+                          "Unified library sign-out leaves the unused legacy vault untouched")
                     let operations = GameOperationsController(installed: InstalledGamesController())
                     operations.useUnifiedAccount()
                     operations.signInForGames()

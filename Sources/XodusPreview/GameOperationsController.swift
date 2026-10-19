@@ -89,6 +89,9 @@ final class GameOperationsController: ObservableObject {
     func useUnifiedAccount() {
         usesUnifiedAccount = true
         serviceStatus = nil
+        gamePassGeneration += 1
+        gamePassStatus = nil
+        gamePassFromCache = false
         serviceError = "This game runtime needs a matching single-account connection before games can run. Signing in again won't fix this."
     }
 
@@ -408,6 +411,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     func loadGamePassCache() async {
+        guard !usesUnifiedAccount else { return }
         guard !gamePassBusy, !terminating else { return }
         gamePassGeneration += 1
         let generation = gamePassGeneration
@@ -517,6 +521,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     func checkSetupOnce() {
+        guard !usesUnifiedAccount else { return }
         guard !setupCheckedOnce, !terminating else { return }
         setupCheckedOnce = true
         refreshSetup()
