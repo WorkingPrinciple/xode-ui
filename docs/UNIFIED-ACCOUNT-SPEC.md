@@ -13,8 +13,54 @@ implementation. Authentication unification belongs primarily in that fork, not
 in Swift views, and does not require changing upstream Xodus itself.
 
 The proposed smallest durable architecture extends the existing management
-credential owner and authenticated-read pattern. Do not create a fourth vault,
-an independent login server or a new browser-based frontend.
+credential owner and authenticated-read pattern through isolated Ode to X
+modules. Do not create a fourth vault, an independent login server or a new
+browser-based frontend.
+
+### Upstream-update constraint
+
+Keep original Xodus behavior and default build paths unchanged wherever
+possible. Put product-specific account orchestration, provider adapters and
+wire-contract extensions in separately named modules or crates in the fork.
+Reuse upstream libraries through their existing public APIs first; do not copy
+their authentication implementation into a parallel maintained version.
+
+Use this order of preference:
+
+1. Additive Ode to X modules using existing public extension points.
+2. A small, explicit integration hook in an upstream-owned module when its API
+   cannot express the required credential source or lifecycle fence.
+3. A narrowly scoped upstream-code change only when the first two cannot
+   preserve correct authorization, cancellation or runtime behavior.
+
+The ownership table below identifies functional seams, not permission to spread
+Ode to X logic across every listed original file. Keep account policy in the
+additive modules; original files should contain only necessary wiring. A
+separate Rust crate is justified only where actual API/build boundaries warrant
+it; a product-specific module is sufficient otherwise. Swift remains a consumer,
+not a workaround credential owner.
+
+Select this integration explicitly in the paired Ode to X build. An ordinary
+upstream/default build must retain its existing login, storage and service
+behavior. The new path must never silently fall back to legacy authentication.
+Do not migrate, delete or repurpose original Xodus/global credentials as a side
+effect of enabling Ode to X. Legacy removal remains limited to explicitly
+identified app-owned sessions under the migration contract below.
+
+Zero changes to original files is a goal, not an established capability. In
+particular, runtime token consumption may require a credential-provider hook.
+Trace that seam before choosing an in-process adapter or private IPC; a wrapper
+cannot make a service use a different authority if the service has no such API.
+Do not use monkey-patching, binary patching or credential copying to claim
+upstream independence.
+
+Keep any unavoidable hook patches in separate focused commits from product
+implementation. Document the upstream base, touched upstream seams and reasons
+in the fork's integration documentation. For each upstream update, verify both
+the unchanged default path and the paired Ode to X path, including contract
+compatibility and auth lifecycle regressions; passing a clean merge alone is
+not compatibility proof. Do not add an automatic updater or enable Actions as
+part of this work.
 
 | Owner | Required changes | Existing seams |
 | --- | --- | --- |
@@ -214,8 +260,9 @@ eligibility; technical exchange success alone is not distribution permission.
 ### 2. Contract and implementation
 
 Land paired producer/schema/client changes locally, preserving existing native
-auth lifecycle and bounded IO. Remove the old interactive paths only after the
-new vertical slice passes parity. Add per-capability state and update
+auth lifecycle and bounded IO. Retire the old interactive paths only in the
+paired Ode to X route after the new vertical slice passes parity; retain
+original Xodus default behavior. Add per-capability state and update
 `UX-FLOWS.md`, `BACKEND-CONTRACT.md`, `NATIVE-INTEGRATION.md` and shipping pins
 at implementation time; historical docs must not claim the proposal shipped.
 
@@ -232,6 +279,8 @@ at implementation time; historical docs must not claim the proposal shipped.
 | Account A -> B during refresh | A results/caches never publish into B; old grants and runtime requests fenced |
 | Logout during refresh / partial removal / process death | No resurrection; restart reconciles partial state; no success until required acknowledgements |
 | Old service or missing negotiated contract | Truthful update-required state; no fallback to separate interactive login |
+| Original/default Xodus build | Existing auth/storage/service behavior retained; Ode to X modules inactive and no implicit credential migration |
+| Upstream update | Default-path regression and paired-path contract/lifecycle tests pass; hook changes explicitly reviewed |
 | Offline, timeout, throttled or malformed response | Bounded retry policy and specific stage; no new consent or destruction of unrelated state |
 | Concurrent clicks/windows/foreground events | One flow and coalesced preparation; cancellation joins owned children |
 | Update across independently built signed engines | Saved-credential access qualified without assuming equal signing requirements eliminate Keychain prompts |
