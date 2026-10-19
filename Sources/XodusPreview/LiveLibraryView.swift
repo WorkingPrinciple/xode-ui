@@ -111,11 +111,11 @@ struct LiveLibraryView: View {
                             Label("No \(filter.rawValue.lowercased()) games", systemImage: "gamecontroller")
                         } description: { Text("Only access-qualified PC games appear in Your Games. Preserved local installations are shown separately below.") }
                         actions: { Button("Show all games") { filter = .all } }
-                    } else if library.hasSavedSignIn {
+                    } else if library.accessIsCurrent, library.representedGames.isEmpty {
                         ContentUnavailableView {
-                            Label("Your games are ready to load", systemImage: "gamecontroller")
-                        } description: { Text("Load your account-held PC games. Local installations alone don't confirm account access.") }
-                        actions: { Button("Load PC games") { library.refresh() }.disabled(library.busy || library.needsKeychainApproval) }
+                            Label("No PC games found", systemImage: "gamecontroller")
+                        } description: { Text("Games installed on this Mac are listed below. You can also browse the catalogue.") }
+                        actions: { Button("Browse games", action: browse) }
                     }
                 } else {
                     LazyVGrid(columns: LibraryGridLayout.columns,
@@ -173,6 +173,7 @@ struct LiveLibraryView: View {
             .padding(.horizontal, 56).padding(.vertical, 22)
             }
         }
+        .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
         .task { if allowsStartupTasks { await library.loadOnAppear() } }
         .task(id: "\(precheckIDs.joined(separator: ",")):\(operations.canStartMutation)") {
             guard allowsStartupTasks, operations.canStartMutation, !precheckIDs.isEmpty else { return }

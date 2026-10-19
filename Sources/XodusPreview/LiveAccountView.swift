@@ -35,7 +35,7 @@ struct LiveAccountView: View {
                 accountDestination
             } else {
                 VStack(spacing: 16) {
-                    VStack(spacing: 8) {
+                    if !session.hasConfirmedSignIn { VStack(spacing: 8) {
                         XOdeLogo().fill(XboxBrand.lightGreen)
                             .frame(width: 48, height: 48).padding(14)
                             .background(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255),
@@ -44,19 +44,8 @@ struct LiveAccountView: View {
                         Text("Ode to X").font(.title2.weight(.medium))
                             .accessibilityLabel("Ode to X")
                             .accessibilityAddTraits(.isHeader)
-                    }
+                    } }
                     if session.hasConfirmedSignIn {
-                        if state.pcGames.usesUnifiedAccount {
-                            if let reason = state.pcGames.error ?? session.accountRuntimeError ?? state.gameOperations.serviceError {
-                                Text(reason).font(.callout).foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("xodus.account.unifiedAccessIssue")
-                            }
-                            if session.accountRuntimeStarting {
-                                ProgressView("Preparing the game connection").controlSize(.small)
-                            }
-                        }
                         XboxAccountSummaryView(companion: companion)
                         if !state.pcGames.usesUnifiedAccount { GroupBox("Xbox access") {
                             GameServiceSignInActions(operations: state.gameOperations,
@@ -290,6 +279,15 @@ struct LiveSettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Diagnostics") {
+                DisclosureGroup("Sign-in and game connection") {
+                    LabeledContent("Xbox Live", value: session.hasConfirmedSignIn ? "Signed in" : "Not signed in")
+                    LabeledContent("Game connection", value: session.accountRuntimeReady ? "Connected"
+                        : session.accountRuntimeStarting ? "Connecting" : "Not connected")
+                    if let error = session.accountRuntimeError {
+                        Text(error).font(.callout).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 Button("Preview redacted diagnostic summary") { Task { await session.previewDiagnostics() } }
                     .disabled(!session.supports(.diagnostics) || session.diagnosticSaving || session.diagnosticPreviewing)
                     .accessibilityElement(children: .ignore)

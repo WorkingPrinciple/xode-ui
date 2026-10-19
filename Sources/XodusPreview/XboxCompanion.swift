@@ -453,7 +453,7 @@ final class XboxCompanionController: ObservableObject {
               let saved = cache, !terminating else { return }
         let games = history.titles.map {
             XboxRecentGame(titleId: $0.titleID, name: $0.name, devices: $0.devices,
-                lastPlayed: $0.lastPlayedAt, artworkURL: nil, achievementsUnlocked: nil,
+                lastPlayed: $0.lastPlayedAt, artworkURL: $0.artwork.first(where: { $0.role == .tile })?.url, achievementsUnlocked: nil,
                 achievementsTotal: nil, gamerscore: nil, gamerscoreTotal: nil, productIds: [])
         }
         cache = XboxCompanionCache(ok: true, accountHash: binding, checkedAt: saved.checkedAt,

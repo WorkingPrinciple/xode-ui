@@ -79,7 +79,7 @@ struct PCGamesView: View {
                             .accessibilityLabel("\(snapshot.games.count) PC games")
                     }
                     Spacer()
-                    Button(library.snapshot == nil ? "Load PC games" : "Refresh") { library.refresh() }
+                    Button("Refresh") { library.refresh() }
                         .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
                         .accessibilityIdentifier("xodus.pcGames.refresh")
                     Text("Manage sign-in in Account").font(.callout).foregroundStyle(.secondary)
@@ -111,16 +111,10 @@ struct PCGamesView: View {
                         if library.error != nil { Text("Showing the last complete library.") }
                     }
                     .font(.callout).foregroundStyle(.secondary) }
-                    if !showsCollection {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Account-held PC collection · updated \(Text(snapshot.updatedAt, style: .relative)) ago")
-                            if !library.accessIsCurrent {
-                                Text("Showing the last complete library. Access is not current; refresh before a new download.")
-                            }
-                        }.font(.callout).foregroundStyle(.secondary)
+                    if !showsCollection, !library.accessIsCurrent {
+                        Text("Showing your saved library. Refresh to check for changes.")
+                            .font(.callout).foregroundStyle(.secondary)
                     }
-                } else if showsCollection, !library.busy {
-                    Text("Load your library to see your PC games.").foregroundStyle(.secondary)
                 }
                 if showsCollection { HStack {
                     Button("Browse games", action: browse)
@@ -134,7 +128,7 @@ struct PCGamesView: View {
                     .accessibilityIdentifier("xodus.pcGames.error")
             }
         }
-        .task { if allowsStartupTasks && showsCollection { await library.restorePresence() } }
+        .task { if allowsStartupTasks && showsCollection { await library.loadOnAppear() } }
         .sheet(isPresented: Binding(get: { library.sheetPresented }, set: { value in
             if !value { Task { await library.cancelSignIn() } }
         })) {

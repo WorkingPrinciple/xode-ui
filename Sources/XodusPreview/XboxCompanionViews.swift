@@ -336,7 +336,7 @@ struct XboxAccountSummaryView: View {
                                 .overlay(Circle().strokeBorder(XboxBrand.gradient, lineWidth: 3))
                                 .accessibilityLabel("\(profile.gamertag) gamer picture")
                         }
-                        Text(profile.gamertag).font(.title2.bold())
+                        Text(profile.gamertag).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                         if let name = profile.displayName, name != profile.gamertag {
                             Text(name).font(.callout).foregroundStyle(.secondary)
                         }
@@ -404,7 +404,8 @@ struct XboxAccountSummaryView: View {
                 VStack(spacing: 9) {
                     if state.pcGames.usesUnifiedAccount {
                         Text("Signed in with Xbox Live").font(.headline)
-                        Text(companion.error ?? "Your profile hasn't loaded yet. Your sign-in is separate from profile availability.")
+                        Text(companion.error == nil ? "Your profile hasn't loaded yet."
+                             : "Your profile couldn't load. Choose Check status to try again.")
                             .font(.callout).foregroundStyle(.secondary)
                             .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     } else {
@@ -433,7 +434,8 @@ struct XboxAccountSummaryView: View {
                     }
                 }
             }
-            if companion.cache?.profile.available == true, companion.cache?.profile.value != nil {
+            if companion.cache?.profile.available == true, companion.cache?.profile.value != nil,
+               !state.pcGames.representedGames.isEmpty || state.gameOperations.gamePassStatus != nil {
                 accountSection("Membership", symbol: "checkmark.seal.fill") {
                     libraryAndGamePass
                 }

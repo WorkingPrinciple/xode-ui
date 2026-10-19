@@ -2,11 +2,13 @@
 
 **19 October naming/layout correction:** App-owned display name and wordmark
 are **Ode to X**. Retain the existing native vector X and system typography.
-Account has one brand mark, no second Xbox fallback logo, and compact spacing
-so account state and actions remain readable in the 480-point sheet. Real gamer
-pictures are account content, not another brand mark. Authentication partial
-states must name the affected feature instead of treating every missing profile
-as failed sign-in. This supersedes earlier display-name instructions below. system: native art-first Library
+Welcome uses the app mark; signed-in Account uses only the user's gamer picture
+and identity, with no additional app logo or wordmark above it. Technical runtime
+details belong in Settings, not Account. Library loads automatically after
+sign-in and distinguishes a loaded empty collection from a request that has not
+finished. Ordinary list content respects native toolbar bounds; only actual
+full-bleed hero artwork extends underneath. Follow the system appearance.
+This supersedes earlier display-name and account-header instructions below.
 
 ## User-directed visual contract
 

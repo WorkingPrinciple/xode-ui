@@ -490,12 +490,17 @@ struct LibraryHeroControlSize: ViewModifier {
     }
 }
 
+struct LibraryHeroPresenceKey: PreferenceKey {
+    static var defaultValue: Bool { false }
+    static func reduce(value: inout Bool, nextValue: () -> Bool) { value = value || nextValue() }
+}
+
 struct LibraryImmersion: ViewModifier {
     var enabled = true
+    var underlapsToolbar = true
     func body(content: Content) -> some View {
-        if enabled {
-            content.environment(\.colorScheme, .dark)
-                .ignoresSafeArea(.container, edges: .top)
+        if enabled, underlapsToolbar {
+            content.ignoresSafeArea(.container, edges: .top)
                 .toolbarBackground(.hidden, for: .windowToolbar)
         } else { content }
     }

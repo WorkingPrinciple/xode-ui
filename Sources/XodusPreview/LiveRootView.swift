@@ -8,12 +8,16 @@ struct LiveRootView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var searchFocused: Bool
+    @State private var libraryHasHero = false
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
 #endif
 
     private var scopedQuery: String { state.query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var toolbarOverArtwork: Bool {
+        immersiveDestination && (state.destination != .library || libraryHasHero)
+    }
     private var requiresSignIn: Bool {
 #if !XODUS_SHIPPING
         if CommandLine.arguments.contains("--export-live") || PreviewExporter.liveDataRequested
@@ -111,7 +115,7 @@ struct LiveRootView: View {
                     .padding(immersiveDestination ? 0 : 30)
                 }
                 .modifier(LibraryScrollEdge(enabled: immersiveDestination))
-                .modifier(LibraryImmersion(enabled: immersiveDestination))
+                .modifier(LibraryImmersion(enabled: immersiveDestination, underlapsToolbar: toolbarOverArtwork))
                 .background(Color(nsColor: .windowBackgroundColor))
             }
         }
@@ -122,7 +126,7 @@ struct LiveRootView: View {
                          searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,
                          accountLabel: session.accountLabel,
                          accountSymbol: session.accountSymbol,
-                         libraryContrast: immersiveDestination) {
+                         libraryContrast: toolbarOverArtwork) {
                 state.openAccount()
             }
             if state.destination == .library && !state.showsRecentActivity {
@@ -170,6 +174,7 @@ struct LiveRootView: View {
 #endif
         }
         .onReceive(state.pcGames.objectWillChange) { _ in state.objectWillChange.send() }
+        .onPreferenceChange(LibraryHeroPresenceKey.self) { libraryHasHero = $0 }
         .onReceive(state.gameOperations.objectWillChange) { _ in state.objectWillChange.send() }
         .onReceive(state.installedGames.objectWillChange) { _ in state.objectWillChange.send() }
 #if !XODUS_SHIPPING
@@ -232,8 +237,7 @@ struct LiveRootView: View {
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
             let accessMessage: String
             if unifiedAccountMode {
-                accessMessage = state.gameOperations.serviceError
-                    ?? "The game runtime isn't connected to this Xbox Live account yet."
+                accessMessage = "Games aren't available in this development build yet."
             } else if !session.hasConfirmedSignIn {
                 accessMessage = "Sign in with Xbox Live to play this game."
             } else if !state.pcGames.hasSavedSignIn || state.pcGames.needsSignIn {

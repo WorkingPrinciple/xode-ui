@@ -10,7 +10,8 @@ real Microsoft access or compatibility.
 ## X Ode first-run gate (16 October, source candidate)
 
 **19 October unified-account source candidate:** App-owned display branding is
-now **Ode to X**, with one brand mark on Account and Welcome. An engine
+now **Ode to X**. Welcome uses the app mark; signed-in Account uses the profile
+identity instead of a second app-brand header. An engine
 advertising `ode.account.read.v1` selects the new native route: the isolated
 launcher account supplies library/profile/achievement reads without separate
 library or service login. Profile failure does not block the signed-in shell.
@@ -20,6 +21,14 @@ sign-out removes the management session and retires memory-only data; it does
 not read or delete unused legacy library/global-service credentials. Those
 legacy sessions are not claimed to be logged out. Other historical paths below
 describe the existing admitted producer, not completion of this candidate.
+
+**Account/Library correction:** Welcome retains the app mark. Signed-in Account
+shows only the gamer picture/profile identity, without a second app-brand header
+or runtime diagnostics. Game-connection details remain in Settings. Library
+loads automatically on signed-in entry; success with an empty PC collection shows
+an empty result, not a "Load PC games" prompt. Loading, failed and empty states
+are distinct. Lists without a hero respect toolbar safe areas, and Library
+follows the system appearance rather than forcing a grey/dark fallback.
 
 Ordinary startup shows the standalone green X logo with **Ode** below it over
 a neutral background, not installed game cards or developer setup diagnostics.

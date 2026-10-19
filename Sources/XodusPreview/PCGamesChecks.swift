@@ -270,6 +270,11 @@ enum PCGamesChecks {
                     check(library.accessIsCurrent && library.snapshot?.games.isEmpty == true
                           && library.accountHash == session.accountHash,
                           "A complete empty backend collection is current and identity-bound without a library login")
+                    let traceFile = config.stateDirectory.appendingPathComponent("lifecycle.log")
+                    let loadedTrace = try String(contentsOf: traceFile, encoding: .utf8)
+                    await library.loadOnAppear()
+                    check(try String(contentsOf: traceFile, encoding: .utf8) == loadedTrace,
+                          "Automatically loaded empty results stay loaded on view re-entry without a manual load or duplicate API call")
                     let companion = XboxCompanionController()
                     companion.useUnifiedAccount(session)
                     await companion.refresh(for: nil)

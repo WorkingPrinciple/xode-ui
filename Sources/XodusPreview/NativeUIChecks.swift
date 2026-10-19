@@ -10,6 +10,11 @@ enum NativeUIChecks {
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         let application = NSApplication.shared
         let windows = application.windows.count
+        var hasHero = LibraryHeroPresenceKey.defaultValue
+        LibraryHeroPresenceKey.reduce(value: &hasHero) { false }
+        check(!hasHero, "A plain Library has no artwork underlap preference")
+        LibraryHeroPresenceKey.reduce(value: &hasHero) { true }
+        check(hasHero, "Actual hero artwork explicitly opts into toolbar underlap")
         for size in [CGFloat(16), 48, 112, 1024] {
             let rect = CGRect(x: 7, y: 11, width: size, height: size)
             let mark = XOdeMark.path(in: rect)
