@@ -121,7 +121,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                             detailErrors[product.ProductId] = nil
                         } catch {
                             detailErrors[product.ProductId] =
-                                "Microsoft returned game details X Ode couldn't read. Try again."
+                                "Microsoft returned game details Ode to X couldn't read. Try again."
                             logger.warning("Optional public game details were rejected; game access and actions are unchanged.")
                         }
                         images[product.ProductId] = Images(cover: cover, hero: heroes.first,

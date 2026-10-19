@@ -73,7 +73,7 @@ struct LiveProductView: View {
                         VStack(alignment: .leading, spacing: 28) {
                         GameOperationProgressView(operations: operations, productID: product.id)
                         if owned != nil, installed == nil {
-                            Text("Your library record is separate from download access. X Ode checks this edition's package and authorization when you install.")
+                            Text("Your library record is separate from download access. Ode to X checks this edition's package and authorization when you install.")
                                 .font(.callout).foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

@@ -86,7 +86,8 @@
             "game.rollback",
             "game.update",
             "game.remove",
-            "diagnostics.export"
+            "diagnostics.export",
+            "ode.account.read.v1"
           ]
         },
         "params": {
@@ -1053,6 +1054,22 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "command": {
+                "const": "ode.account.read.v1"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "$ref": "#/$defs/odeAccountParams"
+              }
+            }
+          }
         }
       ]
     },
@@ -1121,6 +1138,9 @@
             },
             {
               "$ref": "#/$defs/diagnosticsData"
+            },
+            {
+              "$ref": "#/$defs/odeAccountData"
             }
           ]
         }
@@ -3556,6 +3576,371 @@
         }
       },
       "additionalProperties": false
+    },
+    "odeAccountParams": {
+      "type": "object",
+      "required": [
+        "section",
+        "accountHash",
+        "market",
+        "language",
+        "titleID"
+      ],
+      "properties": {
+        "section": {
+          "enum": [
+            "library",
+            "profile",
+            "achievements"
+          ]
+        },
+        "accountHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "market": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$"
+        },
+        "titleID": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{1,10}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "section": {
+                "const": "achievements"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "titleID": {
+                "type": "string",
+                "pattern": "^[0-9]{1,10}$"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "titleID": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "odeAccountData": {
+      "type": "object",
+      "required": [
+        "section",
+        "accountHash",
+        "checkedAt",
+        "payload"
+      ],
+      "properties": {
+        "section": {
+          "enum": [
+            "library",
+            "profile",
+            "achievements"
+          ]
+        },
+        "accountHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "checkedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "payload": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "section": {
+                "const": "library"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "items"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "maxItems": 10000,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "productID",
+                        "acquisitionKind"
+                      ],
+                      "properties": {
+                        "productID": {
+                          "type": "string",
+                          "pattern": "^[A-Z0-9]{12}$"
+                        },
+                        "acquisitionKind": {
+                          "enum": [
+                            "purchased",
+                            "subscription",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "section": {
+                "const": "profile"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "gamertag",
+                  "displayName",
+                  "avatarURL",
+                  "gamerscore",
+                  "bio",
+                  "location"
+                ],
+                "properties": {
+                  "gamertag": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "displayName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 0,
+                        "maxLength": 256
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "avatarURL": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 0,
+                        "maxLength": 2048
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "gamerscore": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "bio": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 0,
+                        "maxLength": 2048
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "location": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 0,
+                        "maxLength": 256
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "section": {
+                "const": "achievements"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "titleID",
+                  "complete",
+                  "achievements"
+                ],
+                "properties": {
+                  "titleID": {
+                    "type": "string",
+                    "pattern": "^[0-9]{1,10}$"
+                  },
+                  "complete": {
+                    "const": true
+                  },
+                  "achievements": {
+                    "type": "array",
+                    "maxItems": 2000,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "progressState",
+                        "unlocked",
+                        "unlockTime",
+                        "gamerscore",
+                        "isSecret",
+                        "artworkURL",
+                        "rarityPercentage",
+                        "requirements"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 256
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 512
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 0,
+                              "maxLength": 4096
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "progressState": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128
+                        },
+                        "unlocked": {
+                          "type": "boolean"
+                        },
+                        "unlockTime": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "gamerscore": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "isSecret": {
+                          "anyOf": [
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "artworkURL": {
+                          "type": "null"
+                        },
+                        "rarityPercentage": {
+                          "type": "null"
+                        },
+                        "requirements": {
+                          "type": "array",
+                          "maxItems": 0
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

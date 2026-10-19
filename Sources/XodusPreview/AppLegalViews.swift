@@ -5,7 +5,7 @@ enum AppLegalCopy {
     static let license = "GNU General Public License version 3 (GPL-3.0-only)"
     static let source = URL(string: "https://github.com/dragoshont/xodus-macos-app")!
     static let licenseText = URL(string: "https://www.gnu.org/licenses/gpl-3.0.html")!
-    static let acknowledgment = "X Ode integrates with the Xodus game-management project. We thank its contributors and the authors of the open-source components used by the app."
+    static let acknowledgment = "Ode to X integrates with the Xodus game-management project. We thank its contributors and the authors of the open-source components used by the app."
 }
 
 struct AppLicensesView: View {
@@ -13,7 +13,7 @@ struct AppLicensesView: View {
         Form {
             Section {
                 Text("Licenses").font(.title2.bold()).accessibilityAddTraits(.isHeader)
-                LabeledContent("X Ode", value: AppLegalCopy.license)
+                LabeledContent("Ode to X", value: AppLegalCopy.license)
                 Text("The original app source, documentation and artwork are licensed under GPL version 3 only.")
                     .foregroundStyle(.secondary)
                 Link("Read the license", destination: AppLegalCopy.licenseText)
@@ -38,7 +38,7 @@ struct AppAcknowledgmentsView: View {
                 Text("Original authors and third-party components retain their copyrights, license terms and required notices.")
                     .foregroundStyle(.secondary)
             }
-            Section("X Ode") {
+            Section("Ode to X") {
                 Link("Source and license notices", destination: AppLegalCopy.source)
                 Text(AppLegalCopy.license).foregroundStyle(.secondary)
             }

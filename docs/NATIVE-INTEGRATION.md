@@ -1,5 +1,23 @@
 # Native management integration
 
+## Ode to X unified-account source slice (19 October)
+
+The candidate integrates the explicit `ode.account.read.v1` producer extension.
+The new collection reader preserves active/nontrial Game filtering, bounded
+pagination and acquisition precedence; Swift's existing public-catalog filtering
+still determines PC representation. Profile and title-scoped achievement readers
+derive Xbox authorization from that same isolated management credential snapshot.
+All return nonsecret account-bound results, revalidated before publication.
+No second OAuth/device-code or installed CLI `login` is initiated by this path.
+
+This is partial source implementation, not demonstrated provider authorization
+or login readiness. The installed game script/runtime route remains separate;
+the candidate refuses its credential-dependent operations rather than assigning
+it the management account based on a cached hash. Friends/consoles and legacy
+credential migration are not implemented on the new route. Existing shipping
+producer pins and sealed inputs are not automatically promoted by this change.
+See [the current specification boundary](UNIFIED-ACCOUNT-SPEC.md).
+
 This is implementation work beyond the immutable foundation at `44d7338`. It is **not a consumer-ready game launcher**.
 
 ## Library source freeze and functional follow-up

@@ -64,6 +64,7 @@ actor Checks {
     }
 
     func run() async throws {
+        try odeAccountChecks()
         try accountTierChecks()
         try registryDevelopmentChecks()
         try installPlanDevelopmentChecks()
@@ -75,7 +76,7 @@ actor Checks {
         try await artworkChecks()
         let validator = try ContractValidator()
         let positive = try fixture("positive").array ?? []
-        check(positive.count == 100, "Pinned producer corpus contains 100 positive frames")
+        check(positive.count == 101, "Pinned producer corpus contains 101 positive frames")
         for (index, frame) in positive.enumerated() {
             do { try validator.validate(frame); check(true, "Producer positive frame \(index + 1)") }
             catch { check(false, "Producer positive frame \(index + 1)") }
@@ -890,7 +891,7 @@ enum MockBackend {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
                                      "savedpermission", "startupquery", "uifailures",
-                                     "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded"].contains(scenario) || scenario.hasPrefix("recent")
+                                     "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded"].contains(scenario) || scenario.hasPrefix("recent") || scenario.hasPrefix("ode")
             func trace(_ entry: String) throws {
                 guard lifecycleScenario else { return }
                 try FileManager.default.createDirectory(at: lifecycleDirectory, withIntermediateDirectories: true,
@@ -921,6 +922,7 @@ enum MockBackend {
             }
             var hello = frames.first(where: { $0["data"]?["schema"] != nil })?["data"]?.object ?? [:]
             var supported: Set<ManagementCommand> = [.authStatus, .authLogout, .jobs]
+            if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
             if scenario == "diagnostics" { supported.insert(.diagnostics) }
@@ -976,6 +978,42 @@ enum MockBackend {
                     if scenario == "mismatch" { result["protocol"] = .object(["major": .integer(2), "minor": .integer(0)]) }
                     try emit(.object(result))
                 } else {
+                    if scenario.hasPrefix("ode") {
+                        try trace(command)
+                        if command == "auth.status" {
+                            try emit(.object(result(request, data: authStatus(loggedOut ? "signedOut" : "credentialPresent"))))
+                            continue
+                        }
+                        if command == "ode.account.read.v1" {
+                            let section = request["params"]?["section"]?.string ?? ""
+                            if scenario == "odefailure" {
+                                let failure = AuthenticatedReadFailure.authRejected
+                                var response = result(request, data: .null)
+                                response["ok"] = .bool(false)
+                                response.removeValue(forKey: "data")
+                                response["error"] = .object(["code": .string(failure.code),
+                                    "message": .string(failure.message), "retryable": .bool(failure.retryable),
+                                    "details": failure.details])
+                                try emit(.object(response))
+                                continue
+                            }
+                            let payload: JSONValue = section == "library" ? .object(["items": .array([])])
+                                : .object(["gamertag": .string("Fixture"), "displayName": .null,
+                                    "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null])
+                            let response = result(request, data: .object([
+                                "section": .string(section),
+                                "accountHash": .string(String(repeating: scenario == "odemismatch" ? "b" : "a", count: 64)),
+                                "checkedAt": .string("2026-10-19T12:00:00Z"), "payload": payload
+                            ]))
+                            if scenario == "odeslow" {
+                                DispatchQueue.global().async {
+                                    Thread.sleep(forTimeInterval: 0.3)
+                                    do { try emit(.object(response)) } catch { exit(3) }
+                                }
+                            } else { try emit(.object(response)) }
+                            continue
+                        }
+                    }
                     if scenario.hasPrefix("recent") {
                         try trace(command)
                         if command == "auth.status" {

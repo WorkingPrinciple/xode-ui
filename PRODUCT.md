@@ -24,6 +24,14 @@ Develop and verify native code on the user's Mac over trusted SSH, using isolate
 
 ## Capabilities and constraints
 
+**19 October direction:** The app name is **Ode to X**. One Microsoft login
+must serve the account's library, profile and game authorization. Keep most
+product-specific development in isolated modules where practical, but reliable
+functionality takes priority over avoiding small upstream integration changes.
+The current unified-account source slice supplies account-bound data reads;
+runtime integration and live acceptance are unfinished. It is not production
+or single-login gameplay readiness.
+
 **User-directed X Ode first-run correction (16 October, source candidate):**
 the live window opens a native welcome/sign-in sheet before displaying Library,
 Discover, Downloads or cached installations. Current management account status,

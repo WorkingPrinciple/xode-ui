@@ -2,6 +2,7 @@
 import AppKit
 import Foundation
 import XodusCredentials
+import XodusManagement
 
 @MainActor
 final class PCGamesController: ObservableObject {
@@ -28,9 +29,17 @@ final class PCGamesController: ObservableObject {
     private var terminating = false
     private var attemptedAutomaticLoad = false
     private let signInOwner = UUID()
+    private weak var unifiedSession: LiveSession?
+    private(set) var usesUnifiedAccount = false
+
+    func useUnifiedAccount(_ session: LiveSession) {
+        guard !busy, !restoringPresence else { return }
+        unifiedSession = session
+        usesUnifiedAccount = true
+    }
 
     var representedGames: [PCGame] { needsSignIn ? [] : snapshot?.games ?? [] }
-    var accountHash: String? { snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
+    var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var accessIsCurrent: Bool {
         snapshot != nil && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
             && !presenceUnavailable && error == nil && !needsKeychainApproval
@@ -47,6 +56,11 @@ final class PCGamesController: ObservableObject {
 
     func restorePresence() async {
         guard !restored, !restoringPresence, !busy, !accountDisconnecting, !terminating else { return }
+        if usesUnifiedAccount {
+            hasSavedSignIn = unifiedSession?.hasConfirmedSignIn == true
+            restored = true
+            return
+        }
         restoringPresence = true
         defer { restoringPresence = false }
         let token = generation
@@ -89,6 +103,10 @@ final class PCGamesController: ObservableObject {
     }
 
     func signIn() {
+        if usesUnifiedAccount {
+            error = "Use Account to reconnect your Xbox Live sign-in."
+            return
+        }
         guard !busy, !restoringPresence, !presenceUnavailable, !needsKeychainApproval,
               !accountDisconnecting, !terminating else { return }
         guard MicrosoftSignInGate.shared.acquire(signInOwner) else {
@@ -129,6 +147,10 @@ final class PCGamesController: ObservableObject {
     }
 
     func refresh() {
+        if usesUnifiedAccount {
+            refreshUnifiedAccount()
+            return
+        }
         guard !busy, !restoringPresence, !presenceUnavailable, hasSavedSignIn,
               !needsSignIn, !needsKeychainApproval, !accountDisconnecting, !terminating else { return }
         let token = UUID()
@@ -155,10 +177,64 @@ final class PCGamesController: ObservableObject {
                     needsSignIn = true
                     snapshot = nil
                 }
+
                 if error as? PCGamesError == .keychainApprovalRequired { needsKeychainApproval = true }
                 self.error = Self.message(error)
             }
         }
+    }
+
+    private func refreshUnifiedAccount() {
+        guard !busy, !accountDisconnecting, !terminating, let session = unifiedSession,
+              session.hasConfirmedSignIn else { return }
+        let token = UUID()
+        generation = token
+        busy = true
+        error = nil
+        operation = Task {
+            defer { finish(token) }
+            do {
+                let read = try await session.readUnifiedAccount(.library)
+                let collection = try read.payload.decode(OdeAccountCollection.self)
+                try collection.validate()
+                try current(token)
+                let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
+                let result = try await client.resolveCollection(
+                    ids: collection.items.map(\.productID), kinds: kinds,
+                    candidateCount: collection.items.count, market: market, language: language,
+                    accountHash: read.accountHash)
+                try current(token)
+                guard session.hasConfirmedSignIn, session.accountHash == read.accountHash else {
+                    throw PCGamesError.identityMismatch
+                }
+                snapshot = result
+                hasSavedSignIn = true
+                needsSignIn = false
+            } catch is CancellationError { }
+            catch {
+                guard generation == token, !terminating else { return }
+                snapshot = nil
+                self.error = "Your PC library couldn't load from your Xbox Live sign-in. \(LiveSession.describe(error))"
+            }
+        }
+    }
+
+    func waitForLoad() async { await operation?.value }
+
+    func retireUnifiedAccount() async {
+        guard usesUnifiedAccount else { return }
+        generation = UUID()
+        let old = operation
+        old?.cancel()
+        snapshot = nil
+        hasSavedSignIn = false
+        restored = false
+        attemptedAutomaticLoad = false
+        needsSignIn = false
+        error = nil
+        await old?.value
+        operation = nil
+        busy = false
     }
 
     func approveKeychain() {

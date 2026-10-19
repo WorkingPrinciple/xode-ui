@@ -67,7 +67,7 @@ final class TrailerCache: NSObject {
         }
         let asset = AVURLAsset(url: url, options: [AVURLAssetHTTPCookiesKey: []])
         guard let task = session?.makeAssetDownloadTask(
-            asset: asset, assetTitle: "X Ode trailer", assetArtworkData: nil,
+            asset: asset, assetTitle: "Ode to X trailer", assetArtworkData: nil,
             options: [AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: 4_500_000]) else { return }
         task.taskDescription = key
         active[key] = task

@@ -84,6 +84,13 @@ final class GameOperationsController: ObservableObject {
     // and honored by `runQueuedOperation` so a paused/cancelled job never installs.
     private var abandonedQueuedRuns: Set<String> = []
     private var installedObservation: AnyCancellable?
+    private(set) var usesUnifiedAccount = false
+
+    func useUnifiedAccount() {
+        usesUnifiedAccount = true
+        serviceStatus = nil
+        serviceError = "This game runtime needs a matching single-account connection before games can run. Signing in again won't fix this."
+    }
 
     var isBusy: Bool {
         operation != nil || checkingCompatibility || gamePassBusy || setupBusy || installed.stoppingGameID != nil
@@ -95,12 +102,12 @@ final class GameOperationsController: ObservableObject {
         installingDirectly ? nil : installConsent
     }
     var canSignIn: Bool {
-        !serviceBusy && !isBusy && !recoveryRequired && !installed.mutationActive
+        !usesUnifiedAccount && !serviceBusy && !isBusy && !recoveryRequired && !installed.mutationActive
             && !preparingConsent && !installingDirectly && !installed.accountDisconnecting
             && installed.runningGameID == nil && !terminating
     }
     var canStartMutation: Bool {
-        !isBusy && !recoveryRequired && !installed.mutationActive && !serviceBusy && !preparingConsent && installed.loaded
+        !usesUnifiedAccount && !isBusy && !recoveryRequired && !installed.mutationActive && !serviceBusy && !preparingConsent && installed.loaded
             && !installed.editing && !installed.choosing && !installed.accountDisconnecting && !terminating
     }
     var canQuit: Bool {
@@ -151,8 +158,8 @@ final class GameOperationsController: ObservableObject {
         } catch {
             serviceLog = await scriptLog(runID)
             serviceError = error as? GameScriptError == .unavailable
-                ? "X Ode couldn't use this runtime's game-service sign-out helper. A matching runtime with sign-out support is required. No PC-library or launcher sign-in was removed."
-                : "X Ode couldn't confirm game-service sign-out. That service may have stopped, but credential removal isn't confirmed. No PC-library or launcher sign-in was removed. Check the sign-out log before retrying."
+                ? "Ode to X couldn't use this runtime's game-service sign-out helper. A matching runtime with sign-out support is required. No PC-library or launcher sign-in was removed."
+                : "Ode to X couldn't confirm game-service sign-out. That service may have stopped, but credential removal isn't confirmed. No PC-library or launcher sign-in was removed. Check the sign-out log before retrying."
             return false
         }
     }
@@ -163,6 +170,7 @@ final class GameOperationsController: ObservableObject {
         operation != nil && operation?.kind != .uninstall && !recoveryRequired && !cancelling
     }
     var serviceLabel: String {
+        if usesUnifiedAccount { return "Game runtime update required" }
         if serviceAccountNeedsVerification { return "Game sign-in saved; account not verified" }
         return serviceStatus?.signedIn == true ? "Signed in for games"
             : serviceStatus == nil ? "Game sign-in hasn't been checked" : "Sign in for games"
@@ -171,6 +179,7 @@ final class GameOperationsController: ObservableObject {
         serviceStatus?.signedIn == true && serviceStatus?.accountHash == nil
     }
     var serviceSignInActionTitle: String? {
+        if usesUnifiedAccount { return nil }
         if serviceAccountNeedsVerification { return "Verify game account" }
         return serviceStatus?.signedIn == true ? nil : "Sign in for games"
     }
@@ -235,6 +244,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     func refreshService() {
+        guard !usesUnifiedAccount else { return }
         guard !serviceBusy, !gamePassBusy, !setupRepairing, !installed.accountDisconnecting, !terminating else { return }
         serviceBusy = true
         gamePassStatus = nil
@@ -357,7 +367,7 @@ final class GameOperationsController: ObservableObject {
                     downloadNeedsSignIn = true
                     error = status.signedIn
                         ? "Your saved game sign-in needs account verification before retrying this download. Continue with Microsoft; installation resumes only after confirmation."
-                        : "X Ode couldn't confirm saved game access. This can also happen when the service is unavailable. Continue with Microsoft to check authorization; installation resumes only after confirmation."
+                        : "Ode to X couldn't confirm saved game access. This can also happen when the service is unavailable. Continue with Microsoft to check authorization; installation resumes only after confirmation."
                     installConsent?.checkError = error
                 }
             } catch {
@@ -365,7 +375,7 @@ final class GameOperationsController: ObservableObject {
                 serviceError = Self.message(error)
                 serviceLog = await scriptLog(runID)
                 if !terminating, feedbackProductID == game.id {
-                    self.error = "X Ode couldn't check download access. No new sign-in was started. Check download access to retry, or show the log."
+                    self.error = "Ode to X couldn't check download access. No new sign-in was started. Check download access to retry, or show the log."
                     installConsent?.checkError = self.error
                     log = serviceLog
                 }
@@ -472,7 +482,7 @@ final class GameOperationsController: ObservableObject {
                 gamePassStatus = nil
                 gamePassFromCache = false
                 gamePassError = gamePassFailureCode == 11
-                    ? "X Ode couldn't verify PC Game Pass download access. Check game access status or try the check again. This result doesn't establish that your subscription or sign-in expired."
+                    ? "Ode to X couldn't verify PC Game Pass download access. Check game access status or try the check again. This result doesn't establish that your subscription or sign-in expired."
                     : Self.message(error)
                 gamePassLog = await scriptLog(runID)
             }

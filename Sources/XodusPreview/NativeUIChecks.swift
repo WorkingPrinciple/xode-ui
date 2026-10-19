@@ -54,7 +54,7 @@ enum NativeUIChecks {
                       && scrollViews.allSatisfy {
                           !$0.hasHorizontalScroller && ($0.documentView?.bounds.width ?? 0) <= size.width + 1
                       },
-                      "X Ode welcome fits native \(appearance.rawValue) at \(Int(size.width)) points with a scrolling body")
+                      "Ode to X welcome fits native \(appearance.rawValue) at \(Int(size.width)) points with a scrolling body")
                 check(!session.hasConfirmedSignIn && !session.accountBusy
                       && !session.canStartWelcomeSignIn && !runtime.checkingDependency,
                       "Detached welcome layout cannot connect, sign in, inspect credentials or install CrossOver")
@@ -98,7 +98,7 @@ enum NativeUIChecks {
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for reduceTransparency in [false, true] {
                 let chrome = NSHostingView(rootView: HStack {
-                    Picker("Navigate X Ode", selection: .constant(Destination.library)) {
+                    Picker("Navigate Ode to X", selection: .constant(Destination.library)) {
                         Text("Library").tag(Destination.library)
                     }.pickerStyle(.segmented)
                     NativeToolbarSearch(text: .constant(""), focused: .constant(false), placeholder: "Search Library")

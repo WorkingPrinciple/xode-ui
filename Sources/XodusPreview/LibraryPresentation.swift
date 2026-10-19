@@ -240,7 +240,7 @@ enum LibrarySupportVisibility {
             issues.append(LibraryCompatibilityIssue(
                 kind: .packageType,
                 title: packageFormat ?? "EAppx/UWP",
-                detail: "This Store package uses EAppx/UWP, which X Ode can't install yet.",
+                detail: "This Store package uses EAppx/UWP, which Ode to X can't install yet.",
                 source: nil
             ))
         }

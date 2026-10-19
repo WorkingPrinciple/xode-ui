@@ -128,13 +128,27 @@ final class AppState: ObservableObject {
         defer { gameOperations.finishAccountDisconnect() }
         guard pcGames.beginAccountDisconnect() else { return false }
         defer { pcGames.finishAccountDisconnect() }
+        if pcGames.usesUnifiedAccount {
+            let result = await session.signOut {
+                await self.gameOperations.cancelPrecheck()
+                XboxCompanionController.shared.invalidateBinding()
+                LibraryXboxStats.shared.invalidateBinding()
+                await self.pcGames.retireUnifiedAccount()
+                return nil
+            }
+            if result {
+                installedGames.suspendAccountView()
+                session.confirmAppSignOut()
+            }
+            return result
+        }
         let result = await session.signOut {
             await self.gameOperations.cancelPrecheck()
             guard await self.gameOperations.signOutForApp() else {
-                return self.gameOperations.serviceError ?? "X Ode couldn't start game-service sign-out. No other sign-in was removed."
+                return self.gameOperations.serviceError ?? "Ode to X couldn't start game-service sign-out. No other sign-in was removed."
             }
             guard await self.pcGames.signOut() else {
-                return "Game-service sign-out was confirmed, but X Ode couldn't remove its saved PC-library sign-in. The launcher profile was not disconnected. Check account status before retrying."
+                return "Game-service sign-out was confirmed, but Ode to X couldn't remove its saved PC-library sign-in. The launcher profile was not disconnected. Check account status before retrying."
             }
             return nil
         }

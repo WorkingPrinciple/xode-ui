@@ -238,7 +238,71 @@ enum PCGamesChecks {
               "Confirmed sign-out copy is concise and keeps the before-action privacy boundary explicit")
     }
 
+    private static func unifiedAccountChecks(check: (Bool, String) -> Void) async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("OdeAccountChecks-\(UUID())")
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Unified-account synthetic traces are cleaned") }
+        }
+        for scenario in ["odeempty", "odemismatch", "odefailure", "odeslow"] {
+            let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
+                .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),
+                stateDirectory: root.appendingPathComponent(scenario))
+            let session = LiveSession(configuration: config)
+            let store = PCGamesMockStore("legacy-must-not-be-read")
+            let transport = PCGamesMockTransport([])
+            let library = PCGamesController(store: store, client: PCGamesClient(transport: transport))
+            await session.connect()
+            await session.refreshAccount()
+            check(session.hasConfirmedSignIn && session.supports(.odeAccountRead),
+                  "Unified account negotiates a saved backend identity without starting consent")
+            library.useUnifiedAccount(session)
+            await library.loadOnAppear()
+            if scenario == "odeslow" {
+                try await Task.sleep(for: .milliseconds(40))
+                await library.retireUnifiedAccount()
+                try await Task.sleep(for: .milliseconds(350))
+                check(library.snapshot == nil && !library.busy && !library.hasSavedSignIn,
+                      "Retiring a unified account joins its load and fences late results")
+            } else {
+                await library.waitForLoad()
+                if scenario == "odeempty" {
+                    check(library.accessIsCurrent && library.snapshot?.games.isEmpty == true
+                          && library.accountHash == session.accountHash,
+                          "A complete empty backend collection is current and identity-bound without a library login")
+                    let companion = XboxCompanionController()
+                    companion.useUnifiedAccount(session)
+                    await companion.refresh(for: nil)
+                    check(companion.cache?.profile.value?.gamertag == "Fixture"
+                          && companion.cache?.accountHash == library.accountHash,
+                          "Profile loads from the same management account without a game-service session")
+                    await companion.shutdown()
+                    let operations = GameOperationsController(installed: InstalledGamesController())
+                    operations.useUnifiedAccount()
+                    operations.signInForGames()
+                    check(!operations.canSignIn && !operations.canStartMutation && !operations.serviceSigningIn,
+                          "An unpaired runtime cannot trigger legacy consent or authorize game mutations")
+                } else {
+                    check(library.snapshot == nil && library.error != nil && !library.accessIsCurrent,
+                          "Rejected or mismatched unified data cannot become a successful empty library")
+                }
+            }
+            let reads = await store.reads
+            let presence = await store.presenceChecks
+            let writes = await store.saved
+            let network = await transport.requests
+            check(reads == 0 && presence == 0 && writes.isEmpty && network.isEmpty,
+                  "Unified library never accesses the legacy vault, OAuth endpoints or public metadata for an empty result")
+            let trace = try String(contentsOf: config.stateDirectory.appendingPathComponent("lifecycle.log"),
+                                   encoding: .utf8).split(separator: "\n").map(String.init)
+            check(!trace.contains("auth.begin") && trace.contains("ode.account.read.v1"),
+                  "Unified account data reads never launch another interactive Microsoft login")
+            check(await session.disconnect(), "Unified-account synthetic management child is joined")
+        }
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
+        try await unifiedAccountChecks(check: check)
         func response(_ value: [String: Any], status: Int = 200) throws -> PCGamesHTTPResponse {
             PCGamesHTTPResponse(status: status, data: try JSONSerialization.data(withJSONObject: value))
         }

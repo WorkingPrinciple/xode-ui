@@ -41,7 +41,7 @@ enum CrossOverDependencyState: Equatable, Sendable {
         case .unverified:
             "The app location, bounded metadata or approved publisher signature could not be verified. Install the official app and check again; this does not say whether you own a license."
         case .installed(let app):
-            "App build \(app.buildVersion) has the approved signature. This does not verify its license or any game's compatibility. Game readiness is checked separately; X Ode does not bundle CrossOver."
+            "App build \(app.buildVersion) has the approved signature. This does not verify its license or any game's compatibility. Game readiness is checked separately; Ode to X does not bundle CrossOver."
         }
     }
 }
@@ -181,7 +181,7 @@ struct RuntimeDependencyStatus: View {
                 Link("Install CrossOver or start a trial",
                      destination: URL(string: "https://www.codeweavers.com/crossover")!)
                     .accessibilityIdentifier("xodus.runtime.installCrossOver")
-                Text("Opens CodeWeavers in your browser. Install CrossOver in Applications, then return here. X Ode checks again when you return; licensing stays with CodeWeavers.")
+                Text("Opens CodeWeavers in your browser. Install CrossOver in Applications, then return here. Ode to X checks again when you return; licensing stays with CodeWeavers.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             if offersSettings { Button("Open Settings", action: openSettings.callAsFunction) }

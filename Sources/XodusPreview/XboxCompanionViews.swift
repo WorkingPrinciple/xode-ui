@@ -88,7 +88,8 @@ struct XboxProfileView: View {
     }
 
     private var accountScope: some View {
-        Text("Profile and social data use your Xbox account. \(XboxCompanionCopy.accountScope)")
+        Text(companion.usesUnifiedAccount ? "Profile and achievements use the Xbox Live account signed in to Ode to X."
+             : "Profile and social data use your Xbox account. \(XboxCompanionCopy.accountScope)")
             .font(.callout).foregroundStyle(.secondary)
     }
 
@@ -401,12 +402,12 @@ struct XboxAccountSummaryView: View {
                 ProgressView().controlSize(.small).accessibilityLabel("Loading Xbox profile")
             } else {
                 VStack(spacing: 9) {
-                    Image(systemName: "xbox.logo")
-                        .font(.system(size: 46, weight: .medium))
-                        .foregroundStyle(XboxBrand.green)
-                        .frame(width: 88, height: 88)
-                        .background(.quaternary, in: Circle())
-                        .accessibilityHidden(true)
+                    if state.pcGames.usesUnifiedAccount {
+                        Text("Signed in with Xbox Live").font(.headline)
+                        Text(companion.error ?? "Your profile hasn't loaded yet. Your sign-in is separate from profile availability.")
+                            .font(.callout).foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    } else {
                     Text(state.gameOperations.serviceStatus?.serviceRunning == false
                          ? "Restoring Xbox services"
                          : state.gameOperations.serviceSigningIn
@@ -415,7 +416,7 @@ struct XboxAccountSummaryView: View {
                                 ? "Xbox account needs verification" : "Xbox profile unavailable")
                         .font(.title3.weight(.semibold))
                     Text(state.gameOperations.serviceStatus?.serviceRunning == false
-                         ? "X Ode is reconnecting automatically. Your saved account and games remain unchanged."
+                         ? "Ode to X is reconnecting automatically. Your saved account and games remain unchanged."
                          : state.gameOperations.serviceSigningIn
                             ? "Finish signing in in the Microsoft window."
                          : state.gameOperations.serviceAccountNeedsVerification
@@ -428,6 +429,7 @@ struct XboxAccountSummaryView: View {
                         ProgressView().controlSize(.small)
                             .accessibilityLabel(state.gameOperations.serviceSigningIn
                                                 ? "Verifying Xbox profile" : "Restoring Xbox services")
+                    }
                     }
                 }
             }

@@ -34,20 +34,26 @@ struct LiveAccountView: View {
             } else if state.accountDestination != .account {
                 accountDestination
             } else {
-                VStack(spacing: 24) {
+                VStack(spacing: 16) {
                     VStack(spacing: 8) {
                         XOdeLogo().fill(XboxBrand.lightGreen)
                             .frame(width: 48, height: 48).padding(14)
                             .background(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255),
                                         in: RoundedRectangle(cornerRadius: 18))
                             .accessibilityHidden(true)
-                        Text("Ode").font(.title2.weight(.medium))
-                            .accessibilityLabel("X Ode")
+                        Text("Ode to X").font(.title2.weight(.medium))
+                            .accessibilityLabel("Ode to X")
                             .accessibilityAddTraits(.isHeader)
                     }
                     if session.hasConfirmedSignIn {
                         XboxAccountSummaryView(companion: companion)
-                        GroupBox("Xbox access") {
+                        if state.pcGames.usesUnifiedAccount {
+                            if let reason = state.pcGames.error ?? state.gameOperations.serviceError {
+                                Text(reason).font(.callout).foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        } else { GroupBox("Xbox access") {
                             GameServiceSignInActions(operations: state.gameOperations,
                                 statusText: state.gameOperations.serviceLabel,
                                 statusIdentifier: "xodus.account.gameServiceStatus",
@@ -57,7 +63,7 @@ struct LiveAccountView: View {
                                 logIdentifier: "xodus.account.gameServiceLog",
                                 verifyIdentifier: "xodus.account.verifyGameService",
                                 setupRepairing: state.gameOperations.setupRepairing)
-                        }
+                        } }
                     } else {
                         VStack(spacing: 8) {
                             Text("Account").font(.title2.bold())
@@ -75,7 +81,7 @@ struct LiveAccountView: View {
                         .accessibilityIdentifier("xodus.account.statusExplanation")
                     }
                 }
-                .frame(maxWidth: .infinity).padding(.vertical, 32)
+                .frame(maxWidth: .infinity).padding(.vertical, 8)
             }
         } actions: {
             if state.showingSetup || state.accountDestination != .account {
@@ -103,7 +109,14 @@ struct LiveAccountView: View {
                     .accessibilityLabel(session.signInPending ? "Cancel sign-in" : "Close account")
                     .accessibilityIdentifier(session.signInPending ? "xodus.account.cancelSignIn" : "xodus.account.close")
                     if session.isReady {
-                        Button("Check status") { Task { await session.refreshAccount() } }
+                        Button("Check status") { Task {
+                            await session.refreshAccount()
+                            if state.pcGames.usesUnifiedAccount, session.hasConfirmedSignIn {
+                                await state.pcGames.retryLibraryLoad()
+                                await state.pcGames.waitForLoad()
+                                await companion.refresh(for: nil, force: true)
+                            }
+                        } }
                             .disabled(session.accountBusy)
                             .accessibilityLabel("Check account status")
                             .accessibilityIdentifier("xodus.account.checkStatus")
@@ -120,6 +133,14 @@ struct LiveAccountView: View {
         }
         .task(id: "\(state.showingSetup):\(state.accountDestination.rawValue)") {
             guard !state.showingSetup else { return }
+            if state.pcGames.usesUnifiedAccount {
+#if !XODUS_SHIPPING
+                guard refreshStatusOnAppear else { return }
+#endif
+                await state.pcGames.waitForLoad()
+                await companion.refresh(for: nil)
+                return
+            }
             if [.profile, .achievements, .consoles].contains(state.accountDestination) {
                 state.gameOperations.refreshService()
                 await state.gameOperations.waitForService()
@@ -316,7 +337,7 @@ struct LiveSettingsView: View {
                 Button("Check status") { Task { await session.prepareWelcome() } }
                     .disabled(session.connectionTransitioning || session.accountBusy)
             }
-            Section("About X Ode") {
+            Section("About Ode to X") {
                 Button("Licenses") { openWindow(id: "licenses") }
                 Button("Acknowledgments") { openWindow(id: "acknowledgments") }
             }

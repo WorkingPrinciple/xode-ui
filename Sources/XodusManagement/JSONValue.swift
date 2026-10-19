@@ -110,7 +110,7 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
         case .writeFailed: "The request could not reach Xodus. Reconnect before retrying."
         case .shutdownFailed: "Xodus has not finished shutting down. Wait, then reconnect or try closing again; another engine was not started."
         case .stateLocked:
-            "Another copy of X Ode is using its sign-in service. Close that copy normally, then sign in again."
+            "Another copy of Ode to X is using its sign-in service. Close that copy normally, then sign in again."
         case .capabilityMissing(let command): "This engine does not provide \(command)."
         case .backendStopped(let status): "The Xodus engine stopped (exit \(status)). Reconnect to recover."
         case .backendError(let code, _): "Xodus reported \(code). No success was assumed."

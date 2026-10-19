@@ -8,7 +8,7 @@ struct GameServiceAccountView: View {
 
     var accountStatusText: String {
         if operations.serviceSignOutConfirmed, operations.serviceStatus?.signedIn == false {
-            return "Signed out of Xbox in X Ode"
+            return "Signed out of Xbox in Ode to X"
         }
         if operations.serviceAccountNeedsVerification { return "Xbox account hasn't been confirmed" }
         if operations.serviceStatus?.signedIn == true { return "Xbox sign-in confirmed" }
@@ -70,9 +70,16 @@ struct GameServiceSignInActions: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if operations.usesUnifiedAccount {
+                Label(operations.serviceLabel, systemImage: "exclamationmark.circle")
+                    .accessibilityIdentifier(statusIdentifier)
+                Text(operations.serviceError ?? "This runtime isn't connected to your Xbox Live account.")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
             Label(statusText, systemImage: operations.serviceAccountSymbol)
                 .accessibilityIdentifier(statusIdentifier)
-            Text("X Ode sign-in and Xbox game-service sign-in are separate. Continue with Microsoft here only when a game download or Xbox feature needs it; X Ode won't open this second sign-in automatically.")
+            Text("Ode to X sign-in and Xbox game-service sign-in are separate. Continue with Microsoft here only when a game download or Xbox feature needs it; Ode to X won't open this second sign-in automatically.")
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if operations.serviceAccountNeedsVerification {
@@ -110,6 +117,7 @@ struct GameServiceSignInActions: View {
                         Button("Show log") { operations.showServiceLog() }
                             .accessibilityIdentifier(logIdentifier)
                     }
+                }
                 }
             }
         }
@@ -372,8 +380,8 @@ struct GameInstallConsentView: View {
                 if consent.compatibility?.supported == true {
                     Section {
                         Text(consent.installedID == nil
-                             ? "X Ode verifies free space again before download. Additional working space can be required while package files are staged and expanded."
-                             : "X Ode checks changed or missing files in this folder. Your saves and installed entry are kept.")
+                             ? "Ode to X verifies free space again before download. Additional working space can be required while package files are staged and expanded."
+                             : "Ode to X checks changed or missing files in this folder. Your saves and installed entry are kept.")
                             .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }

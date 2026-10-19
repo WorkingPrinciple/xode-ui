@@ -60,9 +60,9 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
             }
             if !closed, gameOperations?.canQuit == false {
                 let alert = NSAlert()
-                alert.messageText = "Wait before quitting X Ode"
+                alert.messageText = "Wait before quitting Ode to X"
                 alert.informativeText = "Wait for the current game operation to finish. You can cancel an installation first."
-                alert.addButton(withTitle: "Keep X Ode open")
+                alert.addButton(withTitle: "Keep Ode to X open")
                 alert.runModal()
             }
             sender.reply(toApplicationShouldTerminate: closed)
@@ -87,7 +87,7 @@ struct XodusPreviewApp: App {
     }
 
     init() {
-        ProcessInfo.processInfo.processName = "X Ode"
+        ProcessInfo.processInfo.processName = "Ode to X"
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty {
             FileHandle.standardError.write(Data("This application does not accept preview, test or development arguments.\n".utf8))
@@ -130,7 +130,7 @@ struct XodusPreviewApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("X Ode") {
+        WindowGroup("Ode to X") {
             Group {
 #if !XODUS_SHIPPING
                 if state.fixtureMode { RootView() }
@@ -160,14 +160,14 @@ struct XodusPreviewApp: App {
         .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("About X Ode") {
-                    NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "X Ode"])
+                Button("About Ode to X") {
+                    NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Ode to X"])
                 }
                 Button("Licenses") { openWindow(id: "licenses") }
                 Button("Acknowledgments") { openWindow(id: "acknowledgments") }
             }
             CommandGroup(replacing: .appTermination) {
-                Button("Quit X Ode") { NSApp.terminate(nil) }
+                Button("Quit Ode to X") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
             CommandGroup(after: .newItem) {
@@ -207,7 +207,7 @@ struct XodusPreviewApp: App {
                 Button("Engines") { state.openAccount(.engines) }
                     .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("e", modifiers: [.command, .shift])
-                Button("Return to live X Ode") {
+                Button("Return to live Ode to X") {
                     state.fixtureMode = false
                     state.navigate(.library)
                 }.disabled(!state.fixtureMode)

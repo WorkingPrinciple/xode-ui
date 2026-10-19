@@ -1,9 +1,36 @@
 # Ode to X: unified account implementation specification
 
-Status: proposed, not implemented or shipping-admitted. Scope: one interactive
+Status: implementation in progress, not shipping-admitted. Scope: one interactive
 Microsoft sign-in for games, PC library, Xbox profile and achievements where the
 provider authorizes those capabilities. This document does not promise ownership,
 downloadability, compatibility or gameplay merely because authentication succeeds.
+
+### Current implementation boundary
+
+The first source slice adds `ode.account.read.v1` to the paired Rust producer
+and native client. Library collection, profile and per-title achievements derive
+authorization from the isolated launcher session, with bounded reads and
+generation/publication checks. Swift resolves collection IDs through the existing
+public PC catalog path without receiving tokens. Native synthetic checks exercise
+empty collection, denied access, mismatched identity and late retirement.
+
+This is **not full single-login acceptance**. The installed private game scripts
+still use the global service and another CLI; they are not rerouted by this
+slice. The new native route therefore disables those credential-dependent game
+operations and exposes the runtime update requirement instead of silently falling
+back or offering another login. Friends/consoles remain explicitly unavailable
+on that route. Provider eligibility, real audience authorization, saved-session
+refresh/persistence and a paired runtime consumer still need qualification.
+
+The existing default Xodus login and credential stores are unchanged. The new
+Rust readers live in product-owned `ode_account` modules; management wiring and
+the schema generator are the integration hooks. The native route is selected
+only when the paired engine advertises the explicitly versioned operation.
+The source candidate producer is
+`99a799478a9e2144e810c103c3852dcb6eb38d72`, tree
+`31979331d7f855762460d2bb667d235baa423865`; it is committed locally in the
+writable `ode-unified-account` fork worktree, not pushed or substituted for
+the approved sealed shipping input.
 
 ## Decision and repository boundary
 

@@ -359,6 +359,22 @@
     "params": {}
   },
   {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-28",
+    "command": "ode.account.read.v1",
+    "params": {
+      "section": "library",
+      "accountHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "market": "US",
+      "language": "en-US",
+      "titleID": null
+    }
+  },
+  {
     "kind": "result",
     "protocol": {
       "major": 1,

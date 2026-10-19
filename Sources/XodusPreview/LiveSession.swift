@@ -210,7 +210,7 @@ final class LiveSession: ObservableObject {
     }
     var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
     var accountJourneyTitle: String {
-        if signingOut { return "Signing out of X Ode" }
+        if signingOut { return "Signing out of Ode to X" }
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in" }
         if signInPending { return "Finish signing in" }
         if accountError != nil { return "Your account needs attention" }
@@ -222,7 +222,7 @@ final class LiveSession: ObservableObject {
         return "Sign-in hasn't been checked"
     }
     var accountJourneyMessage: String {
-        if signingOut { return "Removing X Ode's saved sign-ins from this Mac. Please wait." }
+        if signingOut { return "Removing Ode to X's saved sign-ins from this Mac. Please wait." }
         if connectionTransitioning || accountStatusChecking { return "Checking whether your Microsoft sign-in is saved." }
         if failedAccountAction == .signOut, accountError != nil {
             return "Sign-out didn't finish. Some Xbox Live details may remain on this Mac. Choose Sign in with Xbox Live to try again."
@@ -250,18 +250,18 @@ final class LiveSession: ObservableObject {
         }
         return "Choose Sign in with Xbox Live to check your saved sign-in or connect your account."
     }
-    static let signOutConfirmationMessage = "Remove this Xbox account from X Ode on this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, X Ode will tell you which step failed."
+    static let signOutConfirmationMessage = "Remove this Xbox account from Ode to X on this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, Ode to X will tell you which step failed."
     var welcomeMessage: String {
-        if signingOut { return "Signing out of X Ode. Waiting for saved sign-in removal to finish." }
+        if signingOut { return "Signing out of Ode to X. Waiting for saved sign-in removal to finish." }
         if failedAccountAction == .signOut, let accountError { return accountError }
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in…" }
         if managementStateLocked { return ManagementError.stateLocked.localizedDescription }
         if connectionFailedAfterAdmission {
-            return "X Ode couldn't connect to its sign-in service. If another copy of X Ode is open, close it normally, then sign in again."
+            return "Ode to X couldn't connect to its sign-in service. If another copy of Ode to X is open, close it normally, then sign in again."
         }
         guard isReady, nativeSignInHostAdmitted, supports(.authBegin),
               supports(.authCancel), supports(.authStatus) else {
-            return "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required."
+            return "Sign-in is unavailable in this copy of Ode to X. A matching app and sign-in service are required."
         }
         if signInPending { return "Finish signing in in Microsoft's window, or cancel to try later." }
         if accountError != nil {
@@ -275,7 +275,8 @@ final class LiveSession: ObservableObject {
                 ? "You're signed out of Xbox Live on this Mac. Sign in when you're ready. Other apps and Microsoft browser sessions weren't changed."
                 : "Xbox Live sign-out hasn't been confirmed. Sign in again when you're ready."
         }
-        return "This signs you in to X Ode. Game downloads and Xbox features may ask for a separate Microsoft sign-in when you use them."
+        if supports(.odeAccountRead) { return "Use your Microsoft account for your PC library and Xbox profile." }
+        return "This signs you in to Ode to X. Game downloads and Xbox features may ask for a separate Microsoft sign-in when you use them."
     }
 
     func prepareWelcome() async {
@@ -295,14 +296,14 @@ final class LiveSession: ObservableObject {
         return accountLabel
     }
     var accountMessage: String {
-        if phase == .connecting { return "Connecting to X Ode." }
-        guard isReady else { return "X Ode couldn't connect. Open Settings to reconnect." }
+        if phase == .connecting { return "Connecting to Ode to X." }
+        guard isReady else { return "Ode to X couldn't connect. Open Settings to reconnect." }
         if accountStatusChecking {
             return "If macOS asks for Keychain access, respond in its permission window. Your saved sign-in is not being replaced."
         }
         if accountError != nil {
             if failedAccountAction == .status && accountStatusError == .credentialStoreUnavailable {
-                return "Your saved sign-in couldn't be checked because X Ode cannot access Keychain. Sign-in stays disabled until access is confirmed. After resolving Keychain access, choose Check status."
+                return "Your saved sign-in couldn't be checked because Ode to X cannot access Keychain. Sign-in stays disabled until access is confirmed. After resolving Keychain access, choose Check status."
             }
             switch failedAccountAction {
             case .status: return "Account status couldn't be checked. Choose Check status to try again."
@@ -327,7 +328,7 @@ final class LiveSession: ObservableObject {
             ? "Your saved sign-in is available."
             : "Your game library isn't available yet."
         case .expired, .invalid: return "Disconnect this sign-in, then sign in again."
-        case .signedOut: return "You are signed out of Xbox in X Ode. Sign in with your Microsoft account to see your games."
+        case .signedOut: return "You are signed out of Xbox in Ode to X. Sign in with your Microsoft account to see your games."
         case nil: return "Check status to see whether you're signed in."
         }
     }
@@ -335,7 +336,7 @@ final class LiveSession: ObservableObject {
         "Your PC library isn't available yet"
     }
     var libraryMessage: String {
-        "X Ode can't yet verify which PC games you own."
+        "Ode to X can't yet verify which PC games you own."
     }
     var canRefreshRecentLibrary: Bool {
         recentLibraryReadAllowed && !recentLibraryBootstrapRunning
@@ -534,7 +535,7 @@ final class LiveSession: ObservableObject {
     }
     func catalogEmptyExplanation(query: String, canRefresh: Bool) -> String {
         if searching { return "Checking public products in this scope. Results are not available yet." }
-        if !isReady { return "Connect X Ode in Settings to load public product metadata." }
+        if !isReady { return "Connect Ode to X in Settings to load public product metadata." }
         if !canRefresh { return "This engine does not provide this catalog operation. Update the paired app build." }
         if catalogStopped { return "Run a new search or refresh this scope when you are ready." }
         if catalogError != nil || !discoveryFailures.isEmpty {
@@ -557,9 +558,9 @@ final class LiveSession: ObservableObject {
     }
 
     var accountLabel: String {
-        if phase == .connecting { return "Connecting to X Ode" }
-        if phase == .disconnecting { return "Disconnecting from X Ode" }
-        guard isReady else { return "Connect X Ode" }
+        if phase == .connecting { return "Connecting to Ode to X" }
+        if phase == .disconnecting { return "Disconnecting from Ode to X" }
+        guard isReady else { return "Connect Ode to X" }
         if signInPending {
             return accountStatusCurrent ? "Sign-in pending" : "Sign-in status needs checking"
         }
@@ -583,7 +584,7 @@ final class LiveSession: ObservableObject {
             if !accountStatusCurrent {
                 return "The last sign-in result was pending, but its current outcome could not be confirmed. Check status or request cancellation; no completion or cancellation is assumed."
             }
-            return "X Ode reports a pending sign-in, not a completed account connection. If Microsoft has opened a sign-in window, continue there yourself or use Cancel sign-in."
+            return "Ode to X reports a pending sign-in, not a completed account connection. If Microsoft has opened a sign-in window, continue there yourself or use Cancel sign-in."
         }
         guard accountStatusCurrent else {
             return authentication == nil
@@ -596,7 +597,7 @@ final class LiveSession: ObservableObject {
         case .expired, .invalid:
             return "Disconnect this saved launcher sign-in first, then connect again. Other apps' accounts are not changed."
         case .signedOut:
-            return "X Ode reports no saved launcher sign-in. Advertised sign-in support does not verify a paired engine and helper, PC ownership or permission to play."
+            return "Ode to X reports no saved launcher sign-in. Advertised sign-in support does not verify a paired engine and helper, PC ownership or permission to play."
         case nil:
             return "Account status has not been checked. No saved sign-in or PC access is assumed."
         }
@@ -746,6 +747,28 @@ final class LiveSession: ObservableObject {
     }
 
     func supports(_ command: ManagementCommand) -> Bool { hello?.supports(command) == true }
+
+    func readUnifiedAccount(_ section: OdeAccountSection, titleID: String? = nil) async throws -> OdeAccountRead {
+        guard hasConfirmedSignIn, !accountBusy, !applicationTerminating, let client,
+              let account = accountHash else { throw ManagementError.disconnected }
+        guard supports(.odeAccountRead) else {
+            throw ManagementError.capabilityMissing(ManagementCommand.odeAccountRead.rawValue)
+        }
+        let token = generation
+        let authToken = authenticationGeneration
+        accountOperationBusy = true
+        defer { if token == generation { accountOperationBusy = false } }
+        let result = try await client.request(.odeAccountRead, params: [
+            "section": .string(section.rawValue), "accountHash": .string(account),
+            "market": .string(market), "language": .string(language),
+            "titleID": titleID.map(JSONValue.string) ?? .null
+        ]).decode(OdeAccountRead.self)
+        try Task.checkCancellation()
+        guard token == generation, authToken == authenticationGeneration,
+              accountHash == account, hasConfirmedSignIn else { throw ManagementError.disconnected }
+        try result.validate(section: section, accountHash: account)
+        return result
+    }
 
 #if !XODUS_SHIPPING
     var retiringDisconnectWaiterCount: Int { disconnectWaiters }
@@ -1061,7 +1084,7 @@ final class LiveSession: ObservableObject {
         guard isReady, supports(.inspectInstallation), !inspectionBusy else { return }
         let panel = NSOpenPanel()
         panel.title = "Inspect a game folder"
-        panel.message = "Choose one exact folder. X Ode reads only its streaming marker metadata; it will not scan, register, modify or launch the game."
+        panel.message = "Choose one exact folder. Ode to X reads only its streaming marker metadata; it will not scan, register, modify or launch the game."
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
@@ -1238,7 +1261,7 @@ final class LiveSession: ObservableObject {
         }
         let signOutOwner = UUID()
         guard MicrosoftSignInGate.shared.acquire(signOutOwner) else {
-            accountError = "Finish or cancel the current Microsoft sign-in before signing out of X Ode."
+            accountError = "Finish or cancel the current Microsoft sign-in before signing out of Ode to X."
             return false
         }
         defer { MicrosoftSignInGate.shared.release(signOutOwner) }
@@ -1280,7 +1303,7 @@ final class LiveSession: ObservableObject {
             return true
         } catch {
             guard token == generation else { return false }
-            errorMessage = "X Ode couldn't confirm launcher sign-out. Some app sign-in data may already have been removed. Check account status before retrying. " + Self.describe(error)
+            errorMessage = "Ode to X couldn't confirm launcher sign-out. Some app sign-in data may already have been removed. Check account status before retrying. " + Self.describe(error)
             accountError = errorMessage
             failedAccountAction = .signOut
             return false
@@ -1765,6 +1788,17 @@ final class LiveSession: ObservableObject {
     }
 
     static func describe(_ error: Error) -> String {
+        if case let ManagementError.authenticatedReadFailed(failure) = error {
+            switch failure {
+            case .credentialUnavailable: return "Your saved sign-in couldn't be read. Check account status."
+            case .profileChanged: return "The account changed while loading. Reload to try again."
+            case .authExchangeFailed: return "Microsoft couldn't authorize this request. Try again."
+            case .authRejected: return "Microsoft rejected access to this feature. Check account status before reconnecting."
+            case .transportFailed: return "The connection didn't finish. Check your network and try again."
+            case .responseInvalid: return "Microsoft returned details that couldn't be read safely. Reload to try again."
+            case .packageUnavailable: return "The requested content isn't available."
+            }
+        }
         if case let ManagementError.backendError(code, _) = error {
             switch code {
             case "AUTH_INVALID": return "The saved sign-in could not be validated. Check status before disconnecting and reconnecting it."

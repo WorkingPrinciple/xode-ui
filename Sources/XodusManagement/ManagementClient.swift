@@ -142,7 +142,7 @@ public actor ManagementClient {
         guard !stopped, let child = process, child.isRunning, let stdin else {
             throw ManagementError.disconnected
         }
-        if [.authBegin, .authLogout, .authVerify].contains(command),
+        if [.authBegin, .authLogout, .authVerify, .odeAccountRead].contains(command),
            let admitted = admittedConfiguration, let identity = admitted.executableIdentity {
             do {
                 _ = try identity.validatedArguments()

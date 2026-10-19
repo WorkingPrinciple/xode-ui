@@ -22,25 +22,34 @@ struct LiveRootView: View {
         return !session.hasConfirmedSignIn
     }
     private var accountRecoveryAllowed: Bool { startupAllowed && session.hasConfirmedSignIn }
+    private var unifiedAccountMode: Bool { session.supports(.odeAccountRead) }
     private var boundAccountHash: String? {
         guard accountRecoveryAllowed, state.pcGames.accessIsCurrent,
               !state.installedGames.accountDisconnecting else { return nil }
+        if unifiedAccountMode {
+            return session.accountHash == state.pcGames.accountHash ? session.accountHash : nil
+        }
         return XboxAccountBinding.matching(application: session.accountHash,
             library: state.pcGames.accountHash, service: state.gameOperations.serviceStatus)
     }
     private var profileBootstrapBinding: String? {
-        session.accountBusy || state.gameOperations.serviceBusy ? nil : boundAccountHash
+        if unifiedAccountMode { return boundAccountHash }
+        return session.accountBusy || state.gameOperations.serviceBusy ? nil : boundAccountHash
     }
     private var unifiedAccountVerified: Bool {
-        companion.cache?.confirmsAccount(boundAccountHash) == true
+        if unifiedAccountMode {
+            return boundAccountHash != nil && XboxAccountBinding.matching(application: session.accountHash,
+                library: state.pcGames.accountHash, service: state.gameOperations.serviceStatus) != nil
+        }
+        return companion.cache?.confirmsAccount(boundAccountHash) == true
     }
     private var accountBindingMismatch: Bool {
         let values = [session.accountHash, state.pcGames.accountHash,
                       state.gameOperations.serviceStatus?.accountHash].compactMap { $0 }
         return values.count >= 2 && Set(values).count > 1
     }
-    private var requiresAccountGate: Bool { !unifiedAccountVerified }
-    private var accountContentAllowed: Bool { startupAllowed && unifiedAccountVerified }
+    private var requiresAccountGate: Bool { unifiedAccountMode ? requiresSignIn : !unifiedAccountVerified }
+    private var accountContentAllowed: Bool { startupAllowed && (unifiedAccountMode ? !requiresSignIn : unifiedAccountVerified) }
     private var heroAnimationAllowed: Bool {
         startupAllowed && !state.showingAccount && session.selectedProduct == nil
             && !session.signInPending && state.gameOperations.installConsent == nil
@@ -87,7 +96,7 @@ struct LiveRootView: View {
         ScrollViewReader { proxy in
         Group {
             if requiresAccountGate {
-                Text("X Ode").font(.title.bold()).foregroundStyle(.secondary)
+                Text("Ode to X").font(.title.bold()).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(nsColor: .windowBackgroundColor))
                     .accessibilityIdentifier("xodus.welcome.background")
@@ -173,9 +182,19 @@ struct LiveRootView: View {
         }
         .task(id: accountRecoveryAllowed) {
             if accountRecoveryAllowed {
+                if unifiedAccountMode {
+                    state.pcGames.useUnifiedAccount(session)
+                    companion.useUnifiedAccount(session)
+                    state.gameOperations.useUnifiedAccount()
+                }
                 await state.pcGames.loadOnAppear()
                 await state.installedGames.load()
                 await state.gameOperations.restore()
+                if unifiedAccountMode {
+                    await state.pcGames.waitForLoad()
+                    await companion.refresh(for: nil)
+                    return
+                }
                 await state.gameOperations.loadGamePassCache()
                 state.gameOperations.checkSetupOnce()
                 state.gameOperations.refreshService()
@@ -211,7 +230,10 @@ struct LiveRootView: View {
         }
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
             let accessMessage: String
-            if !session.hasConfirmedSignIn {
+            if unifiedAccountMode {
+                accessMessage = state.gameOperations.serviceError
+                    ?? "The game runtime isn't connected to this Xbox Live account yet."
+            } else if !session.hasConfirmedSignIn {
                 accessMessage = "Sign in with Xbox Live to play this game."
             } else if !state.pcGames.hasSavedSignIn || state.pcGames.needsSignIn {
                 accessMessage = "Reconnect your Xbox library to play this game."
@@ -224,7 +246,7 @@ struct LiveRootView: View {
                 unifiedAccountVerified,
                 message: accessMessage
             )
-            if accountContentAllowed {
+            if accountContentAllowed, !unifiedAccountMode {
                 await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,
                     signingIn: state.gameOperations.serviceSigningIn)
                 await XboxCompanionController.shared.refresh(
@@ -250,8 +272,12 @@ struct LiveRootView: View {
         }
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
             if confirmed, state.consumeUnifiedSignInRequest() {
-                Task { await state.refreshGameServiceStatusAfterSignIn() }
+                if !unifiedAccountMode { Task { await state.refreshGameServiceStatusAfterSignIn() } }
             } else if !confirmed {
+                if unifiedAccountMode {
+                    companion.invalidateBinding()
+                    Task { await state.pcGames.retireUnifiedAccount() }
+                }
                 state.installedGames.setAccountAccessAllowed(false)
                 session.selectedProduct = nil
                 state.showingAccount = false
@@ -295,6 +321,11 @@ struct LiveRootView: View {
 
     private func refreshXboxStats() async {
         guard accountContentAllowed else { return }
+        if unifiedAccountMode {
+            await state.pcGames.waitForLoad()
+            await companion.refresh(for: nil)
+            return
+        }
         state.gameOperations.refreshService()
         await state.gameOperations.waitForService()
         await LibraryXboxStats.shared.refresh(for: state.gameOperations.serviceStatus,
@@ -328,8 +359,10 @@ struct LiveRootView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         selectedFolderInspection
                         Divider()
-                        Text("Your PC games uses a separate Microsoft sign-in to read this account's game library. It shows active, non-trial games whose Store packages declare PC support.")
-                        Text("Installed shows games you've imported or installed with X Ode. It doesn't scan your Mac.")
+                        Text(unifiedAccountMode
+                             ? "Your PC games uses your Xbox Live sign-in. It shows active, non-trial games whose Store packages declare PC support."
+                             : "Your PC games uses a separate Microsoft sign-in to read this account's game library. It shows active, non-trial games whose Store packages declare PC support.")
+                        Text("Installed shows games you've imported or installed with Ode to X. It doesn't scan your Mac.")
                         Text("Import an installed Xbox game and choose its working launch script to play. Removing it from the list keeps its game files and saves.")
                         Text("Inspect a game folder checks its installation marker only. This check doesn't import the game or enable Play.")
                     }

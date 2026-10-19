@@ -1,5 +1,13 @@
 # Design system: native art-first Library
 
+**19 October naming/layout correction:** App-owned display name and wordmark
+are **Ode to X**. Retain the existing native vector X and system typography.
+Account has one brand mark, no second Xbox fallback logo, and compact spacing
+so account state and actions remain readable in the 480-point sheet. Real gamer
+pictures are account content, not another brand mark. Authentication partial
+states must name the affected feature instead of treating every missing profile
+as failed sign-in. This supersedes earlier display-name instructions below. system: native art-first Library
+
 ## User-directed visual contract
 
 For the Library refresh, the user-selected v0.2 Figma Library (`5iQu716UFImHjRxJkf0t8V`, `3:115`) owns layout and flow; Apple Games for macOS owns visual treatment. The replacement is dark-reviewed, art-first and native Liquid Glass, while production follows the system appearance. The user rejected the flat v0.1 interpretation and bespoke floating menus. Artwork extends under the real system toolbar; navigation/search and the separate trailing account control remain native. The framework is SwiftUI/AppKit, not UIKit or a painted web dashboard.

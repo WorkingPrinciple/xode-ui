@@ -14,8 +14,8 @@ struct LiveWelcomeView: View {
                     VStack(spacing: 16) {
                         XOdeLogo().fill(XboxBrand.green)
                             .frame(width: 112, height: 112).accessibilityHidden(true)
-                        Text("Ode").font(.largeTitle.weight(.medium))
-                            .accessibilityLabel("X Ode")
+                        Text("Ode to X").font(.largeTitle.weight(.medium))
+                            .accessibilityLabel("Ode to X")
                             .accessibilityAddTraits(.isHeader)
                     }
                     Text(session.accountJourneyMessage)
@@ -48,7 +48,7 @@ struct LiveWelcomeView: View {
                     }
                     if session.connectionTransitioning || session.accountBusy {
                         ProgressView("Checking Xbox Live").controlSize(.small)
-                        Text("If macOS asks for Keychain access, the request is to check or save this X Ode sign-in.")
+                        Text("If macOS asks for Keychain access, the request is to check or save this Ode to X sign-in.")
                             .font(.callout).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: 360)

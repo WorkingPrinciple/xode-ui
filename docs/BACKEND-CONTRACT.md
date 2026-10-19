@@ -4,10 +4,15 @@
 
 Stable handoff: **protocol 1.0**, [canonical scoped JSON Schema](contracts/management-v1.schema.json), [implementation ledger](IMPLEMENTATION-LEDGER.md). The [original foundation proposal](contracts/foundation-v1.schema.json) is preserved. The producer fills strict operation schemas for implemented public-catalog/registry/activity/diagnostic operations and explicitly gates game lifecycle success. Native clients validate the expected command's result, not any success-shaped object. A future minor/operation extension needs its own agreed schema/consumer pin; never guess forward compatibility.
 
-The proposed [Ode to X unified-account specification](UNIFIED-ACCOUNT-SPEC.md)
+The [Ode to X unified-account specification](UNIFIED-ACCOUNT-SPEC.md)
 defines the forked-producer/native-app split and acceptance gates for replacing
-the current separate launcher, PC-library and game-service sign-ins. It is not
-implemented by the current protocol or admitted producer.
+the separate launcher, PC-library and game-service sign-ins. A source candidate
+adds the explicitly versioned `ode.account.read.v1` capability over the unchanged
+1.0 transport. Its pinned schema defines account-hash/section/locale requests and
+nonsecret collection/profile/achievement results. Existing 1.0 commands and
+result shapes are unchanged; older clients can ignore the capability and older
+engines cannot accept it. This source extension is not admitted by the currently
+pinned shipping producer. Runtime authorization is not supplied by this read API.
 
 ## Transport and negotiation
 

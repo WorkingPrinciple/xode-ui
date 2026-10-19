@@ -12,7 +12,7 @@ enum PCGamesError: Error, LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .invalidResponse: "Microsoft returned game-library details X Ode couldn't read. Try again."
+        case .invalidResponse: "Microsoft returned game-library details Ode to X couldn't read. Try again."
         case .transport: "Couldn't reach Microsoft. Check your connection and try again."
         case .responseTooLarge: "Microsoft's response was too large to load safely. Try again later."
         case .http(let status): "Microsoft couldn't complete the request (code \(status)). Try again."
@@ -20,8 +20,8 @@ enum PCGamesError: Error, LocalizedError, Equatable {
         case .signInDeclined: "Microsoft sign-in was declined. Start again when you're ready."
         case .signInRequired: "Sign in again to see your PC games."
         case .keychain: "Couldn't access the saved PC-games sign-in. Unlock your Keychain or respond to macOS's permission prompt, then try again."
-        case .credentialBrokerUnavailable: "This copy of X Ode couldn't verify or reach the saved-sign-in helper. Try again with the approved app and helper pairing. Your saved sign-in is unchanged; X Ode won't switch to direct Keychain access while the helper is installed."
-        case .keychainApprovalRequired: "X Ode needs one-time Keychain approval."
+        case .credentialBrokerUnavailable: "This copy of Ode to X couldn't verify or reach the saved-sign-in helper. Try again with the approved app and helper pairing. Your saved sign-in is unchanged; Ode to X won't switch to direct Keychain access while the helper is installed."
+        case .keychainApprovalRequired: "Ode to X needs one-time Keychain approval."
         case .keychainApprovalCancelled: "Keychain approval was cancelled. Your saved sign-in is preserved. Approve access when you're ready."
         case .noXboxProfile: "This Microsoft account needs an Xbox profile. Create one at xbox.com, then sign in again."
         case .childAccount: "This account needs its Xbox family permissions updated before it can sign in."
@@ -221,12 +221,15 @@ struct PCGamesSnapshot: Sendable {
     let updatedAt: Date
     // Memory-only identity: never persisted or logged. Bounds a retained complete snapshot.
     let accountID: String?
+    let boundAccountHash: String?
 
-    init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil) {
+    init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
+         boundAccountHash: String? = nil) {
         self.games = games
         self.excludedCount = excludedCount
         self.updatedAt = updatedAt
         self.accountID = accountID
+        self.boundAccountHash = boundAccountHash
     }
 }
 
@@ -622,7 +625,15 @@ struct PCGamesClient: Sendable {
                 throw error
             }
         }
-        let ids = candidates.sorted()
+        return try await resolveCollection(ids: candidates.sorted(), kinds: kinds,
+            candidateCount: candidateIDs.count, market: market, language: language, accountID: xid)
+    }
+
+    func resolveCollection(ids: [String], kinds: [String: PCGameAcquisitionKind], candidateCount: Int,
+                           market: String, language: String, accountID: String? = nil,
+                           accountHash: String? = nil) async throws -> PCGamesSnapshot {
+        guard ids.count <= 10_000, Set(ids).count == ids.count, ids.allSatisfy(Self.validProductID),
+              candidateCount >= ids.count else { throw PCGamesError.invalidResponse }
         var games: [PCGame] = []
         for start in stride(from: 0, to: ids.count, by: 20) {
             let batch = Array(ids[start..<min(start + 20, ids.count)])
@@ -647,6 +658,7 @@ struct PCGamesClient: Sendable {
             catch { throw PCGamesError.incompleteCatalog(start) }
         }
         return PCGamesSnapshot(games: games.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending },
-                               excludedCount: candidateIDs.count - games.count, updatedAt: Date(), accountID: xid)
+                               excludedCount: candidateCount - games.count, updatedAt: Date(),
+                               accountID: accountID, boundAccountHash: accountHash)
     }
 }

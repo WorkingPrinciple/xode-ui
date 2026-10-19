@@ -267,6 +267,10 @@ final class XboxCompanionController: ObservableObject {
     private var achievementTasks: [String: Task<Void, Never>] = [:]
     private var runIDs = Set<String>()
     private var terminating = false
+    private weak var unifiedSession: LiveSession?
+    var usesUnifiedAccount: Bool { unifiedSession != nil }
+
+    func useUnifiedAccount(_ session: LiveSession) { unifiedSession = session }
 
     init(paths: GameScriptPaths = .production) {
         self.paths = paths
@@ -283,6 +287,8 @@ final class XboxCompanionController: ObservableObject {
         achievementErrors = [:]
         task?.cancel()
         for value in achievementTasks.values { value.cancel() }
+        refreshing = false
+        refreshingTitles = []
     }
 
     func shutdown() async {
@@ -296,6 +302,10 @@ final class XboxCompanionController: ObservableObject {
     func resumeAfterTerminationRefusal() { terminating = false }
 
     func refresh(for status: GameServiceStatus?, force: Bool = false) async {
+        if let session = unifiedSession {
+            await refreshUnifiedAccount(session, force: force)
+            return
+        }
         let binding = status?.signedIn == true ? status?.accountHash : nil
         await bind(binding, signedIn: status?.signedIn == true)
         guard !terminating, let binding, XboxAccountBinding.valid(binding) else { return }
@@ -303,7 +313,7 @@ final class XboxCompanionController: ObservableObject {
         let epoch = generation
         let started = Date()
         let job = Task {
-            defer { refreshing = false; task = nil }
+            defer { if epoch == generation { refreshing = false; task = nil } }
             do {
                 let saved = try await Self.readCompanion(paths.xboxCompanion)
                 guard epoch == generation, owner == binding, !terminating else { return }
@@ -342,6 +352,10 @@ final class XboxCompanionController: ObservableObject {
     }
 
     func loadAchievements(titleID: String, status: GameServiceStatus?, force: Bool = false) async {
+        if let session = unifiedSession {
+            await loadUnifiedAchievements(session, titleID: titleID, force: force)
+            return
+        }
         guard XboxCompanionValidation.titleID(titleID) else {
             achievementErrors[titleID] = "This Xbox title identifier isn't valid."
             return
@@ -399,12 +413,98 @@ final class XboxCompanionController: ObservableObject {
         await job.value
     }
 
+    private func refreshUnifiedAccount(_ session: LiveSession, force: Bool) async {
+        let binding = session.hasConfirmedSignIn ? session.accountHash : nil
+        await bind(binding, signedIn: session.hasConfirmedSignIn)
+        guard !terminating, let binding else { return }
+        if let task { await task.value; return }
+        if !force, error == nil, let date = cache?.date, Date().timeIntervalSince(date) < 900 { return }
+        let epoch = generation
+        refreshing = true
+        let job = Task {
+            defer { if epoch == generation { refreshing = false; task = nil } }
+            do {
+                let read = try await session.readUnifiedAccount(.profile)
+                let profile = try read.payload.decode(XboxProfile.self)
+                guard epoch == generation, session.hasConfirmedSignIn,
+                      session.accountHash == binding, !terminating else { return }
+                guard XboxCompanionValidation.profile(profile) else { throw GameScriptError.invalidReceipt }
+                let unavailable = XboxCompanionError(reason: "This feature isn't connected to your account yet.", httpStatus: nil)
+                cache = XboxCompanionCache(ok: true, accountHash: binding, checkedAt: read.checkedAt,
+                    profile: XboxCompanionSection(state: "available", value: profile, error: nil),
+                    friends: XboxCompanionSection(state: "unavailable", value: nil, error: unavailable),
+                    consoles: XboxCompanionSection(state: "unavailable", value: nil, error: unavailable),
+                    recentGames: XboxCompanionSection(state: "unavailable", value: nil,
+                        error: XboxCompanionError(reason: "Load recent activity to choose a game.", httpStatus: nil)))
+                error = nil
+            } catch is CancellationError { }
+            catch {
+                if epoch == generation, !terminating {
+                    self.error = "Your Xbox profile couldn't load. \(LiveSession.describe(error))"
+                }
+            }
+        }
+        task = job
+        await job.value
+        guard epoch == generation, session.hasConfirmedSignIn, session.accountHash == binding, !terminating else { return }
+        await session.loadRecentLibraryOnEntry()
+        guard epoch == generation, session.hasConfirmedSignIn, session.accountHash == binding,
+              let history = session.recentLibrary, session.recentLibraryCurrent,
+              let saved = cache, !terminating else { return }
+        let games = history.titles.map {
+            XboxRecentGame(titleId: $0.titleID, name: $0.name, devices: $0.devices,
+                lastPlayed: $0.lastPlayedAt, artworkURL: nil, achievementsUnlocked: nil,
+                achievementsTotal: nil, gamerscore: nil, gamerscoreTotal: nil, productIds: [])
+        }
+        cache = XboxCompanionCache(ok: true, accountHash: binding, checkedAt: saved.checkedAt,
+            profile: saved.profile, friends: saved.friends, consoles: saved.consoles,
+            recentGames: XboxCompanionSection(state: "available", value: games, error: nil))
+    }
+
+    private func loadUnifiedAchievements(_ session: LiveSession, titleID: String, force: Bool) async {
+        guard XboxCompanionValidation.titleID(titleID), !terminating,
+              session.hasConfirmedSignIn, let binding = session.accountHash else { return }
+        await bind(binding, signedIn: true)
+        if let task = achievementTasks[titleID] { await task.value; return }
+        if !force, let date = achievements[titleID]?.date, Date().timeIntervalSince(date) < 900 { return }
+        let epoch = generation
+        refreshingTitles.insert(titleID)
+        let job = Task {
+            defer {
+                if epoch == generation { refreshingTitles.remove(titleID); achievementTasks[titleID] = nil }
+            }
+            do {
+                let read = try await session.readUnifiedAccount(.achievements, titleID: titleID)
+                guard epoch == generation, session.hasConfirmedSignIn, session.accountHash == binding, !terminating else { return }
+                let wrapped: JSONValue = .object([
+                    "ok": .bool(true), "accountHash": .string(binding), "titleId": .string(titleID),
+                    "checkedAt": .string(read.checkedAt), "complete": read.payload["complete"] ?? .bool(false),
+                    "achievements": read.payload["achievements"] ?? .null, "error": .null
+                ])
+                guard read.payload["titleID"]?.string == titleID else { throw GameScriptError.invalidReceipt }
+                achievements[titleID] = try XboxAchievementCache.decode(JSONEncoder().encode(wrapped), titleID: titleID)
+                achievementErrors[titleID] = nil
+            } catch is CancellationError { }
+            catch {
+                if epoch == generation, !terminating {
+                    achievementErrors[titleID] = "Achievements couldn't load. \(LiveSession.describe(error))"
+                }
+            }
+        }
+        achievementTasks[titleID] = job
+        await job.value
+    }
+
     private func bind(_ binding: String?, signedIn: Bool) async {
         if binding != owner {
+            let previous = task
+            let previousAchievements = achievementTasks
             invalidateBinding()
             owner = binding
-            await task?.value
-            for value in achievementTasks.values { await value.value }
+            await previous?.value
+            for value in previousAchievements.values { await value.value }
+            task = nil
+            achievementTasks = [:]
         }
         if signedIn, binding == nil {
             error = "The Xbox game-service account couldn't be confirmed. Check game sign-in."
@@ -502,7 +602,7 @@ private enum XboxCompanionRefreshError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .failed(11): "Xbox companion data requires the current game-service account. Check game sign-in."
-        case .failed(13): "Xbox returned companion data X Ode couldn't validate. Saved data is kept."
+        case .failed(13): "Xbox returned companion data Ode to X couldn't validate. Saved data is kept."
         case .failed(1): "Xbox companion data timed out. Try again later."
         case .failed(2): "The Xbox title identifier wasn't accepted."
         case .failed: "Xbox companion data couldn't be refreshed. Saved data is kept."

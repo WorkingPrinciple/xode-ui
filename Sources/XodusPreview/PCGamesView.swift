@@ -20,9 +20,9 @@ struct PCGamesView: View {
         VStack(alignment: .leading, spacing: 20) {
             if library.needsKeychainApproval {
                 VStack(alignment: .leading, spacing: 10) {
-                    Label("X Ode needs one-time Keychain approval.", systemImage: "key")
+                    Label("Ode to X needs one-time Keychain approval.", systemImage: "key")
                         .font(.headline)
-                    Text("Approve the X Ode credential helper to move your saved PC-games sign-in into its protected storage. The helper stays unchanged when X Ode updates. Updating the helper itself may require another approval.")
+                    Text("Approve the Ode to X credential helper to move your saved PC-games sign-in into its protected storage. The helper stays unchanged when Ode to X updates. Updating the helper itself may require another approval.")
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     if library.approvingKeychain {
                         ProgressView("Waiting for Keychain approval").controlSize(.small)
@@ -37,7 +37,7 @@ struct PCGamesView: View {
                 .accessibilityElement(children: .contain)
             }
             if library.legacyKeychainRetained {
-                Label("Your sign-in is saved in the credential helper. An older Keychain item was retained; X Ode won't retry removing it.", systemImage: "info.circle")
+                Label("Your sign-in is saved in the credential helper. An older Keychain item was retained; Ode to X won't retry removing it.", systemImage: "info.circle")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
@@ -59,7 +59,10 @@ struct PCGamesView: View {
                     Text("See the games in your Microsoft account that are available for PC.")
                         .frame(maxWidth: 520)
                 } actions: {
-                    Button("Sign in") { library.signIn() }
+                    Button(library.usesUnifiedAccount ? "Reload library" : "Sign in") {
+                        if library.usesUnifiedAccount { Task { await library.retryLibraryLoad() } }
+                        else { library.signIn() }
+                    }
                         .buttonStyle(.borderedProminent)
                         .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
                         .accessibilityIdentifier("xodus.pcGames.signIn")
