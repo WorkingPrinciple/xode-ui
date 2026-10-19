@@ -112,10 +112,15 @@ struct LiveLibraryView: View {
                         } description: { Text("Only access-qualified PC games appear in Your Games. Preserved local installations are shown separately below.") }
                         actions: { Button("Show all games") { filter = .all } }
                     } else if library.accessIsCurrent, library.representedGames.isEmpty {
-                        ContentUnavailableView {
-                            Label("No PC games found", systemImage: "gamecontroller")
-                        } description: { Text("Games installed on this Mac are listed below. You can also browse the catalogue.") }
-                        actions: { Button("Browse games", action: browse) }
+                        if !localRecords.isEmpty || !gamePassHighlights.isEmpty {
+                            Text("No PC games found in this account.")
+                                .font(.callout).foregroundStyle(.secondary)
+                        } else {
+                            ContentUnavailableView {
+                                Label("No PC games found", systemImage: "gamecontroller")
+                            } description: { Text("Browse the catalogue to find PC games.") }
+                            actions: { Button("Browse games", action: browse) }
+                        }
                     }
                 } else {
                     LazyVGrid(columns: LibraryGridLayout.columns,
@@ -162,10 +167,10 @@ struct LiveLibraryView: View {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
             }
-            .task(id: (collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id)
+            .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id)
                 + gamePassHighlights.map(\.id)).sorted().joined(separator: ",")) {
                 guard artworkAllowed else { return }
-                await art.load(ids: collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
+                await art.load(ids: heroGames.map(\.id) + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
                     .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
                     + gamePassHighlights.map(\.id).filter(PCGamesClient.validProductID),
                     market: session.market, language: session.language)
@@ -202,15 +207,14 @@ struct LiveLibraryView: View {
         }
     }
 
-    // Apple TV pattern: recently played first, then the rest of the installed and owned collection.
     private var heroGames: [LibraryGame] {
-        let order = Dictionary(continuing.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let ranked = collection.filter(isVisible).sorted {
-            let left = $0.installed.flatMap { order[$0.id] } ?? ($0.installed == nil ? 2_000 : 1_000)
-            let right = $1.installed.flatMap { order[$0.id] } ?? ($1.installed == nil ? 2_000 : 1_000)
-            return left == right ? $0.title.localizedStandardCompare($1.title) == .orderedAscending : left < right
+        func recommendable(_ game: LibraryGame) -> Bool {
+            LibrarySupportVisibility.issues(productID: game.id, installed: false,
+                packageFormat: art.images[game.id]?.facts.packageFormat,
+                compatibility: operations.compatibility[game.id]).isEmpty
         }
-        return Array(ranked.prefix(6))
+        return LibraryGame.heroCandidates(qualified: collection.filter(recommendable),
+            catalogue: gamePassCatalog.filter(recommendable), continuingIDs: continuing.map(\.id))
     }
 
     private var heroCarousel: some View {
@@ -265,26 +269,32 @@ struct LiveLibraryView: View {
 
     private func hero(_ game: LibraryGame, selected: Bool) -> some View {
         let id = game.installed?.storeId ?? game.id
+        let landscape = landscapeReferences(game)
         return LibraryHero(title: game.title,
                     logos: (xboxStats.cache?.games[id]?.logo.map { [$0] } ?? []) + (art.images[id]?.logos ?? []),
                     allowsArtworkLoading: artworkAllowed, height: 460) {
             LibraryHeroMedia(trailer: art.images[id]?.detail?.trailers.first,
                              allowsPlayback: allowsStartupTasks && allowsHeroAnimation && selected,
                              playingChanged: { playing in selection.heroPlaying = playing && selected }) {
-                LibraryLandscapeView(references: art.images[id]?.landscape ?? [],
+                LibraryLandscapeView(references: landscape,
                                      installed: game.installed, allowsLoading: artworkAllowed)
             }
         } poster: {
             LibraryLandscapeView(references: art.images[id]?.cover.map { [$0] } ?? (game.cover.map { [$0] } ?? []),
                                  installed: game.installed, allowsLoading: artworkAllowed)
         } information: {
+            Text(game.pc?.acquisitionKind == .subscription ? "Included with your subscription"
+                 : game.pc != nil ? "In your library" : "PC Game Pass catalogue")
+                .font(.callout.weight(.medium))
             information(id: id)
             if let match = game.installed { InstalledPackageTypeLabel(game: match) }
             LibraryGameSizeView(installed: game.installed, downloadBytes: art.images[id]?.facts.downloadBytes,
                                 packageFormat: art.images[id]?.facts.packageFormat,
                                 allowsMeasurement: artworkAllowed)
         } actions: {
-            if let match = game.installed {
+            if game.pc == nil {
+                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: true))
+            } else if let match = game.installed {
                 InstalledEngineOverride(library: installed, game: match)
                 if installed.placeholderIDs.contains(match.id), let pc = game.pc {
                     Button {
@@ -349,12 +359,17 @@ struct LiveLibraryView: View {
 
     @ViewBuilder private var ambientBackdrop: some View {
         if let game = heroGames.first(where: { $0.id == selection.heroID }) ?? heroGames.first {
-            let id = game.installed?.storeId ?? game.id
-            LibraryAmbientBackdrop(references: art.images[id]?.landscape ?? [],
+            LibraryAmbientBackdrop(references: landscapeReferences(game),
                                    installed: game.installed, allowsLoading: artworkAllowed)
         } else {
             Color(nsColor: .windowBackgroundColor).frame(height: 820)
         }
+    }
+
+    private func landscapeReferences(_ game: LibraryGame) -> [CatalogArtworkReference] {
+        let id = game.installed?.storeId ?? game.id
+        let loaded = art.images[id]?.landscape ?? []
+        return loaded.isEmpty ? game.product?.artwork.filter { $0.role == .hero } ?? [] : loaded
     }
 
     private var precheckIDs: [String] {

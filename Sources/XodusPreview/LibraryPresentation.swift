@@ -127,8 +127,23 @@ struct LibraryGame: Identifiable {
                 if $0.lastPlayedAt != $1.lastPlayedAt {
                     return ($0.lastPlayedAt ?? .distantPast) > ($1.lastPlayedAt ?? .distantPast)
                 }
+
                 return $0.id.uuidString < $1.id.uuidString
             }
+    }
+
+    static func heroCandidates(qualified: [Self], catalogue: [Self], continuingIDs: [UUID]) -> [Self] {
+        let order = Dictionary(continuingIDs.enumerated().map { ($1, $0) },
+                               uniquingKeysWith: { first, _ in first })
+        let subscriptions = qualified.filter { $0.pc?.acquisitionKind == .subscription }
+        let purchases = qualified.filter { $0.pc?.acquisitionKind == .purchased }
+        let source = !subscriptions.isEmpty ? subscriptions
+            : !purchases.isEmpty ? purchases : !qualified.isEmpty ? qualified : catalogue
+        return Array(source.sorted {
+            let left = $0.installed.flatMap { order[$0.id] } ?? ($0.installed == nil ? 2_000 : 1_000)
+            let right = $1.installed.flatMap { order[$0.id] } ?? ($1.installed == nil ? 2_000 : 1_000)
+            return left == right ? $0.title.localizedStandardCompare($1.title) == .orderedAscending : left < right
+        }.prefix(6))
     }
 
     var eligibility: LibraryEligibility? {

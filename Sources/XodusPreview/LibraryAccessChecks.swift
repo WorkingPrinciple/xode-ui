@@ -80,6 +80,19 @@ enum LibraryAccessChecks {
               "Game Pass catalogue includes unowned PC members and independently marks overlapping held access")
         check(catalogue.last?.eligibility == nil,
               "M10: public Game Pass catalogue membership is not account eligibility")
+        let purchase = LibraryGame.collection(installed: [], owned: [
+            PCGame(id: "FIXTURE00008", title: "Purchased game", artwork: nil, acquisitionKind: .purchased)
+        ], products: [], gamePass: [], active: false)
+        check(LibraryGame.heroCandidates(qualified: purchase + granted, catalogue: catalogue,
+              continuingIDs: []).map(\.id) == granted.map(\.id),
+              "First-run hero prioritizes current subscription-held games over purchases")
+        check(LibraryGame.heroCandidates(qualified: purchase, catalogue: catalogue,
+              continuingIDs: []).map(\.id) == purchase.map(\.id),
+              "Without subscription-held titles the hero features purchased PC games")
+        let browsingHeroes = LibraryGame.heroCandidates(qualified: [], catalogue: catalogue, continuingIDs: [])
+        check(!browsingHeroes.isEmpty && browsingHeroes.allSatisfy { $0.pc == nil || $0.pc?.id == held.id }
+              && browsingHeroes.contains { $0.eligibility == nil && !$0.owned },
+              "A new or empty account still gets real catalogue heroes without fabricated account access")
         check(LibraryGame.visible(catalogue, query: "Public PC", filter: .gamePass, sort: .title).count == 1,
               "Game Pass filter searches the catalogue instead of only the owned-library overlap")
         check(LibraryGame.continuing(both, launchableIDs: [local.id]).map(\.id) == [local.id]

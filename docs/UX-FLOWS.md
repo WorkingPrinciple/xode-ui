@@ -29,6 +29,12 @@ loads automatically on signed-in entry; success with an empty PC collection show
 an empty result, not a "Load PC games" prompt. Loading, failed and empty states
 are distinct. Lists without a hero respect toolbar safe areas, and Library
 follows the system appearance rather than forcing a grey/dark fallback.
+The Library hero is not conditional on a populated owned collection: it prefers
+current subscription-held PC games, then purchased/other held PC games, and uses
+real public PC catalogue picks when account-qualified titles are absent. Public
+picks are labelled as catalogue content and open details, never an invented
+Owned/Included grant or a disabled fake Install prompt. Known-incompatible titles
+are excluded from hero recommendations. Hero media loads automatically.
 
 Ordinary startup shows the standalone green X logo with **Ode** below it over
 a neutral background, not installed game cards or developer setup diagnostics.

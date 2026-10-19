@@ -10,6 +10,13 @@ finished. Ordinary list content respects native toolbar bounds; only actual
 full-bleed hero artwork extends underneath. Follow the system appearance.
 This supersedes earlier display-name and account-header instructions below.
 
+**First signed-in Library:** retain the art-first hero even for a new or empty
+owned collection. Prioritize current subscription-linked PC titles, otherwise
+purchased PC titles, then other verified held titles. Real public PC-catalogue
+picks are a browsing fallback, not proof of ownership or a subscription.
+Exclude known-incompatible recommendations even when unsupported rows are shown.
+Fetch hero artwork automatically and prioritize it ahead of secondary shelves.
+
 ## User-directed visual contract
 
 For the Library refresh, the user-selected v0.2 Figma Library (`5iQu716UFImHjRxJkf0t8V`, `3:115`) owns layout and flow; Apple Games for macOS owns visual treatment. The replacement is dark-reviewed, art-first and native Liquid Glass, while production follows the system appearance. The user rejected the flat v0.1 interpretation and bespoke floating menus. Artwork extends under the real system toolbar; navigation/search and the separate trailing account control remain native. The framework is SwiftUI/AppKit, not UIKit or a painted web dashboard.

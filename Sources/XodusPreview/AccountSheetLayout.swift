@@ -81,7 +81,7 @@ struct AccountSheetLayout<Header: View, Content: View, Actions: View>: View {
             }
         }
         .frame(minWidth: 480, idealWidth: showsHeader ? 650 : 560, maxWidth: 760,
-               minHeight: showsHeader ? 340 : 480, idealHeight: 620, maxHeight: 700)
+               minHeight: showsHeader ? 340 : 480, idealHeight: showsHeader ? 620 : 520, maxHeight: 700)
     }
 }
 
