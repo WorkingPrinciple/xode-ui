@@ -21,6 +21,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var playErrors: [UUID: String] = [:]
     @Published private(set) var historyError: String?
     @Published private(set) var packageErrors: [UUID: String] = [:]
+    @Published private(set) var checkingInstallations = Set<UUID>()
     @Published private(set) var playLogs: [UUID: URL] = [:]
     @Published private(set) var playNotices: [UUID: String] = [:]
     @Published private(set) var stoppingGameID: UUID?
@@ -434,6 +435,15 @@ final class InstalledGamesController: ObservableObject {
 
     func refreshAfterSetupRepair() async {
         guard mutationActive, runtimeRepairActive else { return }
+        await refreshLaunchableGames()
+    }
+
+    func checkInstallation(_ game: InstalledGame) async {
+        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
+              !applicationTerminating, runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
+        editing = true
+        checkingInstallations.insert(game.id)
+        defer { checkingInstallations.remove(game.id); editing = false }
         await refreshLaunchableGames()
     }
 

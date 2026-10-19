@@ -20,6 +20,7 @@ struct LiveLibraryView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
+    private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
     private var filter: LibraryFilter {
         get { selection.filter }
         nonmutating set { selection.filter = newValue }
@@ -35,8 +36,11 @@ struct LiveLibraryView: View {
                                active: operations.gamePassActive, accessIsCurrent: library.accessIsCurrent)
     }
     private var visibleCandidates: [LibraryGame] {
-        LibraryGame.visible(filter == .gamePass ? gamePassCatalog : collection,
+        LibraryGame.visible(filter == .gamePass ? gamePassCatalog : libraryGames,
                             query: query, filter: filter, sort: sort)
+    }
+    private var libraryGames: [LibraryGame] {
+        LibraryGame.displayCollection(installed: installed.games, account: collection)
     }
     private var visible: [LibraryGame] {
         visibleCandidates.filter(isVisible)
@@ -106,10 +110,10 @@ struct LiveLibraryView: View {
                                 Task { await session.loadGamePassCatalog(refresh: true) }
                             }.disabled(!allowsStartupTasks || !session.isReady || session.gamePassCatalogPaging)
                         }
-                    } else if !collection.isEmpty {
+                    } else if !libraryGames.isEmpty {
                         ContentUnavailableView {
-                            Label("No \(filter.rawValue.lowercased()) games", systemImage: "gamecontroller")
-                        } description: { Text("Only access-qualified PC games appear in Your Games. Preserved local installations are shown separately below.") }
+                            Label("No \(filter.rawValue.lowercased()) games to show", systemImage: "gamecontroller")
+                        } description: { Text("Try another filter to see the games in your library.") }
                         actions: { Button("Show all games") { filter = .all } }
                     } else if library.accessIsCurrent, library.representedGames.isEmpty {
                         if !localRecords.isEmpty || !gamePassHighlights.isEmpty {
@@ -151,15 +155,6 @@ struct LiveLibraryView: View {
                     }
                     .disabled(!allowsStartupTasks || !session.isReady || session.gamePassCatalogPaging || session.searching)
                 }
-                if filter != .gamePass, !localRecords.isEmpty {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Installed on this Mac").font(.title2.weight(.semibold))
-                        LazyVGrid(columns: LibraryGridLayout.columns,
-                                  alignment: .leading, spacing: 30) {
-                            ForEach(localRecords) { game in card(game) }
-                        }
-                    }.accessibilityIdentifier("xodus.library.localRecords")
-                }
                 if let error = art.error {
                     Label(error, systemImage: "photo.badge.exclamationmark").font(.callout).foregroundStyle(.secondary)
                 }
@@ -179,6 +174,15 @@ struct LiveLibraryView: View {
             }
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
+        .sheet(item: $selection.localDetail) { entry in
+            if let product = entry.product {
+                LiveProductView(product: product, library: library, installedLibrary: installed,
+                    operations: operations, installationID: entry.game.id,
+                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed)
+            } else {
+                LocalInstalledGameView(game: entry.game, installed: installed, operations: operations)
+            }
+        }
         .task { if allowsStartupTasks { await library.loadOnAppear() } }
         .task(id: "\(precheckIDs.joined(separator: ",")):\(operations.canStartMutation)") {
             guard allowsStartupTasks, operations.canStartMutation, !precheckIDs.isEmpty else { return }
@@ -218,19 +222,18 @@ struct LiveLibraryView: View {
     }
 
     private var heroCarousel: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .bottom) {
+        ZStack(alignment: .bottom) {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 0) {
                         ForEach(heroGames) { game in
                             hero(game, selected: selection.heroID == game.id)
-                                .frame(width: geometry.size.width).id(game.id)
+                                .containerRelativeFrame(.horizontal).id(game.id)
                         }
                     }
                     .scrollTargetLayout()
                 }
                 .scrollIndicators(.never).scrollTargetBehavior(.paging)
-                .scrollPosition(id: $selection.heroID)
+                .scrollPosition(id: $selection.heroID, anchor: .leading)
                 if heroGames.count > 1 {
                     HStack(spacing: 4) {
                         ForEach(heroGames) { game in
@@ -248,15 +251,14 @@ struct LiveLibraryView: View {
                     }
                     .padding(.bottom, 18)
                 }
-            }
         }
-        .frame(height: 460)
+        .frame(height: 460).clipped()
         .onHover { selection.heroHovered = $0 }
         .onChange(of: heroGames.map(\.id), initial: true) { _, ids in
             if selection.heroID.map({ !ids.contains($0) }) ?? true { selection.heroID = ids.first }
         }
-        .task(id: heroGames.map(\.id).joined(separator: ",")) {
-            guard allowsStartupTasks, allowsHeroAnimation, !reduceMotion else { return }
+        .task(id: "\(heroGames.map(\.id).joined(separator: ",")):\(heroMotionAllowed):\(reduceMotion)") {
+            guard allowsStartupTasks, heroMotionAllowed, !reduceMotion else { return }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(9))
                 guard !Task.isCancelled, !selection.heroHovered, !selection.heroPlaying, heroGames.count > 1 else { continue }
@@ -274,7 +276,7 @@ struct LiveLibraryView: View {
                     logos: (xboxStats.cache?.games[id]?.logo.map { [$0] } ?? []) + (art.images[id]?.logos ?? []),
                     allowsArtworkLoading: artworkAllowed, height: 460) {
             LibraryHeroMedia(trailer: art.images[id]?.detail?.trailers.first,
-                             allowsPlayback: allowsStartupTasks && allowsHeroAnimation && selected,
+                             allowsPlayback: allowsStartupTasks && heroMotionAllowed && selected,
                              playingChanged: { playing in selection.heroPlaying = playing && selected }) {
                 LibraryLandscapeView(references: landscape,
                                      installed: game.installed, allowsLoading: artworkAllowed)
@@ -295,21 +297,8 @@ struct LiveLibraryView: View {
             if game.pc == nil {
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: true))
             } else if let match = game.installed {
-                InstalledEngineOverride(library: installed, game: match)
-                if installed.placeholderIDs.contains(match.id), let pc = game.pc {
-                    Button {
-                        Task { await operations.repair(pc, installed: match) }
-                    } label: {
-                        Label("Download full game", systemImage: "icloud.and.arrow.down")
-                            .font(.title3.weight(.semibold)).frame(minHeight: 28).padding(.horizontal, 12)
-                    }
-                    .modifier(LibraryActionStyle(primary: true, usesGlass: true))
-                    .modifier(LibraryHeroControlSize())
-                    .disabled(!allowsStartupTasks || !operations.canStartMutation || !library.accessIsCurrent)
-                } else {
-                    InstalledPlayButton(library: installed, operations: operations, game: match,
-                                        usesGlass: true, heroStyle: true)
-                }
+                InstalledPlayButton(library: installed, operations: operations, game: match,
+                                    usesGlass: true, heroStyle: true, attention: { open(game) })
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else if !unsupportedIssues(game).isEmpty {
@@ -483,13 +472,17 @@ struct LiveLibraryView: View {
         do {
             let productID = game.installed?.storeId ?? game.id
             guard PCGamesClient.validProductID(productID) else {
-                session.errorMessage = "This local record has no verified Store identity. Its files and saves are preserved."
+                if let local = game.installed { selection.localDetail = InstalledGameDetailSelection(game: local, product: nil) }
+                else { session.errorMessage = "Game details couldn't be opened." }
                 return
             }
-            session.selectedProduct = try game.product ?? art.images[productID]?.product ??
+            let product = try game.product ?? art.images[productID]?.product ??
                 LibraryGame.details(id: productID, title: game.title, market: session.market, language: session.language,
                                     source: game.owned ? "AccountPCLibrary:identityOnly" : "LocalInstalledRegistry:identityOnly",
                                     pcCandidate: false)
+            if let local = game.installed {
+                selection.localDetail = InstalledGameDetailSelection(game: local, product: product)
+            } else { session.selectedProduct = product }
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
     }
 
@@ -515,16 +508,8 @@ struct LiveLibraryView: View {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
         } status: {
-            HStack(spacing: 8) {
-                if let match = game.installed {
-                    InstalledPackageTypeLabel(game: match)
-                }
-                if game.installed != nil {
-                    Label("Installed", systemImage: "internaldrive")
-                    if game.eligibility == .installedUnknown {
-                        Label("Access not verified", systemImage: "questionmark.circle")
-                    }
-                } else if !unsupportedIssues(game).isEmpty {
+            if game.installed == nil {
+                if !unsupportedIssues(game).isEmpty {
                     LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
                 } else {
                     LibraryGameSizeView(installed: nil, downloadBytes: art.images[artworkID]?.facts.downloadBytes,
@@ -532,25 +517,11 @@ struct LiveLibraryView: View {
                                         allowsMeasurement: artworkAllowed)
                 }
             }
-            if let match = game.installed { InstalledPlayError(library: installed, game: match) }
         } actions: {
             LibraryGlassCluster {
                 if let match = game.installed {
-                    InstalledEngineOverride(library: installed, game: match)
-                    if installed.placeholderIDs.contains(match.id), let pc = game.pc {
-                        Button {
-                            Task { await operations.repair(pc, installed: match) }
-                        } label: {
-                            Label("Download full game", systemImage: "icloud.and.arrow.down")
-                        }
-                        .labelStyle(.iconOnly)
-                        .help("Download the full \(game.title) installation")
-                        .modifier(LibraryActionStyle(primary: false, usesGlass: true))
-                        .disabled(!allowsStartupTasks || !operations.canStartMutation || !library.accessIsCurrent)
-                    } else {
-                        InstalledPlayButton(library: installed, operations: operations, game: match,
-                                            usesGlass: true, prominent: false)
-                    }
+                    InstalledPlayButton(library: installed, operations: operations, game: match,
+                                        usesGlass: true, prominent: false, attention: { open(game) })
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
                 } else if unsupportedReason(game) != nil {
                     EmptyView()

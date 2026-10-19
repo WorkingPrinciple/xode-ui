@@ -754,7 +754,8 @@ final class LiveSession: ObservableObject {
 
     func supports(_ command: ManagementCommand) -> Bool { hello?.supports(command) == true }
 
-    func readUnifiedAccount(_ section: OdeAccountSection, titleID: String? = nil) async throws -> OdeAccountRead {
+    func readUnifiedAccount(_ section: OdeAccountSection, titleID: String? = nil,
+                            market: String? = nil, language: String? = nil) async throws -> OdeAccountRead {
         guard hasConfirmedSignIn, !accountOperationBusy, !recentLibraryBootstrapRunning,
               section == .runtime || !accountRuntimeStarting, !applicationTerminating, let client,
               let account = accountHash else { throw ManagementError.disconnected }
@@ -768,7 +769,7 @@ final class LiveSession: ObservableObject {
         defer { if token == generation { accountOperationBusy = false } }
         let result = try await client.request(command, params: [
             "section": .string(section.rawValue), "accountHash": .string(account),
-            "market": .string(market), "language": .string(language),
+            "market": .string(market ?? self.market), "language": .string(language ?? self.language),
             "titleID": titleID.map(JSONValue.string) ?? .null
         ]).decode(OdeAccountRead.self)
         try Task.checkCancellation()

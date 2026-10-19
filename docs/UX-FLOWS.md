@@ -36,6 +36,16 @@ picks are labelled as catalogue content and open details, never an invented
 Owned/Included grant or a disabled fake Install prompt. Known-incompatible titles
 are excluded from hero recommendations. Hero media loads automatically.
 
+**Unified Library and recovery:** All/Installed include registered local games
+as well as account-held titles, without relabelling local records as Owned or
+granting launch access. Account ownership and subscription evidence remain
+separate. Cards show title and a concise action, not package/entitlement columns
+or an idle "Checking access" status. A known blocker offers **Needs attention**
+and opens the normal game detail sheet for that exact installation. Safe local
+folder/launch-file checks run automatically there. Repair/full installation uses
+the existing guarded flow only when available; registry removal requires
+confirmation and preserves files/saves. Technical details stay behind disclosure.
+
 Ordinary startup shows the standalone green X logo with **Ode** below it over
 a neutral background, not installed game cards or developer setup diagnostics.
 Welcome, Account and the packaged app icon share one native vector X: standalone

@@ -16,6 +16,10 @@ purchased PC titles, then other verified held titles. Real public PC-catalogue
 picks are a browsing fallback, not proof of ownership or a subscription.
 Exclude known-incompatible recommendations even when unsupported rows are shown.
 Fetch hero artwork automatically and prioritize it ahead of secondary shelves.
+All/Installed counts include known local installations without inventing ownership.
+Keep covers clean: title, Play or Needs attention, and the existing action menu.
+Do not compress package/ownership diagnostics into columns below covers. Recovery
+belongs in the normal detail sheet, with concise reasons and real actions.
 
 ## User-directed visual contract
 

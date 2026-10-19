@@ -19,6 +19,7 @@ struct LiveProductView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installedLibrary: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
+    var installationID: UUID? = nil
     var allowsStartupTasks = true
     var allowsArtworkLoading = true
     @EnvironmentObject private var session: LiveSession
@@ -26,7 +27,9 @@ struct LiveProductView: View {
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
     @ObservedObject private var stats = LibraryXboxStats.shared
 
-    private var installed: InstalledGame? { installedLibrary.games.first { $0.storeId == product.id } }
+    private var installed: InstalledGame? {
+        installedLibrary.games.first { $0.storeId == product.id && (installationID == nil || $0.id == installationID) }
+    }
     private var owned: PCGame? { library.representedGames.first { $0.id == product.id } }
     private var gamePass: Bool {
         session.gamePassProductIDs.contains(product.id)
@@ -72,10 +75,10 @@ struct LiveProductView: View {
                         header
                         VStack(alignment: .leading, spacing: 28) {
                         GameOperationProgressView(operations: operations, productID: product.id)
-                        if owned != nil, installed == nil {
-                            Text("Your library record is separate from download access. Ode to X checks this edition's package and authorization when you install.")
-                                .font(.callout).foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                        if let installed {
+                            InstalledGameAttentionView(installed: installedLibrary, operations: operations,
+                                game: installed, repairGame: library.accessIsCurrent ? owned : nil,
+                                close: dismiss.callAsFunction)
                         }
                         evidence
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
@@ -125,6 +128,9 @@ struct LiveProductView: View {
             if allowsArtworkLoading {
                 await catalog.loadDetail(id: product.id, market: product.market, language: product.language)
             }
+        }
+        .task(id: installed?.id) {
+            if allowsStartupTasks, let installed { await installedLibrary.checkInstallation(installed) }
         }
         .task(id: "\(product.id):\(installed == nil):\(operations.canStartMutation)") {
             guard allowsStartupTasks, installed == nil, operations.canStartMutation,

@@ -209,13 +209,21 @@ struct InstalledPlayButton: View {
     var usesGlass = false
     var prominent = true
     var heroStyle = false
+    var attention: (() -> Void)?
+    private var needsAttention: Bool {
+        !canStop && !launching && (library.placeholderIDs.contains(game.id)
+            || library.packageErrors[game.id] != nil || library.playErrors[game.id] != nil
+            || !library.accountAccessAllowed)
+    }
+    private var opensAttention: Bool { needsAttention && attention != nil }
     private var launching: Bool {
         library.runningGameID == game.id && library.playState == .launching
     }
     private var title: String {
         library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : canStop ? "Stop"
-            : library.placeholderIDs.contains(game.id) ? "Needs full install"
-            : !library.accountAccessAllowed ? "Checking access"
+            : opensAttention ? "Needs attention"
+            : library.placeholderIDs.contains(game.id) ? "Install required"
+            : !library.accountAccessAllowed ? "Unavailable"
             : library.playErrors[game.id] == nil ? "Play" : "Try again"
     }
 
@@ -225,7 +233,8 @@ struct InstalledPlayButton: View {
 
     var body: some View {
         Button {
-            if canStop { operations.stop(game) }
+            if opensAttention { attention?() }
+            else if canStop { operations.stop(game) }
             else { Task { await library.play(game) } }
         } label: {
             if heroStyle {
@@ -235,17 +244,22 @@ struct InstalledPlayButton: View {
         }
         .modifier(LibraryActionStyle(primary: prominent, usesGlass: usesGlass))
         .modifier(LibraryHeroControlSize(enabled: heroStyle))
-        .disabled(canStop ? !library.canStop(game) || !operations.canStartMutation
+        .disabled(opensAttention ? library.editing || library.choosing || library.accountDisconnecting
+                   || library.applicationTerminating
+                   : canStop ? !library.canStop(game) || !operations.canStartMutation
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.accountDisconnecting || !library.accountAccessAllowed
                   || library.placeholderIDs.contains(game.id))
-        .accessibilityLabel(canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
+        .accessibilityLabel(opensAttention ? "\(game.title): needs attention"
+             : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
             : library.placeholderIDs.contains(game.id) ? "\(game.title): needs the full game installation"
             : !library.accountAccessAllowed ? "\(game.title): \(library.accountAccessMessage)" : "Play \(game.title)")
-        .help(!canStop && !library.accountAccessAllowed ? library.accountAccessMessage : "")
+        .help(opensAttention ? "Review what needs attention for \(game.title)"
+              : !canStop && !library.accountAccessAllowed ? library.accountAccessMessage : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
-        .accessibilityIdentifier(canStop ? "xodus.installed.stop" : "xodus.installed.play")
+        .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"
+                                : canStop ? "xodus.installed.stop" : "xodus.installed.play")
         if library.stoppingGameID == game.id || launching {
             ProgressView(library.stoppingGameID == game.id ? "Stopping" : "Launching").controlSize(.small)
         }

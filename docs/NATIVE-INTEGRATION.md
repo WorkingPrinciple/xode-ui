@@ -37,6 +37,13 @@ confirmed unexpired user/device RPS tickets and parent-EOF endpoint cleanup;
 ticket contents were never logged or persisted. These checks do not establish
 populated PC inventory, an integrated installed-game consumer or gameplay.
 
+Collection normalization now accepts provider casing for recognized Game/Active
+values and canonicalizes Store IDs to uppercase. Invalid/unmapped active game
+rows cannot be turned into a successful empty collection. Closed aggregate
+diagnostics (counts only, no IDs or account data) distinguish an empty provider
+response from normalization/filtering loss. Library All/Installed counts are
+known local plus account-held records; those display counts do not grant ownership.
+
 This is implementation work beyond the immutable foundation at `44d7338`. It is **not a consumer-ready game launcher**.
 
 ## Library source freeze and functional follow-up

@@ -21,6 +21,7 @@ enum LibraryGridLayout {
 
 @MainActor
 final class LibrarySelection: ObservableObject {
+    @Published var localDetail: InstalledGameDetailSelection?
     @Published var filter: LibraryFilter = .all
     @Published var sort: LibrarySort = .title
     @Published var recentGameID: UUID?
@@ -144,6 +145,10 @@ struct LibraryGame: Identifiable {
             let right = $1.installed.flatMap { order[$0.id] } ?? ($1.installed == nil ? 2_000 : 1_000)
             return left == right ? $0.title.localizedStandardCompare($1.title) == .orderedAscending : left < right
         }.prefix(6))
+    }
+
+    static func displayCollection(installed: [InstalledGame], account: [Self]) -> [Self] {
+        account + localRecords(installed: installed, qualified: account, query: "", sort: .title)
     }
 
     var eligibility: LibraryEligibility? {

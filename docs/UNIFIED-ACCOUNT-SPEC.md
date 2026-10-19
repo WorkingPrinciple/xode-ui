@@ -50,8 +50,8 @@ Rust readers live in product-owned `ode_account` modules; management wiring and
 the schema generator are the integration hooks. The native route is selected
 only when the paired engine advertises the explicitly versioned operation.
 The source candidate producer is
-`90f4c133f4ddb73373e3ad7bf9b3ab8da7b53c4d`, tree
-`f58594826edf57a72054cee9cf8d14da2487162e`; it is committed locally in the
+`261690eafbb21ce2368caccc64109676930476da`, tree
+`690491b2cb6ffa588798f9bda9e8864a1ebf5fa6`; it is committed locally in the
 writable `ode-unified-account` fork worktree, not pushed or substituted for
 the approved sealed shipping input.
 

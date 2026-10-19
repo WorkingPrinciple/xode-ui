@@ -217,6 +217,11 @@ enum InstalledGameChecks {
               && placeholderLibrary.packageErrors[game.id] == InstalledGameError.placeholderContent.localizedDescription
               && placeholderLibrary.games.count == 1,
               "Known placeholder registration remains intact but cannot advertise Play or Continue Playing")
+        await placeholderLibrary.checkInstallation(game)
+        check(placeholderLibrary.placeholderIDs.contains(game.id)
+              && placeholderLibrary.checkingInstallations.isEmpty && !placeholderLibrary.editing
+              && !placeholderLibrary.launchStarted,
+              "Automatic local installation checking settles without launching or repairing placeholder content")
         do {
             try InstalledGameFiles.checkPlayableContent(folder)
             check(false, "The live prelaunch content check refuses a declared placeholder before spawning")

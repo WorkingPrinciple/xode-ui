@@ -53,6 +53,10 @@ enum LibraryAccessChecks {
         let locals = LibraryGame.localRecords(installed: [local], qualified: collection, query: "", sort: .title)
         check(locals.count == 1 && locals[0].installed == local && !locals[0].owned && !locals[0].gamePass,
               "SDD-LIB-04: live local-record seam preserves exact registry data without access badges")
+        let displayed = LibraryGame.displayCollection(installed: [local], account: collection)
+        check(displayed.count == 2 && LibraryGame.visible(displayed, query: "", filter: .installed, sort: .title).count == 1
+              && displayed.first(where: { $0.installed?.id == local.id })?.owned == false,
+              "All counts known installed games without promoting them to owned or subscription access")
         check(collection.first?.eligibility == .owned && locals[0].eligibility == .installedUnknown,
               "M10: eligibility classifies held access as owned and installed-only as installedUnknown")
         check(LibraryGame.continuing(collection, launchableIDs: [local.id]).isEmpty,
@@ -98,6 +102,8 @@ enum LibraryAccessChecks {
         check(LibraryGame.continuing(both, launchableIDs: [local.id]).map(\.id) == [local.id]
               && LibraryGame.localRecords(installed: [installedHeld], qualified: both, query: "", sort: .title).isEmpty,
               "SDD-LIB-04/05: exact held installation is featured and is not duplicated in unverified local records")
+        check(LibraryGame.displayCollection(installed: [installedHeld], account: both).count == 1,
+              "Unified Library does not count the same installed/account-held game twice")
         let consoleOverlap = try LibraryGame.details(id: held.id, title: "Console product",
             market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: false)
         check(LibraryGame.collection(installed: [], owned: [held], products: [],

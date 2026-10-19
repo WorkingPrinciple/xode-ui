@@ -194,7 +194,7 @@ final class PCGamesController: ObservableObject {
         operation = Task {
             defer { finish(token) }
             do {
-                let read = try await session.readUnifiedAccount(.library)
+                let read = try await session.readUnifiedAccount(.library, market: market, language: language)
                 let collection = try read.payload.decode(OdeAccountCollection.self)
                 try collection.validate()
                 try current(token)
@@ -214,7 +214,11 @@ final class PCGamesController: ObservableObject {
             catch {
                 guard generation == token, !terminating else { return }
                 snapshot = nil
-                self.error = "Your PC library couldn't load from your Xbox Live sign-in. \(LiveSession.describe(error))"
+                if error as? ManagementError == .authenticatedReadFailed(.responseInvalid) {
+                    self.error = "Your account library couldn't be read completely. Your installed games are still available."
+                } else {
+                    self.error = "Your PC library couldn't load. \(LiveSession.describe(error))"
+                }
             }
         }
     }
