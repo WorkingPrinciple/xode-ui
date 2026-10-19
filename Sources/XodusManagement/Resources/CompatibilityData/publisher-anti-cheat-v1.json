@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "products": {
+    "9NKCCHCFTHV2": {
+      "title": "VALORANT PC",
+      "technologies": ["Riot Vanguard"],
+      "scope": "Windows PC. Riot identifies a kernel-mode driver and requires Vanguard while playing VALORANT. This does not assess any native Mac edition or certify Wine compatibility.",
+      "source": "https://support.riotgames.com/en-us/riot/performance/what-is-vanguard/",
+      "checkedAt": "2026-10-19T22:29:56Z"
+    },
+    "9NP1P1WFS0LB": {
+      "title": "Halo Infinite",
+      "technologies": ["Easy Anti-Cheat"],
+      "scope": "PC online sessions. The publisher reports EAC is not active in Campaign or Forge Edit Mode. Mode-specific behavior is not a Mac gameplay qualification.",
+      "source": "https://support.halowaypoint.com/hc/en-us/articles/24540901669780-Halo-Infinite-Content-Update-31-Patch-Notes",
+      "checkedAt": "2026-10-19T22:29:56Z"
+    },
+    "9NTM9HXNLSZX": {
+      "title": "Halo: The Master Chief Collection",
+      "technologies": ["Easy Anti-Cheat"],
+      "scope": "Microsoft Store and Xbox PC versions include EAC. The publisher also documents a separate mods/limited-services launch mode without public matchmaking. Neither mode has been qualified by Ode to X.",
+      "source": "https://support.halowaypoint.com/hc/en-us/articles/360037475251-How-to-Launch-Halo-The-Master-Chief-Collection-with-Easy-Anti-Cheat-EAC-Disabled",
+      "checkedAt": "2026-10-19T22:29:56Z"
+    },
+    "9PB301R051CQ": {
+      "title": "League of Legends",
+      "technologies": ["Riot Vanguard"],
+      "scope": "Windows PC League client. Riot requires Vanguard during gameplay and while the League client is open. This Windows-build requirement is not a verdict on the separate native Mac client.",
+      "source": "https://support.riotgames.com/en-us/league-of-legends/performance/riot-vanguard-faq-league-of-legends/",
+      "checkedAt": "2026-10-19T22:29:56Z"
+    }
+  }
+}

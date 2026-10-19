@@ -89,6 +89,12 @@ stay unknown; absence from a community dataset never means "no anti-cheat".
 Live installed-file and Store observations take precedence over offline package
 facts. `--gamepass-compatibility-export <path>` is an explicit nonshipping public
 data regeneration command, not a normal startup network job or an account scan.
+An independent publisher-evidence overlay binds four first-party records to exact
+Store ID/title pairs: Halo Infinite, Halo MCC, VALORANT PC and League of Legends.
+It records Windows/multiplayer/limited-service scope and checked dates. Halo's
+documented mode exceptions and League's separate native Mac client are not turned
+into blanket Mac support or rejection. These records override cross-store hints,
+not runtime qualification; unrelated titles such as No Man's Sky remain unknown.
 
 Ordinary startup shows the standalone green X logo with **Ode** below it over
 a neutral background, not installed game cards or developer setup diagnostics.

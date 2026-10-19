@@ -676,6 +676,9 @@ struct LiveLibraryView: View {
         } status: {
             if !unsupportedIssues(game).isEmpty {
                     LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
+            } else if let evidence = OfflineGameCompatibility.publisherEvidence(for: artworkID) {
+                Label(evidence.technologies.joined(separator: ", "), systemImage: "shield")
+                    .help(evidence.scope)
             } else if game.installed == nil {
                     LibraryGameSizeView(installed: nil, downloadBytes: art.images[artworkID]?.facts.downloadBytes,
                                         packageFormat: art.images[artworkID]?.facts.packageFormat,

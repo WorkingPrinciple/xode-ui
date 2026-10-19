@@ -59,6 +59,14 @@ source remains unresolved. Gameplay and main-branch acceptance are not claimed.
 The locally installed UI update preserves the previously verified signed engine
 bytes rather than replacing them with the denied qualifier.
 
+The supported preserved-engine path was also exercised specifically for No
+Man's Sky: its declared MSA client `000000004826ED21` obtained unexpired silent
+user/device tickets through the isolated broker, and `auth.verify` accepted its
+actual content ID through the authenticated package-metadata provider. The
+broker's owned socket was removed on parent EOF. These are distinct game-identity
+and package-read proofs, not a content-license key acquisition, consumer pairing
+or observed game process; no legacy credential source or game start was used.
+
 The existing default Xodus login and credential stores are unchanged. The new
 Rust readers live in product-owned `ode_account` modules; management wiring and
 the schema generator are the integration hooks. The native route is selected

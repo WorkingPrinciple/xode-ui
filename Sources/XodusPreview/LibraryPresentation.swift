@@ -301,6 +301,9 @@ struct GameCompatibilityFacts: View {
     let checking: Bool
     private var database: OfflineGameCompatibility? { OfflineGameCompatibility.snapshot }
     private var offline: OfflineGameCompatibility.Entry? { database?.products[productID] }
+    private var publisherEvidence: OfflineGameCompatibility.PublisherEvidence? {
+        OfflineGameCompatibility.publisherEvidence(for: productID)
+    }
 
     private var issues: [LibraryCompatibilityIssue] {
         LibrarySupportVisibility.issues(productID: productID, installed: false,
@@ -312,7 +315,7 @@ struct GameCompatibilityFacts: View {
             Text("Compatibility").font(.headline)
             LabeledContent("Package", value: packageFormat ?? offline?.packageFormat ?? "Not identified")
             LabeledContent("Anti-cheat", value: issues.first(where: { $0.kind == .antiCheat })?.title
-                           ?? "Not verified")
+                           ?? publisherEvidence?.technologies.joined(separator: ", ") ?? "Not verified")
             LabeledContent("Mac runtime", value: !issues.isEmpty ? "Known blocker"
                            : checking ? "Checking" : compatibility?.supported == true
                            ? "Saved installation check passed" : "Not verified")
@@ -325,7 +328,18 @@ struct GameCompatibilityFacts: View {
                 Text("Installation check: \(checkedAt.formatted(date: .abbreviated, time: .shortened)).")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            if let offline, !offline.technologyReferences.isEmpty {
+            if let publisherEvidence {
+                Text(publisherEvidence.scope).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Link("Publisher anti-cheat information", destination: publisherEvidence.source)
+                if let date = GameCompatibilityResult.parseDate(publisherEvidence.checkedAt) {
+                    Text("Publisher source checked \(date.formatted(date: .abbreviated, time: .omitted)).")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } else if case .failure = OfflineGameCompatibility.publisherEvidence {
+                Text("Publisher anti-cheat evidence couldn't be read; no clearance was assumed.")
+                    .font(.callout).foregroundStyle(.secondary)
+            } else if let offline, !offline.technologyReferences.isEmpty {
                 Text("Other-store reports: \(offline.technologyReferences.joined(separator: ", ")). These references concern \(offline.referencePlatforms.joined(separator: " / ")), not verification of this Microsoft Store build or Mac runtime.")
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 if let source = database?.antiCheatReference, let url = URL(string: source) {

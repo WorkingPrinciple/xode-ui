@@ -10,6 +10,11 @@ enum LibraryAccessChecks {
         check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
               && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ $0.antiCheat == "unknown" }) == true,
               "A sourced offline catalogue is bundled and never promotes other-store reports into anti-cheat clearance")
+        check(OfflineGameCompatibility.publisherEvidence(for: "9NP1P1WFS0LB")?.technologies == ["Easy Anti-Cheat"]
+              && OfflineGameCompatibility.publisherEvidence(for: "9NP1P1WFS0LB")?.scope.contains("Campaign") == true
+              && OfflineGameCompatibility.publisherEvidence(for: "9PB301R051CQ")?.scope.contains("Windows") == true
+              && OfflineGameCompatibility.publisherEvidence(for: "BQVQTL3PCH05") == nil,
+              "Publisher evidence is Store-ID/title bound, preserves mode/platform scope, and leaves NMS unknown")
         check(InstalledGameActionCopy.title(incomplete: true, installationIssue: false, launchIssue: false) == "Install required"
               && InstalledGameActionCopy.title(incomplete: false, installationIssue: true, launchIssue: false) == "Check installation"
               && InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: true) == "Review launch issue",
