@@ -47,11 +47,14 @@ struct LiveAccountView: View {
                     }
                     if session.hasConfirmedSignIn {
                         if state.pcGames.usesUnifiedAccount {
-                            if let reason = state.pcGames.error ?? state.gameOperations.serviceError {
+                            if let reason = state.pcGames.error ?? session.accountRuntimeError ?? state.gameOperations.serviceError {
                                 Text(reason).font(.callout).foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
                                     .accessibilityIdentifier("xodus.account.unifiedAccessIssue")
+                            }
+                            if session.accountRuntimeStarting {
+                                ProgressView("Preparing the game connection").controlSize(.small)
                             }
                         }
                         XboxAccountSummaryView(companion: companion)
@@ -117,6 +120,7 @@ struct LiveAccountView: View {
                                 await state.pcGames.retryLibraryLoad()
                                 await state.pcGames.waitForLoad()
                                 await companion.refresh(for: nil, force: true)
+                                await session.prepareUnifiedRuntime()
                             }
                         } }
                             .disabled(session.accountBusy)

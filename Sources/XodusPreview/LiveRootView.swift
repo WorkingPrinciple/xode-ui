@@ -193,6 +193,7 @@ struct LiveRootView: View {
                 if unifiedAccountMode {
                     await state.pcGames.waitForLoad()
                     await companion.refresh(for: nil)
+                    await session.prepareUnifiedRuntime()
                     return
                 }
                 await state.gameOperations.loadGamePassCache()

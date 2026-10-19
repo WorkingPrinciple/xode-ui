@@ -40,7 +40,7 @@ extension Checks {
             catch { check(true, "Development negative frame \(index + 1) rejected") }
         }
         let oldFrames = try fixture("positive").array ?? []
-        check(oldFrames.count == 101, "Production corpus remains separate from registry-development frames")
+        check(oldFrames.count == 102, "Production corpus remains separate from registry-development frames")
         for frame in oldFrames { try production.validate(frame) }
         let snapshots = positive.filter { $0["data"]?["installations"]?.array != nil }
         check(snapshots.count == 3, "Qualified registry witnesses include empty, legacy and nullable snapshots")

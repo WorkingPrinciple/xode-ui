@@ -8,6 +8,7 @@ public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
     case authVerify = "auth.verify"
     case libraryRecent = "library.recent"
     case odeAccountRead = "ode.account.read.v1"
+    case odeRuntimeVerify = "ode.runtime.verify.v1"
     case product = "product.detail", plan = "install.plan", enqueue = "jobs.enqueue"
     case discover = "catalog.discover", query = "catalog.query"
     case pause = "jobs.pause", resume = "jobs.resume", cancel = "jobs.cancel", retry = "jobs.retry"
@@ -22,7 +23,7 @@ public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
         case .authStatus, .authLogout, .authBegin, .authCancel: "authData"
         case .authVerify: "authVerifiedData"
         case .libraryRecent: "recentLibraryData"
-        case .odeAccountRead: "odeAccountData"
+        case .odeAccountRead, .odeRuntimeVerify: "odeAccountData"
         case .search: "searchData"
         case .discover: "discoveryData"
         case .query: "queryData"
@@ -41,7 +42,7 @@ public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
         switch self {
         case .authBegin, .authLogout: .seconds(600)
         case .authStatus: .seconds(130)
-        case .odeAccountRead: .seconds(125)
+        case .odeAccountRead, .odeRuntimeVerify: .seconds(125)
         default: .seconds(30)
         }
     }

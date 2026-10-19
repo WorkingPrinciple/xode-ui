@@ -22,13 +22,36 @@ back or offering another login. Friends/consoles remain explicitly unavailable
 on that route. Provider eligibility, real audience authorization, saved-session
 refresh/persistence and a paired runtime consumer still need qualification.
 
+The next source slice adds `ode.runtime.verify.v1`: fixed, silent MSA runtime
+authorization from that same management session, returning only an account-bound
+boolean. `ode-runtime --socket` serves the existing isolated RPS protocol using
+read-only, noninteractive management credentials. Its ready frame proves binding,
+not authorization; its inherited parent descriptor fences lifetime and joins
+peers on EOF. The native session verifies authorization, supervises that private
+broker and stops it before logout/disconnect. No default/global service path is
+substituted. Installed game-script and Wine-consumer pairing remain separate.
+
+The live post-reset diagnostic confirmed a saved management account and a
+successful profile read, while collection failed with `profileChanged`. The
+candidate now derives Xbox and Store XSTS from one shared user-auth token rather
+than joining independently issued authorization chains by `uhs`. Verified Xbox
+XUID and any conflicting Store XUID remain checked. Native account-read errors
+retain the typed failure stage instead of collapsing into generic `AUTH_INVALID`.
+Follow-up private live checks succeeded for collection, profile, a real recent
+title's achievements and runtime authorization using the same saved session,
+without another interactive login. The private runtime also returned valid
+user/device RPS tickets to a scoped local test consumer and cleaned up on parent
+EOF. Account payloads, identifiers, tickets and title details are not committed.
+This proves those scoped auth/read paths, not populated PC ownership, installed
+game-consumer pairing or gameplay.
+
 The existing default Xodus login and credential stores are unchanged. The new
 Rust readers live in product-owned `ode_account` modules; management wiring and
 the schema generator are the integration hooks. The native route is selected
 only when the paired engine advertises the explicitly versioned operation.
 The source candidate producer is
-`99a799478a9e2144e810c103c3852dcb6eb38d72`, tree
-`31979331d7f855762460d2bb667d235baa423865`; it is committed locally in the
+`90f4c133f4ddb73373e3ad7bf9b3ab8da7b53c4d`, tree
+`f58594826edf57a72054cee9cf8d14da2487162e`; it is committed locally in the
 writable `ode-unified-account` fork worktree, not pushed or substituted for
 the approved sealed shipping input.
 

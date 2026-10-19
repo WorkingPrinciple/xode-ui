@@ -18,6 +18,25 @@ credential migration are not implemented on the new route. Existing shipping
 producer pins and sealed inputs are not automatically promoted by this change.
 See [the current specification boundary](UNIFIED-ACCOUNT-SPEC.md).
 
+The follow-up source adds a separately negotiated runtime verification command
+and a parent-EOF-owned private RPS process in the same signed CLI. Native lifecycle
+checks use synthetic children and sockets only; the ready signal cannot authorize
+games. The inherited parent read uses cancellable nonblocking IO, not Tokio's
+noncancellable blocking stdin reader. Ordinary logout stops and joins the private
+broker before credential removal.
+
+A user-approved local reset confirmed isolated logout, followed by a saved
+management sign-in and a successful live profile read. A live collection read
+returned `profileChanged`; the subsequent candidate fixes independently issued
+Xbox/Store chains and preserves the specific native error stage. This evidence
+does not establish a loaded owned library, runtime audience or gameplay.
+The corrected candidate subsequently passed private live collection, profile,
+recent-title achievement and fixed runtime-authorization checks using the same
+saved account, without another consent flow. A separate scoped IPC consumer
+confirmed unexpired user/device RPS tickets and parent-EOF endpoint cleanup;
+ticket contents were never logged or persisted. These checks do not establish
+populated PC inventory, an integrated installed-game consumer or gameplay.
+
 This is implementation work beyond the immutable foundation at `44d7338`. It is **not a consumer-ready game launcher**.
 
 ## Library source freeze and functional follow-up

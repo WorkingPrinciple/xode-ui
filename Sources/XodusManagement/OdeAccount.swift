@@ -2,7 +2,7 @@
 import Foundation
 
 public enum OdeAccountSection: String, Codable, Sendable {
-    case library, profile, achievements
+    case library, profile, achievements, runtime
 }
 
 public struct OdeAccountRead: Decodable, Sendable {

@@ -302,6 +302,10 @@ enum PCGamesChecks {
                 } else {
                     check(library.snapshot == nil && library.error != nil && !library.accessIsCurrent,
                           "Rejected or mismatched unified data cannot become a successful empty library")
+                    if scenario == "odefailure" {
+                        check(library.error?.contains("Microsoft rejected access") == true,
+                              "Unified authorization failure preserves its specific stage instead of becoming a generic login error")
+                    }
                 }
             }
             let reads = await store.reads

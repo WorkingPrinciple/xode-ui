@@ -131,6 +131,9 @@ final class AppState: ObservableObject {
         if pcGames.usesUnifiedAccount {
             let result = await session.signOut {
                 await self.gameOperations.cancelPrecheck()
+                guard await session.stopUnifiedRuntime() else {
+                    return "The game connection hasn't stopped. Your saved account was not removed."
+                }
                 XboxCompanionController.shared.invalidateBinding()
                 LibraryXboxStats.shared.invalidateBinding()
                 await self.pcGames.retireUnifiedAccount()

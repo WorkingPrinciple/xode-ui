@@ -82,6 +82,12 @@ final class LiveSession: ObservableObject {
     @Published private(set) var diagnosticSaved = false
     @Published private(set) var diagnosticExportError: String?
     private var client: ManagementClient?
+    private var connectedConfiguration: BackendConfiguration?
+    private var accountRuntime: OdeRuntimeProcess?
+    private var runtimeGeneration = UUID()
+    @Published private(set) var accountRuntimeReady = false
+    @Published private(set) var accountRuntimeError: String?
+    @Published private(set) var accountRuntimeStarting = false
     private var failedAccountAction: AccountAction?
     private var lifecycleRevision = 0
     private var connectOperationID: UUID?
@@ -194,7 +200,7 @@ final class LiveSession: ObservableObject {
     }
 
     var isReady: Bool { phase == .ready }
-    var accountBusy: Bool { accountOperationBusy || recentLibraryBootstrapRunning }
+    var accountBusy: Bool { accountOperationBusy || recentLibraryBootstrapRunning || accountRuntimeStarting }
     var signInPending: Bool { authentication?.flow?.state == .pending }
     var canSignIn: Bool {
         isReady && supports(.authBegin) && supports(.authCancel) && supports(.authStatus)
@@ -749,16 +755,18 @@ final class LiveSession: ObservableObject {
     func supports(_ command: ManagementCommand) -> Bool { hello?.supports(command) == true }
 
     func readUnifiedAccount(_ section: OdeAccountSection, titleID: String? = nil) async throws -> OdeAccountRead {
-        guard hasConfirmedSignIn, !accountBusy, !applicationTerminating, let client,
+        guard hasConfirmedSignIn, !accountOperationBusy, !recentLibraryBootstrapRunning,
+              section == .runtime || !accountRuntimeStarting, !applicationTerminating, let client,
               let account = accountHash else { throw ManagementError.disconnected }
-        guard supports(.odeAccountRead) else {
-            throw ManagementError.capabilityMissing(ManagementCommand.odeAccountRead.rawValue)
+        let command: ManagementCommand = section == .runtime ? .odeRuntimeVerify : .odeAccountRead
+        guard supports(command) else {
+            throw ManagementError.capabilityMissing(command.rawValue)
         }
         let token = generation
         let authToken = authenticationGeneration
         accountOperationBusy = true
         defer { if token == generation { accountOperationBusy = false } }
-        let result = try await client.request(.odeAccountRead, params: [
+        let result = try await client.request(command, params: [
             "section": .string(section.rawValue), "accountHash": .string(account),
             "market": .string(market), "language": .string(language),
             "titleID": titleID.map(JSONValue.string) ?? .null
@@ -768,6 +776,58 @@ final class LiveSession: ObservableObject {
               accountHash == account, hasConfirmedSignIn else { throw ManagementError.disconnected }
         try result.validate(section: section, accountHash: account)
         return result
+    }
+
+    func prepareUnifiedRuntime() async {
+        guard hasConfirmedSignIn, !accountBusy, !accountRuntimeStarting,
+              !applicationTerminating, !accountRuntimeReady else { return }
+        guard supports(.odeRuntimeVerify), let configuration = connectedConfiguration else {
+            accountRuntimeError = "This engine doesn't include the single-account game connection."
+            return
+        }
+        let epoch = generation
+        let authEpoch = authenticationGeneration
+        let account = accountHash
+        accountRuntimeStarting = true
+        accountRuntimeError = nil
+        defer { accountRuntimeStarting = false }
+        do {
+            guard await stopUnifiedRuntime() else { throw ManagementError.shutdownFailed }
+            let proof = try await readUnifiedAccount(.runtime)
+            guard proof.payload["authorized"]?.boolean == true else { throw ManagementError.invalidPayload }
+            guard generation == epoch, authenticationGeneration == authEpoch,
+                  hasConfirmedSignIn, accountHash == account, !applicationTerminating else { throw CancellationError() }
+            let id = UUID()
+            runtimeGeneration = id
+            let runtime = OdeRuntimeProcess { [weak self] in
+                guard let self, self.runtimeGeneration == id else { return }
+                self.accountRuntimeReady = false
+                self.accountRuntimeError = "The game connection stopped. Check Account to reconnect it."
+            }
+            accountRuntime = runtime
+            try await runtime.start(configuration)
+            guard generation == epoch, authenticationGeneration == authEpoch,
+                  hasConfirmedSignIn, accountHash == account, !applicationTerminating else { throw CancellationError() }
+            accountRuntimeReady = true
+        } catch {
+            guard await stopUnifiedRuntime() else {
+                accountRuntimeError = "The game connection hasn't finished stopping. Wait before reconnecting."
+                return
+            }
+            if generation == epoch, !(error is CancellationError) {
+                accountRuntimeError = "The game connection couldn't be prepared. \(Self.describe(error))"
+            }
+        }
+    }
+
+    @discardableResult
+    func stopUnifiedRuntime() async -> Bool {
+        runtimeGeneration = UUID()
+        accountRuntimeReady = false
+        guard let accountRuntime else { return true }
+        guard await accountRuntime.shutdown() else { return false }
+        self.accountRuntime = nil
+        return true
     }
 
 #if !XODUS_SHIPPING
@@ -829,6 +889,7 @@ final class LiveSession: ObservableObject {
             let negotiated = try await connection.connect(admittedTarget)
             guard token == generation, revision == lifecycleRevision, client === connection else { return }
             hello = negotiated
+            connectedConfiguration = admittedTarget
             nativeSignInHostAdmitted = admittedTarget.nativeAuthHost != nil
             let startupQueryRevision = queryGeneration
             phase = .ready
@@ -879,6 +940,11 @@ final class LiveSession: ObservableObject {
     }
 
     private func retireClient() async -> Bool {
+        guard await stopUnifiedRuntime() else {
+            errorMessage = ManagementError.shutdownFailed.localizedDescription
+            return false
+        }
+        connectedConfiguration = nil
         if let operation = closingOperation { return await finishRetirement(operation) }
         generation += 1
         recentLibraryBootstrap?.task.cancel()

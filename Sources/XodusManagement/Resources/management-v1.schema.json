@@ -87,7 +87,8 @@
             "game.update",
             "game.remove",
             "diagnostics.export",
-            "ode.account.read.v1"
+            "ode.account.read.v1",
+            "ode.runtime.verify.v1"
           ]
         },
         "params": {
@@ -1067,6 +1068,22 @@
             "properties": {
               "params": {
                 "$ref": "#/$defs/odeAccountParams"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "command": {
+                "const": "ode.runtime.verify.v1"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "$ref": "#/$defs/odeRuntimeParams"
               }
             }
           }
@@ -3659,7 +3676,8 @@
           "enum": [
             "library",
             "profile",
-            "achievements"
+            "achievements",
+            "runtime"
           ]
         },
         "accountHash": {
@@ -3939,8 +3957,64 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "section": {
+                "const": "runtime"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "authorized"
+                ],
+                "properties": {
+                  "authorized": {
+                    "const": true
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
         }
       ]
+    },
+    "odeRuntimeParams": {
+      "type": "object",
+      "required": [
+        "section",
+        "accountHash",
+        "market",
+        "language",
+        "titleID"
+      ],
+      "properties": {
+        "section": {
+          "const": "runtime"
+        },
+        "accountHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "market": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$"
+        },
+        "titleID": {
+          "type": "null"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

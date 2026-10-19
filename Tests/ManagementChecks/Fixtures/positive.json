@@ -375,6 +375,22 @@
     }
   },
   {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-29",
+    "command": "ode.runtime.verify.v1",
+    "params": {
+      "section": "runtime",
+      "accountHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "market": "US",
+      "language": "en-US",
+      "titleID": null
+    }
+  },
+  {
     "kind": "result",
     "protocol": {
       "major": 1,

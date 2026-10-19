@@ -142,7 +142,7 @@ public actor ManagementClient {
         guard !stopped, let child = process, child.isRunning, let stdin else {
             throw ManagementError.disconnected
         }
-        if [.authBegin, .authLogout, .authVerify, .odeAccountRead].contains(command),
+        if [.authBegin, .authLogout, .authVerify, .odeAccountRead, .odeRuntimeVerify].contains(command),
            let admitted = admittedConfiguration, let identity = admitted.executableIdentity {
             do {
                 _ = try identity.validatedArguments()
@@ -263,7 +263,9 @@ public actor ManagementClient {
             guard let error = value["error"], let code = error["code"]?.string,
                   let retryable = error["retryable"]?.boolean else { throw ManagementError.invalidFrame }
             let failure: ManagementError
-            if waiter.command == .authVerify {
+            if waiter.command == .authVerify ||
+                ([.odeAccountRead, .odeRuntimeVerify].contains(waiter.command)
+                    && error["details"]?["category"]?.string == "authenticatedReadFailure") {
                 guard let stage = AuthenticatedReadFailure(error: error) else {
                     throw ManagementError.invalidPayload
                 }

@@ -12,7 +12,12 @@ adds the explicitly versioned `ode.account.read.v1` capability over the unchange
 nonsecret collection/profile/achievement results. Existing 1.0 commands and
 result shapes are unchanged; older clients can ignore the capability and older
 engines cannot accept it. This source extension is not admitted by the currently
-pinned shipping producer. Runtime authorization is not supplied by this read API.
+pinned shipping producer. The separate candidate `ode.runtime.verify.v1` command
+uses runtime-only parameters and returns `section:runtime` with an
+`authorized:true` payload only after fixed silent RPS issuance and account
+revalidation. Tickets never cross management frames. A private broker's startup
+ready frame is not that authorization proof, nor is either proof entitlement,
+installation or gameplay acceptance.
 
 ## Transport and negotiation
 

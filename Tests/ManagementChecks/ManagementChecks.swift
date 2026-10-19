@@ -76,7 +76,7 @@ actor Checks {
         try await artworkChecks()
         let validator = try ContractValidator()
         let positive = try fixture("positive").array ?? []
-        check(positive.count == 101, "Pinned producer corpus contains 101 positive frames")
+        check(positive.count == 102, "Pinned producer corpus contains 102 positive frames")
         for (index, frame) in positive.enumerated() {
             do { try validator.validate(frame); check(true, "Producer positive frame \(index + 1)") }
             catch { check(false, "Producer positive frame \(index + 1)") }
