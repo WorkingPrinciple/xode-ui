@@ -5,6 +5,66 @@ import XodusManagement
 @MainActor
 enum LibraryAccessChecks {
     static func run(check: (Bool, String) -> Void) throws {
+        check(InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: false) == "View details",
+              "An app-wide launch gate is not labelled as a broken game")
+        check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
+              && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ $0.antiCheat == "unknown" }) == true,
+              "A sourced offline catalogue is bundled and never promotes other-store reports into anti-cheat clearance")
+        check(InstalledGameActionCopy.title(incomplete: true, installationIssue: false, launchIssue: false) == "Install required"
+              && InstalledGameActionCopy.title(incomplete: false, installationIssue: true, launchIssue: false) == "Check installation"
+              && InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: true) == "Review launch issue",
+              "Installed actions name the specific recovery rather than a generic warning")
+        let feedID = "00000000-0000-4000-8000-000000000001"
+        let recentIDs = try GamePassCollectionSource.productIDs(Data("""
+            [{"siglId":"\(feedID)"},{"id":"FIXTURE00002"},{"id":"FIXTURE00001"}]
+            """.utf8), feedID: feedID)
+        check(recentIDs == ["FIXTURE00002", "FIXTURE00001"],
+              "Recently added retains official feed order rather than alphabetizing or using release date")
+        let html = """
+            <script src="/en-US/xbox-game-pass/games/js/xgpcatPopulate-MWF2.js"></script>
+            <span class="colgroup collections-pc hidden">
+            <a data-col="pcgaVTpopular"><span>Most popular</span></a>
+            <a data-col="pdoPC"><span>Day one fixture</span></a>
+            <span class="colgroup collections-cloud hidden">
+            """
+        let script = """
+            var globalAdd = {
+              "00000000-0000-4000-8000-000000000002": { colname: "benefitspc", plat: "pc",
+                title: "Benefits fixture", spot: 2, startstring: "benefits" }
+            }
+            var newListIds = Object.keys(globalAdd);
+            guidAmpt = {"pdoPC":"\(feedID)", "pcgaVTpopular":"00000000-0000-4000-8000-000000000003"};
+            """
+        let categories = try GamePassCollectionSource.definitions(html: html, script: script)
+        check(categories.first?.key == "pdoPC" && categories.count == 3
+              && categories.first?.feedID == feedID
+              && categories.contains(where: { $0.title == "Benefits fixture" && $0.isBenefits }),
+              "Official PC markup and script data dynamically supply lists and additions, with Day one first")
+        check(try GamePassCollectionSource.scriptURL(in: html).host == "www.xbox.com",
+              "Category configuration scripts resolve only on the official Xbox origin")
+        do {
+            _ = try GamePassCollectionSource.scriptURL(in: html.replacingOccurrences(
+                of: "/en-US/", with: "https://untrusted.invalid/en-US/"))
+            check(false, "Off-origin collection configuration must not be fetched")
+        } catch { check(true, "Off-origin collection configuration is rejected") }
+        for payload in [
+            #"[{"siglId":"wrong"},{"id":"FIXTURE00001"}]"#,
+            #"[{"siglId":"\#(feedID)"},{"id":"FIXTURE00001"},{"id":"FIXTURE00001"}]"#,
+            #"[{"siglId":"\#(feedID)"},{"id":"invalid"}]"#
+        ] {
+            do {
+                _ = try GamePassCollectionSource.productIDs(Data(payload.utf8), feedID: feedID)
+                check(false, "Invalid recently-added metadata must be rejected")
+            } catch { check(true, "Wrong, duplicated, malformed or empty recent feed fails explicitly") }
+        }
+        check(!LibrarySupportVisibility.issues(productID: "C2KDNLT2H7DM", installed: true,
+                  packageFormat: "Win32", compatibility: nil).isEmpty
+              && LibrarySupportVisibility.isVisible(productID: "C2KDNLT2H7DM", installed: true,
+                  packageFormat: "Win32", compatibility: nil, showsUnsupportedGames: false),
+              "An installed game retains known anti-cheat evidence without disappearing from the library")
+        check(LibrarySupportVisibility.issues(productID: "FIXTURE00001", installed: true,
+                  packageFormat: "EAppx", compatibility: nil).contains(where: { $0.kind == .packageType }),
+              "Actual installed package evidence contributes a blocker, not a fabricated success")
         let held = PCGame(id: "FIXTURE00001", title: "Held PC game", artwork: nil)
         let local = InstalledGame(id: UUID(), title: "Local unknown access", identityName: "Fixture.Local",
             version: "1.0.0.0", storeId: "FIXTURE00002", folder: "/synthetic/local",

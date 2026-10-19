@@ -14,12 +14,14 @@ enum DevelopmentArguments {
     static func accepts(_ arguments: [String]) -> Bool {
         guard let mode = arguments.first else { return true }
         switch mode {
-        case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check":
+        case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check", "--gamepass-collections-check":
             return arguments.count == 1
         case "--export-preview", "--export-live", "--export-live-data":
             return arguments.count == 2
         case "--catalog-detail-check":
             return arguments.count == 4
+        case "--gamepass-compatibility-export":
+            return arguments.count == 2
         case "--xbox-companion-check":
             return arguments.count == 3
         case "--library-preview":
@@ -114,6 +116,32 @@ struct XodusPreviewApp: App {
         }
         if CommandLine.arguments.contains("--live-check") { NativeChecks.launch() }
         if CommandLine.arguments.contains("--library-access-check") { NativeChecks.launch(libraryAccessOnly: true) }
+        if CommandLine.arguments.contains("--gamepass-collections-check")
+            || CommandLine.arguments.contains("--gamepass-compatibility-export") {
+            Task { @MainActor in
+                let collections = GamePassCollections()
+                await collections.load(market: PCGamesClient.market(Locale.current.region?.identifier), language: "en-US")
+                for category in collections.collections {
+                    print("\(category.key): \(category.title); feed=\(category.feedID); records=\(category.productIDs.count); resolved=\(category.products.count); error=\(category.error != nil)")
+                }
+                if let error = collections.error { print(error) }
+                let valid = collections.error == nil && !collections.collections.isEmpty
+                    && collections.collections.first?.key == "pdoPC"
+                    && collections.collections.allSatisfy { $0.error == nil }
+                if valid, CommandLine.arguments.contains("--gamepass-compatibility-export") {
+                    do {
+                        try await collections.exportCompatibility(to: URL(fileURLWithPath: CommandLine.arguments[2]),
+                            market: PCGamesClient.market(Locale.current.region?.identifier))
+                    } catch {
+                        print("Public compatibility export failed; no successful snapshot is claimed.")
+                        exit(1)
+                    }
+                }
+                exit(valid ? 0 : 1)
+            }
+            CFRunLoopRun()
+            fatalError("Public catalogue check exited its run loop unexpectedly.")
+        }
         if CommandLine.arguments.contains("--media-check") { NativeChecks.launch(mediaOnly: true) }
         if CommandLine.arguments.contains("--stats-check") { NativeChecks.launch(statsOnly: true) }
         if CommandLine.arguments.contains("--game-operation-check") { NativeChecks.launch(gameOperationsOnly: true) }

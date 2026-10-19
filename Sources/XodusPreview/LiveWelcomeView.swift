@@ -57,6 +57,15 @@ struct LiveWelcomeView: View {
                         GameOperationProgressView(operations: operations, privacyRestricted: true)
                             .accessibilityIdentifier("xodus.welcome.operation")
                     }
+                    VStack(spacing: 6) {
+                        Text(runtime.crossOverDependency.title)
+                            .font(.callout).foregroundStyle(.secondary)
+                        if runtime.crossOverDependency.offersTrialDownload {
+                            Link("Get the CrossOver trial", destination: CrossOverDependencyState.trialDownloadURL)
+                            Text("You can sign in and browse before installing it.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
                     Spacer(minLength: 24)
                 }
                 .frame(maxWidth: .infinity, minHeight: max(0, geometry.size.height - 80))

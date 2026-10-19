@@ -251,15 +251,15 @@ private struct LibrarySupportMenu: View {
 enum LibrarySupportVisibility {
     static func issues(productID: String, installed: Bool, packageFormat: String?,
                        compatibility: GameCompatibilityResult?) -> [LibraryCompatibilityIssue] {
-        guard !installed else { return [] }
         var issues = LibraryCompatibilityRegistry.issues(productID: productID)
-        let families = packageFormat?.split(separator: "/").map {
+        let observedFormat = packageFormat ?? OfflineGameCompatibility.snapshot?.products[productID]?.packageFormat
+        let families = observedFormat?.split(separator: "/").map {
             $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }.filter { !$0.isEmpty } ?? []
         if !families.isEmpty, families.allSatisfy({ ["eappx", "eappxbundle", "uwp"].contains($0) }) {
             issues.append(LibraryCompatibilityIssue(
                 kind: .packageType,
-                title: packageFormat ?? "EAppx/UWP",
+                title: observedFormat ?? "EAppx/UWP",
                 detail: "This Store package uses EAppx/UWP, which Ode to X can't install yet.",
                 source: nil
             ))
@@ -287,8 +287,57 @@ enum LibrarySupportVisibility {
 
     static func isVisible(productID: String, installed: Bool, packageFormat: String?,
                           compatibility: GameCompatibilityResult?, showsUnsupportedGames: Bool) -> Bool {
-        showsUnsupportedGames || issues(productID: productID, installed: installed, packageFormat: packageFormat,
+        installed || showsUnsupportedGames || issues(productID: productID, installed: installed, packageFormat: packageFormat,
                                        compatibility: compatibility).isEmpty
+    }
+}
+
+struct GameCompatibilityFacts: View {
+    let productID: String
+    let packageFormat: String?
+    let compatibility: GameCompatibilityResult?
+    let checking: Bool
+    private var database: OfflineGameCompatibility? { OfflineGameCompatibility.snapshot }
+    private var offline: OfflineGameCompatibility.Entry? { database?.products[productID] }
+
+    private var issues: [LibraryCompatibilityIssue] {
+        LibrarySupportVisibility.issues(productID: productID, installed: false,
+            packageFormat: packageFormat, compatibility: compatibility)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Compatibility").font(.headline)
+            LabeledContent("Package", value: packageFormat ?? offline?.packageFormat ?? "Not identified")
+            LabeledContent("Anti-cheat", value: issues.first(where: { $0.kind == .antiCheat })?.title
+                           ?? "Not verified")
+            LabeledContent("Mac runtime", value: !issues.isEmpty ? "Known blocker"
+                           : checking ? "Checking" : compatibility?.supported == true
+                           ? "Saved installation check passed" : "Not verified")
+            ForEach(issues) { issue in
+                Text(issue.detail).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let source = issue.source { Link("Compatibility source", destination: source) }
+            }
+            if let checkedAt = compatibility?.checkedDate {
+                Text("Installation check: \(checkedAt.formatted(date: .abbreviated, time: .shortened)).")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let offline, !offline.technologyReferences.isEmpty {
+                Text("Other-store reports: \(offline.technologyReferences.joined(separator: ", ")). These references concern \(offline.referencePlatforms.joined(separator: " / ")), not verification of this Microsoft Store build or Mac runtime.")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                if let source = database?.antiCheatReference, let url = URL(string: source) {
+                    Link("Anti-cheat reference dataset", destination: url)
+                }
+            }
+            if let database, let date = GameCompatibilityResult.parseDate(database.checkedAt) {
+                Text("Offline catalogue checked \(date.formatted(date: .abbreviated, time: .omitted)), market \(database.market). Live installed-file evidence takes precedence.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Text("Package inspection and known blockers are checked automatically. An unknown anti-cheat result is not clearance, and an installation check does not prove a game runs.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityIdentifier("xodus.game.compatibility")
     }
 }
 

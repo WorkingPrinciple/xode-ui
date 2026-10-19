@@ -45,6 +45,10 @@ final class RuntimeProviderSettings: ObservableObject {
             var value = RuntimeProviderConfiguration.preset(.crossover)
             value.providerVersion = app.version
             configuration = value
+        } else if configuration?.provider == .crossover, case .installed(let app) = observed {
+            configuration?.providerVersion = app.version
+        } else if configuration?.provider == .crossover, !observed.isVerified {
+            configuration?.providerVersion = nil
         }
     }
 

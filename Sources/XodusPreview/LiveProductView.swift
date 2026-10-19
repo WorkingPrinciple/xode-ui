@@ -52,16 +52,15 @@ struct LiveProductView: View {
         LibrarySupportVisibility.issues(
             productID: product.id,
             installed: installed != nil,
-            packageFormat: art?.facts.packageFormat,
+            packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat,
             compatibility: operations.compatibility[product.id]
         )
     }
     private var compatibilitySummary: String {
-        if installed != nil { return "Installed package detected" }
         if !unsupportedIssues.isEmpty { return unsupportedIssues.map(\.title).joined(separator: " + ") }
         if operations.precheckingProductID == product.id { return "Checking" }
-        if operations.compatibility[product.id]?.supported == true { return "Current runtime check passed" }
-        return "Not checked"
+        if operations.compatibility[product.id]?.supported == true { return "Saved installation check passed" }
+        return "Not verified"
     }
 
     var body: some View {
@@ -80,6 +79,10 @@ struct LiveProductView: View {
                                 game: installed, repairGame: library.accessIsCurrent ? owned : nil,
                                 close: dismiss.callAsFunction)
                         }
+                        GameCompatibilityFacts(productID: product.id,
+                            packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat,
+                            compatibility: operations.compatibility[product.id],
+                            checking: operations.precheckingProductID == product.id)
                         evidence
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
                             HStack {
@@ -132,8 +135,8 @@ struct LiveProductView: View {
         .task(id: installed?.id) {
             if allowsStartupTasks, let installed { await installedLibrary.checkInstallation(installed) }
         }
-        .task(id: "\(product.id):\(installed == nil):\(operations.canStartMutation)") {
-            guard allowsStartupTasks, installed == nil, operations.canStartMutation,
+        .task(id: product.id) {
+            guard allowsStartupTasks,
                   operations.compatibility[product.id] == nil else { return }
             operations.precheck([product.id])
         }

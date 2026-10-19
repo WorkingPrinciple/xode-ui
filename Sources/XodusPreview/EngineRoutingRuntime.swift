@@ -5,6 +5,26 @@ import XodusCore
 /// Launch preferences are independent of the management backend selection.
 enum EngineDefaults {
     static let defaultEngineKey = "Xodus.defaultEngine"
+    static let crossOverApplicationKey = "Xodus.runtime.crossOverApplication"
+
+    static func crossOverApplication(_ defaults: UserDefaults = .standard) -> String? {
+        defaults.string(forKey: crossOverApplicationKey)
+    }
+
+    static func setCrossOverApplication(_ path: String?, defaults: UserDefaults = .standard) {
+        if let path { defaults.set(path, forKey: crossOverApplicationKey) }
+        else { defaults.removeObject(forKey: crossOverApplicationKey) }
+    }
+
+    static func prefixPath(_ kind: RuntimeProviderKind, defaults: UserDefaults = .standard) -> String? {
+        defaults.string(forKey: "Xodus.runner.\(kind.rawValue).prefix")
+    }
+
+    static func setPrefixPath(_ path: String?, for kind: RuntimeProviderKind,
+                              defaults: UserDefaults = .standard) {
+        let key = "Xodus.runner.\(kind.rawValue).prefix"
+        if let path { defaults.set(path, forKey: key) } else { defaults.removeObject(forKey: key) }
+    }
 
     static func defaultEngine(_ defaults: UserDefaults = .standard) -> RuntimeProviderKind? {
         defaults.string(forKey: defaultEngineKey).flatMap(RuntimeProviderKind.init(rawValue:))
@@ -39,6 +59,27 @@ enum EngineDefaults {
 /// The executable's presence is observed; toolkit provenance/version remain the
 /// user's declarations, not a verified compatibility or gameplay claim.
 enum RunnerAvailabilityDetector {
+    static func executable(in selection: URL) -> URL? {
+        if isExecutable(selection) { return selection }
+        for relative in ["bin/wine64", "bin/wine", "wine/bin/wine64", "wine/bin/wine",
+                         "Contents/Resources/wine/bin/wine64", "Contents/Resources/wine/bin/wine"] {
+            let candidate = selection.appendingPathComponent(relative)
+            if isExecutable(candidate) { return candidate }
+        }
+        return nil
+    }
+
+    static func isPrefix(_ folder: URL) -> Bool {
+        let root = folder.standardizedFileURL
+        guard root.isFileURL, root == root.resolvingSymlinksInPath() else { return false }
+        var directory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: root.appendingPathComponent("drive_c").path,
+                                            isDirectory: &directory), directory.boolValue else { return false }
+        return ["system.reg", "cxbottle.conf"].contains {
+            FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
+        }
+    }
+
     static func detect(
         crossOver: CrossOverDependencyState = CrossOverDetector.detect(),
         runnerPaths: [RuntimeProviderKind: String] = EngineDefaults.runnerPaths(),

@@ -482,6 +482,21 @@ enum InstalledGameChecks {
               && RunnerAvailabilityDetector.detect(crossOver: .absent,
                     runnerPaths: EngineDefaults.runnerPaths(preferences)) == observed,
               "M3: Per-provider paths persist independently of a different global default")
+        EngineDefaults.setCrossOverApplication("/synthetic/CrossOver.app", defaults: preferences)
+        EngineDefaults.setPrefixPath("/synthetic/bottle", for: .gptk4, defaults: preferences)
+        check(EngineDefaults.crossOverApplication(preferences) == "/synthetic/CrossOver.app"
+              && EngineDefaults.prefixPath(.gptk4, defaults: preferences) == "/synthetic/bottle"
+              && EngineDefaults.prefixPath(.standaloneWine, defaults: preferences) == nil,
+              "Runtime app and per-provider bottle choices persist independently without rewriting a bottle")
+        EngineDefaults.setCrossOverApplication(nil, defaults: preferences)
+        EngineDefaults.setPrefixPath(nil, for: .gptk4, defaults: preferences)
+        check(EngineDefaults.crossOverApplication(preferences) == nil
+              && EngineDefaults.prefixPath(.gptk4, defaults: preferences) == nil,
+              "Clearing runtime preferences removes only the saved selection")
+        check(RunnerAvailabilityDetector.executable(in: registeredRunner) == registeredRunner
+              && RunnerAvailabilityDetector.executable(in: routingFolder) == nil
+              && !RunnerAvailabilityDetector.isPrefix(routingFolder),
+              "An actual chosen executable resolves; an unrelated folder is not a runtime or bottle")
         check(RunnerAvailabilityDetector.detect(crossOver: .absent,
                     runnerPaths: [.gptk3: routingFolder.path, .standaloneWine: "relative/wine"]).installed.isEmpty,
               "M3: Directories and relative runner paths are not observed as available")

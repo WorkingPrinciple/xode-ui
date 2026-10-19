@@ -2,6 +2,13 @@
 import SwiftUI
 import XodusManagement
 
+enum InstalledGameActionCopy {
+    static func title(incomplete: Bool, installationIssue: Bool, launchIssue: Bool) -> String {
+        incomplete ? "Install required" : installationIssue ? "Check installation"
+            : launchIssue ? "Review launch issue" : "View details"
+    }
+}
+
 struct InstalledGameDetailSelection: Identifiable {
     let game: InstalledGame
     let product: CatalogProduct?
@@ -15,23 +22,33 @@ struct InstalledGameAttentionView: View {
     var repairGame: PCGame?
     let close: () -> Void
     @State private var confirmingRemoval = false
+    @Environment(\.openSettings) private var openSettings
 
     private var incomplete: Bool { installed.placeholderIDs.contains(game.id) }
-    private var localIssue: Bool { incomplete || installed.packageErrors[game.id] != nil || installed.playErrors[game.id] != nil }
+    private var localIssue: Bool {
+        incomplete || installed.packageErrors[game.id] != nil
+            || (installed.accountAccessAllowed && installed.playErrors[game.id] != nil)
+    }
     private var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
 
     var body: some View {
         if needsAttention {
             VStack(alignment: .leading, spacing: 12) {
-                Label("Needs attention", systemImage: "exclamationmark.circle")
+                Label(localIssue ? "Installation needs attention" : "Game launching unavailable",
+                      systemImage: localIssue ? "exclamationmark.circle" : "info.circle")
                     .font(.headline)
                 Text(incomplete ? "This game isn't fully installed."
                      : localIssue ? "The installation or launch files need to be checked."
                      : "Game launching isn't available in this development build yet.")
                     .fixedSize(horizontal: false, vertical: true)
+                if !localIssue {
+                    Text("This is an app-wide limitation, not a failed compatibility check or a problem with your game files. Reinstalling the game won't fix it.")
+                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Button("Open runtime settings", action: openSettings.callAsFunction)
+                }
                 if installed.checkingInstallations.contains(game.id) {
                     ProgressView("Checking installation").controlSize(.small)
-                } else if localIssue {
+                } else {
                     HStack {
                         Button("Check installation") { Task { await installed.checkInstallation(game) } }
                             .disabled(installed.editing || installed.mutationActive)
@@ -87,6 +104,8 @@ struct LocalInstalledGameView: View {
             }
             InstalledGameAttentionView(installed: installed, operations: operations, game: game,
                 close: dismiss.callAsFunction)
+            GameCompatibilityFacts(productID: game.storeId, packageFormat: game.packageType?.label,
+                compatibility: operations.compatibility[game.storeId], checking: false)
             Spacer(minLength: 0)
             HStack { Spacer(); Button("Done", action: dismiss.callAsFunction).keyboardShortcut(.cancelAction) }
         }

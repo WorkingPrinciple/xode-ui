@@ -45,6 +45,20 @@ EOF. Account payloads, identifiers, tickets and title details are not committed.
 This proves those scoped auth/read paths, not populated PC ownership, installed
 game-consumer pairing or gameplay.
 
+**Local AAA qualification checkpoint (20 October):** The registered No Man's Sky
+7.6 installation contains an encrypted MSIXVC-backed executable, not a directly
+launchable PE file. A source-owned, noninteractive package-license qualifier was
+added separately to the writable producer; it neither starts a game nor exports
+keys. The rebuilt qualifier was refused access to the isolated saved session by
+macOS (`accessDenied`, OSStatus `-25293`), while the preserved signed producer still
+reads that account and passes runtime authorization. Human macOS approval is
+required before that new producer can qualify the package. No Keychain ACL/trust
+change, legacy-account fallback, package-key copy, or opaque private-service
+protocol substitution was performed. The installed private NMS CLI's producer
+source remains unresolved. Gameplay and main-branch acceptance are not claimed.
+The locally installed UI update preserves the previously verified signed engine
+bytes rather than replacing them with the denied qualifier.
+
 The existing default Xodus login and credential stores are unchanged. The new
 Rust readers live in product-owned `ode_account` modules; management wiring and
 the schema generator are the integration hooks. The native route is selected

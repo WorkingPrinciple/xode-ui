@@ -359,24 +359,6 @@ struct LiveRootView: View {
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() })
             }
-            if !state.showsRecentActivity {
-                DisclosureGroup("Library details") {
-                    VStack(alignment: .leading, spacing: 18) {
-                        selectedFolderInspection
-                        Divider()
-                        Text(unifiedAccountMode
-                             ? "Your PC games uses your Xbox Live sign-in. It shows active, non-trial games whose Store packages declare PC support."
-                             : "Your PC games uses a separate Microsoft sign-in to read this account's game library. It shows active, non-trial games whose Store packages declare PC support.")
-                        Text("Installed shows games you've imported or installed with Ode to X. It doesn't scan your Mac.")
-                        Text("Import an installed Xbox game and choose its working launch script to play. Removing it from the list keeps its game files and saves.")
-                        Text("Inspect a game folder checks its installation marker only. This check doesn't import the game or enable Play.")
-                    }
-                    .padding(.horizontal, 56).padding(.bottom, 28)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 12)
-                }
-            }
         }
     }
 

@@ -47,6 +47,14 @@ struct AppAcknowledgmentsView: View {
                     .foregroundStyle(.secondary)
                 Link("Python license", destination: URL(string: "https://docs.python.org/3/license.html")!)
             }
+            Section("Anti-cheat references") {
+                Text("The offline catalogue includes technology-name references from AreWeAntiCheatYet, MIT licensed, copyright 2021 Starz0r and Curve. Its Linux/Steam compatibility verdicts are not Mac or Microsoft Store verdicts and are not imported.")
+                    .foregroundStyle(.secondary)
+                Link("Dataset source and MIT license",
+                     destination: URL(string: "https://github.com/AreWeAntiCheatYet/AreWeAntiCheatYet")!)
+                Text("The complete MIT notice is distributed in CompatibilityData/AWACY-LICENSE.txt in the app resource bundle.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped).padding(20)
         .frame(minWidth: 480, idealWidth: 560, minHeight: 360)

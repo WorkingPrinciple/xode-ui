@@ -189,6 +189,10 @@ struct LiveSettingsView: View {
 
     var body: some View {
         Form {
+            Section("Game runtime") {
+                RuntimeDependencyStatus(settings: state.runtimeSettings)
+                RuntimeInstallationPicker(settings: state.runtimeSettings)
+            }
             Section("Account") {
                 LabeledContent("Status", value: session.accountJourneyTitle)
                 Button("Open account") { state.openAccount() }
@@ -238,6 +242,20 @@ struct LiveSettingsView: View {
                     if session.isReady {
                         Button("Disconnect") { Task { await session.disconnect() } }
                             .disabled(session.connectionTransitioning)
+                    }
+                    Section("Installation tools") {
+                        Button("Inspect a game folder") { session.chooseInstallationFolder() }
+                            .disabled(!session.isReady || !session.supports(.inspectInstallation) || session.inspectionBusy)
+                        if session.inspectionBusy { ProgressView("Inspecting installation").controlSize(.small) }
+                        if let inspection = session.inspection {
+                            LabeledContent("Selected folder",
+                                value: URL(fileURLWithPath: inspection.directory).lastPathComponent)
+                            Text("An installation marker was found. This inspection does not verify ownership, full file integrity or compatibility, and does not import or launch the game.")
+                                .font(.callout).foregroundStyle(.secondary)
+                        }
+                        if let error = session.inspectionError {
+                            Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                        }
                     }
                 }
                 if let hello = session.hello {
@@ -349,7 +367,7 @@ struct LiveSettingsView: View {
         .formStyle(.grouped).padding()
         .frame(width: 560)
         .task {
-            if session.hasConfirmedSignIn { await state.runtimeSettings.refreshCrossOverDependency() }
+            await state.runtimeSettings.refreshCrossOverDependency()
         }
     }
 }

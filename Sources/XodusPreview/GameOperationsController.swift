@@ -644,6 +644,9 @@ final class GameOperationsController: ObservableObject {
             for id in ids {
                 if compatibility[id] == nil { await loadCompatibility(productID: id) }
                 guard compatibility[id] == nil, compatibilityErrors[id] == nil else { continue }
+                // Reading saved evidence is safe even when unified-account gameplay is gated.
+                // The legacy checker authenticates independently and must not run in that mode.
+                if usesUnifiedAccount { continue }
                 guard !Task.isCancelled, canStartMutation, installConsent == nil, uninstallConsent == nil,
                       installed.runningGameID == nil, serviceStatus?.signedIn != false else { return }
                 precheckAttempted.insert(id)

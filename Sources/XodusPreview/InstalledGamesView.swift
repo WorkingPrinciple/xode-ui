@@ -221,7 +221,10 @@ struct InstalledPlayButton: View {
     }
     private var title: String {
         library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : canStop ? "Stop"
-            : opensAttention ? "Needs attention"
+            : opensAttention ? InstalledGameActionCopy.title(
+                incomplete: library.placeholderIDs.contains(game.id),
+                installationIssue: library.packageErrors[game.id] != nil,
+                launchIssue: library.accountAccessAllowed && library.playErrors[game.id] != nil)
             : library.placeholderIDs.contains(game.id) ? "Install required"
             : !library.accountAccessAllowed ? "Unavailable"
             : library.playErrors[game.id] == nil ? "Play" : "Try again"
@@ -251,11 +254,11 @@ struct InstalledPlayButton: View {
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.accountDisconnecting || !library.accountAccessAllowed
                   || library.placeholderIDs.contains(game.id))
-        .accessibilityLabel(opensAttention ? "\(game.title): needs attention"
+        .accessibilityLabel(opensAttention ? "\(title) for \(game.title)"
              : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
             : library.placeholderIDs.contains(game.id) ? "\(game.title): needs the full game installation"
             : !library.accountAccessAllowed ? "\(game.title): \(library.accountAccessMessage)" : "Play \(game.title)")
-        .help(opensAttention ? "Review what needs attention for \(game.title)"
+        .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
               : !canStop && !library.accountAccessAllowed ? library.accountAccessMessage : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
         .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"

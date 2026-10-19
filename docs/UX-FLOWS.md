@@ -40,11 +40,50 @@ are excluded from hero recommendations. Hero media loads automatically.
 as well as account-held titles, without relabelling local records as Owned or
 granting launch access. Account ownership and subscription evidence remain
 separate. Cards show title and a concise action, not package/entitlement columns
-or an idle "Checking access" status. A known blocker offers **Needs attention**
-and opens the normal game detail sheet for that exact installation. Safe local
+or an idle "Checking access" status. Local problems offer **Install required**,
+**Check installation**, or **Review launch issue** and open normal game detail
+for that exact installation. An app-wide launch gate offers **View details**;
+it is not presented as a broken installation or a compatibility verdict. Safe local
 folder/launch-file checks run automatically there. Repair/full installation uses
 the existing guarded flow only when available; registry removal requires
 confirmation and preserves files/saves. Technical details stay behind disclosure.
+
+**Catalogue collections and runtime selection:** Library has no detached
+"Library details" footer. Official Xbox PC collection labels and feed identifiers
+are discovered from the games page's PC markup and catalogue-script data literals;
+downloaded JavaScript is never executed. Day-one games lead, followed by recently
+added and the other official PC collections, including popularity, coming/leaving
+soon, EA Play, Bethesda, Riot and in-game benefits when the official source defines
+them. Feed order is retained in shelves. Public list membership is not a subscription
+grant, Mac compatibility verdict, release/departure date or install authorization.
+Each list has independent loading/failure recovery; opening the full collection
+automatically resolves more catalogue records. Known package/anti-cheat blockers
+also remain visible for installed games, which are never hidden by the unsupported
+filter. Missing compatibility evidence stays explicitly unverified.
+
+Welcome and Settings show automatically observed CrossOver version/signature
+status and link missing/unverified installs to CodeWeavers' trial download.
+Settings accepts a signature-verified CrossOver app, an existing Wine/GPTK
+executable or containing folder, and an identifiable existing bottle/prefix.
+Choices persist separately by provider; selection never runs an engine, modifies
+a bottle, proves licensing or enables the still-gated development game consumer.
+CrossOver is not Wine/GPTK, and Apple's evaluation environment is not asserted
+to be a licensed general-purpose replacement. Custom Wine/GPTK version provenance
+remains unverified rather than inferred from a folder name.
+
+**Offline compatibility catalogue:** The app resource bundle carries a versioned,
+dated RO-market snapshot covering the complete union of the official PC lists
+observed during generation (563 product IDs; 394 reported PC package formats).
+Every record has an explicit anti-cheat knowledge state. Exact-name matches to
+the MIT-licensed AreWeAntiCheatYet dataset provide 38 cross-store technology
+references, not Microsoft Store or macOS clearance. Its Linux compatibility
+statuses are not imported. The dataset revision and package source are recorded;
+the full MIT notice ships with the data and Acknowledgments credits the authors.
+Known Store-specific blockers remain separately source-backed. Missing facts
+stay unknown; absence from a community dataset never means "no anti-cheat".
+Live installed-file and Store observations take precedence over offline package
+facts. `--gamepass-compatibility-export <path>` is an explicit nonshipping public
+data regeneration command, not a normal startup network job or an account scan.
 
 Ordinary startup shows the standalone green X logo with **Ode** below it over
 a neutral background, not installed game cards or developer setup diagnostics.

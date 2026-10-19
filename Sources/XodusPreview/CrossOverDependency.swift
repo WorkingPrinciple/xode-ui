@@ -58,6 +58,9 @@ enum CrossOverDetector {
         """
 
     static func detect() -> CrossOverDependencyState {
+        if let path = EngineDefaults.crossOverApplication() {
+            return inspect(URL(fileURLWithPath: path))
+        }
         let locations = [URL(fileURLWithPath: "/Applications/CrossOver.app"),
                          FileManager.default.homeDirectoryForCurrentUser
                             .appendingPathComponent("Applications/CrossOver.app")]
@@ -179,7 +182,7 @@ struct RuntimeDependencyStatus: View {
                 .disabled(!allowsCheck || settings.checkingDependency || settings.applicationTerminating || settings.planning)
             if !settings.crossOverDependency.isVerified {
                 Link("Install CrossOver or start a trial",
-                     destination: URL(string: "https://www.codeweavers.com/crossover")!)
+                     destination: CrossOverDependencyState.trialDownloadURL)
                     .accessibilityIdentifier("xodus.runtime.installCrossOver")
                 Text("Opens CodeWeavers in your browser. Install CrossOver in Applications, then return here. Ode to X checks again when you return; licensing stays with CodeWeavers.")
                     .font(.callout).foregroundStyle(.secondary)
