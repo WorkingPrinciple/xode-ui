@@ -162,6 +162,22 @@ The preparation receipts record exact official release/download URLs, sizes,
 archive checks and executable paths. This expands the prepared control queue
 to eight titles, not the tested count or an Xbox support list.
 
+Static PE inspection confirmed DCSS is a 32-bit Windows executable; Brogue and
+Cataclysm are x64. The DCSS archive therefore also offers a distinct WoW64
+control, but this is not proof that either Wine build runs it. Brogue directly
+imports bundled SDL2/SDL2_image and Windows CRT API sets; DCSS directly imports
+OpenGL32. These are preparation observations, not resolved-dependency or
+renderer verdicts.
+
+The local bounded runner now cleans up the directly owned launcher and invokes
+the exact engine's `wineserver -k` with only the fresh title-specific prefix,
+including when a post-launch display check or screenshot fails. Four mocked
+runner checks passed: initial lock refuses before launch/state creation;
+mid-run lock records an unobservable outcome and cleans up; capture failure
+cleans up without a success claim; normal observation cleans up without
+inventing a visual verdict. A real invocation while locked also refused before
+creating the Brogue run. These are harness checks, not additional game tests.
+
 Runtime and game receipts remain in the session's private artifacts, excluding
 credentials, tickets and content keys. Update this section from actual outcomes,
 not compatibility reports from another storefront.
