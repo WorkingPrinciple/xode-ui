@@ -187,3 +187,22 @@ its default GPU renderer. These queued commands have not yet been executed.
 Runtime and game receipts remain in the session's private artifacts, excluding
 credentials, tickets and content keys. Update this section from actual outcomes,
 not compatibility reports from another storefront.
+
+## Approved-window closeout
+
+The approved 12-hour window ended on 20 October 2026 at 17:48:15 UTC
+(20:48:15 local). Scheduled continuation was cleared at closeout; no further
+launches or input were attempted. Further testing requires a newly approved
+window, not merely an unlocked desktop.
+
+The final count is **five Windows controls actually tested, three additional
+controls prepared only, and zero Xbox game launches**. Free Wine demonstrated
+an OpenTTD running world and SuperTux level interaction; the other outcomes
+retain their stage-specific limitations above. The last scheduled display check
+remained locked, preventing further required full-screen observation. Xbox
+execution separately remained blocked by the exact frozen CLI/live-service
+pairing mismatch. Neither blocker is an additional engine failure.
+
+The batch remains blocked, not qualification-complete. Existing evidence is
+retained; this closeout establishes no production readiness, Xbox login
+readiness, or fresh verified app path.
