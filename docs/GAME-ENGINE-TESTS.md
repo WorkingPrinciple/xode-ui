@@ -178,6 +178,12 @@ cleans up without a success claim; normal observation cleans up without
 inventing a visual verdict. A real invocation while locked also refused before
 creating the Brogue run. These are harness checks, not additional game tests.
 
+The queued invocations now use source-documented options: Brogue's `--no-gpu`
+software renderer and fixed seed `20261020`; Cataclysm's explicit research
+`--userdir` and seed; DCSS's `-rc` file with research-only save/morgue paths.
+Brogue's software mode is an intentional first-test setting, not a verdict on
+its default GPU renderer. These queued commands have not yet been executed.
+
 Runtime and game receipts remain in the session's private artifacts, excluding
 credentials, tickets and content keys. Update this section from actual outcomes,
 not compatibility reports from another storefront.
