@@ -49,6 +49,11 @@ encrypted package cannot be passed directly to Wine as if it were a PE file.
 6. Classify download, install, authorization, executable-load, graphics,
    menu and playable-scene outcomes separately. A process or window alone does
    not demonstrate a visible menu, and a menu does not certify gameplay.
+   Per the owner's screenshot requirement, capture the full screen before and
+   after each run and inspect separate crash/debugger dialogs and macOS
+   notifications. Game-window crops alone are insufficient evidence. Attribute
+   errors to the correct title/engine instead of blaming a foreground game for
+   another title's dialog.
 7. Remove only specifically identified research-created downloads, game folders
    and prefixes after evidence is retained. Existing installations are not
    cleanup targets.
@@ -78,12 +83,13 @@ execution assessment before creating its separate research bottle.
 | SuperTux 0.7.0 Windows x64 | CrossOver 26.3 | Initial invocation exited; explicit Windows data/user paths and SDL software rendering displayed animated startup consent UI. Not yet a playable-level result. |
 | Luanti 5.17.0 Windows x64 | Free Gcenx Wine 11.18, then stable 11.0 | Both actually executed. OpenGL context creation failed; 11.18 displayed a black window and 11.0 also faulted. Neither reached a menu. No unchanged CrossOver rerun after its earlier equivalent failures. |
 | OpenTTD 15.3 Windows x64 + OpenGFX 8.0 | Free Gcenx Wine 11.18 | Generated world and advancing simulation clock visually captured using `win32`/`32bpp-optimized`, hardware acceleration off, sound/music off. No input, audio, save/reload or multiplayer qualification. |
-| SuperTux 0.7.0 Windows x64 | Free Gcenx Wine 11.18 | SDL software renderer worked. Test-only config with source-supported `disable_network #t` and `do_release_check #f` progressed past startup consent to the visually verified main menu. Direct-level retry exited without a captured scene. Scoped host input had no visible effect; Wine VBScript `AppActivate` was unsupported despite the script host exiting zero. No gameplay/input success claimed. |
+| SuperTux 0.7.0 Windows x64 | Free Gcenx Wine 11.18 | SDL software renderer, offline config, main menu, intro, world map and actual "Welcome to Antarctica" level visually verified. A locally compiled helper verified the exact window title and executable inside this research prefix before sending Windows messages; extended arrow scan codes were required for map navigation. Foreground-checked Wine `SendInput` moved the avatar into an enemy and the normal hit/death transition. Full-screen captures retained. Audio/music remained disabled; no physical-keyboard, controller, completion or endurance qualification. Earlier host-targeted/VBScript input attempts failed and are not counted as successes. |
 | Unciv 4.22.12 Windows x64 | Free Gcenx Wine 11.18, then stable 11.0 | 11.18's JVM failed on OpenGL 2.1 without the FBO extension. Stable 11.0 initially failed with "No physical fonts found"; copying its six already-bundled free Wine TTFs into that research prefix's Windows Fonts directory fixed this prerequisite. Actual stable retry rendered the language-selection screen. Not yet a main-menu or playable-turn result. |
 | Endless Sky 0.11.2 Windows x64 | Free Gcenx Wine 11.18 | Main menu visually captured. A texture-array warning did not prevent menu rendering. No pilot created or flight/gameplay qualification. |
 
-Free-engine game executions above occurred between approximately 06:03 and
-06:14 UTC on 20 October 2026; these timestamps are observation bounds, not a
+Initial free-engine game executions above occurred between approximately 06:03
+and 06:14 UTC on 20 October 2026. SuperTux input/level follow-through occurred
+at approximately 06:18-06:23 UTC. These are observation bounds, not a
 claim of continuous active debugging or gameplay. Successful free-engine paths
 do not need a paid fallback. A prior CrossOver baseline is not counted as a
 new free-first fallback test.
@@ -116,6 +122,18 @@ account, shared Xbox service or existing game-prefix changes were made.
 Exact argv, engine paths, process IDs, logs and target-window captures are
 recorded in that private artifact tree. In particular, Unciv's font correction
 affected only its stable research prefix, not macOS fonts or another title.
+
+The owner's full-desktop capture also showed Luanti's separate Program Error
+dialog alongside SuperTux's menu and Unciv's language screen. A macOS "App Update
+Required" notification warned that a Wine Devel component will not open on
+macOS 28; this is a future-OS warning, not proof that the current invocation
+failed on macOS 27.0.1. Earlier game-window crops did not include those separate
+surfaces; future test evidence must include full-screen captures.
+Full-screen inspection also caught two surviving Luanti debugger dialogs after
+the game and Wine server processes had stopped. Both debugger processes were
+independently bound to this batch by their research-only working directory and
+mapped prefix files, then stopped by exact PID. Game/server termination alone
+was therefore not sufficient cleanup evidence.
 
 Runtime and game receipts remain in the session's private artifacts, excluding
 credentials, tickets and content keys. Update this section from actual outcomes,
