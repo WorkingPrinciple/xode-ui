@@ -135,6 +135,33 @@ independently bound to this batch by their research-only working directory and
 mapped prefix files, then stopped by exact PID. Game/server termination alone
 was therefore not sufficient cleanup evidence.
 
+### Locked-display pause and prepared controls
+
+At approximately 06:26-06:28 UTC, Endless Sky follow-through produced black
+full-screen captures. A read-only macOS session query independently confirmed
+`CGSSessionScreenIsLocked: 1`. Those captures are **unobservable results**, not
+evidence of a graphics failure, failed new-pilot action or gameplay. No pilot
+creation or flight was verified. A source-supported `--config` research-only
+windowed retry also occurred before the lock was identified; it has the same
+unobservable outcome. The owned game and its prefix-identified server were
+stopped. No automated unlock or security-setting change was attempted.
+
+Local runners now refuse launch/input while the display is locked. Resume
+visual testing only when the user has independently unlocked the session.
+Meanwhile the following additional official Windows controls were downloaded,
+matched against upstream release SHA-256 digests, safely extracted and inspected
+for executable headers. **None has been executed by this batch yet.**
+
+| Prepared control | Exact release | Official archive SHA-256 |
+|---|---|---|
+| Dungeon Crawl Stone Soup, Windows tiles | 0.34.1 | `a772f22db9dde5dfa85bcc1652dbf16e3d62ecd1173f27c39387403532507979` |
+| Brogue Community Edition, Windows x64 | 1.15.1 | `29dcbae1791156a040c9125d0a28ae97d67a09b22a52266af1c65e2918bede5f` |
+| Cataclysm: Dark Days Ahead, Windows x64 graphics | 0.I-1, 2026-09-19-2324 | `c0a90bfc78e5319733abea1c10ea0c0bd7e7e05a842566e9d6da90c5486e01da` |
+
+The preparation receipts record exact official release/download URLs, sizes,
+archive checks and executable paths. This expands the prepared control queue
+to eight titles, not the tested count or an Xbox support list.
+
 Runtime and game receipts remain in the session's private artifacts, excluding
 credentials, tickets and content keys. Update this section from actual outcomes,
 not compatibility reports from another storefront.
