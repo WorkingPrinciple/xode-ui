@@ -47,10 +47,19 @@ def preflight(identity=None, local_ad_hoc=False, run=command):
     return fingerprint
 
 
-def sign(path, kind, identity=None, local_ad_hoc=False, run=command):
+def sign(path, kind, identity=None, local_ad_hoc=False, run=command, developer_id=False):
+    require(not developer_id or (identity and not local_ad_hoc),
+            "Developer ID signing requires an explicit certificate; ad-hoc is not distribution signing")
     signer = preflight(identity, local_ad_hoc, run)
+    if developer_id:
+        available = run(["/usr/bin/security", "find-identity", "-v", "-p", "codesigning"])
+        require(re.search(r'^\s*\d+\)\s+' + signer
+                          + r'\s+"Developer ID Application: [^"\n]+"\s*$',
+                          available, re.MULTILINE) is not None,
+                "Distribution signing requires a valid Developer ID Application identity")
     arguments = ["/usr/bin/codesign", "--force", "--sign", signer,
-                 "--identifier", IDENTIFIERS[kind], "--timestamp=none"]
+                 "--identifier", IDENTIFIERS[kind]]
+    arguments += ["--timestamp", "--options", "runtime"] if developer_id else ["--timestamp=none"]
     if not local_ad_hoc:
         # Bind the fixed identifier to the supplied certificate, not this build's cdhash.
         arguments += ["--requirements", '=designated => identifier "' + IDENTIFIERS[kind]
@@ -146,6 +155,9 @@ def main():
         operation.add_argument("--identity")
         if name in ("preflight", "sign"):
             operation.add_argument("--local-ad-hoc", action="store_true")
+        if name == "sign":
+            operation.add_argument("--developer-id", action="store_true",
+                                   help="Require valid Developer ID Application signing, timestamp and hardened runtime")
         if name != "preflight":
             operation.add_argument("--kind", choices=IDENTIFIERS, required=True)
         if name in ("sign", "verify"):
@@ -166,7 +178,7 @@ def main():
     if args.operation == "preflight":
         preflight(args.identity, args.local_ad_hoc)
     elif args.operation == "sign":
-        sign(args.path, args.kind, args.identity, args.local_ad_hoc)
+        sign(args.path, args.kind, args.identity, args.local_ad_hoc, developer_id=args.developer_id)
     elif args.operation == "compare":
         print(compare(args.first, args.second, args.kind, args.identity))
     elif args.operation == "verify":

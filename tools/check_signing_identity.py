@@ -64,6 +64,30 @@ sign("/neutral/local-only", "app", local_ad_hoc=True, run=neutral)
 assert all(call[0] != "/usr/bin/security" for call in calls)
 assert calls[0][calls[0].index("--sign") + 1] == "-"
 
+calls.clear()
+rejected(lambda: sign("/neutral/distribution", "cli", local_ad_hoc=True,
+                      run=neutral, developer_id=True))
+assert not calls
+rejected(lambda: sign("/neutral/distribution", "cli", fingerprint,
+                      run=neutral, developer_id=True))
+
+def developer_identity(arguments):
+    calls.append(arguments)
+    if arguments[0] == "/usr/bin/security":
+        return '  1) ' + fingerprint + ' "Developer ID Application: Neutral (TEAM)"\n'
+    return ""
+
+calls.clear()
+sign("/neutral/distribution", "cli", fingerprint, run=developer_identity, developer_id=True)
+signing = next(call for call in calls if "--sign" in call)
+assert "--timestamp" in signing and "--timestamp=none" not in signing
+assert signing[signing.index("--options") + 1] == "runtime"
+assert calls[-1] == ["/usr/bin/codesign", "--verify", "--strict", "/neutral/distribution"]
+rejected(lambda: sign("/neutral/distribution", "cli", fingerprint,
+                      run=lambda arguments: developer_identity(arguments).replace(
+                          "Developer ID Application:", "Apple Development:"),
+                      developer_id=True))
+
 with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
     first, second = Path(temporary).resolve() / "first", Path(temporary).resolve() / "second"
     first.write_bytes(b"Same neutral payload; simulated signature A. Never executed.")

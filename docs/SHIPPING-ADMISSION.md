@@ -131,7 +131,19 @@ not make the full command green. Synthetic checks do not replace live account,
 UI, package-consumer or gameplay observations.
 
 Developer ID signing alone is not notarization. The current signing helper
-uses `--timestamp=none` and does not enable hardened runtime. Gatekeeper rejected
+defaults to local signing with `--timestamp=none` and no hardened runtime.
+Its explicit `sign --developer-id` mode requires a valid Developer ID Application
+certificate and requests a secure timestamp plus hardened runtime:
+
+```sh
+python3 tools/signing_identity.py sign --kind cli --path /absolute/new/candidate \
+    --identity CERT_SHA1 --developer-id
+```
+
+Do not apply that mode to an installed working binary. Hardened-runtime
+compatibility still needs live testing; no permissive entitlements are added
+automatically. `build_app.sh` does not yet select this distribution mode.
+Gatekeeper rejected
 the observed candidate as `Unnotarized Developer ID`. A distribution path needs
 appropriate signing options/entitlements, notarization and applicable ticket/
 Gatekeeper verification. Do not disable Gatekeeper or remove quarantine to

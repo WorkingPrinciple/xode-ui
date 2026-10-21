@@ -123,6 +123,18 @@ approval and matching generated package pins remain necessary.
 
 ### Current implementation boundary
 
+Distribution-signing tooling now has an explicit `sign --developer-id` mode:
+it requires a valid Developer ID Application identity, requests Apple's secure
+timestamp and enables hardened runtime without adding permissive entitlements.
+Default local signing is unchanged. A separate candidate signed in that mode
+passed strict verification; metadata showed `flags=0x10000(runtime)` and a
+secure timestamp. SHA256:
+`d18d7009c06411c98a5913211d6ffc0ebdd8fb8832c94569331ee315f6ab4f3a`.
+Two fresh processes again passed saved status and noninteractive runtime
+authorization. This verifies those hardened-engine paths only, not native
+interactive sign-in UI, package/game execution, notarization or an app package.
+The installed preserved app was reopened afterward. No shipping pin changed.
+
 The first source slice adds `ode.account.read.v1` to the paired Rust producer
 and native client. Library collection, profile and per-title achievements derive
 authorization from the isolated launcher session, with bounded reads and
