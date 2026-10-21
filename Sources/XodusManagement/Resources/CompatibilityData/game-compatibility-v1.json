@@ -5109,13 +5109,50 @@
       "title": "Dungeon Keeper™ 2"
     },
     "9NGLST31DG26": {
-      "antiCheat": "unknown",
+      "antiCheat": "none",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "method": "Scanned every inventoried relative package path using the versioned anti-cheat signature set; file contents were not modified. No known signature matched. The title had no exact AWACY anti-cheat record, and the reviewed PCGamingWiki and publisher sources had no anti-cheat record.",
         "mode": "unknown",
-        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-        "type": "unknown"
+        "packageScan": {
+          "complete": true,
+          "fileCount": 36,
+          "fileListSha256": "d5776435096ec5062929565eca9ed4ce548941611ec08a36d2a3fa9a2ab0bced",
+          "matches": {},
+          "packageIdentity": {
+            "manifest": "MicrosoftGame.config",
+            "name": "rokapublish.AGameAboutDiggingAHole",
+            "storeId": "9NGLST31DG26",
+            "version": "1.2.1.0"
+          },
+          "result": "no-known-signature",
+          "root": "~/Games/Xodus/AGameAboutDiggingAHole-Xbox",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/A_Game_About_Digging_A_Hole",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/3244220/A_Game_About_Digging_A_Hole/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/A_Game_About_Digging_A_Hole",
+        "type": "package-scan"
       },
       "launchProof": [],
       "packageFormat": "MSIXVC",
@@ -5131,7 +5168,7 @@
       },
       "pcPackageIdentified": true,
       "referencePlatforms": [],
-      "supported01": null,
+      "supported01": true,
       "technologyReferences": [],
       "title": "A Game About Digging A Hole™"
     },
@@ -11829,13 +11866,50 @@
       "title": "ROUTINE"
     },
     "9PCR3Z2MSM4T": {
-      "antiCheat": "unknown",
+      "antiCheat": "none",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "method": "Scanned every inventoried relative package path using the versioned anti-cheat signature set; file contents were not modified. No known signature matched. The title had no exact AWACY anti-cheat record, and the reviewed PCGamingWiki and publisher sources had no anti-cheat record.",
         "mode": "unknown",
-        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-        "type": "unknown"
+        "packageScan": {
+          "complete": true,
+          "fileCount": 6062,
+          "fileListSha256": "57c34607aea031a49103cfe8c599f83a6759735906ffda7a9f053865b1c9e77f",
+          "matches": {},
+          "packageIdentity": {
+            "manifest": "MicrosoftGame.config",
+            "name": "SupergiantGamesLLC.HadesII",
+            "storeId": "9PCR3Z2MSM4T",
+            "version": "1.14.296.0"
+          },
+          "result": "no-known-signature",
+          "root": "~/Games/Xodus/HadesII-Xbox",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/Hades_II",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/1145350/Hades_II/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Hades_II",
+        "type": "package-scan"
       },
       "launchProof": [],
       "packageFormat": "MSIXVC",
@@ -11851,7 +11925,7 @@
       },
       "pcPackageIdentified": true,
       "referencePlatforms": [],
-      "supported01": null,
+      "supported01": true,
       "technologyReferences": [],
       "title": "Hades II"
     },
