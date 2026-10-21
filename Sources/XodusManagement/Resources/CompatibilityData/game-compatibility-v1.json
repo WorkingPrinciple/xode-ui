@@ -552,13 +552,50 @@
       "title": "RV There Yet?"
     },
     "9MW9469V91LM": {
-      "antiCheat": "unknown",
+      "antiCheat": "none",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "method": "Scanned every inventoried relative package path using the versioned anti-cheat signature set; file contents were not modified. No known signature matched. The title had no exact AWACY anti-cheat record, and the reviewed PCGamingWiki and publisher sources had no anti-cheat record.",
         "mode": "unknown",
-        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-        "type": "unknown"
+        "packageScan": {
+          "complete": true,
+          "fileCount": 1796,
+          "fileListSha256": "d77c68a2f7f547f4476db9193d21ad9e62cdac15536d3f2e63847f3104faf6b5",
+          "matches": {},
+          "packageIdentity": {
+            "manifest": "MicrosoftGame.config",
+            "name": "TeamCherry.15373CD61C66B",
+            "storeId": "9MW9469V91LM",
+            "version": "1.5.12620.0"
+          },
+          "result": "no-known-signature",
+          "root": "~/Games/Xodus/HollowKnightVoidheart-Xbox",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/Hollow_Knight",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/367520/Hollow_Knight/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Hollow_Knight",
+        "type": "package-scan"
       },
       "launchProof": [],
       "packageFormat": "MSIXVC",
@@ -574,7 +611,7 @@
       },
       "pcPackageIdentified": true,
       "referencePlatforms": [],
-      "supported01": null,
+      "supported01": true,
       "technologyReferences": [],
       "title": "Hollow Knight: Voidheart Edition"
     },
