@@ -5,14 +5,20 @@ import argparse
 import json
 import os
 from pathlib import Path
+import platform
 import plistlib
 import shutil
 import subprocess
 import tarfile
 import tempfile
 
-from shipping_pair import hex_value, owned_bytes, require, swift_pins
+from shipping_pair import FEATURES, PROFILE, hex_value, owned_bytes, require, swift_pins
 from signing_identity import preflight, sign, verify_designated_requirement
+
+
+def validate_host():
+    require(platform.system() == "Darwin" and platform.machine() == "arm64",
+            "This local candidate packager requires an Apple Silicon Mac")
 
 
 def run(arguments, cwd, log, environment=None):
@@ -34,7 +40,29 @@ def source_identity(root):
             "tree": hex_value(git("rev-parse", "HEAD^{tree}"), 40)}
 
 
+def build_evidence(messages):
+    artifacts, native_features = [], {}
+    for line in messages.splitlines():
+        try:
+            frame = json.loads(line)
+        except ValueError:
+            continue
+        if frame.get("reason") != "compiler-artifact":
+            continue
+        name = frame.get("target", {}).get("name", "").replace("_", "-")
+        if name in FEATURES:
+            require(frame.get("profile") == PROFILE, "Unexpected native release build profile: " + name)
+            require(name not in native_features, "Duplicate native build artifact: " + name)
+            native_features[name] = frame.get("features")
+        if name == "xodus-cli" and frame.get("executable"):
+            artifacts.append(frame)
+    require(len(artifacts) == 1, "Expected one actual CLI build artifact")
+    require(native_features == FEATURES, "Missing or incompatible native release features")
+    return artifacts[0], native_features
+
+
 def build(engine_root, output_root, identity):
+    validate_host()
     project = Path(__file__).resolve().parent.parent
     engine_root = engine_root.resolve(strict=True)
     require(output_root.is_absolute() and output_root.resolve(strict=True) == output_root,
@@ -66,19 +94,11 @@ def build(engine_root, output_root, identity):
                "--bin", "xodus-cli", "--target", "aarch64-apple-darwin",
                "--no-default-features", "--message-format=json"]
     messages = run(command, engine_root, log, environment)
-    artifacts = []
-    for line in messages.splitlines():
-        try:
-            frame = json.loads(line)
-        except ValueError:
-            continue
-        if frame.get("reason") == "compiler-artifact" and frame.get("target", {}).get("name") == "xodus-cli" \
-                and frame.get("executable"):
-            artifacts.append(frame)
-    require(len(artifacts) == 1, "Expected one actual CLI build artifact")
-    artifact = artifacts[0]
+    artifact, native_features = build_evidence(messages)
     require(source_identity(engine_root) == engine_source, "Engine source changed during build")
-    unsigned, _ = owned_bytes(Path(artifact["executable"]).resolve(strict=True))
+    executable = Path(artifact["executable"]).resolve(strict=True)
+    require(executable.is_relative_to(stage / "engine-target"), "CLI artifact is outside this build target")
+    unsigned, _ = owned_bytes(executable)
     app = stage / "Ode to X Local Candidate.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
     macos.mkdir(parents=True)
@@ -131,6 +151,9 @@ def build(engine_root, output_root, identity):
     run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
     for path, kind in ((engine, "cli"), (helper, "helper"), (app, "app")):
         verify_designated_requirement(path, kind, identity)
+    for executable in (engine, helper, macos / "Xodus"):
+        require(run(["lipo", "-archs", str(executable)], source, log).decode().strip() == "arm64",
+                "Candidate executables must all be arm64")
     owned_bytes(engine, signed_engine["sha256"], signed_engine["bytes"])
     owned_bytes(helper, signed_helper["sha256"], signed_helper["bytes"])
     require(source_identity(project) == app_source and source_identity(engine_root) == engine_source,
@@ -141,8 +164,10 @@ def build(engine_root, output_root, identity):
         "kind": "local-development-candidate", "productionQualified": False, "notarized": False,
         "appSource": app_source, "engineSource": engine_source, "engineBuildCommand": command,
         "actualCargoProfile": artifact["profile"], "unsignedEngine": unsigned,
+        "actualNativeResolvedFeatures": native_features,
         "signedEngine": signed_engine, "signedHelper": signed_helper,
         "certificateSHA1": identity.upper(), "generatedPins": owned_bytes(pins)[0],
+        "architecture": "arm64",
         "generatedProducerPins": owned_bytes(producer_pins)[0], "packageFiles": inventory,
     }
     (stage / "candidate-receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")

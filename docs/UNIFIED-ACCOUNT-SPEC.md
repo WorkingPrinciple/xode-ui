@@ -5,6 +5,39 @@ Microsoft sign-in for games, PC library, Xbox profile and achievements where the
 provider authorizes those capabilities. This document does not promise ownership,
 downloadability, compatibility or gameplay merely because authentication succeeds.
 
+### Fresh integrated local candidate (21 October, after policy correction)
+
+The supported `tools/build_local_candidate.py` path built clean app source
+`a444f8fe5bb040b9d9d81e4263869385f7118977` with clean engine source
+`96d91dbec6727b4a7409908352c48f09411d3508`. The engine was compiled offline,
+locked, into a new target directory; actual native features and opt3/debug0
+profiles matched the live release configuration. Its signed SHA256 is
+`327e4ac76e1e944c8df5d24d3007bc9715e8e7773bac8d260e27bb1d22822fb6`.
+The engine's management contract matched the app resource before packaging.
+App-specific producer/source and signed engine/helper pins were generated only
+in the isolated stage; the original release producer defaults were not changed.
+
+The packaged engine passed saved-account status and noninteractive runtime
+authorization in two fresh processes. The integrated staged app then opened
+the native Library, showing catalogue content and four local games. A separate
+copy at `~/Applications/Ode to X Local Candidate.app` matched all 24 recorded
+package files, passed strict deep signature verification, and opened its own
+native Library with the bundled engine running. Window-only captures and build/
+restart receipts remain private in `developer-id-candidate.27yxwh/Ode-local-dgpbwu58`.
+All three executables were verified arm64, hardened and securely timestamped
+under the owner's Developer ID identity. The old Development app was preserved,
+not replaced; only the new local candidate was left running.
+
+Gatekeeper still rejects the candidate as `Unnotarized Developer ID` (exit 3).
+No quarantine/trust bypass, new Microsoft sign-in, credential mutation or game
+launch was performed. Accessibility inspection was unavailable; window capture
+and exact-process/bundle identity provided the native launch evidence instead.
+This is not production readiness or interactive sign-in/gameplay qualification.
+After review, the packager also gained explicit Apple Silicon host and all-three-
+binary architecture checks; those checks were independently applied to this
+already built candidate. Current local policy does not require an independent
+human-approved build receipt to authorize this work.
+
 ### Developer ID provisioning checkpoint (21 October evening)
 
 The owner completed native Xcode Apple-account authentication and explicitly
@@ -47,7 +80,7 @@ the separately signed candidate above, these real checks subsequently passed:
 | Read the existing saved account | Foreground status returned `credentialPresent` | Not a new Microsoft sign-in; no credential payload printed |
 | Noninteractive package-license access | Abiotic Factor qualifier exited 0 after authenticating its content key | Key not printed/saved; no Wine or game started |
 | Restart the same signed engine | Two separate fresh management processes each returned `credentialPresent` and passed `ode.runtime.verify.v1` | Verification uses noninteractive read-only credentials; no new Microsoft login |
-| Update to an independently rebuilt engine | Not qualified | Requires separately bound/approved build receipts, not another signature of the same binary |
+| Update to an independently rebuilt engine | Subsequently passed saved-account/runtime checks; see below | A distinct compilation was tested, not another signature of the same binary |
 | Reboot or locked-Keychain access | Not tested | No system lock/unlock or reboot performed |
 | Gatekeeper / notarized app first launch | Not tested | Candidate is an engine, not a hardened/notarized admitted app package |
 
@@ -69,8 +102,8 @@ target directory (not a second signature of the original file). Build ran
 Developer ID signing produced
 `45033eebdd22c468c179abe27c07a2ddd483be5e4496ead77c0fbcb0cc4f4414`.
 Both different artifacts passed the fixed-certificate designated-requirement
-comparison. These local build observations do not create the independently
-approved build receipts or sealed-input approval required for shipping.
+comparison. These observations establish the measured local rebuild behavior,
+not production readiness; see the corrected local policy in SHIPPING-ADMISSION.
 
 Observed live results:
 
@@ -86,8 +119,9 @@ Observed live results:
 
 Negative/release boundaries remain explicit. `spctl --assess --type execute`
 rejected the candidate with `source=Unnotarized Developer ID` (exit 3).
-Current repository signing disables secure timestamps and does not add hardened
-runtime; the created certificate does not make this a distribution-ready binary.
+The default local signing mode disables secure timestamps and hardened runtime;
+the later explicit Developer ID mode enables both. The created certificate alone
+does not make either artifact a distribution-ready binary.
 Its observed public certificate validity is 21 October 2026-1 February 2027.
 No notarization credentials were provisioned or extracted from Xcode.
 

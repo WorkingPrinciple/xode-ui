@@ -23,7 +23,10 @@ source/build/package inventory. It uses secure-timestamped hardened Developer ID
 signatures, but is explicitly **not notarized or production-qualified**.
 This local sign-in candidate does not bundle the legacy game-launch capsule or
 Python runtime; their absence must not be confused with qualified gameplay.
-Both source checkouts must remain clean and unchanged throughout packaging. and authorization
+Both source checkouts must remain clean and unchanged throughout packaging.
+The packager supports Apple Silicon Macs and checks all three executables are
+arm64. Actual native Cargo features/profile must match the live release build;
+they are recorded rather than inferred from the command alone.
 
 These are project packaging checks, not Apple requirements or an approval
 authority separate from the owner.
@@ -70,7 +73,9 @@ signature is not production readiness.
 
 ## Current tooling: constraints to update, not additional policy
 
-The implementation currently predates the local-development policy above:
+The original release-pair implementation predates the local-development policy
+above. Its fixed producer is retained in `build_app.sh`; it is no longer the
+only supported way to build a local candidate:
 
 - `tools/build_app.sh` requires exact app commit/tree, unsigned CLI hash/size,
   provenance hash/size, a clean source tree, an owned output directory and an
@@ -100,6 +105,19 @@ as the expected release input.
 Local candidate support must be explicit and tested. Do not claim that editing
 this policy alone fixes the current scripts, admits a new producer, or produces
 a usable app.
+
+The separate local path was built and exercised on 21 October: app source
+`a444f8fe5bb040b9d9d81e4263869385f7118977` and engine source
+`96d91dbec6727b4a7409908352c48f09411d3508`. Its packaged engine passed two
+fresh-process saved-account/runtime checks. The app and its separately installed
+copy opened native Library windows with catalogue content and four local games.
+All 24 packaged files matched the recorded inventory after copying, all three
+executables were arm64 with timestamped hardened Developer ID signatures, and
+deep strict signature verification passed. The original installed app was
+preserved. Fresh app: `~/Applications/Ode to X Local Candidate.app`.
+This is existing-account and local-launch evidence, not a fresh interactive
+sign-in, qualified gameplay or notarization. Gatekeeper still reports
+`Unnotarized Developer ID` (exit 3); no bypass was applied.
 
 ## Signing and saved-account access
 

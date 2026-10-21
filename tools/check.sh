@@ -6,6 +6,7 @@ python3 tools/sync_contract.py
 python3 tools/sync_runtime_provider_contract.py --check
 sh -n tools/build_app.sh
 python3 tools/check_signing_identity.py
+python3 tools/check_local_candidate.py
 swift build
 python3 tools/check_shipping_pair.py
 python3 tools/check_python_runtime.py

@@ -17,7 +17,7 @@ IDENTIFIERS = {"app": "io.github.dragoshont.xodus",
                "broker": "io.github.dragoshont.xodus.credential-broker"}
 COMPARISON_RESULT = (
     "Different signed artifacts share the fixed certificate-bound designated requirement. "
-    "Independent-build qualification requires two separately approved build receipts/runs; "
+    "Independent-build qualification requires distinct compilations and live access checks; "
     "it is not established by this comparison.")
 PACKAGE_RECEIPT_LIMIT = 4 * 1024 * 1024
 
