@@ -356,6 +356,19 @@ and evidence slice: Abiotic is **21m46s charged**, at most **23m14s** remain.
 NMS remains closed at its 45-minute ceiling; no NMS-specific work was resumed.
 No app package, approved input or installed runtime was replaced.
 
+The explicit combined fixture subsequently passed: unified **`96d91db`** runs
+consumer **`2170338`** through its actual capability-authenticated TCP bridge
+into the real isolated Unix listener and XML router, with only an injected
+memory provider. Shim-shaped escaped XML reached the provider correctly and
+the synthetic token returned; broker cancellation joined peers and removed
+its owned socket. No Keychain, Microsoft API, Wine or game was involved.
+The one cross-checkout test passed explicitly; default service checks remain
+32 passing plus that explicitly ignored integration check. Consumer defaults
+pass four local checks and skip the external broker check. These test-only
+commits do not alter the last release CLI hash.
+Allocate another conservative **two-minute** shared evidence/check charge:
+Abiotic **23m46s**, at most **21m14s** remain; NMS stays closed.
+
 ## Session 2 baseline recovery
 
 Read-only source/artifact inspection on 21 October recovered these components.

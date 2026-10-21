@@ -117,6 +117,13 @@ starting Wine, then rechecks before forwarding each request. Synthetic
 authenticated TCP-to-Unix transport preserves the shim-shaped 7/8 frames.
 These transport and service checks are separate fixtures, not a live combined
 provider/shim/game result.
+The subsequent explicit cross-checkout run (`96d91db` / consumer `2170338`)
+also passed the actual Python capability bridge into the real isolated socket
+listener/XML router with an injected memory-only provider, and verified the
+synthetic token plus joined cancellation/socket cleanup. This closes the
+combined synthetic transport check, not live credential/provider/Wine/game
+qualification. The external-checkout test is explicitly ignored by default
+and was executed separately; it is not silently counted as a default pass.
 
 The supported preserved-engine path was also exercised specifically for No
 Man's Sky: its declared MSA client `000000004826ED21` obtained unexpired silent
