@@ -40,6 +40,9 @@ The tool verifies the signed CLI, resolves that exact commit/tree, compares its
 management schema, and regenerates the app/CLI/helper pairing. Its receipt
 records selection rather than claiming that the packager reproduced S2's
 binary. The native lifecycle digest must also match `NativeLifecyclePins`.
+An explicit frozen S2 CLI keeps its producer signing identifier and is checked
+against the selected certificate leaf and frozen digest, rather than requiring
+the app packager's different CLI identifier. Its original bytes are preserved.
 
 Runtime settings can select an **experimental local** `xgameruntime.dll` and
 its sibling `xgameruntime_legacy.dll`. Both hashes are captured at selection and

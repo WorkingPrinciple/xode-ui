@@ -18,7 +18,7 @@ import tempfile
 
 from build_local_candidate import run, source_identity, validate_host
 from shipping_pair import PRODUCER, PRODUCER_TREE, owned_bytes, require, swift_pins
-from signing_identity import preflight, sign, verify_designated_requirement
+from signing_identity import command, preflight, sign, verify_designated_requirement
 
 
 def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None):
@@ -49,8 +49,18 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         require(contract == (project / "Sources/XodusManagement/Resources/management-v1.schema.json").read_bytes(),
                 "Selected CLI producer and app management contracts differ")
     old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/XodusEngine/xodus-cli"
-    verify_designated_requirement(old_cli, "cli", identity)
+    def verify_cli(path):
+        if selected_cli is None:
+            verify_designated_requirement(path, "cli", identity)
+        else:
+            command(["/usr/bin/codesign", "--verify", "--strict", "-R",
+                     'certificate leaf = H"' + identity.upper() + '"', str(path)])
+    verify_cli(old_cli)
     cli_record, _ = owned_bytes(old_cli)
+    if selected_cli is not None:
+        lifecycle_source = (project / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text()
+        require('static let cliSHA256 = "' + cli_record["sha256"] + '"' in lifecycle_source,
+                "Selected lifecycle CLI differs from the source's explicit frozen digest")
     stage = Path(tempfile.mkdtemp(prefix="Ode-refresh-", dir=output_root))
     stage.chmod(0o700)
     log = stage / "build.log"
@@ -122,7 +132,8 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     (stage / "candidate-receipt.json").write_text(encoded)
     sign(app, "app", identity, developer_id=True)
     run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
-    for path, kind in ((cli, "cli"), (helper, "helper"), (app, "app")):
+    verify_cli(cli)
+    for path, kind in ((helper, "helper"), (app, "app")):
         verify_designated_requirement(path, kind, identity)
     owned_bytes(old_cli, cli_record["sha256"], cli_record["bytes"])
     require(source_identity(project) == source_identity_before, "App source changed during refresh")
