@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import ApplicationServices
 import CryptoKit
 import Darwin
 import Security
@@ -335,6 +336,26 @@ enum NativeGameForeground {
         return Set(windows.compactMap { ($0[kCGWindowNumber as String] as? NSNumber)?.uint32Value })
     }
 
+    private static func raiseGameWindow(_ identity: LaunchProcessIdentity, title: String) -> Bool {
+        guard identity.matchesKernel() else { return false }
+        let application = AXUIElementCreateApplication(identity.pid)
+        AXUIElementSetMessagingTimeout(application, 0.25)
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &value) == .success,
+              let windows = value as? [AXUIElement] else { return false }
+        for window in windows.prefix(32) {
+            var name: CFTypeRef?, pid: pid_t = 0
+            guard AXUIElementGetPid(window, &pid) == .success, pid == identity.pid,
+                  AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &name) == .success,
+                  let name = name as? String, matchesGameWindow(name, title: title),
+                  identity.matchesKernel() else { continue }
+            guard AXUIElementSetAttributeValue(application, kAXFrontmostAttribute as CFString, kCFBooleanTrue) == .success,
+                  identity.matchesKernel() else { return false }
+            return AXUIElementPerformAction(window, kAXRaiseAction as CFString) == .success
+        }
+        return false
+    }
+
     static func activate(launcherPID: Int32, title: String, executables: [String],
                          existingWindows: Set<UInt32>, current: () -> Bool) async -> Bool {
         var seconds: UInt64 = 0, microseconds: UInt64 = 0
@@ -361,7 +382,11 @@ enum NativeGameForeground {
                     let target = LaunchProcessIdentity(pid: pid, start_sec: seconds, start_usec: microseconds)
                     if current(), launcher.matchesKernel(),
                        LaunchAssociationHandoff.readyTarget(target),
-                       LaunchAssociationHandoff.activateTarget(target) { return true }
+                       LaunchAssociationHandoff.activateTarget(target) {
+                        // Wine applications can share a bundle identity; activation alone
+                        // can select a different game's window.
+                        return AXIsProcessTrusted() ? raiseGameWindow(target, title: title) : true
+                    }
                 }
             }
             do { try await Task.sleep(for: .milliseconds(250)) }

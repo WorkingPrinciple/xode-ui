@@ -84,7 +84,10 @@ and pre-launch failures are logged under `io.github.dragoshont.xodus/GameLaunch`
 tile failures are shown inline. A bounded foreground handoff targets a newly
 created same-user game window with an exact game-title match and the configured
 executable/Wine owner. It excludes pre-existing windows and browser titles,
-rechecks kernel birth identity before activation, supports Wine's reparenting
+rechecks kernel birth identity before activation and, when existing Accessibility
+permission permits, raises only that PID's exact-title accessibility window.
+This avoids shared Wine bundle activation selecting a different running game.
+It supports Wine's reparenting
 to PID 1, and never steals focus after the user leaves Ode to X.
 
 The owner changed the classification policy on 22 October: unknown anti-cheat
