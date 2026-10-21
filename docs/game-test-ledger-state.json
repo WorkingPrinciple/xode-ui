@@ -5,23 +5,25 @@
   "deadline": "2026-10-22T05:28:46Z",
   "notes": [
     "Session 1: five standalone Windows controls attempted; zero Xbox game launches during that batch.",
-    "Session 2: Brogue and Cataclysm control processes attempted; no reviewed visual outcome recorded yet. These are not joint-product acceptance.",
+    "Session 2: Brogue, Cataclysm and DCSS control processes attempted; no reviewed gameplay result. DCSS correctly rejected visual eligibility when no owned window was observed. These are not joint-product acceptance.",
     "Session 3 is planned for tomorrow, not executed or automatically authorized beyond the current window.",
     "Installed observations below are from 20 October preflight, not a fresh authenticated inventory.",
     "Personal entitlement and current download access have not been established for this queue.",
     "Historical No Man's Sky success is recorded in PAUSE-HANDOFF.md; Hogwarts success is owner-reported pending receipt recovery.",
     "Prior service hash drift does not establish incompatibility. Recover the modified fork, shims and working route before retrying.",
     "Minecraft Java and Minecraft Launcher were also inspected as installed encrypted packages, but their exact product IDs are absent from this public snapshot; do not substitute bundle or preview IDs.",
-    "No confirmed Xbox game fix or fresh joint-product gameplay result was produced by Session 1."
+    "No confirmed Xbox game fix or fresh joint-product gameplay result was produced by Session 1.",
+    "Session 2 NMS registered launch was actually attempted at 2026-10-21T05:55:59Z: CLI invalid package key response frame; matching service error entry not found. No Wine/game start. This supersedes the earlier hash-only blocker inference.",
+    "Session 1 adversarial verdict REVISE; audit, corrective harness work and current real failure are recorded in GAME-ENGINE-TESTS.md."
   ],
   "products": {
     "BQVQTL3PCH05": {
       "historical": "CrossOver + modified Xodus: in-world rendering recorded",
       "installedObservation": "20 Oct: NMS 7.6 resident; inventory/readiness passed",
       "session1": "Preflight only; not launched",
-      "session2": "Not launched",
-      "next": "P1: recover exact working app/runtime/shim/Wine route",
-      "evidence": "PAUSE-HANDOFF.md; Session 1 private xbox-title-test receipt"
+      "session2": "Launch route attempted 21 Oct 05:55:59Z; service entry not found; no Wine/game start",
+      "next": "P1: fix error attribution and isolated-account/legacy consumer integration; do not repeat unchanged",
+      "evidence": "PAUSE-HANDOFF.md; private Session 2 NMS baseline receipt and matching service diagnostic"
     },
     "9MT5NJ5W7B8Z": {
       "historical": "CrossOver + modified Xodus/shims: launch owner-reported",

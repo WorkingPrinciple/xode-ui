@@ -5,7 +5,7 @@
 | Session | Window | State |
 |---|---|---|
 | 1 | 20 October 2026, 08:48-20:48 local (+03:00) | Closed; five standalone controls attempted, zero Xbox game launches in this session. Historical Xbox successes remain separate. |
-| 2 | Renewed 21 October 2026; ends 22 October at 08:28:46 local (+03:00) | Active investigation of the joint product; previous working configurations are the baseline. Brogue and Cataclysm control processes were attempted before the scope correction; neither has a reviewed visual result yet. |
+| 2 | Renewed 21 October 2026; ends 22 October at 08:28:46 local (+03:00) | Active joint-product investigation. Registered NMS launch actually attempted: package service returned `entry not found`; no Wine/game start. Three additional controls attempted, none qualified for gameplay. |
 | 3 | Planned for 22 October 2026 | Planned only. No results, automatic extension, or additional wake/security-setting changes are implied. |
 
 The full package-filtered title queue and reviewed per-title state are in
@@ -59,6 +59,13 @@ and corrective work; it must not inherit Session 1's conclusions uncritically.
     and work on another admissible joint-product slice. At the deadline stop,
     preserve the handoff and attempt the scheduled five-minute lock restoration.
 
+The owner explicitly approved relevant installs, process termination/restarts,
+game launches and desktop/window arrangement for Session 2. Prefer the Studio
+Display for games; the operator moved the editor to the MacBook display.
+Full-screen capture remains required on both, with particular attention to
+separate error messages. This approval does not include password entry, new
+interactive sign-in consent, purchases or security bypasses.
+
 ## Joint delivery scope
 
 Owner clarification, 21 October 2026: **Ode to X and the modified Xodus
@@ -101,6 +108,77 @@ qualification.
 Confirmed joint-product Xbox gameplay fixes from Sessions 1-2: **none yet**.
 Findings that have only a source patch or configuration remedy must retain that
 label until the failing joint flow is rerun.
+
+## Session 1 adversarial review and Session 2 corrective actions
+
+Independent host-native review of the prior evidence returned **REVISE**.
+The review also inspected the two early Session 2 controls. Findings below
+distinguish demonstrated evidence gaps from reviewer hypotheses.
+
+| Severity | Finding | Consequence / required correction | Current disposition |
+|---|---|---|---|
+| Blocker for joint-product acceptance | Session 1 executed standalone controls, not Ode to X plus the modified package/runtime route | Controls cannot establish the delivered app's installation, authorization or launch behavior | Joint scope and historical NMS/Hogwarts baseline now explicit; actual NMS route exercised in Session 2 below |
+| Major | The old preserved consumer's fixed socket was overgeneralized to the whole modified fork, and hash drift became a stop condition without reproducing the failure | Lost an available investigation path; inspect actual producer/consumer roles and obtain a real stage error | Private helper supports `--socket`; modified private broker exists. This does not alone reroute the fixed package-key consumer |
+| Major | Repeated locked-display checks displaced useful investigation for much of Session 1 | Lock was an observation limit, not proof macOS prevents game launches; status wakeups did not add game evidence | User unlocked and disabled locking for this window; continuation must act on hypotheses and admissible work, not repeat the old hold |
+| Blocker for visual verdicts on affected runs | Early Session 2 Brogue/Cataclysm captures showed the orchestrator rather than a game, despite named-window metadata | Those captures cannot establish a menu or gameplay. Occlusion/Space/compositing cause was not proven from that evidence | New all-display capture helper records display geometry, owned windows and potential occluders; absent/occluded targets refuse visual eligibility |
+| Major | Mocked capture success did not exercise real desktop content or all displays | Prior four mocks covered control flow, not visual truth | Five updated runner mocks include visibility rejection; real helper captures both active displays and rejects nonexistent-PID/duplicate/invalid-label cases |
+| Evidence limit | Elapsed launch receipts are not a complete per-title active-debugging ledger | Cannot certify all cumulative budgets merely from process lifetimes | Record accumulated investigation time on subsequent retries; do not reconstruct unsupported totals |
+
+Positive evidence retained: false-by-default menu/gameplay flags, exact-prefix
+cleanup, separately verified residual debugger cleanup, and honest labeling of
+mock checks versus real game runs. Prior OpenTTD/SuperTux observations remain
+standalone-control results, not invalidated Xbox results.
+
+Review corrections: identical MoltenVK log endings do **not** prove truncation
+or an engine stall; parent `fsync` cannot flush child user-space buffers.
+Window-only captures would violate the full-screen requirement and were rejected.
+The review's suggestion that macOS honors `XDG_RUNTIME_DIR` was rejected after
+checking the fork's platform branches: only Linux uses that override; macOS
+returns `/tmp/`. Full-desktop capture can incidentally include unrelated content;
+that evidence stays private rather than cropping away possible error dialogs.
+
+### First actual Session 2 Xbox route attempt
+
+At **2026-10-21T05:55:59Z**, the unchanged registered NMS launcher was invoked
+with a fresh run ID, preserving its CLI, custom runtime/shims, pinned MoltenVK
+and CrossOver selection. It exited 1 **before Wine/game startup**:
+`package key service failed: invalid package key response frame`.
+The service log in the matching minute independently recorded the exact
+nonsecret error **`entry not found`**.
+
+Source inspection explains the misleading message: the service converts any
+request-handler error into an empty response, while the CLI rejects a zero-size
+response as an invalid frame. A missing stored entry and incompatible framing
+are therefore indistinguishable to that CLI. The failed lookup's exact
+credential/token is not established; this is not proof of absent entitlement or
+an incompatible service build. No game process remained, no new sign-in was
+initiated, and no credentials/content keys were printed or retained.
+
+The attempt also exposed a harness defect: cleanup ran the preserved wineserver
+despite never reaching Wine and returned 1. That is recorded as a cleanup-command
+failure, not successful cleanup. The process snapshot showed no NMS process.
+Do not repeat the same launch unchanged: next address the typed-error gap and
+the isolated-account versus legacy-service integration without forcing another
+login or silently switching accounts.
+
+## Session 2 baseline recovery
+
+Read-only source/artifact inspection on 21 October recovered these components.
+This is an identity ledger, **not a reproduced working configuration or a backup**.
+Do not infer a build-to-source mapping from a nearby branch or matching filename.
+
+| Component | Recovered identity / observation | Remaining work before replacement |
+|---|---|---|
+| Unified-account fork | Session-owned `ode-unified-engine`, clean `91624782862ef0ffb833bbbf1204a8c54629124c` | Separate source candidate from the signed engine actually used by the installed app; preserve macOS permission boundaries |
+| Legacy modified service/launcher source | Fork ref `private/ai-hogwarts-runtime` at `7ae8ffe`; includes service lifecycle changes `c43a47b` and `2004d49` | Bind exact source/build inputs to the live artifact; old manifest drift alone is not a compatibility verdict |
+| Modified runtime/shim source | Existing private runtime worktree at `cc051eb`; four unrelated untracked probe files observed and left untouched | Identify which built DLLs came from which source changes; do not overwrite that worktree |
+| NMS preserved CLI | SHA-256 `0d0141dadd2512454122e592ef170c6aa72e78fa997568296dcb7150448b38e4` | Recover its source and compatible consumer/service route |
+| Shared service, disk bytes | SHA-256 `a3cc1dd758e47be52700f84ff6874c240cca3238ffdcb9282d26ba19888286eb` | Retain the distinction between current disk identity, historical run identity and source provenance |
+| NMS `runtime/xgameruntime.dll` | SHA-256 `6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8` | Record the rest of the actual loaded shim set and source mapping |
+| NMS `runtime/xgameruntime_legacy.dll` | SHA-256 `de6f1c47f3cfb087655a4852c185cf89c3d64ca5e2327146d424426d3b7944a5` | A file's presence does not prove that a game loaded it |
+| Hogwarts historical configuration | `HogwartsPrivateStock` bottle retains `xgameruntime.dll` and `windows.web.dll`; fork contains isolated Hogwarts launcher | Locate actual package/content and prior successful-run evidence before claiming a new launch |
+| Locally patched Wine build recipe | Fork `build-crossover-wine-af-unix.sh` references CrossOver source 26.3.0 and Xodus Wine AF_UNIX patch `6b7313c1bd` | Recipe inspection does not prove this Wine build is installed or used; do not run this provisioning script blindly |
+| Private transport helper | Preserved `private-stock-ipc.py` accepts `--socket`; unified-account fork has a configurable private broker | Establish the complete consumer route and supported request protocol, not just endpoint configurability |
 
 ## Reproducibility and regression tracking
 

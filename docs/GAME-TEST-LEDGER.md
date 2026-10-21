@@ -20,7 +20,7 @@ Do not edit this generated file; update `docs/game-test-ledger-state.json` and r
 See [the constitution, session register, audit and fix ledger](GAME-ENGINE-TESTS.md).
 
 - Session 1: five standalone Windows controls attempted; zero Xbox game launches during that batch.
-- Session 2: Brogue and Cataclysm control processes attempted; no reviewed visual outcome recorded yet. These are not joint-product acceptance.
+- Session 2: Brogue, Cataclysm and DCSS control processes attempted; no reviewed gameplay result. DCSS correctly rejected visual eligibility when no owned window was observed. These are not joint-product acceptance.
 - Session 3 is planned for tomorrow, not executed or automatically authorized beyond the current window.
 - Installed observations below are from 20 October preflight, not a fresh authenticated inventory.
 - Personal entitlement and current download access have not been established for this queue.
@@ -28,6 +28,8 @@ See [the constitution, session register, audit and fix ledger](GAME-ENGINE-TESTS
 - Prior service hash drift does not establish incompatibility. Recover the modified fork, shims and working route before retrying.
 - Minecraft Java and Minecraft Launcher were also inspected as installed encrypted packages, but their exact product IDs are absent from this public snapshot; do not substitute bundle or preview IDs.
 - No confirmed Xbox game fix or fresh joint-product gameplay result was produced by Session 1.
+- Session 2 NMS registered launch was actually attempted at 2026-10-21T05:55:59Z: CLI invalid package key response frame; matching service error entry not found. No Wine/game start. This supersedes the earlier hash-only blocker inference.
+- Session 1 adversarial verdict REVISE; audit, corrective harness work and current real failure are recorded in GAME-ENGINE-TESTS.md.
 
 ## Next tests
 
@@ -46,7 +48,7 @@ See [the constitution, session register, audit and fix ledger](GAME-ENGINE-TESTS
 | 9PCR3Z2MSM4T | Hades II | No gameplay evidence reviewed | 20 Oct: absent from inspected registry and standard root | Public package and local-presence triage only | Not launched | P3: resolve legitimate account/package access before download | Session 1 private xbox-five-title-batch receipt |
 | 9MT5NJ5W7B8Z | Hogwarts Legacy | CrossOver + modified Xodus/shims: launch owner-reported | 21 Oct: HogwartsPrivateStock bottle exists; package not found in standard game root | Not attempted | Not launched | P1: locate historical package, launch evidence and shim configuration | Owner clarification 21 Oct; private fork isolated Hogwarts launcher |
 | 9MW9469V91LM | Hollow Knight: Voidheart Edition | No gameplay evidence reviewed | 20 Oct: absent from inspected registry and standard root | Exact Voidheart package triage only; not launched | Not launched | P3: resolve access to exact Xbox edition, not Steam base game | Session 1 private xbox-five-title-batch receipt |
-| BQVQTL3PCH05 | No Man's Sky | CrossOver + modified Xodus: in-world rendering recorded | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | Not launched | P1: recover exact working app/runtime/shim/Wine route | PAUSE-HANDOFF.md; Session 1 private xbox-title-test receipt |
+| BQVQTL3PCH05 | No Man's Sky | CrossOver + modified Xodus: in-world rendering recorded | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | Launch route attempted 21 Oct 05:55:59Z; service entry not found; no Wine/game start | P1: fix error attribution and isolated-account/legacy consumer integration; do not repeat unchanged | PAUSE-HANDOFF.md; private Session 2 NMS baseline receipt and matching service diagnostic |
 | 9P03JGQ4S1GC | The Elder Scrolls V: Skyrim Special Edition (PC) | No gameplay evidence reviewed | 20 Oct: absent from inspected registry and standard root | Public package and local-presence triage only | Not launched | P3: resolve legitimate account/package access before download | Session 1 private xbox-five-title-batch receipt |
 
 ## Complete MSI-family queue
@@ -281,7 +283,7 @@ above retain dated local observations and historical results separately.
 | 222 | 9N3LGKGF3CC2 | Nine Sols | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 223 | 9N51FH42VQDS | NINJA GAIDEN 2 Black | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 224 | 9PGFSLP8GWQK | NINJA GAIDEN: Ragebound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 225 | BQVQTL3PCH05 | No Man's Sky | MSIXVC | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | Not launched | Unknown | P1: recover exact working app/runtime/shim/Wine route |
+| 225 | BQVQTL3PCH05 | No Man's Sky | MSIXVC | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | Launch route attempted 21 Oct 05:55:59Z; service entry not found; no Wine/game start | Unknown | P1: fix error attribution and isolated-account/legacy consumer integration; do not repeat unchanged |
 | 226 | 9N0QWXC09MPT | Once Human | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 227 | 9N8CD0XZKLP4 | Ori and the Will of the Wisps | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 228 | 9PFWZMT737GG | Outbound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
