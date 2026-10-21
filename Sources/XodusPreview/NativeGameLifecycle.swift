@@ -4,7 +4,7 @@ import Foundation
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "419c38d9e9e3240bb7329b0064866e7cd95d4ef014748a583c8ff7d05a0543f3"
+    static let cliSHA256 = "ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
@@ -42,7 +42,8 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     }
 
     static let failureCodes: Set<String> = [
-        "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED"
+        "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
+        "POPUP_MONITOR_FAILED"
     ]
 
     var failureMessage: String {
@@ -51,6 +52,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED": "Your Xbox account changed. Refresh your library before trying again."
         case "CANCELLED": "The operation was cancelled. Partial files are kept; you can retry the installation."
         case "TIMEOUT": "The game did not finish starting before the launch probe ended."
+        case "POPUP_MONITOR_FAILED": "The launch window monitor failed. Open the log to review the cause; this does not establish whether the game ran successfully."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
     }

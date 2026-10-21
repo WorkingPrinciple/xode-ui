@@ -57,10 +57,23 @@ Optional per-title launch profiles live in the selected profile directory as
 ```
 
 The CLI receives the explicitly selected engine/registry, a game-and-engine
-private prefix, `--shim-dir` when present, and the profile environment. Missing
-profiles mean no additional shims or overrides; malformed or wrong-product
-profiles fail visibly. Registry engine environment and wineserver selection
+private prefix, mandatory `--shim-dir`, and the profile environment. The
+shim-only `Engines/profiles/native-web-shims-v1` directory supplies Windows.Web,
+XCurl and CA roots, with all three SHA-256 identities checked before every
+launch. It cannot replace either half of the separately selected runtime pair.
+Missing profiles mean no additional environment overrides, not missing sign-in
+components; malformed/wrong-product profiles or alternate shim directories fail
+visibly. Registry engine environment and wineserver selection
 remain the CLI's responsibility.
+
+An optional exact `engine` in a title profile binds its current qualified recipe
+ahead of historical gameplay evidence, while explicit provider selections still
+win. The local lifecycle candidate is pinned to CLI `ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d`,
+producer `d30de0f313fda91635f38dc714dc9040a20d3082`, tree
+`287a8b60f4289ec2f32cfe4bedb34be03b520ba3`. This candidate applies the
+selected registry engine's checksum-checked `prefix_registry_imports` after
+overlays and before launch, so a fresh Hollow Knight native-JSON prefix does
+not rely on registrations left by a historical test.
 
 Play does not require an engine-picker step. An explicit per-game/default
 provider remains an override. Otherwise the latest successful gameplay ledger

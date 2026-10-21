@@ -93,9 +93,43 @@ struct NativeLocalRuntime: Codable {
     }
 }
 
+struct NativeShimReference: Sendable {
+    let directory: URL
+    let hashes: [String: String]
+
+    static let approved = Self(directory: URL(fileURLWithPath: NSHomeDirectory())
+        .appendingPathComponent("Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1"),
+        hashes: [
+            "windows.web.dll": "da4059506a4763b1f5b584c99a36d3c8f2596d5c8d619346958a3ee1c04c3c2e",
+            "XCurl.dll": "238f94356df33e52a5656a763bdf65402f53bab5b47338c4ec91d9cd1163aac3",
+            "cacert.pem": "a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505"
+        ])
+
+    func validate() async throws {
+        guard Set(hashes.keys) == ["windows.web.dll", "XCurl.dll", "cacert.pem"] else {
+            throw NativeLaunchError.shimsUnavailable
+        }
+        let names = try await Task.detached {
+            try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        }.value
+        guard Set(names) == Set(hashes.keys) else { throw NativeLaunchError.shimsUnavailable }
+        for (name, expected) in hashes {
+            let url = directory.appendingPathComponent(name)
+            let bytes = try await Task.detached {
+                try GameScriptFiles.checkPath(url)
+                return try InstalledGameFiles.readRegular(url, maximumBytes: 67_108_864)
+            }.value
+            guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == expected else {
+                throw NativeLaunchError.shimsUnavailable
+            }
+        }
+    }
+}
+
 struct NativeTitleLaunchProfile: Codable {
     let version: Int
     let productID: String
+    let engine: String?
     let shimDirectory: String?
     let environment: [String: String]
 
@@ -129,10 +163,12 @@ struct NativeLaunchConfiguration {
     let prefix: URL
     let runtime: NativeRuntimeReference
     let profile: NativeTitleLaunchProfile?
+    let shims: NativeShimReference
 
     static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
                         defaults: UserDefaults = .standard,
                         runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
+                        shims: NativeShimReference = .approved,
                         provenEngine: String? = nil) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
@@ -141,8 +177,9 @@ struct NativeLaunchConfiguration {
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
+        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults)
         let entry = try selectEngine(registry: registry, provider: provider, defaults: defaults,
-                                     provenEngine: provenEngine)
+                                     provenEngine: profile?.engine ?? provenEngine)
         let engineName = entry.name
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable
@@ -150,8 +187,11 @@ struct NativeLaunchConfiguration {
         let prefix = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
             "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
-        return try Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
-                        profile: NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults))
+        if let selected = profile?.shimDirectory, selected != shims.directory.path {
+            throw NativeLaunchError.invalidProfile
+        }
+        return Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
+                        profile: profile, shims: shims)
     }
 
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
@@ -173,15 +213,14 @@ struct NativeLaunchConfiguration {
 
     func arguments() async throws -> [String] {
         let dll = try await runtime.validate()
-        var arguments = ["--engine", engine, "--registry", registry.path, "--prefix", prefix.path,
-                "--runtime-dll", dll.path]
-        if let shim = profile?.shimDirectory { arguments += ["--shim-dir", shim] }
-        return arguments
+        try await shims.validate()
+        return ["--engine", engine, "--registry", registry.path, "--prefix", prefix.path,
+                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path]
     }
 }
 
 enum NativeLaunchError: Error, LocalizedError {
-    case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile
+    case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable
     var errorDescription: String? {
         switch self {
         case .runtimeNotQualified:
@@ -193,7 +232,9 @@ enum NativeLaunchError: Error, LocalizedError {
         case .engineUnavailable:
             "The selected registry engine is no longer available. Restore it or choose another engine in Runtime settings."
         case .invalidProfile:
-            "The title's local launch profile is invalid. Check its product ID, shim folder and environment in the selected profile directory."
+            "The title's local launch profile is invalid. Check its product ID and use the verified native-web-shims-v1 folder, separate from the game runtime."
+        case .shimsUnavailable:
+            "The native sign-in components are missing or have changed. Restore native-web-shims-v1 before playing."
         }
     }
 }

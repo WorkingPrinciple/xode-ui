@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import CryptoKit
 import XodusManagement
 
 @MainActor
@@ -180,6 +181,15 @@ enum NativeLifecycleChecks {
         ]]).write(to: registry)
         defaults.set(registry.path, forKey: "Xodus.lifecycle.registry")
         defaults.set("synthetic", forKey: "Xodus.lifecycle.engine.standaloneWine")
+        let shimDirectory = root.appendingPathComponent("shims")
+        try FileManager.default.createDirectory(at: shimDirectory, withIntermediateDirectories: true)
+        var shimHashes: [String: String] = [:]
+        for name in ["windows.web.dll", "XCurl.dll", "cacert.pem"] {
+            let bytes = Data("Synthetic shim \(name)".utf8)
+            try bytes.write(to: shimDirectory.appendingPathComponent(name))
+            shimHashes[name] = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+        }
+        let shims = NativeShimReference(directory: shimDirectory, hashes: shimHashes)
         let automatic = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults)
         let proven = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
                                                             provenEngine: "synthetic")
@@ -209,20 +219,51 @@ enum NativeLifecycleChecks {
         } catch NativeLaunchError.engineUnavailable {
             check(true, "An unavailable proven engine is reported instead of silently substituting")
         }
-        let launch = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults)
+        let launch = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults,
+                                                           shims: shims)
         let args = try await launch.arguments()
-        check(args.contains(primary.path) && args.contains("synthetic") && !args.contains("--shim-dir"),
-              "A local launch keeps the explicit registry engine and selected pair without inferred shims")
+        check(args.contains(primary.path) && args.contains("synthetic")
+              && args.contains("--shim-dir") && args.contains(shimDirectory.path),
+              "Every MSIXVC launch requires the hash-verified native sign-in shims alongside its separate runtime pair")
         defaults.set(root.path, forKey: "Xodus.lifecycle.profileDirectory")
-        let profile = NativeTitleLaunchProfile(version: 1, productID: nativeGame.storeId,
-            shimDirectory: root.path, environment: ["CX_ENV": "synthetic override"])
+        let profile = NativeTitleLaunchProfile(version: 1, productID: nativeGame.storeId, engine: "synthetic",
+            shimDirectory: shimDirectory.path, environment: ["CX_ENV": "synthetic override"])
         let profileURL = root.appendingPathComponent(nativeGame.storeId + ".json")
         try JSONEncoder().encode(profile).write(to: profileURL)
-        let profiled = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults)
+        let profiled = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults,
+                                                             shims: shims)
         let profileArguments = try await profiled.arguments()
         check(profileArguments.contains("--shim-dir") && profiled.profile?.environment["CX_ENV"] == "synthetic override",
               "A product-bound data-only launch profile forwards its explicit shims and environment")
-        let wrongProfile = NativeTitleLaunchProfile(version: 1, productID: "OTHER0000001",
+        let bound = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
+            shims: shims, provenEngine: "obsolete-evidence-engine")
+        check(bound.engine == "synthetic",
+              "A title's current exact recipe binding takes precedence over its historical gameplay engine")
+        try Data("changed shim".utf8).write(to: shimDirectory.appendingPathComponent("windows.web.dll"))
+        do {
+            _ = try await profiled.arguments()
+            check(false, "A changed native sign-in shim cannot start a game")
+        } catch NativeLaunchError.shimsUnavailable {
+            check(true, "A changed native sign-in shim fails before launching instead of silently using Wine's built-in Web/JSON")
+        }
+        try Data("Synthetic shim windows.web.dll".utf8).write(to: shimDirectory.appendingPathComponent("windows.web.dll"))
+        let extra = shimDirectory.appendingPathComponent("xgameruntime.dll")
+        try Data("stale runtime".utf8).write(to: extra)
+        do {
+            _ = try await profiled.arguments()
+            check(false, "A shim directory cannot smuggle an old runtime")
+        } catch NativeLaunchError.shimsUnavailable {
+            check(true, "A shim directory containing extra runtime DLLs is rejected")
+        }
+        try FileManager.default.removeItem(at: extra)
+        try FileManager.default.removeItem(at: shimDirectory.appendingPathComponent("XCurl.dll"))
+        do {
+            _ = try await profiled.arguments()
+            check(false, "An incomplete native sign-in shim directory cannot launch")
+        } catch NativeLaunchError.shimsUnavailable {
+            check(true, "A missing native sign-in shim fails before launching")
+        }
+        let wrongProfile = NativeTitleLaunchProfile(version: 1, productID: "OTHER0000001", engine: nil,
             shimDirectory: nil, environment: [:])
         try JSONEncoder().encode(wrongProfile).write(to: profileURL)
         do {
