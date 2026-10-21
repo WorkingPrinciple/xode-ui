@@ -83,6 +83,17 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     pins = swift_pins("a" * 40, "b" * 40, {"sha256": "c" * 64, "bytes": 20},
                       {"sha256": "d" * 64, "bytes": 30})
     assert 'engineSHA256: "' + "c" * 64 in pins and 'helperSHA256: "' + "d" * 64 in pins
+    local_pins = swift_pins("a" * 40, "b" * 40, {"sha256": "c" * 64, "bytes": 20},
+                           {"sha256": "d" * 64, "bytes": 30}, "e" * 40, "f" * 40)
+    assert 'producerCommit: "' + "e" * 40 in local_pins
+    assert 'producerTree: "' + "f" * 40 in local_pins
+    for producer, tree in (("not-a-commit", "f" * 40), ("e" * 40, "invalid-tree")):
+        try:
+            swift_pins("a" * 40, "b" * 40, {"sha256": "c" * 64, "bytes": 20},
+                       {"sha256": "d" * 64, "bytes": 30}, producer, tree)
+            raise AssertionError("Malformed local source pin accepted")
+        except ValueError:
+            count += 1
     assert engine_hash not in pins and str(engine) not in pins
     count += 1
     stage = root / "neutral-stage"

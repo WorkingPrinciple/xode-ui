@@ -2,6 +2,29 @@
 
 ## Purpose and authorization
 
+### Supported local-candidate build
+
+`tools/build_local_candidate.py` builds an engine from a clean committed checkout
+with offline locked Cargo, compares its management contract with the app's,
+builds a clean app-source archive, and generates exact source and signed-byte
+pins in that archive only. It does not edit release producer pins, accept
+unsigned arbitrary external binaries, replace an installed app, launch sign-in,
+or enable Actions.
+
+```sh
+python3 tools/build_local_candidate.py \
+  --engine-source /absolute/engine-checkout \
+  --output-root /absolute/owned-output-directory \
+  --identity DEVELOPER_ID_CERT_SHA1
+```
+
+The output is **Ode to X Local Candidate.app**, accompanied by an observed
+source/build/package inventory. It uses secure-timestamped hardened Developer ID
+signatures, but is explicitly **not notarized or production-qualified**.
+This local sign-in candidate does not bundle the legacy game-launch capsule or
+Python runtime; their absence must not be confused with qualified gameplay.
+Both source checkouts must remain clean and unchanged throughout packaging. and authorization
+
 These are project packaging checks, not Apple requirements or an approval
 authority separate from the owner.
 

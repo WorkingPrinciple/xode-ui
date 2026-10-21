@@ -110,8 +110,9 @@ def verify_input(engine, engine_hash, engine_bytes, proof_hash, proof_bytes):
             "profile": PROFILE, "features": FEATURES}
 
 
-def swift_pins(app_source, app_tree, engine, helper):
+def swift_pins(app_source, app_tree, engine, helper, producer=PRODUCER, producer_tree=PRODUCER_TREE):
     source, tree = hex_value(app_source, 40), hex_value(app_tree, 40)
+    producer, producer_tree = hex_value(producer, 40), hex_value(producer_tree, 40)
     for record in (engine, helper):
         hex_value(record["sha256"], 64)
         positive(record["bytes"])
@@ -120,7 +121,7 @@ enum ShippingPairPins {{
     static let approved: ShippingPairIdentity? = ShippingPairIdentity(
         schemaVersion: 1,
         appSourceCommit: "{source}", appSourceTree: "{tree}",
-        producerCommit: "{PRODUCER}", producerTree: "{PRODUCER_TREE}",
+        producerCommit: "{producer}", producerTree: "{producer_tree}",
         engineSHA256: "{engine["sha256"]}", engineBytes: {engine["bytes"]},
         helperSHA256: "{helper["sha256"]}", helperBytes: {helper["bytes"]},
         helperVersion: 1, helperSourceCommit: "{source}")

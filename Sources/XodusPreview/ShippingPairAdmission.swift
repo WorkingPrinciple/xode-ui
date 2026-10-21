@@ -22,8 +22,8 @@ enum ShippingPairAdmission {
         guard let pins, pins.schemaVersion == 1,
               pins.appSourceCommit.range(of: "^[0-9a-f]{40}$", options: .regularExpression) != nil,
               pins.appSourceTree.range(of: "^[0-9a-f]{40}$", options: .regularExpression) != nil,
-              pins.producerCommit == "28f737df46b29cc195145425e3fd1397ebc09be3",
-              pins.producerTree == "1273ddaa50a6b3e77647aabb5bb170b1b525c922",
+              pins.producerCommit == ShippingProducerPins.commit,
+              pins.producerTree == ShippingProducerPins.tree,
               pins.helperVersion == 1, pins.helperSourceCommit == pins.appSourceCommit,
               pins.engineBytes > 0, pins.helperBytes > 0,
               bundle.bundleURL.pathExtension == "app" else {

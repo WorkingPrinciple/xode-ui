@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+"""Build an explicitly local, source-bound Developer ID candidate without replacing an installed app."""
+import argparse
+import json
+import os
+from pathlib import Path
+import plistlib
+import shutil
+import subprocess
+import tarfile
+import tempfile
+
+from shipping_pair import hex_value, owned_bytes, require, swift_pins
+from signing_identity import preflight, sign, verify_designated_requirement
+
+
+def run(arguments, cwd, log, environment=None):
+    result = subprocess.run(arguments, cwd=cwd, env=environment, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, timeout=1800)
+    with log.open("ab") as output:
+        output.write(("$ " + " ".join(map(str, arguments)) + "\n").encode())
+        output.write(result.stdout)
+    require(result.returncode == 0, "Local build failed; inspect " + str(log))
+    return result.stdout
+
+
+def source_identity(root):
+    def git(*arguments):
+        return subprocess.check_output(["git", *arguments], cwd=root, text=True).strip()
+    require(not git("status", "--porcelain", "--untracked-files=normal"),
+            "Commit the selected source changes before building a reproducible candidate")
+    return {"commit": hex_value(git("rev-parse", "HEAD"), 40),
+            "tree": hex_value(git("rev-parse", "HEAD^{tree}"), 40)}
+
+
+def build(engine_root, output_root, identity):
+    project = Path(__file__).resolve().parent.parent
+    engine_root = engine_root.resolve(strict=True)
+    require(output_root.is_absolute() and output_root.resolve(strict=True) == output_root,
+            "Use a canonical existing owned output directory")
+    metadata = output_root.stat()
+    require(metadata.st_uid == os.getuid() and metadata.st_mode & 0o022 == 0,
+            "Output directory must be owned and not group/world writable")
+    preflight(identity)
+    app_source, engine_source = source_identity(project), source_identity(engine_root)
+    contract = engine_root / "docs/contracts/management-v1.schema.json"
+    consumer = project / "Sources/XodusManagement/Resources/management-v1.schema.json"
+    require(contract.read_bytes() == consumer.read_bytes(),
+            "Engine and app management contracts differ; update the actual contract before packaging")
+    stage = Path(tempfile.mkdtemp(prefix="Ode-local-", dir=output_root))
+    stage.chmod(0o700)
+    log = stage / "build.log"
+    archive = stage / "source.tar"
+    with archive.open("xb") as output:
+        subprocess.run(["git", "archive", "--format=tar", app_source["commit"]],
+                       cwd=project, stdout=output, check=True)
+    source = stage / "source"
+    source.mkdir()
+    with tarfile.open(archive) as archived:
+        archived.extractall(source, filter="data")
+    environment = os.environ.copy()
+    environment.update(CARGO_TARGET_DIR=str(stage / "engine-target"), CARGO_INCREMENTAL="0",
+                       CARGO_BUILD_JOBS="1")
+    command = ["cargo", "build", "--release", "--offline", "--locked", "-p", "xodus-cli",
+               "--bin", "xodus-cli", "--target", "aarch64-apple-darwin",
+               "--no-default-features", "--message-format=json"]
+    messages = run(command, engine_root, log, environment)
+    artifacts = []
+    for line in messages.splitlines():
+        try:
+            frame = json.loads(line)
+        except ValueError:
+            continue
+        if frame.get("reason") == "compiler-artifact" and frame.get("target", {}).get("name") == "xodus-cli" \
+                and frame.get("executable"):
+            artifacts.append(frame)
+    require(len(artifacts) == 1, "Expected one actual CLI build artifact")
+    artifact = artifacts[0]
+    require(source_identity(engine_root) == engine_source, "Engine source changed during build")
+    unsigned, _ = owned_bytes(Path(artifact["executable"]).resolve(strict=True))
+    app = stage / "Ode to X Local Candidate.app"
+    macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
+    macos.mkdir(parents=True)
+    (resources / "XodusEngine").mkdir(parents=True)
+    engine = resources / "XodusEngine/xodus-cli"
+    shutil.copyfile(artifact["executable"], engine)
+    engine.chmod(0o755)
+    owned_bytes(engine, unsigned["sha256"], unsigned["bytes"])
+    sign(engine, "cli", identity, developer_id=True)
+    signed_engine, _ = owned_bytes(engine)
+    environment = os.environ.copy()
+    environment["XODUS_SHIPPING"] = "1"
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"],
+        source, log, environment)
+    binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"],
+                         source, log, environment).decode().strip())
+    helper = macos / "XodusAuthHost"
+    shutil.copyfile(binary_dir / "XodusAuthHost", helper)
+    helper.chmod(0o755)
+    sign(helper, "helper", identity, developer_id=True)
+    signed_helper, _ = owned_bytes(helper)
+    pins = source / "Sources/XodusPreview/ShippingPairPins.swift"
+    pins.write_text(swift_pins(app_source["commit"], app_source["tree"],
+                              signed_engine, signed_helper, engine_source["commit"], engine_source["tree"]))
+    producer_pins = source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    producer_pins.write_text(
+        '// Generated for this local candidate only.\nenum ShippingProducerPins {\n'
+        f'    static let commit = "{engine_source["commit"]}"\n'
+        f'    static let tree = "{engine_source["tree"]}"\n}}\n')
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
+        source, log, environment)
+    shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
+    (macos / "Xodus").chmod(0o755)
+    info = plistlib.loads((source / "tools/Info.plist").read_bytes())
+    info["CFBundleName"] = info["CFBundleDisplayName"] = "Ode to X Local Candidate"
+    with (app / "Contents/Info.plist").open("wb") as output:
+        plistlib.dump(info, output)
+    shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    run(["swiftc", "Sources/XodusCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
+         "-o", str(stage / "RenderAppIcon")], source, log)
+    run([str(stage / "RenderAppIcon"), str(resources / "Xodus.iconset")], source, log)
+    run(["iconutil", "-c", "icns", str(resources / "Xodus.iconset"),
+         "-o", str(resources / "Xodus.icns")], source, log)
+    shutil.copytree(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
+                    resources / "XodusAppFoundation_XodusManagement.bundle")
+    (resources / "XodusAuthHost.json").write_text(json.dumps({
+        "version": 1, "sha256": signed_helper["sha256"],
+        "sourceCommit": app_source["commit"]}, sort_keys=True) + "\n")
+    sign(app, "app", identity, developer_id=True)
+    run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
+    for path, kind in ((engine, "cli"), (helper, "helper"), (app, "app")):
+        verify_designated_requirement(path, kind, identity)
+    owned_bytes(engine, signed_engine["sha256"], signed_engine["bytes"])
+    owned_bytes(helper, signed_helper["sha256"], signed_helper["bytes"])
+    require(source_identity(project) == app_source and source_identity(engine_root) == engine_source,
+            "Source changed during candidate packaging")
+    inventory = {str(path.relative_to(app)): owned_bytes(path)[0]
+                 for path in sorted(app.rglob("*")) if path.is_file()}
+    receipt = {
+        "kind": "local-development-candidate", "productionQualified": False, "notarized": False,
+        "appSource": app_source, "engineSource": engine_source, "engineBuildCommand": command,
+        "actualCargoProfile": artifact["profile"], "unsignedEngine": unsigned,
+        "signedEngine": signed_engine, "signedHelper": signed_helper,
+        "certificateSHA1": identity.upper(), "generatedPins": owned_bytes(pins)[0],
+        "generatedProducerPins": owned_bytes(producer_pins)[0], "packageFiles": inventory,
+    }
+    (stage / "candidate-receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    print(app)
+    print(stage / "candidate-receipt.json")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--engine-source", type=Path, required=True)
+    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--identity", required=True)
+    args = parser.parse_args()
+    build(args.engine_source, args.output_root, args.identity)
