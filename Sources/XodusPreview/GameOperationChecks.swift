@@ -251,9 +251,6 @@ enum GameOperationChecks {
         _ = try GameScriptFiles.script(.serviceStatus, paths: paths)
         _ = try GameScriptFiles.read(paths.journal, missingAllowed: true)
         let store = InstalledGameStore(file: root.appendingPathComponent("registry/installed-games.json"))
-        let installed = InstalledGamesController(store: store, launchingDuration: .milliseconds(50),
-                                                 defaultEngine: { nil },
-                                                 detectAvailability: { RunnerAvailability([.crossover]) })
         let catalogue = OfflineGameCompatibility(version: 1, checkedAt: "2026-10-21T00:00:00Z",
             market: "GB", packageSource: "Synthetic unit-test classification", antiCheatReference: "Unit test",
             products: Dictionary(uniqueKeysWithValues: (1...5).map {
@@ -261,6 +258,9 @@ enum GameOperationChecks {
                  OfflineGameCompatibility.Entry(title: nil, packageFormat: "MSIXVC", pcPackageIdentified: true,
                     antiCheat: "none", technologyReferences: [], referencePlatforms: []))
             }))
+        let installed = InstalledGamesController(store: store, launchingDuration: .milliseconds(50),
+            defaultEngine: { nil }, detectAvailability: { RunnerAvailability([.crossover]) },
+            compatibilityCatalogue: catalogue)
         let operations = GameOperationsController(installed: installed, paths: paths,
                                                   compatibilityCatalogue: catalogue)
         check(operations.serviceStatus == nil && !operations.serviceBusy && operations.operation == nil

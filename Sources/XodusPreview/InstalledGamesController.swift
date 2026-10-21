@@ -48,6 +48,7 @@ final class InstalledGamesController: ObservableObject {
     private let defaultEngine: @Sendable () -> RuntimeProviderKind?
     private let detectAvailability: @Sendable () async -> RunnerAvailability
     private let inspectPackage: @Sendable (URL) throws -> PackageType
+    private let compatibilityCatalogue: OfflineGameCompatibility?
     private var playingTask: Task<Void, Never>?
     private var runToken: UUID?
     private var stopToken: UUID?
@@ -74,13 +75,15 @@ final class InstalledGamesController: ObservableObject {
          detectAvailability: @escaping @Sendable () async -> RunnerAvailability = {
              await Task.detached(priority: .utility) { RunnerAvailabilityDetector.detect() }.value
          },
-         inspectPackage: @escaping @Sendable (URL) throws -> PackageType = { try PackageInspector.detect(folder: $0) }) {
+         inspectPackage: @escaping @Sendable (URL) throws -> PackageType = { try PackageInspector.detect(folder: $0) },
+         compatibilityCatalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) {
         self.store = store
         self.launchingDuration = launchingDuration
         self.logDirectory = logDirectory
         self.defaultEngine = defaultEngine
         self.detectAvailability = detectAvailability
         self.inspectPackage = inspectPackage
+        self.compatibilityCatalogue = compatibilityCatalogue
     }
 
     func load() async {
@@ -230,6 +233,12 @@ final class InstalledGamesController: ObservableObject {
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
               accountAccessAllowed, games.contains(game) else { return }
+        let issues = LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
+            packageFormat: game.packageType?.label, compatibility: nil, catalogue: compatibilityCatalogue)
+        guard issues.isEmpty else {
+            playErrors[game.id] = "Not supported yet. " + issues.map(\.detail).joined(separator: " ")
+            return
+        }
         let interpreter: URL?
         do { interpreter = try LaunchAssociationAssets.bundledInterpreter() }
         catch {

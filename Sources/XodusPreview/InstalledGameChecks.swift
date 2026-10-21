@@ -10,6 +10,10 @@ import XodusCore
 enum InstalledGameChecks {
     static func run(check: (Bool, String) -> Void) async throws {
         try await LaunchAssociationChecks.run(check: check)
+        let catalogue = OfflineGameCompatibility(version: 1, checkedAt: "2026-10-21T00:00:00Z",
+            market: "GB", packageSource: "Synthetic unit-test classification", antiCheatReference: "Unit test",
+            products: ["FIXTURE00001": .init(title: nil, packageFormat: "MSIXVC", pcPackageIdentified: true,
+                antiCheat: "none", technologyReferences: [], referencePlatforms: [])])
         let config = """
         <?xml version="1.0"?>
         <Game><Identity Name="Fixture.Game" Version="1.2.3.4"/>
@@ -192,12 +196,36 @@ enum InstalledGameChecks {
         let library = InstalledGamesController(store: store, launchingDuration: .milliseconds(100),
                                                logDirectory: root.appendingPathComponent("logs"),
                                                defaultEngine: { nil },
-                                               detectAvailability: { RunnerAvailability([.crossover]) })
+                                               detectAvailability: { RunnerAvailability([.crossover]) },
+                                               compatibilityCatalogue: catalogue)
         await library.load()
         check(library.loaded && library.games.isEmpty && library.error == nil,
               "Absent private list loads as empty without importing or scanning games")
         await library.importGame(folder: folder, launcher: zero)
         guard let game = library.games.first else { throw InstalledGameError.invalidRegistry }
+        let unadmitted = InstalledGamesController(store: store, compatibilityCatalogue: nil)
+        await unadmitted.load()
+        unadmitted.setAccountAccessAllowed(true)
+        guard let forged = unadmitted.games.first else { throw InstalledGameError.invalidRegistry }
+        await unadmitted.play(forged)
+        check(unadmitted.runningGameID == nil && !unadmitted.launchStarted
+              && unadmitted.playErrors[forged.id]?.contains("Not supported yet") == true,
+              "UI-5: Direct play of an unadmitted installed title is refused before any launcher or engine starts")
+        for (format, antiCheat) in [("MSIXVC", "unknown"), ("MSIXVC", "Easy Anti-Cheat"), ("Appx", "none")] {
+            let rejectedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
+                market: catalogue.market, packageSource: catalogue.packageSource,
+                antiCheatReference: catalogue.antiCheatReference,
+                products: [game.storeId: .init(title: nil, packageFormat: format, pcPackageIdentified: true,
+                    antiCheat: antiCheat, technologyReferences: [], referencePlatforms: [])])
+            let rejected = InstalledGamesController(store: store, compatibilityCatalogue: rejectedCatalogue)
+            await rejected.load()
+            rejected.setAccountAccessAllowed(true)
+            guard let title = rejected.games.first else { throw InstalledGameError.invalidRegistry }
+            await rejected.play(title)
+            check(rejected.runningGameID == nil && !rejected.launchStarted
+                  && rejected.playErrors[title.id]?.contains("Not supported yet") == true,
+                  "UI-5: Direct play rejects \(format) with \(antiCheat) even when account access is allowed")
+        }
         NativeUIChecks.checkWelcomePrivacy(installed: library, check: check)
         check(game.publisher == "Fixture Publisher" && game.lastPlayedAt == nil && library.continuingGame == nil,
               "AC1.2/1.4: Import stores publisher but never invents a played session or hero")
@@ -396,7 +424,8 @@ enum InstalledGameChecks {
         let resilient = InstalledGamesController(store: store, launchingDuration: .milliseconds(100),
                                                 logDirectory: root.appendingPathComponent("logs"),
                                                 defaultEngine: { nil },
-                                                detectAvailability: { RunnerAvailability([.crossover]) })
+                                                detectAvailability: { RunnerAvailability([.crossover]) },
+                                                compatibilityCatalogue: catalogue)
         await resilient.load()
         resilient.setAccountAccessAllowed(true)
         await resilient.importGame(folder: folder, launcher: slow)
@@ -507,7 +536,7 @@ enum InstalledGameChecks {
         let routingStore = InstalledGameStore(file: routingFile)
         let routing = InstalledGamesController(store: routingStore, launchingDuration: .milliseconds(100),
             logDirectory: routingRoot, defaultEngine: { nil },
-            detectAvailability: { RunnerAvailability([.crossover]) })
+            detectAvailability: { RunnerAvailability([.crossover]) }, compatibilityCatalogue: catalogue)
         await routing.load()
         routing.setAccountAccessAllowed(true)
         await routing.importGame(folder: routingFolder, launcher: routingLauncher)
@@ -568,7 +597,7 @@ enum InstalledGameChecks {
         let nonDefault = InstalledGamesController(store: routingStore, defaultEngine: { .crossover },
             detectAvailability: {
                 RunnerAvailabilityDetector.detect(crossOver: .absent, runnerPaths: declaredPaths)
-            })
+            }, compatibilityCatalogue: catalogue)
         await nonDefault.load()
         nonDefault.setAccountAccessAllowed(true)
         await nonDefault.importGame(folder: routingFolder, launcher: selectorLauncher)

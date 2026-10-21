@@ -6,6 +6,25 @@ game download, install or gameplay.
 
 ## 0.1 compatibility and game action source candidate (2026-10-22)
 
+The UI-5 controller follow-up to `4317984` enforces the shared 0.1 policy
+inside `InstalledGamesController.play(_:)`, before runtime lookup or launch.
+Direct calls reject a missing catalogue, unknown anti-cheat, named anti-cheat
+and Appx even with account access allowed. Existing synthetic launch checks
+explicitly inject MSIXVC/none classification; production data is unchanged.
+This controller has no game-repair entry point: its setup-repair refresh only
+rechecks local launchability. Game repair remains admission-checked in
+`GameOperationsController`.
+
+Local follow-up commands, both exit 0:
+`swift run XodusPreview --game-operation-check` (455 checks,
+`s5-controller-admission-operations.log`) and
+`swift run XodusPreview --live-check` (1411 checks,
+`s5-controller-admission-native.log`). Logs use the session-artifact directory
+below. These use synthetic classifications/scripts and mock management children;
+they do not establish real service lifecycle or running-app acceptance.
+`XODUS_SHIPPING=1 swift build --jobs 1 --product XodusPreview` also exited 0
+(`s5-controller-admission-shipping.log`); compilation is not signed-app acceptance.
+
 Candidate `c5fc19c6be9bbfdfee13d0f38fe84d2fec5ec3a6` is pushed to
 `origin/dragoshont-s5-app-ui-4a2`. The inherited local-only base was pushed
 before editing. Local evidence, with GitHub Actions left disabled:
