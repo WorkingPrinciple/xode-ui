@@ -758,7 +758,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Matched every inventoried relative package path against the versioned anti-cheat filename/path signatures; file contents were not read or modified. No known path signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -773,6 +773,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/StardewValley-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -1278,13 +1279,14 @@
       "title": "Date Everything!"
     },
     "9N0H62KZ3BXV": {
-      "antiCheat": "unknown",
+      "antiCheat": "Warden",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
-        "mode": "unknown",
+        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Warden. Its Linux status is not a macOS/Xodus runtime acceptance result.",
+        "mode": "named-technology",
         "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-        "type": "unknown"
+        "sourceType": "awacy",
+        "type": "public-source"
       },
       "launchProof": [],
       "packageFormat": "unknown",
@@ -1297,7 +1299,7 @@
       },
       "pcPackageIdentified": false,
       "referencePlatforms": [],
-      "supported01": null,
+      "supported01": false,
       "technologyReferences": [],
       "title": "Diablo® IV PC"
     },
@@ -5296,7 +5298,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Matched every inventoried relative package path against the versioned anti-cheat filename/path signatures; file contents were not read or modified. No known path signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -5311,6 +5313,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/Mixtape-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -7779,11 +7782,11 @@
     "9NTM9HXNLSZX": {
       "antiCheat": "Easy Anti-Cheat",
       "antiCheatEvidence": {
-        "checkedAt": "2026-10-19T22:29:56Z",
-        "method": "Publisher-authored evidence record names this anti-cheat for the Windows PC title. Kernel/user mode was not established.",
-        "mode": "unknown",
-        "scope": "Microsoft Store and Xbox PC versions include EAC. The publisher also documents a separate mods/limited-services launch mode without public matchmaking. Neither mode has been qualified by Ode to X.",
-        "source": "https://support.halowaypoint.com/hc/en-us/articles/360037475251-How-to-Launch-Halo-The-Master-Chief-Collection-with-Easy-Anti-Cheat-EAC-Disabled",
+        "checkedAt": "2026-10-21",
+        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Easy Anti-Cheat. Its Linux status is not a macOS/Xodus runtime acceptance result.",
+        "mode": "named-technology",
+        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+        "sourceType": "awacy",
         "type": "public-source"
       },
       "launchProof": [],
@@ -7914,7 +7917,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Scanned every inventoried relative package path using the versioned anti-cheat signature set; no known signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -7929,6 +7932,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/REPLACED-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -9462,7 +9466,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Matched every inventoried relative package path against the versioned anti-cheat filename/path signatures; file contents were not read or modified. No known path signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -9477,6 +9481,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/OblivionGOTY2009-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -9566,13 +9571,14 @@
       "title": "Quake 4"
     },
     "9P2N57MC619K": {
-      "antiCheat": "unknown",
+      "antiCheat": "Easy Anti-Cheat",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
-        "mode": "unknown",
+        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Easy Anti-Cheat. Its Linux status is not a macOS/Xodus runtime acceptance result.",
+        "mode": "named-technology",
         "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-        "type": "unknown"
+        "sourceType": "awacy",
+        "type": "public-source"
       },
       "launchProof": [],
       "packageFormat": "MSIXVC",
@@ -9588,7 +9594,7 @@
       },
       "pcPackageIdentified": true,
       "referencePlatforms": [],
-      "supported01": null,
+      "supported01": false,
       "technologyReferences": [],
       "title": "Sea of Thieves: 2026 Edition"
     },
@@ -9882,7 +9888,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Matched every inventoried relative package path against the versioned anti-cheat filename/path signatures; file contents were not read or modified. No known path signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -9897,6 +9903,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/KingdomComeDeliverance-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -13186,7 +13193,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Scanned every inventoried relative package path using the versioned anti-cheat signature set; no known signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -13201,6 +13208,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/MinecraftJavaEdition-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction; Minecraft Windows entitlement stub, not Java runtime",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -13354,7 +13362,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Matched every inventoried relative package path against the versioned anti-cheat filename/path signatures; file contents were not read or modified. No known path signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -13369,6 +13377,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/Subnautica2-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -13484,7 +13493,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Matched every inventoried relative package path against the versioned anti-cheat filename/path signatures; file contents were not read or modified. No known path signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -13499,6 +13508,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/Balatro-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -14371,7 +14381,7 @@
       "antiCheat": "unknown",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Matched every inventoried relative package path against the versioned anti-cheat filename/path signatures; file contents were not read or modified. No known path signature matched. The public evidence reviewed does not establish absence of anti-cheat, so the classification remains unknown.",
+        "method": "Rescanned all available package paths with the versioned anti-cheat filename signature set, including Easy Anti-Cheat, BattlEye, Vanguard, GameGuard and XIGNCODE. No known filename matched. Opaque executable contents and remote components are not cleared by a path scan. Previously cited public checks did not affirm absence; unknown is retained.",
         "mode": "unknown",
         "packageScan": {
           "complete": true,
@@ -14386,6 +14396,7 @@
           },
           "result": "no-known-signature",
           "root": "~/Games/Xodus/LIMBO-Xbox",
+          "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -15455,8 +15466,8 @@
     "items": [
       {
         "entitlementStatus": "account-download-reported",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1pkgrgg/hogwarts_legacy_free_on_epic_game_store/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/990080?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 92,
         "productID": "9MT5NJ5W7B8Z",
         "publicScreeningStatus": "confirmed-none-package-and-public-evidence",
@@ -15471,39 +15482,48 @@
       },
       {
         "entitlementStatus": "account-install-reported",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1x4hs9d/no_mans_sky_is_coming_to_iphone_ipad/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/275850?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 33.332,
         "productID": "BQVQTL3PCH05",
         "publicScreeningStatus": "confirmed-none-package-and-public-evidence",
         "rank": 2,
-        "releaseStatus": "unverified",
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "12 Aug, 2016"
+        },
         "sourceList": "top50Mac",
         "sourceRank": 14,
         "title": "No Man's Sky"
       },
       {
         "entitlementStatus": "account-install-reported",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1wu10nr/a_game_about_digging_a_hole_sequel_announced_for/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/3244220?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 44.226,
         "productID": "9NGLST31DG26",
         "publicScreeningStatus": "confirmed-none-package-and-public-evidence",
         "rank": 3,
-        "releaseStatus": "unverified",
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "7 Feb, 2025"
+        },
         "sourceList": "provisionalGamePassPriorityList",
         "sourceRank": 15,
         "title": "A Game About Digging A Hole™"
       },
       {
         "entitlementStatus": "account-install-reported",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1wnzx9r/for_me_the_best_metroidvania_of_the_year_well/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/3699590?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 59.831,
         "productID": "9PLH7R84GJWP",
         "publicScreeningStatus": "confirmed-none-package-and-public-evidence",
         "rank": 4,
-        "releaseStatus": "unverified",
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "22 Sep, 2026"
+        },
         "sourceList": "provisionalGamePassPriorityList",
         "sourceRank": 12,
         "title": "Well Dweller"
@@ -15512,13 +15532,16 @@
         "entitlementStatus": "unverified",
         "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Balatro",
         "nativeMacStatus": "native Mac version exists",
-        "popularityEvidenceURL": "https://www.reddit.com/r/pcgaming/comments/1hfjo7a/balatro_dev_swings_at_pegi_for_rating_it_18/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/2379780?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 51.934,
         "productID": "9PK087LNGJC5",
         "publicScreeningStatus": "public-evidence-incomplete",
         "rank": 5,
-        "releaseStatus": "unverified",
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "20 Feb, 2024"
+        },
         "sourceList": "top50Overall",
         "sourceRank": 30,
         "title": "Balatro"
@@ -15527,13 +15550,16 @@
         "entitlementStatus": "unverified",
         "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Limbo",
         "nativeMacStatus": "native Mac version exists",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1oc5j7c/i_am_happy_to_announce_the_official_launch_of_my/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/48000?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 42.806,
         "productID": "9PNG83MDD6SH",
         "publicScreeningStatus": "public-evidence-incomplete",
         "rank": 6,
-        "releaseStatus": "unverified",
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "2 Aug, 2011"
+        },
         "sourceList": "top50Mac",
         "sourceRank": 24,
         "title": "LIMBO"
@@ -15542,21 +15568,24 @@
         "entitlementStatus": "unverified",
         "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Stardew_Valley",
         "nativeMacStatus": "native Mac version exists",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/lwtkkp/shoutout_to_stardew_and_celeste/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/413150?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 46.868,
         "productID": "9MWR1NC6VQ6L",
         "publicScreeningStatus": "public-evidence-incomplete",
         "rank": 7,
-        "releaseStatus": "unverified",
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "26 Feb, 2016"
+        },
         "sourceList": "top50Mac",
         "sourceRank": 21,
         "title": "Stardew Valley"
       },
       {
         "entitlementStatus": "account-install-reported",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1t0pcqg/recommend_me_games_for_my_macbook_air_m4/ojalwc0/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1663850?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 76.853,
         "productID": "9NV3L234VGXD",
         "publicScreeningStatus": "public-evidence-incomplete",
@@ -15571,21 +15600,24 @@
       },
       {
         "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1t6j1f6/an_hour_into_mixtape_and_the_nostalgia_is_already/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/2582320?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 61.48,
         "productID": "9NH0MSG29X6L",
         "publicScreeningStatus": "likely-none-public-sources",
         "rank": 9,
-        "releaseStatus": "unverified",
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "7 May, 2026"
+        },
         "sourceList": "provisionalGamePassPriorityList",
         "sourceRank": 11,
         "title": "Mixtape"
       },
       {
         "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1tg5bg1/subnautica_2_mac_release/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1962700?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 164.292,
         "productID": "9PJPCB188SVG",
         "publicScreeningStatus": "likely-none-public-sources",
@@ -15600,8 +15632,8 @@
       },
       {
         "entitlementStatus": "account-download-reported",
-        "popularityEvidenceURL": "https://www.reddit.com/r/gaming/comments/s9culs/pokemon_2022_vs_oblivion_2006/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/22330?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 97.796,
         "productID": "9P2J5D12GJL5",
         "publicScreeningStatus": "likely-none-public-sources",
@@ -15633,8 +15665,8 @@
       },
       {
         "entitlementStatus": "account-download-reported",
-        "popularityEvidenceURL": "https://www.reddit.com/r/gaming/comments/1wxnoqq/kingdom_come_deliverance_studio_cofounder_says_a/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/379430?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 67.194,
         "productID": "9P3T7HVKM6D0",
         "publicScreeningStatus": "likely-none-public-sources",
@@ -15648,44 +15680,257 @@
         "title": "Kingdom Come: Deliverance"
       },
       {
-        "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/pcgaming/comments/1wrtdqx/valor_mortis_is_the_biggest_game_our_studio_has/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 125.086,
-        "productID": "9P861V1542BL",
-        "publicScreeningStatus": "likely-none-public-sources",
-        "rank": 14,
-        "releaseStatus": "unverified",
-        "sourceList": "provisionalGamePassPriorityList",
-        "sourceRank": 3,
-        "title": "Valor Mortis"
-      },
-      {
         "entitlementStatus": "account-download-reported",
         "packageScanBlocker": "SkyrimSELauncher.exe.manifest is missing from the installed root; no complete-package scan recorded.",
         "packageScanStatus": "blocked-incomplete-root",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1x9wckh/skyrimmt_skyrim_on_apple_silicon_with_a_native/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/489830?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
         "priorityScore": 100.892,
         "productID": "9P03JGQ4S1GC",
         "publicScreeningStatus": "public-evidence-incomplete",
-        "rank": 15,
+        "rank": 14,
         "releaseStatus": {
           "coming_soon": false,
-          "date": "28 Oct, 2016"
+          "date": "27 Oct, 2016"
         },
         "sourceList": "provisionalGamePassPriorityList",
         "sourceRank": 4,
         "title": "The Elder Scrolls V: Skyrim Special Edition (PC)"
       },
       {
+        "entitlementStatus": "account-download-reported",
+        "packageScanBlocker": "COCInfo.dat is missing from the installed root; no complete-package scan recorded.",
+        "packageScanStatus": "blocked-incomplete-root",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/377160?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 36.09,
+        "productID": "C3KLDKZBHNCZ",
+        "publicScreeningStatus": "public-evidence-incomplete",
+        "rank": 15,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "9 Nov, 2015"
+        },
+        "sourceList": "provisionalGamePassPriorityList",
+        "sourceRank": 17,
+        "title": "Fallout 4"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1173800?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 3.330391,
+        "productID": "9N8C07SS8C9D",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 16,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "8 Sep, 2021"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 67,
+        "title": "FINAL FANTASY IV"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/875800?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 1.931932,
+        "productID": "9NGH1FK0RJGL",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 17,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "25 Feb, 2020"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 73,
+        "title": "Wasteland Remastered"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/205100?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 1.880891,
+        "productID": "9P1N07XDL1D4",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 18,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "11 Oct, 2012"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 48,
+        "title": "Dishonored® Definitive Edition (PC)"
+      },
+      {
         "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/pcgaming/comments/1q9exg5/kingdom_come_deliverance_2_producer_says_only/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 100.482,
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1215940?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 1.370703,
+        "productID": "9NFB47H2SDRX",
+        "publicScreeningStatus": "likely-none-public-sources",
+        "rank": 19,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "8 Oct, 2026"
+        },
+        "sourceList": "provisionalGamePassPriorityList",
+        "sourceRank": 14,
+        "title": "Forever Ago"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1252330?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 1.089456,
+        "productID": "9P5Z4530318L",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 20,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "13 Sep, 2021"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 50,
+        "title": "DEATHLOOP"
+      },
+      {
+        "entitlementStatus": "provisional-game-pass-candidate",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/2001760?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.900026,
+        "productID": "9NXWSWBM4H6T",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 21,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "3 Aug, 2026"
+        },
+        "sourceList": "provisionalGamePassPriorityList",
+        "sourceRank": 16,
+        "title": "Beast of Reincarnation"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/3043580?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.869239,
+        "productID": "9NCJWHHMVHR0",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 22,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "17 Oct, 2025"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 74,
+        "title": "Keeper"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/3064040?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.812817,
+        "productID": "9NQVHHW88XW9",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 23,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "14 Oct, 2026"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 57,
+        "title": "Bluey's Happy Snaps"
+      },
+      {
+        "entitlementStatus": "provisional-game-pass-candidate",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/2828710?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.67031,
+        "productID": "9P861V1542BL",
+        "publicScreeningStatus": "likely-none-public-sources",
+        "rank": 24,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "13 Oct, 2026"
+        },
+        "sourceList": "provisionalGamePassPriorityList",
+        "sourceRank": 3,
+        "title": "Valor Mortis"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1934570?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.523207,
+        "productID": "9NJCVGS6T30K",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 25,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "8 Apr, 2025"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 55,
+        "title": "South of Midnight"
+      },
+      {
+        "entitlementStatus": "provisional-game-pass-candidate",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1466860?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.467707,
+        "productID": "9N94NCGM1Q2N",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 26,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "28 Oct, 2021"
+        },
+        "sourceList": "provisionalGamePassPriorityList",
+        "sourceRank": 19,
+        "title": "Age of Empires IV: Anniversary Edition"
+      },
+      {
+        "entitlementStatus": "provisional-game-pass-candidate",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/2713000?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.437357,
+        "productID": "9PPBNCXP0096",
+        "publicScreeningStatus": "likely-none-public-sources",
+        "rank": 27,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "27 Aug, 2026"
+        },
+        "sourceList": "provisionalGamePassPriorityList",
+        "sourceRank": 8,
+        "title": "Resonance: A Plague Tale Legacy"
+      },
+      {
+        "entitlementStatus": "entitlement-unverified",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/2069250?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.359387,
+        "productID": "9NF6XPSBTTGB",
+        "publicScreeningStatus": "public-screening-pending",
+        "rank": 28,
+        "releaseStatus": {
+          "coming_soon": false,
+          "date": "13 Feb, 2026"
+        },
+        "sourceList": "nativeUnverifiedCandidates",
+        "sourceRank": 71,
+        "title": "High On Life 2"
+      },
+      {
+        "entitlementStatus": "provisional-game-pass-candidate",
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/1771300?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.35415,
         "productID": "9N4W31HSMVVD",
         "publicScreeningStatus": "likely-none-public-sources",
-        "rank": 16,
+        "rank": 29,
         "releaseStatus": {
           "coming_soon": false,
           "date": "4 Feb, 2025"
@@ -15696,196 +15941,22 @@
       },
       {
         "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1w0y4wd/resonance_a_plague_tale_legacy_is_awesome_really/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 77.488,
-        "productID": "9PPBNCXP0096",
-        "publicScreeningStatus": "likely-none-public-sources",
-        "rank": 17,
-        "releaseStatus": "unverified",
-        "sourceList": "provisionalGamePassPriorityList",
-        "sourceRank": 8,
-        "title": "Resonance: A Plague Tale Legacy"
-      },
-      {
-        "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1qk4aaf/whos_hyped_for_fable/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 47.941,
+        "popularityEvidenceURL": "https://store.steampowered.com/appreviews/2769570?json=1&language=all&purchase_type=all&num_per_page=0",
+        "popularityMetric": "Steam total user reviews, not player count or Xbox popularity",
+        "priorityScore": 0.0,
         "productID": "9PMN4DGRT1LN",
         "publicScreeningStatus": "likely-none-public-sources",
-        "rank": 18,
-        "releaseStatus": "unverified",
+        "rank": 30,
+        "releaseStatus": {
+          "coming_soon": true,
+          "date": "23 Feb, 2027"
+        },
         "sourceList": "provisionalGamePassPriorityList",
         "sourceRank": 13,
         "title": "Fable"
-      },
-      {
-        "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1x00cgu/coming_to_xbox_game_pass_battlefield_6_valor/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 44.229,
-        "productID": "9NFB47H2SDRX",
-        "publicScreeningStatus": "likely-none-public-sources",
-        "rank": 19,
-        "releaseStatus": "unverified",
-        "sourceList": "provisionalGamePassPriorityList",
-        "sourceRank": 14,
-        "title": "Forever Ago"
-      },
-      {
-        "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1v2hro5/coming_to_xbox_game_pass_halo_campaign_evolved/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 41.501,
-        "productID": "9NXWSWBM4H6T",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 20,
-        "releaseStatus": "unverified",
-        "sourceList": "provisionalGamePassPriorityList",
-        "sourceRank": 16,
-        "title": "Beast of Reincarnation"
-      },
-      {
-        "entitlementStatus": "account-download-reported",
-        "packageScanBlocker": "COCInfo.dat is missing from the installed root; no complete-package scan recorded.",
-        "packageScanStatus": "blocked-incomplete-root",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1v9il45/new_to_mac_whats_ur_favorite_games/p0g0r2q/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 36.09,
-        "productID": "C3KLDKZBHNCZ",
-        "publicScreeningStatus": "public-evidence-incomplete",
-        "rank": 21,
-        "releaseStatus": {
-          "coming_soon": false,
-          "date": "10 Nov, 2015"
-        },
-        "sourceList": "provisionalGamePassPriorityList",
-        "sourceRank": 17,
-        "title": "Fallout 4"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/pcgaming/comments/1wwzgl7/fallen_london_is_where_the_writers_of_baldurs/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 31.199,
-        "productID": "9P1N07XDL1D4",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 22,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 48,
-        "title": "Dishonored® Definitive Edition (PC)"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1s87meh/what_is_it_deathloop_for_me/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 30.162,
-        "productID": "9P5Z4530318L",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 23,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 50,
-        "title": "DEATHLOOP"
-      },
-      {
-        "entitlementStatus": "provisional-game-pass-candidate",
-        "popularityEvidenceURL": "https://www.reddit.com/r/macgaming/comments/1w9hz08/gpt6_astra_just_got_age_of_empires_iv_running_at/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 26.612,
-        "productID": "9N94NCGM1Q2N",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 24,
-        "releaseStatus": {
-          "coming_soon": false,
-          "date": "28 Oct, 2021"
-        },
-        "sourceList": "provisionalGamePassPriorityList",
-        "sourceRank": 19,
-        "title": "Age of Empires IV: Anniversary Edition"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1k628id/xbox_game_pass_is_absolutely_on_fire_right_now/momm5ot/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 24.542,
-        "productID": "9NJCVGS6T30K",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 25,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 55,
-        "title": "South of Midnight"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1x67ozn/blueys_happy_snaps_is_now_available_on_game_pass/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 22.761,
-        "productID": "9NQVHHW88XW9",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 26,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 57,
-        "title": "Bluey's Happy Snaps"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1rw67pr/coming_to_xbox_game_pass_long_dark_disco_elysium/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 21.025,
-        "productID": "9N8C07SS8C9D",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 27,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 67,
-        "title": "FINAL FANTASY IV"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1r5g5vi/this_is_an_actual_side_quest_in_high_on_life_2/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 20.959,
-        "productID": "9NF6XPSBTTGB",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 28,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 71,
-        "title": "High On Life 2"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1sn1yxc/wasteland_remastered_for_free/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 20.871,
-        "productID": "9NGH1FK0RJGL",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 29,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 73,
-        "title": "Wasteland Remastered"
-      },
-      {
-        "entitlementStatus": "entitlement-unverified",
-        "popularityEvidenceURL": "https://www.reddit.com/r/XboxGamePass/comments/1sgzt15/graveyard_keeper_for_free/",
-        "popularityMetric": "weighted Reddit attention; not player counts",
-        "priorityScore": 20.792,
-        "productID": "9NCJWHHMVHR0",
-        "publicScreeningStatus": "public-screening-pending",
-        "rank": 30,
-        "releaseStatus": "unverified",
-        "sourceList": "nativeUnverifiedCandidates",
-        "sourceRank": 74,
-        "title": "Keeper"
       }
     ],
-    "rankingMethod": "Prioritize mandatory Hogwarts/NMS, then installed and small staging roots (including the three user-selected S8 products), before remaining weighted Reddit-attention candidates. Scores are attention signals, not player counts. Package presence does not prove entitlement or release; unknown anti-cheat remains unverified."
+    "rankingMethod": "Already-installed retests first, retaining their prior relative order. Remaining titles rank released ahead of unreleased, exclude named anti-cheat, prefer known no-sign-in over unknown over required, then known catalog size, then descending log10(1 + Steam total reviews)/(1 + Windows MSIXVC catalog download GiB/10). Steam review count is an audience proxy, not player count or Xbox popularity. Unknown sign-in/anti-cheat is not a no-sign-in/no-cheat claim; preorders/stubs go last."
   },
   "version": 1
 }
