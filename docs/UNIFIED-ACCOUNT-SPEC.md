@@ -5,6 +5,27 @@ Microsoft sign-in for games, PC library, Xbox profile and achievements where the
 provider authorizes those capabilities. This document does not promise ownership,
 downloadability, compatibility or gameplay merely because authentication succeeds.
 
+### Developer ID provisioning checkpoint (21 October evening)
+
+The owner completed native Xcode Apple-account authentication and explicitly
+authorized certificate creation and candidate signing. Xcode created a valid
+Developer ID Application identity for team `M62Z4M5EUY`, certificate SHA1
+`410914520BCC840C0125D3826CCF0F247F603321`. The existing unsigned source candidate
+SHA256 `723d91c83bd53fad10daca3b7cef99aea551c14e0858a39030301a21268e61f6`
+was copied to a separate private stage and signed through the repository's
+fixed-identifier/fixed-leaf signing policy. Its signed SHA256 is
+`baaec709352ec81e63b8259e729750953511e45610caee5ac0b4e238f7a12ff9`.
+Strict signature and designated-requirement verification passed.
+
+This is an engine signing candidate, not a packaged app, notarized distribution,
+hardened-runtime qualification, stable team-based requirement migration or proof
+of saved Keychain access. The current policy still pins the exact certificate.
+The installed app and its self-signed engine were untouched and still passed
+strict deep verification. No shipping pins or sealed-input approvals changed.
+The owner's subsequent request to revoke "the other" certificate was ambiguous
+between an older Apple Development certificate shown by Xcode and the local
+Xodus identity; neither was revoked or removed without identifying the target.
+
 ### Current implementation boundary
 
 The first source slice adds `ode.account.read.v1` to the paired Rust producer
