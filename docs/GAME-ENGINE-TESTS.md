@@ -1,5 +1,64 @@
 # Local game-engine qualification
 
+## Session register and live ledger
+
+| Session | Window | State |
+|---|---|---|
+| 1 | 20 October 2026, 08:48-20:48 local (+03:00) | Closed; five standalone controls attempted, zero Xbox game launches in this session. Historical Xbox successes remain separate. |
+| 2 | Renewed 21 October 2026; ends 22 October at 08:28:46 local (+03:00) | Active investigation of the joint product; previous working configurations are the baseline. Brogue and Cataclysm control processes were attempted before the scope correction; neither has a reviewed visual result yet. |
+| 3 | Planned for 22 October 2026 | Planned only. No results, automatic extension, or additional wake/security-setting changes are implied. |
+
+The full package-filtered title queue and reviewed per-title state are in
+[the game test ledger](GAME-TEST-LEDGER.md). Its scope is the checked public
+catalogue, not an account entitlement inventory. Session 2 includes recovery
+and corrective work; it must not inherit Session 1's conclusions uncritically.
+
+## Testing constitution
+
+1. Test **Ode to X together with our modified Xodus services/libraries, built
+   shims and the exact Wine/CrossOver build**. Inspect local modifications rather
+   than silently substituting stock dependencies.
+2. Aim to find, reproduce and fix defects, not maximize process-start or document
+   counts. Fix the responsible layer and verify the integration across repositories.
+   A harness fix is not a game fix or proof that the app works.
+3. Recover the historically working NMS and Hogwarts CrossOver configurations
+   first. Preserve them before engine substitutions. Prefer free Wine, rotate
+   supported free builds where useful, and retain CrossOver as a valid fallback.
+4. Spend at most 15 minutes of active debugging per title across free engines,
+   then at most 15 minutes on CrossOver. Record start/end and accumulated active
+   time, including retries. Downloads and idle windows are not gameplay or debugging.
+5. Inventory the catalogue before claiming coverage. For the `MSI*` queue require
+   explicit PC-package evidence and format `MSIXVC` or `MSIX`. Keep Appx, EAppx
+   and unidentified formats outside that queue; do not equate MSIXVC with MSI.
+6. Separate public package evidence, authenticated access, installed residency,
+   authorization, executable load, graphics, menu, gameplay and endurance.
+   Unknown access never means unowned; no process/window alone proves gameplay.
+7. Capture and inspect the **full desktop on every attached display**, before
+   and after launches and significant inputs. Include separate error dialogs;
+   preserve display geometry, timestamps and exact owned process/window identities.
+   An occluded/offscreen or locked display is unobservable, not a graphics failure.
+8. Make every blocker falsifiable: identify the failing stage, observed error,
+   exact configuration, attempted supported remedy and the next action or required
+   permission. A hash mismatch is drift evidence, not proof of incompatibility.
+   Stop repeating an unchanged hypothesis after two matching failures.
+9. Preserve known-working source and artifacts, saves and account state.
+   Record cross-repository revisions, dirty changes, engine/shim hashes, settings,
+   evidence, result and rollback for each experiment. Never overwrite prior receipts.
+10. Bound every run and clean up only verified research-owned processes.
+    Capture termination/cleanup results, including surviving debuggers.
+    A mock cleanup check is not proof of actual post-run cleanup.
+11. Do not bypass credential, consent, licence, security or shipping-admission
+    rules. Do not enable the disabled GitHub Actions workflow. Keep account data,
+    keys and full-desktop evidence private; public package data is not entitlement.
+12. A fix is accepted only after the original failure is reproduced, the changed
+    configuration passes the affected behavior, and the preserved baseline is
+    checked for regression. Otherwise label it source-only, harness-only or
+    unverified. No production/login-readiness claim follows from catalogue triage.
+13. Use the renewed window actively on dependency-ready work. Do not repeat
+    status-only wakeups for hours. Record a genuine consent/availability hold
+    and work on another admissible joint-product slice. At the deadline stop,
+    preserve the handoff and attempt the scheduled five-minute lock restoration.
+
 ## Joint delivery scope
 
 Owner clarification, 21 October 2026: **Ode to X and the modified Xodus
@@ -20,7 +79,30 @@ diagnostic evidence, not joint-product acceptance. Preserve existing credential,
 security and shipping-admission requirements; joint scope does not authorize
 unattended credential access or replacing unrelated live services.
 
-### Reproducibility and regression tracking
+## Fix and correction ledger
+
+These entries distinguish product code, diagnostic harness work, supported
+configuration changes and corrected reporting. None is a new Xbox gameplay
+qualification.
+
+| Item | Layer / session | Change and observed result | Remaining limit |
+|---|---|---|---|
+| Missing metadata treated as confirmed PC-package absence | Native app; before Session 1, `af91e25` | Tri-state package listing, related Library/Discover/detail presentation and footer corrections committed; prior source checks recorded | Not an engine, entitlement or game-launch fix |
+| OpenTTD hardware-acceleration warning / graphics setup | Standalone control; Session 1 | Explicit win32/software graphics and OpenGFX configuration produced a visible running world | No Xbox package, audio, controller or endurance acceptance |
+| SuperTux startup/input impediments | Standalone control/harness; Session 1 | Explicit Windows data/user paths, software renderer, documented offline config and scoped input helper reached a level; synthetic movement/hit observed | No physical input, Xbox package, audio or endurance acceptance |
+| Unciv missing physical fonts on stable Wine 11.0 | Standalone research prefix; Session 1 | Six fonts already bundled with that Wine build copied into its research prefix; language-selection screen rendered | No playable turn or joint-product result |
+| Game-window crops missed separate errors | Evidence harness; Session 1 | Full-desktop captures exposed Luanti debugger dialogs | All-display coverage and occlusion still need review; do not promote primary-screen capture alone |
+| Debuggers survived game/server cleanup | Research cleanup; Session 1 | Exact residual debugger ownership verified and those PIDs terminated | One cleanup observation, not proof all future errors are automatically reaped |
+| Locked-display black screenshots misinterpreted | Reporting/harness; Session 1 | Outcomes corrected to unobservable; guard prevents unobservable visual assertions | Lock does not generally prevent OS game launch; hours of repeated lock checks were not progress |
+| Runner initial-lock/finally cleanup defects | Evidence harness; Session 1 | Initial lock-state failure corrected; bounded cleanup paths added; four mocked checks and real pre-launch lock refusal recorded | Mock coverage is not actual game lifecycle/cleanup qualification |
+| Service drift treated as a universal launch blocker | Investigation/reporting; Session 2 correction | Restored historical NMS/Hogwarts baseline and identified modified fork/private socket support | Current consumer pairing and working route still require recovery; no live incompatibility proven from hashes |
+| No complete package-filtered queue | Test tracking; Session 2 | Deterministic ledger now lists all 374 matching catalogue IDs with untested/unknown states preserved | A queue is not 374 tests or proof of current account access |
+
+Confirmed joint-product Xbox gameplay fixes from Sessions 1-2: **none yet**.
+Findings that have only a source patch or configuration remedy must retain that
+label until the failing joint flow is rerun.
+
+## Reproducibility and regression tracking
 
 Preserve the known-working joint configuration before changing it. For each
 experiment or fix, retain the exact repository commits and any uncommitted

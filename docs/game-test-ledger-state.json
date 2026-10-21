@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-21",
+  "session": 2,
+  "deadline": "2026-10-22T05:28:46Z",
+  "notes": [
+    "Session 1: five standalone Windows controls attempted; zero Xbox game launches during that batch.",
+    "Session 2: Brogue and Cataclysm control processes attempted; no reviewed visual outcome recorded yet. These are not joint-product acceptance.",
+    "Session 3 is planned for tomorrow, not executed or automatically authorized beyond the current window.",
+    "Installed observations below are from 20 October preflight, not a fresh authenticated inventory.",
+    "Personal entitlement and current download access have not been established for this queue.",
+    "Historical No Man's Sky success is recorded in PAUSE-HANDOFF.md; Hogwarts success is owner-reported pending receipt recovery.",
+    "Prior service hash drift does not establish incompatibility. Recover the modified fork, shims and working route before retrying.",
+    "Minecraft Java and Minecraft Launcher were also inspected as installed encrypted packages, but their exact product IDs are absent from this public snapshot; do not substitute bundle or preview IDs.",
+    "No confirmed Xbox game fix or fresh joint-product gameplay result was produced by Session 1."
+  ],
+  "products": {
+    "BQVQTL3PCH05": {
+      "historical": "CrossOver + modified Xodus: in-world rendering recorded",
+      "installedObservation": "20 Oct: NMS 7.6 resident; inventory/readiness passed",
+      "session1": "Preflight only; not launched",
+      "session2": "Not launched",
+      "next": "P1: recover exact working app/runtime/shim/Wine route",
+      "evidence": "PAUSE-HANDOFF.md; Session 1 private xbox-title-test receipt"
+    },
+    "9MT5NJ5W7B8Z": {
+      "historical": "CrossOver + modified Xodus/shims: launch owner-reported",
+      "installedObservation": "21 Oct: HogwartsPrivateStock bottle exists; package not found in standard game root",
+      "session1": "Not attempted",
+      "session2": "Not launched",
+      "next": "P1: locate historical package, launch evidence and shim configuration",
+      "evidence": "Owner clarification 21 Oct; private fork isolated Hogwarts launcher"
+    },
+    "9P4NV23Q6QC2": {
+      "historical": "No gameplay evidence reviewed",
+      "installedObservation": "20 Oct: Abiotic Factor 1.4.28206.0 resident; inventory/readiness passed",
+      "session1": "Preflight only; not launched",
+      "session2": "Not launched",
+      "next": "P2: exercise recovered joint route after baseline recovery",
+      "evidence": "Session 1 private xbox-title-test receipt"
+    },
+    "9P03JGQ4S1GC": {
+      "historical": "No gameplay evidence reviewed",
+      "installedObservation": "20 Oct: absent from inspected registry and standard root",
+      "session1": "Public package and local-presence triage only",
+      "session2": "Not launched",
+      "next": "P3: resolve legitimate account/package access before download",
+      "evidence": "Session 1 private xbox-five-title-batch receipt"
+    },
+    "C3KLDKZBHNCZ": {
+      "historical": "No gameplay evidence reviewed",
+      "installedObservation": "20 Oct: absent from inspected registry and standard root",
+      "session1": "Public package and local-presence triage only",
+      "session2": "Not launched",
+      "next": "P3: resolve legitimate account/package access before download",
+      "evidence": "Session 1 private xbox-five-title-batch receipt"
+    },
+    "9PCR3Z2MSM4T": {
+      "historical": "No gameplay evidence reviewed",
+      "installedObservation": "20 Oct: absent from inspected registry and standard root",
+      "session1": "Public package and local-presence triage only",
+      "session2": "Not launched",
+      "next": "P3: resolve legitimate account/package access before download",
+      "evidence": "Session 1 private xbox-five-title-batch receipt"
+    },
+    "9MW9469V91LM": {
+      "historical": "No gameplay evidence reviewed",
+      "installedObservation": "20 Oct: absent from inspected registry and standard root",
+      "session1": "Exact Voidheart package triage only; not launched",
+      "session2": "Not launched",
+      "next": "P3: resolve access to exact Xbox edition, not Steam base game",
+      "evidence": "Session 1 private xbox-five-title-batch receipt"
+    }
+  }
+}
