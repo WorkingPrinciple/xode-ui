@@ -49,10 +49,11 @@ def parse_public_source(value: str) -> tuple[str, str, str, str]:
         or not PRODUCT_ID.fullmatch(product_id)
         or kind not in {"pcgamingwiki", "publisher"}
         or not url.startswith("https://")
-        or result != "no-anticheat-record"
+        or result not in {"no-anticheat-record", "insufficient-to-classify"}
     ):
         raise argparse.ArgumentTypeError(
-            "public checks must be PRODUCTID=pcgamingwiki|publisher=https-url=no-anticheat-record"
+            "public checks must be PRODUCTID=pcgamingwiki|publisher=https-url="
+            "no-anticheat-record|insufficient-to-classify"
         )
     return product_id, kind, url, result
 
@@ -151,6 +152,7 @@ def update_product(
     signatures: dict[str, Any],
     publisher_products: dict[str, Any],
     checked_at: str,
+    retain_unknown: bool = False,
 ) -> dict[str, Any]:
     product = database["products"].get(product_id)
     if product is None:
@@ -168,9 +170,12 @@ def update_product(
     identity = package_identity(package_root, product_id)
     sources_for_product = [entry for entry in checked_sources if entry[0] == product_id]
     kinds = {entry[1] for entry in sources_for_product}
-    if kinds != {"pcgamingwiki", "publisher"}:
+    if not retain_unknown and (
+        kinds != {"pcgamingwiki", "publisher"}
+        or any(result != "no-anticheat-record" for _, _, _, result in sources_for_product)
+    ):
         raise RuntimeError(
-            f"{product_id} requires reviewed PCGamingWiki and publisher checks before marking none"
+            f"{product_id} requires affirmative PCGamingWiki and publisher checks before marking none"
         )
     if not scan["complete"]:
         raise RuntimeError(f"{product_id} has symlinked files; package scan is incomplete")
@@ -191,12 +196,16 @@ def update_product(
             "sourceType": "awacy",
         }
     ]
-    for _, kind, url, _ in sources_for_product:
+    for _, kind, url, result in sources_for_product:
         public_checks.append(
             {
                 "source": url,
                 "checkedAt": checked_at,
-                "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+                "result": (
+                    "Reviewed page/search results; no anti-cheat technology record for this Windows PC title."
+                    if result == "no-anticheat-record"
+                    else "Reviewed source did not establish anti-cheat status; classification remains unknown."
+                ),
                 "sourceType": kind,
             }
         )
@@ -205,28 +214,50 @@ def update_product(
         technology_names = sorted(scan["matches"])
         product["antiCheat"] = "; ".join(technology_names)
         scan_evidence["result"] = "named"
+        evidence_type = "package-scan"
+        method = (
+            "Matched every inventoried relative package path against the versioned anti-cheat "
+            "filename/path signatures; file contents were not read or modified. A package "
+            "path match takes precedence."
+        )
+    elif retain_unknown:
+        product["antiCheat"] = "unknown"
+        scan_evidence["result"] = "no-known-signature"
+        evidence_type = "unknown"
+        method = (
+            "Matched every inventoried relative package path against the versioned anti-cheat "
+            "filename/path signatures; file contents were not read or modified, and no known "
+            "path signature matched. The public evidence reviewed does not establish absence "
+            "of anti-cheat, so the classification remains unknown."
+        )
     else:
         product["antiCheat"] = "none"
         scan_evidence["result"] = "no-known-signature"
+        evidence_type = "package-scan"
+        method = (
+            "Matched every inventoried relative package path against the versioned anti-cheat "
+            "filename/path signatures; file contents were not read or modified. No known path "
+            "signature matched. The title had no exact AWACY anti-cheat record, and the "
+            "reviewed PCGamingWiki and publisher sources had no anti-cheat record."
+        )
     product["antiCheatEvidence"] = {
-        "type": "package-scan",
-        "source": next(url for _, kind, url, _ in sources_for_product if kind == "pcgamingwiki"),
+        "type": evidence_type,
+        "source": next(
+            (url for _, kind, url, _ in sources_for_product if kind == "pcgamingwiki"),
+            database["antiCheatReference"],
+        ),
         "checkedAt": checked_at,
         "mode": "unknown",
-        "method": (
-            "Scanned every inventoried relative package path using the versioned anti-cheat "
-            "signature set; file contents were not modified. No known signature matched. "
-            "The title had no exact AWACY anti-cheat record, and the reviewed PCGamingWiki "
-            "and publisher sources had no anti-cheat record."
-            if not scan["matches"]
-            else "Scanned every inventoried relative package path using the versioned anti-cheat "
-            "signature set; matched the named component(s). A package match takes precedence."
-        ),
+        "method": method,
         "packageScan": scan_evidence,
         "publicChecks": public_checks,
     }
     product["supported01"] = (
-        product["packageFormat"] == "MSIXVC" and product["antiCheat"] == "none"
+        True
+        if product["antiCheat"].lower() == "none"
+        else None
+        if product["antiCheat"].lower() == "unknown"
+        else False
     )
     return {
         "productID": product_id,
@@ -261,6 +292,11 @@ def main() -> int:
         action="store_true",
         help="record scan evidence in the checked-in catalogue (otherwise report only)",
     )
+    parser.add_argument(
+        "--retain-unknown",
+        action="store_true",
+        help="record a clean signature scan as unknown when public evidence is insufficient",
+    )
     args = parser.parse_args()
     if len({product_id for product_id, _ in args.root}) != len(args.root):
         raise RuntimeError("Each product may have only one scanned package root")
@@ -277,6 +313,7 @@ def main() -> int:
             signatures,
             publisher_products,
             checked_at,
+            args.retain_unknown,
         )
         for product_id, package_root in args.root
     ]
