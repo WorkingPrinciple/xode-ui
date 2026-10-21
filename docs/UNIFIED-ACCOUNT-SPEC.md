@@ -26,6 +26,16 @@ The owner's subsequent request to revoke "the other" certificate was ambiguous
 between an older Apple Development certificate shown by Xcode and the local
 Xodus identity; neither was revoked or removed without identifying the target.
 
+The subsequent foreground `auth.status` check on that Developer ID candidate
+returned `ok: true`, `state: credentialPresent`. Its initial attempt was
+refused with `STATE_LOCKED` because the running preserved app owned the state;
+the app was quit normally, the check was repeated successfully, and the
+preserved app was reopened. No credential values were printed, no Microsoft
+sign-in or game was started, and no credential ACL/trust was changed by tooling.
+This supersedes the earlier unconditional saved-status denial for this new
+signed artifact. It does not establish noninteractive credential access,
+live package licensing, game execution, or shipping admission.
+
 ### Current implementation boundary
 
 The first source slice adds `ode.account.read.v1` to the paired Rust producer
