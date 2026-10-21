@@ -4,6 +4,25 @@
 
 ### Supported local-candidate build
 
+For a UI-only refresh with the currently installed, verified Developer ID CLI,
+use the explicit preservation path:
+
+```sh
+python3 tools/refresh_local_candidate.py \
+  --installed-app "$HOME/Applications/Ode to X Local Candidate.app" \
+  --output-root /absolute/owned-output-directory \
+  --identity 410914520BCC840C0125D3826CCF0F247F603321
+```
+
+It builds the committed app/helper, regenerates exact pairing pins, preserves
+the signed CLI byte-for-byte, signs the new app, and embeds
+`Contents/Resources/local-candidate-receipt.json`. Missing historical receipts
+and unverified producer source are recorded honestly; this does not certify
+producer reproducibility or enable lifecycle on the old CLI. Replace the
+installed app only after this build succeeds and the previous app quits.
+Every UI-affecting commit must be followed by build, install, relaunch and
+real-screen inspection; source checks alone do not update the user's app.
+
 `tools/build_local_candidate.py` builds an engine from a clean committed checkout
 with offline locked Cargo, compares its management contract with the app's,
 builds a clean app-source archive, and generates exact source and signed-byte

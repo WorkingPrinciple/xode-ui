@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+"""Refresh local UI source while preserving an explicitly selected signed CLI.
+
+This is not producer-source or release qualification. A missing prior receipt is
+recorded, not reconstructed. The preserved CLI never gains lifecycle admission
+unless its digest independently matches the app's lifecycle pin.
+"""
+import argparse
+import json
+import os
+from pathlib import Path
+import plistlib
+import shutil
+import subprocess
+import tarfile
+import tempfile
+
+from build_local_candidate import run, source_identity, validate_host
+from shipping_pair import PRODUCER, PRODUCER_TREE, owned_bytes, require, swift_pins
+from signing_identity import preflight, sign, verify_designated_requirement
+
+
+def refresh(installed, output_root, identity):
+    validate_host()
+    preflight(identity)
+    project = Path(__file__).resolve().parent.parent
+    source_identity_before = source_identity(project)
+    installed = installed.resolve(strict=True)
+    require(installed.suffix == ".app", "Select the existing local candidate app")
+    require(output_root.is_absolute() and output_root.resolve(strict=True) == output_root,
+            "Use a canonical existing output directory")
+    info = output_root.stat()
+    require(info.st_uid == os.getuid() and info.st_mode & 0o022 == 0, "Unsafe output directory")
+    verify_designated_requirement(installed, "app", identity)
+    old_cli = installed / "Contents/Resources/XodusEngine/xodus-cli"
+    verify_designated_requirement(old_cli, "cli", identity)
+    cli_record, _ = owned_bytes(old_cli)
+    stage = Path(tempfile.mkdtemp(prefix="Ode-refresh-", dir=output_root))
+    stage.chmod(0o700)
+    log = stage / "build.log"
+    archive = stage / "source.tar"
+    with archive.open("xb") as output:
+        subprocess.run(["git", "archive", "--format=tar", source_identity_before["commit"]],
+                       cwd=project, stdout=output, check=True)
+    source = stage / "source"
+    source.mkdir()
+    with tarfile.open(archive) as archived:
+        archived.extractall(source, filter="data")
+    environment = os.environ.copy()
+    environment["XODUS_SHIPPING"] = "1"
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"],
+        source, log, environment)
+    binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"],
+                         source, log, environment).decode().strip())
+    app = stage / "Ode to X Local Candidate.app"
+    macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
+    macos.mkdir(parents=True)
+    (resources / "XodusEngine").mkdir(parents=True)
+    cli = resources / "XodusEngine/xodus-cli"
+    shutil.copyfile(old_cli, cli)
+    cli.chmod(0o755)
+    owned_bytes(cli, cli_record["sha256"], cli_record["bytes"])
+    helper = macos / "XodusAuthHost"
+    shutil.copyfile(binary_dir / "XodusAuthHost", helper)
+    helper.chmod(0o755)
+    sign(helper, "helper", identity, developer_id=True)
+    helper_record, _ = owned_bytes(helper)
+    (source / "Sources/XodusPreview/ShippingPairPins.swift").write_text(swift_pins(
+        source_identity_before["commit"], source_identity_before["tree"], cli_record, helper_record))
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
+        source, log, environment)
+    shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
+    (macos / "Xodus").chmod(0o755)
+    bundle_info = plistlib.loads((source / "tools/Info.plist").read_bytes())
+    bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "Ode to X Local Candidate"
+    with (app / "Contents/Info.plist").open("wb") as output:
+        plistlib.dump(bundle_info, output)
+    shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    shutil.copyfile(installed / "Contents/Resources/Xodus.icns", resources / "Xodus.icns")
+    shutil.copytree(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
+                    resources / "XodusAppFoundation_XodusManagement.bundle")
+    (resources / "XodusAuthHost.json").write_text(json.dumps({
+        "version": 1, "sha256": helper_record["sha256"],
+        "sourceCommit": source_identity_before["commit"]}, sort_keys=True) + "\n")
+    receipt = {
+        "kind": "local-ui-refresh", "productionQualified": False, "notarized": False,
+        "appSource": source_identity_before, "certificateSHA1": identity.upper(),
+        "preservedCLI": cli_record, "preservedCLIPath": str(old_cli),
+        "producerBuildPerformed": False, "priorReceiptAvailable": False,
+        "producerSourceIndependentlyVerified": False,
+        "preservedProducerDeclaration": {"commit": PRODUCER, "tree": PRODUCER_TREE},
+        "signedHelper": helper_record,
+    }
+    previous_receipt = installed / "Contents/Resources/local-candidate-receipt.json"
+    if previous_receipt.exists():
+        receipt["priorReceiptAvailable"] = True
+        receipt["priorReceipt"], _ = owned_bytes(previous_receipt)
+    encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+    (resources / "local-candidate-receipt.json").write_text(encoded)
+    (stage / "candidate-receipt.json").write_text(encoded)
+    sign(app, "app", identity, developer_id=True)
+    run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
+    for path, kind in ((cli, "cli"), (helper, "helper"), (app, "app")):
+        verify_designated_requirement(path, kind, identity)
+    owned_bytes(old_cli, cli_record["sha256"], cli_record["bytes"])
+    require(source_identity(project) == source_identity_before, "App source changed during refresh")
+    print(app)
+    print(stage / "candidate-receipt.json")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--installed-app", type=Path, required=True)
+    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--identity", required=True)
+    args = parser.parse_args()
+    refresh(args.installed_app, args.output_root, args.identity)

@@ -93,11 +93,13 @@ enum NativeChecks {
                 return failures == 0
             }
             if gameOperationsOnly {
+                try await NativeLifecycleChecks.run(check: check)
                 try await GameOperationChecks.run(check: check)
                 print("\(count) game operation checks, \(failures) failures. Synthetic scripts only.")
                 return failures == 0
             }
             try await InstalledGameChecks.run(check: check)
+            try await NativeLifecycleChecks.run(check: check)
             try await CatalogDetailLoadingChecks.run(check: check)
             try await PCGamesChecks.run(check: check)
             try await GameOperationChecks.run(check: check)

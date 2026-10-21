@@ -22,6 +22,7 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
     /// the configured default; a missing selected engine refuses launch, never
     /// silently substitutes another runner.
     var engineOverride: RuntimeProviderKind? = nil
+    var usesNativeLifecycle: Bool? = nil
 }
 
 enum InstalledGameError: Error, LocalizedError {
@@ -214,7 +215,8 @@ actor InstalledGameStore {
         let games = try JSONDecoder().decode([InstalledGame].self, from: data)
         guard Set(games.map(\.id)).count == games.count, Set(games.map(\.folder)).count == games.count,
               games.allSatisfy({ !$0.title.isEmpty && !$0.identityName.isEmpty && !$0.version.isEmpty
-                  && !$0.storeId.isEmpty && $0.folder.hasPrefix("/") && $0.launcher.hasPrefix("/")
+                  && !$0.storeId.isEmpty && $0.folder.hasPrefix("/")
+                  && ($0.usesNativeLifecycle == true ? $0.launcher.isEmpty : $0.launcher.hasPrefix("/"))
                   && ($0.lastSessionSeconds.map { $0.isFinite && $0 >= 0 } ?? true)
                   && ($0.lastPlayedAt.map { $0.timeIntervalSince1970.isFinite } ?? true) }) else {
             throw InstalledGameError.invalidRegistry

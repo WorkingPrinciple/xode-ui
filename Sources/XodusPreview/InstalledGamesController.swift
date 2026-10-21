@@ -49,6 +49,10 @@ final class InstalledGamesController: ObservableObject {
     private let detectAvailability: @Sendable () async -> RunnerAvailability
     private let inspectPackage: @Sendable (URL) throws -> PackageType
     private let compatibilityCatalogue: OfflineGameCompatibility?
+    private weak var unifiedSession: LiveSession?
+    private var usesUnifiedAccount = false
+    private let nativeLauncher = NativeGameLifecycle()
+    private var nativeLaunchTask: Task<Void, Never>?
     private var playingTask: Task<Void, Never>?
     private var runToken: UUID?
     private var stopToken: UUID?
@@ -239,6 +243,14 @@ final class InstalledGamesController: ObservableObject {
             playErrors[game.id] = "Not supported yet. " + issues.map(\.detail).joined(separator: " ")
             return
         }
+        if usesUnifiedAccount {
+            await playNative(game)
+            return
+        }
+        guard game.usesNativeLifecycle != true else {
+            playErrors[game.id] = "Reconnect your Xbox account before playing this installation."
+            return
+        }
         let interpreter: URL?
         do { interpreter = try LaunchAssociationAssets.bundledInterpreter() }
         catch {
@@ -338,6 +350,79 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    func useUnifiedAccount(_ session: LiveSession) {
+        usesUnifiedAccount = true
+        unifiedSession = session
+    }
+
+    private func playNative(_ game: InstalledGame) async {
+        guard let session = unifiedSession, let configuration = session.nativeLifecycleConfiguration,
+              let account = session.accountHash else {
+            playErrors[game.id] = "Reconnect your Xbox account before playing this installation."
+            return
+        }
+        do {
+            let launch = try NativeLaunchConfiguration.resolve(game: game,
+                provider: game.engineOverride ?? defaultEngine())
+            let arguments = try await launch.arguments()
+            guard accountAccessAllowed, session.accountHash == account,
+                  session.nativeLifecycleConfiguration?.executable == configuration.executable,
+                  runningGameID == nil, !accountDisconnecting, !applicationTerminating,
+                  games.contains(game) else { throw GameScriptError.busy }
+            let token = UUID()
+            runToken = token
+            runningGameID = game.id
+            playState = .launching
+            playErrors[game.id] = nil
+            playLogs[game.id] = nil
+            playNotices[game.id] = nil
+            let runID = Self.runID()
+            runIDs[game.id] = runID
+            nativeLaunchTask = Task {
+                let startedAt = Date(), clock = ContinuousClock.now
+                do {
+                    let result = try await nativeLauncher.run(configuration: configuration, accountHash: account,
+                        operation: "launch", product: game.storeId,
+                        gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
+                        launchArguments: arguments, onStarted: {
+                            launchStarted = true
+                            recordSession(gameID: game.id, startedAt: startedAt, seconds: nil)
+                        })
+                    guard runToken == token else { return }
+                    let duration = clock.duration(to: .now).components
+                    recordSession(gameID: game.id, startedAt: startedAt,
+                        seconds: Double(duration.seconds) + Double(duration.attoseconds) / 1e18)
+                    finished(token: token, gameID: game.id, status: result.exitCode)
+                    playLogs[game.id] = URL(fileURLWithPath: result.logDirectory)
+                    if !result.success && result.errorCode != "CANCELLED" {
+                        playErrors[game.id] = result.failureMessage
+                    }
+                    if session.accountHash != account { playErrors[game.id] = "Your Xbox account changed during play." }
+                } catch {
+                    finished(token: token, gameID: game.id, status: 1)
+                    playErrors[game.id] = (error as? GameScriptError)?.localizedDescription
+                        ?? InstalledGameError.launch.localizedDescription
+                    playLogs[game.id] = nativeLauncher.stateDirectory
+                }
+                nativeLaunchTask = nil
+            }
+        } catch {
+            playErrors[game.id] = (error as? NativeLaunchError)?.localizedDescription
+                ?? (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
+        }
+    }
+
+    func stopNative(_ game: InstalledGame) async {
+        guard usesUnifiedAccount, canStop(game) else { return }
+        let token: UUID
+        do { token = try reserveStop(game) }
+        catch { playErrors[game.id] = GameScriptError.busy.localizedDescription; return }
+        nativeLauncher.cancel()
+        await nativeLaunchTask?.value
+        completeStop(token: token, gameID: game.id, error: nil, log: playLogs[game.id])
+        releaseMutation()
+    }
+
     @discardableResult private func finished(token: UUID, gameID: UUID, status: Int32) -> Bool {
         guard runToken == token else { return false }
         if let handoff = foregroundHandoff {
@@ -374,7 +459,8 @@ final class InstalledGamesController: ObservableObject {
     func canStop(_ game: InstalledGame) -> Bool {
         loaded && !editing && !choosing && !mutationActive && !serviceSignInActive && !accountDisconnecting
             && !applicationTerminating && stoppingGameID == nil && runningGameID == game.id
-            && launchStarted && process?.isRunning == true && games.contains(where: {
+            && launchStarted && (usesUnifiedAccount ? nativeLauncher.isRunning : process?.isRunning == true)
+            && games.contains(where: {
                 $0.id == game.id && $0.storeId == game.storeId && $0.launcher == game.launcher
             })
     }
@@ -489,6 +575,13 @@ final class InstalledGamesController: ObservableObject {
         try await saveValidatedGame(folder: folder, launcher: launcher, expectedStoreID: expectedStoreID)
     }
 
+    func registerNativeInstallation(folder: URL, expectedStoreID: String) async throws {
+        guard loaded, mutationActive, !editing, !applicationTerminating else { throw GameScriptError.busy }
+        editing = true
+        defer { editing = false }
+        try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: expectedStoreID)
+    }
+
     func removeUninstalled(_ id: UUID) async throws {
         guard mutationActive, mutationGameID == id, runningGameID != id, !editing else { throw GameScriptError.busy }
         editing = true
@@ -501,12 +594,12 @@ final class InstalledGamesController: ObservableObject {
         runIDs[id] = nil
     }
 
-    private func saveValidatedGame(folder: URL, launcher: URL, expectedStoreID: String?) async throws {
+    private func saveValidatedGame(folder: URL, launcher: URL?, expectedStoreID: String?) async throws {
         inspectionGeneration = UUID()
         let inspectPackage = inspectPackage
         let metadata = try await Task.detached(priority: .userInitiated) {
             let config = try MicrosoftGameConfig.read(folder: folder)
-            try InstalledGameFiles.checkLauncher(launcher)
+            if let launcher { try InstalledGameFiles.checkLauncher(launcher) }
             if let expectedStoreID, config.storeId != expectedStoreID { throw GameScriptError.invalidReceipt }
             return (config, try inspectPackage(folder))
         }.value
@@ -514,8 +607,9 @@ final class InstalledGamesController: ObservableObject {
         guard previous?.id != runningGameID || runningGameID == nil else { throw GameScriptError.busy }
         let game = InstalledGame(id: previous?.id ?? UUID(),
             title: metadata.0.title, identityName: metadata.0.identityName, version: metadata.0.version,
-            storeId: metadata.0.storeId, folder: folder.path, launcher: launcher.path, importedAt: Date(),
-            publisher: metadata.0.publisher, packageType: metadata.1)
+            storeId: metadata.0.storeId, folder: folder.path, launcher: launcher?.path ?? "", importedAt: Date(),
+            publisher: metadata.0.publisher, packageType: metadata.1,
+            usesNativeLifecycle: launcher == nil ? true : nil)
         applySavedGames(try await store.upsert(game))
         await refreshLaunchableGames()
     }
@@ -577,8 +671,11 @@ final class InstalledGamesController: ObservableObject {
                 }
                 do {
                     try InstalledGameFiles.checkFolder(folder)
-                    try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: game.launcher))
+                    if game.usesNativeLifecycle != true {
+                        try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: game.launcher))
+                    }
                     let config = try MicrosoftGameConfig.read(folder: folder)
+                    guard config.storeId == game.storeId else { throw InstalledGameError.invalidConfig }
                     if config.placeholderOnly {
                         placeholders.insert(game.id)
                         failures[game.id] = InstalledGameError.placeholderContent.localizedDescription

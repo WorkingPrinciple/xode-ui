@@ -557,12 +557,14 @@ struct GameOperationRecord: Codable, Identifiable, Sendable {
     let title: String
     let destination: String
     let installedID: UUID?
+    var nativeAccountHash: String? = nil
 
     func validate() throws {
         guard GameScriptPaths.validRunID(id), PCGamesClient.validProductID(productID),
               !title.isEmpty, title.utf8.count <= 4096, destination.hasPrefix("/"), destination != "/",
               destination.utf8.count <= 4096, !destination.split(separator: "/").contains(".."),
               !destination.split(separator: "/").contains("."),
+              nativeAccountHash.map(XboxAccountBinding.valid) ?? true,
               kind == .install ? installedID == nil : installedID != nil else { throw GameScriptError.storage }
     }
 }

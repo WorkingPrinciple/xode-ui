@@ -1,0 +1,145 @@
+// SPDX-License-Identifier: GPL-3.0-only
+import Foundation
+import XodusManagement
+
+@MainActor
+enum NativeLifecycleChecks {
+    static func run(check: (Bool, String) -> Void) async throws {
+        var progress = NativeGameProgress()
+        for line in [
+            #"{"event":"file_started","id":18446744073709551615,"name":"metadata","total_bytes":50}"#,
+            #"{"event":"bytes","id":18446744073709551615,"delta_bytes":50}"#,
+            #"{"event":"remaining","phase":"Downloading","remaining_bytes":100}"#,
+            #"{"event":"bytes","id":0,"delta_bytes":25}"#,
+            #"{"event":"completed"}"#
+        ] { try progress.consume(Data(line.utf8)) }
+        check(progress.bytesDone == 25 && progress.bytesTotal == 100 && progress.phase != .done,
+              "Native lifecycle: UInt64 metadata progress is separate; completed never asserts success")
+        for line in [#"{"event":"bytes","id":0,"delta_bytes":-1}"#,
+                     #"{"event":"remaining","remaining_bytes":-1}"#,
+                     #"{"event":"future"}"#] {
+            do {
+                try progress.consume(Data(line.utf8))
+                check(false, "Native lifecycle rejects invalid progress")
+            } catch { check(true, "Native lifecycle rejects invalid progress") }
+        }
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/NativeLifecycleChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true,
+                                                attributes: [.posixPermissions: 0o700])
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Native lifecycle synthetic files cleaned after child exit") }
+        }
+        let executable = root.appendingPathComponent("synthetic-cli")
+        let script = #"""
+        #!/usr/bin/python3
+        import json, os, pathlib, signal, sys, time, uuid
+        operation, product = sys.argv[1:3]
+        options = dict(zip(sys.argv[3::2], sys.argv[4::2]))
+        assert sys.argv[-1] == "--allow-keychain-prompt"
+        assert options["--account-hash"] == "a" * 64
+        state = pathlib.Path(options["--state-dir"])
+        game = options["--game-dir"]
+        run_id = str(uuid.uuid4())
+        log = state / "runs" / run_id
+        log.mkdir(parents=True, mode=0o700)
+        def write(path, data):
+            path.write_text(data)
+            path.chmod(0o600)
+        progress = log / "progress.jsonl"
+        write(progress, '{"event":"bytes","id":18446744073709551615,"delta_bytes":7}\n'
+                        '{"event":"bytes","id":0,"delta_bytes":25}\n'
+                        '{"event":"completed"}\n')
+        cancelled = False
+        def stop(signum, frame):
+            global cancelled
+            cancelled = True
+        signal.signal(signal.SIGTERM, stop)
+        if operation == "launch":
+            deadline = time.monotonic() + 5
+            while not cancelled and time.monotonic() < deadline:
+                time.sleep(0.01)
+        code = 1 if operation == "repair" or cancelled else 0
+        result = dict(version=1, run_id=run_id, operation=operation, product=product,
+            success=code == 0, exit_code=code,
+            error_code="CANCELLED" if cancelled else "OPERATION_FAILED" if code else None,
+            game_dir=game, log_dir=str(log), result_path=str(log / "result.json"), progress_path=str(progress))
+        write(log / "result.json", json.dumps(result))
+        if operation == "uninstall":
+            result["success"] = False
+            result["exit_code"] = 1
+            result["error_code"] = "OPERATION_FAILED"
+        print(json.dumps(result))
+        sys.exit(code)
+        """#
+        try Data(script.utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let configuration = BackendConfiguration(executable: executable, stateDirectory: root.appendingPathComponent("manage"))
+        let runner = NativeGameLifecycle()
+        let game = root.appendingPathComponent("game")
+        try FileManager.default.createDirectory(at: game, withIntermediateDirectories: false)
+        try GameScriptFiles.checkPath(game)
+        try GameScriptFiles.checkPath(root.appendingPathComponent("install"), allowMissing: true)
+        var received: [GameScriptProgress] = []
+        let result: NativeGameResult
+        do {
+            result = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+                operation: "install", product: "FIXTURE00001", gameDirectory: game,
+                runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("install"),
+                onProgress: { received.append($0) })
+        } catch {
+            print("Native fixture failed after child start: \(runner.started), state: \(runner.stateDirectory?.path ?? "none")")
+            if let state = runner.stateDirectory {
+                let stderr = try String(contentsOf: state.appendingPathComponent("launcher-stderr.log"), encoding: .utf8)
+                print("Native fixture stderr: \(stderr)")
+            }
+            throw error
+        }
+        check(result.success && result.exitCode == 0 && received.last?.bytesDone == 25 && !runner.isRunning,
+              "Native lifecycle: actual synthetic child result and persisted receipt agree after streamed progress")
+        try Data("""
+            <Game><Identity Name="Fixture.Native" Version="1.0.0.0"/><StoreId>FIXTURE00001</StoreId></Game>
+            """.utf8).write(to: game.appendingPathComponent("MicrosoftGame.config"))
+        let store = InstalledGameStore(file: root.appendingPathComponent("registry/installed.json"))
+        let installed = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
+        await installed.load()
+        try installed.reserveMutation(gameID: nil)
+        try await installed.registerNativeInstallation(folder: game, expectedStoreID: "FIXTURE00001")
+        installed.releaseMutation()
+        let saved = try await store.load().first
+        check(saved?.usesNativeLifecycle == true && saved?.launcher == ""
+              && saved.map { installed.launchableIDs.contains($0.id) } == true,
+              "Native lifecycle: StoreID-bound installation persists and becomes locally ready without an invented launcher script")
+        let reloaded = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
+        await reloaded.load()
+        check(reloaded.games.first?.usesNativeLifecycle == true && reloaded.launchableIDs.count == 1,
+              "Native lifecycle: native installation routing survives registry reload")
+        let repair = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+            operation: "repair", product: "FIXTURE00001", gameDirectory: game,
+            runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("repair"))
+        check(!repair.success && repair.errorCode == "OPERATION_FAILED",
+              "Native lifecycle: stream completed before a failed repair cannot register success")
+        let cancelled = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+            operation: "launch", product: "FIXTURE00001", gameDirectory: game,
+            runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("cancel"),
+            onProgress: { _ in runner.cancel() })
+        check(cancelled.errorCode == "CANCELLED" && !runner.isRunning,
+              "Native lifecycle: cancellation signals the exact live child and joins its terminal receipt")
+        do {
+            _ = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+                operation: "uninstall", product: "FIXTURE00001", gameDirectory: game,
+                runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("mismatch"))
+            check(false, "Native lifecycle refuses stdout/status disagreement")
+        } catch { check(true, "Native lifecycle refuses stdout/status disagreement") }
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: InstalledGame(id: UUID(), title: "Fixture",
+                identityName: "Fixture", version: "1.0.0.0", storeId: "FIXTURE00001",
+                folder: game.path, launcher: "", importedAt: Date(), usesNativeLifecycle: true),
+                provider: .standaloneWine)
+            check(false, "Unqualified runtime cannot enable production launch")
+        } catch NativeLaunchError.runtimeNotQualified {
+            check(true, "Unqualified runtime cannot enable production launch")
+        }
+    }
+}

@@ -214,6 +214,13 @@ final class LiveSession: ObservableObject {
     var accountHash: String? {
         authentication?.accountHash.flatMap { XboxAccountBinding.valid($0) ? $0 : nil }
     }
+    var nativeLifecycleConfiguration: BackendConfiguration? {
+        guard hasConfirmedSignIn, !connectionTransitioning, !signingOut, !applicationTerminating,
+              supports(.odeAccountRead), let configuration = connectedConfiguration,
+              configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256,
+              configuration.executableIdentity?.executable == configuration.executable else { return nil }
+        return configuration
+    }
     var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
     var accountJourneyTitle: String {
         if signingOut { return "Signing out of Ode to X" }

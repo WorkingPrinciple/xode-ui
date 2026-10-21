@@ -42,8 +42,7 @@ struct LiveRootView: View {
     }
     private var unifiedAccountVerified: Bool {
         if unifiedAccountMode {
-            return boundAccountHash != nil && XboxAccountBinding.matching(application: session.accountHash,
-                library: state.pcGames.accountHash, service: state.gameOperations.serviceStatus) != nil
+            return boundAccountHash != nil && session.nativeLifecycleConfiguration != nil
         }
         return companion.cache?.confirmsAccount(boundAccountHash) == true
     }
@@ -192,7 +191,8 @@ struct LiveRootView: View {
                 if unifiedAccountMode {
                     state.pcGames.useUnifiedAccount(session)
                     companion.useUnifiedAccount(session)
-                    state.gameOperations.useUnifiedAccount()
+                    state.gameOperations.useUnifiedAccount(session)
+                    state.installedGames.useUnifiedAccount(session)
                 }
                 await state.pcGames.loadOnAppear()
                 await state.installedGames.load()
@@ -239,7 +239,7 @@ struct LiveRootView: View {
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
             let accessMessage: String
             if unifiedAccountMode {
-                accessMessage = "Games aren't available in this development build yet."
+                accessMessage = "Your Xbox account and game connection need to match. Check Account and refresh your library."
             } else if !session.hasConfirmedSignIn {
                 accessMessage = "Sign in with Xbox Live to play this game."
             } else if !state.pcGames.hasSavedSignIn || state.pcGames.needsSignIn {

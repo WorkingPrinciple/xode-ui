@@ -447,9 +447,11 @@ struct GameInstallConsentView: View {
                         if operations.log != nil { Button("Show log") { operations.showLog() } }
                     }
                 }
-                if consent.compatibility?.supported == true {
+                if consent.compatibility?.supported == true || consent.nativeAccountHash != nil {
                     Section {
-                        Text(consent.installedID == nil
+                        Text(consent.nativeAccountHash != nil
+                             ? "The account-bound service verifies package access before downloading. Repair downloads all package files again. Keep a separate backup of saves stored inside the game folder."
+                             : consent.installedID == nil
                              ? "Ode to X verifies free space again before download. Additional working space can be required while package files are staged and expanded."
                              : "Ode to X checks changed or missing files in this folder. Your saves and installed entry are kept.")
                             .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -499,7 +501,9 @@ struct GameOperationPresentation: View {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("Uninstall \(game.title)?").font(.title2.bold())
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Deletes the game files. Your saves are kept.").foregroundStyle(.secondary)
+                    Text(operations.usesUnifiedAccount
+                         ? "Deletes this game's installation folder. Back up any saves stored inside that folder first. Saves in separate bottles are not removed."
+                         : "Deletes the game files. Your saves are kept.").foregroundStyle(.secondary)
                     HStack {
                         Spacer()
                         Button("Cancel") { operations.uninstallConsent = nil }.keyboardShortcut(.cancelAction)

@@ -10,6 +10,14 @@ enum LibraryAccessChecks {
         check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
               && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ !$0.antiCheat.isEmpty }) == true,
               "A sourced offline catalogue is bundled with explicit anti-cheat classification fields")
+        let admitted = OfflineGameCompatibility.snapshot?.products.filter {
+            LibrarySupportVisibility.issues(productID: $0.key, installed: false,
+                packageFormat: nil, compatibility: nil).isEmpty
+        }
+        check(admitted?.count == 2
+              && Set(admitted?.values.compactMap(\.title) ?? []) == ["Abiotic Factor", "No Man's Sky"]
+              && admitted?.values.allSatisfy({ $0.packageFormat == "MSIXVC" && $0.antiCheat == "none" }) == true,
+              "OX-9/UI-3: Real bundled admission clears exactly S4's Abiotic Factor and No Man's Sky")
         check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "none").isEmpty,
               "0.1 admits MSIXVC with explicit no-anti-cheat classification")
         for format in ["MSIX", "Appx", "EAppx", "UWP", "Win32", "Unspecified", ""] {

@@ -192,12 +192,16 @@ struct RuntimeProviderSection: View {
     var body: some View {
         Section("Runtime configuration") {
             RuntimeDependencyStatus(settings: settings, allowsCheck: allowsInstallationCheck)
+            DisclosureGroup("Account-bound game engines") {
+                NativeEngineSettings(allowsFileReads: allowsInstallationCheck)
+            }
             Picker("Runtime provider", selection: Binding(
                 get: { settings.configuration?.provider }, set: { settings.select($0) })) {
                 Text("Choose a provider").tag(Optional<RuntimeProviderKind>.none)
                 ForEach(RuntimeProviderSettings.providerChoices, id: \.self) { provider in
                     Text(RuntimeProviderSettings.providerLabel(provider)).tag(Optional(provider))
                 }
+
             }
             .disabled(settings.planning || settings.applicationTerminating)
             Text("Configuration only. This does not inspect, download or license a runtime, create a prefix, or enable Play.")

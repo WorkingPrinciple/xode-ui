@@ -4,6 +4,38 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## S5 native lifecycle and S4 catalogue integration (2026-10-22)
+
+S4's tools/data commits `d3e3e00` and `ea35f67` were integrated unchanged as
+`0d4461f` and `ec2b359`. The real bundled loader and shared admission rule
+clear exactly **Abiotic Factor** and **No Man's Sky**. Other records remain
+gated by format/anti-cheat evidence, including unknowns.
+
+The native lifecycle client binds the expected current account, verifies its
+admitted CLI identity, isolates operation directories, tails UInt64-ID progress,
+and compares stdout, process exit and the private persisted result. Stream
+`completed` is never success. Cancellation signals only its exact owned CLI and
+joins cleanup. Native installation records store StoreID/folder with no invented
+launcher; unified mode never falls back to old install/launch/stop scripts.
+Repair and uninstall copy reflects actual redownload/folder deletion semantics,
+not an unproven save-preservation guarantee.
+
+Native launch resolves an explicitly selected passed S1 registry engine and a
+per-game/per-engine prefix. The runtime primary/legacy pair remains unqualified
+(`NativeRuntimePins.approved == nil`); no production launch is admitted by merely
+selecting an arbitrary DLL. The lifecycle CLI pin is separate from ordinary
+management admission, so the old installed CLI cannot gain commands it lacks.
+
+Local source evidence:
+`swift run XodusPreview --live-check` exited 0 (1421 checks,
+`s5-native-integration-full.log`), and
+`XODUS_SHIPPING=1 swift build --jobs 1 --product XodusPreview` exited 0
+(`s5-native-shipping.log`). These logs are in the session-artifact directory
+below. Synthetic subprocess checks cover native progress, cancellation,
+repair failure after `completed`, and conflicting receipts; they are not real
+service acceptance. A separate real Abiotic installation is in progress against
+S2's immutable Developer-ID-signed CLI; no successful result is claimed here.
+
 ## 0.1 compatibility and game action source candidate (2026-10-22)
 
 The UI-5 controller follow-up to `4317984` enforces the shared 0.1 policy
