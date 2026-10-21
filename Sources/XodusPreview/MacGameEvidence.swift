@@ -8,6 +8,7 @@ struct MacGameEvidence: Decodable, Sendable {
     enum Verdict: String, Decodable, Sendable {
         case gameplay = "GAMEPLAY_PASS", menu = "MENU_PASS", blocked = "BLOCKED"
         case failed = "FAIL", notTested = "NOT_TESTED", excluded = "ANTI_CHEAT_EXCLUDED"
+        case working = "WORKING"
 
         var label: String {
             switch self {
@@ -17,6 +18,7 @@ struct MacGameEvidence: Decodable, Sendable {
             case .failed: "Mac launch failed"
             case .notTested: "Mac play not tested"
             case .excluded: "Anti-cheat excluded"
+            case .working: "Working on Mac"
             }
         }
     }
@@ -29,7 +31,7 @@ struct MacGameEvidence: Decodable, Sendable {
         let title: String
         let verdict: Verdict
         let scope: String
-        let engine: String
+        let engine: String?
         let runId: String?
         let screenshots: [Screenshot]
         let owner: String
@@ -51,7 +53,8 @@ struct MacGameEvidence: Decodable, Sendable {
               Set(value.games.map(\.productId)).count == value.games.count,
               value.games.allSatisfy({ game in
                   PCGamesClient.validProductID(game.productId) && validText(game.title, limit: 512)
-                      && validText(game.scope, limit: 4096) && validText(game.engine, limit: 128)
+                      && validText(game.scope, limit: 4096)
+                      && (game.engine.map { validText($0, limit: 128) } ?? true)
                       && validText(game.owner, limit: 128)
                       && (game.runId.map { UUID(uuidString: $0) != nil } ?? true)
                       && game.screenshots.count <= 16
@@ -73,7 +76,11 @@ final class MacGameEvidenceStore: ObservableObject {
     @Published private(set) var errorMessage: String?
 
     func refresh(defaults: UserDefaults = .standard) async {
-        guard let path = defaults.string(forKey: "Xodus.evidence.triedGames"), !path.isEmpty else {
+        let defaultURL = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/Application Support/Ode to X/Evidence/tried-games.json")
+        let selected = defaults.string(forKey: "Xodus.evidence.triedGames").flatMap { $0.isEmpty ? nil : $0 }
+        let path = selected ?? defaultURL.path
+        guard selected != nil || FileManager.default.fileExists(atPath: path) else {
             games = [:]
             errorMessage = nil
             return
@@ -88,7 +95,7 @@ final class MacGameEvidenceStore: ObservableObject {
             errorMessage = nil
         } catch {
             games = [:]
-            errorMessage = "Mac test evidence couldn't be read. Choose the current evidence JSON in Runtime settings."
+            errorMessage = "Mac test evidence couldn't be read at \(path). Check the ledger's format and file access."
         }
     }
 }
@@ -102,7 +109,9 @@ struct MacGameEvidenceView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if let proof = record.screenshots.first {
                     Button { open(proof) } label: {
-                        Label(record.verdict.label, systemImage: "photo")
+                        Label(record.verdict == .gameplay
+                              ? "Played on Mac (\(record.engine?.hasPrefix("crossover") == true ? "CrossOver" : record.engine ?? "engine not recorded"))"
+                              : record.verdict.label, systemImage: "photo")
                     }
                     .buttonStyle(.link)
                     .accessibilityLabel("\(record.verdict.label). Open screenshot for \(record.title)")
@@ -119,7 +128,7 @@ struct MacGameEvidenceView: View {
                 if let blocker = record.blocker {
                     Text(blocker).fixedSize(horizontal: false, vertical: true)
                 }
-                Text("\(record.engine) · \(record.owner)").font(.caption)
+                Text("\(record.engine ?? "Engine not recorded") · \(record.owner)").font(.caption)
             }
             .help(record.scope)
             .alert("Screenshot unavailable", isPresented: Binding(

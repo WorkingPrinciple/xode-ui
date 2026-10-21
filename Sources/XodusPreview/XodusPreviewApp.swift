@@ -2,6 +2,18 @@
 import AppKit
 import SwiftUI
 import XodusCore
+import XodusManagement
+
+enum GameLaunchArguments: Equatable {
+    case play(String), nativeMinecraft
+
+    static func parse(_ arguments: [String]) -> Self? {
+        if arguments == ["--open-native-minecraft"] { return .nativeMinecraft }
+        if arguments.count == 2, arguments[0] == "--play-game",
+           PCGamesClient.validProductID(arguments[1]) { return .play(arguments[1]) }
+        return nil
+    }
+}
 
 #if !XODUS_SHIPPING
 private struct LibraryReviewAccessibility: ViewModifier {
@@ -12,6 +24,7 @@ private struct LibraryReviewAccessibility: ViewModifier {
 
 enum DevelopmentArguments {
     static func accepts(_ arguments: [String]) -> Bool {
+        if GameLaunchArguments.parse(arguments) != nil { return true }
         guard let mode = arguments.first else { return true }
         switch mode {
         case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check", "--gamepass-collections-check":
@@ -91,7 +104,8 @@ struct XodusPreviewApp: App {
     init() {
         ProcessInfo.processInfo.processName = "Ode to X"
 #if XODUS_SHIPPING
-        if !CommandLine.arguments.dropFirst().isEmpty {
+        if !CommandLine.arguments.dropFirst().isEmpty,
+           GameLaunchArguments.parse(Array(CommandLine.arguments.dropFirst())) == nil {
             FileHandle.standardError.write(Data("This application does not accept preview, test or development arguments.\n".utf8))
             exit(64)
         }

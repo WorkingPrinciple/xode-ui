@@ -62,15 +62,30 @@ profiles mean no additional shims or overrides; malformed or wrong-product
 profiles fail visibly. Registry engine environment and wineserver selection
 remain the CLI's responsibility.
 
-The Mac test evidence JSON is separately selected in Runtime settings
-(`Xodus.evidence.triedGames`). Schema version 1 has `updatedAt` and `games[]`,
+The Mac test evidence JSON automatically loads from
+`~/Library/Application Support/Ode to X/Evidence/tried-games.json`; an advanced
+Runtime setting (`Xodus.evidence.triedGames`) can select a different ledger.
+Schema version 1 has `updatedAt` and `games[]`,
 with `productId`, `title`, `verdict`, `scope`, `engine`, optional `runId`,
 `screenshots[]` (`path`, `caption`), `owner`, and optional `blocker`.
 Supported verdicts are `GAMEPLAY_PASS`, `MENU_PASS`, `BLOCKED`, `FAIL`,
-`NOT_TESTED`, and `ANTI_CHEAT_EXCLUDED`. The library reloads it every five
+`NOT_TESTED`, `WORKING`, and `ANTI_CHEAT_EXCLUDED`. Engine and run ID may be
+null when not recorded. The library reloads it every five
 seconds, keeps the full observation scope visible, and opens recorded local
 screenshots. Missing screenshots are stated, not invented. These observations
 do not grant entitlement or override S4 package/anti-cheat admission.
+
+In unified-account mode, the app discovers complete game configurations under
+`~/Games/Xodus` and registers native lifecycle records without launcher scripts
+or a file-picker step. Invalid sibling folders are reported separately and
+never suppress valid imports. Minecraft uses a separate **Native launcher**
+route, matched to `com.mojang.minecraftlauncher`; its Java status checks only
+owned process IDs and executable paths, never credential-bearing Java arguments.
+
+Normal app launch actions `--play-game STOREID` and
+`--open-native-minecraft` invoke the same real controller actions as their
+library buttons after normal startup/account readiness. They do not enable
+fixtures, change catalogue admission or bypass authentication.
 
 `tools/build_local_candidate.py` builds an engine from a clean committed checkout
 with offline locked Cargo, compares its management contract with the app's,

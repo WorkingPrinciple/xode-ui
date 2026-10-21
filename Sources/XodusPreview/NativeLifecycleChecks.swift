@@ -116,6 +116,26 @@ enum NativeLifecycleChecks {
         await reloaded.load()
         check(reloaded.games.first?.usesNativeLifecycle == true && reloaded.launchableIDs.count == 1,
               "Native lifecycle: native installation routing survives registry reload")
+        let discovery = root.appendingPathComponent("discovery")
+        let discoveredGame = discovery.appendingPathComponent("new-game")
+        let brokenGame = discovery.appendingPathComponent("broken-game")
+        for directory in [discoveredGame, brokenGame] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        try Data("""
+            <Game><Identity Name="Fixture.Discovered" Version="1.0.0.0"/><StoreId>FIXTURE00002</StoreId></Game>
+            """.utf8).write(to: discoveredGame.appendingPathComponent("MicrosoftGame.config"))
+        try Data("<broken".utf8).write(to: brokenGame.appendingPathComponent("MicrosoftGame.config"))
+        let session = LiveSession()
+        installed.useUnifiedAccount(session)
+        await installed.discoverNativeInstallations(root: discovery)
+        check(installed.games.contains { $0.storeId == "FIXTURE00002" && $0.usesNativeLifecycle == true }
+              && installed.discoveryError?.contains("broken-game") == true,
+              "Automatic discovery imports valid native records while a corrupt sibling stays an explicit separate error")
+        let discoveredCount = installed.games.count
+        await installed.discoverNativeInstallations(root: discovery)
+        check(installed.games.count == discoveredCount,
+              "Repeated discovery never duplicates an existing installation")
         let repair = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
             operation: "repair", product: "FIXTURE00001", gameDirectory: game,
             runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("repair"))

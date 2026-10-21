@@ -95,7 +95,7 @@ struct LiveLibraryView: View {
     private var classifiedGames: [LibraryGame] {
         let catalogue = OfflineGameCompatibility.snapshot?.products ?? [:]
         let ids = Set(catalogue.filter { $0.value.supported01 }.map(\.key))
-            .union(macEvidence.games.keys)
+            .union(macEvidence.games.filter { $0.value.engine != "native-macos" }.map(\.key))
         return ids.compactMap { id -> LibraryGame? in
             guard let title = catalogue[id]?.title ?? macEvidence.games[id]?.title else { return nil }
             let pc = library.accessIsCurrent ? library.representedGames.first { $0.id == id } : nil
@@ -120,6 +120,9 @@ struct LiveLibraryView: View {
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
+                if query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query) {
+                    NativeMinecraftCard()
+                }
                 if !classifiedGames.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Classified and tested games").font(.title2.weight(.semibold))
@@ -176,6 +179,9 @@ struct LiveLibraryView: View {
                     }
                 }
                 if let error = installed.historyError {
+                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                }
+                if let error = installed.discoveryError {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
                 PCGamesView(library: library, installed: installed, operations: operations,
@@ -343,6 +349,8 @@ struct LiveLibraryView: View {
             guard allowsStartupTasks else { return }
             while !Task.isCancelled {
                 await macEvidence.refresh()
+                await installed.discoverNativeInstallations()
+                await NativeMinecraft.shared.refresh()
                 do { try await Task.sleep(for: .seconds(5)) }
                 catch { return }
             }

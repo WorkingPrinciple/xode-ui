@@ -16,6 +16,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var choosing = false
     @Published private(set) var loaded = false
     @Published private(set) var error: String?
+    @Published private(set) var discoveryError: String?
     @Published private(set) var runningGameID: UUID?
     @Published private(set) var playState: InstalledGamePlayState?
     @Published private(set) var playErrors: [UUID: String] = [:]
@@ -155,6 +156,34 @@ final class InstalledGamesController: ObservableObject {
         scriptPanel.allowsMultipleSelection = false
         guard await scriptPanel.begin() == .OK, let launcher = scriptPanel.url else { return }
         await importGame(folder: folder, launcher: launcher)
+    }
+
+    func discoverNativeInstallations(root: URL? = nil) async {
+        guard usesUnifiedAccount, loaded, !editing, !choosing, !mutationActive,
+              !accountDisconnecting, !applicationTerminating else { return }
+        let directory = root ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Games/Xodus")
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        editing = true
+        defer { editing = false }
+        do {
+            let folders = try await Task.detached {
+                try GameScriptFiles.checkPath(directory)
+                let children = try FileManager.default.contentsOfDirectory(at: directory,
+                    includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
+                guard children.count <= 512 else { throw InstalledGameError.invalidRegistry }
+                return children.filter {
+                    FileManager.default.fileExists(atPath: $0.appendingPathComponent("MicrosoftGame.config").path)
+                }
+            }.value
+            var failures: [String] = []
+            for folder in folders where !games.contains(where: { $0.folder == folder.path }) {
+                do { try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: nil) }
+                catch { failures.append("\(folder.lastPathComponent): \(error.localizedDescription)") }
+            }
+            discoveryError = failures.isEmpty ? nil : "Some installed folders couldn't be imported. " + failures.joined(separator: " ")
+        } catch {
+            discoveryError = "Installed folders under \(directory.path) couldn't be read. \(error.localizedDescription)"
+        }
     }
 
     func remove(_ game: InstalledGame) async {

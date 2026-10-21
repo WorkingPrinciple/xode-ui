@@ -9,6 +9,7 @@ struct LiveRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var searchFocused: Bool
     @State private var libraryHasHero = false
+    @State private var launchArgumentHandled = false
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
@@ -202,6 +203,7 @@ struct LiveRootView: View {
                 }
                 await state.pcGames.loadOnAppear()
                 await state.installedGames.load()
+                await state.installedGames.discoverNativeInstallations()
                 await state.gameOperations.restore()
                 if unifiedAccountMode {
                     await state.pcGames.waitForLoad()
@@ -218,6 +220,27 @@ struct LiveRootView: View {
         .task(id: profileBootstrapBinding) {
             guard profileBootstrapBinding != nil else { return }
             await companion.refresh(for: state.gameOperations.serviceStatus)
+        }
+        .task(id: "\(unifiedAccountVerified):\(state.installedGames.loaded):\(state.installedGames.editing):\(state.installedGames.games.count)") {
+            guard startupAllowed, !launchArgumentHandled, unifiedAccountVerified,
+                  state.installedGames.loaded, !state.installedGames.editing,
+                  let action = GameLaunchArguments.parse(Array(CommandLine.arguments.dropFirst())) else { return }
+            launchArgumentHandled = true
+            switch action {
+            case .nativeMinecraft:
+                await NativeMinecraft.shared.refresh()
+                NativeMinecraft.shared.open()
+            case .play(let productID):
+                guard let game = state.installedGames.games.first(where: { $0.storeId == productID }) else {
+                    session.errorMessage = "The requested game isn't registered as installed on this Mac."
+                    return
+                }
+                await state.installedGames.play(game)
+                if state.installedGames.runningGameID != game.id {
+                    session.errorMessage = state.installedGames.playErrors[game.id]
+                        ?? "The requested game couldn't start. Check its installation and runtime settings."
+                }
+            }
         }
         .task(id: unifiedAccountVerified) {
             state.installedGames.setAccountAccessAllowed(unifiedAccountVerified,

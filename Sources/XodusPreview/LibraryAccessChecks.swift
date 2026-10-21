@@ -75,6 +75,25 @@ enum LibraryAccessChecks {
         check(decodedEvidence.games.first?.scope.contains("save persistence unverified") == true
               && decodedEvidence.games.first?.screenshots.count == 1,
               "Mac evidence keeps observation scope and screenshot references without inventing save proof")
+        let notTested = String(decoding: evidence, as: UTF8.self)
+            .replacingOccurrences(of: #""engine":"synthetic""#, with: #""engine":null"#)
+            .replacingOccurrences(of: "GAMEPLAY_PASS", with: "NOT_TESTED")
+        check(try MacGameEvidence.decode(Data(notTested.utf8)).games.first?.engine == nil,
+              "A not-tested title without a selected engine does not invalidate other real Mac evidence")
+        let working = String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "WORKING")
+        check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verdict == .working,
+              "An externally qualified WORKING record preserves its scoped evidence without granting Windows package admission")
+        check(GameLaunchArguments.parse(["--play-game", "FIXTURE00001"]) == .play("FIXTURE00001")
+              && GameLaunchArguments.parse(["--play-game", "/tmp/game.exe"]) == nil
+              && GameLaunchArguments.parse(["--play-game", "FIXTURE00001", "--fixture"]) == nil
+              && GameLaunchArguments.parse(["--open-native-minecraft"]) == .nativeMinecraft,
+              "App launch actions accept only exact product IDs/native Minecraft, never an executable or fixture override")
+        check(NativeMinecraft.minecraftJavaPID(in: """
+            123 501 /usr/bin/java
+            124 501 /Users/example/Library/Application Support/minecraft/runtime/java-runtime/bin/java
+            125 502 /Users/other/Library/Application Support/minecraft/runtime/java-runtime/bin/java
+            """, uid: 501) == 124,
+              "Native Minecraft detects only this user's bundled Minecraft Java executable, without reading credential-bearing arguments")
         for invalid in [
             String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "SHIPPED"),
             String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "/synthetic/proof.png", with: "https://invalid/proof.png")
