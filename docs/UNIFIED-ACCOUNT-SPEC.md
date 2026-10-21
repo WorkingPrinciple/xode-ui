@@ -36,6 +36,81 @@ This supersedes the earlier unconditional saved-status denial for this new
 signed artifact. It does not establish noninteractive credential access,
 live package licensing, game execution, or shipping admission.
 
+### Developer ID manual-approval scenario recheck
+
+The owner requested rechecking the previously manual-approval scenarios. With
+the separately signed candidate above, these real checks subsequently passed:
+
+| Scenario | Observed result | Evidence boundary |
+| --- | --- | --- |
+| Use the new signing private key | Repository signing and signature/requirement verification completed | Does not establish future absence of private-key approval dialogs |
+| Read the existing saved account | Foreground status returned `credentialPresent` | Not a new Microsoft sign-in; no credential payload printed |
+| Noninteractive package-license access | Abiotic Factor qualifier exited 0 after authenticating its content key | Key not printed/saved; no Wine or game started |
+| Restart the same signed engine | Two separate fresh management processes each returned `credentialPresent` and passed `ode.runtime.verify.v1` | Verification uses noninteractive read-only credentials; no new Microsoft login |
+| Update to an independently rebuilt engine | Not qualified | Requires separately bound/approved build receipts, not another signature of the same binary |
+| Reboot or locked-Keychain access | Not tested | No system lock/unlock or reboot performed |
+| Gatekeeper / notarized app first launch | Not tested | Candidate is an engine, not a hardened/notarized admitted app package |
+
+The preserved app was normally quit to release its state lock for these checks,
+then reopened. A private closed-result restart receipt contains only scenario
+outcomes, not account IDs, credential values or provider payloads. The earlier
+blanket native-password blocker is resolved for the observed candidate paths;
+do not keep reporting it as their current outcome. No claim is made that
+Developer ID removes all macOS prompts, or that a human never interacted with a
+foreground native dialog. The noninteractive successes are the narrower proof.
+
+### Extended approval regression results (21 October)
+
+The owner's exhaustive recheck added an offline release compilation of clean
+runtime source `96d91dbec6727b4a7409908352c48f09411d3508` into a new empty
+target directory (not a second signature of the original file). Build ran
+19:48:26Z-19:49:15Z. Its unsigned SHA256 was
+`ce6d10de182920e11d75fc5523797afd0a9629fa039e6536f1580ad70bc8e460`;
+Developer ID signing produced
+`45033eebdd22c468c179abe27c07a2ddd483be5e4496ead77c0fbcb0cc4f4414`.
+Both different artifacts passed the fixed-certificate designated-requirement
+comparison. These local build observations do not create the independently
+approved build receipts or sealed-input approval required for shipping.
+
+Observed live results:
+
+- The freshly compiled signed engine passed saved status and noninteractive
+  runtime authorization in two fresh processes.
+- It also passed noninteractive Abiotic package qualification (authenticated
+  key, no key output/persistence and no game), followed by another fresh-process
+  runtime verification.
+- Relocating the original signed candidate to a new owned directory preserved
+  its signature and passed two fresh-process account/runtime checks.
+- Returning to the original installed self-signed owner also passed two
+  fresh-process account/runtime checks; rollback access was retained.
+
+Negative/release boundaries remain explicit. `spctl --assess --type execute`
+rejected the candidate with `source=Unnotarized Developer ID` (exit 3).
+Current repository signing disables secure timestamps and does not add hardened
+runtime; the created certificate does not make this a distribution-ready binary.
+Its observed public certificate validity is 21 October 2026-1 February 2027.
+No notarization credentials were provisioned or extracted from Xcode.
+
+The full documented `tools/check.sh` also exposed an existing package-resource
+admission mismatch: `verify_shipping_package.py` expects management schema
+SHA256 `d2f4222e952f732396018a4c4576da24729bdbddde7dd1f95df3b84d7a6d324d`,
+but the checked-in contract and resource both contain
+`03afeb28e4e5b652712c2b6f29fe648fa05c842ea86a4920bd4f960bdbcc0529`.
+The matching runtime-provider schema remains unchanged. The mismatch dates to
+the earlier management-contract changes; sync did not modify tracked bytes.
+The verifier's rejection was preserved, not hidden by replacing an approval
+hash. Remaining regression checks were invoked separately to expose other
+failures rather than stopping evidence collection at that first rejection.
+Those remaining checks all passed: private Python-runtime packaging checks,
+shipping XCTest/binary-admission checks, fixture and management executables,
+presentation and synthetic native-session checks, auth-host checks and
+credential-wire checks. The affected CLI/service/management Rust suites passed
+223 tests with two explicitly ignored tests (one pre-existing CLI test and the
+external-checkout integration test, which had previously been run explicitly).
+These regressions do not override the real package-schema rejection.
+Reboot/locked-Keychain, a real upgraded app package and notarized first launch
+remain untested; the Mac was not rebooted or locked remotely.
+
 ### Current implementation boundary
 
 The first source slice adds `ode.account.read.v1` to the paired Rust producer

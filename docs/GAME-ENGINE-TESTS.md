@@ -369,6 +369,55 @@ commits do not alter the last release CLI hash.
 Allocate another conservative **two-minute** shared evidence/check charge:
 Abiotic **23m46s**, at most **21m14s** remain; NMS stays closed.
 
+### Evening Developer ID live qualification
+
+The owner authorized Xcode certificate provisioning and completed native
+Apple-account sign-in. A valid Developer ID Application identity was created
+for team `M62Z4M5EUY`. The previously built unified engine was copied to a new
+private stage and signed, not substituted into the installed app. Unsigned
+SHA256 remains `723d91c83bd53fad10daca3b7cef99aea551c14e0858a39030301a21268e61f6`;
+signed candidate SHA256 is
+`baaec709352ec81e63b8259e729750953511e45610caee5ac0b4e238f7a12ff9`.
+Signature and fixed-certificate requirement verification passed.
+
+**Actual Abiotic Factor package qualification now passes** with that candidate:
+`ode-package-check` exited 0 after noninteractive saved-account access and
+authenticated single-content-key unpacking. No key was saved/printed and no
+game/Wine was started. This supersedes the prior credential-permission hold
+for this observed candidate path, not the separate shipping/admission gate.
+Two fresh management-process runs also passed saved status and noninteractive
+runtime authorization; those are same-artifact restarts, not independent builds.
+The preserved installed app was reopened afterward and remains unchanged.
+
+Conservatively allocate **four minutes** to the live package/restart checks and
+evidence closeout: Abiotic **27m46s charged**, at most **17m14s** remain before
+later title work. NMS remains closed at 45 minutes and was not checked again.
+No fresh Xbox gameplay or admitted app package is claimed. Rebuild persistence,
+reboot/locked-Keychain behavior and notarized app first launch remain untested.
+
+The exhaustive approval follow-up compiled a second release engine from clean
+`96d91db` source into an empty target directory and Developer ID-signed it.
+It passed two fresh-process account/runtime reads and a further noninteractive
+Abiotic package-key qualification. Relocated original-candidate and preserved
+old-owner rollback checks also passed twice each. No game was started.
+The independent signed artifact SHA256 is
+`45033eebdd22c468c179abe27c07a2ddd483be5e4496ead77c0fbcb0cc4f4414`;
+this is observed local rebuild evidence, not independently approved shipping
+provenance or two admitted build receipts.
+
+The broader CLI/service/management regressions passed 223 tests with two
+explicit ignores. Remaining documented app checks passed when run separately.
+The full `tools/check.sh` is nevertheless **not green**: its package verifier
+rejects the earlier management-schema hash drift. The approval hash was not
+silently changed. Gatekeeper also rejects the candidate as `Unnotarized
+Developer ID`. These are real remaining admission/distribution failures, not
+new credential-access failures. Full details are in UNIFIED-ACCOUNT-SPEC.md.
+
+Conservatively allocate **eight further minutes** for the exhaustive shared
+build/access/regression/evidence slice: Abiotic **35m46s charged**, at most
+**9m14s** remain before later title work. NMS remains closed; no further
+NMS-specific work or repeated NMS licensing check occurred.
+
 ## Session 2 baseline recovery
 
 Read-only source/artifact inspection on 21 October recovered these components.

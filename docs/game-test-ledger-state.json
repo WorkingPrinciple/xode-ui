@@ -4,6 +4,8 @@
   "session": 2,
   "deadline": "2026-10-22T05:28:46Z",
   "notes": [
+    "Latest exhaustive follow-up: independently compiled Developer ID engine passed account/runtime restart checks and Abiotic package qualification; relocated candidate and old-owner rollback passed.223Rust tests pass/2explicitignored; remaining app checks pass separately. Full check.sh fails stale management-schema admission hash; spctl rejects Unnotarized DeveloperID. No approval hashes altered, app replaced or game started. Additional conservative8m brings Abiotic35m46, atmost9m14remain; supersedes earlier totals. NMS staysclosed45min.",
+    "Evening Developer ID candidate signed/verified; actual noninteractive Abiotic package qualification PASSED authenticated content-key unpack, no key saved/printed/no game. Two fresh same-artifact management processes passed saved status and noninteractive runtime authorization. Earlier blanket permission hold resolved for these observed paths; independent rebuild/reboot/lockedKeychain/notarizedapp untested. Conservative4m live-check/evidence charge brings Abiotic27m46, at most17m14 remain. NMS closed45min, not retried. No installed replacement or admitted freshapp.",
     "Session 1: five standalone Windows controls attempted; zero Xbox game launches during that batch.",
     "Latest combined synthetic check96d91db/2170338 explicitly passes the actual Python capability bridge into the real isolated Unix listener/XML router with an injected memory provider, then cancellation/socket cleanup. No Keychain/API/Wine/game involved; external-checkout test ignored by default and executed explicitly. Additional conservative2m charge brings Abiotic23m46, at most21m14 remain; supersedes earlier shared-allocation totals below. NMS remains closed45min.",
     "Session 2: three distinct standalone controls attempted. Stable Wine11.0 retries rendered Brogue's depth1 dungeon, Cataclysm's shelter world and DCSS0.34.1's tutorial dungeon. DCSS exact-target synthetic Right input shifted scenery and advanced game time0.0to1.0. Copilot overlap flags remain unchanged; no full unoccluded/physical-input/audio/endurance acceptance. None establishes Xbox or joint-product acceptance.",
@@ -44,9 +46,9 @@
       "historical": "No gameplay evidence reviewed",
       "installedObservation": "21 Oct: package and local executable metadata resident; 20 Oct inventory/readiness passed",
       "session1": "Preflight only; not launched",
-      "session2": "Actual registered launcher 06:19:04Z failed before Wine; ignored engine choice fixed in source only; shared credential diagnostics included in 11m46s charged",
-      "next": "23m46 charged including conservative shared protocol/transport/combined-fixture/evidence allocations; at most21m14 remain. Native password/live account-consumer checkpoint persists; no unchanged retry. Free Xbox adapter not implemented",
-      "evidence": "Private session2-abiotic-20261021T061904Z receipt and package-route checks; runtime3be4fd1/3bc6599/b7382f2/4bf453c/96d91db/2170338; GAME-ENGINE-TESTS.md"
+      "session2": "Registered launcher06:19:04Z failed beforeWine. Evening Developer ID candidate package qualifier exited0 after noninteractive access/authenticated key unpack; no game. Two fresh same-artifact processes passed runtime authorization",
+      "next": "35m46 charged incl conservative exhaustive build/access/regression/evidence allocation; at most9m14 remain. Package permission hold resolved in original and independently compiled DeveloperID candidates; live game-consumer pairing/admission pending. Free Xbox adapter not implemented",
+      "evidence": "Private session2-abiotic receipt, Developer ID package check and restart-access-results.json; runtime3be4fd1/3bc6599/b7382f2/4bf453c/96d91db/2170338; GAME-ENGINE-TESTS.md"
     },
     "9P03JGQ4S1GC": {
       "historical": "No gameplay evidence reviewed",
