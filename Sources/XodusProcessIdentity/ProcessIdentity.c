@@ -21,14 +21,3 @@ int xodus_process_start(int32_t pid, uint64_t *seconds, uint64_t *microseconds) 
     *microseconds = info.pbi_start_tvusec;
     return 1;
 }
-
-int xodus_process_descends_from(int32_t pid, int32_t ancestor) {
-    if (pid <= 1 || ancestor <= 1) return 0;
-    for (int depth = 0; depth < 64 && pid > 1 && pid != ancestor; depth++) {
-        struct proc_bsdinfo info = {0};
-        if (proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, sizeof(info)) != sizeof(info) ||
-            info.pbi_uid != geteuid() || info.pbi_ppid == (uint32_t)pid) return 0;
-        pid = (int32_t)info.pbi_ppid;
-    }
-    return pid == ancestor;
-}

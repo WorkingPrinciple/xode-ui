@@ -68,9 +68,11 @@ entry selects its exact registry engine; without successful evidence the first
 available PASS engine is used, preferring Free Wine. An unavailable proven or
 explicit engine is reported rather than silently substituted. Launch requests
 and pre-launch failures are logged under `io.github.dragoshont.xodus/GameLaunch`;
-tile failures are shown inline. A bounded foreground handoff targets only an
-owned descendant of the current launcher with a matching game-window title,
-and never steals focus after the user leaves Ode to X.
+tile failures are shown inline. A bounded foreground handoff targets a newly
+created same-user game window with an exact game-title match and the configured
+executable/Wine owner. It excludes pre-existing windows and browser titles,
+rechecks kernel birth identity before activation, supports Wine's reparenting
+to PID 1, and never steals focus after the user leaves Ode to X.
 
 The owner changed the classification policy on 22 October: unknown anti-cheat
 is not a known blocker. MSIXVC games without a named blocker can be tried and

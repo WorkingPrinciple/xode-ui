@@ -425,6 +425,8 @@ final class InstalledGamesController: ObservableObject {
                 provider: game.engineOverride ?? defaultEngine(),
                 provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine)
             let arguments = try await launch.arguments()
+            let executables = try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder)).executables
+            let existingWindows = NativeGameForeground.windowIDs()
             guard accountAccessAllowed, session.accountHash == account,
                   session.nativeLifecycleConfiguration?.executable == configuration.executable,
                   runningGameID == nil, !accountDisconnecting, !applicationTerminating,
@@ -451,7 +453,8 @@ final class InstalledGamesController: ObservableObject {
                             recordSession(gameID: game.id, startedAt: startedAt, seconds: nil)
                             if let pid = nativeLauncher.processIdentifier {
                                 nativeForegroundTask = Task {
-                                    let activated = await NativeGameForeground.activate(launcherPID: pid, title: game.title) {
+                                    let activated = await NativeGameForeground.activate(launcherPID: pid, title: game.title,
+                                        executables: executables, existingWindows: existingWindows) {
                                         self.runToken == token && self.nativeLauncher.isRunning
                                             && self.stoppingGameID == nil && !self.applicationTerminating
                                     }

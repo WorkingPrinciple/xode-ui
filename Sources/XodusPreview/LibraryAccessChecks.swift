@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
 import XodusManagement
-import XodusProcessIdentity
 
 @MainActor
 enum LibraryAccessChecks {
@@ -99,13 +98,14 @@ enum LibraryAccessChecks {
               "Installer-only failures never imply that a game was launched")
         check(NativeGameForeground.matchesGameWindow("Hollow Knight", title: "Hollow Knight: Voidheart Edition")
               && NativeGameForeground.matchesGameWindow("Hades II", title: "Hades II")
+              && !NativeGameForeground.matchesGameWindow("Hollow Knight: Silksong", title: "Hollow Knight: Voidheart Edition")
               && !NativeGameForeground.matchesGameWindow("Wine System Tray", title: "Hades II")
               && !NativeGameForeground.matchesGameWindow("Other game", title: ""),
               "Foreground handoff targets the launched game's window, never unrelated Wine windows")
-        check(xodus_process_descends_from(getpid(), getppid()) == 1
-              && xodus_process_descends_from(getppid(), getpid()) == 0
-              && xodus_process_descends_from(0, 0) == 0,
-              "Foreground ancestry comes from same-user kernel process metadata, rejecting unrelated or invalid PIDs")
+        check(NativeGameForeground.matchesOwner("Hollow Knight.exe", executables: ["Hollow Knight.exe"])
+              && NativeGameForeground.matchesOwner("wine64-preloader", executables: ["Hades2.exe"])
+              && !NativeGameForeground.matchesOwner("Microsoft Edge", executables: ["Hollow Knight.exe"]),
+              "Foreground matching accepts the game's executable or Wine owner, never browser windows with game titles")
         check(GameLaunchArguments.parse(["--play-game", "FIXTURE00001"]) == .play("FIXTURE00001")
               && GameLaunchArguments.parse(["--play-game", "/tmp/game.exe"]) == nil
               && GameLaunchArguments.parse(["--play-game", "FIXTURE00001", "--fixture"]) == nil

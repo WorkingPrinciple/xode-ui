@@ -311,13 +311,32 @@ final class LaunchAssociationHandoff {
 @MainActor
 enum NativeGameForeground {
     static func matchesGameWindow(_ name: String, title: String) -> Bool {
-        let title = (title.components(separatedBy: ":").first ?? title)
-            .replacingOccurrences(of: "™", with: "").replacingOccurrences(of: "®", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return !title.isEmpty && name.localizedCaseInsensitiveContains(title)
+        func normalize(_ value: String) -> String {
+            value.replacingOccurrences(of: "™", with: "").replacingOccurrences(of: "®", with: "")
+                .replacingOccurrences(of: "’", with: "'")
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        }
+        let observed = normalize(name), full = normalize(title)
+        let main = normalize(title.components(separatedBy: ":").first ?? title)
+        return !observed.isEmpty && !full.isEmpty && (observed == full || observed == main)
     }
 
-    static func activate(launcherPID: Int32, title: String, current: () -> Bool) async -> Bool {
+    static func matchesOwner(_ name: String, executables: [String]) -> Bool {
+        let name = name.lowercased()
+        return ["wine", "wine64", "wine-preloader", "wine64-preloader"].contains(name)
+            || executables.contains {
+                $0.replacingOccurrences(of: "\\", with: "/").split(separator: "/").last?.lowercased() == name
+            }
+    }
+
+    static func windowIDs() -> Set<UInt32> {
+        let windows = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements],
+                                                 kCGNullWindowID) as? [[String: Any]] ?? []
+        return Set(windows.compactMap { ($0[kCGWindowNumber as String] as? NSNumber)?.uint32Value })
+    }
+
+    static func activate(launcherPID: Int32, title: String, executables: [String],
+                         existingWindows: Set<UInt32>, current: () -> Bool) async -> Bool {
         var seconds: UInt64 = 0, microseconds: UInt64 = 0
         guard xodus_process_start(launcherPID, &seconds, &microseconds) == 1 else { return false }
         let launcher = LaunchProcessIdentity(pid: launcherPID, start_sec: seconds, start_usec: microseconds)
@@ -328,13 +347,19 @@ enum NativeGameForeground {
                                                         kCGNullWindowID) as? [[String: Any]] {
                 for window in windows {
                     guard let pid = (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value,
-                          pid != launcherPID, xodus_process_descends_from(pid, launcherPID) == 1,
+                          pid != launcherPID,
+                          let id = (window[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
+                          !existingWindows.contains(id),
+                          let owner = window[kCGWindowOwnerName as String] as? String,
+                          matchesOwner(owner, executables: executables),
                           (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
                           let name = window[kCGWindowName as String] as? String,
                           matchesGameWindow(name, title: title),
-                          xodus_process_start(pid, &seconds, &microseconds) == 1 else { continue }
+                          xodus_process_start(pid, &seconds, &microseconds) == 1,
+                          seconds > launcher.start_sec
+                            || (seconds == launcher.start_sec && microseconds >= launcher.start_usec) else { continue }
                     let target = LaunchProcessIdentity(pid: pid, start_sec: seconds, start_usec: microseconds)
-                    if current(), launcher.matchesKernel(), xodus_process_descends_from(pid, launcherPID) == 1,
+                    if current(), launcher.matchesKernel(),
                        LaunchAssociationHandoff.readyTarget(target),
                        LaunchAssociationHandoff.activateTarget(target) { return true }
                 }
