@@ -12,10 +12,11 @@ struct MacGameEvidence: Decodable, Sendable {
 
         var label: String {
             switch self {
-            case .gameplay, .working: "Works on Mac"
+            case .gameplay: "Playable, not fully verified"
+            case .working: "Works on Mac"
             case .menu: "Starts, not yet playable"
-            case .blocked, .failed: "Doesn't start yet"
-            case .notTested: "Not tested on Mac yet"
+            case .failed: "Doesn't start yet"
+            case .blocked, .notTested: "Not tested on Mac yet"
             case .excluded: "Not supported yet"
             }
         }
@@ -34,6 +35,13 @@ struct MacGameEvidence: Decodable, Sendable {
         let screenshots: [Screenshot]
         let owner: String
         let blocker: String?
+        let launchAttempted: Bool?
+
+        var statusLabel: String {
+            if launchAttempted == false { return Verdict.notTested.label }
+            if verdict == .blocked, launchAttempted == true { return Verdict.failed.label }
+            return verdict.label
+        }
 
         var engineLabel: String? {
             guard let engine else { return nil }
@@ -155,7 +163,8 @@ struct MacGameEvidenceView: View {
     }
 
     private func status(_ record: MacGameEvidence.Game) -> String {
-        record.verdict.label + (record.engineLabel.map { " · " + $0 } ?? "")
+        let engine = record.statusLabel == MacGameEvidence.Verdict.notTested.label ? nil : record.engineLabel
+        return record.statusLabel + (engine.map { " · " + $0 } ?? "")
     }
 
     private func open(_ proof: MacGameEvidence.Screenshot) {

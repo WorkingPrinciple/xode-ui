@@ -90,6 +90,9 @@ null when not recorded. The library reloads it every five
 seconds, exposes compact verdict/engine copy on cards, and opens recorded local
 screenshots. Full observation scope is available in Details, not on the cards. These observations
 do not grant entitlement or override S4 package/anti-cheat admission.
+Only `WORKING` is labelled "Works on Mac"; `GAMEPLAY_PASS` is "Playable, not
+fully verified". `BLOCKED` without an explicit `launchAttempted:true` remains
+"Not tested on Mac yet", so installer failures never become launch claims.
 
 In unified-account mode, the app discovers complete game configurations under
 `~/Games/Xodus` and registers native lifecycle records without launcher scripts

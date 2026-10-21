@@ -88,8 +88,11 @@ struct NativeMinecraftCard<Artwork: View>: View {
             }
                 Menu {
                     Button("Details") { showsDetails = true }
-                } label: { Image(systemName: "ellipsis").accessibilityLabel("Minecraft options") }
+                } label: { Image(systemName: "ellipsis").accessibilityHidden(true) }
+                .menuIndicator(.hidden)
                 .modifier(LibraryActionStyle(primary: false))
+                .fixedSize()
+                .accessibilityLabel("Actions for Minecraft: Java Edition")
             }
         }
         .sheet(isPresented: $showsDetails) {

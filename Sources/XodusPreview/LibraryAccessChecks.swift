@@ -85,12 +85,18 @@ enum LibraryAccessChecks {
         let working = String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "WORKING")
         check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verdict == .working,
               "An externally qualified WORKING record preserves its scoped evidence without granting Windows package admission")
-        check(MacGameEvidence.Verdict.gameplay.label == "Works on Mac"
+        check(MacGameEvidence.Verdict.gameplay.label == "Playable, not fully verified"
+              && MacGameEvidence.Verdict.working.label == "Works on Mac"
+              && MacGameEvidence.Verdict.blocked.label == "Not tested on Mac yet"
               && MacGameEvidence.Verdict.menu.label == "Starts, not yet playable"
               && MacGameEvidence.Verdict.failed.label == "Doesn't start yet"
               && decodedEvidence.games.first?.engineLabel == "Free Wine"
               && decodedEvidence.games.first?.provenEngine == "synthetic",
               "Cards use compact verdict/provider copy; only successful gameplay supplies automatic engine selection")
+        let preLaunch = String(decoding: evidence, as: UTF8.self)
+            .replacingOccurrences(of: #""blocker":null"#, with: #""blocker":null,"launchAttempted":false"#)
+        check(try MacGameEvidence.decode(Data(preLaunch.utf8)).games.first?.statusLabel == "Not tested on Mac yet",
+              "Installer-only failures never imply that a game was launched")
         check(NativeGameForeground.matchesGameWindow("Hollow Knight", title: "Hollow Knight: Voidheart Edition")
               && NativeGameForeground.matchesGameWindow("Hades II", title: "Hades II")
               && !NativeGameForeground.matchesGameWindow("Wine System Tray", title: "Hades II")
