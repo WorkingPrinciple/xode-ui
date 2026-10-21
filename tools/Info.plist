@@ -13,6 +13,8 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
+    <key>NSLocalNetworkUsageDescription</key><string>Ode to X discovers Xbox consoles on your local network when you request local discovery.</string>
+    <key>NSBonjourServices</key><array><string>_xbox._tcp</string></array>
     <key>NSHumanReadableCopyright</key><string>GPL-3.0-only. Development build; not a certified game runtime.</string>
 </dict>
 </plist>

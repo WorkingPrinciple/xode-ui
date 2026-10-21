@@ -184,7 +184,13 @@ struct LiveRootView: View {
         }
 #endif
         .task {
-            if startupAllowed { await state.runtimeSettings.refreshCrossOverDependency() }
+            if startupAllowed {
+                if UserDefaults.standard.bool(forKey: "Xodus.localNetwork.requestOnce") {
+                    UserDefaults.standard.removeObject(forKey: "Xodus.localNetwork.requestOnce")
+                    LocalNetworkDiscovery.shared.search()
+                }
+                await state.runtimeSettings.refreshCrossOverDependency()
+            }
         }
         .task(id: accountRecoveryAllowed) {
             if accountRecoveryAllowed {

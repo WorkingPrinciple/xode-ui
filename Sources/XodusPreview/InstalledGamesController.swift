@@ -133,6 +133,19 @@ final class InstalledGamesController: ObservableObject {
             self.error = InstalledGameError.invalidConfig.localizedDescription
             return
         }
+        if usesUnifiedAccount {
+            editing = true
+            defer { editing = false }
+            do {
+                try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: nil)
+                error = nil
+            } catch {
+                self.error = (error as? InstalledGameError)?.localizedDescription
+                    ?? (error as? GameScriptError)?.localizedDescription
+                    ?? InstalledGameError.storage.localizedDescription
+            }
+            return
+        }
         let scriptPanel = NSOpenPanel()
         scriptPanel.title = "Choose the launch script for this game"
         scriptPanel.message = "Use the launch script you already use for this game."

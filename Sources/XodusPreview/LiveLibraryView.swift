@@ -467,7 +467,7 @@ struct LiveLibraryView: View {
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else if let match = game.installed {
                 InstalledPlayButton(library: installed, operations: operations, game: match,
-                                    usesGlass: true, heroStyle: true, attention: { open(game) })
+                                    usesGlass: true, heroStyle: true)
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else {
@@ -732,7 +732,7 @@ struct LiveLibraryView: View {
                 if let match = game.installed {
                     if unsupportedIssues(game).isEmpty {
                         InstalledPlayButton(library: installed, operations: operations, game: match,
-                                            usesGlass: true, prominent: false, attention: { open(game) })
+                                            usesGlass: true, prominent: false)
                     }
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
                 } else if unsupportedReason(game) != nil {
@@ -746,6 +746,10 @@ struct LiveLibraryView: View {
                         DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
                             gamePass: true, subscriptionActive: operations.gamePassActive,
                             pcCandidate: product.pcCatalogCandidate), primary: false)
+                } else {
+                    GameInstallAction(game: PCGame(id: game.id, title: game.title, artwork: game.cover),
+                        operations: operations, enabled: allowsStartupTasks && library.accessIsCurrent,
+                        primary: false)
                 }
             }
         }

@@ -11,6 +11,7 @@ struct NativeEngineSettings: View {
     @AppStorage("Xodus.evidence.triedGames") private var evidencePath = ""
     @State private var entries: [NativeEngineRegistry.Entry] = []
     @State private var errorMessage: String?
+    @ObservedObject private var localDiscovery = LocalNetworkDiscovery.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -88,6 +89,11 @@ struct NativeEngineSettings: View {
             if !evidencePath.isEmpty {
                 Text(evidencePath).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
             }
+            Button("Find consoles on local network") { localDiscovery.search() }
+                .disabled(!allowsFileReads)
+                .accessibilityIdentifier("xodus.localNetwork.discover")
+            Text(localDiscovery.status).font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             if let errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.circle")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)

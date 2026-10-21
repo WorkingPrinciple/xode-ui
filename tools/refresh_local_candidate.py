@@ -54,7 +54,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
             verify_designated_requirement(path, "cli", identity)
         else:
             command(["/usr/bin/codesign", "--verify", "--strict", "-R",
-                     'certificate leaf = H"' + identity.upper() + '"', str(path)])
+                     '=certificate leaf = H"' + identity.upper() + '"', str(path)])
     verify_cli(old_cli)
     cli_record, _ = owned_bytes(old_cli)
     if selected_cli is not None:
