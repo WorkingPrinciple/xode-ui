@@ -1,0 +1,584 @@
+{
+  "products": {
+    "9N8C07SS8C9D": {
+      "checkedAt": "2026-10-21T23:45:50+00:00",
+      "completeness": {
+        "content_id": "5ed01e66-9b79-4d5b-84f6-64d41aa6430a",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 1610,
+        "finished_at": "2026-10-21T23:45:50.561823Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/FinalFantasyIV-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/594ba71f-fea0-4a1c-ad8b-1ee2b4e8ade7",
+        "operation": "install-status",
+        "product": "9N8C07SS8C9D",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/594ba71f-fea0-4a1c-ad8b-1ee2b4e8ade7/result.json",
+        "run_id": "594ba71f-fea0-4a1c-ad8b-1ee2b4e8ade7",
+        "started_at": "2026-10-21T23:45:49.864357Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": null,
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "pending-S1-binding",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-21T23:26:46.240550Z",
+        "product": "9N8C07SS8C9D",
+        "run_id": "173a3d9b-0e61-4785-b0c0-eedba72e34cf",
+        "started_at": "2026-10-21T23:26:15.394030Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/173a3d9b-0e61-4785-b0c0-eedba72e34cf/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 1611,
+          "fileListSha256": "065f258a3667648206be96b5867c700d4fe105253cbb747f9ac7088e4616d243",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "a6e32b310cbc94d74cd8be381a95a3110ccb85fd69be516d9322515e44fd2f5c",
+            "imports": [],
+            "path": "FINAL FANTASY IV.exe",
+            "sizeBytes": 667648,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "backendMarkers": [],
+            "dxgi": false,
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "headerSha256": "03acb875c9cec9e9ff36e12b5d95c42c57e7d4c6e86f8915f3560e1bf2fec622",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "dwmapi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 28297648,
+            "status": "parsed"
+          }
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "FINAL FANTASY IV_Data/globalgamemanagers",
+            "FINAL FANTASY IV_Data/globalgamemanagers.assets",
+            "UnityPlayer.dll"
+          ]
+        },
+        "executables": [
+          "FINAL FANTASY IV.exe"
+        ],
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "hasUnityPlayer": true,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "39EA002F.FF4DF",
+          "storeId": "9N8C07SS8C9D",
+          "version": "1.2.2.0"
+        },
+        "manifestSha256": "175083f95cb11ee2ab24533b96da0c04442ba06c0206895cba647a85409597e3",
+        "metadata": {
+          "MSAAppId": [
+            "8e57bc4e-cf70-4bcd-8cbf-93807eb0dd68"
+          ],
+          "TitleId": [
+            "64d7923e"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [],
+        "root": "~/Games/Xodus/FinalFantasyIV-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/FinalFantasyIV-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    },
+    "9NFB47H2SDRX": {
+      "checkedAt": "2026-10-21T23:45:57+00:00",
+      "completeness": {
+        "content_id": "2dff0f2a-fd10-473d-85db-868f7e6a7e35",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 421,
+        "finished_at": "2026-10-21T23:45:57.238808Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/ForeverAgo-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d2c7085f-7c51-496e-a0a9-6cb2f1ab5d51",
+        "operation": "install-status",
+        "product": "9NFB47H2SDRX",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d2c7085f-7c51-496e-a0a9-6cb2f1ab5d51/result.json",
+        "run_id": "d2c7085f-7c51-496e-a0a9-6cb2f1ab5d51",
+        "started_at": "2026-10-21T23:45:56.499072Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": null,
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "pending-S1-binding",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-21T23:33:53.357482Z",
+        "product": "9NFB47H2SDRX",
+        "run_id": "bbbf3af0-80b8-491d-85fb-511cd0390024",
+        "started_at": "2026-10-21T23:28:40.966750Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bbbf3af0-80b8-491d-85fb-511cd0390024/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 422,
+          "fileListSha256": "818b663ecb38f76dcec3104a977a5a9cc9fd2298ea555ea11b39c3e6eb596e10",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "038d95ccb8f2208e10ae999ff1ad367ffd53296ed4513622161c8a1c62790fb3",
+            "imports": [],
+            "path": "ForeverAgo.exe",
+            "sizeBytes": 667648,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "backendMarkers": [],
+            "dxgi": true,
+            "graphicsAPIs": [
+              "DX11",
+              "DX12",
+              "OpenGL"
+            ],
+            "headerSha256": "e42bd07a3249c3ec8b33ab3606a97cb70f7bd9e99a80e939ff4cdc2a17845f28",
+            "imports": [
+              "advapi32.dll",
+              "api-ms-win-core-synch-l1-2-0.dll",
+              "api-ms-win-core-winrt-l1-1-0.dll",
+              "api-ms-win-core-winrt-string-l1-1-0.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "d3d11.dll",
+              "d3d12.dll",
+              "dwmapi.dll",
+              "dxgi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "iphlpapi.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "uiautomationcore.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 36259240,
+            "status": "parsed"
+          }
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "ForeverAgo_Data/globalgamemanagers",
+            "ForeverAgo_Data/globalgamemanagers.assets",
+            "ForeverAgo_Data/globalgamemanagers.assets.resS",
+            "UnityPlayer.dll"
+          ]
+        },
+        "executables": [
+          "ForeverAgo.exe"
+        ],
+        "graphicsAPIs": [
+          "DX11",
+          "DX12",
+          "OpenGL"
+        ],
+        "hasUnityPlayer": true,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "57209AnnapurnaInteractive.ForeverAgo",
+          "storeId": "9NFB47H2SDRX",
+          "version": "1.0.1642.0"
+        },
+        "manifestSha256": "9f5b4c1901a68a7dceea07fbb3e042b4483ca8b6e6b46aeac08c68c5865faf19",
+        "metadata": {
+          "MSAAppId": [
+            "00000000416F0D09"
+          ],
+          "TitleId": [
+            "734f98d9"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "D3D12/D3D12Core.dll",
+          "ForeverAgo_Data/Managed/UnityEngine.ClusterRendererModule.dll"
+        ],
+        "root": "~/Games/Xodus/ForeverAgo-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/ForeverAgo-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    },
+    "9NGH1FK0RJGL": {
+      "checkedAt": "2026-10-21T23:45:51+00:00",
+      "completeness": {
+        "content_id": "9200fed3-78d1-4568-b66b-00135207931c",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 219,
+        "finished_at": "2026-10-21T23:45:51.163204Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/WastelandRemastered-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/f996abbe-7a24-4fbe-8e4a-df0cfdb90437",
+        "operation": "install-status",
+        "product": "9NGH1FK0RJGL",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/f996abbe-7a24-4fbe-8e4a-df0cfdb90437/result.json",
+        "run_id": "f996abbe-7a24-4fbe-8e4a-df0cfdb90437",
+        "started_at": "2026-10-21T23:45:50.753Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": null,
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "pending-S1-binding",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-21T23:28:32.757300Z",
+        "product": "9NGH1FK0RJGL",
+        "run_id": "3ab04535-7c3d-499b-a140-db91951cc4c5",
+        "started_at": "2026-10-21T23:26:15.418571Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/3ab04535-7c3d-499b-a140-db91951cc4c5/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 220,
+          "fileListSha256": "2306854ba2cda027c2f2e5cc84e789454ba8f8e72174cb23fccbc104beb568d1",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "backendMarkers": [],
+            "dxgi": false,
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "headerSha256": "03acb875c9cec9e9ff36e12b5d95c42c57e7d4c6e86f8915f3560e1bf2fec622",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "dwmapi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "windowscodecs.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll",
+              "wsock32.dll"
+            ],
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 22972872,
+            "status": "parsed"
+          },
+          {
+            "headerSha256": "dd8c726af2bca2b7600a0647f7b8ce98fc7cf094e405d209dcddc3e9b7b0b3c9",
+            "imports": [],
+            "path": "Wasteland Remastered.exe",
+            "sizeBytes": 651264,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "UnityPlayer.dll",
+            "Wasteland Remastered_Data/globalgamemanagers",
+            "Wasteland Remastered_Data/globalgamemanagers.assets"
+          ]
+        },
+        "executables": [
+          "Wasteland Remastered.exe"
+        ],
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "hasUnityPlayer": true,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Microsoft.Wasteland30thAnniversaryEdition",
+          "storeId": "9NGH1FK0RJGL",
+          "version": "1.0.5088.0"
+        },
+        "manifestSha256": "6194e1791c477003585c68b0b8cbe3b3d97623435af974b826bf1b7c058f012c",
+        "metadata": {
+          "TitleId": [
+            "72CEC741"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [],
+        "root": "~/Games/Xodus/WastelandRemastered-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/WastelandRemastered-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    },
+    "9P1N07XDL1D4": {
+      "checkedAt": "2026-10-21T23:45:56+00:00",
+      "completeness": {
+        "content_id": "6f4b5989-6054-48c4-ba84-04a597d750e3",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 11196,
+        "finished_at": "2026-10-21T23:45:55.861703Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/DishonoredDefinitive-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bf12783d-adf9-4c8d-85bc-ce338e742b64",
+        "operation": "install-status",
+        "product": "9P1N07XDL1D4",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bf12783d-adf9-4c8d-85bc-ce338e742b64/result.json",
+        "run_id": "bf12783d-adf9-4c8d-85bc-ce338e742b64",
+        "started_at": "2026-10-21T23:45:51.264070Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": null,
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "pending-S1-binding",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-21T23:36:23.747988Z",
+        "product": "9P1N07XDL1D4",
+        "run_id": "4c251e73-d1c2-4dfb-adb0-ccf1f952c327",
+        "started_at": "2026-10-21T23:27:07.555060Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/4c251e73-d1c2-4dfb-adb0-ccf1f952c327/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 11197,
+          "fileListSha256": "97c1ebcda0aeb9116619554c879974bec444f7530375cda373cf7b7233fb1ba8",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "38178b3db40bc82f1e6c51d70a84484c82b81a3f6acc77bce5a6f6de13e1416f",
+            "imports": [],
+            "path": "Binaries/Win64/Dishonored.exe",
+            "sizeBytes": 26451968,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {},
+        "executables": [
+          "Binaries/Win64/Dishonored.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.DishonoredDE-PC",
+          "storeId": "9P1N07XDL1D4",
+          "version": "1.10.0.0"
+        },
+        "manifestSha256": "653200f8c71fc7ffe50984337601e6dbe7ccd1f03f4ab09349af41754266655d",
+        "metadata": {
+          "MSAAppId": [
+            "0000000044674E93"
+          ],
+          "TitleId": [
+            "61068E0F"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [],
+        "root": "~/Games/Xodus/DishonoredDefinitive-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/DishonoredDefinitive-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    },
+    "9P5Z4530318L": {
+      "checkedAt": "2026-10-21T23:45:59+00:00",
+      "completeness": {
+        "content_id": "bfc20305-9099-46bc-8f65-ca6f5163831b",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 740,
+        "finished_at": "2026-10-21T23:45:59.758618Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Deathloop-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/207db8fe-4392-42f9-8541-e42486abf516",
+        "operation": "install-status",
+        "product": "9P5Z4530318L",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/207db8fe-4392-42f9-8541-e42486abf516/result.json",
+        "run_id": "207db8fe-4392-42f9-8541-e42486abf516",
+        "started_at": "2026-10-21T23:45:57.350311Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": null,
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "pending-S1-binding",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-21T23:44:24.917977Z",
+        "product": "9P5Z4530318L",
+        "run_id": "4bff1cfa-7b63-429f-9137-4e2c8fde0178",
+        "started_at": "2026-10-21T23:36:14.234713Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/4bff1cfa-7b63-429f-9137-4e2c8fde0178/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 741,
+          "fileListSha256": "0e522f23cebef2e3c4d03f00ea01ba2dad08d1734dd1ff7593e20d608a0f8fdd",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "02876d828ef970d99f120fb73387731f92a7c5cef4e597d9b262d3b103a0f0e2",
+            "imports": [],
+            "path": "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/Deathloop.exe",
+            "sizeBytes": 486498304,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {},
+        "executables": [
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/Deathloop.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.ProjectPrism",
+          "storeId": "9P5Z4530318L",
+          "version": "1.8.0.0"
+        },
+        "manifestSha256": "37ef73fb32bbaf9ec71158a324cfbcf95d11c6ea397771fdb90cae71ab6035a0",
+        "metadata": {
+          "MSAAppId": [
+            "000000004089C14A"
+          ],
+          "TitleId": [
+            "64c2808e"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "base/shaderCache/ShaderCache_D3D12_PC.rpd",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpi",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpue",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpvd",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpvi",
+          "base/shaderCache/ShaderCache_D3D12_PC.str",
+          "base/shaderCache/ShaderCache_D3D12_PC.ucd",
+          "base/shaderCache/ShaderCache_D3D12_PC.uci",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/AnselSDK64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/Deathloop.exe",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/EOSSDK-Win64-Shipping.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/GFSDK_SSAO_D3D12.win64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/PartyWin.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/PartyWin7.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/XCurl.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/amd_ags_x64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/bink2w64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/nvngx_dlss.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/oo2core_8_win64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/oo2net_8_win64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/steam_api64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/xaudio2_9redist.dll"
+        ],
+        "root": "~/Games/Xodus/Deathloop-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/Deathloop-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    }
+  },
+  "schemaVersion": 1,
+  "scope": "Installation and static package evidence only; no game launches or runtime qualification."
+}

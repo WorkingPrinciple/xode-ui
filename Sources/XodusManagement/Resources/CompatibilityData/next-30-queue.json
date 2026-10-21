@@ -1396,13 +1396,15 @@
       "title": "Fallout 4"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX10",
-      "apiAlternatives": [],
+      "apiAlternatives": [
+        "OpenGL"
+      ],
       "apiBasis": "public-Windows-requirement",
       "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 10. This is a public requirement, not an import scan or proof of the Xbox renderer.",
       "apiEvidenceCheckedAt": "2026-10-21",
@@ -1421,11 +1423,14 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9N8C07SS8C9D&market=GB&languages=en-GB"
       },
       "downloadSizeKnown": true,
-      "engine": [],
+      "engine": [
+        "Unity"
+      ],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9N8C07SS8C9D",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/FinalFantasyIV-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1441,30 +1446,40 @@
         "date": "8 Sep, 2021"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "8e57bc4e-cf70-4bcd-8cbf-93807eb0dd68"
+          ],
+          "TitleId": [
+            "64d7923e"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 516707096,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9N8C07SS8C9D",
       "storeId": "9N8C07SS8C9D",
       "testEligibility": "test-unverified",
       "title": "FINAL FANTASY IV"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX11",
-      "apiAlternatives": [],
+      "apiAlternatives": [
+        "OpenGL"
+      ],
       "apiBasis": "public-Windows-requirement",
       "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 11. This is a public requirement, not an import scan or proof of the Xbox renderer.",
       "apiEvidenceCheckedAt": "2026-10-21",
@@ -1483,11 +1498,14 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NGH1FK0RJGL&market=GB&languages=en-GB"
       },
       "downloadSizeKnown": true,
-      "engine": [],
+      "engine": [
+        "Unity"
+      ],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NGH1FK0RJGL",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/WastelandRemastered-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1503,28 +1521,33 @@
         "date": "25 Feb, 2020"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "TitleId": [
+            "72CEC741"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 3072526735,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9NGH1FK0RJGL",
       "storeId": "9NGH1FK0RJGL",
       "testEligibility": "test-unverified",
       "title": "Wasteland Remastered"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX9",
       "apiAlternatives": [],
       "apiBasis": "public-Windows-requirement",
@@ -1548,8 +1571,9 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P1N07XDL1D4",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/DishonoredDefinitive-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1565,30 +1589,42 @@
         "date": "11 Oct, 2012"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "0000000044674E93"
+          ],
+          "TitleId": [
+            "61068E0F"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 17488643206,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9P1N07XDL1D4",
       "storeId": "9P1N07XDL1D4",
       "testEligibility": "test-unverified",
       "title": "Dishonored® Definitive Edition (PC)"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX12",
-      "apiAlternatives": [],
+      "apiAlternatives": [
+        "DX11",
+        "DX12",
+        "OpenGL"
+      ],
       "apiBasis": "public-Windows-requirement",
       "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
       "apiEvidenceCheckedAt": "2026-10-21",
@@ -1607,11 +1643,14 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NFB47H2SDRX&market=GB&languages=en-GB"
       },
       "downloadSizeKnown": true,
-      "engine": [],
+      "engine": [
+        "Unity"
+      ],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NFB47H2SDRX",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/ForeverAgo-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1627,28 +1666,36 @@
         "date": "8 Oct, 2026"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "00000000416F0D09"
+          ],
+          "TitleId": [
+            "734f98d9"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 9474068229,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9NFB47H2SDRX",
       "storeId": "9NFB47H2SDRX",
       "testEligibility": "test-unverified",
       "title": "Forever Ago"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX12",
       "apiAlternatives": [],
       "apiBasis": "public-Windows-requirement",
@@ -1672,8 +1719,9 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P5Z4530318L",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/Deathloop-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1689,18 +1737,26 @@
         "date": "13 Sep, 2021"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004089C14A"
+          ],
+          "TitleId": [
+            "64c2808e"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 33466539491,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9P5Z4530318L",
       "storeId": "9P5Z4530318L",
       "testEligibility": "test-unverified",
       "title": "DEATHLOOP"

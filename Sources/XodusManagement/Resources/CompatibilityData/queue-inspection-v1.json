@@ -258,14 +258,14 @@
           "Subtitle Options"
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=2344520&cc=gb&l=english",
-        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  64-bit Windows\u00ae 10 version 1909 or newer    Processor:  Intel\u00ae Core\u2122 i5-2500K or AMD\u2122 FX-8350    Memory:  8 GB RAM    Graphics:  NVIDIA\u00ae GeForce\u00ae GTX 660 or Intel\u00ae Arc\u2122 A380 or AMD Radeon\u2122 R9 280    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  90 GB available space    Additional Notes:  *1080p native resolution / 720p render resolution, low graphics settings, 30fps, SSD Required",
-        "name": "Diablo\u00ae IV",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  64-bit Windows® 10 version 1909 or newer    Processor:  Intel® Core™ i5-2500K or AMD™ FX-8350    Memory:  8 GB RAM    Graphics:  NVIDIA® GeForce® GTX 660 or Intel® Arc™ A380 or AMD Radeon™ R9 280    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  90 GB available space    Additional Notes:  *1080p native resolution / 720p render resolution, low graphics settings, 30fps, SSD Required",
+        "name": "Diablo® IV",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
           "source": "https://store.steampowered.com/appreviews/2344520?json=1&language=all&purchase_type=all&num_per_page=0",
           "totalReviews": 80222
         },
-        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  64-bit Windows\u00ae 10 version 1909 or newer    Processor:  Intel\u00ae Core\u2122 i5-4670K or AMD Ryzen\u2122 1300X    Memory:  16 GB RAM    Graphics:  NVIDIA\u00ae GeForce\u00ae GTX 970 or Intel\u00ae Arc\u2122 A750 or AMD Radeon\u2122 RX 470    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  90 GB available space    Additional Notes:  *1080p resolution, medium graphics settings, 60fps, SSD Required",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  64-bit Windows® 10 version 1909 or newer    Processor:  Intel® Core™ i5-4670K or AMD Ryzen™ 1300X    Memory:  16 GB RAM    Graphics:  NVIDIA® GeForce® GTX 970 or Intel® Arc™ A750 or AMD Radeon™ RX 470    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  90 GB available space    Additional Notes:  *1080p resolution, medium graphics settings, 60fps, SSD Required",
         "releaseDate": {
           "coming_soon": false,
           "date": "17 Oct, 2023"
@@ -894,6 +894,90 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9N8C07SS8C9D&market=GB&languages=en-GB",
         "status": "matched"
       },
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 1611,
+          "fileListSha256": "065f258a3667648206be96b5867c700d4fe105253cbb747f9ac7088e4616d243",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "a6e32b310cbc94d74cd8be381a95a3110ccb85fd69be516d9322515e44fd2f5c",
+            "imports": [],
+            "path": "FINAL FANTASY IV.exe",
+            "sizeBytes": 667648,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "backendMarkers": [],
+            "dxgi": false,
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "headerSha256": "03acb875c9cec9e9ff36e12b5d95c42c57e7d4c6e86f8915f3560e1bf2fec622",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "dwmapi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 28297648,
+            "status": "parsed"
+          }
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "FINAL FANTASY IV_Data/globalgamemanagers",
+            "FINAL FANTASY IV_Data/globalgamemanagers.assets",
+            "UnityPlayer.dll"
+          ]
+        },
+        "executables": [
+          "FINAL FANTASY IV.exe"
+        ],
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "hasUnityPlayer": true,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "39EA002F.FF4DF",
+          "storeId": "9N8C07SS8C9D",
+          "version": "1.2.2.0"
+        },
+        "manifestSha256": "175083f95cb11ee2ab24533b96da0c04442ba06c0206895cba647a85409597e3",
+        "metadata": {
+          "MSAAppId": [
+            "8e57bc4e-cf70-4bcd-8cbf-93807eb0dd68"
+          ],
+          "TitleId": [
+            "64d7923e"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [],
+        "root": "~/Games/Xodus/FinalFantasyIV-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
       "steam": {
         "appID": 1173800,
         "categories": [
@@ -911,14 +995,14 @@
           "Family Sharing"
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1173800&cc=gb&l=english",
-        "minimum": "Minimum:     OS *:  Windows 8.1 64-bit / Windows 10 64-bit (ver.1909 and above)    Processor:  AMD A8-7600 / Intel\u00ae Core\u2122 i3-2105    Memory:  4 GB RAM    Graphics:  AMD Radeon\u2122 R7 Graphics / Intel\u00ae HD Graphics 3000    DirectX:  Version 10    Storage:  1 GB available space",
+        "minimum": "Minimum:     OS *:  Windows 8.1 64-bit / Windows 10 64-bit (ver.1909 and above)    Processor:  AMD A8-7600 / Intel® Core™ i3-2105    Memory:  4 GB RAM    Graphics:  AMD Radeon™ R7 Graphics / Intel® HD Graphics 3000    DirectX:  Version 10    Storage:  1 GB available space",
         "name": "FINAL FANTASY IV",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
           "source": "https://store.steampowered.com/appreviews/1173800?json=1&language=all&purchase_type=all&num_per_page=0",
           "totalReviews": 3100
         },
-        "recommended": "Recommended:     OS *:  Windows 8.1 64-bit / Windows 10 64-bit (ver.1909 and above)    Processor:  AMD A8-7600 / Intel\u00ae Core\u2122 i3-3225    Memory:  4 GB RAM    Graphics:  AMD Radeon\u2122 R7 Graphics / Intel\u00ae HD Graphics 4000    DirectX:  Version 11    Storage:  1 GB available space",
+        "recommended": "Recommended:     OS *:  Windows 8.1 64-bit / Windows 10 64-bit (ver.1909 and above)    Processor:  AMD A8-7600 / Intel® Core™ i3-3225    Memory:  4 GB RAM    Graphics:  AMD Radeon™ R7 Graphics / Intel® HD Graphics 4000    DirectX:  Version 11    Storage:  1 GB available space",
         "releaseDate": {
           "coming_soon": false,
           "date": "8 Sep, 2021"
@@ -1325,6 +1409,106 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NFB47H2SDRX&market=GB&languages=en-GB",
         "status": "matched"
       },
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 422,
+          "fileListSha256": "818b663ecb38f76dcec3104a977a5a9cc9fd2298ea555ea11b39c3e6eb596e10",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "038d95ccb8f2208e10ae999ff1ad367ffd53296ed4513622161c8a1c62790fb3",
+            "imports": [],
+            "path": "ForeverAgo.exe",
+            "sizeBytes": 667648,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "backendMarkers": [],
+            "dxgi": true,
+            "graphicsAPIs": [
+              "DX11",
+              "DX12",
+              "OpenGL"
+            ],
+            "headerSha256": "e42bd07a3249c3ec8b33ab3606a97cb70f7bd9e99a80e939ff4cdc2a17845f28",
+            "imports": [
+              "advapi32.dll",
+              "api-ms-win-core-synch-l1-2-0.dll",
+              "api-ms-win-core-winrt-l1-1-0.dll",
+              "api-ms-win-core-winrt-string-l1-1-0.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "d3d11.dll",
+              "d3d12.dll",
+              "dwmapi.dll",
+              "dxgi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "iphlpapi.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "uiautomationcore.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 36259240,
+            "status": "parsed"
+          }
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "ForeverAgo_Data/globalgamemanagers",
+            "ForeverAgo_Data/globalgamemanagers.assets",
+            "ForeverAgo_Data/globalgamemanagers.assets.resS",
+            "UnityPlayer.dll"
+          ]
+        },
+        "executables": [
+          "ForeverAgo.exe"
+        ],
+        "graphicsAPIs": [
+          "DX11",
+          "DX12",
+          "OpenGL"
+        ],
+        "hasUnityPlayer": true,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "57209AnnapurnaInteractive.ForeverAgo",
+          "storeId": "9NFB47H2SDRX",
+          "version": "1.0.1642.0"
+        },
+        "manifestSha256": "9f5b4c1901a68a7dceea07fbb3e042b4483ca8b6e6b46aeac08c68c5865faf19",
+        "metadata": {
+          "MSAAppId": [
+            "00000000416F0D09"
+          ],
+          "TitleId": [
+            "734f98d9"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "D3D12/D3D12Core.dll",
+          "ForeverAgo_Data/Managed/UnityEngine.ClusterRendererModule.dll"
+        ],
+        "root": "~/Games/Xodus/ForeverAgo-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
       "steam": {
         "appID": 1215940,
         "categories": [
@@ -1460,6 +1644,89 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NGH1FK0RJGL&market=GB&languages=en-GB",
         "status": "matched"
       },
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 220,
+          "fileListSha256": "2306854ba2cda027c2f2e5cc84e789454ba8f8e72174cb23fccbc104beb568d1",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "backendMarkers": [],
+            "dxgi": false,
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "headerSha256": "03acb875c9cec9e9ff36e12b5d95c42c57e7d4c6e86f8915f3560e1bf2fec622",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "dwmapi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "windowscodecs.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll",
+              "wsock32.dll"
+            ],
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 22972872,
+            "status": "parsed"
+          },
+          {
+            "headerSha256": "dd8c726af2bca2b7600a0647f7b8ce98fc7cf094e405d209dcddc3e9b7b0b3c9",
+            "imports": [],
+            "path": "Wasteland Remastered.exe",
+            "sizeBytes": 651264,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "UnityPlayer.dll",
+            "Wasteland Remastered_Data/globalgamemanagers",
+            "Wasteland Remastered_Data/globalgamemanagers.assets"
+          ]
+        },
+        "executables": [
+          "Wasteland Remastered.exe"
+        ],
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "hasUnityPlayer": true,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Microsoft.Wasteland30thAnniversaryEdition",
+          "storeId": "9NGH1FK0RJGL",
+          "version": "1.0.5088.0"
+        },
+        "manifestSha256": "6194e1791c477003585c68b0b8cbe3b3d97623435af974b826bf1b7c058f012c",
+        "metadata": {
+          "TitleId": [
+            "72CEC741"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [],
+        "root": "~/Games/Xodus/WastelandRemastered-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
       "steam": {
         "appID": 875800,
         "categories": [
@@ -1477,7 +1744,7 @@
           "source": "https://store.steampowered.com/appreviews/875800?json=1&language=all&purchase_type=all&num_per_page=0",
           "totalReviews": 304
         },
-        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS *:  Windows 8.1/10 (64 bit)    Processor:  Intel Core i5-3570K or AMD Phenom X4 9600    Memory:  8 GB RAM    Graphics:  GeForce GTX 750 Ti or Radeon HD 7770\u00a0 or Intel UHD 630    DirectX:  Version 11    Storage:  4 GB available space    Sound Card:  DirectX compatible sound card",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS *:  Windows 8.1/10 (64 bit)    Processor:  Intel Core i5-3570K or AMD Phenom X4 9600    Memory:  8 GB RAM    Graphics:  GeForce GTX 750 Ti or Radeon HD 7770  or Intel UHD 630    DirectX:  Version 11    Storage:  4 GB available space    Sound Card:  DirectX compatible sound card",
         "releaseDate": {
           "coming_soon": false,
           "date": "25 Feb, 2020"
@@ -1669,7 +1936,7 @@
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=3244220&cc=gb&l=english",
         "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 / 11    Processor:  Intel Core i5    Memory:  8 GB RAM    Graphics:  NVIDIA GTX 770",
-        "name": "A Game About Digging A Hole\u2122",
+        "name": "A Game About Digging A Hole™",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
           "source": "https://store.steampowered.com/appreviews/3244220?json=1&language=all&purchase_type=all&num_per_page=0",
@@ -1975,7 +2242,7 @@
           "Family Sharing"
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1934570&cc=gb&l=english",
-        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10/11    Processor:  AMD\u202fRyzen 3 1300X / Intel i3-8100    Memory:  12 GB RAM    Graphics:  AMD RX 580 / Nvidia GTX 1060    DirectX:  Version 12    Storage:  60 GB available space    Additional Notes:  Performance scales with higher-end systems",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10/11    Processor:  AMD Ryzen 3 1300X / Intel i3-8100    Memory:  12 GB RAM    Graphics:  AMD RX 580 / Nvidia GTX 1060    DirectX:  Version 12    Storage:  60 GB available space    Additional Notes:  Performance scales with higher-end systems",
         "name": "South of Midnight",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
@@ -2344,7 +2611,7 @@
           "Family Sharing"
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1663850&cc=gb&l=english",
-        "minimum": "Minimum:     OS:  Windows 10 64-bit    Processor:  Intel\u00ae Core\u2122 i5-8400 Processor    Memory:  16 GB RAM    Graphics:  GeForce GTX 1060 (6GB) or equivalent    Storage:  8 GB available space",
+        "minimum": "Minimum:     OS:  Windows 10 64-bit    Processor:  Intel® Core™ i5-8400 Processor    Memory:  16 GB RAM    Graphics:  GeForce GTX 1060 (6GB) or equivalent    Storage:  8 GB available space",
         "name": "REPLACED",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
@@ -2658,6 +2925,50 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P1N07XDL1D4&market=GB&languages=en-GB",
         "status": "matched"
       },
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 11197,
+          "fileListSha256": "97c1ebcda0aeb9116619554c879974bec444f7530375cda373cf7b7233fb1ba8",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "38178b3db40bc82f1e6c51d70a84484c82b81a3f6acc77bce5a6f6de13e1416f",
+            "imports": [],
+            "path": "Binaries/Win64/Dishonored.exe",
+            "sizeBytes": 26451968,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {},
+        "executables": [
+          "Binaries/Win64/Dishonored.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.DishonoredDE-PC",
+          "storeId": "9P1N07XDL1D4",
+          "version": "1.10.0.0"
+        },
+        "manifestSha256": "653200f8c71fc7ffe50984337601e6dbe7ccd1f03f4ab09349af41754266655d",
+        "metadata": {
+          "MSAAppId": [
+            "0000000044674E93"
+          ],
+          "TitleId": [
+            "61068E0F"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [],
+        "root": "~/Games/Xodus/DishonoredDefinitive-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
       "steam": {
         "appID": 205100,
         "categories": [
@@ -2818,8 +3129,8 @@
           "Family Sharing"
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=22330&cc=gb&l=english",
-        "minimum": "OS *:  Windows XP, Windows 2000, Windows XP 64-Bit \t\t\t\t\t   Processor:  2 Ghz Intel Pentium 4 or equivalent \t\t\t\t\t   Memory:  512 MB \t\t\t\t\t   Graphics:  128 MB Direct3D compatible video card and DirectX 9.0 compatible driver \t\t\t\t\t   DirectX\u00ae:  DirectX 9.0c \t\t\t\t\t   Hard Drive:  4.6 GB  \t\t\t\t\t   Sound:  DirectX 8.1 compatible",
-        "name": "The Elder Scrolls IV: Oblivion\u00ae Game of the Year Edition (2009)",
+        "minimum": "OS *:  Windows XP, Windows 2000, Windows XP 64-Bit \t\t\t\t\t   Processor:  2 Ghz Intel Pentium 4 or equivalent \t\t\t\t\t   Memory:  512 MB \t\t\t\t\t   Graphics:  128 MB Direct3D compatible video card and DirectX 9.0 compatible driver \t\t\t\t\t   DirectX®:  DirectX 9.0c \t\t\t\t\t   Hard Drive:  4.6 GB  \t\t\t\t\t   Sound:  DirectX 8.1 compatible",
+        "name": "The Elder Scrolls IV: Oblivion® Game of the Year Edition (2009)",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
           "source": "https://store.steampowered.com/appreviews/22330?json=1&language=all&purchase_type=all&num_per_page=0",
@@ -3098,6 +3409,73 @@
         ],
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P5Z4530318L&market=GB&languages=en-GB",
         "status": "matched"
+      },
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 741,
+          "fileListSha256": "0e522f23cebef2e3c4d03f00ea01ba2dad08d1734dd1ff7593e20d608a0f8fdd",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "02876d828ef970d99f120fb73387731f92a7c5cef4e597d9b262d3b103a0f0e2",
+            "imports": [],
+            "path": "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/Deathloop.exe",
+            "sizeBytes": 486498304,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {},
+        "executables": [
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/Deathloop.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.ProjectPrism",
+          "storeId": "9P5Z4530318L",
+          "version": "1.8.0.0"
+        },
+        "manifestSha256": "37ef73fb32bbaf9ec71158a324cfbcf95d11c6ea397771fdb90cae71ab6035a0",
+        "metadata": {
+          "MSAAppId": [
+            "000000004089C14A"
+          ],
+          "TitleId": [
+            "64c2808e"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "base/shaderCache/ShaderCache_D3D12_PC.rpd",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpi",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpue",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpvd",
+          "base/shaderCache/ShaderCache_D3D12_PC.rpvi",
+          "base/shaderCache/ShaderCache_D3D12_PC.str",
+          "base/shaderCache/ShaderCache_D3D12_PC.ucd",
+          "base/shaderCache/ShaderCache_D3D12_PC.uci",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/AnselSDK64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/Deathloop.exe",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/EOSSDK-Win64-Shipping.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/GFSDK_SSAO_D3D12.win64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/PartyWin.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/PartyWin7.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/XCurl.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/amd_ags_x64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/bink2w64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/nvngx_dlss.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/oo2core_8_win64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/oo2net_8_win64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/steam_api64.dll",
+          "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/xaudio2_9redist.dll"
+        ],
+        "root": "~/Games/Xodus/Deathloop-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
         "appID": 1252330,
@@ -4007,14 +4385,14 @@
           "Family Sharing"
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=2769570&cc=gb&l=english",
-        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 22H2    Processor:  AMD Ryzen 5 2600 / Intel i7\u20106850K     Memory:  12 GB RAM    Graphics:  AMD Radeon RX 6600 / Nvidia RTX 5050 / NVIDIA GeForce RTX 2060 / Intel A580    DirectX:  Version 12    Storage:  135 GB available space    Additional Notes:  SSD required",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 22H2    Processor:  AMD Ryzen 5 2600 / Intel i7‐6850K     Memory:  12 GB RAM    Graphics:  AMD Radeon RX 6600 / Nvidia RTX 5050 / NVIDIA GeForce RTX 2060 / Intel A580    DirectX:  Version 12    Storage:  135 GB available space    Additional Notes:  SSD required",
         "name": "Fable",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
           "source": "https://store.steampowered.com/appreviews/2769570?json=1&language=all&purchase_type=all&num_per_page=0",
           "totalReviews": 0
         },
-        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 10 22H2    Processor:  AMD Ryzen 5 5600 / Intel i5\u201011600KF    Memory:  16 GB RAM    Graphics:  AMD Radeon RX 6700 XT/ NVIDIA GeForce RTX 3060TI    DirectX:  Version 12    Storage:  135 GB available space    Additional Notes:  SSD required",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 10 22H2    Processor:  AMD Ryzen 5 5600 / Intel i5‐11600KF    Memory:  16 GB RAM    Graphics:  AMD Radeon RX 6700 XT/ NVIDIA GeForce RTX 3060TI    DirectX:  Version 12    Storage:  135 GB available space    Additional Notes:  SSD required",
         "releaseDate": {
           "coming_soon": true,
           "date": "23 Feb, 2027"
@@ -4124,7 +4502,7 @@
           "Family Sharing"
         ],
         "detailsURL": "https://store.steampowered.com/api/appdetails?appids=48000&cc=gb&l=english",
-        "minimum": "OS:  Windows 10 or later \t\t\t\t\t\t   Processor:  2 GHz \t\t\t\t\t\t   Memory:  4GB \t\t\t\t\t\t   Hard Disk Space:  150MB\t \t\t\t\t\t\t   Video Card:  Integrated graphics from 2020 or later. Shader Model 3.0 required \t\t\t\t\t\t   DirectX\u00ae:  9.0c",
+        "minimum": "OS:  Windows 10 or later \t\t\t\t\t\t   Processor:  2 GHz \t\t\t\t\t\t   Memory:  4GB \t\t\t\t\t\t   Hard Disk Space:  150MB\t \t\t\t\t\t\t   Video Card:  Integrated graphics from 2020 or later. Shader Model 3.0 required \t\t\t\t\t\t   DirectX®:  9.0c",
         "name": "LIMBO",
         "popularity": {
           "metric": "Steam total user reviews, not player count or Xbox popularity",
