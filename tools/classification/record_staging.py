@@ -83,6 +83,24 @@ def main() -> None:
             {"storeId": product_id, "installRoot": "~/" + root.relative_to(Path.home()).as_posix()},
             signatures["signatures"],
         )
+        queue_path = DATA / "next-30-queue.json"
+        inspection_path = DATA / "queue-inspection-v1.json"
+        queue = load_json(queue_path)
+        inspection = load_json(inspection_path)
+        item = next(row for row in queue["items"] if row["storeId"] == product_id)
+        proposal = {
+            "DX11": "creation-dx11-d3dmetal",
+            "DX12": "apple-gptk-4.0b3",
+            "DX9": "queue-winecx-nativejson",
+            "OpenGL": "queue-winecx-nativejson",
+        }.get(item["api"])
+        proposal_basis = f"queue API {item['api']}; {item['apiBasis']}"
+        if proposal is None and "OpenGL" in package["graphicsAPIs"]:
+            proposal = "queue-winecx-nativejson"
+            proposal_basis = (
+                "Readable package renderer imports OpenGL; active renderer unverified. "
+                f"Public queue API remains {item['api']}."
+            )
         profile = by_id.get(product_id)
         data["products"][product_id] = {
             "root": "~/" + root.relative_to(Path.home()).as_posix(),
@@ -102,15 +120,16 @@ def main() -> None:
             "engineProfileSource": str(args.profiles),
             "engineProfile": profile,
             "engineProfileStatus": "candidate-not-game-qualified" if profile else "pending-S1-binding",
+            "engineProfileProposal": {
+                "profile": proposal,
+                "status": "proposal-awaiting-S1-confirmation",
+                "basis": proposal_basis,
+                "scope": "Not an approved binding or a runtime/gameplay result.",
+            } if proposal and not profile else None,
         }
         OUTPUT.write_text(
             json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
         )
-        queue_path = DATA / "next-30-queue.json"
-        inspection_path = DATA / "queue-inspection-v1.json"
-        queue = load_json(queue_path)
-        inspection = load_json(inspection_path)
-        item = next(row for row in queue["items"] if row["storeId"] == product_id)
         item["alreadyInstalled"] = True
         item["installRoot"] = data["products"][product_id]["root"]
         item["sizeBytes"] = sum(

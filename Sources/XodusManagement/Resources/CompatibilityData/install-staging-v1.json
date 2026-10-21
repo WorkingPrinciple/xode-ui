@@ -23,6 +23,12 @@
         "version": 1
       },
       "engineProfile": null,
+      "engineProfileProposal": {
+        "basis": "Readable UnityPlayer imports OpenGL; active renderer unverified. Public queue API remains DX10.",
+        "profile": "queue-winecx-nativejson",
+        "scope": "Not an approved binding or a runtime/gameplay result.",
+        "status": "proposal-awaiting-S1-confirmation"
+      },
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
       "engineProfileStatus": "pending-S1-binding",
       "install": {
@@ -147,6 +153,12 @@
         "version": 1
       },
       "engineProfile": null,
+      "engineProfileProposal": {
+        "basis": "queue API DX12; public-Windows-requirement",
+        "profile": "apple-gptk-4.0b3",
+        "scope": "Not an approved binding or a runtime/gameplay result.",
+        "status": "proposal-awaiting-S1-confirmation"
+      },
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
       "engineProfileStatus": "pending-S1-binding",
       "install": {
@@ -287,6 +299,12 @@
         "version": 1
       },
       "engineProfile": null,
+      "engineProfileProposal": {
+        "basis": "queue API DX11; public-Windows-requirement",
+        "profile": "creation-dx11-d3dmetal",
+        "scope": "Not an approved binding or a runtime/gameplay result.",
+        "status": "proposal-awaiting-S1-confirmation"
+      },
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
       "engineProfileStatus": "pending-S1-binding",
       "install": {
@@ -387,6 +405,118 @@
       "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
       "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
     },
+    "9NXWSWBM4H6T": {
+      "checkedAt": "2026-10-21T23:57:12+00:00",
+      "completeness": {
+        "content_id": "b59198cb-4811-42c1-95d3-655f48da1b43",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 106,
+        "finished_at": "2026-10-21T23:57:12.743977Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/BeastOfReincarnation-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/42fb7bb7-e06f-4bc1-bd4e-0b47bc63886d",
+        "operation": "install-status",
+        "product": "9NXWSWBM4H6T",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/42fb7bb7-e06f-4bc1-bd4e-0b47bc63886d/result.json",
+        "run_id": "42fb7bb7-e06f-4bc1-bd4e-0b47bc63886d",
+        "started_at": "2026-10-21T23:57:10.473722Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": null,
+      "engineProfileProposal": {
+        "basis": "queue API DX12; public-Windows-requirement",
+        "profile": "apple-gptk-4.0b3",
+        "scope": "Not an approved binding or a runtime/gameplay result.",
+        "status": "proposal-awaiting-S1-confirmation"
+      },
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "pending-S1-binding",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-21T23:56:55.147783Z",
+        "product": "9NXWSWBM4H6T",
+        "run_id": "de9c2160-6939-46f3-ad94-55ef1d1d6797",
+        "started_at": "2026-10-21T23:44:33.302388Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/de9c2160-6939-46f3-ad94-55ef1d1d6797/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 107,
+          "fileListSha256": "890b19b0deb0451469bf7531a84a3fb633e939a739c233d712f44c3e827f6d58",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "b9dd9b7a0221070976dbe1c97fb76c70546da09468c56cb22b6fc15ea1916ee0",
+            "imports": [],
+            "path": "BeastOfReincarnation/Binaries/WinGDK/BeastOfReincarnation-WinGDK-Shipping.exe",
+            "sizeBytes": 181481472,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {
+          "Unreal": [
+            "BeastOfReincarnation/Binaries/WinGDK/BeastOfReincarnation-WinGDK-Shipping.exe",
+            "BeastOfReincarnation/Binaries/WinGDK/D3D12/D3D12Core.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/D3D12/d3d12SDKLayers.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/GameChat2.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/Party.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/PartyXboxLive.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/XCurl.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/libHttpClient.GDK.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/tbb.dll",
+            "BeastOfReincarnation/Binaries/WinGDK/tbbmalloc.dll",
+            "Engine/Binaries/ThirdParty/Ogg/Win64/VS2015/libogg_64.dll",
+            "Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbis_64.dll"
+          ]
+        },
+        "executables": [
+          "BeastOfReincarnation/Binaries/WinGDK/BeastOfReincarnation-WinGDK-Shipping.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Fictions.ProjectAibou",
+          "storeId": "9NXWSWBM4H6T",
+          "version": "1.1.1.0"
+        },
+        "manifestSha256": "794d228c763096a6ce0f8913ffce2c5a836c9ca5f6d33cc4cef39b966bb79335",
+        "metadata": {
+          "MSAAppId": [
+            "000000004967745E"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "7ABD18B1"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "BeastOfReincarnation/Binaries/WinGDK/D3D12/D3D12Core.dll",
+          "BeastOfReincarnation/Binaries/WinGDK/D3D12/d3d12SDKLayers.dll",
+          "Engine/Content/Renderer/TessellationTable.bin"
+        ],
+        "root": "~/Games/Xodus/BeastOfReincarnation-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/BeastOfReincarnation-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    },
     "9P1N07XDL1D4": {
       "checkedAt": "2026-10-21T23:45:56+00:00",
       "completeness": {
@@ -410,6 +540,12 @@
         "version": 1
       },
       "engineProfile": null,
+      "engineProfileProposal": {
+        "basis": "queue API DX9; public-Windows-requirement",
+        "profile": "queue-winecx-nativejson",
+        "scope": "Not an approved binding or a runtime/gameplay result.",
+        "status": "proposal-awaiting-S1-confirmation"
+      },
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
       "engineProfileStatus": "pending-S1-binding",
       "install": {
@@ -494,6 +630,12 @@
         "version": 1
       },
       "engineProfile": null,
+      "engineProfileProposal": {
+        "basis": "queue API DX12; public-Windows-requirement",
+        "profile": "apple-gptk-4.0b3",
+        "scope": "Not an approved binding or a runtime/gameplay result.",
+        "status": "proposal-awaiting-S1-confirmation"
+      },
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
       "engineProfileStatus": "pending-S1-binding",
       "install": {

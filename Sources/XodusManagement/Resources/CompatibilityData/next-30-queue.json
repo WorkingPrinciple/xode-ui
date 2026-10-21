@@ -1762,11 +1762,11 @@
       "title": "DEATHLOOP"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX12",
       "apiAlternatives": [],
       "apiBasis": "public-Windows-requirement",
@@ -1787,11 +1787,14 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NXWSWBM4H6T&market=GB&languages=en-GB"
       },
       "downloadSizeKnown": true,
-      "engine": [],
+      "engine": [
+        "Unreal"
+      ],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NXWSWBM4H6T",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/BeastOfReincarnation-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1807,18 +1810,29 @@
         "date": "3 Aug, 2026"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004967745E"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "7ABD18B1"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 34677369041,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9NXWSWBM4H6T",
       "storeId": "9NXWSWBM4H6T",
       "testEligibility": "test-unverified",
       "title": "Beast of Reincarnation"
