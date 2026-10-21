@@ -418,6 +418,12 @@ build/access/regression/evidence slice: Abiotic **35m46s charged**, at most
 **9m14s** remain before later title work. NMS remains closed; no further
 NMS-specific work or repeated NMS licensing check occurred.
 
+The later schema trace confirms that the expected hash belongs to the currently
+approved shipping producer, while the newer account/runtime contract is
+explicitly unadmitted. The prior shorthand "stale hash" must not be taken as
+authorization to replace it. This is a producer/consumer admission boundary,
+not a credential failure or a checksum-only fix. No pin was changed.
+
 ## Session 2 baseline recovery
 
 Read-only source/artifact inspection on 21 October recovered these components.

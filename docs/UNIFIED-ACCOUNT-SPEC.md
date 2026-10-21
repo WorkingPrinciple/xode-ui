@@ -111,6 +111,16 @@ These regressions do not override the real package-schema rejection.
 Reboot/locked-Keychain, a real upgraded app package and notarized first launch
 remain untested; the Mac was not rebooted or locked remotely.
 
+Follow-up trace clarified the schema rejection: the earlier description
+"stale" does not establish that its pin may be updated. NATIVE-INTEGRATION.md
+binds the `d2f422...` schema to approved producer `28f737df...`, while
+BACKEND-CONTRACT.md explicitly says the later account/runtime extensions are
+not admitted by that producer. Commits `bd1725e` and `13f3532` introduced those
+extensions and explain the different checked-in bytes. The rejection therefore
+exposes an unresolved producer/consumer admission boundary. Changing that hash
+alone would not admit this candidate; exact new producer/source/provenance
+approval and matching generated package pins remain necessary.
+
 ### Current implementation boundary
 
 The first source slice adds `ode.account.read.v1` to the paired Rust producer
