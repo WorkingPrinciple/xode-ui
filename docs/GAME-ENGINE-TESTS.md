@@ -1,5 +1,28 @@
 # Local game-engine qualification
 
+## Historical Xbox launches: do not reset the baseline
+
+Owner clarification, 21 October 2026: **No Man's Sky and Hogwarts Legacy
+previously launched using our modified Xodus fork, libraries and shims with
+CrossOver.** These are not merely standalone Windows control games.
+`PAUSE-HANDOFF.md` independently records historical NMS 7.6 in-world rendering.
+The equivalent Hogwarts run receipt has not yet been located in this review;
+retain it as owner-reported history, not a newly reproduced result.
+
+The fork is materially modified. The session-owned `files/ode-unified-engine`
+checkout at `91624782862ef0ffb833bbbf1204a8c54629124c` contains the unified-account
+work, a private configurable-socket runtime broker and an isolated package-license
+qualifier. Inspect the actual fork and known-working launch configuration before
+concluding that only the legacy shared-service route exists.
+
+The recent batch's **zero Xbox game launches** means zero in that batch, not
+zero in project history. The observed service hash/manifest mismatch identifies
+an unreconciled preserved route; it does not by itself prove incompatibility or
+invalidate previous successful launches. Recover the working NMS/Hogwarts
+CrossOver configurations and their service, launcher and shim identities before
+evaluating free-engine substitutions. Do not replace that task with unrelated
+standalone controls or claim fresh gameplay without observing it.
+
 ## Scope and time budget
 
 The owner approved real downloads, installations, launches, retries and removal
