@@ -20,7 +20,7 @@
     "The owner subsequently explicitly approved autonomous experimentation and saved-account checks. Approved checks found the preserved owner's saved session, but the qualifier required a native login-Keychain password. No password supplied, ACL changed, credential exported or new Microsoft sign-in. Do not misreport absent owner authorization or repeatedly trigger this prompt.",
     "Abiotic source fix 3be4fd1 refuses unsupported engine selection; four stub/mock tests pass. Actual registered launcher invocation at 06:19:04Z failed before Wine. Charge 06:13:27Z-06:25:13Z including shared credential diagnostics: 11m46s, at most 33m14s remain before later title-specific work.",
     "The Wine Mono Installer behind the game belonged to three-day-old control.exe PID 22093 in XodusVMServiceTest, not the new games. Exact stale installer/debugger owners and matching desktop helpers were terminated and their windows verified absent; no unnecessary .NET install. Capture metadata now records runtime-dialog candidates even behind a game.",
-    "Source-only integration now built: unified broker0ccd528 explicitly opts into exact-account package licensing; consumerbc3afab selects the matching private endpoint without credential/global fallback. Follow-upf5fe973 authenticates the qualifier key;0e63cd4 checks package cancellation;3bc6599 adds account-bound XML7/8 license tokens and cancellation/refusal/framing coverage. Latest77CLI/32service checks passed, one pre-existing CLI check ignored. No installed signed replacement, live credential repair or Xbox gameplay qualification. Conservative shared follow-up allocation6m brings Abiotic to17m46, at most27m14 remain; NMS is closed at45min."
+    "Source-only integration now built: unified broker0ccd528 explicitly opts into exact-account package licensing; consumerbc3afab selects the matching private endpoint without credential/global fallback. Follow-upf5fe973 authenticates the qualifier key;0e63cd4 checks package cancellation;3bc6599 adds account-bound XML7/8 license tokens; b7382f2 fixes reproduced standard-XML-reference rejection; consumer4bf453c validates explicit bridge endpoints before Wine and forwarding. Latest77CLI/32service and4transport/5adapter checks passed, one pre-existing CLI check ignored. Transport/service fixtures are separate, not live combined acceptance. No installed signed replacement, live credential repair or Xbox gameplay qualification. Conservative shared allocations6m then4m bring Abiotic to21m46, at most23m14 remain; NMS stays closed at45min, no NMS-specific work resumed."
   ],
   "products": {
     "BQVQTL3PCH05": {
@@ -44,8 +44,8 @@
       "installedObservation": "21 Oct: package and local executable metadata resident; 20 Oct inventory/readiness passed",
       "session1": "Preflight only; not launched",
       "session2": "Actual registered launcher 06:19:04Z failed before Wine; ignored engine choice fixed in source only; shared credential diagnostics included in 11m46s charged",
-      "next": "17m46 charged including conservative shared token-bridge/evidence allocation; at most27m14 remain. Native password/live account-consumer checkpoint persists; no unchanged retry. Free Xbox adapter not implemented",
-      "evidence": "Private session2-abiotic-20261021T061904Z receipt and package-route checks; runtime 3be4fd1; GAME-ENGINE-TESTS.md"
+      "next": "21m46 charged including conservative shared protocol/transport/evidence allocations; at most23m14 remain. Native password/live account-consumer checkpoint persists; no unchanged retry. Free Xbox adapter not implemented",
+      "evidence": "Private session2-abiotic-20261021T061904Z receipt and package-route checks; runtime3be4fd1/3bc6599/b7382f2/4bf453c; GAME-ENGINE-TESTS.md"
     },
     "9P03JGQ4S1GC": {
       "historical": "No gameplay evidence reviewed",

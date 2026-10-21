@@ -108,6 +108,15 @@ empty custom text and signed-out/legacy-profile refusal are checked.
 This is not live game-shim compatibility or permission to enable native Play
 or promote a package. The owner was unavailable for the genuine native-password
 checkpoint; it was not retriggered or bypassed.
+The actual recovered C shim emits an XML declaration and escaped developer
+text. A reproduced rejection of standard character references was fixed in
+unified source `b7382f2`; built-in/numeric references now pass, while unknown
+entities and DTDs remain blocked. Consumer `4bf453c` validates explicit private
+endpoint ownership, canonical parent, permissions and socket type before
+starting Wine, then rechecks before forwarding each request. Synthetic
+authenticated TCP-to-Unix transport preserves the shim-shaped 7/8 frames.
+These transport and service checks are separate fixtures, not a live combined
+provider/shim/game result.
 
 The supported preserved-engine path was also exercised specifically for No
 Man's Sky: its declared MSA client `000000004826ED21` obtained unexpired silent

@@ -337,6 +337,25 @@ charge Abiotic **17m46s total**, leaving at most **27m14s** before any later
 title-specific work. NMS is parked with no further title-specific work this
 window; an unchanged credential or launch retry is not useful.
 
+The shim-format follow-up reproduced and fixed another real source defect:
+valid `&amp;` developer text was rejected by the strict XML validator.
+Unified **`b7382f2`** accepts built-in/numeric character references inside fields
+without admitting unknown entities or DTDs. The C shim's XML declaration,
+repeated product elements and escaped text now pass; 77 CLI/32 service checks
+and the release build pass. The updated unified CLI SHA-256 is
+`723d91c83bd53fad10daca3b7cef99aea551c14e0858a39030301a21268e61f6`.
+Consumer **`4bf453c`** applies matching private-path validation to the Python
+game bridge before Wine starts and before each upstream request. Four real
+local transport/guard checks and five existing adapter checks pass, including
+capability rejection and byte-preserved shim-shaped 7/8 frames across TCP/Unix.
+No Wine process, credential access or game launch is part of these checks.
+The service and transport fixtures are separate, not live combined acceptance.
+
+Allocate a conservative **four further minutes** for this shared interoperability
+and evidence slice: Abiotic is **21m46s charged**, at most **23m14s** remain.
+NMS remains closed at its 45-minute ceiling; no NMS-specific work was resumed.
+No app package, approved input or installed runtime was replaced.
+
 ## Session 2 baseline recovery
 
 Read-only source/artifact inspection on 21 October recovered these components.
