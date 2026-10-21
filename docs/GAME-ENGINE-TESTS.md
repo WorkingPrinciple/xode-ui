@@ -20,6 +20,24 @@ diagnostic evidence, not joint-product acceptance. Preserve existing credential,
 security and shipping-admission requirements; joint scope does not authorize
 unattended credential access or replacing unrelated live services.
 
+### Reproducibility and regression tracking
+
+Preserve the known-working joint configuration before changing it. For each
+experiment or fix, retain the exact repository commits and any uncommitted
+source changes, built artifact hashes, engine version, shim/library set,
+launcher arguments and nonsecret configuration. Record the observed baseline,
+what changed, the result and how to restore the prior configuration. Keep
+private evidence local; never retain credentials or content keys in this ledger.
+
+Use bounded, attributable changes and separate research configurations from
+the working installation. Commit source fixes in their owning repositories,
+cross-reference the app/runtime revisions tested together, and add focused
+regression coverage for confirmed defects where feasible. Before accepting a
+replacement, rerun the affected behavior and the known-working path; if that
+cannot be done, mark it unverified and retain the previous artifacts. A later
+session must be able to reproduce or revert the experiment without reconstructing
+its setup from conversation history.
+
 ## Historical Xbox launches: do not reset the baseline
 
 Owner clarification, 21 October 2026: **No Man's Sky and Hogwarts Legacy
