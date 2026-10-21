@@ -293,6 +293,19 @@ Fresh local release CLI SHA-256 identities (not shipping pins):
 - Unified broker: `9532022c31bc8d6e47fdc1d7801bd84ff7ae0908c800a5b1adf124a559dcdfb1`.
 - Modified staging consumer: `df8a32cfca5f35dbf178113a1c4a79230abb0be67b0dd4bee28844406bd7ae30`.
 
+The qualifier follow-up **`f5fe973`** replaces its count-only content-key check
+with the same authenticated single-key unpack used by the broker. Tests reject
+missing/multiple keys, corrupted wrapping and a wrong device key, and accept a
+synthetically wrapped valid key. Five focused core checks, 77 CLI checks and
+29 service checks passed; one pre-existing CLI check remains ignored. The
+rebuilt unified CLI SHA-256 is now
+`26564a9531c604d79c540f675be0768ad76aae71c5345b20c30f97e26be2b712`.
+This closes a false-positive qualification risk, not the native password or
+live-game checkpoint. Allocate a conservative **four-minute charge** for this
+follow-up and its evidence closeout, rather than claiming an exact timing
+receipt: **39m02s charged**, at most **5m58s** before further title-specific
+work. Do not retry an unchanged prompt.
+
 The preserved `~/Applications/Ode to X Development.app` passed strict deep
 signature verification on 21 October; it was **not rebuilt or replaced** by this
 slice. No fresh app/package receipt or login readiness is claimed. The sole

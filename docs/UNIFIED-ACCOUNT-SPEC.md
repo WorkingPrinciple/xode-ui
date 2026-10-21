@@ -89,6 +89,12 @@ Local release builds and memory-only protocol/lifecycle checks passed. The
 installed signed pair and its Play gate remain unchanged, pending native
 credential permission, live verification and shipping admission.
 
+Follow-up `f5fe973` corrects the separate package qualifier: counting a single
+packed key is insufficient to report verification. The qualifier and private
+broker now share authenticated single-key unpacking. Synthetic checks cover
+missing/multiple keys, invalid wrapping, a valid wrapped key and the wrong device
+key. No live qualification was retried or inferred from these fixtures.
+
 The supported preserved-engine path was also exercised specifically for No
 Man's Sky: its declared MSA client `000000004826ED21` obtained unexpired silent
 user/device tickets through the isolated broker, and `auth.verify` accepted its
