@@ -1,34 +1,416 @@
 {
+  "assessedAlternatives": [
+    {
+      "antiCheat": "unknown",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "checkedAt": "2026-10-21",
+      "decision": "deferred-unverified-not-proven-blocked",
+      "namedAntiCheatObserved": [],
+      "note": "Xbox build multiplayer/services integration is unverified; not established as universally blocked.",
+      "providerEvidenceSource": null,
+      "steam": {
+        "appID": 1623730,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "Co-op",
+          "Online Co-op",
+          "Cross-Platform Multiplayer",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Steam Workshop",
+          "DualShock Controller Support",
+          "DualShock Controller Support",
+          "DualSense Controller Support",
+          "DualSense Controller Support",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1623730&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 (64-Bit)    Processor:  Intel Core i5-9400F    Memory:  16 GB RAM    Graphics:  GeForce GTX 1660    DirectX:  Version 11    Network:  Broadband Internet connection    Storage:  40 GB available space    Additional Notes:  SSD Required - Performance may vary depending on the amount of active Pals.",
+        "name": "Palworld",
+        "popularity": {
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "source": "https://store.steampowered.com/appreviews/1623730?json=1&language=all&purchase_type=all&num_per_page=0",
+          "totalReviews": 493717
+        },
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 11 (64-Bit)    Processor:  Intel Core i5-12400 / AMD Ryzen 5 5600X    Memory:  32 GB RAM    Graphics:  GeForce RTX 3060 Ti / Radeon RX 6700 XT    DirectX:  Version 11    Network:  Broadband Internet connection    Storage:  40 GB available space    Additional Notes:  SSD Required - Performance may vary depending on the amount of active Pals.",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "9 Jul, 2026"
+        },
+        "requiredAccount": null,
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "source": "https://store.steampowered.com/app/1623730/",
+        "status": "matched"
+      },
+      "storeId": "9NKV34XDW014",
+      "title": "Palworld"
+    },
+    {
+      "antiCheat": "unknown",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "checkedAt": "2026-10-21",
+      "decision": "deferred-unverified-not-proven-blocked",
+      "namedAntiCheatObserved": [],
+      "note": "Xbox services/multiplayer integration is unverified; not established as universally blocked.",
+      "providerEvidenceSource": null,
+      "steam": {
+        "appID": 962130,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "Co-op",
+          "Online Co-op",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Steam Cloud",
+          "Remote Play on Tablet",
+          "Family Sharing"
+        ],
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=962130&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 64bit    Processor:  Intel Core i3-3225    Memory:  4 GB RAM    Graphics:  Nvidia GTX 650 Ti    Storage:  8 GB available space",
+        "name": "Grounded",
+        "popularity": {
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "source": "https://store.steampowered.com/appreviews/962130?json=1&language=all&purchase_type=all&num_per_page=0",
+          "totalReviews": 96248
+        },
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 11 64bit    Processor:  Intel Core i7-7700K or Ryzen 5 1600    Memory:  8 GB RAM    Graphics:  GeForce GTX 1060 6GB or Radeon RX 470    Storage:  8 GB available space",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "27 Sep, 2022"
+        },
+        "requiredAccount": null,
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "source": "https://store.steampowered.com/app/962130/",
+        "status": "matched"
+      },
+      "storeId": "9PJTHRNVH62H",
+      "title": "Grounded"
+    },
+    {
+      "antiCheat": "Easy Anti-Cheat",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "checkedAt": "2026-10-21",
+      "decision": "excluded-named-anti-cheat",
+      "namedAntiCheatObserved": [
+        "Easy Anti-Cheat"
+      ],
+      "note": "Named anti-cheat excludes this title under the 0.1 policy.",
+      "providerEvidenceSource": null,
+      "steam": {
+        "matches": [
+          {
+            "appID": 1172620,
+            "name": "Sea of Thieves: 2026 Edition"
+          },
+          {
+            "appID": 4373370,
+            "name": "Sea of Thieves: 2026 Premium Bundle"
+          },
+          {
+            "appID": 4373360,
+            "name": "Sea of Thieves: 2026 Deluxe Bundle"
+          },
+          {
+            "appID": 3937210,
+            "name": "Immerse Gamepack Sea of Thieves"
+          },
+          {
+            "appID": 2838630,
+            "name": "Sea of Thieves: Athena's Fortune Audiobook"
+          }
+        ],
+        "searchURL": "https://store.steampowered.com/api/storesearch/?term=Sea+of+Thieves&cc=gb&l=english",
+        "status": "no-exact-Steam-match"
+      },
+      "storeId": "9P2N57MC619K",
+      "title": "Sea of Thieves"
+    },
+    {
+      "antiCheat": "unknown",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "checkedAt": "2026-10-21",
+      "decision": "deferred-unverified-not-proven-blocked",
+      "namedAntiCheatObserved": [],
+      "note": "Xbox package/identity and anti-cheat behavior require verification; do not infer no blocker from a missing AWACY record.",
+      "providerEvidenceSource": null,
+      "steam": {
+        "appID": 1551360,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "PvP",
+          "Online PvP",
+          "Co-op",
+          "Online Co-op",
+          "Cross-Platform Multiplayer",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Steam Cloud",
+          "HDR available",
+          "Family Sharing"
+        ],
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1551360&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 version 18362.0 or higher    Processor:  Intel i5-4460 or AMD Ryzen 3 1200    Memory:  8 GB RAM    Graphics:  NVidia GTX 970, AMD RX 470, OR Intel Arc A380    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  110 GB available space",
+        "name": "Forza Horizon 5",
+        "popularity": {
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "source": "https://store.steampowered.com/appreviews/1551360?json=1&language=all&purchase_type=all&num_per_page=0",
+          "totalReviews": 283581
+        },
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 10 version 18362.0 or higher    Processor:  Intel i5-8400 or AMD Ryzen 5 1500X    Memory:  16 GB RAM    Graphics:  NVidia GTX 1070, AMD RX 590, OR Intel Arc A750    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  110 GB available space",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "8 Nov, 2021"
+        },
+        "requiredAccount": null,
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "source": "https://store.steampowered.com/app/1551360/",
+        "status": "matched"
+      },
+      "storeId": "9NKX70BBCDRN",
+      "title": "Forza Horizon 5"
+    },
+    {
+      "antiCheat": "unknown",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "checkedAt": "2026-10-21",
+      "decision": "deferred-unverified-not-proven-blocked",
+      "namedAntiCheatObserved": [],
+      "note": "Large DX12 title; no observed local runtime or compatibility pass. A demanding API is not itself proof of incompatibility.",
+      "providerEvidenceSource": null,
+      "steam": {
+        "appID": 1716740,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Color Alternatives",
+          "#category_contrast_controls",
+          "Playable without Timed Input",
+          "Stereo Sound",
+          "Surround Sound",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1716740&cc=gb&l=english",
+        "minimum": "Minimum:     OS:  Windows 10 version 21H1 (10.0.19043)    Processor:  AMD Ryzen 5 2600X, Intel Core i7-6800K    Memory:  16 GB RAM    Graphics:  AMD Radeon RX 5700, NVIDIA GeForce 1070 Ti    DirectX:  Version 12    Storage:  125 GB available space    Additional Notes:  SSD Required",
+        "name": "Starfield",
+        "popularity": {
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "source": "https://store.steampowered.com/appreviews/1716740?json=1&language=all&purchase_type=all&num_per_page=0",
+          "totalReviews": 175810
+        },
+        "recommended": "Recommended:     OS:  Windows 10/11 with updates    Processor:  AMD Ryzen 5 3600X, Intel i5-10600K    Memory:  16 GB RAM    Graphics:  AMD Radeon RX 6800 XT, NVIDIA GeForce RTX 2080    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  125 GB available space    Additional Notes:  SSD Required",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "5 Sep, 2023"
+        },
+        "requiredAccount": null,
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "source": "https://store.steampowered.com/app/1716740/",
+        "status": "matched"
+      },
+      "storeId": "9NCJSXWZTP88",
+      "title": "Starfield"
+    },
+    {
+      "antiCheat": "Warden",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "checkedAt": "2026-10-21",
+      "decision": "excluded-provider-and-named-anti-cheat",
+      "namedAntiCheatObserved": [
+        "Warden"
+      ],
+      "note": "Battle.net provider route is outside the active MSIXVC/native-Minecraft queue. Publisher launcher required; no ordinary MSIXVC support claim.",
+      "providerEvidenceSource": "https://us.shop.battle.net/en-us/product/diablo-iv",
+      "steam": {
+        "appID": 2344520,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "PvP",
+          "Online PvP",
+          "Co-op",
+          "Online Co-op",
+          "Cross-Platform Multiplayer",
+          "Steam Achievements",
+          "Full controller support",
+          "In-App Purchases",
+          "Adjustable Text Size",
+          "Camera Comfort",
+          "Color Alternatives",
+          "Adjustable Difficulty",
+          "Keyboard Only Option",
+          "Mouse Only Option",
+          "Narrated Game Menus",
+          "Playable without Timed Input",
+          "DualShock Controller Support",
+          "DualSense Controller Support",
+          "DualSense Controller Support",
+          "Save Anytime",
+          "Stereo Sound",
+          "Subtitle Options"
+        ],
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=2344520&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  64-bit Windows® 10 version 1909 or newer    Processor:  Intel® Core™ i5-2500K or AMD™ FX-8350    Memory:  8 GB RAM    Graphics:  NVIDIA® GeForce® GTX 660 or Intel® Arc™ A380 or AMD Radeon™ R9 280    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  90 GB available space    Additional Notes:  *1080p native resolution / 720p render resolution, low graphics settings, 30fps, SSD Required",
+        "name": "Diablo® IV",
+        "popularity": {
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "source": "https://store.steampowered.com/appreviews/2344520?json=1&language=all&purchase_type=all&num_per_page=0",
+          "totalReviews": 80222
+        },
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  64-bit Windows® 10 version 1909 or newer    Processor:  Intel® Core™ i5-4670K or AMD Ryzen™ 1300X    Memory:  16 GB RAM    Graphics:  NVIDIA® GeForce® GTX 970 or Intel® Arc™ A750 or AMD Radeon™ RX 470    DirectX:  Version 12    Network:  Broadband Internet connection    Storage:  90 GB available space    Additional Notes:  *1080p resolution, medium graphics settings, 60fps, SSD Required",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "17 Oct, 2023"
+        },
+        "requiredAccount": null,
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "source": "https://store.steampowered.com/app/2344520/",
+        "status": "matched"
+      },
+      "storeId": "9N0H62KZ3BXV",
+      "title": "Diablo IV"
+    },
+    {
+      "antiCheat": "Easy Anti-Cheat",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "checkedAt": "2026-10-21",
+      "decision": "excluded-named-anti-cheat",
+      "namedAntiCheatObserved": [
+        "Easy Anti-Cheat"
+      ],
+      "note": "Named anti-cheat excludes this title under the 0.1 policy even if some modes or other platforms can disable/support EAC.",
+      "providerEvidenceSource": null,
+      "steam": {
+        "appID": 976730,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "PvP",
+          "Online PvP",
+          "LAN PvP",
+          "Co-op",
+          "Online Co-op",
+          "LAN Co-op",
+          "Cross-Platform Multiplayer",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Steam Workshop",
+          "Remote Play on Phone",
+          "Remote Play on Tablet",
+          "Remote Play on TV",
+          "Family Sharing"
+        ],
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=976730&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS *:  Windows 7    Processor:  AMD Phenom II X4 960T ; Intel i3550    Graphics:  AMD HD 6850 ; NVIDIA GeForce GTS 450    DirectX:  Version 11    Network:  Broadband Internet connection    Storage:  43 GB available space    Additional Notes:  Direct3D feature Level 11.1",
+        "name": "Halo: The Master Chief Collection",
+        "popularity": {
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "source": "https://store.steampowered.com/appreviews/976730?json=1&language=all&purchase_type=all&num_per_page=0",
+          "totalReviews": 263767
+        },
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "3 Dec, 2019"
+        },
+        "requiredAccount": null,
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "source": "https://store.steampowered.com/app/976730/",
+        "status": "matched"
+      },
+      "storeId": "9NTM9HXNLSZX",
+      "title": "Halo: The Master Chief Collection"
+    }
+  ],
   "fieldNotes": {
     "alreadyInstalled": "True means a local Xodus package root with a matching MicrosoftGame.config StoreId was found; install completeness is separate.",
     "antiCheat": "Copied from the evidence-backed compatibility catalogue; unknown is not a no-anti-cheat claim.",
-    "api": "unknown unless a title-specific Windows API source or test is recorded; no API was inferred.",
-    "signInNeeded": "null means the per-title requirement is unverified. The shared Xbox account is signed in.",
-    "sizeBytes": "Local installed-root byte sum only, not download size; null means no matching local root."
+    "api": "Sourced testing API; apiBasis distinguishes requirements, engine/layout inference and renderer-library imports. Not an observed active renderer. DX9/DX10/OpenGL are preserved rather than relabeled DX11.",
+    "downloadSizeBytes": "Always numeric. Windows MSIXVC catalog maximum download bytes, not Steam disk requirement. 0 plus downloadSizeKnown=false means unknown.",
+    "signInNeeded": "True only with title-specific public/runtime evidence, false only with verified optional/offline behavior, null if unverified. RequiresXboxLive is console-only; Xbox identity presence does not imply mandatory sign-in.",
+    "sizeBytes": "Installed-root footprint, not download size. Always numeric; 0 plus sizeKnown=false means not measured."
   },
-  "generatedAt": "2026-10-21T23:02:31Z",
+  "generatedAt": "2026-10-21T23:20:07+00:00",
   "items": [
     {
       "alreadyInstalled": true,
       "antiCheat": "none",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/Hogwarts_Legacy",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9MT5NJ5W7B8Z/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/990080/",
+      "blockingNotes": [],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 95473455104,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          95473455104
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MT5NJ5W7B8Z&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Unreal"
+      ],
       "entitlementStatus": "account-download-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9MT5NJ5W7B8Z",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/HogwartsLegacy-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/990080?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 376434
+      },
       "rank": 1,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/990080/",
       "releaseStatus": {
         "coming_soon": false,
         "date": "10 Feb, 2023"
       },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004428562F"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "64ee52ce"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 95476787854,
+      "sizeKnown": true,
       "storeId": "9MT5NJ5W7B8Z",
+      "testEligibility": "test-anti-cheat-cleared",
       "title": "Hogwarts Legacy"
     },
     {
@@ -36,19 +418,66 @@
       "antiCheat": "none",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/No_Man's_Sky",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/BQVQTL3PCH05/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "Vulkan",
+      "apiAlternatives": [],
+      "apiBasis": "publisher-and-package-layout",
+      "apiEvidence": "Hello Games states OpenGL was replaced by Vulkan; installed Binaries/vulkan-1.dll agrees.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.nomanssky.com/2019/04/vulkan-update/",
+      "blockingNotes": [],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 33692307456,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          33692307456
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=BQVQTL3PCH05&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
       "entitlementStatus": "account-install-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/BQVQTL3PCH05",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/NoMansSky-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/275850?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 423481
+      },
       "rank": 2,
-      "releaseStatus": "unverified",
+      "releaseEvidenceSource": "https://store.steampowered.com/app/275850/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "12 Aug, 2016"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004826ED21"
+          ],
+          "TitleId": [
+            "3980429C"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 33694695107,
+      "sizeKnown": true,
       "storeId": "BQVQTL3PCH05",
+      "testEligibility": "test-anti-cheat-cleared",
       "title": "No Man's Sky"
     },
     {
@@ -56,19 +485,71 @@
       "antiCheat": "none",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/A_Game_About_Digging_A_Hole",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9NGLST31DG26/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "package-layout-inference",
+      "apiEvidence": "Unreal layout and shipped D3D12Core.dll suggest DX12; opaque main images prevent import confirmation. PCGamingWiki identifies Unreal Engine 5. Runtime API unverified.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/A_Game_About_Digging_A_Hole",
+      "blockingNotes": [],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 374624256,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          374624256
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NGLST31DG26&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Unreal"
+      ],
       "entitlementStatus": "account-install-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NGLST31DG26",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/AGameAboutDiggingAHole-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/3244220?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 20329
+      },
       "rank": 3,
-      "releaseStatus": "unverified",
+      "releaseEvidenceSource": "https://store.steampowered.com/app/3244220/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "7 Feb, 2025"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "00000000456ABC08"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "791D6CEE"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 379189046,
+      "sizeKnown": true,
       "storeId": "9NGLST31DG26",
+      "testEligibility": "test-anti-cheat-cleared",
       "title": "A Game About Digging A Hole™"
     },
     {
@@ -76,19 +557,68 @@
       "antiCheat": "none",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/Well_Dweller",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9PLH7R84GJWP/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX11",
+      "apiAlternatives": [],
+      "apiBasis": "engine-inference",
+      "apiEvidence": "data.win identifies the GameMaker Windows runner; DX11 is a testing hypothesis based on that engine, not a title-specific import or runtime confirmation.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://manual.gamemaker.io/monthly/en/Settings/Game_Options/Windows.htm",
+      "blockingNotes": [],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 891768832,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          891768832
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PLH7R84GJWP&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "GameMaker"
+      ],
       "entitlementStatus": "account-install-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9PLH7R84GJWP",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/WellDweller-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/3699590?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 4099
+      },
       "rank": 4,
-      "releaseStatus": "unverified",
+      "releaseEvidenceSource": "https://store.steampowered.com/app/3699590/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "22 Sep, 2026"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "00000000417EFC0E"
+          ],
+          "TitleId": [
+            "64439fe5"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 892637037,
+      "sizeKnown": true,
       "storeId": "9PLH7R84GJWP",
+      "testEligibility": "test-anti-cheat-cleared",
       "title": "Well Dweller"
     },
     {
@@ -96,21 +626,72 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9PK087LNGJC5/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "OpenGL",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify OpenGL.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/2379780/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 111280128,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          111280128
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PK087LNGJC5&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "LOVE"
+      ],
       "entitlementStatus": "unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9PK087LNGJC5",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/Balatro-Xbox",
       "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Balatro",
       "nativeMacStatus": "native Mac version exists",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/2379780?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 200278
+      },
       "rank": 5,
-      "releaseStatus": "unverified",
+      "releaseEvidenceSource": "https://store.steampowered.com/app/2379780/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "20 Feb, 2024"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "0000000049075E37"
+          ],
+          "TitleId": [
+            "6adc6be5"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 112864356,
+      "sizeKnown": true,
       "storeId": "9PK087LNGJC5",
+      "testEligibility": "test-unverified",
       "title": "Balatro"
     },
     {
@@ -118,21 +699,70 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9PNG83MDD6SH/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX9",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 9. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/48000/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 113655808,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          113655808
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PNG83MDD6SH&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
       "entitlementStatus": "unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9PNG83MDD6SH",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/LIMBO-Xbox",
       "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Limbo",
       "nativeMacStatus": "native Mac version exists",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/48000?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 62338
+      },
       "rank": 6,
-      "releaseStatus": "unverified",
+      "releaseEvidenceSource": "https://store.steampowered.com/app/48000/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "2 Aug, 2011"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "00000000486ABD52"
+          ],
+          "TitleId": [
+            "79ecc5a6"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 121909161,
+      "sizeKnown": true,
       "storeId": "9PNG83MDD6SH",
+      "testEligibility": "test-unverified",
       "title": "LIMBO"
     },
     {
@@ -140,21 +770,72 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9MWR1NC6VQ6L/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "OpenGL",
+      "apiAlternatives": [],
+      "apiBasis": "managed-backend-marker",
+      "apiEvidence": "Installed MonoGame.Framework.dll contains MonoGame.OpenGL and DesktopGL metadata; main EXE is opaque. Steam DX10 minimum requirements do not identify this Xbox backend.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/Stardew_Valley",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 727924736,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          727924736
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MWR1NC6VQ6L&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "MonoGame"
+      ],
       "entitlementStatus": "unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9MWR1NC6VQ6L",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/StardewValley-Xbox",
       "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Stardew_Valley",
       "nativeMacStatus": "native Mac version exists",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/413150?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 1046343
+      },
       "rank": 7,
-      "releaseStatus": "unverified",
+      "releaseEvidenceSource": "https://store.steampowered.com/app/413150/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "26 Feb, 2016"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004C7A3E7D"
+          ],
+          "TitleId": [
+            "7bfd81c5"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 719153467,
+      "sizeKnown": true,
       "storeId": "9MWR1NC6VQ6L",
+      "testEligibility": "test-unverified",
       "title": "Stardew Valley"
     },
     {
@@ -162,22 +843,74 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/REPLACED",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9NV3L234VGXD/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX11",
+      "apiAlternatives": [
+        "DX11",
+        "DX12",
+        "OpenGL"
+      ],
+      "apiBasis": "renderer-library-import",
+      "apiEvidence": "Installed UnityPlayer.dll imports d3d11.dll, d3d12.dll and opengl32.dll. DX11 is the first backend to test, not an observed active renderer; all imports are listed.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/1663850/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 6030954496,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          6030954496
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NV3L234VGXD&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Unity"
+      ],
       "entitlementStatus": "account-install-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NV3L234VGXD",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/REPLACED-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1663850?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 10362
+      },
       "rank": 8,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1663850/",
       "releaseStatus": {
         "coming_soon": false,
         "date": "14 Apr, 2026"
       },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004D70F405"
+          ],
+          "TitleId": [
+            "7c29deb5"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 6033510839,
+      "sizeKnown": true,
       "storeId": "9NV3L234VGXD",
+      "testEligibility": "test-unverified",
       "title": "REPLACED"
     },
     {
@@ -185,19 +918,73 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9NH0MSG29X6L/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "package-layout-inference",
+      "apiEvidence": "Unreal layout with NewMoon/Binaries/WinGDK/D3D12/x64/D3D12Core.dll suggests DX12. Both main and shipping images are opaque; runtime API is unverified.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/2582320/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 12058365952,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          12058365952
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NH0MSG29X6L&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Unreal"
+      ],
       "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NH0MSG29X6L",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/Mixtape-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/2582320?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 8770
+      },
       "rank": 9,
-      "releaseStatus": "unverified",
+      "releaseEvidenceSource": "https://store.steampowered.com/app/2582320/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "7 May, 2026"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "0000000048D1039A"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "743ea7cf"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 12060152985,
+      "sizeKnown": true,
       "storeId": "9NH0MSG29X6L",
+      "testEligibility": "test-unverified",
       "title": "Mixtape"
     },
     {
@@ -205,22 +992,73 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9PJPCB188SVG/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/1962700/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 14788407296,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          14788407296
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PJPCB188SVG&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Unreal"
+      ],
       "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9PJPCB188SVG",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/Subnautica2-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1962700?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 129071
+      },
       "rank": 10,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1962700/",
       "releaseStatus": {
         "coming_soon": false,
         "date": "14 May, 2026"
       },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "04430e6b-50f6-4443-b5a4-16fd775a0e24"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "7e4db419"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 14788376189,
+      "sizeKnown": true,
       "storeId": "9PJPCB188SVG",
+      "testEligibility": "test-unverified",
       "title": "Subnautica 2 (Game Preview)"
     },
     {
@@ -228,22 +1066,63 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9P2J5D12GJL5/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX9",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 9. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/22330/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 29208236032,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          29208236032
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P2J5D12GJL5&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Gamebryo"
+      ],
       "entitlementStatus": "account-download-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9P2J5D12GJL5",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/OblivionGOTY2009-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/22330?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 53189
+      },
       "rank": 11,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/22330/",
       "releaseStatus": {
         "coming_soon": false,
         "date": "16 Jun, 2009"
       },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": false,
+        "manifestFields": {},
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 29210534795,
+      "sizeKnown": true,
       "storeId": "9P2J5D12GJL5",
+      "testEligibility": "test-unverified",
       "title": "The Elder Scrolls IV: Oblivion Game of the Year Edition (PC) – 2009"
     },
     {
@@ -251,19 +1130,59 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/Minecraft:_Java_Edition",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9PJ8266BHFWN/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "OpenGL",
+      "apiAlternatives": [],
+      "apiBasis": "public-title-reference",
+      "apiEvidence": "Java Edition uses the OpenGL/LWJGL renderer, not the Xbox MCPlaceholderStub.exe. This queue row launches through the separately verified native macOS provider.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/Minecraft",
+      "blockingNotes": [
+        "Package root and download size describe the Windows entitlement stub, not Java game content. Use native provider minecraft-java-native-macos; the signed macOS launcher was inspected separately, not proven in-world.",
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 71819264,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          71819264
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PJ8266BHFWN&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
       "entitlementStatus": "account-install-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9PJ8266BHFWN",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/MinecraftJavaEdition-Xbox",
       "packageFormat": "MSIXVC",
       "rank": 12,
       "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInEvidence": {
+        "basis": "public-title-reference",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "0000000048380B3F"
+          ],
+          "TitleId": [
+            "71A0E6A2"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://www.pcgamingwiki.com/wiki/Minecraft"
+      },
+      "signInNeeded": true,
+      "signInStatus": "Microsoft account required for Java Edition/native launcher; public title reference.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 71986661,
+      "sizeKnown": true,
       "storeId": "9PJ8266BHFWN",
+      "testEligibility": "native-provider",
       "title": "Minecraft: Java Edition"
     },
     {
@@ -271,191 +1190,209 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9P3T7HVKM6D0/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX11",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 11. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/379430/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 79613956096,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          79613956096
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P3T7HVKM6D0&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "CryEngine"
+      ],
       "entitlementStatus": "account-download-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9P3T7HVKM6D0",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
       "installRoot": "~/Games/Xodus/KingdomComeDeliverance-Xbox",
       "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/379430?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 187027
+      },
       "rank": 13,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/379430/",
       "releaseStatus": {
         "coming_soon": false,
         "date": "13 Feb, 2018"
       },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "TitleId": [
+            "6585d8ba"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 79619963890,
+      "sizeKnown": true,
       "storeId": "9P3T7HVKM6D0",
+      "testEligibility": "test-unverified",
       "title": "Kingdom Come: Deliverance"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "provisional-game-pass-candidate",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 14,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9P861V1542BL",
-      "title": "Valor Mortis"
     },
     {
       "alreadyInstalled": true,
       "antiCheat": "none",
       "antiCheatEvidenceCheckedAt": "2026-10-22",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/The_Elder_Scrolls_V:_Skyrim_Special_Edition",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/9P03JGQ4S1GC/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX11",
+      "apiAlternatives": [],
+      "apiBasis": "public-title-reference",
+      "apiEvidence": "PCGamingWiki API table and Windows requirements identify DirectX 11; installed Creation-engine layout agrees. Both local images are opaque; no import result.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/The_Elder_Scrolls_V:_Skyrim_Special_Edition",
+      "blockingNotes": [
+        "SkyrimSELauncher.exe.manifest is missing from the installed root; no complete-package scan recorded."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 29927604224,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          29927604224
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P03JGQ4S1GC&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Creation"
+      ],
       "entitlementStatus": "account-download-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9P03JGQ4S1GC",
       "installNote": "SkyrimSELauncher.exe.manifest is missing from the installed root.",
       "installRoot": "~/Games/Xodus/SkyrimSE-Xbox",
       "packageFormat": "MSIXVC",
-      "rank": 15,
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/489830?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 381464
+      },
+      "rank": 14,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/489830/",
       "releaseStatus": {
         "coming_soon": false,
-        "date": "28 Oct, 2016"
+        "date": "27 Oct, 2016"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "0000000044671685"
+          ],
+          "TitleId": [
+            "64A9A431"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 30114234152,
+      "sizeKnown": true,
       "storeId": "9P03JGQ4S1GC",
+      "testEligibility": "test-anti-cheat-cleared",
       "title": "The Elder Scrolls V: Skyrim Special Edition (PC)"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "provisional-game-pass-candidate",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 16,
-      "releaseStatus": {
-        "coming_soon": false,
-        "date": "4 Feb, 2025"
-      },
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9N4W31HSMVVD",
-      "title": "Kingdom Come: Deliverance II"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "provisional-game-pass-candidate",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 17,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9PPBNCXP0096",
-      "title": "Resonance: A Plague Tale Legacy"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "provisional-game-pass-candidate",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 18,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9PMN4DGRT1LN",
-      "title": "Fable"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "provisional-game-pass-candidate",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 19,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9NFB47H2SDRX",
-      "title": "Forever Ago"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "provisional-game-pass-candidate",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 20,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9NXWSWBM4H6T",
-      "title": "Beast of Reincarnation"
     },
     {
       "alreadyInstalled": true,
       "antiCheat": "none",
       "antiCheatEvidenceCheckedAt": "2026-10-22",
       "antiCheatEvidenceSource": "https://www.pcgamingwiki.com/wiki/Fallout_4",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanEvidence": "queue-inspection-v1.json#/products/C3KLDKZBHNCZ/package/antiCheatScan",
+      "antiCheatScanStatus": "no-known-path-signature",
+      "api": "DX11",
+      "apiAlternatives": [],
+      "apiBasis": "package-layout-inference",
+      "apiEvidence": "Creation-engine Data/Fallout4.esm and GFSDK_SSAO_D3D11.win64.dll identify a DX11 integration; main/launcher images are opaque. No runtime API pass is implied.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/Fallout_4",
+      "blockingNotes": [
+        "COCInfo.dat is missing from the installed root; no complete-package scan recorded."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 29188612096,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          29188612096
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=C3KLDKZBHNCZ&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [
+        "Creation"
+      ],
       "entitlementStatus": "account-download-reported",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/C3KLDKZBHNCZ",
       "installNote": "COCInfo.dat is missing from the installed root.",
       "installRoot": "~/Games/Xodus/Fallout4-Xbox",
       "packageFormat": "MSIXVC",
-      "rank": 21,
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/377160?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 430351
+      },
+      "rank": 15,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/377160/",
       "releaseStatus": {
         "coming_soon": false,
-        "date": "10 Nov, 2015"
+        "date": "9 Nov, 2015"
+      },
+      "signInEvidence": {
+        "basis": "manifest-insufficient",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004C28CC33"
+          ],
+          "TitleId": [
+            "4AE8F9B2"
+          ]
+        },
+        "packageInspected": true,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "sum of local file sizes in the installed root; not download size",
       "sizeBytes": 29398619668,
+      "sizeKnown": true,
       "storeId": "C3KLDKZBHNCZ",
+      "testEligibility": "test-anti-cheat-cleared",
       "title": "Fallout 4"
     },
     {
@@ -463,122 +1400,61 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX10",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 10. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/1173800/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 519434240,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          519434240
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9N8C07SS8C9D&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
       "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9N8C07SS8C9D",
       "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
-      "rank": 22,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9P1N07XDL1D4",
-      "title": "Dishonored® Definitive Edition (PC)"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "entitlement-unverified",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 23,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9P5Z4530318L",
-      "title": "DEATHLOOP"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "provisional-game-pass-candidate",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 24,
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1173800?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 3100
+      },
+      "rank": 16,
+      "rankingScore": 3.330391,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1173800/",
       "releaseStatus": {
         "coming_soon": false,
-        "date": "28 Oct, 2021"
+        "date": "8 Sep, 2021"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9N94NCGM1Q2N",
-      "title": "Age of Empires IV: Anniversary Edition"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "entitlement-unverified",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 25,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9NJCVGS6T30K",
-      "title": "South of Midnight"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "entitlement-unverified",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 26,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9NQVHHW88XW9",
-      "title": "Bluey's Happy Snaps"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "entitlement-unverified",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 27,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
+      "sizeBytes": 0,
+      "sizeKnown": false,
       "storeId": "9N8C07SS8C9D",
+      "testEligibility": "test-unverified",
       "title": "FINAL FANTASY IV"
     },
     {
@@ -586,39 +1462,61 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX11",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 11. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/875800/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 3069984768,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          3069984768
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NGH1FK0RJGL&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
       "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NGH1FK0RJGL",
       "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
-      "rank": 28,
-      "releaseStatus": "unverified",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/875800?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 304
+      },
+      "rank": 17,
+      "rankingScore": 1.931932,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/875800/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "25 Feb, 2020"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "not measured locally",
-      "sizeBytes": null,
-      "storeId": "9NF6XPSBTTGB",
-      "title": "High On Life 2"
-    },
-    {
-      "alreadyInstalled": false,
-      "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
-      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
-      "entitlementStatus": "entitlement-unverified",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
-      "packageFormat": "MSIXVC",
-      "rank": 29,
-      "releaseStatus": "unverified",
-      "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": null,
+      "sizeBytes": 0,
+      "sizeKnown": false,
       "storeId": "9NGH1FK0RJGL",
+      "testEligibility": "test-unverified",
       "title": "Wasteland Remastered"
     },
     {
@@ -626,23 +1524,810 @@
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "api": "unknown",
-      "apiEvidence": "Per-title Windows graphics API has not been verified from a title-specific source or test.",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX9",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 9. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/205100/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 17511350272,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          17511350272
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P1N07XDL1D4&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
       "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9P1N07XDL1D4",
       "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
-      "rank": 30,
-      "releaseStatus": "unverified",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/205100?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 88793
+      },
+      "rank": 18,
+      "rankingScore": 1.880891,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/205100/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "11 Oct, 2012"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
       "signInNeeded": null,
-      "signInStatus": "Per-title sign-in requirement not verified; shared Xbox account is signed in.",
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
       "sizeBasis": "not measured locally",
-      "sizeBytes": null,
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9P1N07XDL1D4",
+      "testEligibility": "test-unverified",
+      "title": "Dishonored® Definitive Edition (PC)"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/1215940/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 9471352832,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          9471352832
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NFB47H2SDRX&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NFB47H2SDRX",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1215940?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 379
+      },
+      "rank": 19,
+      "rankingScore": 1.370703,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1215940/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "8 Oct, 2026"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9NFB47H2SDRX",
+      "testEligibility": "test-unverified",
+      "title": "Forever Ago"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/1252330/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 33464537088,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          33464537088
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P5Z4530318L&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9P5Z4530318L",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1252330?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 30540
+      },
+      "rank": 20,
+      "rankingScore": 1.089456,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1252330/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "13 Sep, 2021"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9P5Z4530318L",
+      "testEligibility": "test-unverified",
+      "title": "DEATHLOOP"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/2001760/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 34673172480,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          34673172480
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NXWSWBM4H6T&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NXWSWBM4H6T",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/2001760?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 6402
+      },
+      "rank": 21,
+      "rankingScore": 0.900026,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/2001760/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "3 Aug, 2026"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9NXWSWBM4H6T",
+      "testEligibility": "test-unverified",
+      "title": "Beast of Reincarnation"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-title-reference",
+      "apiEvidence": "PCGamingWiki Windows requirements explicitly say DirectX 12 compatible and Shader Model 6. No local Xbox package was inspected.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/Keeper",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 27329888256,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          27329888256
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NCJWHHMVHR0&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NCJWHHMVHR0",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/3043580?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 1206
+      },
+      "rank": 22,
+      "rankingScore": 0.869239,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/3043580/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "17 Oct, 2025"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
       "storeId": "9NCJWHHMVHR0",
+      "testEligibility": "test-unverified",
       "title": "Keeper"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX11",
+      "apiAlternatives": [],
+      "apiBasis": "public-title-reference",
+      "apiEvidence": "PCGamingWiki Windows requirements explicitly say DirectX 11 compatible. No local Xbox package was inspected.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/Bluey%27s_Happy_Snaps",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 3518705664,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          3518705664
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NQVHHW88XW9&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NQVHHW88XW9",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/3064040?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 11
+      },
+      "rank": 23,
+      "rankingScore": 0.812817,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/3064040/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "14 Oct, 2026"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9NQVHHW88XW9",
+      "testEligibility": "test-unverified",
+      "title": "Bluey's Happy Snaps"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/2828710/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 42646802432,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          42646802432
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P861V1542BL&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9P861V1542BL",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/2828710?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 2150
+      },
+      "rank": 24,
+      "rankingScore": 0.67031,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/2828710/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "13 Oct, 2026"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9P861V1542BL",
+      "testEligibility": "test-unverified",
+      "title": "Valor Mortis"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/1934570/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 64915361792,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          64915361792
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NJCVGS6T30K&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NJCVGS6T30K",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1934570?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 4856
+      },
+      "rank": 25,
+      "rankingScore": 0.523207,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1934570/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "8 Apr, 2025"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9NJCVGS6T30K",
+      "testEligibility": "test-unverified",
+      "title": "South of Midnight"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/1466860/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 103670935552,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          103670935552
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9N94NCGM1Q2N&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9N94NCGM1Q2N",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1466860?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 96264
+      },
+      "rank": 26,
+      "rankingScore": 0.467707,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1466860/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "28 Oct, 2021"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9N94NCGM1Q2N",
+      "testEligibility": "test-unverified",
+      "title": "Age of Empires IV: Anniversary Edition"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/2713000/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 82249052160,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          82249052160
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PPBNCXP0096&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9PPBNCXP0096",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/2713000?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 6130
+      },
+      "rank": 27,
+      "rankingScore": 0.437357,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/2713000/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "27 Aug, 2026"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9PPBNCXP0096",
+      "testEligibility": "test-unverified",
+      "title": "Resonance: A Plague Tale Legacy"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/2069250/",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 91694682112,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          91694682112
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NF6XPSBTTGB&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "entitlement-unverified",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9NF6XPSBTTGB",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/2069250?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 2681
+      },
+      "rank": 28,
+      "rankingScore": 0.359387,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/2069250/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "13 Feb, 2026"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9NF6XPSBTTGB",
+      "testEligibility": "test-unverified",
+      "title": "High On Life 2"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-title-reference",
+      "apiEvidence": "PCGamingWiki API table identifies DirectX 12. No local Xbox package was inspected.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://www.pcgamingwiki.com/wiki/Kingdom_Come:_Deliverance_II",
+      "blockingNotes": [
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 149917323264,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          149917323264
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9N4W31HSMVVD&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9N4W31HSMVVD",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/1771300?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 198991
+      },
+      "rank": 29,
+      "rankingScore": 0.35415,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/1771300/",
+      "releaseStatus": {
+        "coming_soon": false,
+        "date": "4 Feb, 2025"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9N4W31HSMVVD",
+      "testEligibility": "test-unverified",
+      "title": "Kingdom Come: Deliverance II"
+    },
+    {
+      "alreadyInstalled": false,
+      "antiCheat": "unknown",
+      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+      "antiCheatScanStatus": "not-installed",
+      "api": "DX12",
+      "apiAlternatives": [],
+      "apiBasis": "public-Windows-requirement",
+      "apiEvidence": "Exact title Steam Windows minimum requirements specify DirectX 12. This is a public requirement, not an import scan or proof of the Xbox renderer.",
+      "apiEvidenceCheckedAt": "2026-10-21",
+      "apiEvidenceSource": "https://store.steampowered.com/app/2769570/",
+      "blockingNotes": [
+        "Steam reports coming_soon; catalog package may be a preorder stub. Do not stage a download based on its tiny catalog size.",
+        "No affirmative absence evidence; a clean filename scan does not prove no embedded or remotely loaded anti-cheat. Eligible only for unverified testing."
+      ],
+      "checkedAt": "2026-10-21",
+      "downloadSizeBytes": 62943232,
+      "downloadSizeEvidence": {
+        "basis": "Maximum Windows MSIXVC catalog MaxDownloadSizeInBytes across offers; not measured transfer bytes. Zero means unknown, never zero-cost.",
+        "checkedAt": "2026-10-21",
+        "observedSizesBytes": [
+          62943232
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PMN4DGRT1LN&market=GB&languages=en-GB"
+      },
+      "downloadSizeKnown": true,
+      "engine": [],
+      "entitlementStatus": "provisional-game-pass-candidate",
+      "inspectionEvidence": "queue-inspection-v1.json#/products/9PMN4DGRT1LN",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
+      "installRoot": null,
+      "packageFormat": "MSIXVC",
+      "popularityEvidence": {
+        "checkedAt": "2026-10-21",
+        "metric": "Steam total user reviews, not player count or Xbox popularity",
+        "source": "https://store.steampowered.com/appreviews/2769570?json=1&language=all&purchase_type=all&num_per_page=0",
+        "totalReviews": 0
+      },
+      "rank": 30,
+      "rankingScore": 0.0,
+      "releaseEvidenceSource": "https://store.steampowered.com/app/2769570/",
+      "releaseStatus": {
+        "coming_soon": true,
+        "date": "23 Feb, 2027"
+      },
+      "signInEvidence": {
+        "basis": "not-installed",
+        "checkedAt": "2026-10-21",
+        "hasXboxIdentity": null,
+        "manifestFields": null,
+        "packageInspected": false,
+        "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
+      },
+      "signInNeeded": null,
+      "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
+      "sizeBasis": "not measured locally",
+      "sizeBytes": 0,
+      "sizeKnown": false,
+      "storeId": "9PMN4DGRT1LN",
+      "testEligibility": "defer-unreleased",
+      "title": "Fable"
     }
   ],
-  "rankingMethod": "Prioritize mandatory Hogwarts/NMS, then installed and small staging roots (including the three user-selected S8 products), before remaining weighted Reddit-attention candidates. Scores are attention signals, not player counts. Package presence does not prove entitlement or release; unknown anti-cheat remains unverified.",
+  "rankingMethod": "Already-installed retests first, retaining their prior relative order. Remaining titles rank released ahead of unreleased, exclude named anti-cheat, prefer known no-sign-in over unknown over required, then known catalog size, then descending log10(1 + Steam total reviews)/(1 + Windows MSIXVC catalog download GiB/10). Steam review count is an audience proxy, not player count or Xbox popularity. Unknown sign-in/anti-cheat is not a no-sign-in/no-cheat claim; preorders/stubs go last.",
   "schemaVersion": 1,
   "sourceCatalogue": "game-compatibility-v1.json"
 }

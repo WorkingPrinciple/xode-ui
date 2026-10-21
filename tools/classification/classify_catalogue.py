@@ -694,6 +694,16 @@ def validate_next30_queue(database: dict[str, Any]) -> None:
     ):
         raise RuntimeError("next-30-queue.json must mirror the 30-title catalogue queue")
     products = database["products"]
+    inspection_path = DATA_DIR / "queue-inspection-v1.json"
+    inspection = load_json(inspection_path)
+    if (
+        not isinstance(inspection, dict)
+        or not isinstance(inspection.get("checkedAt"), str)
+        or not isinstance(inspection.get("products"), dict)
+        or set(inspection["products"]) != {item.get("productID") for item in candidates}
+        or artifact.get("assessedAlternatives") != inspection.get("assessedAlternatives")
+    ):
+        raise RuntimeError("queue inspection evidence is missing or does not match the queue")
     for candidate, item in zip(candidates, items):
         if not isinstance(item, dict):
             raise RuntimeError("next-30-queue.json entries must be objects")
@@ -711,9 +721,25 @@ def validate_next30_queue(database: dict[str, Any]) -> None:
             or item.get("entitlementStatus")
             != candidate.get("entitlementStatus", "unverified")
             or item.get("releaseStatus") != candidate.get("releaseStatus", "unverified")
-            or item.get("api") not in {"DX11", "DX12", "Vulkan", "unknown"}
+            or item.get("api") not in {"DX9", "DX10", "DX11", "DX12", "Vulkan", "OpenGL"}
             or not isinstance(item.get("apiEvidence"), str)
             or not item["apiEvidence"]
+            or item.get("apiBasis") not in {
+                "public-Windows-requirement", "public-title-reference",
+                "publisher-and-package-layout", "package-layout-inference",
+                "engine-inference", "managed-backend-marker", "renderer-library-import",
+            }
+            or not isinstance(item.get("apiEvidenceSource"), str)
+            or not item["apiEvidenceSource"].startswith("https://")
+            or not isinstance(item.get("signInEvidence"), dict)
+            or (
+                item.get("signInNeeded") is not None
+                and item.get("signInEvidence", {}).get("basis")
+                not in {"public-title-reference", "runtime"}
+            )
+            or item.get("inspectionEvidence")
+            != f"{inspection_path.name}#/products/{product_id}"
+            or item.get("apiEvidenceCheckedAt") != inspection["checkedAt"][:10]
             or (
                 item.get("signInNeeded") is not None
                 and not isinstance(item["signInNeeded"], bool)
@@ -727,25 +753,27 @@ def validate_next30_queue(database: dict[str, Any]) -> None:
             )
             or not isinstance(item.get("signInStatus"), str)
             or not item["signInStatus"]
-            or (
-                size is not None
-                and (
-                    not isinstance(size, int)
-                    or isinstance(size, bool)
-                    or size < 0
-                )
-            )
+            or not isinstance(size, int)
+            or isinstance(size, bool)
+            or size < 0
+            or item.get("sizeKnown") is not (size > 0)
+            or not isinstance(item.get("downloadSizeBytes"), int)
+            or isinstance(item["downloadSizeBytes"], bool)
+            or item["downloadSizeBytes"] < 0
+            or item.get("downloadSizeKnown") is not (item["downloadSizeBytes"] > 0)
+            or not isinstance(item.get("downloadSizeEvidence"), dict)
+            or not isinstance(item["downloadSizeEvidence"].get("source"), str)
+            or not item["downloadSizeEvidence"]["source"].startswith("https://")
             or (
                 installed
                 and (
-                    size is None
-                    or not isinstance(item.get("installRoot"), str)
+                    not isinstance(item.get("installRoot"), str)
                     or not item["installRoot"].startswith("~/Games/Xodus/")
                 )
             )
             or (
                 not installed
-                and (size is not None or item.get("installRoot") is not None)
+                and (size != 0 or item.get("installRoot") is not None)
             )
             or not isinstance(item.get("antiCheatEvidenceSource"), str)
             or not item["antiCheatEvidenceSource"].startswith("https://")
@@ -755,6 +783,22 @@ def validate_next30_queue(database: dict[str, Any]) -> None:
             raise RuntimeError(
                 f"next-30-queue.json has stale or malformed entry {product_id!r}"
             )
+        observed = inspection["products"][product_id].get("package")
+        if installed and (
+            not isinstance(observed, dict)
+            or observed.get("identity", {}).get("storeId") != product_id
+            or observed.get("root") != item.get("installRoot")
+            or observed.get("metadata") != item["signInEvidence"].get("manifestFields")
+        ):
+            raise RuntimeError(f"{product_id}: installed queue evidence has a mismatched identity")
+    for alternative in artifact["assessedAlternatives"]:
+        named = alternative.get("namedAntiCheatObserved", [])
+        product = products.get(alternative.get("storeId"))
+        if product is None or (named and (
+            product.get("antiCheat") != "; ".join(named)
+            or product.get("supported01") is not False
+        )):
+            raise RuntimeError("Assessed alternative contradicts the anti-cheat catalogue")
 
 
 def main() -> int:
