@@ -117,11 +117,23 @@ struct OfflineGameCompatibility: Codable {
             return true
         }
         guard product["packageFormat"] as? String == "MSIXVC",
-              product["antiCheat"] as? String == "none", product["supported01"] as? Bool == true,
+              (product["antiCheat"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "none",
+              product["supported01"] as? Bool == true,
               product["pcPackageIdentified"] as? Bool == true,
               let package = product["packageFormatEvidence"] as? [String: Any], validSource(package),
+              (package["method"] as? String)?.isEmpty == false,
               let formats = package["observedFormats"] as? [String], !formats.isEmpty,
               let antiCheat = product["antiCheatEvidence"] as? [String: Any], validSource(antiCheat),
+              (antiCheat["method"] as? String)?.isEmpty == false,
+              let checks = antiCheat["publicChecks"] as? [[String: Any]], checks.count == 3,
+              Set(checks.compactMap { $0["sourceType"] as? String }) == ["awacy", "pcgamingwiki", "publisher"],
+              checks.allSatisfy({ validSource($0) && ($0["result"] as? String)?.isEmpty == false }) else { return false }
+        if antiCheat["type"] as? String == "public-source" {
+            return antiCheat["mode"] as? String == "user-directed-correction"
+                && (antiCheat["method"] as? String)?.hasPrefix("User-directed classification: ") == true
+                && antiCheat["packageScan"] == nil
+        }
+        guard
               antiCheat["type"] as? String == "package-scan",
               let scan = antiCheat["packageScan"] as? [String: Any],
               scan["complete"] as? Bool == true, (scan["fileCount"] as? Int ?? 0) > 0,
@@ -133,10 +145,7 @@ struct OfflineGameCompatibility: Codable {
               let signature = scan["signatureSet"] as? String, !signature.isEmpty,
               (scan["signatureVersion"] as? Int ?? 0) > 0,
               let identity = scan["packageIdentity"] as? [String: Any],
-              identity["storeId"] as? String == productID,
-              let checks = antiCheat["publicChecks"] as? [[String: Any]], checks.count == 3,
-              Set(checks.compactMap { $0["sourceType"] as? String }) == ["awacy", "pcgamingwiki", "publisher"],
-              checks.allSatisfy({ validSource($0) && ($0["result"] as? String)?.isEmpty == false }) else { return false }
+              identity["storeId"] as? String == productID else { return false }
         return true
     }
 

@@ -95,6 +95,11 @@ is not a known blocker. MSIXVC games without a named blocker can be tried and
 are labelled "Not tested on Mac yet"; this is not a support or gameplay claim.
 Named anti-cheat and unsupported formats remain blocked. The supported filter
 continues to use S4's evidence-qualified `supported01` facts.
+Bundled public-source `none` corrections require the explicit
+`user-directed-correction` mode, documented user direction, and all three
+AWACY/PCGamingWiki/publisher checks. They are not complete package scans,
+installation-readiness receipts, or Mac gameplay proof. Undocumented public
+absence claims and incomplete scans cannot qualify a title.
 
 The Mac test evidence JSON automatically loads from
 `~/Library/Application Support/Ode to X/Evidence/tried-games.json`; an advanced

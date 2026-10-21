@@ -65,6 +65,32 @@ enum LibraryAccessChecks {
         forged["antiCheatEvidence"] = ["type": "package-scan", "packageScan": ["complete": true]]
         check(!OfflineGameCompatibility.validClearance(productID: "9P4NV23Q6QC2", product: forged),
               "A claimed complete scan without StoreID, digest, signature inventory and public checks is not clearance")
+        let corrections = rawProducts.filter {
+            ($0.value["antiCheatEvidence"] as? [String: Any])?["mode"] as? String == "user-directed-correction"
+        }
+        check(!corrections.isEmpty && corrections.allSatisfy {
+            OfflineGameCompatibility.validClearance(productID: $0.key, product: $0.value)
+        }, "S4's documented user-directed anti-cheat corrections remain eligibility, not invented complete scans")
+        for (id, product) in corrections {
+            for missing in ["mode", "method", "publicChecks"] {
+                var invalid = product
+                var evidence = product["antiCheatEvidence"] as? [String: Any] ?? [:]
+                evidence.removeValue(forKey: missing)
+                invalid["antiCheatEvidence"] = evidence
+                check(!OfflineGameCompatibility.validClearance(productID: id, product: invalid),
+                      "Public-source none without \(missing) cannot admit \(id)")
+            }
+            var uppercase = product
+            uppercase["antiCheat"] = "NONE"
+            check(OfflineGameCompatibility.validClearance(productID: id, product: uppercase),
+                  "The supported 0.1 rule accepts explicit none case insensitively for \(id)")
+            var mislabeledScan = product
+            var evidence = product["antiCheatEvidence"] as? [String: Any] ?? [:]
+            evidence["packageScan"] = ["complete": false]
+            mislabeledScan["antiCheatEvidence"] = evidence
+            check(!OfflineGameCompatibility.validClearance(productID: id, product: mislabeledScan),
+                  "A public-source correction cannot disguise an incomplete package scan for \(id)")
+        }
         let evidence = Data("""
             {"schemaVersion":1,"updatedAt":"2026-10-21T00:00:00Z","games":[
             {"productId":"FIXTURE00001","title":"Synthetic proof","verdict":"GAMEPLAY_PASS",
