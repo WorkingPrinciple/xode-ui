@@ -52,8 +52,63 @@ struct NativeRuntimeReference: Sendable {
         return primary.executable
     }
 
+    static func capture(_ primary: URL) throws -> Self {
+        guard primary.lastPathComponent == "xgameruntime.dll" else { throw GameScriptError.runtimeUnavailable }
+        func binding(_ url: URL) throws -> NativeAuthHostBinding {
+            try GameScriptFiles.checkPath(url)
+            let bytes = try InstalledGameFiles.readRegular(url, maximumBytes: 67_108_864)
+            return NativeAuthHostBinding(executable: url, sha256: hash(bytes), expectedBytes: Int64(bytes.count))
+        }
+        return try Self(primary: binding(primary),
+                        legacy: binding(primary.deletingLastPathComponent().appendingPathComponent("xgameruntime_legacy.dll")))
+    }
+
     private static func hash(_ bytes: Data) -> String {
         SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+struct NativeLocalRuntime: Codable {
+    let primaryPath: String
+    let primarySHA256: String
+    let legacySHA256: String
+
+    init(_ reference: NativeRuntimeReference) {
+        primaryPath = reference.primary.executable.path
+        primarySHA256 = reference.primary.sha256
+        legacySHA256 = reference.legacy.sha256
+    }
+
+    var reference: NativeRuntimeReference {
+        let primary = URL(fileURLWithPath: primaryPath)
+        return NativeRuntimeReference(primary: .init(executable: primary, sha256: primarySHA256),
+            legacy: .init(executable: primary.deletingLastPathComponent().appendingPathComponent("xgameruntime_legacy.dll"),
+                          sha256: legacySHA256))
+    }
+}
+
+struct NativeTitleLaunchProfile: Codable {
+    let version: Int
+    let productID: String
+    let shimDirectory: String?
+    let environment: [String: String]
+
+    static func read(productID: String, defaults: UserDefaults) throws -> Self? {
+        guard let directory = defaults.string(forKey: "Xodus.lifecycle.profileDirectory"), !directory.isEmpty else { return nil }
+        let url = URL(fileURLWithPath: directory).appendingPathComponent(productID + ".json")
+        try GameScriptFiles.checkPath(url, allowMissing: true)
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        let profile = try JSONDecoder().decode(Self.self, from: InstalledGameFiles.readRegular(url, maximumBytes: 65_536))
+        guard profile.version == 1, profile.productID == productID, profile.environment.count <= 64,
+              profile.environment.allSatisfy({ key, value in
+                  key.range(of: "^[A-Z_][A-Z0-9_]{0,127}$", options: .regularExpression) != nil
+                      && value.utf8.count <= 16_384 && !value.utf8.contains(0)
+              }) else { throw NativeLaunchError.invalidProfile }
+        if let directory = profile.shimDirectory {
+            guard directory.hasPrefix("/") else { throw NativeLaunchError.invalidProfile }
+            try GameScriptFiles.checkPath(URL(fileURLWithPath: directory))
+        }
+        return profile
     }
 }
 
@@ -67,11 +122,14 @@ struct NativeLaunchConfiguration {
     let registry: URL
     let prefix: URL
     let runtime: NativeRuntimeReference
+    let profile: NativeTitleLaunchProfile?
 
     static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
                         defaults: UserDefaults = .standard,
                         runtime: NativeRuntimeReference? = NativeRuntimePins.approved) throws -> Self {
-        guard let runtime else { throw NativeLaunchError.runtimeNotQualified }
+        let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
+            .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
+        guard let runtime = runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
         guard let provider else { throw NativeLaunchError.engineNotSelected }
         guard let registryPath = defaults.string(forKey: "Xodus.lifecycle.registry"),
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
@@ -86,28 +144,33 @@ struct NativeLaunchConfiguration {
         let prefix = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
             "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
-        return Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime)
+        return try Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
+                        profile: NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults))
     }
 
     func arguments() async throws -> [String] {
         let dll = try await runtime.validate()
-        return ["--engine", engine, "--registry", registry.path, "--prefix", prefix.path,
+        var arguments = ["--engine", engine, "--registry", registry.path, "--prefix", prefix.path,
                 "--runtime-dll", dll.path]
+        if let shim = profile?.shimDirectory { arguments += ["--shim-dir", shim] }
+        return arguments
     }
 }
 
 enum NativeLaunchError: Error, LocalizedError {
-    case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable
+    case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile
     var errorDescription: String? {
         switch self {
         case .runtimeNotQualified:
-            "The primary and legacy game runtime pair hasn't been qualified for this app yet. Installing games is available; Play requires the matching runtime pair."
+            "Choose the local primary and legacy runtime pair in Runtime settings before playing. Experimental local runtimes do not require release qualification."
         case .registryMissing:
             "Choose the engine registry in Runtime settings before playing."
         case .engineNotSelected:
             "Choose a tested registry engine for this provider in Runtime settings. No other engine was substituted."
         case .engineUnavailable:
             "The selected registry engine is no longer available. Restore it or choose another engine in Runtime settings."
+        case .invalidProfile:
+            "The title's local launch profile is invalid. Check its product ID, shim folder and environment in the selected profile directory."
         }
     }
 }

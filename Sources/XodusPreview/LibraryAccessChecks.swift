@@ -14,10 +14,15 @@ enum LibraryAccessChecks {
             LibrarySupportVisibility.issues(productID: $0.key, installed: false,
                 packageFormat: nil, compatibility: nil).isEmpty
         }
-        check(admitted?.count == 2
-              && Set(admitted?.values.compactMap(\.title) ?? []) == ["Abiotic Factor", "No Man's Sky"]
+        let rawCatalogue = try JSONSerialization.jsonObject(with: Data(contentsOf:
+            CompatibilityResources.catalogueURL())) as? [String: Any]
+        let rawProducts = rawCatalogue?["products"] as? [String: [String: Any]] ?? [:]
+        let declared = Set(rawProducts.filter { ($0.value["supported01"] as? Bool) == true }.map(\.key))
+        check(!declared.isEmpty && Set(admitted?.keys.map { $0 } ?? []) == declared
+              && declared.allSatisfy { OfflineGameCompatibility.validClearance(
+                  productID: $0, product: rawProducts[$0] ?? [:]) }
               && admitted?.values.allSatisfy({ $0.packageFormat == "MSIXVC" && $0.antiCheat == "none" }) == true,
-              "OX-9/UI-3: Real bundled admission clears exactly S4's Abiotic Factor and No Man's Sky")
+              "OX-9/UI-3: Real bundled admission exactly matches S4's evolving supported01 facts")
         check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "none").isEmpty,
               "0.1 admits MSIXVC with explicit no-anti-cheat classification")
         for format in ["MSIX", "Appx", "EAppx", "UWP", "Win32", "Unspecified", ""] {
@@ -35,17 +40,49 @@ enum LibraryAccessChecks {
               && GameSupportPolicy.issues(packageFormat: "msixvc", antiCheat: " none ").isEmpty,
               "Missing or ambiguous formats fail closed; only a classified MSIXVC package is cleared")
         for technology in [Optional("none"), "Easy Anti-Cheat", "unknown", nil] {
-            let field = technology.map { "\"antiCheat\":\"\($0)\"," } ?? ""
-            let database = try OfflineGameCompatibility.decode(Data("""
-                {"version":1,"checkedAt":"2026-10-21T00:00:00Z","market":"GB",
-                 "packageSource":"Microsoft catalog","antiCheatReference":"Evidence catalogue",
-                 "products":{"FIXTURE00001":{"packageFormat":"MSIXVC","pcPackageIdentified":true,
-                  \(field)"technologyReferences":[],"referencePlatforms":[]}}}
-                """.utf8))
-            let entry = database.products["FIXTURE00001"]
+            var input = rawCatalogue ?? [:]
+            var product = rawProducts["9P4NV23Q6QC2"] ?? [:]
+            product["antiCheat"] = technology
+            input["products"] = ["9P4NV23Q6QC2": product]
+            let database = try OfflineGameCompatibility.decode(JSONSerialization.data(withJSONObject: input))
+            let entry = database.products["9P4NV23Q6QC2"]
             check(entry?.antiCheat == (technology ?? "unknown")
                   && entry?.supported01 == (technology == "none"),
                   "Catalogue loader accepts none, named and unknown anti-cheat; missing defaults to unknown: \(technology ?? "missing")")
+        }
+        for field in ["antiCheatEvidence", "packageFormatEvidence", "supported01"] {
+            var input = rawCatalogue ?? [:]
+            var product = rawProducts["9P4NV23Q6QC2"] ?? [:]
+            product.removeValue(forKey: field)
+            input["products"] = ["9P4NV23Q6QC2": product]
+            do {
+                _ = try OfflineGameCompatibility.decode(JSONSerialization.data(withJSONObject: input))
+                check(false, "Bare none cannot admit a title missing \(field)")
+            } catch { check(true, "Bare none cannot admit a title missing \(field)") }
+        }
+        var forged = rawProducts["9P4NV23Q6QC2"] ?? [:]
+        forged["antiCheatEvidence"] = ["type": "package-scan", "packageScan": ["complete": true]]
+        check(!OfflineGameCompatibility.validClearance(productID: "9P4NV23Q6QC2", product: forged),
+              "A claimed complete scan without StoreID, digest, signature inventory and public checks is not clearance")
+        let evidence = Data("""
+            {"schemaVersion":1,"updatedAt":"2026-10-21T00:00:00Z","games":[
+            {"productId":"FIXTURE00001","title":"Synthetic proof","verdict":"GAMEPLAY_PASS",
+             "scope":"Movement observed; save persistence unverified.","engine":"synthetic",
+             "runId":null,"screenshots":[{"path":"/synthetic/proof.png","caption":"Synthetic path only"}],
+             "owner":"test","blocker":null}]}
+            """.utf8)
+        let decodedEvidence = try MacGameEvidence.decode(evidence)
+        check(decodedEvidence.games.first?.scope.contains("save persistence unverified") == true
+              && decodedEvidence.games.first?.screenshots.count == 1,
+              "Mac evidence keeps observation scope and screenshot references without inventing save proof")
+        for invalid in [
+            String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "SHIPPED"),
+            String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "/synthetic/proof.png", with: "https://invalid/proof.png")
+        ] {
+            do {
+                _ = try MacGameEvidence.decode(Data(invalid.utf8))
+                check(false, "Unknown verdicts and nonlocal screenshot references are rejected")
+            } catch { check(true, "Unknown verdicts and nonlocal screenshot references are rejected") }
         }
         check(GameSupportPolicy.packageFormat(observed: "Win32", classified: "MSIXVC") == "MSIXVC"
               && GameSupportPolicy.packageFormat(observed: "Unknown", classified: "MSIXVC") == "MSIXVC"

@@ -109,7 +109,7 @@ struct LiveAccountView: View {
                                 await state.pcGames.retryLibraryLoad()
                                 await state.pcGames.waitForLoad()
                                 await companion.refresh(for: nil, force: true)
-                                await session.prepareUnifiedRuntime()
+                                if session.nativeLifecycleConfiguration == nil { await session.prepareUnifiedRuntime() }
                             }
                         } }
                             .disabled(session.accountBusy)
@@ -299,7 +299,8 @@ struct LiveSettingsView: View {
             Section("Diagnostics") {
                 DisclosureGroup("Sign-in and game connection") {
                     LabeledContent("Xbox Live", value: session.hasConfirmedSignIn ? "Signed in" : "Not signed in")
-                    LabeledContent("Game connection", value: session.accountRuntimeReady ? "Connected"
+                    LabeledContent("Game connection", value: session.nativeLifecycleConfiguration != nil
+                        ? "Private per launch" : session.accountRuntimeReady ? "Connected"
                         : session.accountRuntimeStarting ? "Connecting" : "Not connected")
                     if let error = session.accountRuntimeError {
                         Text(error).font(.callout).foregroundStyle(.secondary)

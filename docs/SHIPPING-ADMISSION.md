@@ -23,6 +23,52 @@ installed app only after this build succeeds and the previous app quits.
 Every UI-affecting commit must be followed by build, install, relaunch and
 real-screen inspection; source checks alone do not update the user's app.
 
+To replace that CLI with an immutable, already signed S2 artifact, supply all
+three explicit producer inputs:
+
+```sh
+python3 tools/refresh_local_candidate.py \
+  --installed-app "$HOME/Applications/Ode to X Local Candidate.app" \
+  --output-root /absolute/owned-output-directory \
+  --identity 410914520BCC840C0125D3826CCF0F247F603321 \
+  --cli /absolute/immutable-candidate/xodus-cli \
+  --producer-source /absolute/producer-repository \
+  --producer-commit FULL_FROZEN_COMMIT
+```
+
+The tool verifies the signed CLI, resolves that exact commit/tree, compares its
+management schema, and regenerates the app/CLI/helper pairing. Its receipt
+records selection rather than claiming that the packager reproduced S2's
+binary. The native lifecycle digest must also match `NativeLifecyclePins`.
+
+Runtime settings can select an **experimental local** `xgameruntime.dll` and
+its sibling `xgameruntime_legacy.dll`. Both hashes are captured at selection and
+rechecked before launch. Release qualification is not a local testing gate;
+this does not make the pair production-qualified.
+
+Optional per-title launch profiles live in the selected profile directory as
+`STOREID.json`, with this shape:
+
+```json
+{"version":1,"productID":"BQVQTL3PCH05","shimDirectory":"/absolute/shims","environment":{"CX_ENV":"explicit adapter options"}}
+```
+
+The CLI receives the explicitly selected engine/registry, a game-and-engine
+private prefix, `--shim-dir` when present, and the profile environment. Missing
+profiles mean no additional shims or overrides; malformed or wrong-product
+profiles fail visibly. Registry engine environment and wineserver selection
+remain the CLI's responsibility.
+
+The Mac test evidence JSON is separately selected in Runtime settings
+(`Xodus.evidence.triedGames`). Schema version 1 has `updatedAt` and `games[]`,
+with `productId`, `title`, `verdict`, `scope`, `engine`, optional `runId`,
+`screenshots[]` (`path`, `caption`), `owner`, and optional `blocker`.
+Supported verdicts are `GAMEPLAY_PASS`, `MENU_PASS`, `BLOCKED`, `FAIL`,
+`NOT_TESTED`, and `ANTI_CHEAT_EXCLUDED`. The library reloads it every five
+seconds, keeps the full observation scope visible, and opens recorded local
+screenshots. Missing screenshots are stated, not invented. These observations
+do not grant entitlement or override S4 package/anti-cheat admission.
+
 `tools/build_local_candidate.py` builds an engine from a clean committed checkout
 with offline locked Cargo, compares its management contract with the app's,
 builds a clean app-source archive, and generates exact source and signed-byte

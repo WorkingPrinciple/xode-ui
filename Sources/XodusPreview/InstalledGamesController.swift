@@ -384,8 +384,9 @@ final class InstalledGamesController: ObservableObject {
                     let result = try await nativeLauncher.run(configuration: configuration, accountHash: account,
                         operation: "launch", product: game.storeId,
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
-                        launchArguments: arguments, onStarted: {
+                        launchArguments: arguments, launchEnvironment: launch.profile?.environment ?? [:], onStarted: {
                             launchStarted = true
+                            playState = .playing
                             recordSession(gameID: game.id, startedAt: startedAt, seconds: nil)
                         })
                     guard runToken == token else { return }

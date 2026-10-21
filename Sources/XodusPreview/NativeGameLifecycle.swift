@@ -4,7 +4,7 @@ import Foundation
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "c4882a6e328eeb2e0295d5d8ef081933d0a0320732479c2bca824dc737a3f575"
+    static let cliSHA256 = "bd9b79e32235417ceb6111434b9549e2b38ef54c65d3284cd2096eb0aa3abda6"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
@@ -116,6 +116,7 @@ final class NativeGameLifecycle {
     func run(configuration: BackendConfiguration, accountHash: String, operation: String,
              product: String, gameDirectory: URL, runID: String,
              stateRoot: URL? = nil, launchArguments: [String] = [],
+             launchEnvironment: [String: String] = [:],
              onStarted: () -> Void = {},
              onProgress: (GameScriptProgress) -> Void = { _ in }) async throws -> NativeGameResult {
         guard !active, ["install", "repair", "uninstall", "launch"].contains(operation),
@@ -161,6 +162,7 @@ final class NativeGameLifecycle {
                            "--state-dir", state.path, "--account-hash", accountHash,
                            "--allow-keychain-prompt"] + launchArguments
         child.environment = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment)
+            .merging(launchEnvironment) { _, selected in selected }
         child.standardInput = FileHandle.nullDevice
         child.standardOutput = output
         child.standardError = diagnostic

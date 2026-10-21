@@ -57,6 +57,7 @@ enum NativeLifecycleChecks {
             cancelled = True
         signal.signal(signal.SIGTERM, stop)
         if operation == "launch":
+            assert os.environ.get("S5_SYNTHETIC_ENV") == "owned-fixture"
             deadline = time.monotonic() + 5
             while not cancelled and time.monotonic() < deadline:
                 time.sleep(0.01)
@@ -123,6 +124,7 @@ enum NativeLifecycleChecks {
         let cancelled = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
             operation: "launch", product: "FIXTURE00001", gameDirectory: game,
             runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("cancel"),
+            launchEnvironment: ["S5_SYNTHETIC_ENV": "owned-fixture"],
             onProgress: { _ in runner.cancel() })
         check(cancelled.errorCode == "CANCELLED" && !runner.isRunning,
               "Native lifecycle: cancellation signals the exact live child and joins its terminal receipt")
@@ -132,14 +134,58 @@ enum NativeLifecycleChecks {
                 runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("mismatch"))
             check(false, "Native lifecycle refuses stdout/status disagreement")
         } catch { check(true, "Native lifecycle refuses stdout/status disagreement") }
-        do {
-            _ = try NativeLaunchConfiguration.resolve(game: InstalledGame(id: UUID(), title: "Fixture",
+        let defaultsName = "NativeLifecycleChecks-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: defaultsName)!
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let nativeGame = InstalledGame(id: UUID(), title: "Fixture",
                 identityName: "Fixture", version: "1.0.0.0", storeId: "FIXTURE00001",
-                folder: game.path, launcher: "", importedAt: Date(), usesNativeLifecycle: true),
-                provider: .standaloneWine)
-            check(false, "Unqualified runtime cannot enable production launch")
+                folder: game.path, launcher: "", importedAt: Date(), usesNativeLifecycle: true)
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults)
+            check(false, "A missing runtime selection cannot enable launch")
         } catch NativeLaunchError.runtimeNotQualified {
-            check(true, "Unqualified runtime cannot enable production launch")
+            check(true, "A missing runtime selection cannot enable launch")
         }
+        let primary = root.appendingPathComponent("xgameruntime.dll")
+        let legacy = root.appendingPathComponent("xgameruntime_legacy.dll")
+        try Data("synthetic primary".utf8).write(to: primary)
+        try Data("synthetic legacy".utf8).write(to: legacy)
+        let reference = try NativeRuntimeReference.capture(primary)
+        let runtimeURL = try await reference.validate()
+        check(runtimeURL == primary, "An explicitly selected local DLL pair is available without claiming release qualification")
+        defaults.set(try JSONEncoder().encode(NativeLocalRuntime(reference)), forKey: "Xodus.lifecycle.runtime")
+        let registry = root.appendingPathComponent("engines.json")
+        try JSONSerialization.data(withJSONObject: ["engines": [
+            ["name": "synthetic", "kind": "free", "wine": executable.path, "smoke_test": ["status": "pass"]]
+        ]]).write(to: registry)
+        defaults.set(registry.path, forKey: "Xodus.lifecycle.registry")
+        defaults.set("synthetic", forKey: "Xodus.lifecycle.engine.standaloneWine")
+        let launch = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults)
+        let args = try await launch.arguments()
+        check(args.contains(primary.path) && args.contains("synthetic") && !args.contains("--shim-dir"),
+              "A local launch keeps the explicit registry engine and selected pair without inferred shims")
+        defaults.set(root.path, forKey: "Xodus.lifecycle.profileDirectory")
+        let profile = NativeTitleLaunchProfile(version: 1, productID: nativeGame.storeId,
+            shimDirectory: root.path, environment: ["CX_ENV": "synthetic override"])
+        let profileURL = root.appendingPathComponent(nativeGame.storeId + ".json")
+        try JSONEncoder().encode(profile).write(to: profileURL)
+        let profiled = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults)
+        let profileArguments = try await profiled.arguments()
+        check(profileArguments.contains("--shim-dir") && profiled.profile?.environment["CX_ENV"] == "synthetic override",
+              "A product-bound data-only launch profile forwards its explicit shims and environment")
+        let wrongProfile = NativeTitleLaunchProfile(version: 1, productID: "OTHER0000001",
+            shimDirectory: nil, environment: [:])
+        try JSONEncoder().encode(wrongProfile).write(to: profileURL)
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults)
+            check(false, "A launch profile for another product cannot be substituted")
+        } catch NativeLaunchError.invalidProfile {
+            check(true, "A launch profile for another product cannot be substituted")
+        }
+        try Data("changed synthetic legacy".utf8).write(to: legacy)
+        do {
+            _ = try await reference.validate()
+            check(false, "A changed local legacy DLL requires selecting the updated pair")
+        } catch { check(true, "A changed local legacy DLL requires selecting the updated pair") }
     }
 }

@@ -6,6 +6,9 @@ import XodusCore
 struct NativeEngineSettings: View {
     let allowsFileReads: Bool
     @AppStorage("Xodus.lifecycle.registry") private var registryPath = ""
+    @AppStorage("Xodus.lifecycle.runtime") private var runtimeData = Data()
+    @AppStorage("Xodus.lifecycle.profileDirectory") private var profileDirectory = ""
+    @AppStorage("Xodus.evidence.triedGames") private var evidencePath = ""
     @State private var entries: [NativeEngineRegistry.Entry] = []
     @State private var errorMessage: String?
 
@@ -35,8 +38,55 @@ struct NativeEngineSettings: View {
             Text("Only registry engines with a passed smoke test are listed. Each game and engine uses its own bottle; changing engines never reuses another engine's bottle.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if NativeRuntimePins.approved == nil {
-                Text("Play is waiting for the matching primary and legacy runtime pair to be qualified. No runtime is silently substituted.")
+                Button("Choose local game runtime…") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseDirectories = false
+                    panel.canChooseFiles = true
+                    panel.allowsMultipleSelection = false
+                    panel.message = "Choose xgameruntime.dll. The sibling xgameruntime_legacy.dll is required."
+                    guard panel.runModal() == .OK, let url = panel.url else { return }
+                    Task {
+                        do {
+                            let reference = try await Task.detached { try NativeRuntimeReference.capture(url) }.value
+                            runtimeData = try JSONEncoder().encode(NativeLocalRuntime(reference))
+                            errorMessage = nil
+                        } catch {
+                            errorMessage = "The matching runtime DLL pair couldn't be read. Choose xgameruntime.dll beside xgameruntime_legacy.dll."
+                        }
+                    }
+                }.disabled(!allowsFileReads)
+                Text(runtimeData.isEmpty ? "No local game runtime selected."
+                     : "Local experimental runtime selected. Its two DLL hashes are checked before each launch; gameplay and release qualification remain separate.")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            HStack {
+                Text("Title launch profiles")
+                Spacer()
+                Button("Choose folder…") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseDirectories = true
+                    panel.canChooseFiles = false
+                    panel.allowsMultipleSelection = false
+                    if panel.runModal() == .OK, let url = panel.url { profileDirectory = url.path }
+                }.disabled(!allowsFileReads)
+            }
+            if !profileDirectory.isEmpty {
+                Text(profileDirectory).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+            }
+            HStack {
+                Text("Mac test evidence")
+                Spacer()
+                Button("Choose evidence JSON…") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseDirectories = false
+                    panel.canChooseFiles = true
+                    panel.allowsMultipleSelection = false
+                    panel.allowedContentTypes = [.json]
+                    if panel.runModal() == .OK, let url = panel.url { evidencePath = url.path }
+                }.disabled(!allowsFileReads)
+            }
+            if !evidencePath.isEmpty {
+                Text(evidencePath).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
             }
             if let errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.circle")
@@ -53,7 +103,10 @@ struct NativeEngineSettings: View {
                     try NativeEngineRegistry.read(URL(fileURLWithPath: path)).engines
                 }.value
                 guard path == registryPath, !Task.isCancelled else { return }
-                entries = loaded.filter { $0.smoke_test.status == "pass" }
+                entries = loaded.filter {
+                    $0.smoke_test.status == "pass"
+                        && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: $0.wine))
+                }
             } catch {
                 guard path == registryPath, !Task.isCancelled else { return }
                 errorMessage = "The engine registry couldn't be read. Choose the current registry file again."

@@ -20,6 +20,7 @@ struct LiveLibraryView: View {
     @State private var selectedPassCollection: String?
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
+    @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
@@ -91,6 +92,21 @@ struct LiveLibraryView: View {
     private var localRecords: [LibraryGame] {
         LibraryGame.localRecords(installed: installed.games, qualified: collection, query: query, sort: sort)
     }
+    private var classifiedGames: [LibraryGame] {
+        let catalogue = OfflineGameCompatibility.snapshot?.products ?? [:]
+        let ids = Set(catalogue.filter { $0.value.supported01 }.map(\.key))
+            .union(macEvidence.games.keys)
+        return ids.compactMap { id -> LibraryGame? in
+            guard let title = catalogue[id]?.title ?? macEvidence.games[id]?.title else { return nil }
+            let pc = library.accessIsCurrent ? library.representedGames.first { $0.id == id } : nil
+            return LibraryGame(id: id, title: title,
+                installed: installed.games.first { $0.storeId == id }, pc: pc,
+                product: art.images[id]?.product,
+                owned: pc.map { $0.acquisitionKind != .subscription } ?? false,
+                gamePass: session.gamePassProducts.contains { $0.id == id })
+        }.filter { isVisible($0) && (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -104,6 +120,19 @@ struct LiveLibraryView: View {
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
+                if !classifiedGames.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Classified and tested games").font(.title2.weight(.semibold))
+                        Text("Package eligibility and observed Mac results. Game access is checked separately.")
+                            .font(.callout).foregroundStyle(.secondary)
+                        LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
+                            ForEach(classifiedGames) { game in card(game) }
+                        }
+                    }
+                }
+                if let error = macEvidence.errorMessage {
+                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                }
                 if query.isEmpty {
                     ForEach(Array(passCollections.collections.filter { $0.key != "pcgaVTaz" }.prefix(2))) { category in
                         if !games(in: category).isEmpty {
@@ -288,12 +317,12 @@ struct LiveLibraryView: View {
             }
             .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id)
                 + gamePassHighlights.map(\.id) + editorialGames.map(\.id)
-                + cataloguePreviewIDs).sorted().joined(separator: ",")) {
+                + cataloguePreviewIDs + classifiedGames.map(\.id)).sorted().joined(separator: ",")) {
                 guard artworkAllowed else { return }
                 await art.load(ids: heroGames.map(\.id) + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
                     .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
                     + gamePassHighlights.map(\.id).filter(PCGamesClient.validProductID)
-                    + editorialGames.map(\.id) + cataloguePreviewIDs,
+                    + editorialGames.map(\.id) + cataloguePreviewIDs + classifiedGames.map(\.id),
                     market: session.market, language: session.language)
             }
             .padding(.horizontal, 56).padding(.vertical, 22)
@@ -310,6 +339,14 @@ struct LiveLibraryView: View {
             }
         }
         .task { if allowsStartupTasks { await library.loadOnAppear() } }
+        .task {
+            guard allowsStartupTasks else { return }
+            while !Task.isCancelled {
+                await macEvidence.refresh()
+                do { try await Task.sleep(for: .seconds(5)) }
+                catch { return }
+            }
+        }
         .task(id: precheckIDs.joined(separator: ",")) {
             guard allowsStartupTasks, !precheckIDs.isEmpty else { return }
             guard !Task.isCancelled else { return }
@@ -689,11 +726,7 @@ struct LiveLibraryView: View {
                                 packageFormat: game.installed?.packageType?.label
                                     ?? art.images[artworkID]?.facts.packageFormat,
                                 allowsMeasurement: artworkAllowed)
-            if game.installed != nil && unsupportedIssues(game).isEmpty
-                && OfflineGameCompatibility.publisherEvidence(for: artworkID) == nil {
-                Label("Mac support unverified", systemImage: "questionmark.circle")
-                    .help("The package is inspected automatically. No verified game/runtime or Microsoft Store anti-cheat clearance is available yet.")
-            }
+            MacGameEvidenceView(record: macEvidence.games[artworkID])
         } actions: {
             LibraryGlassCluster {
                 if let match = game.installed {

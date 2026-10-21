@@ -1,14 +1,58 @@
 # Verification evidence
 
 Foundation recorded 2026-10-03; subsequent native/read-only milestones are
-identified separately below. None establishes successful human authentication,
-game download, install or gameplay.
+identified separately below. Source checks, real lifecycle results and external
+gameplay observations are distinguished explicitly.
+
+## Current catalogue, local runtime and Mac evidence (2026-10-22)
+
+S4 data commits `8401a51`, `ab2951c` and `e315aaf` are integrated unchanged.
+The catalogue currently clears six titles, including Hollow Knight, Digging,
+Hades II and Well Dweller. Admission checks derive their expected set from
+S4's records rather than a fixed title list. An admitted record must retain
+MSIXVC, explicit `none`, `supported01=true`, package-format evidence and a
+complete StoreID-bound, signature-versioned clean package scan with all three
+reviewed public checks. Bare `none` is rejected by the production loader.
+
+The library includes classified/tested titles independently of account-owned
+inventory, without inferring entitlement. A separately selected, live-reloaded
+Mac evidence ledger supplies scoped per-title observations and screenshot
+links; it never substitutes for S4 admission.
+
+Local testing relaxation: a user-selected, hash-bound experimental runtime
+pair can launch without production runtime qualification; signing and account
+identity protections are unchanged. The frozen S2 lifecycle CLI is
+`bd9b79e32235417ceb6111434b9549e2b38ef54c65d3284cd2096eb0aa3abda6`,
+producer `aeea0a658a1e4aec098e96b2f1d9108fa2c46d7b`, tree
+`4ba96ae72f7c9a9b9399900b651aed53c4b0546d`. Per-title data-only profiles carry
+the explicitly selected shim directory and adapter environment.
+
+`swift run XodusPreview --game-operation-check` exited 0 with 477 checks
+(`s5-local-runtime-operation-check.log`). Final profile cases passed in
+`s5-profile-final-check.log` (479 checks, exit 0); the shipping build also exited
+0 (`s5-profile-shipping.log`). These use synthetic subprocesses, not games.
+
+Real service-first Abiotic installation completed exit 0 with authoritative
+`success=true` at
+`~/Library/Application Support/Ode to X/S5Acceptance/abiotic-20261021T215052Z/install/runs/59d78037-7cf4-4854-87c0-545ad406d191/result.json`.
+It used signed candidate `c4882a6e...`; a separate corruption/repair test now
+uses the frozen `bd9b79e...` artifact. UI install/repair/play/uninstall acceptance
+is not established by that CLI result.
+
+Source `f4d7b01d29c27db6473f76ddcb6e837479959fa2` was built, installed at
+`~/Applications/Ode to X Local Candidate.app`, and relaunched as PID 41879.
+The app embeds `Contents/Resources/local-candidate-receipt.json`.
+Full-display captures are under `.build/s5-ui-evidence-f4d7b01/`:
+`supported-library-viewport-display-1.png` and
+`unsupported-library-viewport-display-1.png`. These show the then-current
+two-title filter and honest unknown-title gating, not the newer catalogue or
+runtime acceptance.
 
 ## S5 native lifecycle and S4 catalogue integration (2026-10-22)
 
 S4's tools/data commits `d3e3e00` and `ea35f67` were integrated unchanged as
 `0d4461f` and `ec2b359`. The real bundled loader and shared admission rule
-clear exactly **Abiotic Factor** and **No Man's Sky**. Other records remain
+cleared exactly **Abiotic Factor** and **No Man's Sky** at that source. Other records remained
 gated by format/anti-cheat evidence, including unknowns.
 
 The native lifecycle client binds the expected current account, verifies its

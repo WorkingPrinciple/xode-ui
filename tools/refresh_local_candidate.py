@@ -21,7 +21,7 @@ from shipping_pair import PRODUCER, PRODUCER_TREE, owned_bytes, require, swift_p
 from signing_identity import preflight, sign, verify_designated_requirement
 
 
-def refresh(installed, output_root, identity):
+def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None):
     validate_host()
     preflight(identity)
     project = Path(__file__).resolve().parent.parent
@@ -33,7 +33,22 @@ def refresh(installed, output_root, identity):
     info = output_root.stat()
     require(info.st_uid == os.getuid() and info.st_mode & 0o022 == 0, "Unsafe output directory")
     verify_designated_requirement(installed, "app", identity)
-    old_cli = installed / "Contents/Resources/XodusEngine/xodus-cli"
+    supplied = (selected_cli is not None, producer_source is not None, producer_commit is not None)
+    require(all(supplied) or not any(supplied),
+            "An explicit CLI needs both its producer source repository and frozen commit")
+    producer, producer_tree = PRODUCER, PRODUCER_TREE
+    if selected_cli is not None:
+        producer = subprocess.check_output(
+            ["git", "rev-parse", "--verify", producer_commit + "^{commit}"],
+            cwd=producer_source, text=True).strip()
+        require(producer == producer_commit, "Select the full frozen producer commit")
+        producer_tree = subprocess.check_output(
+            ["git", "rev-parse", producer + "^{tree}"], cwd=producer_source, text=True).strip()
+        contract = subprocess.check_output(
+            ["git", "show", producer + ":docs/contracts/management-v1.schema.json"], cwd=producer_source)
+        require(contract == (project / "Sources/XodusManagement/Resources/management-v1.schema.json").read_bytes(),
+                "Selected CLI producer and app management contracts differ")
+    old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/XodusEngine/xodus-cli"
     verify_designated_requirement(old_cli, "cli", identity)
     cli_record, _ = owned_bytes(old_cli)
     stage = Path(tempfile.mkdtemp(prefix="Ode-refresh-", dir=output_root))
@@ -67,7 +82,12 @@ def refresh(installed, output_root, identity):
     sign(helper, "helper", identity, developer_id=True)
     helper_record, _ = owned_bytes(helper)
     (source / "Sources/XodusPreview/ShippingPairPins.swift").write_text(swift_pins(
-        source_identity_before["commit"], source_identity_before["tree"], cli_record, helper_record))
+        source_identity_before["commit"], source_identity_before["tree"], cli_record, helper_record,
+        producer, producer_tree))
+    (source / "Sources/XodusPreview/ShippingProducerPins.swift").write_text(
+        '// Generated for this local candidate only.\nenum ShippingProducerPins {\n'
+        f'    static let commit = "{producer}"\n'
+        f'    static let tree = "{producer_tree}"\n}}\n')
     run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
         source, log, environment)
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
@@ -89,7 +109,8 @@ def refresh(installed, output_root, identity):
         "preservedCLI": cli_record, "preservedCLIPath": str(old_cli),
         "producerBuildPerformed": False, "priorReceiptAvailable": False,
         "producerSourceIndependentlyVerified": False,
-        "preservedProducerDeclaration": {"commit": PRODUCER, "tree": PRODUCER_TREE},
+        "preservedProducerDeclaration": {"commit": producer, "tree": producer_tree},
+        "explicitFrozenCLISelected": selected_cli is not None,
         "signedHelper": helper_record,
     }
     previous_receipt = installed / "Contents/Resources/local-candidate-receipt.json"
@@ -114,5 +135,9 @@ if __name__ == "__main__":
     parser.add_argument("--installed-app", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--identity", required=True)
+    parser.add_argument("--cli", type=Path)
+    parser.add_argument("--producer-source", type=Path)
+    parser.add_argument("--producer-commit")
     args = parser.parse_args()
-    refresh(args.installed_app, args.output_root, args.identity)
+    refresh(args.installed_app, args.output_root, args.identity, args.cli,
+            args.producer_source, args.producer_commit)

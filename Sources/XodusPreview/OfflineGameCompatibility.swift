@@ -99,7 +99,44 @@ struct OfflineGameCompatibility: Codable {
               }) else {
             throw PCGamesError.invalidResponse
         }
+        let raw = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let products = raw?["products"] as? [String: [String: Any]] ?? [:]
+        guard value.products.allSatisfy({ id, entry in
+            !entry.supported01 || validClearance(productID: id, product: products[id] ?? [:])
+        }) else { throw PCGamesError.invalidResponse }
         return value
+    }
+
+    static func validClearance(productID: String, product: [String: Any]) -> Bool {
+        func validSource(_ evidence: [String: Any]) -> Bool {
+            guard let source = evidence["source"] as? String, let url = URL(string: source),
+                  url.scheme == "https", url.host != nil, url.user == nil, url.password == nil,
+                  let date = evidence["checkedAt"] as? String,
+                  date.range(of: #"^\d{4}-\d{2}-\d{2}(T.*Z)?$"#, options: .regularExpression) != nil else { return false }
+            return true
+        }
+        guard product["packageFormat"] as? String == "MSIXVC",
+              product["antiCheat"] as? String == "none", product["supported01"] as? Bool == true,
+              product["pcPackageIdentified"] as? Bool == true,
+              let package = product["packageFormatEvidence"] as? [String: Any], validSource(package),
+              let formats = package["observedFormats"] as? [String], !formats.isEmpty,
+              let antiCheat = product["antiCheatEvidence"] as? [String: Any], validSource(antiCheat),
+              antiCheat["type"] as? String == "package-scan",
+              let scan = antiCheat["packageScan"] as? [String: Any],
+              scan["complete"] as? Bool == true, (scan["fileCount"] as? Int ?? 0) > 0,
+              scan["result"] as? String == "no-known-signature",
+              let digest = scan["fileListSha256"] as? String,
+              digest.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil,
+              let matches = scan["matches"] as? [String: Any], matches.isEmpty,
+              scan["symlinkCount"] as? Int == 0,
+              let signature = scan["signatureSet"] as? String, !signature.isEmpty,
+              (scan["signatureVersion"] as? Int ?? 0) > 0,
+              let identity = scan["packageIdentity"] as? [String: Any],
+              identity["storeId"] as? String == productID,
+              let checks = antiCheat["publicChecks"] as? [[String: Any]], checks.count == 3,
+              Set(checks.compactMap { $0["sourceType"] as? String }) == ["awacy", "pcgamingwiki", "publisher"],
+              checks.allSatisfy({ validSource($0) && ($0["result"] as? String)?.isEmpty == false }) else { return false }
+        return true
     }
 
     static var snapshot: Self? {
