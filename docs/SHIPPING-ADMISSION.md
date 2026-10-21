@@ -115,8 +115,14 @@ All 24 packaged files matched the recorded inventory after copying, all three
 executables were arm64 with timestamped hardened Developer ID signatures, and
 deep strict signature verification passed. The original installed app was
 preserved. Fresh app: `~/Applications/Ode to X Local Candidate.app`.
-This is existing-account and local-launch evidence, not a fresh interactive
-sign-in, qualified gameplay or notarization. Gatekeeper still reports
+The owner subsequently authorized sign-out and completed a fresh native
+Microsoft sign-in. Both the first candidate and an independently compiled update
+passed two fresh-process saved-status/runtime checks each. The updated native app
+then reopened with the sign-in saved and four local game cards, without another
+login. The update uses app source `2a2555305485ddf6de1031b596ebf7747889e639`;
+the previous local candidate and original Development app remain preserved.
+This is interactive sign-in and local-update evidence, not qualified gameplay,
+reboot/locked-Keychain coverage or notarization. Gatekeeper still reports
 `Unnotarized Developer ID` (exit 3); no bypass was applied.
 
 ## Signing and saved-account access

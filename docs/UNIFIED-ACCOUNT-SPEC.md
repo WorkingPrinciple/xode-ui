@@ -7,6 +7,34 @@ downloadability, compatibility or gameplay merely because authentication succeed
 
 ### Fresh integrated local candidate (21 October, after policy correction)
 
+Subsequent owner-authorized interactive test: the owner explicitly requested
+sign-out and offered to complete Microsoft login. The native account sheet's
+sign-out confirmation was invoked; the app returned to its one
+`xodus.welcome.signIn` action with sign-out no longer available. Starting that
+action opened the bundled native auth host. Subsequently the host closed and
+the app's account control reported `Microsoft sign-in saved`, with no pending
+or welcome sign-in control. No Microsoft login fields, passwords or MFA values
+were inspected or logged. An accessibility press on the disappearing sign-out
+confirmation returned an error, but the resulting signed-out state was checked
+before any retry; sign-out was not issued twice.
+
+Two fresh management processes then passed saved status and noninteractive
+runtime authorization with that newly saved session. The independently compiled
+update at app source `2a2555305485ddf6de1031b596ebf7747889e639` passed the same
+checks in two further fresh processes. Its signed engine SHA256 is
+`60ba944a4eff7948fe0d3dd9d225dccb05236ebe78175185bfd43363a23862c9`.
+The updated package's enforced native features/profile/architecture checks,
+exact file inventory and deep strict signature verification passed. It was
+installed at `~/Applications/Ode to X Local Candidate.app`, retaining the first
+candidate at `~/Applications/Ode to X Local Candidate Previous.app` and the
+original Development app separately. The updated native app reopened with
+`Microsoft sign-in saved`, no welcome sign-in action and four local game cards:
+the fresh interactive session survived the app/engine update without another
+login. Private results are in `Ode-local-dgpbwu58/fresh-signin-restart-results.json`
+and `Ode-local-tzoxh7rf/fresh-signin-update-results.json`.
+This supersedes the earlier untested interactive/update boundary below, but not
+the remaining notarization, reboot/locked-Keychain or gameplay limitations.
+
 The supported `tools/build_local_candidate.py` path built clean app source
 `a444f8fe5bb040b9d9d81e4263869385f7118977` with clean engine source
 `96d91dbec6727b4a7409908352c48f09411d3508`. The engine was compiled offline,
