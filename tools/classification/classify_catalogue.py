@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "Sources/XodusManagement/Resources/CompatibilityData"
 CATALOGUE = DATA_DIR / "game-compatibility-v1.json"
 PUBLISHER_EVIDENCE = DATA_DIR / "publisher-anti-cheat-v1.json"
+NEXT_30_QUEUE = DATA_DIR / "next-30-queue.json"
 CATALOGUE_ENDPOINT = "https://displaycatalog.mp.microsoft.com/v7.0/products"
 USER_AGENT = "XodusCompatibilityClassification/1.0"
 FORMATS = {
@@ -269,6 +270,8 @@ def refresh(database: dict[str, Any]) -> dict[str, Any]:
 
     for product_id, product in products.items():
         prior_evidence = product.get("antiCheatEvidence")
+        prior_anti_cheat = product.get("antiCheat")
+        prior_references = product.get("technologyReferences", [])
         prior_launch_proof = product.get("launchProof", [])
         product.update(results[product_id])
         anti_cheat, evidence, references = anti_cheat_classification(
@@ -277,10 +280,27 @@ def refresh(database: dict[str, Any]) -> dict[str, Any]:
         if (
             anti_cheat.lower() in {"none", "unknown"}
             and isinstance(prior_evidence, dict)
-            and prior_evidence.get("type") == "package-scan"
+            and (
+                prior_evidence.get("type") == "package-scan"
+                or (
+                    prior_evidence.get("type") == "unknown"
+                    and isinstance(prior_evidence.get("packageScan"), dict)
+                )
+            )
         ):
             anti_cheat = product["antiCheat"]
             evidence = prior_evidence
+        elif (
+            anti_cheat.lower() in {"none", "unknown"}
+            and isinstance(prior_evidence, dict)
+            and prior_evidence.get("type") == "public-source"
+            and prior_evidence.get("sourceType") == "pcgamingwiki"
+            and isinstance(prior_anti_cheat, str)
+            and prior_anti_cheat.lower() not in {"none", "unknown"}
+        ):
+            anti_cheat = prior_anti_cheat
+            evidence = prior_evidence
+            references = prior_references
         product["antiCheat"] = anti_cheat
         product["antiCheatEvidence"] = evidence
         product["technologyReferences"] = references
@@ -297,6 +317,61 @@ def validate(database: dict[str, Any]) -> Counter[str]:
     products = database.get("products")
     if not isinstance(products, dict) or not products:
         raise RuntimeError("Catalogue has no product records")
+    native_providers = database.get("nativeProviders", [])
+    if not isinstance(native_providers, list):
+        raise RuntimeError("nativeProviders must be a list")
+    native_provider_by_id: dict[str, dict[str, Any]] = {}
+    for provider in native_providers:
+        if not isinstance(provider, dict):
+            raise RuntimeError("nativeProviders entries must be objects")
+        provider_id = provider.get("id")
+        product_id = provider.get("productID")
+        evidence = provider.get("evidence")
+        signature = provider.get("signature")
+        architectures = provider.get("architectures")
+        if (
+            not isinstance(provider_id, str)
+            or not provider_id
+            or provider_id in native_provider_by_id
+            or provider.get("type") != "native-macos-app"
+            or provider.get("platform") != "macOS"
+            or not isinstance(product_id, str)
+            or product_id not in products
+            or products[product_id].get("productRole") != "game"
+            or not isinstance(provider.get("bundleIdentifier"), str)
+            or not provider["bundleIdentifier"]
+            or not isinstance(provider.get("appVersion"), str)
+            or not provider["appVersion"]
+            or not isinstance(architectures, list)
+            or not architectures
+            or len(architectures) != len(set(architectures))
+            or not all(architecture in {"arm64", "x86_64"} for architecture in architectures)
+            or not isinstance(signature, dict)
+            or signature.get("verified") is not True
+            or not isinstance(signature.get("teamIdentifier"), str)
+            or not signature["teamIdentifier"]
+            or not isinstance(evidence, dict)
+            or evidence.get("sourceType") != "local-app-inspection"
+            or not isinstance(evidence.get("source"), str)
+            or not evidence["source"].startswith("https://")
+            or not isinstance(evidence.get("checkedAt"), str)
+            or not re.match(r"^\d{4}-\d{2}-\d{2}$", evidence["checkedAt"])
+            or not isinstance(evidence.get("method"), str)
+            or not evidence["method"]
+            or not isinstance(evidence.get("localPath"), str)
+            or not evidence["localPath"].startswith("~/")
+        ):
+            raise RuntimeError(f"{provider_id!r}: malformed native macOS provider record")
+        launcher_product_id = provider.get("storeLauncherProductID")
+        if launcher_product_id is not None and (
+            not isinstance(launcher_product_id, str)
+            or launcher_product_id not in products
+            or products[launcher_product_id].get("productRole") != "native-launcher"
+        ):
+            raise RuntimeError(
+                f"{provider_id}: storeLauncherProductID must reference a native launcher"
+            )
+        native_provider_by_id[provider_id] = provider
     totals: Counter[str] = Counter()
     for product_id, product in products.items():
         if not isinstance(product, dict):
@@ -343,11 +418,39 @@ def validate(database: dict[str, Any]) -> Counter[str]:
         normalized_anti_cheat = anti_cheat.lower()
         if evidence_type == "unknown" and normalized_anti_cheat != "unknown":
             raise RuntimeError(f"{product_id}: unknown evidence must keep antiCheat unknown")
+        public_checks = anti_cheat_evidence.get("publicChecks")
         if evidence_type == "public-source" and normalized_anti_cheat in {"none", "unknown"}:
-            raise RuntimeError(
-                f"{product_id}: public-source evidence must name an anti-cheat technology"
+            user_directed_none = (
+                normalized_anti_cheat == "none"
+                and isinstance(anti_cheat_evidence.get("method"), str)
+                and anti_cheat_evidence["method"].startswith("User-directed classification: ")
+                and isinstance(public_checks, list)
+                and any(
+                    isinstance(check, dict) and check.get("sourceType") == "pcgamingwiki"
+                    for check in public_checks
+                )
             )
-        if evidence_type == "package-scan":
+            if not user_directed_none:
+                raise RuntimeError(
+                    f"{product_id}: public-source evidence must name an anti-cheat technology "
+                    "unless a user-directed none classification is explicitly documented"
+                )
+        if public_checks is not None and (
+            not isinstance(public_checks, list)
+            or not all(
+                isinstance(check, dict)
+                and check.get("sourceType") in {"awacy", "pcgamingwiki", "publisher"}
+                and isinstance(check.get("source"), str)
+                and check["source"].startswith("https://")
+                and isinstance(check.get("checkedAt"), str)
+                and re.match(r"^\d{4}-\d{2}-\d{2}(?:T.*Z)?$", check["checkedAt"])
+                and isinstance(check.get("result"), str)
+                and check["result"]
+                for check in public_checks
+            )
+        ):
+            raise RuntimeError(f"{product_id}: malformed anti-cheat publicChecks records")
+        if evidence_type == "package-scan" or "packageScan" in anti_cheat_evidence:
             scan = anti_cheat_evidence.get("packageScan")
             if not isinstance(scan, dict):
                 raise RuntimeError(f"{product_id}: package-scan evidence is missing packageScan")
@@ -405,7 +508,8 @@ def validate(database: dict[str, Any]) -> Counter[str]:
                     for check in public_checks
                 }
                 if (
-                    scan.get("result") != "no-known-signature"
+                    evidence_type != "package-scan"
+                    or scan.get("result") != "no-known-signature"
                     or matches
                     or scan.get("symlinkCount") != 0
                     or len(public_checks) != 3
@@ -416,9 +520,18 @@ def validate(database: dict[str, Any]) -> Counter[str]:
                         "and publisher checks"
                     )
             elif normalized_anti_cheat == "unknown":
-                raise RuntimeError(f"{product_id}: package scan cannot classify antiCheat as unknown")
+                if (
+                    evidence_type != "unknown"
+                    or scan.get("result") != "no-known-signature"
+                    or matches
+                    or scan.get("symlinkCount") != 0
+                ):
+                    raise RuntimeError(
+                        f"{product_id}: an unknown package scan must be clean and retain unknown"
+                    )
             elif (
-                scan.get("result") != "named"
+                evidence_type != "package-scan"
+                or scan.get("result") != "named"
                 or not matches
                 or set(anti_cheat.split("; ")) != set(matches)
             ):
@@ -430,6 +543,71 @@ def validate(database: dict[str, Any]) -> Counter[str]:
             isinstance(item, dict) for item in launch_proof
         ):
             raise RuntimeError(f"{product_id}: launchProof must be a list of proof records")
+        role = product.get("productRole")
+        if role is not None and role not in {
+            "game",
+            "native-launcher",
+            "entitlement-bundle",
+        }:
+            raise RuntimeError(f"{product_id}: unsupported productRole")
+        launch_mode = product.get("launchMode")
+        if launch_mode is not None and launch_mode not in {
+            "native-launcher",
+            "native-macos-provider",
+        }:
+            raise RuntimeError(f"{product_id}: unsupported launchMode")
+        if launch_mode in {"native-launcher", "native-macos-provider"} and role != "game":
+            raise RuntimeError(f"{product_id}: native launchMode requires a game product")
+        if role == "entitlement-bundle":
+            components = product.get("componentProductIDs")
+            if (
+                not isinstance(components, list)
+                or not components
+                or not all(isinstance(component_id, str) for component_id in components)
+                or len(components) != len(set(components))
+                or any(
+                    component_id not in products
+                    or products[component_id].get("productRole")
+                    not in {"game", "native-launcher"}
+                    for component_id in components
+                )
+            ):
+                raise RuntimeError(
+                    f"{product_id}: entitlement bundle must reference known game or launcher products"
+                )
+        if role in {"native-launcher", "entitlement-bundle"} and supported is not None:
+            raise RuntimeError(f"{product_id}: non-game product role must not claim game support")
+        for key in ("entitlementProductID", "launchViaProductID"):
+            reference = product.get(key)
+            if reference is not None and (
+                not isinstance(reference, str) or reference not in products
+            ):
+                raise RuntimeError(f"{product_id}: {key} does not reference a catalogue product")
+            if (
+                reference is not None
+                and key == "entitlementProductID"
+                and products[reference].get("productRole") != "entitlement-bundle"
+            ):
+                raise RuntimeError(f"{product_id}: entitlementProductID must reference a bundle")
+            if (
+                reference is not None
+                and key == "launchViaProductID"
+                and products[reference].get("productRole") != "native-launcher"
+            ):
+                raise RuntimeError(f"{product_id}: launchViaProductID must reference a launcher")
+        if launch_mode == "native-launcher" and not product.get("launchViaProductID"):
+            raise RuntimeError(f"{product_id}: native-launcher launchMode requires launchViaProductID")
+        provider_id = product.get("nativeProviderID")
+        if launch_mode == "native-macos-provider":
+            provider = native_provider_by_id.get(provider_id)
+            if provider is None or provider.get("productID") != product_id:
+                raise RuntimeError(
+                    f"{product_id}: native-macos-provider requires a matching nativeProviderID"
+                )
+        elif provider_id is not None:
+            raise RuntimeError(
+                f"{product_id}: nativeProviderID requires native-macos-provider launchMode"
+            )
         expected = supported01(package_format, anti_cheat)
         if supported is not expected:
             raise RuntimeError(
@@ -440,7 +618,143 @@ def validate(database: dict[str, Any]) -> Counter[str]:
         ] += 1
         totals[f"antiCheat:{'none' if anti_cheat.lower() == 'none' else 'unknown' if anti_cheat.lower() == 'unknown' else 'named'}"] += 1
         totals[f"packageFormat:{package_format}"] += 1
+    for provider_id, provider in native_provider_by_id.items():
+        product = products[provider["productID"]]
+        if (
+            product.get("nativeProviderID") != provider_id
+            or product.get("launchMode") != "native-macos-provider"
+        ):
+            raise RuntimeError(f"{provider_id}: provider must be linked from its game product")
+    candidate_queue = database.get("testCandidates")
+    if candidate_queue is not None:
+        items = candidate_queue.get("items") if isinstance(candidate_queue, dict) else None
+        if (
+            not isinstance(candidate_queue, dict)
+            or not isinstance(candidate_queue.get("rankingMethod"), str)
+            or not isinstance(candidate_queue.get("antiCheatPolicy"), str)
+            or not isinstance(items, list)
+            or len(items) != 30
+        ):
+            raise RuntimeError("testCandidates must contain a ranked 30-title queue")
+        ranks: set[int] = set()
+        candidate_ids: set[str] = set()
+        for item in items:
+            if not isinstance(item, dict):
+                raise RuntimeError("testCandidates items must be objects")
+            candidate_id = item.get("productID")
+            rank = item.get("rank")
+            score = item.get("priorityScore")
+            evidence_url = item.get("popularityEvidenceURL")
+            public_status = item.get("publicScreeningStatus")
+            product = products.get(candidate_id) if isinstance(candidate_id, str) else None
+            if (
+                product is None
+                or not isinstance(rank, int)
+                or isinstance(rank, bool)
+                or rank < 1
+                or not isinstance(score, (int, float))
+                or isinstance(score, bool)
+                or not isinstance(evidence_url, str)
+                or not evidence_url.startswith("https://")
+                or public_status
+                not in {
+                    "confirmed-none-package-and-public-evidence",
+                    "likely-none-public-sources",
+                    "public-evidence-incomplete",
+                    "public-screening-pending",
+                    "runtime-unverified",
+                }
+                or product.get("packageFormat") != "MSIXVC"
+                or product.get("antiCheat", "unknown").lower()
+                not in {"none", "unknown"}
+            ):
+                raise RuntimeError(f"testCandidates contains malformed entry {candidate_id!r}")
+            if rank in ranks or candidate_id in candidate_ids:
+                raise RuntimeError("testCandidates ranks and product IDs must be unique")
+            ranks.add(rank)
+            candidate_ids.add(candidate_id)
+        if ranks != set(range(1, 31)):
+            raise RuntimeError("testCandidates ranks must be consecutive from 1 through 30")
     return totals
+
+
+def validate_next30_queue(database: dict[str, Any]) -> None:
+    artifact = load_json(NEXT_30_QUEUE)
+    if not isinstance(artifact, dict):
+        raise RuntimeError("next-30-queue.json must be an object")
+    candidates = database.get("testCandidates", {}).get("items")
+    items = artifact.get("items")
+    if (
+        artifact.get("schemaVersion") != 1
+        or artifact.get("sourceCatalogue") != CATALOGUE.name
+        or not isinstance(candidates, list)
+        or not isinstance(items, list)
+        or len(candidates) != 30
+        or len(items) != 30
+    ):
+        raise RuntimeError("next-30-queue.json must mirror the 30-title catalogue queue")
+    products = database["products"]
+    for candidate, item in zip(candidates, items):
+        if not isinstance(item, dict):
+            raise RuntimeError("next-30-queue.json entries must be objects")
+        product_id = candidate.get("productID")
+        product = products.get(product_id)
+        size = item.get("sizeBytes")
+        installed = item.get("alreadyInstalled")
+        if (
+            product is None
+            or item.get("rank") != candidate.get("rank")
+            or item.get("storeId") != product_id
+            or item.get("title") != candidate.get("title")
+            or item.get("antiCheat") != product.get("antiCheat")
+            or item.get("packageFormat") != product.get("packageFormat")
+            or item.get("entitlementStatus")
+            != candidate.get("entitlementStatus", "unverified")
+            or item.get("releaseStatus") != candidate.get("releaseStatus", "unverified")
+            or item.get("api") not in {"DX11", "DX12", "Vulkan", "unknown"}
+            or not isinstance(item.get("apiEvidence"), str)
+            or not item["apiEvidence"]
+            or (
+                item.get("signInNeeded") is not None
+                and not isinstance(item["signInNeeded"], bool)
+            )
+            or not isinstance(installed, bool)
+            or item.get("sizeBasis")
+            != (
+                "sum of local file sizes in the installed root; not download size"
+                if installed
+                else "not measured locally"
+            )
+            or not isinstance(item.get("signInStatus"), str)
+            or not item["signInStatus"]
+            or (
+                size is not None
+                and (
+                    not isinstance(size, int)
+                    or isinstance(size, bool)
+                    or size < 0
+                )
+            )
+            or (
+                installed
+                and (
+                    size is None
+                    or not isinstance(item.get("installRoot"), str)
+                    or not item["installRoot"].startswith("~/Games/Xodus/")
+                )
+            )
+            or (
+                not installed
+                and (size is not None or item.get("installRoot") is not None)
+            )
+            or not isinstance(item.get("antiCheatEvidenceSource"), str)
+            or not item["antiCheatEvidenceSource"].startswith("https://")
+            or item.get("antiCheatEvidenceCheckedAt")
+            != product.get("antiCheatEvidence", {}).get("checkedAt")
+        ):
+            raise RuntimeError(
+                f"next-30-queue.json has stale or malformed entry {product_id!r}"
+            )
 
 
 def main() -> int:
@@ -459,6 +773,7 @@ def main() -> int:
             encoding="utf-8",
         )
     totals = validate(database)
+    validate_next30_queue(database)
     print(
         f"{len(database['products'])} products; supported01 "
         f"true={totals['true']} false={totals['false']} unknown={totals['unknown']}"
