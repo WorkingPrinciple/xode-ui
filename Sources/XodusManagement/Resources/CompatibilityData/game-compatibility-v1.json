@@ -13509,13 +13509,50 @@
       "title": "Cooking Simulator Windows"
     },
     "9PLH7R84GJWP": {
-      "antiCheat": "unknown",
+      "antiCheat": "none",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "method": "Scanned every inventoried relative package path using the versioned anti-cheat signature set; file contents were not modified. No known signature matched. The title had no exact AWACY anti-cheat record, and the reviewed PCGamingWiki and publisher sources had no anti-cheat record.",
         "mode": "unknown",
-        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-        "type": "unknown"
+        "packageScan": {
+          "complete": true,
+          "fileCount": 33,
+          "fileListSha256": "5d6582de8e7af15865451d077f32ff3a369add2877692ea54962274de81d79c3",
+          "matches": {},
+          "packageIdentity": {
+            "manifest": "MicrosoftGame.config",
+            "name": "TopHatStudiosInc.WellDweller",
+            "storeId": "9PLH7R84GJWP",
+            "version": "1.0.4.0"
+          },
+          "result": "no-known-signature",
+          "root": "~/Games/Xodus/WellDweller-Xbox",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/Well_Dweller",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/3699590/Well_Dweller/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Well_Dweller",
+        "type": "package-scan"
       },
       "launchProof": [],
       "packageFormat": "MSIXVC",
@@ -13531,7 +13568,7 @@
       },
       "pcPackageIdentified": true,
       "referencePlatforms": [],
-      "supported01": null,
+      "supported01": true,
       "technologyReferences": [],
       "title": "Well Dweller"
     },
