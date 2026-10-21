@@ -1,152 +1,146 @@
-# Controlled local shipping boundary
+# Local builds and release verification
 
-`XODUS_SHIPPING=1` selects a different SwiftPM source set, not a runtime demo
-toggle. Fixture views/state, game illustrations/resources, synthetic core
-install plans/jobs, exports, native check entrypoints and the authentication-host
-check corpus are excluded. Live Library/Discover/Downloads and Account show
-native state and actual management data. Unsupported game installation/play
-does not get a simulated action. The nonshipping preview/test products remain
-available for explicitly requested development.
+## Purpose and authorization
 
-Shipping ignores `XODUS_BACKEND_PATH` and remembered developer selection,
-has no engine picker, rejects preview/test/development argv, and resolves only:
+These are project packaging checks, not Apple requirements or an approval
+authority separate from the owner.
 
-- `Contents/Resources/XodusEngine/xodus-cli`
-- `Contents/MacOS/XodusAuthHost`
-- `Contents/Resources/XodusAuthHost.json`
+The owner's authorization to build, sign, install and test locally is sufficient
+to do that work. Do not repeatedly request permission for those same operations.
+Do not require an independently approved receipt, a second reviewer, or manual
+approval of every commit/hash merely to prepare or test a local candidate.
+Record exact inputs and observed results automatically so the work is
+reproducible. A generated receipt records what happened; it is not permission
+to proceed and does not prove that an app works.
 
-The repository's `ShippingPairPins.approved` is nil. This compiles, but management
-and pure planning fail closed before any process. Packaging generates a
-stage-only Swift pin table after independently approved sealed inputs and
-separate signing. The table binds schema1, approved app commit/tree,
-the pinned producer/tree, signed engine/helper SHA256 and byte sizes, helper version1
-and matching helper source. Runtime JSON, HELLO and ad-hoc signing alone cannot
-create that approval.
+Source revisions, schema hashes and artifact hashes are versioned compatibility
+inputs, not permanent prohibitions on development. When an authorized change
+updates the engine or contract, update the corresponding consumer checks,
+packaging metadata and regression tests together. Investigate mismatches before
+updating pins; never remove a failing check or accept arbitrary inputs just to
+make packaging pass.
 
-## Operator trust chain
+Do not turn a production-release requirement into a reason to stop controlled
+local implementation or testing. Conversely, a successful local build or
+signature is not production readiness.
 
-`tools/build_app.sh` requires the exact externally approved app commit/tree,
-unsigned CLI SHA256/bytes, adjacent provenance SHA256/bytes and a new owned output
-root. It refuses a dirty/mismatched source and does not overwrite an old app.
-The provenance is hash-pinned before parsing. Duplicate keys, wrong source/tree,
-nonrelease profile, unexpected features, incorrect architecture/target,
-plaintext/debug/console feature changes or mismatched sealed identity reject
-the input. These claims are accepted only under the operator's independent
-external pins, not because the JSON asserts them.
+## Preserve these actual protections
 
-The current source producer is `28f737df46b29cc195145425e3fd1397ebc09be3`,
-tree `1273ddaa50a6b3e77647aabb5bb170b1b525c922`, matching the compiled admission
-gate and independently sealed account-bound input. Earlier producer identities
-in integration history are not current packaging approval. Required Cargo profile
-is opt3/debug0, no debug assertions/overflow
-checks/test. Exact features are xodus/CLI empty, management live, native Keychain
-and security-framework. The old e7/304 engine cannot satisfy this gate.
+- Keep credentials, content keys, signing private keys and tokens out of source,
+  logs and receipts. Do not export credentials or alter credential ACLs/trust
+  to avoid native authentication.
+- Native password, MFA and consent steps remain with the user. Certificate
+  creation and signing may be automated when the owner has authorized them;
+  an outstanding native authentication dialog cannot be completed by approval
+  in chat alone.
+- Use a new owned output directory. Preserve the installed working app and
+  account/game data while preparing a replacement. Install or replace only
+  within the owner's authorized scope, with a recoverable previous version.
+- Bind the package to its actual source, engine, helper, schema and resources.
+  Check ownership, file type, permissions, sizes, hashes and signatures.
+  Reject unexpected symlinks, malformed metadata and changed staged inputs.
+- Do not silently fall back to another engine, credential owner, account or
+  ad-hoc signature. Report an actual failure instead of manufacturing success.
+- Keep unsupported installation/play actions unavailable; do not simulate
+  entitlement, owned inventory or gameplay.
+- Keep GitHub Actions disabled as requested.
 
-The copied unsigned engine is rehashed before signing. The separately signed
-CLI/helper identities are new pins, not renamed unsigned hashes. Only then is
-`ShippingPairPins.swift` generated and the launcher compiled in the isolated
-source stage. The external package receipt records unsigned/provenance inputs,
-signed identities, generated compiler pins and final resource/package inventory.
-The final app sign is followed by deep verification, helper receipt/identity,
-arm64 and C95/provider-resource checks, then the original unsigned inputs are
-reverified. Signing/source generation is never performed on the current checkout
-or a protected bundle.
+## Current tooling: constraints to update, not additional policy
 
-## Explicit signing policy
+The implementation currently predates the local-development policy above:
 
-Packaging requires a supplied matching OS Keychain code-signing identity's
-exact certificate SHA1 through `--signing-identity`; there is no automatic
-ad-hoc fallback. Preflight uses `security find-identity -p codesigning`, not
-the trusted-valid-only `-v` filter. A matching local self-signed identity may
-report `CSSMERR_TP_NOT_TRUSTED`: this does not require global OS trust for a
-fixed-leaf designated requirement. Expired or wrong-purpose error entries are
-not accepted. This is not Developer ID, Gatekeeper or distribution qualification.
-Signing
-identifiers are fixed to `io.github.dragoshont.xodus`,
-`io.github.dragoshont.xodus.cli` and `io.github.dragoshont.xodus.auth-host`.
-The designated requirement binds the fixed identifier to that certificate's
-fingerprint, not a build-specific code hash. The development bundle identifier
-and existing preferences are unchanged by this signing-identifier preparation.
+- `tools/build_app.sh` requires exact app commit/tree, unsigned CLI hash/size,
+  provenance hash/size, a clean source tree, an owned output directory and an
+  explicitly selected signing identity.
+- `tools/shipping_pair.py` still pins producer
+  `28f737df46b29cc195145425e3fd1397ebc09be3`, tree
+  `1273ddaa50a6b3e77647aabb5bb170b1b525c922`.
+- `tools/verify_shipping_package.py` expects that producer's management schema
+  SHA256 `d2f4222e952f732396018a4c4576da24729bdbddde7dd1f95df3b84d7a6d324d`.
+  The newer account/runtime contract and checked-in resource instead match
+  `03afeb28e4e5b652712c2b6f29fe648fa05c842ea86a4920bd4f960bdbcc0529`.
+  This mismatch currently rejects package verification. Resolve the complete
+  producer/consumer pairing and its tests, not just the one checksum.
+- `ShippingPairPins.approved` is nil in source. Packaging generates exact
+  engine/helper pins in an isolated source stage. Changing this document does
+  not generate those pins or make an existing package valid.
+- Runtime executable and helper checks enforce owned regular files, safe
+  permissions, exact sizes/hashes and matching helper metadata immediately
+  before execution. Preserve those checks when updating the build path.
 
-An equal designated requirement is not proof of unattended saved-item access
-after a locally signed engine rebuild. Apple's securityd also checks a separate
-partition: locally self-signed, non-Apple-chain code is classified by its
-build-specific code-directory hash. A new build may therefore require a native
-human Keychain approval. The app's foreground status read permits that prompt;
-verification remains a separate noninteractive read. No arbitrary Team ID,
-global trust change or credential reset is used to bypass this distinction.
+The expected release profile is opt3/debug0 with no debug assertions, overflow
+checks or test mode; features are xodus/CLI empty, management live, native
+Keychain and security-framework. Record the actual profile/features and explain
+any intentional development difference rather than labeling a different build
+as the expected release input.
 
-Certificate creation, trust changes and any private-key permission prompt need
-separate human approval. The tooling never creates/unlocks a Keychain, exports a
-private key or changes a credential ACL. Preparation and neutral tests are not
-proof that a usable identity exists or that saved credentials became accessible.
-Before accepting an identity migration, obtain two independently approved build
-receipts/runs that each bind an actual build to its signed CLI artifact, and
-compare those artifacts:
+Local candidate support must be explicit and tested. Do not claim that editing
+this policy alone fixes the current scripts, admits a new producer, or produces
+a usable app.
+
+## Signing and saved-account access
+
+Use the owner's valid Developer ID Application identity for new candidates.
+Do not re-sign a preserved working engine in place. Sign a separate candidate
+and regenerate its package identity metadata consistently.
+
+Signing identifiers remain `io.github.dragoshont.xodus`,
+`io.github.dragoshont.xodus.cli` and
+`io.github.dragoshont.xodus.auth-host`. The existing signing helper uses an
+exact certificate-leaf requirement. This is not yet a team-based renewal policy.
+Certificate renewal therefore needs a tested identity update, not an assumption
+that a matching team automatically satisfies the current requirement.
+
+The owner authorized provisioning on 21 October 2026. A valid Developer ID
+Application certificate was created for team `M62Z4M5EUY`; its SHA1 is
+`410914520BCC840C0125D3826CCF0F247F603321`. Separate signed candidates passed
+saved-account reads, noninteractive runtime authorization, same-binary restarts,
+relocation and a fresh compilation. Abiotic package-license qualification also
+passed without printing/saving its content key. The preserved original owner
+retained access afterward. See [the evidence](UNIFIED-ACCOUNT-SPEC.md).
+
+Do not require two independently human-approved build receipts to test rebuild
+persistence. Build into a fresh target directory, record source/toolchain/
+configuration and unsigned/signed identities, then exercise the actual saved
+account with that artifact. Re-signing the same binary is not a rebuild test.
+The existing command below compares requirements only; it does not run that
+account-access test:
 
 ```sh
 python3 tools/signing_identity.py compare --kind cli --identity CERT_SHA1 \
     --first /absolute/first/signed-cli --second /absolute/second/signed-cli
 ```
 
-The comparison checks valid signatures, different signed bytes and exactly the
-same fixed certificate-bound designated requirement. Its result is only
-**different signed artifacts share a requirement**: file-hash inequality cannot
-distinguish an independent rebuild from signature variation or re-signing the
-same binary. Independent build evidence must be approved separately; this tool
-does not qualify two builds. Real identity/persistence qualification remains
-pending human-approved provisioning, signing and independent build receipts/runs.
-Neutral tests are simulations, not certificate, build or persistence evidence.
+Do not promise that all future builds, reboots or locked-Keychain situations
+will be prompt-free. Test those scenarios separately and report their outcomes.
+Do not revoke an unidentified certificate or delete the old signing identity
+while the working app still depends on it.
 
-An explicitly approved UI-only package may preserve its signed engine with
-either the same exact stable certificate or explicit `--local-ad-hoc`, together
-with the externally pinned prior final package receipt:
+## Local testing versus distribution
 
-```sh
---preserve-signed-cli /absolute/accepted/cli SHA256 BYTES \
-    /absolute/prior/package-receipt.json RECEIPT_SHA256 RECEIPT_BYTES
-```
+`XODUS_SHIPPING=1` excludes fixture state, synthetic install/job success,
+illustrations, exports and native test entrypoints. It uses bundled engine/
+helper paths and rejects development arguments and backend overrides.
+Nonshipping products remain available for explicitly requested development.
+Preserve that separation; a local candidate need not be called a production
+release to be useful.
 
-The independently approved receipt must bind that exact signed CLI in both its
-signed identity and final package inventory, the required producer/tree, and
-the same sealed unsigned/provenance approval, profile and features as the current
-externally pinned inputs. A hash/size supplied for the CLI alone is insufficient.
-The bounded prior receipt is hash-pinned before parsing; missing, changed,
-cross-producer or mismatched sealed-input approval rejects reuse before signature
-verification or copying. The copied CLI and receipt are verified again after
-copying and after the app sign; the engine is never re-signed.
-Stable mode also strictly verifies the existing and copied CLI's exact fixed
-identifier/certificate-leaf designated requirement against the supplied
-certificate before copying and after the final app sign. A different certificate,
-identifier, build-cdhash requirement or ad-hoc CLI cannot pass as a stable pair.
-The app and helper may be rebuilt without re-signing or changing the CLI bytes.
-Preservation alone does not establish credential access or independent engine
-rebuild reuse. The receipt's existence or self-asserted contents never replace
-independent operator approval of its exact hash/bytes.
+`tools/check.sh` is the documented regression entrypoint. Capture each failure
+truthfully and continue independent checks where useful. A passing subset does
+not make the full command green. Synthetic checks do not replace live account,
+UI, package-consumer or gameplay observations.
 
-Runtime admission requires canonical no-follow current-UID single-link regular
-executables, non-group/world-writable files, exact sizes and SHA256; helper
-metadata remains bounded/canonical and its source/version/hash must match
-compiled pins. The management launch rechecks identity immediately before
-execution; paired auth mutations also recheck. Pure planning performs the same
-shipping pair gate and prelaunch engine check. No credential value is added to
-argv, receipts or logs.
+Developer ID signing alone is not notarization. The current signing helper
+uses `--timestamp=none` and does not enable hardened runtime. Gatekeeper rejected
+the observed candidate as `Unnotarized Developer ID`. A distribution path needs
+appropriate signing options/entitlements, notarization and applicable ticket/
+Gatekeeper verification. Do not disable Gatekeeper or remove quarantine to
+pretend those checks passed. Submission to Apple's notarization service is a
+separate external operation; do not send credential stores or private evidence.
 
-## Evidence and remaining gates
-
-Neutral checks compile the shipping source, test nil/valid/missing/changed/
-linked/source/version/size failures with an owned mock engine and no helper or
-account operation, verify no shipping resource bundles contain illustrations/
-private fixture corpora, and execute the shipping binary's rejected flags.
-Startup delayed reconciliation tests protect a post-ready user query across
-initial connection and reconnect; loading/error/cancelled/confirmed-zero remain
-distinct.
-
-This is a **controlled local operator-approved pair**, not a generic provenance
-framework, DeveloperID release, notarized distribution or a successful Microsoft
-login. New sealed CLI existence does not authorize packaging/launch. Source
-review, exact native qualification, independent package checks, desktop ownership
-and explicit launch approval remain separate. Credentials, MFA/consent and
-Keychain interaction are human-only. Owned inventory, install/update and verified
-gameplay remain unsupported rather than fabricated. No passkey capability or
-biometric cause/fix is inferred from the Swift host or neutral tests.
+Call the product production-ready only after verifying the integrated app's
+actual sign-in, restart/update behavior, error recovery and supported user
+flows. A package-license check is not a launched game; standalone Wine controls
+are not Xbox-route gameplay. Keep measured results, remaining defects and
+untested scenarios distinct. Owner authorization permits the work; it does not
+turn an untested result into a pass.
