@@ -94,6 +94,20 @@ packed key is insufficient to report verification. The qualifier and private
 broker now share authenticated single-key unpacking. Synthetic checks cover
 missing/multiple keys, invalid wrapping, a valid wrapped key and the wrong device
 key. No live qualification was retried or inferred from these fixtures.
+Cancellation follow-up `0e63cd4` exercises an in-flight package provider through
+the real Unix-stream router: cancelling the parent request drops the pending
+provider and closes the socket without publishing a key frame.
+
+Follow-up source `3bc6599` adds the recovered game shim's XML license-token
+bridge (7/8) alongside MSA tickets (3/4) and opted-in package keys (5/6).
+The token route uses the same exact-account option and checked noninteractive
+snapshot, with shared device/user ticket acquisition, bounded flat XML,
+closed failure behavior and cancellation without late secret publication.
+Synthetic actual Unix-stream framing, missing provider, repeated products,
+empty custom text and signed-out/legacy-profile refusal are checked.
+This is not live game-shim compatibility or permission to enable native Play
+or promote a package. The owner was unavailable for the genuine native-password
+checkpoint; it was not retriggered or bypassed.
 
 The supported preserved-engine path was also exercised specifically for No
 Man's Sky: its declared MSA client `000000004826ED21` obtained unexpired silent

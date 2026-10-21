@@ -311,6 +311,32 @@ signature verification on 21 October; it was **not rebuilt or replaced** by this
 slice. No fresh app/package receipt or login readiness is claimed. The sole
 GitHub Actions workflow was freshly observed `disabled_manually` and left so.
 
+The later cancellation-only regression at unified revision `0e63cd4` confirms
+that an in-flight package provider is dropped on cancellation and no late key
+frame is emitted. Four service XML checks passed through the real Unix-stream
+router with a synthetic provider. This test-only commit does not alter the
+`f5fe973` release artifact.
+The owner was unavailable at the native-password checkpoint; no prompt was
+retriggered and no password/security workaround was attempted.
+
+Unified follow-up **`3bc6599`** implements the game-shim XML license-token
+bridge (7/8), reusing the exact-account opt-in, one checked credential snapshot
+and shared licensing-ticket acquisition. Flat XML/product bounds, missing
+provider refusal, signed-out/legacy-profile refusal, actual socket framing and
+cancellation of both licensing routes are checked: **77 CLI and 32 service
+checks passed**, with one pre-existing CLI check ignored. Local release build
+passed; its CLI SHA-256 is
+`68ae6b632b5dc817d6a909d600e9bec2c556e61a0056ce9d043db8a9f82d6f69`.
+Neither the installed app nor approved sealed inputs changed. No live
+license-token/provider/game success is inferred.
+
+Conservatively allocate another **six minutes** for this shared follow-up and
+evidence persistence; this is not an exact active-timing receipt. Close NMS at
+its **45-minute ceiling** (consume its remaining 5m58s, not a new clock), and
+charge Abiotic **17m46s total**, leaving at most **27m14s** before any later
+title-specific work. NMS is parked with no further title-specific work this
+window; an unchanged credential or launch retry is not useful.
+
 ## Session 2 baseline recovery
 
 Read-only source/artifact inspection on 21 October recovered these components.
