@@ -25,7 +25,7 @@ enum GameSupportPolicy {
             let unknown = technology == nil || technology?.isEmpty == true
                 || ["unknown", "unspecified"].contains(technology?.lowercased() ?? "")
             let title = unknown ? "Anti-cheat not verified yet" : (technology ?? "Anti-cheat not verified yet")
-            issues.append(LibraryCompatibilityIssue(kind: .antiCheat, title: title,
+            issues.append(LibraryCompatibilityIssue(kind: .antiCheat, title: unknown ? title : "Uses \(title)",
                 detail: unknown ? "Anti-cheat has not been classified for this game."
                     : "\(title) is not supported by Ode to X 0.1.", source: nil))
         }

@@ -173,11 +173,9 @@ struct PCGameTile: View {
     var accessIsCurrent = true
 
     private var unsupportedIssues: [LibraryCompatibilityIssue] {
-        LibrarySupportVisibility.issues(productID: game.id,
-            installed: PCGamesController.installedMatch(game, in: installed.games) != nil,
+        operations.supportIssues(productID: game.id,
             packageFormat: PCGamesController.installedMatch(game, in: installed.games)?.packageType?.label
-                ?? catalog.images[game.id]?.facts.packageFormat,
-            compatibility: operations.compatibility[game.id])
+                ?? catalog.images[game.id]?.facts.packageFormat)
     }
 
     var body: some View {

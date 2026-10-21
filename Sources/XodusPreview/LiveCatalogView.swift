@@ -375,9 +375,8 @@ struct LiveCatalogView: View {
     }
 
     private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
-        LibrarySupportVisibility.issues(productID: game.id, installed: game.installed != nil,
-            packageFormat: game.installed?.packageType?.label ?? facts[game.id]?.packageFormat,
-            compatibility: operations.compatibility[game.id])
+        operations.supportIssues(productID: game.id,
+            packageFormat: game.installed?.packageType?.label ?? facts[game.id]?.packageFormat)
     }
 
     private func isVisible(_ game: LibraryGame) -> Bool {
@@ -398,7 +397,7 @@ struct LiveCatalogView: View {
 
     private var unavailable: some View {
         ContentUnavailableView {
-            Label(hiddenUnsupportedCount > 0 ? "No supported games to show"
+            Label(hiddenUnsupportedCount > 0 ? "No games verified yet"
                   : validEmptySearch ? DiscoverCopy.noResults(query)
                   : selection.genre != nil && query.isEmpty ? "No games in this genre" : session.catalogEmptyTitle,
                   systemImage: "magnifyingglass")

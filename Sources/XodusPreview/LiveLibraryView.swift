@@ -172,7 +172,7 @@ struct LiveLibraryView: View {
                 } else if visible.isEmpty {
                     if hiddenUnsupportedCount > 0, !showsUnsupportedGames {
                         ContentUnavailableView {
-                            Label("No supported games to show", systemImage: "gamecontroller")
+                            Label("No games verified yet", systemImage: "gamecontroller")
                         } description: {
                             Text("Ode to X 0.1 supports MSIXVC games classified without anti-cheat. Unclassified games stay hidden until checked.")
                         } actions: {
@@ -450,31 +450,19 @@ struct LiveLibraryView: View {
     }
 
     private func unsupportedReason(_ game: LibraryGame) -> String? {
-        LibrarySupportVisibility.unsupportedReason(
-            productID: game.installed?.storeId ?? game.id,
-            installed: game.installed != nil,
-            packageFormat: game.installed?.packageType?.label ?? art.images[game.id]?.facts.packageFormat,
-            compatibility: operations.compatibility[game.installed?.storeId ?? game.id]
-        )
+        let issues = unsupportedIssues(game)
+        return issues.isEmpty ? nil : issues.map(\.detail).joined(separator: " ")
     }
 
     private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
-        LibrarySupportVisibility.issues(
+        operations.supportIssues(
             productID: game.installed?.storeId ?? game.id,
-            installed: game.installed != nil,
-            packageFormat: game.installed?.packageType?.label ?? art.images[game.id]?.facts.packageFormat,
-            compatibility: operations.compatibility[game.installed?.storeId ?? game.id]
+            packageFormat: game.installed?.packageType?.label ?? art.images[game.id]?.facts.packageFormat
         )
     }
 
     private func isVisible(_ game: LibraryGame) -> Bool {
-        LibrarySupportVisibility.isVisible(
-            productID: game.installed?.storeId ?? game.id,
-            installed: game.installed != nil,
-            packageFormat: game.installed?.packageType?.label ?? art.images[game.id]?.facts.packageFormat,
-            compatibility: operations.compatibility[game.installed?.storeId ?? game.id],
-            showsUnsupportedGames: showsUnsupportedGames
-        )
+        showsUnsupportedGames || unsupportedIssues(game).isEmpty
     }
 
     @ViewBuilder private var ambientBackdrop: some View {
@@ -709,8 +697,10 @@ struct LiveLibraryView: View {
         } actions: {
             LibraryGlassCluster {
                 if let match = game.installed {
-                    InstalledPlayButton(library: installed, operations: operations, game: match,
-                                        usesGlass: true, prominent: false, attention: { open(game) })
+                    if unsupportedIssues(game).isEmpty {
+                        InstalledPlayButton(library: installed, operations: operations, game: match,
+                                            usesGlass: true, prominent: false, attention: { open(game) })
+                    }
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
                 } else if unsupportedReason(game) != nil {
                     EmptyView()

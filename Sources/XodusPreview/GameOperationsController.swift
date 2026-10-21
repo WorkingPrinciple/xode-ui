@@ -60,6 +60,7 @@ final class GameOperationsController: ObservableObject {
     private let serviceRunner: GameScriptRunner
     private let setupRunner: GameScriptRunner
     private let journal: GameOperationJournal
+    private let compatibilityCatalogue: OfflineGameCompatibility?
     private var mutationTask: Task<Void, Never>?
     private var serviceTask: Task<Void, Never>?
     private var compatibilityTask: Task<Void, Never>?
@@ -167,7 +168,9 @@ final class GameOperationsController: ObservableObject {
         }
     }
     var canConfirmInstall: Bool {
-        canStartMutation && installConsent?.compatibility?.supported == true
+        guard canStartMutation, let consent = installConsent, consent.compatibility?.supported == true else { return false }
+        let format = consent.installedID.flatMap { id in installed.games.first { $0.id == id }?.packageType?.label }
+        return supportIssues(productID: consent.game.id, packageFormat: format, includeRuntime: false).isEmpty
     }
     var canCancel: Bool {
         operation != nil && operation?.kind != .uninstall && !recoveryRequired && !cancelling
@@ -214,9 +217,11 @@ final class GameOperationsController: ObservableObject {
             : gamePassStatus?.active == false ? "PC Game Pass: Not active" : "PC Game Pass: Unknown"
     }
 
-    init(installed: InstalledGamesController, paths: GameScriptPaths = .production) {
+    init(installed: InstalledGamesController, paths: GameScriptPaths = .production,
+         compatibilityCatalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) {
         self.installed = installed
         self.paths = paths
+        self.compatibilityCatalogue = compatibilityCatalogue
         mutationRunner = GameScriptRunner(paths: paths)
         serviceRunner = GameScriptRunner(paths: paths)
         setupRunner = GameScriptRunner(paths: paths)
@@ -225,6 +230,32 @@ final class GameOperationsController: ObservableObject {
         installedObservation = installed.objectWillChange.sink { [weak self] in
             self?.objectWillChange.send()
         }
+    }
+
+    func supportIssues(productID: String, packageFormat: String? = nil,
+                       includeRuntime: Bool = true) -> [LibraryCompatibilityIssue] {
+        LibrarySupportVisibility.issues(productID: productID, installed: false,
+            packageFormat: packageFormat, compatibility: includeRuntime ? compatibility[productID] : nil,
+            catalogue: compatibilityCatalogue)
+    }
+
+    func canRepair(_ game: InstalledGame) -> Bool {
+        canStartMutation && installed.runningGameID != game.id
+            && supportIssues(productID: game.storeId, packageFormat: game.packageType?.label,
+                             includeRuntime: false).isEmpty
+    }
+
+    private func admitInstall(productID: String, installedID: UUID? = nil) -> Bool {
+        let format = installedID.flatMap { id in installed.games.first { $0.id == id }?.packageType?.label }
+        let issues = supportIssues(productID: productID, packageFormat: format, includeRuntime: false)
+        guard issues.isEmpty else {
+            if operation == nil && !checkingCompatibility {
+                resetFeedback(productID: productID)
+                error = "Not supported yet. " + issues.map(\.detail).joined(separator: " ")
+            }
+            return false
+        }
+        return true
     }
 
     func restore() async {
@@ -680,6 +711,7 @@ final class GameOperationsController: ObservableObject {
             guard repairing.storeId == game.id, installed.games.contains(repairing),
                   installed.runningGameID != repairing.id else { return }
         }
+        guard admitInstall(productID: game.id, installedID: repairing?.id) else { return }
         resetFeedback(productID: game.id)
         if repairing == nil { downloadRetry = game }
         preparingConsent = true
@@ -732,8 +764,12 @@ final class GameOperationsController: ObservableObject {
     }
 
     func confirmInstall(_ consent: GameInstallConsent) {
-        guard installConsent?.id == consent.id, canConfirmInstall, !recoveryRequired,
+        guard installConsent?.id == consent.id, canStartMutation, !recoveryRequired,
               consent.compatibility?.supported == true else { return }
+        guard admitInstall(productID: consent.game.id, installedID: consent.installedID) else {
+            installConsent = nil
+            return
+        }
         resetFeedback(productID: consent.game.id)
         installConsent = nil
         let record = GameOperationRecord(id: InstalledGamesController.runID(),
@@ -794,6 +830,9 @@ final class GameOperationsController: ObservableObject {
     }
 
     private func begin(_ record: GameOperationRecord) {
+        guard record.kind == .uninstall || admitInstall(productID: record.productID, installedID: record.installedID) else {
+            return
+        }
         resetFeedback(productID: record.productID)
         do { try installed.reserveMutation(gameID: record.installedID) }
         catch { self.error = Self.message(error); return }
@@ -907,6 +946,7 @@ final class GameOperationsController: ObservableObject {
     func runQueuedOperation(_ record: GameOperationRecord,
                             onProgress: @escaping (GameScriptProgress) -> Void) async -> InstallEvent {
         guard record.kind == .install, (try? record.validate()) != nil else { return .fail(code: -1) }
+        guard admitInstall(productID: record.productID) else { return .fail(code: 12) }
         while !canStartMutation || operation != nil || mutationTask != nil {
             if terminating { return .fail(code: -1) }
             if abandonedQueuedRuns.remove(record.id) != nil { return .cancel }

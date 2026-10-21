@@ -4,6 +4,34 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. None establishes successful human authentication,
 game download, install or gameplay.
 
+## 0.1 compatibility and game action source candidate (2026-10-22)
+
+Candidate `c5fc19c6be9bbfdfee13d0f38fe84d2fec5ec3a6` is pushed to
+`origin/dragoshont-s5-app-ui-4a2`. The inherited local-only base was pushed
+before editing. Local evidence, with GitHub Actions left disabled:
+
+| Command | Exit | Result | Log |
+| --- | --- | --- | --- |
+| `swift run XodusPreview --library-access-check` | 0 | 220 checks, including loader none/named/unknown/missing-field cases and strict 0.1 policy | `s5-library-access.log` |
+| `swift run XodusPreview --self-check` | 0 | 247 source/native-layout checks, no backend | `s5-self-check.log` |
+| `XODUS_SHIPPING=1 swift build --jobs 1 --product XodusPreview` | 0 | Shipping configuration compiles | `s5-shipping-build.log` |
+
+These logs are under
+`/Users/dragoshont/.copilot/session-state/d9280fd8-f3da-4a6e-a8ad-c228d500ecfa/files/`.
+They are deterministic source evidence, not service or installed-product
+acceptance. No fixture screenshot is offered as a real game state.
+
+At this candidate the bundled data still classifies all anti-cheat as
+`unknown`; such games correctly lack clearance. The unified-account runtime
+also fences legacy independently authenticated install/launch scripts.
+Real install, repair, uninstall and launch acceptance, signed running-app
+screenshots, and S4's classified catalogue remain pending their actual
+upstream component contracts/data. The installed CLI was inspected directly;
+its help does not yet expose the new install/repair/uninstall/launch commands.
+The available Developer ID identity is
+`Developer ID Application: Dragos Hont (M62Z4M5EUY)`; a successful compile is
+not a signing or notarization claim.
+
 ## Single-button login and actual connection recovery (2026-10-19)
 
 The login surface uses the proposed standalone green X with **Ode** below it

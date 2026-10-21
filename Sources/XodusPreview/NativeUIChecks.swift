@@ -574,6 +574,19 @@ enum NativeUIChecks {
         catalog.frame = CGRect(x: 0, y: 0, width: 820, height: 720)
         catalog.layoutSubtreeIfNeeded()
         let feedback = GameOperationProgressView(operations: operations)
+        let installAction = GameInstallAction(game: game, operations: operations)
+        let actionHost = NSHostingView(rootView: installAction)
+        actionHost.sizingOptions = []
+        actionHost.frame = CGRect(x: 0, y: 0, width: 230, height: 180)
+        actionHost.layoutSubtreeIfNeeded()
+        check(actionHost.window == nil && actionHost.fittingSize.width.isFinite
+              && (operations.installingDirectly
+                  ? installAction.preparing && installAction.showsCancel
+                    && installAction.statusTitle == "Preparing installation"
+                  : operations.operation != nil
+                  ? installAction.active && installAction.showsCancel && operations.progress != nil
+                  : installAction.failed && installAction.actionTitle == "Retry installation"),
+              "UI-9 source: Shared tile/detail Install controls reflect preparation, byte progress/cancel or failure/retry")
         let availableCancellation = feedback.preparationCancelTitle ?? feedback.installCancelTitle
         check(catalog.window == nil && operations.hasDownloadStatus
               && (cancelTitle.map { availableCancellation == $0 } ?? (feedback.operationError == expectedStatus)),

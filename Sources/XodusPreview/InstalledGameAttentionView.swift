@@ -30,6 +30,7 @@ struct InstalledGameAttentionView: View {
             || (installed.accountAccessAllowed && installed.playErrors[game.id] != nil)
     }
     private var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
+    var offersRepair: Bool { repairGame != nil && operations.canRepair(game) }
 
     var body: some View {
         if needsAttention {
@@ -53,7 +54,7 @@ struct InstalledGameAttentionView: View {
                         Button("Check installation") { Task { await installed.checkInstallation(game) } }
                             .disabled(installed.editing || installed.mutationActive)
                             .help("Checks the game folder and launch files without downloading or starting the game.")
-                        if let repairGame, operations.canStartMutation {
+                        if offersRepair, let repairGame {
                             Button(incomplete ? "Install full game" : "Repair installation") {
                                 close()
                                 Task { await operations.prepareInstall(repairGame, repairing: game) }

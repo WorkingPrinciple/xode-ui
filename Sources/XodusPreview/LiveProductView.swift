@@ -53,11 +53,9 @@ struct LiveProductView: View {
         art?.landscape ?? product.artwork.filter { $0.role == .hero }
     }
     private var unsupportedIssues: [LibraryCompatibilityIssue] {
-        LibrarySupportVisibility.issues(
+        operations.supportIssues(
             productID: product.id,
-            installed: installed != nil,
-            packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat,
-            compatibility: operations.compatibility[product.id]
+            packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat
         )
     }
     private var compatibilitySummary: String {

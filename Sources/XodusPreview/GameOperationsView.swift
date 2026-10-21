@@ -331,21 +331,31 @@ struct GameInstallAction: View {
     @ObservedObject var operations: GameOperationsController
     var enabled = true
     var primary = true
-    private var preparing: Bool {
+    var preparing: Bool {
         operations.installingDirectly && operations.directInstallProductID == game.id
     }
-    private var active: Bool { operations.operation?.productID == game.id }
-    private var failed: Bool {
+    var active: Bool { operations.operation?.productID == game.id }
+    var failed: Bool {
         operations.feedbackProductID == game.id && operations.error != nil
     }
+    var statusTitle: String {
+        operations.cancelling || operations.directInstallCancelled ? "Stopping"
+            : preparing ? "Preparing installation"
+            : operations.operation?.kind == .uninstall ? "Uninstalling"
+            : operations.operation?.kind == .repair ? "Repairing" : "Installing"
+    }
+    var actionTitle: String { failed ? "Retry installation" : "Install" }
+    var showsCancel: Bool { preparing || (active && operations.canCancel) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if preparing || active {
-                Text(operations.cancelling || operations.directInstallCancelled ? "Stopping"
-                     : preparing ? "Preparing installation"
-                     : operations.operation?.kind == .uninstall ? "Uninstalling"
-                     : operations.operation?.kind == .repair ? "Repairing" : "Installing")
+            if active, operations.recoveryRequired {
+                Label("Installation needs attention", systemImage: "exclamationmark.circle")
+                    .font(.callout.weight(.semibold))
+                Button("Check last operation") { Task { await operations.reconcile() } }
+                    .disabled(operations.checkingRecovery)
+            } else if preparing || active {
+                Text(statusTitle)
                     .font(.callout.weight(.semibold))
                 if active, let progress = operations.progress, let total = progress.bytesTotal, total > 0 {
                     ProgressView(value: Double(progress.bytesDone), total: Double(total))
@@ -356,7 +366,7 @@ struct GameInstallAction: View {
                     ProgressView().controlSize(.small)
                         .accessibilityLabel("Preparing \(game.title)")
                 }
-                if preparing || operations.canCancel {
+                if showsCancel {
                     Button("Cancel") {
                         Task {
                             if preparing { await operations.cancelInstallConsent() }
@@ -370,7 +380,7 @@ struct GameInstallAction: View {
                 Button {
                     Task { await operations.install(game) }
                 } label: {
-                    Label(failed ? "Retry installation" : "Install", systemImage: "icloud.and.arrow.down")
+                    Label(actionTitle, systemImage: "icloud.and.arrow.down")
                 }
                 .modifier(LibraryActionStyle(primary: primary))
                 .disabled(!enabled || !operations.canStartMutation)
@@ -550,7 +560,9 @@ struct InstalledGameManagement: View {
             .disabled(!canRepair)
             .accessibilityIdentifier("xodus.installed.repair")
             Button("Remove from list") { Task { await library.remove(game) } }
-                .disabled(library.editing || library.choosing || library.mutationActive || library.runningGameID == game.id)
+                .disabled(library.editing || library.choosing || library.mutationActive
+                          || library.accountDisconnecting || library.applicationTerminating
+                          || library.runningGameID == game.id)
                 .accessibilityIdentifier("xodus.installed.remove")
             Divider()
             Button("Uninstall…", role: .destructive) { operations.prepareUninstall(game) }
@@ -560,9 +572,6 @@ struct InstalledGameManagement: View {
     }
 
     private var canRepair: Bool {
-        operations.canStartMutation && library.runningGameID != game.id
-            && LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
-                packageFormat: game.packageType?.label,
-                compatibility: operations.compatibility[game.storeId]).isEmpty
+        operations.canRepair(game)
     }
 }

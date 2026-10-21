@@ -254,7 +254,15 @@ enum GameOperationChecks {
         let installed = InstalledGamesController(store: store, launchingDuration: .milliseconds(50),
                                                  defaultEngine: { nil },
                                                  detectAvailability: { RunnerAvailability([.crossover]) })
-        let operations = GameOperationsController(installed: installed, paths: paths)
+        let catalogue = OfflineGameCompatibility(version: 1, checkedAt: "2026-10-21T00:00:00Z",
+            market: "GB", packageSource: "Synthetic unit-test classification", antiCheatReference: "Unit test",
+            products: Dictionary(uniqueKeysWithValues: (1...5).map {
+                (String(format: "FIXTURE%05d", $0),
+                 OfflineGameCompatibility.Entry(title: nil, packageFormat: "MSIXVC", pcPackageIdentified: true,
+                    antiCheat: "none", technologyReferences: [], referencePlatforms: []))
+            }))
+        let operations = GameOperationsController(installed: installed, paths: paths,
+                                                  compatibilityCatalogue: catalogue)
         check(operations.serviceStatus == nil && !operations.serviceBusy && operations.operation == nil
               && operations.gamePassStatus == nil && !operations.gamePassActive
               && installed.stoppingGameID == nil && operations.setupResult == nil && !operations.setupBusy
@@ -333,6 +341,39 @@ enum GameOperationChecks {
               && !installed.serviceSignInActive && operations.canQuit,
               "XO-018: Explicit retry consumes a fresh bound status and removes the verification action")
         let game = PCGame(id: "FIXTURE00001", title: "Fixture Game", artwork: nil)
+        for (format, technology) in [("MSIXVC", "unknown"), ("MSIXVC", "Easy Anti-Cheat"),
+                                     ("Appx", "none"), ("EAppx", "none")] {
+            let blockedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
+                market: catalogue.market, packageSource: catalogue.packageSource,
+                antiCheatReference: catalogue.antiCheatReference,
+                products: [game.id: .init(title: game.title, packageFormat: format, pcPackageIdentified: true,
+                    antiCheat: technology, technologyReferences: [], referencePlatforms: [])])
+            let blocked = GameOperationsController(installed: installed, paths: paths,
+                                                    compatibilityCatalogue: blockedCatalogue)
+            await blocked.prepareInstall(game)
+            check(blocked.installConsent == nil && blocked.operation == nil && !installed.mutationActive
+                  && blocked.error?.contains("Not supported yet") == true,
+                  "UI-5: \(format)/\(technology) is rejected before a compatibility script or download starts")
+            let forged = GameInstallConsent(game: game, destination: paths.games.appendingPathComponent("blocked"),
+                freeBytes: 100_000_000_000, installedID: nil,
+                compatibility: GameCompatibilityResult(storeId: game.id, packageBytes: 1, supported: true,
+                    reason: nil, checkedAt: catalogue.checkedAt))
+            blocked.installConsent = forged
+            check(!blocked.canConfirmInstall, "UI-5: A positive runtime verdict cannot enable unsupported confirmation")
+            blocked.confirmInstall(forged)
+            check(blocked.operation == nil && blocked.installConsent == nil && !installed.mutationActive
+                  && blocked.error?.contains("Not supported yet") == true,
+                  "UI-5: Direct confirmation independently rejects unsupported classification")
+            let queued = await blocked.runQueuedOperation(GameOperationRecord(
+                id: InstalledGamesController.runID(), kind: .install, productID: game.id,
+                title: game.title, destination: forged.destination.path, installedID: nil),
+                onProgress: { _ in })
+            check(queued == .fail(code: 12) && blocked.operation == nil,
+                  "UI-5: Queued installs cannot bypass 0.1 classification")
+        }
+        check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("check-arguments").path)
+              && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path),
+              "UI-5: Rejected admission produced no script side effect")
         func checkUnrelatedDetail(_ controller: GameOperationsController, owner: String, stage: String) {
             let unrelatedID = owner == "FIXTURE00001" ? "FIXTURE00002" : "FIXTURE00001"
             let unrelated = GameOperationProgressView(operations: controller, productID: unrelatedID)
@@ -555,7 +596,8 @@ enum GameOperationChecks {
         check(operations.serviceStatus?.signedIn == true && operations.setupResult?.needsSignIn == false
               && !operations.setupNeedsAttention,
               "B8 successful Check game sign-in refreshes Setup items and clears a stale setup banner")
-        let concurrentSetup = GameOperationsController(installed: installed, paths: paths)
+        let concurrentSetup = GameOperationsController(installed: installed, paths: paths,
+                                                       compatibilityCatalogue: catalogue)
         let setupCallsBefore = try String(contentsOf: root.appendingPathComponent("setup-arguments"), encoding: .utf8)
             .split(separator: "\n").count
         try writeMode("setupslow")
@@ -787,7 +829,8 @@ enum GameOperationChecks {
         try FileManager.default.createSymbolicLink(at: aliasedGames, withDestinationURL: paths.games)
         let unavailableStorage = GameScriptPaths(scripts: paths.scripts, processed: paths.processed,
             logs: paths.logs, games: aliasedGames, journal: paths.journal)
-        let storageFailure = GameOperationsController(installed: installed, paths: unavailableStorage)
+        let storageFailure = GameOperationsController(installed: installed, paths: unavailableStorage,
+                                                      compatibilityCatalogue: catalogue)
         await storageFailure.install(game)
         check(storageFailure.error == GameScriptError.invalidDestination.localizedDescription
               && storageFailure.hasDownloadStatus && storageFailure.canQuit && !installed.mutationActive,
@@ -934,6 +977,26 @@ enum GameOperationChecks {
         check(installed.runningGameID == nil && !installed.launchStarted,
               "Library Install completes registration without automatically calling Play")
         installed.setAccountAccessAllowed(true)
+        let play = InstalledPlayButton(library: installed, operations: operations, game: imported)
+        check(play.title == "Play" && play.unsupportedIssues.isEmpty && operations.canRepair(imported),
+              "UI-9 source: Shared Library/Discover installed controls offer Play and Repair for cleared MSIXVC")
+        for technology in ["unknown", "BattlEye"] {
+            let blockedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
+                market: catalogue.market, packageSource: catalogue.packageSource,
+                antiCheatReference: catalogue.antiCheatReference,
+                products: [game.id: .init(title: game.title, packageFormat: "MSIXVC", pcPackageIdentified: true,
+                    antiCheat: technology, technologyReferences: [], referencePlatforms: [])])
+            let blocked = GameOperationsController(installed: installed, paths: paths,
+                                                    compatibilityCatalogue: blockedCatalogue)
+            let panel = InstalledGameAttentionView(installed: installed, operations: blocked,
+                game: imported, repairGame: game, close: {})
+            check(!panel.offersRepair && !blocked.canRepair(imported)
+                  && !InstalledPlayButton(library: installed, operations: blocked, game: imported).unsupportedIssues.isEmpty,
+                  "UI-5: \(technology) cannot expose attention-panel Repair or an installed Play button")
+            await blocked.repair(game, installed: imported)
+            check(blocked.operation == nil && blocked.error?.contains("Not supported yet") == true,
+                  "UI-5: Direct installed repair cannot bypass attention-panel admission")
+        }
         await installed.play(imported)
         check(installed.runningGameID == imported.id && !operations.canSignIn,
               "S3 game-service restart is disabled while a game is running")
@@ -1081,7 +1144,8 @@ enum GameOperationChecks {
         let dirMode = (try FileManager.default.attributesOfItem(atPath: paths.journal.deletingLastPathComponent().path)[.posixPermissions] as? NSNumber)?.intValue
         check(recordMode == 0o600 && dirMode == 0o700, "S5 pending journal is atomic/private with 0600/0700")
         installed.releaseMutation()
-        let recovered = GameOperationsController(installed: installed, paths: paths)
+        let recovered = GameOperationsController(installed: installed, paths: paths,
+                                                 compatibilityCatalogue: catalogue)
         await recovered.restore()
         check(recovered.recoveryRequired && recovered.operation?.id == saved?.id && !recovered.canStartMutation,
               "S5 reopening a pending operation does not replay scripts or silently permit another mutation")
@@ -1160,7 +1224,8 @@ enum GameOperationChecks {
         }
         installed.releaseMutation()
         try privateFile(paths.journal, "Neutral invalid journal, no recoverable product identity.")
-        let unknownRecovery = GameOperationsController(installed: installed, paths: paths)
+        let unknownRecovery = GameOperationsController(installed: installed, paths: paths,
+                                                       compatibilityCatalogue: catalogue)
         await unknownRecovery.restore()
         for scope in [Optional<String>.none, game.id, other.id] {
             let feedback = GameOperationProgressView(operations: unknownRecovery, productID: scope)
@@ -1185,7 +1250,8 @@ enum GameOperationChecks {
             let consentPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed,
                 logs: paths.logs, games: paths.games,
                 journal: root.appendingPathComponent("\(label)/operation.json"))
-            let controller = GameOperationsController(installed: consentLibrary, paths: consentPaths)
+            let controller = GameOperationsController(installed: consentLibrary, paths: consentPaths,
+                                                      compatibilityCatalogue: catalogue)
             let a = PCGame(id: "FIXTURE00004", title: "Consent A", artwork: nil)
             let b = PCGame(id: "FIXTURE00005", title: "Queued B", artwork: nil)
             let aFolder = try paths.destination(title: a.title, productID: a.id)

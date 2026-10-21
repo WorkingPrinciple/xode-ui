@@ -122,10 +122,7 @@ struct InstalledUpdateBadge: View {
                             PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game)
                     }
                 }
-                .disabled(!operations.canStartMutation || library.runningGameID == game.id
-                          || !LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
-                              packageFormat: game.packageType?.label,
-                              compatibility: operations.compatibility[game.storeId]).isEmpty)
+                .disabled(!operations.canRepair(game))
                 .accessibilityIdentifier("xodus.installed.update")
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -219,17 +216,20 @@ struct InstalledPlayButton: View {
             || !library.accountAccessAllowed)
     }
     private var opensAttention: Bool { needsAttention && attention != nil }
+    private var needsRepair: Bool {
+        library.placeholderIDs.contains(game.id) || library.packageErrors[game.id] != nil
+    }
     private var launching: Bool {
         library.runningGameID == game.id && library.playState == .launching
     }
-    private var title: String {
+    var title: String {
         library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : canStop ? "Stop"
             : opensAttention ? InstalledGameActionCopy.title(
                 incomplete: library.placeholderIDs.contains(game.id),
                 installationIssue: library.packageErrors[game.id] != nil,
                 launchIssue: library.accountAccessAllowed && library.playErrors[game.id] != nil)
-            : library.placeholderIDs.contains(game.id) ? "Install required"
             : !library.accountAccessAllowed ? "Unavailable"
+            : needsRepair ? "Repair"
             : library.playErrors[game.id] == nil ? "Play" : "Try again"
     }
 
@@ -237,9 +237,8 @@ struct InstalledPlayButton: View {
         (library.runningGameID == game.id && library.launchStarted) || library.stoppingGameID == game.id
     }
 
-    private var unsupportedIssues: [LibraryCompatibilityIssue] {
-        LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
-            packageFormat: game.packageType?.label, compatibility: operations.compatibility[game.storeId])
+    var unsupportedIssues: [LibraryCompatibilityIssue] {
+        operations.supportIssues(productID: game.storeId, packageFormat: game.packageType?.label)
     }
 
     @ViewBuilder var body: some View {
@@ -261,10 +260,14 @@ struct InstalledPlayButton: View {
         Button {
             if opensAttention { attention?() }
             else if canStop { operations.stop(game) }
+            else if needsRepair {
+                Task { await operations.repair(PCGame(id: game.storeId, title: game.title, artwork: nil),
+                                              installed: game) }
+            }
             else { Task { await library.play(game) } }
         } label: {
             if heroStyle {
-                Label(title, systemImage: canStop ? "stop.fill" : "play.fill")
+                Label(title, systemImage: canStop ? "stop.fill" : needsRepair ? "wrench" : "play.fill")
                     .font(.title3.weight(.semibold)).frame(minHeight: 28).padding(.horizontal, 12)
             } else { Text(title) }
         }
@@ -273,14 +276,15 @@ struct InstalledPlayButton: View {
         .disabled(opensAttention ? library.editing || library.choosing || library.accountDisconnecting
                    || library.applicationTerminating
                    : canStop ? !library.canStop(game) || !operations.canStartMutation
+                  : needsRepair ? !operations.canStartMutation || !library.accountAccessAllowed
+                    || library.runningGameID != nil || library.stoppingGameID != nil
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
-                  || library.accountDisconnecting || !library.accountAccessAllowed
-                  || library.placeholderIDs.contains(game.id))
+                  || library.accountDisconnecting || !library.accountAccessAllowed)
         .accessibilityLabel(opensAttention ? "\(title) for \(game.title)"
              : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
-            : library.placeholderIDs.contains(game.id) ? "\(game.title): needs the full game installation"
-            : !library.accountAccessAllowed ? "\(game.title): \(library.accountAccessMessage)" : "Play \(game.title)")
+            : !library.accountAccessAllowed ? "\(game.title): \(library.accountAccessMessage)"
+            : needsRepair ? "Repair \(game.title)" : "Play \(game.title)")
         .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
               : !canStop && !library.accountAccessAllowed ? library.accountAccessMessage : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")

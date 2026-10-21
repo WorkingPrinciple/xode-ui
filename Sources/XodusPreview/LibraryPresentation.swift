@@ -252,14 +252,17 @@ struct LibrarySupportMenu: View {
 
 enum LibrarySupportVisibility {
     static func issues(productID: String, installed: Bool, packageFormat: String?,
-                       compatibility: GameCompatibilityResult?) -> [LibraryCompatibilityIssue] {
-        let offline = OfflineGameCompatibility.snapshot?.products[productID]
+                       compatibility: GameCompatibilityResult?,
+                       catalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) -> [LibraryCompatibilityIssue] {
+        let offline = catalogue?.products[productID]
         var issues = GameSupportPolicy.issues(
             packageFormat: GameSupportPolicy.packageFormat(observed: packageFormat, classified: offline?.packageFormat),
                                              antiCheat: offline?.antiCheat)
         for issue in LibraryCompatibilityRegistry.issues(productID: productID) {
             issues.removeAll { $0.kind == issue.kind }
-            issues.append(issue)
+            issues.append(LibraryCompatibilityIssue(kind: issue.kind,
+                title: issue.kind == .antiCheat ? "Uses \(issue.title)" : issue.title,
+                detail: issue.detail, source: issue.source))
         }
         if let compatibility, !compatibility.supported {
             let kind: LibraryCompatibilityIssueKind = compatibility.category == .antiCheatUnsupported
