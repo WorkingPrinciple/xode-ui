@@ -1,5 +1,25 @@
 # Local game-engine qualification
 
+## Joint delivery scope
+
+Owner clarification, 21 October 2026: **Ode to X and the modified Xodus
+libraries, services and shims are the product under test and will be delivered
+together.** Qualification is not an app-only review or an independent stock-Wine
+compatibility exercise.
+
+Trace each finding across the native app and modified runtime repositories.
+Apply fixes to the owning layer or both layers where required, and carry the
+corresponding feedback, contracts and regression coverage across that boundary.
+Do not patch only the UI around a runtime defect or repair the runtime while
+leaving the app's integration broken. A finding need not produce artificial
+changes in both repositories when only one layer is responsible.
+
+End-to-end evidence must identify the app, modified runtime/libraries/shims,
+engine and launch configuration tested together. Standalone controls remain
+diagnostic evidence, not joint-product acceptance. Preserve existing credential,
+security and shipping-admission requirements; joint scope does not authorize
+unattended credential access or replacing unrelated live services.
+
 ## Historical Xbox launches: do not reset the baseline
 
 Owner clarification, 21 October 2026: **No Man's Sky and Hogwarts Legacy
