@@ -18,6 +18,14 @@ credential migration are not implemented on the new route. Existing shipping
 producer pins and sealed inputs are not automatically promoted by this change.
 See [the current specification boundary](UNIFIED-ACCOUNT-SPEC.md).
 
+The 21 October source follow-up pairs an explicitly opted-in, exact-account-bound
+private package-license broker (`0ccd528`) with a configurable private-socket
+staging consumer and consistent launcher/RPS endpoint (`bc3afab`). The default
+broker does not gain licensing; the installed signed producer and native Play
+gate are unchanged. Release builds and synthetic socket/lifecycle checks are not
+live package-key, complete game-shim or gameplay qualification. The previously
+observed native login-Keychain password checkpoint remains unresolved.
+
 The follow-up source adds a separately negotiated runtime verification command
 and a parent-EOF-owned private RPS process in the same signed CLI. Native lifecycle
 checks use synthetic children and sockets only; the ready signal cannot authorize

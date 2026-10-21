@@ -69,6 +69,26 @@ Gameplay and main-branch acceptance are not claimed.
 The locally installed UI update preserves the previously verified signed engine
 bytes rather than replacing them with the denied qualifier.
 
+**21 October source-only consumer follow-up:** Unified fork `0ccd528` adds
+package-key frames to the existing private broker, enabled only by an explicit
+`ode-runtime --package-account-hash <exact-account-hash>` selection. The default
+broker has no license provider. The selected provider rejects legacy profiles,
+checks the exact saved account, passes that same checked credential snapshot to
+the existing license acquisition code, authenticates the one packed content key
+and rechecks the profile before returning it over the private socket. Keys never
+enter management JSON, logs or disk. Failure is a closed nonempty error frame.
+
+The modified staging consumer at `bc3afab` accepts `XODUS_LICENSE_SOCKET` only as
+an explicit owned private socket, with no global fallback on invalid selection.
+The generic launcher preflight and RPS bridge inherit that same endpoint.
+An explicit endpoint without service-backed licensing is rejected before
+credential initialization. Omitting the selection retains the legacy endpoint.
+This removes a source-level pairing gap; it does not qualify the native app,
+all game-shim protocol calls, live package licensing or actual game launch.
+Local release builds and memory-only protocol/lifecycle checks passed. The
+installed signed pair and its Play gate remain unchanged, pending native
+credential permission, live verification and shipping admission.
+
 The supported preserved-engine path was also exercised specifically for No
 Man's Sky: its declared MSA client `000000004826ED21` obtained unexpired silent
 user/device tickets through the isolated broker, and `auth.verify` accepted its

@@ -119,6 +119,7 @@ qualification.
 | Selected free engine was ignored by the registered generic adapter | Abiotic Factor route investigation; Session 2, `3be4fd1` | The generic script did not consume the selected engine and its IPC bridge always constructed a CrossOver command. The candidate now explicitly rejects Wine/GPTK/conflicting selectors before service access rather than silently choosing CrossOver. Four regression tests cover refusal, receipt status, direct bridge refusal and unchanged CrossOver command/default routing using stubs | This prevents wrong-engine testing; it does not implement free-Wine support. No actual Abiotic process or gameplay. The installed Minecraft-specific adapter is not present in the recovered source ref and was not patched |
 | Old runtime windows survived named-process cleanup | Evidence/cleanup; Session 2 | Exact research-owned Luanti consoles/explorers 44568/45627/44503/45595 were terminated and their windows verified gone. Separately identified three-day-old VM-test debugger pair 24524/23278 and Mono-installer pair 22093/22076 were bound to their test prefixes and terminated | The Mono dialog belonged to `control.exe` in `XodusVMServiceTest`, not Brogue or Cataclysm. No unnecessary .NET install. Other unrelated prefixes left untouched |
 | Pre-Wine failure still invoked wineserver cleanup | Private harness; Session 2 | Candidate runner now skips server stop when no preserved-runtime Wine process was observed, and records actual sample elapsed separately from the target checkpoint | Not rerun against a game; no live cleanup qualification claimed |
+| Isolated account broker and package consumer had no matching route | Unified broker `0ccd528`; modified consumer `bc3afab` | Explicit exact-account package-license opt-in reuses the checked credential snapshot and authenticates the packed key. Consumer validates a private endpoint and refuses credential/global fallback; launcher and RPS bridge inherit the same endpoint. Both release CLIs built; 29 service, 77 CLI and 10 consumer checks pass, one pre-existing CLI check ignored; five adapter checks pass | Source/memory-only protocol evidence, not live credentials, full shim interoperability or game launch. Installed signed binaries and native Play gate unchanged |
 
 Confirmed joint-product Xbox gameplay fixes from Sessions 1-2: **none yet**.
 Findings that have only a source patch or configuration remedy must retain that
@@ -229,6 +230,23 @@ offscreen/covered windows, independently of the current game's owned window.
 This is attribution evidence, never permission to kill unrelated processes or
 a gameplay verdict. The post-cleanup capture contained no such candidates.
 
+The next stable-Wine control, **Dungeon Crawl Stone Soup 0.34.1 (32-bit Windows
+tiles)**, ran **06:54:18Z-06:57:20Z**. Full-display inspection confirmed the title
+screen, main menu, tutorial selection and a dungeon scene. Exact-window/executable
+input advanced the tutorial: after Space and Right, scenery shifted relative to
+the character and displayed game time advanced **0.0 to 1.0**. This is a manually
+reviewed synthetic movement response, not physical-input/audio/endurance or
+Xbox qualification.
+
+The launcher was `start.exe` PID 58261; the actual window belonged to Wine PID
+58310 running `crawl.exe`. The original final runner capture targeted the former.
+Additional captures bound to the real renderer still correctly refused full
+visual eligibility because Copilot overlapped the right side, including after
+the hide attempt. Do not rewrite those flags or describe this as a crash.
+The exact title-prefix wineserver stop succeeded; both PIDs were verified absent
+and desktop restoration completed. Separate private `reviewed-outcome.json`
+records these manual observations without changing the original receipt.
+
 The runtime patch is committed in the isolated session-owned
 `files/session2-legacy-engine` worktree at **`0c3cbb3`**, based on `7ae8ffe`.
 At that revision the locally built release artifacts had SHA-256:
@@ -249,6 +267,36 @@ The app-side wording change accompanies the runtime diagnostics; it does not
 interpret arbitrary stderr as an authorization verdict or start another login.
 The exact missing live store entry still needs safe attribution. In particular,
 do not infer a missing user token from the generic `entry not found` message.
+
+### Source-only account-consumer integration follow-up
+
+The shared integration interval **06:37:02Z-06:54:36Z** is conservatively charged
+in full to NMS, not treated as free shared work: **17 minutes 34 seconds**.
+Together with its earlier **17 minutes 28 seconds**, the recorded charge is
+**35 minutes 2 seconds**, leaving at most **9 minutes 58 seconds** for further
+NMS-specific work. Later evidence/documentation time must also be charged.
+The lane is parked; no repeated credential prompt or unchanged live launch.
+
+Unified source **`0ccd528`** adds opt-in package licensing to the private account
+broker. Consumer source **`bc3afab`** removes the fixed-global-only endpoint
+assumption and propagates the selected endpoint consistently. Account pinning,
+strict XML/framing, parent cancellation, missing-provider refusal and actual
+in-memory Unix-socket exchanges were checked. An actual candidate CLI invocation
+with an explicit socket but omitted service mode refused before credential
+initialization. One independent host-native source review found no blocking
+issue; its indirect-snapshot observation was tightened by passing the checked
+snapshot directly into the existing license implementation, then rebuilding
+and rerunning affected checks.
+
+Fresh local release CLI SHA-256 identities (not shipping pins):
+
+- Unified broker: `9532022c31bc8d6e47fdc1d7801bd84ff7ae0908c800a5b1adf124a559dcdfb1`.
+- Modified staging consumer: `df8a32cfca5f35dbf178113a1c4a79230abb0be67b0dd4bee28844406bd7ae30`.
+
+The preserved `~/Applications/Ode to X Development.app` passed strict deep
+signature verification on 21 October; it was **not rebuilt or replaced** by this
+slice. No fresh app/package receipt or login readiness is claimed. The sole
+GitHub Actions workflow was freshly observed `disabled_manually` and left so.
 
 ## Session 2 baseline recovery
 
