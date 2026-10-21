@@ -20,7 +20,7 @@ Do not edit this generated file; update `docs/game-test-ledger-state.json` and r
 See [the constitution, session register, audit and fix ledger](GAME-ENGINE-TESTS.md).
 
 - Session 1: five standalone Windows controls attempted; zero Xbox game launches during that batch.
-- Session 2: Brogue, Cataclysm and DCSS control processes attempted; no reviewed gameplay result. DCSS correctly rejected visual eligibility when no owned window was observed. These are not joint-product acceptance.
+- Session 2: three distinct standalone controls attempted. Stable Wine 11.0 retries visibly rendered Brogue's depth-1 dungeon and Cataclysm's shelter world after scoped menu input. Overlap flags remain unchanged; no movement/audio/endurance acceptance. DCSS had no owned window. None establishes Xbox or joint-product acceptance.
 - Session 3 is planned for tomorrow, not executed or automatically authorized beyond the current window.
 - Installed observations below are from 20 October preflight, not a fresh authenticated inventory.
 - Personal entitlement and current download access have not been established for this queue.
@@ -30,6 +30,11 @@ See [the constitution, session register, audit and fix ledger](GAME-ENGINE-TESTS
 - No confirmed Xbox game fix or fresh joint-product gameplay result was produced by Session 1.
 - Session 2 NMS registered launch was actually attempted at 2026-10-21T05:55:59Z: CLI invalid package key response frame; matching service error entry not found. No Wine/game start. This supersedes the earlier hash-only blocker inference.
 - Session 1 adversarial verdict REVISE; audit, corrective harness work and current real failure are recorded in GAME-ENGINE-TESTS.md.
+- Latest owner limit: 45 minutes per game including investigation, fixes and verification. NMS parked at 06:13:27Z after 17m28s charged; 27m32s remain if resumed, not a new clock.
+- Runtime diagnostic patch 0c3cbb3 and delegated-credential-owner patch cf2e023 built locally with 12 affected Rust tests passing; app launcher-error wording has 247 presentation and 1358 synthetic native checks passing. No installed replacement, live credential repair or new gameplay qualification.
+- The owner subsequently explicitly approved autonomous experimentation and saved-account checks. Approved checks found the preserved owner's saved session, but the qualifier required a native login-Keychain password. No password supplied, ACL changed, credential exported or new Microsoft sign-in. Do not misreport absent owner authorization or repeatedly trigger this prompt.
+- Abiotic source fix 3be4fd1 refuses unsupported engine selection; four stub/mock tests pass. Actual registered launcher invocation at 06:19:04Z failed before Wine. Charge 06:13:27Z-06:25:13Z including shared credential diagnostics: 11m46s, at most 33m14s remain before later title-specific work.
+- The Wine Mono Installer behind the game belonged to three-day-old control.exe PID 22093 in XodusVMServiceTest, not the new games. Exact stale installer/debugger owners and matching desktop helpers were terminated and their windows verified absent; no unnecessary .NET install. Capture metadata now records runtime-dialog candidates even behind a game.
 
 ## Next tests
 
@@ -43,12 +48,12 @@ See [the constitution, session register, audit and fix ledger](GAME-ENGINE-TESTS
 
 | Product ID | Title | Historical baseline | Installed observation | Session 1 | Session 2 | Next action | Evidence |
 |---|---|---|---|---|---|---|---|
-| 9P4NV23Q6QC2 | Abiotic Factor | No gameplay evidence reviewed | 20 Oct: Abiotic Factor 1.4.28206.0 resident; inventory/readiness passed | Preflight only; not launched | Not launched | P2: exercise recovered joint route after baseline recovery | Session 1 private xbox-title-test receipt |
+| 9P4NV23Q6QC2 | Abiotic Factor | No gameplay evidence reviewed | 21 Oct: package and local executable metadata resident; 20 Oct inventory/readiness passed | Preflight only; not launched | Actual registered launcher 06:19:04Z failed before Wine; ignored engine choice fixed in source only; shared credential diagnostics included in 11m46s charged | At most 33m14s remain before later title work; resolve observed native password/account-consumer checkpoint, no unchanged retry; free adapter not implemented | Private session2-abiotic-20261021T061904Z receipt and package-route checks; runtime 3be4fd1; GAME-ENGINE-TESTS.md |
 | C3KLDKZBHNCZ | Fallout 4 | No gameplay evidence reviewed | 20 Oct: absent from inspected registry and standard root | Public package and local-presence triage only | Not launched | P3: resolve legitimate account/package access before download | Session 1 private xbox-five-title-batch receipt |
 | 9PCR3Z2MSM4T | Hades II | No gameplay evidence reviewed | 20 Oct: absent from inspected registry and standard root | Public package and local-presence triage only | Not launched | P3: resolve legitimate account/package access before download | Session 1 private xbox-five-title-batch receipt |
 | 9MT5NJ5W7B8Z | Hogwarts Legacy | CrossOver + modified Xodus/shims: launch owner-reported | 21 Oct: HogwartsPrivateStock bottle exists; package not found in standard game root | Not attempted | Not launched | P1: locate historical package, launch evidence and shim configuration | Owner clarification 21 Oct; private fork isolated Hogwarts launcher |
 | 9MW9469V91LM | Hollow Knight: Voidheart Edition | No gameplay evidence reviewed | 20 Oct: absent from inspected registry and standard root | Exact Voidheart package triage only; not launched | Not launched | P3: resolve access to exact Xbox edition, not Steam base game | Session 1 private xbox-five-title-batch receipt |
-| BQVQTL3PCH05 | No Man's Sky | CrossOver + modified Xodus: in-world rendering recorded | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | Launch route attempted 21 Oct 05:55:59Z; service entry not found; no Wine/game start | P1: fix error attribution and isolated-account/legacy consumer integration; do not repeat unchanged | PAUSE-HANDOFF.md; private Session 2 NMS baseline receipt and matching service diagnostic |
+| BQVQTL3PCH05 | No Man's Sky | CrossOver + modified Xodus: in-world rendering recorded | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | 21 Oct 05:55:59Z: service entry not found before Wine. Diagnostic source patch built/tested, not installed | Parked at observed qualifier login-Keychain password checkpoint and unintegrated account consumer; at most 27m32s remain before later title work; no unchanged retry | PAUSE-HANDOFF.md; private NMS receipt/service diagnostic; runtime 0c3cbb3; GAME-ENGINE-TESTS.md |
 | 9P03JGQ4S1GC | The Elder Scrolls V: Skyrim Special Edition (PC) | No gameplay evidence reviewed | 20 Oct: absent from inspected registry and standard root | Public package and local-presence triage only | Not launched | P3: resolve legitimate account/package access before download | Session 1 private xbox-five-title-batch receipt |
 
 ## Complete MSI-family queue
@@ -63,7 +68,7 @@ above retain dated local observations and historical results separately.
 | 2 | 9P8LR42PTRGJ | 33 Immortals | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 3 | 9NNM7PKZN3JF | 9 Kings (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 4 | 9NGLST31DG26 | A Game About Digging A Hole™ | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 5 | 9P4NV23Q6QC2 | Abiotic Factor | MSIXVC | 20 Oct: Abiotic Factor 1.4.28206.0 resident; inventory/readiness passed | Preflight only; not launched | Not launched | Unknown | P2: exercise recovered joint route after baseline recovery |
+| 5 | 9P4NV23Q6QC2 | Abiotic Factor | MSIXVC | 21 Oct: package and local executable metadata resident; 20 Oct inventory/readiness passed | Preflight only; not launched | Actual registered launcher 06:19:04Z failed before Wine; ignored engine choice fixed in source only; shared credential diagnostics included in 11m46s charged | Unknown | At most 33m14s remain before later title work; resolve observed native password/account-consumer checkpoint, no unchanged retry; free adapter not implemented |
 | 6 | 9NR6NJ401NBS | Absolum | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 7 | 9P8NKVVB0XQJ | Abyssus | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 8 | 9P59J86GHDGL | Aerial_Knight's DropShot | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
@@ -283,7 +288,7 @@ above retain dated local observations and historical results separately.
 | 222 | 9N3LGKGF3CC2 | Nine Sols | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 223 | 9N51FH42VQDS | NINJA GAIDEN 2 Black | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 224 | 9PGFSLP8GWQK | NINJA GAIDEN: Ragebound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 225 | BQVQTL3PCH05 | No Man's Sky | MSIXVC | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | Launch route attempted 21 Oct 05:55:59Z; service entry not found; no Wine/game start | Unknown | P1: fix error attribution and isolated-account/legacy consumer integration; do not repeat unchanged |
+| 225 | BQVQTL3PCH05 | No Man's Sky | MSIXVC | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | 21 Oct 05:55:59Z: service entry not found before Wine. Diagnostic source patch built/tested, not installed | Unknown | Parked at observed qualifier login-Keychain password checkpoint and unintegrated account consumer; at most 27m32s remain before later title work; no unchanged retry |
 | 226 | 9N0QWXC09MPT | Once Human | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 227 | 9N8CD0XZKLP4 | Ori and the Will of the Wisps | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 228 | 9PFWZMT737GG | Outbound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |

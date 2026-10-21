@@ -51,11 +51,21 @@ launchable PE file. A source-owned, noninteractive package-license qualifier was
 added separately to the writable producer; it neither starts a game nor exports
 keys. The rebuilt qualifier was refused access to the isolated saved session by
 macOS (`accessDenied`, OSStatus `-25293`), while the preserved signed producer still
-reads that account and passes runtime authorization. Human macOS approval is
-required before that new producer can qualify the package. No Keychain ACL/trust
+reads that account and passes runtime authorization. Session 2 confirmed a native
+login-Keychain password prompt for the qualifier; the owner's approval of
+experimentation does not supply that password. No Keychain ACL/trust
 change, legacy-account fallback, package-key copy, or opaque private-service
-protocol substitution was performed. The installed private NMS CLI's producer
-source remains unresolved. Gameplay and main-branch acceptance are not claimed.
+protocol substitution was performed. Session 2 subsequently recovered the modified
+legacy source implementing that consumer at fork ref `private/ai-hogwarts-runtime`
+(`7ae8ffe`). Its package-key
+consumer remains separate from the isolated management account; exact
+build-to-source provenance of the preserved installed binary is still unresolved.
+A real registered NMS launch failed before Wine with `entry not found` hidden
+by an empty service response. The isolated legacy diagnostic patch `0c3cbb3`
+now preserves typed credential/request failures, with focused tests and local
+release builds; it has not replaced the installed service or integrated the
+management account into that consumer. See [Session 2 evidence](GAME-ENGINE-TESTS.md).
+Gameplay and main-branch acceptance are not claimed.
 The locally installed UI update preserves the previously verified signed engine
 bytes rather than replacing them with the denied qualifier.
 

@@ -5,7 +5,7 @@
 | Session | Window | State |
 |---|---|---|
 | 1 | 20 October 2026, 08:48-20:48 local (+03:00) | Closed; five standalone controls attempted, zero Xbox game launches in this session. Historical Xbox successes remain separate. |
-| 2 | Renewed 21 October 2026; ends 22 October at 08:28:46 local (+03:00) | Active joint-product investigation. Registered NMS launch actually attempted: package service returned `entry not found`; no Wine/game start. Three additional controls attempted, none qualified for gameplay. |
+| 2 | Renewed 21 October 2026; ends 22 October at 08:28:46 local (+03:00) | Active joint-product investigation. NMS and Abiotic registered routes both failed before Wine at package licensing. Free Wine 11.0 retries visibly rendered Brogue's dungeon and Cataclysm's world; these remain standalone controls, not Xbox or joint-product acceptance. |
 | 3 | Planned for 22 October 2026 | Planned only. No results, automatic extension, or additional wake/security-setting changes are implied. |
 
 The full package-filtered title queue and reviewed per-title state are in
@@ -24,9 +24,14 @@ and corrective work; it must not inherit Session 1's conclusions uncritically.
 3. Recover the historically working NMS and Hogwarts CrossOver configurations
    first. Preserve them before engine substitutions. Prefer free Wine, rotate
    supported free builds where useful, and retain CrossOver as a valid fallback.
-4. Spend at most 15 minutes of active debugging per title across free engines,
-   then at most 15 minutes on CrossOver. Record start/end and accumulated active
-   time, including retries. Downloads and idle windows are not gameplay or debugging.
+4. Latest owner limit (21 October): **at most 45 minutes per game, including
+   investigation, fixes and verification**, then preserve the result and move
+   to the next title. Within that ceiling retain free engines first (at most
+   15 minutes combined free-engine debugging), then CrossOver (at most 15 minutes).
+   Integration work and retries count toward the 45-minute total; do not restart
+   a title's clock for another engine, session wakeup or shared-runtime fix.
+   Record start/end and accumulated active time. Downloads and idle windows
+   are not gameplay and must not be used to manufacture test progress.
 5. Inventory the catalogue before claiming coverage. For the `MSI*` queue require
    explicit PC-package evidence and format `MSIXVC` or `MSIX`. Keep Appx, EAppx
    and unidentified formats outside that queue; do not equate MSIXVC with MSI.
@@ -37,6 +42,10 @@ and corrective work; it must not inherit Session 1's conclusions uncritically.
    and after launches and significant inputs. Include separate error dialogs;
    preserve display geometry, timestamps and exact owned process/window identities.
    An occluded/offscreen or locked display is unobservable, not a graphics failure.
+   Also inspect runtime dialogs behind the game and after it closes. Their owners
+   may be `control.exe` or `conhost.exe`, not `wine`/`winedbg`; bind each to its
+   actual prefix before attributing it to the current game, installing a runtime,
+   or terminating it. A stale installer is not evidence the new game needs .NET.
 8. Make every blocker falsifiable: identify the failing stage, observed error,
    exact configuration, attempted supported remedy and the next action or required
    permission. A hash mismatch is drift evidence, not proof of incompatibility.
@@ -104,6 +113,12 @@ qualification.
 | Runner initial-lock/finally cleanup defects | Evidence harness; Session 1 | Initial lock-state failure corrected; bounded cleanup paths added; four mocked checks and real pre-launch lock refusal recorded | Mock coverage is not actual game lifecycle/cleanup qualification |
 | Service drift treated as a universal launch blocker | Investigation/reporting; Session 2 correction | Restored historical NMS/Hogwarts baseline and identified modified fork/private socket support | Current consumer pairing and working route still require recovery; no live incompatibility proven from hashes |
 | No complete package-filtered queue | Test tracking; Session 2 | Deterministic ledger now lists all 374 matching catalogue IDs with untested/unknown states preserved | A queue is not 374 tests or proof of current account access |
+| Package-license handler failure became a malformed-frame error | Modified runtime; Session 2, `0c3cbb3` on `session2-package-diagnostics` | Optional closed error codes preserve missing/unavailable credential versus other request failures; success wire shape unchanged. CLI distinguishes an empty legacy rejection from invalid framing and rejects non-ASCII key data without slicing panics. Twelve affected Rust tests pass, including an actual in-memory Unix-socket handler round trip; release CLI/service built locally | Source/build verified only. The installed service, signed app engine and historical NMS binaries were not replaced; missing live credential and account-consumer integration are not repaired by better diagnostics |
+| Failed launcher implied the game had started | Native app; Session 2 | Nonzero script exit now says the launcher reported an error, not that the game stopped. Existing generated-session log recovery remains unchanged. 247 presentation and 1,358 synthetic native checks pass | Mock children only; no live game, Keychain or Microsoft qualification. Not yet in an installed app |
+| Delegated CLI run still initialized another credential owner | Modified runtime; Session 2, `cf2e023` | macOS `Run` with service-backed licensing now uses an empty memory store instead of initializing the CLI Keychain provider; other commands retain their existing initialization. Twelve affected Rust tests pass and release artifacts rebuilt | No saved credentials migrated or repaired; not installed or credential-qualified |
+| Selected free engine was ignored by the registered generic adapter | Abiotic Factor route investigation; Session 2, `3be4fd1` | The generic script did not consume the selected engine and its IPC bridge always constructed a CrossOver command. The candidate now explicitly rejects Wine/GPTK/conflicting selectors before service access rather than silently choosing CrossOver. Four regression tests cover refusal, receipt status, direct bridge refusal and unchanged CrossOver command/default routing using stubs | This prevents wrong-engine testing; it does not implement free-Wine support. No actual Abiotic process or gameplay. The installed Minecraft-specific adapter is not present in the recovered source ref and was not patched |
+| Old runtime windows survived named-process cleanup | Evidence/cleanup; Session 2 | Exact research-owned Luanti consoles/explorers 44568/45627/44503/45595 were terminated and their windows verified gone. Separately identified three-day-old VM-test debugger pair 24524/23278 and Mono-installer pair 22093/22076 were bound to their test prefixes and terminated | The Mono dialog belonged to `control.exe` in `XodusVMServiceTest`, not Brogue or Cataclysm. No unnecessary .NET install. Other unrelated prefixes left untouched |
+| Pre-Wine failure still invoked wineserver cleanup | Private harness; Session 2 | Candidate runner now skips server stop when no preserved-runtime Wine process was observed, and records actual sample elapsed separately from the target checkpoint | Not rerun against a game; no live cleanup qualification claimed |
 
 Confirmed joint-product Xbox gameplay fixes from Sessions 1-2: **none yet**.
 Findings that have only a source patch or configuration remedy must retain that
@@ -160,6 +175,80 @@ failure, not successful cleanup. The process snapshot showed no NMS process.
 Do not repeat the same launch unchanged: next address the typed-error gap and
 the isolated-account versus legacy-service integration without forcing another
 login or silently switching accounts.
+
+### Bounded NMS diagnostic follow-up
+
+This pass began at **05:55:59Z on 21 October**, and was parked at **06:13:27Z**:
+**17 minutes 28 seconds wall time charged**, an upper bound rather than a
+reconstructed active-only total. The owner subsequently explicitly approved
+autonomous experimentation and saved-account checks; the earlier unavailable
+answer is no longer an authorization hold. The new 45-minute ceiling includes all investigation,
+fixes and verification; any continuation of this pass has at most **27 minutes
+32 seconds** remaining. Do not reset the clock on another engine or wakeup.
+
+Abiotic Factor's separate, noncredential preflight began at **06:13:27Z**.
+Its current adapter's ignored engine selection was investigated and the
+source-only refusal fix committed by **06:16:04Z**. The actual registered
+launcher was then invoked at **06:19:04Z** and exited before Wine with the same
+legacy invalid-package-frame error. The receipt's supervisor-shell match is
+not a remaining game process. Charge the continuous interval through
+**06:25:13Z**, including shared credential diagnostics: **11 minutes 46 seconds**,
+leaving at most **33 minutes 14 seconds**, less later title-specific work.
+
+The approved saved-account check at **06:21:18Z** found a saved session under
+the preserved signed engine, but both NMS/Abiotic package checks rejected the
+qualifier's isolated-account permission. Using that qualifier itself as status
+owner produced a native login-Keychain **password-required** dialog, confirmed
+in the full-display capture. The bounded read timed out and was terminated;
+no password was supplied, ACL changed, credential exported or new Microsoft
+sign-in started. This is an observed OS checkpoint, not absent owner approval.
+The development app was reopened; no installed runtime was replaced.
+
+### Reviewed free-Wine controls and hidden runtime windows
+
+On stable Wine **11.0**, Brogue's **06:25:13Z** retry visibly rendered a
+depth-1 dungeon. The roughly one-minute sample was partially overlapped by
+Copilot: retain the helper's ineligible flag and record the manually reviewed
+scene separately. No independently verified movement, audio or endurance.
+
+The subsequent bounded **180-second** Cataclysm run rendered its main menu.
+Exact-title/executable-scoped Down, Down, Enter input was followed by captured
+world loading and then a visible character in an evacuation shelter, HUD and
+world messages. A later movement attempt safely refused because cleanup had
+already removed the owned window; do not claim movement. The runner's final
+capture returned visibility status 3, not a game-crash verdict. Its cleanup
+completed and previously hidden applications were restored.
+
+After the games closed, a **Wine Mono Installer** remained behind them. Its
+owner was `control.exe` PID 22093, started **18 October**, with working directory
+inside `XodusVMServiceTest`; it was not evidence Brogue/Cataclysm required .NET.
+That installer and its matching stale explorer were terminated. The separate
+old VM-game debugger and explorer were also removed after exact ownership
+checks. The capture helper now records runtime-dialog candidates, including
+offscreen/covered windows, independently of the current game's owned window.
+This is attribution evidence, never permission to kill unrelated processes or
+a gameplay verdict. The post-cleanup capture contained no such candidates.
+
+The runtime patch is committed in the isolated session-owned
+`files/session2-legacy-engine` worktree at **`0c3cbb3`**, based on `7ae8ffe`.
+At that revision the locally built release artifacts had SHA-256:
+
+- CLI: `0fafe7b121e454c3a790f69a2b3c71245d6824058f63bb6fcd57b5ad7f2729b4`.
+- Service: `ffcf55529700c438e78ad7c612b9ff31d20d8b18287117eed7b6cf8c077a2535`.
+
+The subsequent CLI-only credential-owner patch `cf2e023` was rebuilt and tested:
+CLI SHA-256 is now
+`45973ddf813caba9935bbd5fac90e06db7b717fb15e82b342ef749232f125ce3`;
+the service bytes are unchanged. Script-only follow-up `3be4fd1` is tracked
+separately from those executable builds.
+
+These identities are traceability, **not externally approved sealed inputs or
+shipping pins**. Rollback of this experiment requires no installed-binary
+restoration: no installed runtime, credential store or game content was changed.
+The app-side wording change accompanies the runtime diagnostics; it does not
+interpret arbitrary stderr as an authorization verdict or start another login.
+The exact missing live store entry still needs safe attribution. In particular,
+do not infer a missing user token from the generic `entry not found` message.
 
 ## Session 2 baseline recovery
 

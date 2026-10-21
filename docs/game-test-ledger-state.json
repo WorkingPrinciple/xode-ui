@@ -5,7 +5,7 @@
   "deadline": "2026-10-22T05:28:46Z",
   "notes": [
     "Session 1: five standalone Windows controls attempted; zero Xbox game launches during that batch.",
-    "Session 2: Brogue, Cataclysm and DCSS control processes attempted; no reviewed gameplay result. DCSS correctly rejected visual eligibility when no owned window was observed. These are not joint-product acceptance.",
+    "Session 2: three distinct standalone controls attempted. Stable Wine 11.0 retries visibly rendered Brogue's depth-1 dungeon and Cataclysm's shelter world after scoped menu input. Overlap flags remain unchanged; no movement/audio/endurance acceptance. DCSS had no owned window. None establishes Xbox or joint-product acceptance.",
     "Session 3 is planned for tomorrow, not executed or automatically authorized beyond the current window.",
     "Installed observations below are from 20 October preflight, not a fresh authenticated inventory.",
     "Personal entitlement and current download access have not been established for this queue.",
@@ -14,16 +14,21 @@
     "Minecraft Java and Minecraft Launcher were also inspected as installed encrypted packages, but their exact product IDs are absent from this public snapshot; do not substitute bundle or preview IDs.",
     "No confirmed Xbox game fix or fresh joint-product gameplay result was produced by Session 1.",
     "Session 2 NMS registered launch was actually attempted at 2026-10-21T05:55:59Z: CLI invalid package key response frame; matching service error entry not found. No Wine/game start. This supersedes the earlier hash-only blocker inference.",
-    "Session 1 adversarial verdict REVISE; audit, corrective harness work and current real failure are recorded in GAME-ENGINE-TESTS.md."
+    "Session 1 adversarial verdict REVISE; audit, corrective harness work and current real failure are recorded in GAME-ENGINE-TESTS.md.",
+    "Latest owner limit: 45 minutes per game including investigation, fixes and verification. NMS parked at 06:13:27Z after 17m28s charged; 27m32s remain if resumed, not a new clock.",
+    "Runtime diagnostic patch 0c3cbb3 and delegated-credential-owner patch cf2e023 built locally with 12 affected Rust tests passing; app launcher-error wording has 247 presentation and 1358 synthetic native checks passing. No installed replacement, live credential repair or new gameplay qualification.",
+    "The owner subsequently explicitly approved autonomous experimentation and saved-account checks. Approved checks found the preserved owner's saved session, but the qualifier required a native login-Keychain password. No password supplied, ACL changed, credential exported or new Microsoft sign-in. Do not misreport absent owner authorization or repeatedly trigger this prompt.",
+    "Abiotic source fix 3be4fd1 refuses unsupported engine selection; four stub/mock tests pass. Actual registered launcher invocation at 06:19:04Z failed before Wine. Charge 06:13:27Z-06:25:13Z including shared credential diagnostics: 11m46s, at most 33m14s remain before later title-specific work.",
+    "The Wine Mono Installer behind the game belonged to three-day-old control.exe PID 22093 in XodusVMServiceTest, not the new games. Exact stale installer/debugger owners and matching desktop helpers were terminated and their windows verified absent; no unnecessary .NET install. Capture metadata now records runtime-dialog candidates even behind a game."
   ],
   "products": {
     "BQVQTL3PCH05": {
       "historical": "CrossOver + modified Xodus: in-world rendering recorded",
       "installedObservation": "20 Oct: NMS 7.6 resident; inventory/readiness passed",
       "session1": "Preflight only; not launched",
-      "session2": "Launch route attempted 21 Oct 05:55:59Z; service entry not found; no Wine/game start",
-      "next": "P1: fix error attribution and isolated-account/legacy consumer integration; do not repeat unchanged",
-      "evidence": "PAUSE-HANDOFF.md; private Session 2 NMS baseline receipt and matching service diagnostic"
+      "session2": "21 Oct 05:55:59Z: service entry not found before Wine. Diagnostic source patch built/tested, not installed",
+      "next": "Parked at observed qualifier login-Keychain password checkpoint and unintegrated account consumer; at most 27m32s remain before later title work; no unchanged retry",
+      "evidence": "PAUSE-HANDOFF.md; private NMS receipt/service diagnostic; runtime 0c3cbb3; GAME-ENGINE-TESTS.md"
     },
     "9MT5NJ5W7B8Z": {
       "historical": "CrossOver + modified Xodus/shims: launch owner-reported",
@@ -35,11 +40,11 @@
     },
     "9P4NV23Q6QC2": {
       "historical": "No gameplay evidence reviewed",
-      "installedObservation": "20 Oct: Abiotic Factor 1.4.28206.0 resident; inventory/readiness passed",
+      "installedObservation": "21 Oct: package and local executable metadata resident; 20 Oct inventory/readiness passed",
       "session1": "Preflight only; not launched",
-      "session2": "Not launched",
-      "next": "P2: exercise recovered joint route after baseline recovery",
-      "evidence": "Session 1 private xbox-title-test receipt"
+      "session2": "Actual registered launcher 06:19:04Z failed before Wine; ignored engine choice fixed in source only; shared credential diagnostics included in 11m46s charged",
+      "next": "At most 33m14s remain before later title work; resolve observed native password/account-consumer checkpoint, no unchanged retry; free adapter not implemented",
+      "evidence": "Private session2-abiotic-20261021T061904Z receipt and package-route checks; runtime 3be4fd1; GAME-ENGINE-TESTS.md"
     },
     "9P03JGQ4S1GC": {
       "historical": "No gameplay evidence reviewed",

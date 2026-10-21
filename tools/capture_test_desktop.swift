@@ -96,6 +96,14 @@ if let owner, let application = NSRunningApplication(processIdentifier: owner) {
 }
 let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
     as? [[String: Any]] ?? []
+let allWindows = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements], kCGNullWindowID)
+    as? [[String: Any]] ?? []
+let runtimeDialogCandidates = allWindows.filter { window in
+    let title = window[kCGWindowName as String] as? String ?? ""
+    let application = (window[kCGWindowOwnerName as String] as? String ?? "").lowercased()
+    return ["Wine Mono Installer", "Wine Gecko Installer", "Wine Debugger"].contains(title)
+        || (!title.isEmpty && ["control.exe", "conhost.exe", "winedbg.exe", "wineboot.exe"].contains(application))
+}
 func bounds(_ window: [String: Any]) -> CGRect? {
     guard let dictionary = window[kCGWindowBounds as String] as? NSDictionary else { return nil }
     return CGRect(dictionaryRepresentation: dictionary)
@@ -149,6 +157,7 @@ let record: [String: Any] = [
         ( $0[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == owner && owner != nil
     },
     "occludingWindows": occluders,
+    "runtimeDialogCandidates": runtimeDialogCandidates,
     "visualInspectionEligible": eligible,
     "meaning": "Full displays, not game crops. Eligible means inspectable, never menu/gameplay success.",
 ]

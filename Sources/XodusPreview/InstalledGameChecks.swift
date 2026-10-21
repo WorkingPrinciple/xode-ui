@@ -268,7 +268,7 @@ enum InstalledGameChecks {
         let failedSession = try await store.load().first
         check(failedSession?.lastPlayedAt != nil && failedSession?.lastSessionSeconds.map { $0 >= 0 } == true,
               "AC1.3: A short-lived Xodus-launched failure records its start and measured lifetime atomically")
-        check(library.playErrors[game.id] == "The game stopped unexpectedly (code 3)." && library.playState == nil,
+        check(library.playErrors[game.id] == "The game launcher reported an error (code 3)." && library.playState == nil,
               "Nonzero fake session exit returns to Play with exact code and retry message")
         check(library.playLogs[game.id] == nil, "AC2.3: A nonzero session without its stderr file offers no Show log")
         let logs = root.appendingPathComponent("logs")
@@ -280,7 +280,7 @@ enum InstalledGameChecks {
         await library.play(loggedGame)
         try await wait { library.playLogs[game.id] != nil }
         check(library.playLogs[game.id]?.deletingLastPathComponent().path == logs.path
-              && library.playErrors[game.id] == "The game stopped unexpectedly (code 3).",
+              && library.playErrors[game.id] == "The game launcher reported an error (code 3).",
               "AC2.3: Nonzero script exit exposes only its existing generated-session stderr file")
         await library.waitForSessionPersistence()
         await library.importGame(folder: folder, launcher: zero)

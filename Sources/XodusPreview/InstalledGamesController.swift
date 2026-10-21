@@ -358,7 +358,7 @@ final class InstalledGamesController: ObservableObject {
             }
             return false
         }
-        if status != 0 { playErrors[gameID] = "The game stopped unexpectedly (code \(status))." }
+        if status != 0 { playErrors[gameID] = "The game launcher reported an error (code \(status))." }
         return status != 0
     }
 
