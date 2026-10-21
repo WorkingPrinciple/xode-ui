@@ -61,30 +61,44 @@ final class NativeMinecraft: ObservableObject {
     }
 }
 
-struct NativeMinecraftCard: View {
+struct NativeMinecraftCard<Artwork: View>: View {
     @ObservedObject private var minecraft = NativeMinecraft.shared
     @ObservedObject private var evidence = MacGameEvidenceStore.shared
+    @ViewBuilder let artwork: () -> Artwork
+    @State private var showsDetails = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Minecraft: Java Edition", systemImage: "gamecontroller").font(.headline)
+        LibraryCover(title: "Minecraft: Java Edition", openLabel: "Details for",
+                     alwaysShowsActions: true, open: { showsDetails = true }, artwork: artwork) {
             Label("Native launcher", systemImage: "desktopcomputer")
-            Text("Uses the official macOS launcher, not the Windows Xbox package.")
-                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"])
+            if minecraft.javaPID != nil { Text("Minecraft Java is running") }
+            if let error = minecraft.errorMessage {
+                Text(error).fixedSize(horizontal: false, vertical: true)
+            }
+        } actions: {
+            LibraryGlassCluster {
             if minecraft.app != nil {
-                Button("Open native launcher") { minecraft.open() }
+                Button("Open") { minecraft.open() }
+                    .modifier(LibraryActionStyle(primary: false))
+                    .accessibilityLabel("Open Minecraft's official native launcher")
                     .accessibilityIdentifier("xodus.native.minecraft.open")
-                Text(minecraft.javaPID == nil ? "Launcher installed" : "Minecraft Java is running")
-                    .font(.caption).foregroundStyle(.secondary)
             } else {
                 Link("Download native launcher", destination: URL(string: "https://www.minecraft.net/download")!)
             }
-            if let error = minecraft.errorMessage {
-                Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                Menu {
+                    Button("Details") { showsDetails = true }
+                } label: { Image(systemName: "ellipsis").accessibilityLabel("Minecraft options") }
+                .modifier(LibraryActionStyle(primary: false))
             }
-            MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"])
         }
-        .frame(maxWidth: 360, alignment: .leading)
-        .padding(.vertical, 12)
+        .sheet(isPresented: $showsDetails) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Minecraft: Java Edition").font(.title2)
+                Text("Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your Ode to X account.")
+                MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"], detailed: true)
+                Button("Done") { showsDetails = false }.keyboardShortcut(.cancelAction)
+            }.padding(24).frame(width: 540)
+        }
     }
 }

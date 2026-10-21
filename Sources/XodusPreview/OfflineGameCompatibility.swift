@@ -47,7 +47,8 @@ struct OfflineGameCompatibility: Codable {
         }
 
         var supported01: Bool {
-            GameSupportPolicy.issues(packageFormat: packageFormat, antiCheat: antiCheat).isEmpty
+            antiCheat.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "none"
+                && GameSupportPolicy.issues(packageFormat: packageFormat, antiCheat: antiCheat).isEmpty
         }
     }
     let version: Int

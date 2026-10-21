@@ -341,7 +341,7 @@ enum GameOperationChecks {
               && !installed.serviceSignInActive && operations.canQuit,
               "XO-018: Explicit retry consumes a fresh bound status and removes the verification action")
         let game = PCGame(id: "FIXTURE00001", title: "Fixture Game", artwork: nil)
-        for (format, technology) in [("MSIXVC", "unknown"), ("MSIXVC", "Easy Anti-Cheat"),
+        for (format, technology) in [("MSIXVC", "Easy Anti-Cheat"),
                                      ("Appx", "none"), ("EAppx", "none")] {
             let blockedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
                 market: catalogue.market, packageSource: catalogue.packageSource,
@@ -980,7 +980,7 @@ enum GameOperationChecks {
         let play = InstalledPlayButton(library: installed, operations: operations, game: imported)
         check(play.title == "Play" && play.unsupportedIssues.isEmpty && operations.canRepair(imported),
               "UI-9 source: Shared Library/Discover installed controls offer Play and Repair for cleared MSIXVC")
-        for technology in ["unknown", "BattlEye"] {
+        for technology in ["BattlEye"] {
             let blockedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
                 market: catalogue.market, packageSource: catalogue.packageSource,
                 antiCheatReference: catalogue.antiCheatReference,

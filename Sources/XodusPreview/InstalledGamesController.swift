@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
 import Foundation
+import OSLog
 import XodusCore
 import XodusManagement
 
@@ -10,6 +11,7 @@ enum InstalledGamePlayState: Equatable {
 
 @MainActor
 final class InstalledGamesController: ObservableObject {
+    private static let launchLog = Logger(subsystem: "io.github.dragoshont.xodus", category: "GameLaunch")
     @Published private(set) var games: [InstalledGame] = []
     @Published private(set) var loading = false
     @Published private(set) var editing = false
@@ -54,6 +56,7 @@ final class InstalledGamesController: ObservableObject {
     private var usesUnifiedAccount = false
     private let nativeLauncher = NativeGameLifecycle()
     private var nativeLaunchTask: Task<Void, Never>?
+    private var nativeForegroundTask: Task<Void, Never>?
     private var playingTask: Task<Void, Never>?
     private var runToken: UUID?
     private var stopToken: UUID?
@@ -163,8 +166,6 @@ final class InstalledGamesController: ObservableObject {
               !accountDisconnecting, !applicationTerminating else { return }
         let directory = root ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Games/Xodus")
         guard FileManager.default.fileExists(atPath: directory.path) else { return }
-        editing = true
-        defer { editing = false }
         do {
             let folders = try await Task.detached {
                 try GameScriptFiles.checkPath(directory)
@@ -175,8 +176,14 @@ final class InstalledGamesController: ObservableObject {
                     FileManager.default.fileExists(atPath: $0.appendingPathComponent("MicrosoftGame.config").path)
                 }
             }.value
+            guard !editing, !choosing, !mutationActive, !accountDisconnecting,
+                  !applicationTerminating else { return }
+            let pending = folders.filter { folder in !games.contains(where: { $0.folder == folder.path }) }
+            guard !pending.isEmpty else { return }
+            editing = true
+            defer { editing = false }
             var failures: [String] = []
-            for folder in folders where !games.contains(where: { $0.folder == folder.path }) {
+            for folder in pending {
                 do { try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: nil) }
                 catch { failures.append("\(folder.lastPathComponent): \(error.localizedDescription)") }
             }
@@ -276,9 +283,19 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func play(_ game: InstalledGame) async {
+        Self.launchLog.notice("Play requested: \(game.storeId, privacy: .public)")
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
-              accountAccessAllowed, games.contains(game) else { return }
+              accountAccessAllowed, games.contains(game) else {
+            let message = !accountAccessAllowed ? accountAccessMessage
+                : runningGameID != nil ? "Quit the running game before starting another."
+                : "Your library is busy. Wait for the current operation to finish and try again."
+            if runningGameID == game.id {
+                playNotices[game.id] = "This game is already running."
+            } else { playErrors[game.id] = message }
+            Self.launchLog.error("Play unavailable: \(game.storeId, privacy: .public): \(message, privacy: .public)")
+            return
+        }
         let issues = LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
             packageFormat: game.packageType?.label, compatibility: nil, catalogue: compatibilityCatalogue)
         guard issues.isEmpty else {
@@ -405,7 +422,8 @@ final class InstalledGamesController: ObservableObject {
         }
         do {
             let launch = try NativeLaunchConfiguration.resolve(game: game,
-                provider: game.engineOverride ?? defaultEngine())
+                provider: game.engineOverride ?? defaultEngine(),
+                provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine)
             let arguments = try await launch.arguments()
             guard accountAccessAllowed, session.accountHash == account,
                   session.nativeLifecycleConfiguration?.executable == configuration.executable,
@@ -427,11 +445,25 @@ final class InstalledGamesController: ObservableObject {
                         operation: "launch", product: game.storeId,
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
                         launchArguments: arguments, launchEnvironment: launch.profile?.environment ?? [:], onStarted: {
+                            Self.launchLog.notice("Launcher started: \(game.storeId, privacy: .public), engine \(launch.engine, privacy: .public)")
                             launchStarted = true
                             playState = .playing
                             recordSession(gameID: game.id, startedAt: startedAt, seconds: nil)
+                            if let pid = nativeLauncher.processIdentifier {
+                                nativeForegroundTask = Task {
+                                    let activated = await NativeGameForeground.activate(launcherPID: pid, title: game.title) {
+                                        self.runToken == token && self.nativeLauncher.isRunning
+                                            && self.stoppingGameID == nil && !self.applicationTerminating
+                                    }
+                                    if !activated, runToken == token, nativeLauncher.isRunning {
+                                        playNotices[game.id] = "Click the game window to bring it to the front."
+                                    }
+                                }
+                            }
                         })
                     guard runToken == token else { return }
+                    nativeForegroundTask?.cancel()
+                    nativeForegroundTask = nil
                     let duration = clock.duration(to: .now).components
                     recordSession(gameID: game.id, startedAt: startedAt,
                         seconds: Double(duration.seconds) + Double(duration.attoseconds) / 1e18)
@@ -452,6 +484,7 @@ final class InstalledGamesController: ObservableObject {
         } catch {
             playErrors[game.id] = (error as? NativeLaunchError)?.localizedDescription
                 ?? (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
+            Self.launchLog.error("Play failed before launch: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
 

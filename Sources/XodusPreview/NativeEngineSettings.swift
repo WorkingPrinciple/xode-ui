@@ -110,8 +110,7 @@ struct NativeEngineSettings: View {
                 }.value
                 guard path == registryPath, !Task.isCancelled else { return }
                 entries = loaded.filter {
-                    $0.smoke_test.status == "pass"
-                        && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: $0.wine))
+                    $0.isAvailable
                 }
             } catch {
                 guard path == registryPath, !Task.isCancelled else { return }
@@ -138,7 +137,10 @@ private struct NativeEnginePicker: View {
             if !selection.isEmpty, !entries.contains(where: { $0.name == selection }) {
                 Text("\(selection) (unavailable)").tag(selection)
             }
-            ForEach(entries) { entry in Text(entry.name).tag(entry.name) }
+            ForEach(entries) { entry in
+                Text("\(entry.engine_label ?? (entry.kind.lowercased() == "free" ? "Free Wine" : "CrossOver")) - \(entry.name)")
+                    .tag(entry.name)
+            }
         }
         .disabled(entries.isEmpty)
     }

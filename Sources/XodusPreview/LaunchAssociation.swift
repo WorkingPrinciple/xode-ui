@@ -283,7 +283,7 @@ final class LaunchAssociationHandoff {
         if let observer { NotificationCenter.default.removeObserver(observer); self.observer = nil }
     }
 
-    private static func readyTarget(_ identity: LaunchProcessIdentity) -> Bool {
+    static func readyTarget(_ identity: LaunchProcessIdentity) -> Bool {
         guard identity.matchesKernel(), let target = NSRunningApplication(processIdentifier: identity.pid),
               !target.isTerminated, target.isFinishedLaunching,
               let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
@@ -298,12 +298,50 @@ final class LaunchAssociationHandoff {
         }
     }
 
-    private static func activateTarget(_ identity: LaunchProcessIdentity) -> Bool {
+    static func activateTarget(_ identity: LaunchProcessIdentity) -> Bool {
         guard #available(macOS 14, *), NSApp.isActive, readyTarget(identity),
               let target = NSRunningApplication(processIdentifier: identity.pid),
               !target.isTerminated, target.isFinishedLaunching, identity.matchesKernel(),
               NSApp.isActive else { return false }
         NSApp.yieldActivation(to: target)
         return target.activate(options: [])
+    }
+}
+
+@MainActor
+enum NativeGameForeground {
+    static func matchesGameWindow(_ name: String, title: String) -> Bool {
+        let title = (title.components(separatedBy: ":").first ?? title)
+            .replacingOccurrences(of: "™", with: "").replacingOccurrences(of: "®", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return !title.isEmpty && name.localizedCaseInsensitiveContains(title)
+    }
+
+    static func activate(launcherPID: Int32, title: String, current: () -> Bool) async -> Bool {
+        var seconds: UInt64 = 0, microseconds: UInt64 = 0
+        guard xodus_process_start(launcherPID, &seconds, &microseconds) == 1 else { return false }
+        let launcher = LaunchProcessIdentity(pid: launcherPID, start_sec: seconds, start_usec: microseconds)
+        let deadline = ContinuousClock.now.advanced(by: .seconds(90))
+        while !Task.isCancelled && current() && launcher.matchesKernel() && ContinuousClock.now < deadline {
+            guard NSApp.isActive else { return false }
+            if let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
+                                                        kCGNullWindowID) as? [[String: Any]] {
+                for window in windows {
+                    guard let pid = (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value,
+                          pid != launcherPID, xodus_process_descends_from(pid, launcherPID) == 1,
+                          (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
+                          let name = window[kCGWindowName as String] as? String,
+                          matchesGameWindow(name, title: title),
+                          xodus_process_start(pid, &seconds, &microseconds) == 1 else { continue }
+                    let target = LaunchProcessIdentity(pid: pid, start_sec: seconds, start_usec: microseconds)
+                    if current(), launcher.matchesKernel(), xodus_process_descends_from(pid, launcherPID) == 1,
+                       LaunchAssociationHandoff.readyTarget(target),
+                       LaunchAssociationHandoff.activateTarget(target) { return true }
+                }
+            }
+            do { try await Task.sleep(for: .milliseconds(250)) }
+            catch { return false }
+        }
+        return false
     }
 }

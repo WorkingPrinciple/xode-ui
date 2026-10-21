@@ -180,6 +180,35 @@ enum NativeLifecycleChecks {
         ]]).write(to: registry)
         defaults.set(registry.path, forKey: "Xodus.lifecycle.registry")
         defaults.set("synthetic", forKey: "Xodus.lifecycle.engine.standaloneWine")
+        let automatic = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults)
+        let proven = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
+                                                            provenEngine: "synthetic")
+        check(automatic.engine == "synthetic" && proven.engine == "synthetic",
+              "Play automatically selects an available Free Wine engine or the game's proven engine without manual setup")
+        let orderedRegistry = try JSONDecoder().decode(NativeEngineRegistry.self,
+            from: JSONSerialization.data(withJSONObject: ["engines": [
+                ["name": "failed-presentation", "kind": "free", "engine_label": "Free Wine",
+                 "wine": executable.path, "smoke_test": ["status": "pass"],
+                 "presentation_validation": ["status": "failed"]],
+                ["name": "paid", "kind": "CrossOver", "engine_label": "CrossOver",
+                 "wine": executable.path, "smoke_test": ["status": "pass"]],
+                ["name": "synthetic", "kind": "free", "engine_label": "Free Wine",
+                 "wine": executable.path, "smoke_test": ["status": "pass"]]
+            ]]))
+        check(try NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
+                defaults: defaults, provenEngine: nil).name == "synthetic"
+              && NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
+                defaults: defaults, provenEngine: "paid").name == "paid"
+              && NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: .standaloneWine,
+                defaults: defaults, provenEngine: "paid").name == "synthetic",
+              "Unconfigured Play prefers available Free Wine, excludes failed presentation, and preserves proven/explicit precedence")
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
+                                                       provenEngine: "unavailable-proven-engine")
+            check(false, "An unavailable proven engine cannot silently become a different engine")
+        } catch NativeLaunchError.engineUnavailable {
+            check(true, "An unavailable proven engine is reported instead of silently substituting")
+        }
         let launch = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: .standaloneWine, defaults: defaults)
         let args = try await launch.arguments()
         check(args.contains(primary.path) && args.contains("synthetic") && !args.contains("--shim-dir"),

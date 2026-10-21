@@ -62,6 +62,22 @@ profiles mean no additional shims or overrides; malformed or wrong-product
 profiles fail visibly. Registry engine environment and wineserver selection
 remain the CLI's responsibility.
 
+Play does not require an engine-picker step. An explicit per-game/default
+provider remains an override. Otherwise the latest successful gameplay ledger
+entry selects its exact registry engine; without successful evidence the first
+available PASS engine is used, preferring Free Wine. An unavailable proven or
+explicit engine is reported rather than silently substituted. Launch requests
+and pre-launch failures are logged under `io.github.dragoshont.xodus/GameLaunch`;
+tile failures are shown inline. A bounded foreground handoff targets only an
+owned descendant of the current launcher with a matching game-window title,
+and never steals focus after the user leaves Ode to X.
+
+The owner changed the classification policy on 22 October: unknown anti-cheat
+is not a known blocker. MSIXVC games without a named blocker can be tried and
+are labelled "Not tested on Mac yet"; this is not a support or gameplay claim.
+Named anti-cheat and unsupported formats remain blocked. The supported filter
+continues to use S4's evidence-qualified `supported01` facts.
+
 The Mac test evidence JSON automatically loads from
 `~/Library/Application Support/Ode to X/Evidence/tried-games.json`; an advanced
 Runtime setting (`Xodus.evidence.triedGames`) can select a different ledger.
@@ -71,8 +87,8 @@ with `productId`, `title`, `verdict`, `scope`, `engine`, optional `runId`,
 Supported verdicts are `GAMEPLAY_PASS`, `MENU_PASS`, `BLOCKED`, `FAIL`,
 `NOT_TESTED`, `WORKING`, and `ANTI_CHEAT_EXCLUDED`. Engine and run ID may be
 null when not recorded. The library reloads it every five
-seconds, keeps the full observation scope visible, and opens recorded local
-screenshots. Missing screenshots are stated, not invented. These observations
+seconds, exposes compact verdict/engine copy on cards, and opens recorded local
+screenshots. Full observation scope is available in Details, not on the cards. These observations
 do not grant entitlement or override S4 package/anti-cheat admission.
 
 In unified-account mode, the app discovers complete game configurations under

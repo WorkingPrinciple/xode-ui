@@ -21,13 +21,10 @@ enum GameSupportPolicy {
                 detail: "\(format). Ode to X 0.1 supports MSIXVC packages only.", source: nil))
         }
         let technology = antiCheat?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if technology?.lowercased() != "none" {
-            let unknown = technology == nil || technology?.isEmpty == true
-                || ["unknown", "unspecified"].contains(technology?.lowercased() ?? "")
-            let title = unknown ? "Anti-cheat not verified yet" : (technology ?? "Anti-cheat not verified yet")
-            issues.append(LibraryCompatibilityIssue(kind: .antiCheat, title: unknown ? title : "Uses \(title)",
-                detail: unknown ? "Anti-cheat has not been classified for this game."
-                    : "\(title) is not supported by Ode to X 0.1.", source: nil))
+        if let technology, !technology.isEmpty,
+           !["none", "unknown", "unspecified"].contains(technology.lowercased()) {
+            issues.append(LibraryCompatibilityIssue(kind: .antiCheat, title: "Uses \(technology)",
+                detail: "\(technology) is not supported by Ode to X 0.1.", source: nil))
         }
         return issues
     }

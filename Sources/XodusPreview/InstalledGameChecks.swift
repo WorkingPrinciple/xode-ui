@@ -211,7 +211,7 @@ enum InstalledGameChecks {
         check(unadmitted.runningGameID == nil && !unadmitted.launchStarted
               && unadmitted.playErrors[forged.id]?.contains("Not supported yet") == true,
               "UI-5: Direct play of an unadmitted installed title is refused before any launcher or engine starts")
-        for (format, antiCheat) in [("MSIXVC", "unknown"), ("MSIXVC", "Easy Anti-Cheat"), ("Appx", "none")] {
+        for (format, antiCheat) in [("MSIXVC", "Easy Anti-Cheat"), ("Appx", "none")] {
             let rejectedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
                 market: catalogue.market, packageSource: catalogue.packageSource,
                 antiCheatReference: catalogue.antiCheatReference,
@@ -366,8 +366,9 @@ enum InstalledGameChecks {
         await library.importGame(folder: otherFolder, launcher: failure)
         guard let other = library.games.last else { throw InstalledGameError.invalidRegistry }
         await library.play(other)
-        check(library.runningGameID == slowGame.id && library.playErrors[other.id] == nil,
-              "A second game's Play cannot overlap the running session")
+        check(library.runningGameID == slowGame.id
+              && (other.id == slowGame.id || library.playErrors[other.id]?.contains("Quit the running game") == true),
+              "A second game's Play cannot overlap the running session and explains its busy state")
         let coordinator = ApplicationTerminationCoordinator()
         check(await coordinator.shutdown(session: nil, runtime: nil, installedGames: library)
               && library.applicationTerminating && library.runningGameID == slowGame.id,

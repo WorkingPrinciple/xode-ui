@@ -26,6 +26,7 @@ struct LiveProductView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
     @ObservedObject private var stats = LibraryXboxStats.shared
+    @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
 
     private var installed: InstalledGame? {
         installedLibrary.games.first { $0.storeId == product.id && (installationID == nil || $0.id == installationID) }
@@ -87,6 +88,7 @@ struct LiveProductView: View {
                             compatibility: operations.compatibility[product.id],
                             checking: operations.precheckingProductID == product.id)
                         evidence
+                        MacGameEvidenceView(record: macEvidence.games[product.id], detailed: true)
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
                             HStack {
                                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)

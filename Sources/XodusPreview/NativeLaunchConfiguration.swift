@@ -11,7 +11,13 @@ struct NativeEngineRegistry: Decodable {
         let kind: String
         let wine: String
         let smoke_test: SmokeTest
+        let presentation_validation: SmokeTest?
+        let engine_label: String?
         var id: String { name }
+        var isAvailable: Bool {
+            smoke_test.status == "pass" && presentation_validation?.status != "failed"
+                && wine.hasPrefix("/") && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: wine))
+        }
     }
     let engines: [Entry]
 
@@ -126,18 +132,18 @@ struct NativeLaunchConfiguration {
 
     static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
                         defaults: UserDefaults = .standard,
-                        runtime: NativeRuntimeReference? = NativeRuntimePins.approved) throws -> Self {
+                        runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
+                        provenEngine: String? = nil) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         guard let runtime = runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
-        guard let provider else { throw NativeLaunchError.engineNotSelected }
         guard let registryPath = defaults.string(forKey: "Xodus.lifecycle.registry"),
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
-        let engineName = defaults.string(forKey: "Xodus.lifecycle.engine.\(provider.rawValue)")
-        guard let engineName, let entry = registry.engines.first(where: { $0.name == engineName }),
-              entry.smoke_test.status == "pass" else { throw NativeLaunchError.engineNotSelected }
+        let entry = try selectEngine(registry: registry, provider: provider, defaults: defaults,
+                                     provenEngine: provenEngine)
+        let engineName = entry.name
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable
         }
@@ -146,6 +152,23 @@ struct NativeLaunchConfiguration {
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         return try Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
                         profile: NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults))
+    }
+
+    static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
+                             defaults: UserDefaults, provenEngine: String?) throws -> NativeEngineRegistry.Entry {
+        let selected = provider.flatMap { defaults.string(forKey: "Xodus.lifecycle.engine.\($0.rawValue)") }
+        if provider != nil || provenEngine != nil {
+            guard let name = provider != nil ? selected : provenEngine,
+                  let entry = registry.engines.first(where: { $0.name == name }),
+                  entry.isAvailable else {
+                throw NativeLaunchError.engineUnavailable
+            }
+            return entry
+        }
+        let available = registry.engines.filter(\.isAvailable)
+        guard let entry = available.first(where: { $0.engine_label == "Free Wine" || $0.kind.lowercased() == "free" })
+                ?? available.first else { throw NativeLaunchError.engineUnavailable }
+        return entry
     }
 
     func arguments() async throws -> [String] {

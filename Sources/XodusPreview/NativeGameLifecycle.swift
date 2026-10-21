@@ -107,6 +107,7 @@ final class NativeGameLifecycle {
     private(set) var started = false
     private(set) var stateDirectory: URL?
     var isRunning: Bool { process?.isRunning == true }
+    var processIdentifier: Int32? { process?.isRunning == true ? process?.processIdentifier : nil }
 
     static func directory(runID: String) -> URL {
         URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(

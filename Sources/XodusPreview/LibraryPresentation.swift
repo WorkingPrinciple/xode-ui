@@ -287,8 +287,9 @@ enum LibrarySupportVisibility {
 
     static func isVisible(productID: String, installed: Bool, packageFormat: String?,
                           compatibility: GameCompatibilityResult?, showsUnsupportedGames: Bool) -> Bool {
-        showsUnsupportedGames || issues(productID: productID, installed: installed, packageFormat: packageFormat,
-                                       compatibility: compatibility).isEmpty
+        showsUnsupportedGames || (OfflineGameCompatibility.snapshot?.products[productID]?.supported01 == true
+            && issues(productID: productID, installed: installed, packageFormat: packageFormat,
+                      compatibility: compatibility).isEmpty)
     }
 }
 
@@ -363,7 +364,7 @@ struct GameCompatibilityFacts: View {
                 Text("Offline catalogue checked \(date.formatted(date: .abbreviated, time: .omitted)), market \(database.market). Live installed-file evidence takes precedence.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Text("Package inspection and known blockers are checked automatically. An unknown anti-cheat result is not clearance, and an installation check does not prove a game runs.")
+            Text("Package inspection and known blockers are checked automatically. Unclassified games can be tried, but are not verified as supported. An installation check does not prove a game runs.")
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Text("A PC package listing is not account download access or proof this Mac can install or run the game.")
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -634,9 +635,11 @@ struct LibraryImmersion: ViewModifier {
 struct LibraryGlassCluster<Content: View>: View {
     @ViewBuilder let content: () -> Content
     var body: some View {
-        if #available(macOS 26, *) {
-            GlassEffectContainer(spacing: 12) { HStack(spacing: 12, content: content) }
-        } else { HStack(spacing: 12, content: content) }
+        Group {
+            if #available(macOS 26, *) {
+                GlassEffectContainer(spacing: 12) { HStack(spacing: 12, content: content) }
+            } else { HStack(spacing: 12, content: content) }
+        }.accessibilityElement(children: .contain)
     }
 }
 

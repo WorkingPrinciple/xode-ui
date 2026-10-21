@@ -12,13 +12,11 @@ struct MacGameEvidence: Decodable, Sendable {
 
         var label: String {
             switch self {
-            case .gameplay: "Mac gameplay observed"
-            case .menu: "Mac menu observed"
-            case .blocked: "Mac launch blocked"
-            case .failed: "Mac launch failed"
-            case .notTested: "Mac play not tested"
-            case .excluded: "Anti-cheat excluded"
-            case .working: "Working on Mac"
+            case .gameplay, .working: "Works on Mac"
+            case .menu: "Starts, not yet playable"
+            case .blocked, .failed: "Doesn't start yet"
+            case .notTested: "Not tested on Mac yet"
+            case .excluded: "Not supported yet"
             }
         }
     }
@@ -36,6 +34,16 @@ struct MacGameEvidence: Decodable, Sendable {
         let screenshots: [Screenshot]
         let owner: String
         let blocker: String?
+
+        var engineLabel: String? {
+            guard let engine else { return nil }
+            if engine == "native-macos" { return "Native" }
+            return engine.lowercased().hasPrefix("crossover") ? "CrossOver" : "Free Wine"
+        }
+
+        var provenEngine: String? {
+            verdict == .gameplay || verdict == .working ? engine : nil
+        }
     }
     let schemaVersion: Int
     let updatedAt: String
@@ -74,6 +82,7 @@ final class MacGameEvidenceStore: ObservableObject {
     static let shared = MacGameEvidenceStore()
     @Published private(set) var games: [String: MacGameEvidence.Game] = [:]
     @Published private(set) var errorMessage: String?
+    private var lastBytes: Data?
 
     func refresh(defaults: UserDefaults = .standard) async {
         let defaultURL = URL(fileURLWithPath: NSHomeDirectory())
@@ -83,15 +92,19 @@ final class MacGameEvidenceStore: ObservableObject {
         guard selected != nil || FileManager.default.fileExists(atPath: path) else {
             games = [:]
             errorMessage = nil
+            lastBytes = nil
             return
         }
         do {
-            let catalogue = try await Task.detached {
+            let bytes = try await Task.detached {
                 let url = URL(fileURLWithPath: path)
                 try GameScriptFiles.checkPath(url)
-                return try MacGameEvidence.decode(InstalledGameFiles.readRegular(url, maximumBytes: 1_048_576))
+                return try InstalledGameFiles.readRegular(url, maximumBytes: 1_048_576)
             }.value
+            guard bytes != lastBytes || errorMessage != nil else { return }
+            let catalogue = try MacGameEvidence.decode(bytes)
             games = Dictionary(uniqueKeysWithValues: catalogue.games.map { ($0.productId, $0) })
+            lastBytes = bytes
             errorMessage = nil
         } catch {
             games = [:]
@@ -102,6 +115,7 @@ final class MacGameEvidenceStore: ObservableObject {
 
 struct MacGameEvidenceView: View {
     let record: MacGameEvidence.Game?
+    var detailed = false
     @State private var openError: String?
 
     var body: some View {
@@ -109,36 +123,39 @@ struct MacGameEvidenceView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if let proof = record.screenshots.first {
                     Button { open(proof) } label: {
-                        Label(record.verdict == .gameplay
-                              ? "Played on Mac (\(record.engine?.hasPrefix("crossover") == true ? "CrossOver" : record.engine ?? "engine not recorded"))"
-                              : record.verdict.label, systemImage: "photo")
+                        Label(status(record), systemImage: "photo")
                     }
                     .buttonStyle(.link)
                     .accessibilityLabel("\(record.verdict.label). Open screenshot for \(record.title)")
                     .contextMenu {
-                        ForEach(Array(record.screenshots.enumerated()), id: \.offset) { _, image in
-                            Button(image.caption) { open(image) }
+                        if detailed {
+                            ForEach(Array(record.screenshots.enumerated()), id: \.offset) { _, image in
+                                Button(image.caption) { open(image) }
+                            }
                         }
                     }
                 } else {
-                    Label(record.verdict.label, systemImage: "exclamationmark.circle")
-                    Text("No screenshot recorded").font(.caption)
+                    Label(status(record), systemImage: "questionmark.circle")
                 }
-                Text(record.scope).fixedSize(horizontal: false, vertical: true)
-                if let blocker = record.blocker {
-                    Text(blocker).fixedSize(horizontal: false, vertical: true)
+                if detailed {
+                    Text(record.scope).fixedSize(horizontal: false, vertical: true)
+                    if let blocker = record.blocker {
+                        Text(blocker).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                Text("\(record.engine ?? "Engine not recorded") · \(record.owner)").font(.caption)
             }
-            .help(record.scope)
             .alert("Screenshot unavailable", isPresented: Binding(
                 get: { openError != nil }, set: { if !$0 { openError = nil } })) {
                 Button("OK") { openError = nil }
             } message: { Text(openError ?? "") }
         } else {
-            Label("Mac play not tested", systemImage: "questionmark.circle")
+            Label("Not tested on Mac yet", systemImage: "questionmark.circle")
                 .help("Package eligibility is separate from observed Mac gameplay. No Mac test evidence is recorded.")
         }
+    }
+
+    private func status(_ record: MacGameEvidence.Game) -> String {
+        record.verdict.label + (record.engineLabel.map { " · " + $0 } ?? "")
     }
 
     private func open(_ proof: MacGameEvidence.Screenshot) {

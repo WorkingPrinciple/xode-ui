@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
 import XodusManagement
+import XodusProcessIdentity
 
 @MainActor
 enum LibraryAccessChecks {
@@ -10,10 +11,7 @@ enum LibraryAccessChecks {
         check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
               && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ !$0.antiCheat.isEmpty }) == true,
               "A sourced offline catalogue is bundled with explicit anti-cheat classification fields")
-        let admitted = OfflineGameCompatibility.snapshot?.products.filter {
-            LibrarySupportVisibility.issues(productID: $0.key, installed: false,
-                packageFormat: nil, compatibility: nil).isEmpty
-        }
+        let admitted = OfflineGameCompatibility.snapshot?.products.filter { $0.value.supported01 }
         let rawCatalogue = try JSONSerialization.jsonObject(with: Data(contentsOf:
             CompatibilityResources.catalogueURL())) as? [String: Any]
         let rawProducts = rawCatalogue?["products"] as? [String: [String: Any]] ?? [:]
@@ -30,12 +28,16 @@ enum LibraryAccessChecks {
                 .contains(where: { $0.kind == .packageType }),
                   "0.1 rejects non-MSIXVC package format: \(format)")
         }
-        for technology in ["Easy Anti-Cheat", "BattlEye", "Vanguard", "unknown", "Unspecified", ""] {
+        for technology in ["Easy Anti-Cheat", "BattlEye", "Vanguard"] {
             let issues = GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: technology)
             check(issues.contains(where: { $0.kind == .antiCheat }),
-                  "0.1 rejects anti-cheat or missing clearance: \(technology)")
+                  "0.1 rejects named anti-cheat: \(technology)")
         }
-        check(GameSupportPolicy.issues(packageFormat: nil, antiCheat: nil).count == 2
+        for technology in [Optional("unknown"), "Unspecified", "", nil] {
+            check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: technology).isEmpty,
+                  "User-directed policy allows trying MSIXVC without inventing an anti-cheat blocker: \(technology ?? "missing")")
+        }
+        check(GameSupportPolicy.issues(packageFormat: nil, antiCheat: nil).count == 1
               && !GameSupportPolicy.issues(packageFormat: "MSIXVC / EAppx", antiCheat: "none").isEmpty
               && GameSupportPolicy.issues(packageFormat: "msixvc", antiCheat: " none ").isEmpty,
               "Missing or ambiguous formats fail closed; only a classified MSIXVC package is cleared")
@@ -83,6 +85,21 @@ enum LibraryAccessChecks {
         let working = String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "WORKING")
         check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verdict == .working,
               "An externally qualified WORKING record preserves its scoped evidence without granting Windows package admission")
+        check(MacGameEvidence.Verdict.gameplay.label == "Works on Mac"
+              && MacGameEvidence.Verdict.menu.label == "Starts, not yet playable"
+              && MacGameEvidence.Verdict.failed.label == "Doesn't start yet"
+              && decodedEvidence.games.first?.engineLabel == "Free Wine"
+              && decodedEvidence.games.first?.provenEngine == "synthetic",
+              "Cards use compact verdict/provider copy; only successful gameplay supplies automatic engine selection")
+        check(NativeGameForeground.matchesGameWindow("Hollow Knight", title: "Hollow Knight: Voidheart Edition")
+              && NativeGameForeground.matchesGameWindow("Hades II", title: "Hades II")
+              && !NativeGameForeground.matchesGameWindow("Wine System Tray", title: "Hades II")
+              && !NativeGameForeground.matchesGameWindow("Other game", title: ""),
+              "Foreground handoff targets the launched game's window, never unrelated Wine windows")
+        check(xodus_process_descends_from(getpid(), getppid()) == 1
+              && xodus_process_descends_from(getppid(), getpid()) == 0
+              && xodus_process_descends_from(0, 0) == 0,
+              "Foreground ancestry comes from same-user kernel process metadata, rejecting unrelated or invalid PIDs")
         check(GameLaunchArguments.parse(["--play-game", "FIXTURE00001"]) == .play("FIXTURE00001")
               && GameLaunchArguments.parse(["--play-game", "/tmp/game.exe"]) == nil
               && GameLaunchArguments.parse(["--play-game", "FIXTURE00001", "--fixture"]) == nil

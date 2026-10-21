@@ -107,6 +107,9 @@ struct LiveLibraryView: View {
         }.filter { isVisible($0) && (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)) }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
+    private var showsNativeMinecraft: Bool {
+        query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -120,15 +123,18 @@ struct LiveLibraryView: View {
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
-                if query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query) {
-                    NativeMinecraftCard()
-                }
-                if !classifiedGames.isEmpty {
+                if !classifiedGames.isEmpty || showsNativeMinecraft {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Classified and tested games").font(.title2.weight(.semibold))
                         Text("Package eligibility and observed Mac results. Game access is checked separately.")
                             .font(.callout).foregroundStyle(.secondary)
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
+                            if showsNativeMinecraft {
+                                NativeMinecraftCard {
+                                    CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
+                                        status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
+                                }
+                            }
                             ForEach(classifiedGames) { game in card(game) }
                         }
                     }
@@ -209,7 +215,7 @@ struct LiveLibraryView: View {
                         ContentUnavailableView {
                             Label("No games verified yet", systemImage: "gamecontroller")
                         } description: {
-                            Text("Ode to X 0.1 supports MSIXVC games classified without anti-cheat. Unclassified games stay hidden until checked.")
+                            Text("Ode to X 0.1 installs MSIXVC games. Known anti-cheat is not supported. The supported filter shows verified classifications; other games may be untested on Mac.")
                         } actions: {
                             Button("Show unsupported games") { showsUnsupportedGames = true }
                         }
@@ -328,7 +334,7 @@ struct LiveLibraryView: View {
                 await art.load(ids: heroGames.map(\.id) + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
                     .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
                     + gamePassHighlights.map(\.id).filter(PCGamesClient.validProductID)
-                    + editorialGames.map(\.id) + cataloguePreviewIDs + classifiedGames.map(\.id),
+                    + editorialGames.map(\.id) + cataloguePreviewIDs + classifiedGames.map(\.id) + ["9PJ8266BHFWN"],
                     market: session.market, language: session.language)
             }
             .padding(.horizontal, 56).padding(.vertical, 22)
@@ -735,6 +741,9 @@ struct LiveLibraryView: View {
                                     ?? art.images[artworkID]?.facts.packageFormat,
                                 allowsMeasurement: artworkAllowed)
             MacGameEvidenceView(record: macEvidence.games[artworkID])
+            if let match = game.installed {
+                InstalledPlayError(library: installed, game: match)
+            }
         } actions: {
             LibraryGlassCluster {
                 if let match = game.installed {
@@ -742,7 +751,8 @@ struct LiveLibraryView: View {
                         InstalledPlayButton(library: installed, operations: operations, game: match,
                                             usesGlass: true, prominent: false)
                     }
-                    InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
+                    InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true,
+                                         details: { open(game) })
                 } else if unsupportedReason(game) != nil {
                     EmptyView()
                 } else if let pc = game.pc {

@@ -523,9 +523,11 @@ struct InstalledGameActions: View {
     let game: InstalledGame
     var usesGlass = false
     var heroStyle = false
+    var details: (() -> Void)?
 
     var body: some View {
         Menu {
+            if let details { Button("Details", action: details) }
             InstalledGameManagement(library: library, operations: operations, game: game)
         } label: {
             if heroStyle {
