@@ -182,7 +182,13 @@ struct LiveProductView: View {
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     LibraryGlassCluster {
-                        if let installed {
+                        if !unsupportedIssues.isEmpty {
+                            LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: true)
+                            if let installed {
+                                InstalledGameActions(library: installedLibrary, operations: operations,
+                                                     game: installed, usesGlass: true)
+                            }
+                        } else if let installed {
                             if installedLibrary.placeholderIDs.contains(installed.id), let owned {
                                 Button {
                                     Task { await operations.repair(owned, installed: installed) }
@@ -198,33 +204,12 @@ struct LiveProductView: View {
                             }
                             InstalledGameActions(library: installedLibrary, operations: operations,
                                                  game: installed, usesGlass: true)
-                        } else if !unsupportedIssues.isEmpty {
-                            LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: true)
-                            Link("View in Microsoft Store",
-                                 destination: URL(string: "https://apps.microsoft.com/detail/\(product.id)")!)
-                                .modifier(LibraryActionStyle(primary: false))
                         } else if let owned {
-                            Button {
-                                Task { await operations.install(owned) }
-                            } label: {
-                                Label("Install", systemImage: "icloud.and.arrow.down")
-                            }
-                                .modifier(LibraryActionStyle())
-                                .disabled(!allowsStartupTasks || !library.accessIsCurrent || !operations.canStartMutation
-                                          || operations.compatibility[product.id]?.supported != true)
-                                .help("Install \(product.title)")
-                                .accessibilityLabel("Install \(product.title)")
+                            GameInstallAction(game: owned, operations: operations,
+                                              enabled: allowsStartupTasks && library.accessIsCurrent)
                         } else if canReviewGamePass {
-                            Button {
-                                Task { await operations.install(PCGame(product: product)) }
-                            } label: {
-                                Label("Install", systemImage: "icloud.and.arrow.down")
-                            }
-                            .modifier(LibraryActionStyle())
-                            .disabled(!allowsStartupTasks || !operations.canStartMutation || !canReviewGamePass
-                                      || operations.compatibility[product.id]?.supported != true)
-                            .help("Install \(product.title)")
-                            .accessibilityLabel("Install \(product.title)")
+                            GameInstallAction(game: PCGame(product: product), operations: operations,
+                                              enabled: allowsStartupTasks && canReviewGamePass)
                         } else if gamePass, !operations.usesUnifiedAccount {
                             Button {
                                 operations.checkGamePass(
@@ -240,9 +225,12 @@ struct LiveProductView: View {
                                   ? "Verify this account's current PC Game Pass download access."
                                   : "Refresh your PC library before checking Game Pass access.")
                         } else {
-                            Link("View in Microsoft Store",
-                                 destination: URL(string: "https://apps.microsoft.com/detail/\(product.id)")!)
-                                .modifier(LibraryActionStyle())
+                            Button("Install", systemImage: "icloud.and.arrow.down") {
+                                Task { await operations.install(PCGame(product: product)) }
+                            }
+                            .modifier(LibraryActionStyle())
+                            .disabled(true)
+                            .help("Current ownership or Game Pass access is required to install this game.")
                         }
                     }.controlSize(.large)
                     if installed == nil, operations.precheckingProductID == product.id {

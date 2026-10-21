@@ -8,8 +8,42 @@ enum LibraryAccessChecks {
         check(InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: false) == "View details",
               "An app-wide launch gate is not labelled as a broken game")
         check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
-              && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ $0.antiCheat == "unknown" }) == true,
-              "A sourced offline catalogue is bundled and never promotes other-store reports into anti-cheat clearance")
+              && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ !$0.antiCheat.isEmpty }) == true,
+              "A sourced offline catalogue is bundled with explicit anti-cheat classification fields")
+        check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "none").isEmpty,
+              "0.1 admits MSIXVC with explicit no-anti-cheat classification")
+        for format in ["MSIX", "Appx", "EAppx", "UWP", "Win32", "Unspecified", ""] {
+            check(GameSupportPolicy.issues(packageFormat: format, antiCheat: "none")
+                .contains(where: { $0.kind == .packageType }),
+                  "0.1 rejects non-MSIXVC package format: \(format)")
+        }
+        for technology in ["Easy Anti-Cheat", "BattlEye", "Vanguard", "unknown", "Unspecified", ""] {
+            let issues = GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: technology)
+            check(issues.contains(where: { $0.kind == .antiCheat }),
+                  "0.1 rejects anti-cheat or missing clearance: \(technology)")
+        }
+        check(GameSupportPolicy.issues(packageFormat: nil, antiCheat: nil).count == 2
+              && !GameSupportPolicy.issues(packageFormat: "MSIXVC / EAppx", antiCheat: "none").isEmpty
+              && GameSupportPolicy.issues(packageFormat: "msixvc", antiCheat: " none ").isEmpty,
+              "Missing or ambiguous formats fail closed; only a classified MSIXVC package is cleared")
+        for technology in [Optional("none"), "Easy Anti-Cheat", "unknown", nil] {
+            let field = technology.map { "\"antiCheat\":\"\($0)\"," } ?? ""
+            let database = try OfflineGameCompatibility.decode(Data("""
+                {"version":1,"checkedAt":"2026-10-21T00:00:00Z","market":"GB",
+                 "packageSource":"Microsoft catalog","antiCheatReference":"Evidence catalogue",
+                 "products":{"FIXTURE00001":{"packageFormat":"MSIXVC","pcPackageIdentified":true,
+                  \(field)"technologyReferences":[],"referencePlatforms":[]}}}
+                """.utf8))
+            let entry = database.products["FIXTURE00001"]
+            check(entry?.antiCheat == (technology ?? "unknown")
+                  && entry?.supported01 == (technology == "none"),
+                  "Catalogue loader accepts none, named and unknown anti-cheat; missing defaults to unknown: \(technology ?? "missing")")
+        }
+        check(GameSupportPolicy.packageFormat(observed: "Win32", classified: "MSIXVC") == "MSIXVC"
+              && GameSupportPolicy.packageFormat(observed: "Unknown", classified: "MSIXVC") == "MSIXVC"
+              && GameSupportPolicy.packageFormat(observed: "EAppx", classified: "MSIXVC") == "EAppx"
+              && GameSupportPolicy.packageFormat(observed: "Win32", classified: nil) == "Win32",
+              "An extracted PE application model never erases its classified source container; a real unsupported container still vetoes")
         check(OfflineGameCompatibility.publisherEvidence(for: "9NP1P1WFS0LB")?.technologies == ["Easy Anti-Cheat"]
               && OfflineGameCompatibility.publisherEvidence(for: "9NP1P1WFS0LB")?.scope.contains("Campaign") == true
               && OfflineGameCompatibility.publisherEvidence(for: "9PB301R051CQ")?.scope.contains("Windows") == true
@@ -64,9 +98,9 @@ enum LibraryAccessChecks {
         }
         check(!LibrarySupportVisibility.issues(productID: "C2KDNLT2H7DM", installed: true,
                   packageFormat: "Win32", compatibility: nil).isEmpty
-              && LibrarySupportVisibility.isVisible(productID: "C2KDNLT2H7DM", installed: true,
+              && !LibrarySupportVisibility.isVisible(productID: "C2KDNLT2H7DM", installed: true,
                   packageFormat: "Win32", compatibility: nil, showsUnsupportedGames: false),
-              "An installed game retains known anti-cheat evidence without disappearing from the library")
+              "The supported filter excludes installed anti-cheat games too")
         check(LibrarySupportVisibility.issues(productID: "FIXTURE00001", installed: true,
                   packageFormat: "EAppx", compatibility: nil).contains(where: { $0.kind == .packageType }),
               "Actual installed package evidence contributes a blocker, not a fabricated success")

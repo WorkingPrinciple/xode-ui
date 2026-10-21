@@ -600,13 +600,13 @@ enum PreviewChecks {
             check(!LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: false,
                     packageFormat: "EAppx",
                     compatibility: nil, showsUnsupportedGames: false) &&
-                  LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: true,
+                  !LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: true,
                     packageFormat: "EAppx",
                     compatibility: antiCheat, showsUnsupportedGames: false) &&
-                  LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: false,
+                  !LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: false,
                     packageFormat: "MSIXVC / EAppx",
                     compatibility: nil, showsUnsupportedGames: false),
-                  "EAppx-only games hide before install, while installed and mixed-format titles remain reachable")
+                  "Supported-only excludes unsupported installations and unclassified anti-cheat even for mixed packages")
             check(LibraryCompatibilityRegistry.issues(productID: "C2KDNLT2H7DM")
                     .map(\.kind) == [.antiCheat]
                   && !LibrarySupportVisibility.isVisible(productID: "C2KDNLT2H7DM", installed: false,

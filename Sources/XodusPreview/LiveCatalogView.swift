@@ -66,6 +66,7 @@ struct LiveCatalogView: View {
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @StateObject private var selection = DiscoverSelection()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     let query: String
     var allowsArtworkLoading = true
     var allowsStartupTasks = true
@@ -79,8 +80,13 @@ struct LiveCatalogView: View {
     }
     private var facts: [String: LibraryCatalogFacts] { art.images.mapValues(\.facts) }
     private var genres: [String] { DiscoverBrowse.genres(products: results.storeProducts, facts: facts) }
-    private var visible: [CatalogProduct] {
+    private var visibleCandidates: [CatalogProduct] {
         DiscoverBrowse.visible(products: results.storeProducts, facts: facts, genre: query.isEmpty ? selection.genre : nil)
+    }
+    private var visible: [CatalogProduct] { visibleCandidates.filter { isVisible(game($0)) } }
+    private var ownedMatches: [PCGame] { results.ownedMatches.filter { isVisible(game($0)) } }
+    private var hiddenUnsupportedCount: Int {
+        visibleCandidates.count - visible.count + results.ownedMatches.count - ownedMatches.count
     }
     private var canRefresh: Bool {
         allowsStartupTasks && session.isReady && (session.supports(.search)
@@ -111,14 +117,14 @@ struct LiveCatalogView: View {
                     if !genres.isEmpty { browseGenres }
                 } else {
                     Text("Results for \"\(query)\"").font(.largeTitle.bold())
-                    if !results.ownedMatches.isEmpty {
+                    if !ownedMatches.isEmpty {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Your games").font(.title2.weight(.semibold))
                             if library.error != nil || library.busy {
                                 Text("Showing your last complete PC library.").font(.callout).foregroundStyle(.secondary)
                             }
                             LazyVGrid(columns: columns, spacing: 28) {
-                                ForEach(results.ownedMatches) { card(game($0)) }
+                                ForEach(ownedMatches) { card(game($0)) }
                             }
                         }
                     }
@@ -127,6 +133,8 @@ struct LiveCatalogView: View {
                     HStack {
                         Text(storeHeading).font(.title2.weight(.semibold))
                         Spacer()
+                        LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount,
+                                           showsUnsupportedGames: $showsUnsupportedGames)
                         if session.searching {
                             ProgressView().controlSize(.small).accessibilityLabel("Searching for games")
                             Button("Stop search") { session.stopCatalogSearch() }
@@ -145,7 +153,7 @@ struct LiveCatalogView: View {
                         LazyVGrid(columns: columns, spacing: 28) {
                             ForEach(visible) { card(game($0)) }
                         }
-                    } else if results.ownedMatches.isEmpty {
+                    } else if ownedMatches.isEmpty {
                         unavailable
                     } else if !session.searching && session.catalogError == nil {
                         Text(DiscoverCopy.noOtherGames(query)).foregroundStyle(.secondary)
@@ -334,10 +342,13 @@ struct LiveCatalogView: View {
     private func card(_ game: LibraryGame) -> some View {
         let cover = art.images[game.id]?.cover ?? game.cover
         return LibraryCover(title: game.title, openLabel: "View",
-                            alwaysShowsActions: game.installed != nil, open: { open(game) }) {
+                            alwaysShowsActions: true, open: { open(game) }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
+            if !unsupportedIssues(game).isEmpty {
+                LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
+            }
             LibraryGameInformation(access: LibraryAccess(game), gamePass: game.gamePass,
                                    facts: facts[game.id], compact: true)
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
@@ -363,43 +374,42 @@ struct LiveCatalogView: View {
         }
     }
 
+    private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
+        LibrarySupportVisibility.issues(productID: game.id, installed: game.installed != nil,
+            packageFormat: game.installed?.packageType?.label ?? facts[game.id]?.packageFormat,
+            compatibility: operations.compatibility[game.id])
+    }
+
+    private func isVisible(_ game: LibraryGame) -> Bool {
+        showsUnsupportedGames || unsupportedIssues(game).isEmpty
+    }
+
     @ViewBuilder private func actions(_ game: LibraryGame, primary: Bool) -> some View {
-        if let match = game.installed {
+        if !unsupportedIssues(game).isEmpty {
+            if primary { LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true) }
+        } else if let match = game.installed {
             InstalledPlayButton(library: installed, operations: operations, game: match,
                                 usesGlass: true, prominent: primary)
-        } else if canReviewInstall(game) {
-            Button {
-                if let pc = game.pc { Task { await operations.install(pc) } }
-                else if let product = game.product { Task { await operations.install(PCGame(product: product)) } }
-            } label: {
-                if game.pc != nil {
-                    if primary {
-                        Label("Install", systemImage: "icloud.and.arrow.down")
-                    } else {
-                        Image(systemName: "icloud.and.arrow.down").accessibilityHidden(true)
-                    }
-                } else {
-                    Label("Install", systemImage: "icloud.and.arrow.down")
-                }
-            }
-            .modifier(LibraryActionStyle(primary: primary))
-            .help("Install \(game.title)")
-            .disabled(!allowsStartupTasks || !operations.canStartMutation)
-            .accessibilityLabel("Install \(game.title)")
-            .accessibilityIdentifier(game.owned ? "xodus.pcGames.download" : "xodus.pcGames.install")
+        } else if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
+            GameInstallAction(game: pc, operations: operations,
+                              enabled: allowsStartupTasks && canReviewInstall(game), primary: primary)
         }
     }
 
     private var unavailable: some View {
         ContentUnavailableView {
-            Label(validEmptySearch ? DiscoverCopy.noResults(query)
+            Label(hiddenUnsupportedCount > 0 ? "No supported games to show"
+                  : validEmptySearch ? DiscoverCopy.noResults(query)
                   : selection.genre != nil && query.isEmpty ? "No games in this genre" : session.catalogEmptyTitle,
                   systemImage: "magnifyingglass")
         } description: {
-            Text(validEmptySearch ? DiscoverCopy.emptyDescription
+            Text(hiddenUnsupportedCount > 0
+                 ? "Ode to X 0.1 supports MSIXVC games classified without anti-cheat. Show unsupported games to see each reason."
+                 : validEmptySearch ? DiscoverCopy.emptyDescription
                  : selection.genre != nil && query.isEmpty ? "Choose another genre from the loaded selection."
                  : session.catalogMessage(query: query, canRefresh: canRefresh))
         } actions: {
+            if hiddenUnsupportedCount > 0 { Button("Show unsupported games") { showsUnsupportedGames = true } }
             if selection.genre != nil { Button("All genres") { selection.genre = nil } }
             if !session.isReady, allowsStartupTasks { Button("Settings", action: openSettings.callAsFunction) }
             if !query.isEmpty { Button("Clear Search", action: clearSearch) }

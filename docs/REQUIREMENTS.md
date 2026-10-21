@@ -2,6 +2,33 @@
 
 Status: **proposed v1 requirements**, not implemented functionality. "Must" below is a release gate. The current preview demonstrates only the subset listed in [verification](VERIFICATION.md).
 
+## Ode to X 0.1 support and actions
+
+0.1 admits only MSIXVC packages whose offline compatibility record explicitly
+classifies anti-cheat as `none`. MSIX, Appx, EAppx and unclassified titles are
+not supported yet. A live negative compatibility check can add a blocker;
+a positive install check never substitutes for missing classification.
+The existing `CompatibilityData` catalogue owns these facts. Other-store
+technology references are not clearance for the Microsoft Store package.
+
+Library and Discover share the supported-only filter, including installed
+titles. "Show unsupported games" restores excluded games with a visible
+"Not supported yet" label and package-format or anti-cheat reason, never a
+Play action. Installed unsupported games remain removable and uninstallable.
+Supported uninstalled titles use Install, not an external Store link; access
+and the account-bound runtime still govern whether it is enabled.
+
+Tile and detail installation controls share preparation, byte progress,
+cancellation and failure/retry presentation. Installed actions retain Repair,
+Uninstall and the distinct non-destructive Remove from list. Update is offered
+only when an actual newer version has been supplied; missing version data is
+not an update claim.
+
+The unified-account lifecycle integration and real CLI-then-app acceptance are
+not established by source checks. The legacy independently authenticated game
+scripts remain fenced until the matching service/CLI contract is admitted.
+No fixture render or synthetic operation check counts as real game acceptance.
+
 ## Core journey
 
 | ID | Requirement | Measurable acceptance |

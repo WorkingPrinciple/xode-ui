@@ -85,7 +85,7 @@ struct LiveLibraryView: View {
         passCollections.collections.filter { $0.isUpcoming || $0.isBenefits }.flatMap { $0.products.map(\.id) }
     }
     private var continuing: [InstalledGame] {
-        LibraryGame.continuing(LibraryGame.visible(collection, query: query, filter: filter, sort: sort),
+        LibraryGame.continuing(LibraryGame.visible(collection, query: query, filter: filter, sort: sort).filter(isVisible),
                               launchableIDs: installed.launchableIDs)
     }
     private var localRecords: [LibraryGame] {
@@ -170,7 +170,15 @@ struct LiveLibraryView: View {
                 if let category = selectedPreviewCollection {
                     cataloguePreviewShelf(category)
                 } else if visible.isEmpty {
-                    if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    if hiddenUnsupportedCount > 0, !showsUnsupportedGames {
+                        ContentUnavailableView {
+                            Label("No supported games to show", systemImage: "gamecontroller")
+                        } description: {
+                            Text("Ode to X 0.1 supports MSIXVC games classified without anti-cheat. Unclassified games stay hidden until checked.")
+                        } actions: {
+                            Button("Show unsupported games") { showsUnsupportedGames = true }
+                        }
+                    } else if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         ContentUnavailableView.search(text: query)
                     } else if filter == .gamePass {
                         ContentUnavailableView {
@@ -417,22 +425,22 @@ struct LiveLibraryView: View {
                                 packageFormat: art.images[id]?.facts.packageFormat,
                                 allowsMeasurement: artworkAllowed)
         } actions: {
-            if game.pc == nil {
-                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: true))
+            if !unsupportedIssues(game).isEmpty {
+                LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true)
+                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else if let match = game.installed {
                 InstalledPlayButton(library: installed, operations: operations, game: match,
                                     usesGlass: true, heroStyle: true, attention: { open(game) })
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
-            } else if !unsupportedIssues(game).isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true)
-                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else {
-                Button {
-                    if let pc = game.pc { Task { await operations.install(pc) } }
-                } label: { Label("Install", systemImage: "icloud.and.arrow.down") }
-                .modifier(LibraryActionStyle(primary: true))
-                .disabled(game.pc == nil || !allowsStartupTasks || !operations.canStartMutation)
+                if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
+                    GameInstallAction(game: pc, operations: operations,
+                        enabled: allowsStartupTasks && DiscoverBrowse.canReviewInstall(
+                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent,
+                            gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
+                            pcCandidate: true))
+                }
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
                 if operations.precheckingProductID == game.id {
                     ProgressView().controlSize(.small).help("Checking whether this game runs on Mac")
@@ -461,10 +469,10 @@ struct LiveLibraryView: View {
 
     private func isVisible(_ game: LibraryGame) -> Bool {
         LibrarySupportVisibility.isVisible(
-            productID: game.id,
+            productID: game.installed?.storeId ?? game.id,
             installed: game.installed != nil,
-            packageFormat: art.images[game.id]?.facts.packageFormat,
-            compatibility: operations.compatibility[game.id],
+            packageFormat: game.installed?.packageType?.label ?? art.images[game.id]?.facts.packageFormat,
+            compatibility: operations.compatibility[game.installed?.storeId ?? game.id],
             showsUnsupportedGames: showsUnsupportedGames
         )
     }
@@ -673,7 +681,7 @@ struct LiveLibraryView: View {
         let artworkID = game.installed?.storeId ?? game.id
         return LibraryCover(title: game.title,
                      openLabel: "View",
-                     alwaysShowsActions: game.installed != nil,
+                     alwaysShowsActions: true,
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
@@ -706,37 +714,15 @@ struct LiveLibraryView: View {
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
                 } else if unsupportedReason(game) != nil {
                     EmptyView()
-                } else if game.pc != nil {
-                    Button {
-                        if let pc = game.pc { Task { await operations.install(pc) } }
-                        else if let product = game.product {
-                            Task { await operations.install(PCGame(product: product)) }
-                        }
-                    } label: {
-                        Label("Install", systemImage: "icloud.and.arrow.down")
-                    }
-                    .labelStyle(.iconOnly)
-                    .help("Install \(game.title)")
-                    .modifier(LibraryActionStyle(primary: false))
-                    .disabled(!allowsStartupTasks || !operations.canStartMutation)
-                    .accessibilityLabel("Install \(game.title)")
-                    .accessibilityIdentifier("xodus.pcGames.download")
-                } else if game.gamePass {
-                    Button {
-                        if let product = game.product {
-                            Task { await operations.install(PCGame(product: product)) }
-                        }
-                    } label: {
-                        Label("Install", systemImage: "icloud.and.arrow.down")
-                    }
-                    .modifier(LibraryActionStyle(primary: false))
-                    .disabled(!allowsStartupTasks || !operations.canStartMutation ||
-                        !DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
+                } else if let pc = game.pc {
+                    GameInstallAction(game: pc, operations: operations,
+                        enabled: allowsStartupTasks && library.accessIsCurrent, primary: false)
+                } else if game.gamePass, let product = game.product {
+                    GameInstallAction(game: PCGame(product: product), operations: operations,
+                        enabled: allowsStartupTasks &&
+                        DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
                             gamePass: true, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: game.product?.pcCatalogCandidate == true))
-                    .help("Install \(game.title)")
-                    .accessibilityLabel("Install \(game.title)")
-                    .accessibilityIdentifier("xodus.pcGames.install")
+                            pcCandidate: product.pcCatalogCandidate), primary: false)
                 }
             }
         }

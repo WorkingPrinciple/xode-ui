@@ -118,11 +118,14 @@ struct InstalledUpdateBadge: View {
                 Spacer()
                 Button("Update") {
                     Task {
-                        await operations.prepareInstall(
-                            PCGame(id: game.storeId, title: game.title, artwork: nil), repairing: game)
+                        await operations.repair(
+                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game)
                     }
                 }
-                .disabled(!operations.canStartMutation || library.runningGameID == game.id)
+                .disabled(!operations.canStartMutation || library.runningGameID == game.id
+                          || !LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
+                              packageFormat: game.packageType?.label,
+                              compatibility: operations.compatibility[game.storeId]).isEmpty)
                 .accessibilityIdentifier("xodus.installed.update")
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -234,7 +237,27 @@ struct InstalledPlayButton: View {
         (library.runningGameID == game.id && library.launchStarted) || library.stoppingGameID == game.id
     }
 
-    var body: some View {
+    private var unsupportedIssues: [LibraryCompatibilityIssue] {
+        LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
+            packageFormat: game.packageType?.label, compatibility: operations.compatibility[game.storeId])
+    }
+
+    @ViewBuilder var body: some View {
+        if operations.operation?.productID == game.storeId
+            || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
+            GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
+                              operations: operations, enabled: false, primary: prominent)
+        } else if !canStop, !launching, !unsupportedIssues.isEmpty {
+            LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: heroStyle)
+        } else {
+            actionButton
+            if library.updateStatus(for: game).hasUpdate {
+                Label("Update available", systemImage: "arrow.down.circle").font(.caption)
+            }
+        }
+    }
+
+    @ViewBuilder private var actionButton: some View {
         Button {
             if opensAttention { attention?() }
             else if canStop { operations.stop(game) }

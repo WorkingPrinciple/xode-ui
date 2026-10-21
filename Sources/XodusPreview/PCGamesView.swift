@@ -172,6 +172,14 @@ struct PCGameTile: View {
     var viewDetails: (() -> Void)?
     var accessIsCurrent = true
 
+    private var unsupportedIssues: [LibraryCompatibilityIssue] {
+        LibrarySupportVisibility.issues(productID: game.id,
+            installed: PCGamesController.installedMatch(game, in: installed.games) != nil,
+            packageFormat: PCGamesController.installedMatch(game, in: installed.games)?.packageType?.label
+                ?? catalog.images[game.id]?.facts.packageFormat,
+            compatibility: operations.compatibility[game.id])
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             CatalogArtworkView(reference: allowsArtworkLoading ? game.artwork : nil,
@@ -186,20 +194,14 @@ struct PCGameTile: View {
                      : "Saved library - refresh required")
                     .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             }
-            if let match = PCGamesController.installedMatch(game, in: installed.games) {
+            if !unsupportedIssues.isEmpty {
+                LibraryCompatibilityIndicators(issues: unsupportedIssues)
+            } else if let match = PCGamesController.installedMatch(game, in: installed.games) {
                 InstalledPlayButton(library: installed, operations: operations, game: match)
                 InstalledPlayError(library: installed, game: match)
             } else {
                 Text("Not installed").font(.callout).foregroundStyle(.secondary)
-                Button {
-                    Task { await operations.install(game) }
-                } label: {
-                    Label("Install", systemImage: "icloud.and.arrow.down")
-                }
-                    .disabled(!accessIsCurrent || !operations.canStartMutation)
-                    .help("Install \(game.title)")
-                    .accessibilityLabel("Install \(game.title)")
-                    .accessibilityIdentifier("xodus.pcGames.download")
+                GameInstallAction(game: game, operations: operations, enabled: accessIsCurrent)
             }
             LibraryGameSizeView(installed: PCGamesController.installedMatch(game, in: installed.games),
                                 downloadBytes: catalog.images[game.id]?.facts.downloadBytes,

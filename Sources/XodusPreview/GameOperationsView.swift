@@ -326,6 +326,66 @@ struct GameOperationProgressView: View {
     }
 }
 
+struct GameInstallAction: View {
+    let game: PCGame
+    @ObservedObject var operations: GameOperationsController
+    var enabled = true
+    var primary = true
+    private var preparing: Bool {
+        operations.installingDirectly && operations.directInstallProductID == game.id
+    }
+    private var active: Bool { operations.operation?.productID == game.id }
+    private var failed: Bool {
+        operations.feedbackProductID == game.id && operations.error != nil
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if preparing || active {
+                Text(operations.cancelling || operations.directInstallCancelled ? "Stopping"
+                     : preparing ? "Preparing installation"
+                     : operations.operation?.kind == .uninstall ? "Uninstalling"
+                     : operations.operation?.kind == .repair ? "Repairing" : "Installing")
+                    .font(.callout.weight(.semibold))
+                if active, let progress = operations.progress, let total = progress.bytesTotal, total > 0 {
+                    ProgressView(value: Double(progress.bytesDone), total: Double(total))
+                        .accessibilityLabel("Installation progress for \(game.title)")
+                    Text("\(GameOperationProgressView.bytes(progress.bytesDone)) of \(GameOperationProgressView.bytes(total))")
+                        .font(.caption)
+                } else {
+                    ProgressView().controlSize(.small)
+                        .accessibilityLabel("Preparing \(game.title)")
+                }
+                if preparing || operations.canCancel {
+                    Button("Cancel") {
+                        Task {
+                            if preparing { await operations.cancelInstallConsent() }
+                            else { await operations.cancelInstall() }
+                        }
+                    }
+                    .disabled(operations.cancelling || operations.directInstallCancelled)
+                    .accessibilityLabel("Cancel installation of \(game.title)")
+                }
+            } else {
+                Button {
+                    Task { await operations.install(game) }
+                } label: {
+                    Label(failed ? "Retry installation" : "Install", systemImage: "icloud.and.arrow.down")
+                }
+                .modifier(LibraryActionStyle(primary: primary))
+                .disabled(!enabled || !operations.canStartMutation)
+                .help("Install \(game.title)")
+                .accessibilityLabel("\(failed ? "Retry installation of" : "Install") \(game.title)")
+                .accessibilityIdentifier("xodus.pcGames.download")
+                if failed {
+                    Label("Installation needs attention", systemImage: "exclamationmark.circle")
+                        .font(.caption)
+                }
+            }
+        }
+    }
+}
+
 struct GameInstallConsentView: View {
     @ObservedObject var operations: GameOperationsController
     let consent: GameInstallConsent
@@ -475,11 +535,19 @@ struct InstalledGameManagement: View {
 
     var body: some View {
         Group {
-            Button("Check for update / Repair") {
-                Task { await operations.prepareInstall(PCGame(id: game.storeId, title: game.title, artwork: nil),
-                                                        repairing: game) }
+            if library.updateStatus(for: game).hasUpdate {
+                Button("Update") {
+                    Task { await operations.repair(PCGame(id: game.storeId, title: game.title, artwork: nil),
+                                                  installed: game) }
+                }
+                .disabled(!canRepair)
+                .accessibilityIdentifier("xodus.installed.update")
             }
-            .disabled(!operations.canStartMutation || library.runningGameID == game.id)
+            Button("Repair") {
+                Task { await operations.repair(PCGame(id: game.storeId, title: game.title, artwork: nil),
+                                              installed: game) }
+            }
+            .disabled(!canRepair)
             .accessibilityIdentifier("xodus.installed.repair")
             Button("Remove from list") { Task { await library.remove(game) } }
                 .disabled(library.editing || library.choosing || library.mutationActive || library.runningGameID == game.id)
@@ -489,5 +557,12 @@ struct InstalledGameManagement: View {
                 .disabled(!operations.canStartMutation || library.runningGameID == game.id)
                 .accessibilityIdentifier("xodus.installed.uninstall")
         }
+    }
+
+    private var canRepair: Bool {
+        operations.canStartMutation && library.runningGameID != game.id
+            && LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
+                packageFormat: game.packageType?.label,
+                compatibility: operations.compatibility[game.storeId]).isEmpty
     }
 }

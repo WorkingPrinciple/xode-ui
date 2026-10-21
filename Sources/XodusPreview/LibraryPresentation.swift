@@ -229,7 +229,7 @@ struct LibraryControls: View {
     }
 }
 
-private struct LibrarySupportMenu: View {
+struct LibrarySupportMenu: View {
     let hiddenCount: Int
     @Binding var showsUnsupportedGames: Bool
 
@@ -245,7 +245,7 @@ private struct LibrarySupportMenu: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("Shows uninstalled EAppx/UWP games and titles rejected by compatibility checks, including known anti-cheat blockers.")
+        .help("When off, shows only MSIXVC games classified without anti-cheat. Unclassified games are not treated as supported.")
         .accessibilityIdentifier("xodus.library.showUnsupported")
     }
 }
@@ -253,18 +253,13 @@ private struct LibrarySupportMenu: View {
 enum LibrarySupportVisibility {
     static func issues(productID: String, installed: Bool, packageFormat: String?,
                        compatibility: GameCompatibilityResult?) -> [LibraryCompatibilityIssue] {
-        var issues = LibraryCompatibilityRegistry.issues(productID: productID)
-        let observedFormat = packageFormat ?? OfflineGameCompatibility.snapshot?.products[productID]?.packageFormat
-        let families = observedFormat?.split(separator: "/").map {
-            $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        }.filter { !$0.isEmpty } ?? []
-        if !families.isEmpty, families.allSatisfy({ ["eappx", "eappxbundle", "uwp"].contains($0) }) {
-            issues.append(LibraryCompatibilityIssue(
-                kind: .packageType,
-                title: observedFormat ?? "EAppx/UWP",
-                detail: "This Store package uses EAppx/UWP, which Ode to X can't install yet.",
-                source: nil
-            ))
+        let offline = OfflineGameCompatibility.snapshot?.products[productID]
+        var issues = GameSupportPolicy.issues(
+            packageFormat: GameSupportPolicy.packageFormat(observed: packageFormat, classified: offline?.packageFormat),
+                                             antiCheat: offline?.antiCheat)
+        for issue in LibraryCompatibilityRegistry.issues(productID: productID) {
+            issues.removeAll { $0.kind == issue.kind }
+            issues.append(issue)
         }
         if let compatibility, !compatibility.supported {
             let kind: LibraryCompatibilityIssueKind = compatibility.category == .antiCheatUnsupported
@@ -289,7 +284,7 @@ enum LibrarySupportVisibility {
 
     static func isVisible(productID: String, installed: Bool, packageFormat: String?,
                           compatibility: GameCompatibilityResult?, showsUnsupportedGames: Bool) -> Bool {
-        installed || showsUnsupportedGames || issues(productID: productID, installed: installed, packageFormat: packageFormat,
+        showsUnsupportedGames || issues(productID: productID, installed: installed, packageFormat: packageFormat,
                                        compatibility: compatibility).isEmpty
     }
 }
@@ -327,9 +322,10 @@ struct GameCompatibilityFacts: View {
             LabeledContent("Windows PC package",
                            value: packageListing == true ? "Found in Microsoft catalog"
                            : packageListing == false ? "Not found in catalog data" : "Not verified")
-            LabeledContent("Package", value: packageFormat ?? offline?.packageFormat ?? "Not identified")
+            LabeledContent("Package", value: GameSupportPolicy.packageFormat(
+                observed: packageFormat, classified: offline?.packageFormat) ?? "Not identified")
             LabeledContent("Anti-cheat", value: issues.first(where: { $0.kind == .antiCheat })?.title
-                           ?? publisherEvidence?.technologies.joined(separator: ", ") ?? "Not verified")
+                           ?? offline?.antiCheat ?? publisherEvidence?.technologies.joined(separator: ", ") ?? "Not verified")
             LabeledContent("Ode install check", value: !issues.isEmpty ? "Known blocker"
                            : checking ? "Checking" : compatibility?.supported == true
                            ? "Passed; install review still required" : "Not verified")
@@ -660,13 +656,14 @@ struct LibraryCompatibilityIndicators: View {
     var heroStyle = false
 
     var body: some View {
-        HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Not supported yet").font(.callout.weight(.semibold))
             ForEach(issues) { issue in
-                Image(systemName: issue.kind.symbol)
-                    .font(heroStyle ? .title3.weight(.semibold) : .callout.weight(.medium))
+                Label(issue.title, systemImage: issue.kind.symbol)
+                    .font(.callout)
                     .foregroundStyle(heroStyle ? Color.white.opacity(0.92) : .secondary)
                     .shadow(color: heroStyle ? .black.opacity(0.5) : .clear, radius: 3, y: 1)
-                    .frame(width: 28, height: 28)
+                    .fixedSize(horizontal: false, vertical: true)
                     .help("\(issue.title): \(issue.detail)")
                     .accessibilityLabel("\(issue.title). \(issue.detail)")
             }
