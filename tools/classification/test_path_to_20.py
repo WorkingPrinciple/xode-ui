@@ -10,6 +10,19 @@ class PathTo20Tests(unittest.TestCase):
     def setUp(self):
         self.packet = load_json(OUTPUT)
 
+    def test_dishonored_original_gameplay_claim_is_superseded(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T19:00:00+00:00"
+        reports = inputs["ownerVerdicts"]["snapshot"]
+        self.assertTrue(all("verdict" not in row for row in reports["queueAdditions"]["items"]))
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9P1N07XDL1D4")
+        self.assertFalse(row["strictWorking"])
+        self.assertEqual(row["gates"]["gameplay"]["status"], "unknown")
+        for gate in ("save", "relaunch", "quit"):
+            self.assertEqual(row["gates"][gate]["status"], "passed")
+        self.assertIn("superseding ORIGINAL gameplay claim", row["scope"])
+
     def test_reproduction_and_admitted_count_without_candidate_inflation(self):
         self.assertEqual(build(self.packet["collectionInputs"], self.packet), self.packet)
         admitted = sum(row["verdict"] == "WORKING" for row in

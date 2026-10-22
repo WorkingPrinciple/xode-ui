@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T23:46:51.357038+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-22T23:56:55.743263+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -26,7 +26,7 @@ Updated 2026-10-22T23:46:51.357038+00:00; **12/20 strict WORKING**. Title qualif
 | DOOM 64 | INCONCLUSIVE_START_INPUT_NO_TRANSITION | passed | ? | not passed | not passed | not passed | Start input attribution hold / S1/S2/coordinator | 4f061291 Escape100 exposed Start; Enter100 never transitioned, then DEMO. Forced stop295.517533875s/exact-k0/-w0 despiteCLI0/Wine0, NOT ordinary quit. No auth verdict, gameplay, save, reload or retry. | - |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Dishonored Definitive Edition | RETAINED_WORLD_ORDINARY_QUIT_MOVEMENT_UNATTRIBUTED | ? | ? | ? | ? | ? | menu / S2/S3 | Required attributable movement unproven; no full WORKING assertion. Retained world and ordinary actual BackToWindowsYes established: quitbegin322.724<420,exit566.942<600,CLI0/Wine0,no force,cleanup-k1/-w0,prefixStopped. 88runfiles/67raw/21screens verified. Original world77run/56raw and failed300s reload87run/66raw unchanged. No retry/extra world; screen released S2 for separate REPLACED passive. | >2h |
+| Dishonored Definitive Edition | INCONCLUSIVE_GAMEPLAY_NOT_ESTABLISHED | passed | ? | passed | passed | passed | controllable gameplay / S3/coordinator | Original c489 W100 gameplay assertion superseded: world/reload frames show boat rails/helm seated state and NPC exiting right, no actual movement or unseated frame. Manual save/load and ordinary exits do not establish WORKING. | - |
 | Dome Keeper | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | FINAL FANTASY IV | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Opening-sequence bound: Escape477.47s exposed no quit. Actual900s cap/CLI1/Wine0, forced exact-k0/-w0. Before/after raw title roots including explicitly mapped host title folder archived. No reload/retry or compatibility FAIL. | - |
 | Fable | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
@@ -44,7 +44,7 @@ Updated 2026-10-22T23:46:51.357038+00:00; **12/20 strict WORKING**. Title qualif
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | owned matcher packet disk precheck / S2 | Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result. | - |
 | Quake | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | HUMAN_CONSENT_HOLD. Exact-prefix forced-k0/-w0 at160.058s;CLI0/Wine0 not ordinary quit,5812 reconciled descriptive consent attribution. 30runfiles/8raw/3screens verified;0nonemptyxgs. Runtime save-fix untested, not FAIL. User alone decides agreement, no retry/reload. Historical100ms campaign/GAME SAVED/post-save input failure and earlier late quit retained unchanged. | - |
-| REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
+| REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Historical nonacquiring package entitlement GRANTED receipt32119200, not game qualification. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Skyrim Special Edition | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Directexe spontaneouslyexits5/5 in17.58s. COM80040154 remainsnoncausal logevidence. Exactprefixstopped; no additionalretry. | >2h |

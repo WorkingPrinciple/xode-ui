@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T23:46:51.462043+00:00",
+  "checkedAt": "2026-10-22T23:56:55.859584+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 12,
@@ -31,7 +31,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "97fb6da76e86ec309704d4539be9cfddd493f67a30b675afa47ce63f170c1810"
+      "sha256": "9467ec3d8a5d85b1d2e5a67f2a00e84ff4575a187673a5323661f53e5d56ea40"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -218,7 +218,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Queued for actual game test.",
+      "blocker": "Historical nonacquiring package entitlement GRANTED receipt32119200, not game qualification.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -853,7 +853,7 @@
       "rank": 20,
       "storeId": "9P1N07XDL1D4",
       "title": "Dishonored Definitive Edition",
-      "verdict": "RETAINED_WORLD_ORDINARY_QUIT_MOVEMENT_UNATTRIBUTED",
+      "verdict": "INCONCLUSIVE_GAMEPLAY_NOT_ESTABLISHED",
       "installState": "complete; fresh read-only install-status 2026-10-22T19:58:57.754873+00:00",
       "downloadSizeBytes": 17511350272,
       "planningBudgetBytes": 17511350272,
@@ -862,7 +862,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "CrossOver candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Required attributable movement unproven; no full WORKING assertion. Retained world and ordinary actual BackToWindowsYes established: quitbegin322.724<420,exit566.942<600,CLI0/Wine0,no force,cleanup-k1/-w0,prefixStopped. 88runfiles/67raw/21screens verified. Original world77run/56raw and failed300s reload87run/66raw unchanged. No retry/extra world; screen released S2 for separate REPLACED passive.",
+      "blocker": "Original c489 W100 gameplay assertion superseded: world/reload frames show boat rails/helm seated state and NPC exiting right, no actual movement or unseated frame. Manual save/load and ordinary exits do not establish WORKING.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
