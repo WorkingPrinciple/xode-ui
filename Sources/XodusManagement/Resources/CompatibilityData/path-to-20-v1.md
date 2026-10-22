@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T20:51:44.237349+00:00; **10/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T20:53:19.058603+00:00; **10/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -61,7 +61,7 @@ Full blockers, source hashes and packet references are in `path-to-20-v1.json`. 
 
 ## Retained attempt evidence
 
-Audit 2026-10-22T20:51:46.556752+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
+Audit 2026-10-22T20:52:59.397866+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
 
 Coverage: 27 titles, 141 launch-result attempts, 5 unresolved references; 2759 present / 153 missing artifact links. This is bounded discovery, not a complete historical archive.
 

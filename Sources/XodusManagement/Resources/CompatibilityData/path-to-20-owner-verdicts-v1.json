@@ -106,6 +106,12 @@
       "reportedAt": "2026-10-22T20:47:32+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
       "runId": "a27be511",
+      "finalIntegrity": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-tunic-full-01/reload-cli68f-01-evidence/integrity.json",
+        "sha256": "bb783401216e821f064d9c05833cb95b1c3c6be130395db083e410844cc59339",
+        "supersededSha256": "8f43fc649e9243af27eb0e7bda3f01f33f069ea648a8ec4e5231abed3e19ab7c",
+        "basis": "S3 finalized retention-result and coordinator admission at same paths; prior integrity version historical, not the current file."
+      },
       "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "relaunch": "passed", "save": "passed"},
       "nextGate": "complete",
       "ownerStream": "S3",
