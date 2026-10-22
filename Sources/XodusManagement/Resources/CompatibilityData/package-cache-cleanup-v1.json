@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-22T01:37:15.041410+00:00",
+  "finishedAt": "2026-10-22T01:37:15.574563+00:00",
+  "authorization": "Coordinator exact package-manager download-cache approval after read-only measurement",
+  "deleted": [
+    {
+      "path": "/Users/dragoshont/Library/Caches/Homebrew/downloads",
+      "allocatedBytesBefore": 3318738944,
+      "class": "Explicit coordinator-approved regenerable package-manager download cache"
+    },
+    {
+      "path": "/Users/dragoshont/Library/Caches/pip",
+      "allocatedBytesBefore": 395190272,
+      "class": "Explicit coordinator-approved regenerable package-manager download cache"
+    },
+    {
+      "path": "/Users/dragoshont/Library/Caches/org.swift.swiftpm/repositories",
+      "allocatedBytesBefore": 237674496,
+      "class": "Explicit coordinator-approved regenerable package-manager download cache"
+    }
+  ],
+  "freeBytesBefore": 168408829952,
+  "freeBytesAfter": 172124160000,
+  "observedFreeDeltaBytes": 3715330048,
+  "appBrowserOdeEngineXcodeCachesDeleted": false,
+  "payloadsPrefixesSavesEvidenceDeleted": false,
+  "notPresentAtApprovedLocation": [
+    "/Users/dragoshont/Library/Caches/npm/_cacache",
+    "/Users/dragoshont/Library/Caches/Yarn",
+    "/Users/dragoshont/Library/Caches/go-build"
+  ],
+  "caveat": "Shared APFS free delta may differ from du allocated bytes; no other home-directory cache locations inspected/deleted."
+}

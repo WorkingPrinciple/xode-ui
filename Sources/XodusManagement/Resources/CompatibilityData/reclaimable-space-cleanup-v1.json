@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-22T01:35:57.405008+00:00",
+  "finishedAt": "2026-10-22T01:35:58.639769+00:00",
+  "authorization": "Coordinator pre-approved compiler outputs; S2 exact-path quiescent/no-evidence handoff",
+  "deletedPaths": [
+    "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/debug/incremental"
+  ],
+  "allocatedBytesBefore": 5361614848,
+  "freeBytesBefore": 165819805696,
+  "freeBytesAfter": 169094656000,
+  "observedFreeDeltaBytes": 3274850304,
+  "protectedHashesUnchanged": {
+    "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe": "ec243c3aa00da62c6e31e65643fc4f63d4cdbd9cc0ce740ca618f99461e5ca2c",
+    "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
+    "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli": "ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d",
+    "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3"
+  },
+  "payloadsPrefixesSavesEvidenceDeleted": false,
+  "caveat": "Free delta observed on shared APFS volume; allocated count does not guarantee exclusive physical bytes."
+}
