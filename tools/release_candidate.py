@@ -15,6 +15,7 @@ import tempfile
 from build_local_candidate import source_identity
 from refresh_local_candidate import refresh
 from shipping_pair import hex_value, owned_bytes, require, unique_object
+from signing_identity import verify_designated_requirement
 
 CLI_SHA256 = "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
 HELPER_SHA256 = "d5968170c91535385935319a33cb5f680237778cfc85b5e74c5e1be66bdf5535"
@@ -102,6 +103,94 @@ def notarize(path, stage, receipt, receipt_path, label, profile):
     return submission
 
 
+def distribute(app, stage, receipt, receipt_path, identity, profile):
+    archive = stage / "Ode-to-X-submission.zip"
+    execute(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)],
+            stage, receipt, receipt_path, "app-archive")
+    receipt["artifacts"]["appSubmissionArchive"] = {"path": str(archive), **owned_bytes(archive)[0]}
+    write_receipt(receipt_path, receipt)
+    receipt["appSubmission"] = notarize(archive, stage, receipt, receipt_path, "app", profile)
+    for verb in ("staple", "validate"):
+        execute(["/usr/bin/xcrun", "stapler", verb, str(app)],
+                stage, receipt, receipt_path, "app-stapler-" + verb)
+    execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
+            stage, receipt, receipt_path, "stapled-app-signature")
+    execute(["/usr/sbin/spctl", "--assess", "--type", "execute", "--verbose=4", str(app)],
+            stage, receipt, receipt_path, "app-gatekeeper")
+    distribution = stage / "distribution"
+    distribution.mkdir(mode=0o700)
+    execute(["/usr/bin/ditto", str(app), str(distribution / app.name)],
+            stage, receipt, receipt_path, "distribution-app-copy")
+    execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(distribution / app.name)],
+            stage, receipt, receipt_path, "distribution-app-signature")
+    dmg = stage / "Ode-to-X.dmg"
+    execute(["/usr/bin/hdiutil", "create", "-volname", "Ode to X", "-srcfolder", str(distribution),
+             "-format", "UDZO", str(dmg)], stage, receipt, receipt_path, "dmg-create")
+    execute(["/usr/bin/codesign", "--sign", identity, "--timestamp", str(dmg)],
+            stage, receipt, receipt_path, "dmg-sign")
+    receipt["artifacts"]["dmgSubmittedBytes"] = {"path": str(dmg), **owned_bytes(dmg)[0]}
+    write_receipt(receipt_path, receipt)
+    receipt["dmgSubmission"] = notarize(dmg, stage, receipt, receipt_path, "dmg", profile)
+    for verb in ("staple", "validate"):
+        execute(["/usr/bin/xcrun", "stapler", verb, str(dmg)],
+                stage, receipt, receipt_path, "dmg-stapler-" + verb)
+    execute(["/usr/bin/codesign", "--verify", "--strict", str(dmg)],
+            stage, receipt, receipt_path, "dmg-signature")
+    execute(["/usr/sbin/spctl", "--assess", "--type", "open", "--context",
+             "context:primary-signature", "--verbose=4", str(dmg)],
+            stage, receipt, receipt_path, "dmg-gatekeeper")
+    receipt["artifacts"]["dmg"] = {"path": str(dmg), **owned_bytes(dmg)[0]}
+    receipt["notarized"], receipt["state"] = True, "notarized_candidate"
+    receipt["unexecutedGates"] = ["install/activation", "app_e2e"]
+    write_receipt(receipt_path, receipt)
+
+
+def resume(receipt_path, profile):
+    receipt = read_json(receipt_path)
+    stage = receipt_path.parent
+    require(receipt["version"] == 1 and receipt["state"] == "signed_dry_run_complete"
+            and receipt["dryRun"] is True and receipt["notarized"] is False
+            and receipt["installed"] is False and receipt["activated"] is False,
+            "Only an untouched successful signed dry-run can be submitted; reconcile partial submissions explicitly")
+    require(profile == receipt["notaryProfile"], "Use the dry-run's admitted notary profile")
+    app = Path(receipt["artifacts"]["app"]["path"])
+    require(app.resolve(strict=True) == app and app.is_relative_to(stage), "App must remain in its owned dry-run stage")
+    for name, relative in (("launcher", "Contents/MacOS/Xodus"),
+                           ("authenticationHelper", "Contents/MacOS/XodusAuthHost"),
+                           ("resourceSeal", "Contents/_CodeSignature/CodeResources"),
+                           ("bundledCLI", "Contents/Resources/XodusEngine/xodus-cli"),
+                           ("bundledWindowsHelper", "Contents/Resources/XodusEngine/xodus-window-monitor.exe")):
+        expected = receipt["artifacts"][name]
+        owned_bytes(app / relative, expected["sha256"], expected["bytes"])
+    expected = receipt["sealedAppResourceReceipt"]
+    owned_bytes(app / "Contents/Resources/local-candidate-receipt.json", expected["sha256"], expected["bytes"])
+    embedded = read_json(app / "Contents/Resources/local-candidate-receipt.json")
+    require(embedded["appSource"] == receipt["appSource"]
+            and embedded["preservedCLI"]["sha256"] == CLI_SHA256
+            and embedded["preservedWindowsHelper"]["sha256"] == HELPER_SHA256,
+            "Sealed app receipt does not bind this exact source and frozen payload pair")
+    inputs = receipt["buildInvocation"]["inputs"]
+    candidate = Path(inputs["cli"]).parent
+    _, _, producer = frozen_payloads(candidate)
+    require(producer == receipt["producer"], "Frozen producer receipt changed since dry-run")
+    verify_designated_requirement(app, "app", receipt["certificateSHA1"])
+    receipt["initialDryRunReceipt"] = owned_bytes(receipt_path)[0]
+    receipt["state"], receipt["dryRun"] = "notarizing", False
+    write_receipt(receipt_path, receipt)
+    try:
+        execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
+                stage, receipt, receipt_path, "resume-app-signature")
+        distribute(app, stage, receipt, receipt_path, receipt["certificateSHA1"], profile)
+        frozen_payloads(candidate)
+        write_receipt(receipt_path, receipt)
+        print(receipt_path, flush=True)
+        return receipt_path
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        receipt["state"], receipt["error"] = "failed", str(error)
+        write_receipt(receipt_path, receipt)
+        raise
+
+
 def build(args):
     project = Path(__file__).resolve().parent.parent
     source = source_identity(project)
@@ -145,43 +234,7 @@ def build(args):
                                           "DMG creation/signing/notarization/stapling/Gatekeeper",
                                           "install/activation", "app_e2e"]
         else:
-            archive = stage / "Ode-to-X-submission.zip"
-            execute(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)],
-                    stage, receipt, receipt_path, "app-archive")
-            receipt["artifacts"]["appSubmissionArchive"] = {"path": str(archive), **owned_bytes(archive)[0]}
-            write_receipt(receipt_path, receipt)
-            receipt["appSubmission"] = notarize(archive, stage, receipt, receipt_path, "app", args.notary_profile)
-            for verb in ("staple", "validate"):
-                execute(["/usr/bin/xcrun", "stapler", verb, str(app)],
-                        stage, receipt, receipt_path, "app-stapler-" + verb)
-            execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
-                    stage, receipt, receipt_path, "stapled-app-signature")
-            execute(["/usr/sbin/spctl", "--assess", "--type", "execute", "--verbose=4", str(app)],
-                    stage, receipt, receipt_path, "app-gatekeeper")
-            distribution = stage / "distribution"
-            distribution.mkdir(mode=0o700)
-            execute(["/usr/bin/ditto", str(app), str(distribution / app.name)],
-                    stage, receipt, receipt_path, "distribution-app-copy")
-            execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(distribution / app.name)],
-                    stage, receipt, receipt_path, "distribution-app-signature")
-            dmg = stage / "Ode-to-X.dmg"
-            execute(["/usr/bin/hdiutil", "create", "-volname", "Ode to X", "-srcfolder", str(distribution),
-                     "-format", "UDZO", str(dmg)], stage, receipt, receipt_path, "dmg-create")
-            execute(["/usr/bin/codesign", "--sign", args.identity, "--timestamp", str(dmg)],
-                    stage, receipt, receipt_path, "dmg-sign")
-            receipt["artifacts"]["dmgSubmittedBytes"] = {"path": str(dmg), **owned_bytes(dmg)[0]}
-            write_receipt(receipt_path, receipt)
-            receipt["dmgSubmission"] = notarize(dmg, stage, receipt, receipt_path, "dmg", args.notary_profile)
-            for verb in ("staple", "validate"):
-                execute(["/usr/bin/xcrun", "stapler", verb, str(dmg)],
-                        stage, receipt, receipt_path, "dmg-stapler-" + verb)
-            execute(["/usr/bin/codesign", "--verify", "--strict", str(dmg)],
-                    stage, receipt, receipt_path, "dmg-signature")
-            execute(["/usr/sbin/spctl", "--assess", "--type", "open", "--context",
-                     "context:primary-signature", "--verbose=4", str(dmg)],
-                    stage, receipt, receipt_path, "dmg-gatekeeper")
-            receipt["artifacts"]["dmg"] = {"path": str(dmg), **owned_bytes(dmg)[0]}
-            receipt["notarized"], receipt["state"] = True, "notarized_candidate"
+            distribute(app, stage, receipt, receipt_path, args.identity, args.notary_profile)
         require(source_identity(project) == source, "Source changed during release build")
         frozen_payloads(args.candidate.resolve(strict=True))
         receipt["artifacts"]["bundledCLI"] = owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli")[0]
@@ -203,15 +256,25 @@ def build(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--app-commit", required=True)
-    parser.add_argument("--installed-app", type=Path, required=True, help="Read-only icon and prior receipt source")
-    parser.add_argument("--output-root", type=Path, required=True)
-    parser.add_argument("--identity", required=True)
-    parser.add_argument("--candidate", type=Path, required=True, help="Frozen adf8 directory with S2 notarization receipts")
-    parser.add_argument("--producer-source", type=Path, required=True)
+    parser.add_argument("--app-commit")
+    parser.add_argument("--installed-app", type=Path, help="Read-only icon and prior receipt source")
+    parser.add_argument("--output-root", type=Path)
+    parser.add_argument("--identity")
+    parser.add_argument("--candidate", type=Path, help="Frozen adf8 directory with S2 notarization receipts")
+    parser.add_argument("--producer-source", type=Path)
+    parser.add_argument("--resume-receipt", type=Path, help="Submit the exact already-signed successful dry-run app")
     parser.add_argument("--notary-profile", default="notary")
     parser.add_argument("--dry-run", action="store_true", help="Build/sign only; no Apple submission, install or activation")
-    build(parser.parse_args())
+    args = parser.parse_args()
+    if args.resume_receipt:
+        require(not args.dry_run and not any((args.app_commit, args.installed_app, args.output_root,
+                                             args.identity, args.candidate, args.producer_source)),
+                "Resume takes only its exact dry-run receipt and notary profile")
+        resume(args.resume_receipt, args.notary_profile)
+    else:
+        require(all((args.app_commit, args.installed_app, args.output_root,
+                     args.identity, args.candidate, args.producer_source)), "Supply all pinned build inputs")
+        build(args)
 
 
 if __name__ == "__main__":

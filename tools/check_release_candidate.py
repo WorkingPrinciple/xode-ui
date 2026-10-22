@@ -119,6 +119,37 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     release.execute(["neutral"], root, receipt, path, "neutral-failure")
                 self.assertEqual(json.loads(path.read_text())["commands"][0]["exitCode"], 7)
 
+    def test_resume_preserves_exact_candidate_and_never_rebuilds(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            app = root / "Neutral.app"
+            app.mkdir()
+            identity = {"sha256": "d" * 64, "bytes": 2}
+            receipt = {"version": 1, "state": "signed_dry_run_complete", "dryRun": True,
+                "notarized": False, "installed": False, "activated": False, "notaryProfile": "notary",
+                "commands": [], "certificateSHA1": "c" * 40, "producer": {},
+                "appSource": {"commit": "a" * 40, "tree": "b" * 40},
+                "sealedAppResourceReceipt": identity,
+                "buildInvocation": {"inputs": {"cli": str(root / "cli")}},
+                "artifacts": {"app": {"path": str(app)}, **{name: identity for name in
+                    ("launcher", "authenticationHelper", "resourceSeal", "bundledCLI", "bundledWindowsHelper")}}}
+            embedded = {"appSource": receipt["appSource"], "preservedCLI": {"sha256": release.CLI_SHA256},
+                        "preservedWindowsHelper": {"sha256": release.HELPER_SHA256}}
+            with patch.object(release, "read_json", side_effect=lambda path:
+                    embedded if path.name == "local-candidate-receipt.json" else receipt), \
+                    patch.object(release, "owned_bytes", return_value=(identity, b"{}")), \
+                    patch.object(release, "frozen_payloads", return_value=(root / "cli", root / "helper", {})), \
+                    patch.object(release, "verify_designated_requirement"), \
+                    patch.object(release, "execute"), patch.object(release, "distribute") as distribute, \
+                    patch.object(release, "refresh") as refresh:
+                release.resume(root / "release-receipt.json", "notary")
+                self.assertEqual(distribute.call_args.args[0], app)
+                refresh.assert_not_called()
+                receipt["state"] = "failed"
+                with self.assertRaises(ValueError):
+                    release.resume(root / "release-receipt.json", "notary")
+                self.assertEqual(distribute.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

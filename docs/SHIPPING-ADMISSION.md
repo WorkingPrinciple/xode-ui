@@ -37,6 +37,19 @@ candidate receipt is never edited to claim notarization. Gameplay/app_e2e
 remains unobserved until separately exercised; a notarized candidate is not
 automatically a production-qualified release.
 
+To submit the **same signed dry-run bytes**, without rebuilding or re-signing:
+
+```sh
+python3 tools/release_candidate.py \
+  --resume-receipt /absolute/Ode-release-SESSION/release-receipt.json \
+  --notary-profile notary
+```
+
+Resume requires a successful untouched dry-run, the exact signed
+launcher/helper/resource seal, the embedded source receipt and frozen
+CLI/helper bytes. A failed/partially submitted run is not automatically
+replayed: reconcile its recorded Apple submission before retrying.
+
 ### Supported local-candidate build
 
 For a UI-only refresh with the currently installed, verified Developer ID CLI,
