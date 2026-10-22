@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "checkedDate": "2026-10-22",
+  "query": "Mortis",
+  "matchConfidence": "likely; user supplied partial title, not confirmed identity",
+  "title": "Valor Mortis",
+  "productId": "9P861V1542BL",
+  "storeUrl": "https://www.xbox.com/games/store/valor-mortis/9P861V1542BL",
+  "gamePassPcMembership": "present",
+  "ownership": "unknown",
+  "licenseConfirmed": false,
+  "accountRead": {
+    "complete": true,
+    "accountBindingVerified": true,
+    "returnedProductCount": 0,
+    "meaning": "No explicit owned grant returned; empty Collections listing does not disprove subscription entitlement."
+  },
+  "packageFormat": "MSIXVC",
+  "platform": "Windows.Desktop",
+  "architecture": "x64",
+  "packageId": "616ba563-ddfa-4ae5-8346-dae6e35af68e",
+  "downloadSizeBytes": 42646802432,
+  "downloadSizeGiB": 39.71792984008789,
+  "installedSizeBytes": null,
+  "nativeMacBuildProved": false,
+  "freeStandaloneFullGame": false,
+  "fullGamePrice": {"amount": 39.99, "currency": "USD", "market": "US"},
+  "offerCaveats": [
+    "Full-game SKU 0010 zero-price Purchase offers require subscription Upsell remediation; not unconditional free ownership.",
+    "SKU 0011 is explicitly IsTrial=true; its zero-price License/Fulfill offer does not prove full-game rights or trial duration."
+  ],
+  "userAction": "On the existing signed-in Xbox PC app, open exact product 9P861V1542BL (Valor Mortis), select the full-game Install with Game Pass/Add to library option if included in the existing subscription, and report completion for a fresh license check. Stop on a price, subscription-upgrade or sign-in prompt. Do not buy. A free-trial option is not full-game entitlement.",
+  "installHandoff": "held: no confirmed account license; no S2 executable install packet admitted",
+  "antiCheat": "unknown",
+  "supported01": null,
+  "evidence": [
+    {
+      "kind": "public Microsoft DisplayCatalog product and offers",
+      "localFile": "mortis-valor-product-20261022.json",
+      "sha256": "e5530e8f575c2b77a1a52a6d19e0909faaad409801d2dfa8011a58db3995b36b"
+    },
+    {
+      "kind": "public PC Game Pass feed",
+      "url": "https://catalog.gamepass.com/sigls/v3?id=609d944c-d395-4c0a-9ea4-e9f39b52c1ad&language=en-US&market=US&platformContext=pc&subscriptionContext=cfq7ttc0kgq8",
+      "localFile": "mortis-gamepass-20261022.json",
+      "sha256": "792faa332274a4b628716ce219e8ffe89ba2d8e04293c0acf12125064c1fce29"
+    },
+    {
+      "kind": "account-bound read-only Collections v7 library read",
+      "localFile": "mortis-owned-20261022.json",
+      "sha256": "66ec04f2263ff0887b844cd3a92f90847aefb0dd1b9c837488a7c72c5bd4c36c"
+    }
+  ],
+  "evidenceDirectory": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files",
+  "purchases": 0,
+  "acquisitions": 0,
+  "installs": 0,
+  "launches": 0
+}
