@@ -85,7 +85,17 @@
   ],
   "historicalCoverage": {
     "matrix": "$HOME/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-    "matrixNote": "Contains earlier attempts and title-level diagnosis. Legacy archives are not claimed freshly integrity-audited by this index.",
+    "matrixNote": "Contains earlier attempts and title-level diagnosis. Inventory integrity does not establish historical save-baseline availability or independently requalify a title.",
+    "inventory": {
+      "path": "s3-historical-evidence-index-01/index.json",
+      "sha256": "419d24bb8be3e7320fed8a7a021897dbef0a6e8a6fcbb34ccfce0b9092f57a29",
+      "manifestSha256": "83f7861c31a59ecbf7821d52b247d10d8fc38ab4d2f9385e5c12b230669f1a58",
+      "proofRoots": 41,
+      "files": 2168,
+      "missingReferencedScreenshots": 0,
+      "changedDuringRead": 0,
+      "boundary": "Existing S3 proof roots, retained title session artifacts and explicit matrix references only. No live saves read or written. No baseline reconstructed and no raw data copied into git."
+    },
     "earlierAdmittedTitles": ["Minecraft Java", "No Man's Sky", "Hollow Knight: Voidheart Edition", "Halls of Torment", "Hogwarts Legacy", "Hades II", "Abiotic Factor", "Mixtape", "Monster Sanctuary"],
     "unresolvedTitles": ["DREDGE", "Fallout 4", "Skyrim Special Edition", "A Game About Digging A Hole", "Well Dweller", "Stardew Valley", "Balatro", "LIMBO"],
     "boundary": "Passive results from other owners are tracked separately; pending or not-tested titles are not promoted to gameplay or retention passes."
