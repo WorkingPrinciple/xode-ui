@@ -66,6 +66,27 @@ class PathTo20Tests(unittest.TestCase):
         self.assertFalse(row["stuckOver2Hours"])
         self.assertEqual(row["gateFirstObservedAt"], inputs["collectedAt"])
 
+    def test_owner_prerequisite_report_supersedes_old_install_hold(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        sid = "9P861V1542BL"
+        inputs["matrix"]["snapshot"]["games"] = [
+            row for row in inputs["matrix"]["snapshot"]["games"] if row["productId"] != sid]
+        row = next(row for row in build(inputs, {})["items"] if row["storeId"] == sid)
+        self.assertEqual(row["nextGate"], "prefix prerequisite setup")
+        self.assertEqual(row["ownerStream"], "S2")
+        self.assertIn("VC++", row["blocker"])
+        self.assertFalse(row["strictWorking"])
+
+    def test_tonight_reports_do_not_promote_incomplete_runs(self):
+        rows = {row["storeId"]: row for row in self.packet["items"]}
+        stardew = rows["9MWR1NC6VQ6L"]
+        self.assertEqual(stardew["gates"]["save"]["status"], "passed")
+        self.assertEqual(stardew["gates"]["quit"]["status"], "unknown")
+        self.assertEqual(rows["9NLRT31Z4RWM"]["gates"]["save"]["status"], "not-passed")
+        self.assertEqual(rows["9PBWWQGXVMKC"]["nextGate"], "infrastructure retry")
+        for sid in ("9MWR1NC6VQ6L", "9NLRT31Z4RWM", "9PBWWQGXVMKC", "9P861V1542BL"):
+            self.assertFalse(rows[sid]["strictWorking"])
+
     def test_unchanged_gate_preserves_clock_despite_blocker_edit(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])
         previous = copy.deepcopy(self.packet)

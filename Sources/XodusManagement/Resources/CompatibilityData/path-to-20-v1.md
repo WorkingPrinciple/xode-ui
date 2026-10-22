@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T19:22:18.428531+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T19:53:50.445990+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -36,21 +36,21 @@ Updated 2026-10-22T19:22:18.428531+00:00; **8/20 strict WORKING**. Brotato candi
 | Keeper | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Kingdom Come: Deliverance | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Kingdom Come: Deliverance II | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
-| LIMBO | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Firstspikegap not cleared; no confirmed newcheckpoint/retention. Ordinary0/0 established but75%quit rule missed. No automatic retry/reload. | - |
+| LIMBO | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Firstspikegap not cleared; no confirmed newcheckpoint/retention. Ordinary0/0 established but75%quit rule missed. No automatic retry/reload. | >2h |
 | Minishoot' Adventures | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Monster Sanctuary | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
+| Monster Sanctuary | INCONCLUSIVE | passed | passed | passed | ? | ? | infrastructure retry / S2/S3 | World PASS-candidate with ordinary SaveQuit/titleExit0/0; reload 0d057caf INFRA RPS sign-in, no retention. Monster retry pending, not WORKING. | - |
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Oblivion GOTY (2009) | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Quake | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Earlier renderer-selection hold superseded by exact S1 Kex candidate; no title-screen/gameplay/save receipt or execution grant. | >2h |
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Skyrim Special Edition | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Directexe spontaneouslyexits5/5 in17.58s. COM80040154 remainsnoncausal logevidence. Exactprefixstopped; no additionalretry. | - |
+| Skyrim Special Edition | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Directexe spontaneouslyexits5/5 in17.58s. COM80040154 remainsnoncausal logevidence. Exactprefixstopped; no additionalretry. | >2h |
 | South of Midnight | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
-| Stardew Valley | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Exit255 after observedExitToTitle; S2 source-only diagnosis. Preserve savedprefix; no retry/reload without new grant. | >2h |
+| Stardew Valley | INCONCLUSIVE | passed | passed | ? | passed | passed | ordinary quit / S3 | Fresh22d78ea2 retained Day2/s3/proof Farm/15ParsnipSeeds; final ExitGame input unobserved, no qualified quit or WORKING promotion. | - |
 | Subnautica 2 | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
-| TUNIC | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
-| Valor Mortis | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
+| TUNIC | INCONCLUSIVE | passed | passed | not passed | passed | not passed | qualification hold / S3/coordinator | Full d928b209 overran quit deadline; reload931f693e quit navigation also INCONCLUSIVE. Stick not retained after no normal quit; no WORKING or runtime save-regression conclusion. | - |
+| Valor Mortis | INCONCLUSIVE | not passed | ? | ? | ? | ? | prefix prerequisite setup / S2 | Passive792b6f4e blocked by missing VC++ redistributable prerequisite in prefix. S2 setup required; no title/gameplay/retention qualification or new launch grant. | - |
 | Vampire Survivors | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Wasteland Remastered | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Well Dweller | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked after actual gameplay reached; TIMEOUT, CLI 1 / Wine 0, no save marker. No clean quit or retention qualification; no retry authorized. | >2h |

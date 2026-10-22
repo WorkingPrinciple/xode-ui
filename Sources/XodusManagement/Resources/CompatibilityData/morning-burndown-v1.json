@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T19:22:18.428531+00:00",
+    "asOf": "2026-10-22T19:53:50.445990+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
-    "trackerMatrixSha256": "23572d6de83743654f45b1140e5f9dc0e8a47f0d93a1a0af216590f3d025cc4e",
+    "trackerMatrixSha256": "b140123bffe6daeed6b0f3d7019b27a11aa4aaa00ecb5c4205b3f37a8692652d",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -341,6 +341,16 @@
         "storeId": "9PNG83MDD6SH",
         "title": "LIMBO",
         "verdict": "INCONCLUSIVE"
+      },
+      {
+        "storeId": "9PBWWQGXVMKC",
+        "title": "Monster Sanctuary",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
+        "storeId": "9NLRT31Z4RWM",
+        "title": "TUNIC",
+        "verdict": "INCONCLUSIVE"
       }
     ],
     "attemptedTrackerRows": [
@@ -420,6 +430,11 @@
         "verdict": "INCONCLUSIVE"
       },
       {
+        "storeId": "9PBWWQGXVMKC",
+        "title": "Monster Sanctuary",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
         "storeId": "9P03JGQ4S1GC",
         "title": "Skyrim Special Edition",
         "verdict": "INCONCLUSIVE"
@@ -427,6 +442,16 @@
       {
         "storeId": "9MWR1NC6VQ6L",
         "title": "Stardew Valley",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
+        "storeId": "9NLRT31Z4RWM",
+        "title": "TUNIC",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
+        "storeId": "9P861V1542BL",
+        "title": "Valor Mortis",
         "verdict": "INCONCLUSIVE"
       },
       {
@@ -569,17 +594,17 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 903.6928578166667,
+  "remainingWallMinutes": 872.1592335,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
-      "serialCycleSlots": 10,
-      "queueCappedAdditions": 10,
-      "conditionalTotalWorking": 18,
-      "gapTo20": 2,
-      "minimumPassRateRawSlots": 1.2,
-      "minimumPassRateCurrentQueue": 1.2,
+      "serialCycleSlots": 9,
+      "queueCappedAdditions": 9,
+      "conditionalTotalWorking": 17,
+      "gapTo20": 3,
+      "minimumPassRateRawSlots": 1.3333333333333333,
+      "minimumPassRateCurrentQueue": 1.3333333333333333,
       "targetPossibleCurrentQueue": false
     },
     {
@@ -596,22 +621,22 @@
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 20,
-      "queueCappedAdditions": 20,
-      "conditionalTotalWorking": 28,
+      "serialCycleSlots": 19,
+      "queueCappedAdditions": 19,
+      "conditionalTotalWorking": 27,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.6,
-      "minimumPassRateCurrentQueue": 0.6,
+      "minimumPassRateRawSlots": 0.631578947368421,
+      "minimumPassRateCurrentQueue": 0.631578947368421,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
     "working": 8,
     "matrixWorking": 8,
-    "attemptedMatrix": 17,
-    "ratio": 0.47058823529411764,
-    "receiptAugmentedAttempted": 18,
-    "receiptAugmentedRatio": 0.4444444444444444,
+    "attemptedMatrix": 19,
+    "ratio": 0.42105263157894735,
+    "receiptAugmentedAttempted": 21,
+    "receiptAugmentedRatio": 0.38095238095238093,
     "titleScreenOrBeyond": 10,
     "postTitleScreenAdmissionRatio": 0.8,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -638,7 +663,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 75.30773815138889,
+  "requiredAverageMinutesPerAddition": 72.679936125,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

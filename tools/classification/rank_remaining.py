@@ -10,6 +10,9 @@ from build_catalogue_batch import installed_inventory
 from inspect_queue import DATA
 
 OUTPUT = DATA / "remaining-candidates-ranked-v1.json"
+FREE_GIB = 127
+FLOOR_GIB = 110
+MARGIN_GIB = FREE_GIB - FLOOR_GIB
 ORDER = [
     "9P9VNSQK1W3K", "9MWR1NC6VQ6L", "9PBWWQGXVMKC", "9PD5BM2Z8C4L",
     "9NLRT31Z4RWM", "9N8C07SS8C9D", "9NGH1FK0RJGL", "9P1Z43KRNQD4",
@@ -26,11 +29,11 @@ ORDER = [
 ]
 REASONS = {
     "9P9VNSQK1W3K": "All title gates already observed; promotion/admission only, not another game run.",
-    "9MWR1NC6VQ6L": "Queued; tooling cancellation did not consume an attempt. Small existing payload.",
-    "9PBWWQGXVMKC": "Untested installed compact single-player candidate; no new download.",
+    "9MWR1NC6VQ6L": "Fresh reload retained Day2 progress; observed final quit still required.",
+    "9PBWWQGXVMKC": "World PASS-candidate; reload blocked by RPS sign-in infrastructure, retry pending.",
     "9PD5BM2Z8C4L": "Untested installed compact candidate; progression/ordinary exit still unproved.",
     "9N8C07SS8C9D": "Untested installed compact candidate; first-save and renderer need exact card.",
-    "9NLRT31Z4RWM": "Installed; app Play is not gameplay proof, full gates outstanding.",
+    "9NLRT31Z4RWM": "World/reload INCONCLUSIVE; stick not retained without normal quit, qualification hold.",
     "9NGH1FK0RJGL": "Installed single-player candidate; exact save route outstanding.",
     "9P1Z43KRNQD4": "Installed; exact Kex candidate prepared, renderer still needs real title proof.",
     "9MXND4PQLK3W": "Very small installed Kex title; renderer/title qualification outstanding.",
@@ -86,28 +89,32 @@ def build():
                 route = "Apple4 DX12 hypothesis; S1 Unreal-family card, exact save backend unknown"
         present = sid in installed
         partial = present and any(Path(installed[sid]["root"]).glob("*.streaming-tmp"))
-        state = ("downloading; coordinator/S1 report, install-status handoff pending"
+        state = ("passive attempted; coordinator report, fresh install-status receipt not supplied"
                  if sid == "9P861V1542BL" else
                  "partial streaming payload" if partial else
                  "manifest present; prior installed inventory, not fresh install-status"
                  if present else "not installed in current manifest inventory")
-        incremental = 0 if present and not partial and sid != "9P861V1542BL" else budget
+        incremental = 0 if present and not partial else budget
         blocker = candidate.get("blocker", "User must claim exact free offer; license and install unconfirmed.")
-        if sid == "9P861V1542BL":
-            blocker = "Download active; S2 complete install-status required before full-test admission."
+        needs_download = not present or partial
+        extension = (len(items) >= 10 and not needs_download and not is_free
+                     and candidate.get("verdict") in {"UNTESTED", "NOT_TESTED"})
         items.append({
             "rank": len(items) + 1, "storeId": sid, "title": candidate["title"],
             "verdict": candidate.get("verdict", "UNTESTED"), "installState": state,
             "downloadSizeBytes": size, "planningBudgetBytes": budget,
             "incrementalDownloadBudgetBytes": incremental,
-            "fitsGross23GiBMargin": incremental is not None and incremental <= 23 * 2**30,
-            "diskAdmission": "NOT ADMITTED: Valor remaining bytes/prefix/transient reserve unknown; "
-            "23 GiB is gross, not available concurrent download budget.",
+            "fitsGrossMargin": incremental is not None and incremental <= MARGIN_GIB * 2**30,
+            "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require "
+            "S2 preflight; 17 GiB is gross, not available concurrent download budget.",
             "expectedRoute": route, "routeQualification": "Candidate/hypothesis, not observed title support.",
             "blocker": blocker,
             "needsUserClaim": is_free,
             "needsLicenseCheck": not present,
-            "needsDownload": not present or partial or sid == "9P861V1542BL",
+            "needsDownload": needs_download,
+            "pipelineExtensionCandidate": extension,
+            "purchasePolicy": "No purchase or claim proposed for manifest-present payload; "
+            "fresh entitlement/install-status check still required, stop on any price or grant request.",
             "rankingBasis": REASONS.get(sid, "Installed candidates before new downloads; "
                                       "holds, large downloads and unclear routes ranked later."),
             "inventoryEvidence": installed.get(sid),
@@ -119,15 +126,24 @@ def build():
         "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; "
         "not numerical success probability, permission or replacement for owner queues.",
         "strictWorking": tracker["strictWorkingCount"], "needed": 20 - tracker["strictWorkingCount"],
-        "disk": {"coordinatorReportedFreeGiB": 133, "prelaunchGiB": 110,
-                 "stagingGiB": 110, "abortBelowGiB": 105, "grossMarginGiB": 23,
+        "disk": {"coordinatorReportedFreeGiB": FREE_GIB, "prelaunchGiB": FLOOR_GIB,
+                 "stagingGiB": FLOOR_GIB, "abortBelowGiB": 105, "grossMarginGiB": MARGIN_GIB,
+                 "reportedAt": "2026-10-22T19:51:42.038+00:00",
+                 "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
                  "valorMortisTotalDownloadGiB": 42646802432 / 2**30,
                  "valorMortisRemainingBytes": None,
-                 "warning": "Do not subtract full Valor download again from current free; "
-                 "do not assume it is fully allocated either. Need live S2 remaining/peak budget."},
+                 "warning": "Existing payload size is not incremental allocation. Prefix/transient "
+                 "growth unknown; need live S2 preflight, no further download admitted."},
+        "pipelineExtension": {
+            "storeIds": [row["storeId"] for row in items if row["pipelineExtensionCandidate"]],
+            "scope": "Ranks after top ten, manifest present, no streaming marker, no new claim or "
+            "download, untested only. Existing queue overlap is not additional unique capacity.",
+            "diskBasis": "Zero incremental payload download fits reported 17 GiB gross headroom; "
+            "not proof that unknown prefix/transient growth fits. Admission remains conditional.",
+        },
         "sources": sources, "items": items,
-        "ownerUpdate": "S1 selects Monster Sanctuary, Vampire Survivors and TUNIC for next "
-        "free-Wine cards, using observed UnityPlayer/Data layout; no title support inferred.",
+        "ownerUpdate": "Monster reload INFRA, TUNIC inconclusive, Stardew retention YES/quit "
+        "unobserved, Valor prefix VC++ prerequisite missing; strict count unchanged.",
     }
 
 
@@ -135,10 +151,14 @@ def main():
     packet = build()
     OUTPUT.write_text(json.dumps(packet, indent=2) + "\n")
     lines = ["# Remaining candidates ranked", "", packet["scope"], "", packet["rankingPolicy"], "",
-             "**Disk:** coordinator reports 133 GiB free; 110 prelaunch/staging, 105 abort. "
-             "23 GiB gross margin; active Valor Mortis remaining/peak allocation UNKNOWN. "
+             "**Disk:** coordinator reports 127 GiB free; 110 prelaunch/staging, 105 abort. "
+             "17 GiB gross margin; prefix/transient allocation UNKNOWN. "
              "No new concurrent download admitted. Sizes are catalog download/planning proxies, "
              "not installed footprints. Existing payloads still need prefix/transient space.", "",
+             "**Pipeline extension (conditional, not launch grants):** "
+             + ", ".join(row["title"] for row in packet["items"] if row["pipelineExtensionCandidate"])
+             + ". Zero new payload download; entitlement, prefix budget, route/card and owner admission "
+             "still required. No added unique-capacity claim for already queued titles.", "",
              "| Rank | Title / ID | State | Catalog GiB | Route proposal | Claim / download | Blocker |",
              "|---|---|---|---|---|---|---|"]
     for row in packet["items"]:

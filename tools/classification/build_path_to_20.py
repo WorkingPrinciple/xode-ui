@@ -101,6 +101,7 @@ def build(inputs, previous):
             evidence.append({"path": passive["path"], "sha256": passive["sha256"],
                              "runId": passive["runId"]})
         reports = inputs.get("ownerVerdicts")
+        owner_report_applied = False
         if reports:
             report = next((row for row in reports["snapshot"]["items"]
                            if row["storeId"] == sid), None)
@@ -112,6 +113,7 @@ def build(inputs, previous):
                                and any(str(observed.get(key, "")).startswith(report["runId"] or "unmatched")
                                        for key in ("runId", "retentionRunId")))):
                 verdict = report["verdict"]
+                owner_report_applied = True
                 scope = report["scope"]
                 next_gate, owner, blocker = (
                     report["nextGate"], report["ownerStream"], report["blocker"])
@@ -127,7 +129,7 @@ def build(inputs, previous):
         if candidate.get("catalogueOnly"):
             next_gate, owner = "catalogue hold / entitlement / disk", "user/coordinator"
             blocker = "Catalogue closed tonight; membership is not entitlement; no install grant"
-        elif candidate.get("blockerClass") == "disk/ownership" and not observed:
+        elif candidate.get("blockerClass") == "disk/ownership" and not observed and not owner_report_applied:
             next_gate, owner = "install hold / entitlement / disk", "user/coordinator"
         if sid == "9PLH7R84GJWP" and verdict == "FAIL":
             next_gate, owner = "actual-title candidate retest", "S3"
