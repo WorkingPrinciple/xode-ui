@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T05:18:30.974583+00:00",
+    "asOf": "2026-10-22T05:19:35.121813+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
     "strictWorkingCount": 7,
@@ -132,7 +132,8 @@
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
       "routeCommit": "5b944e3",
       "reportedQueueCap": 23,
-      "basis": "Coordinator reports S1 routes added; S2 packets being prepared. Pipeline capacity only, not completed packets or launch authorization.",
+      "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue.",
+      "reconciledUniqueCount": 21,
       "items": [
         {
           "storeId": "9P3T7HVKM6D0",
@@ -149,7 +150,7 @@
     "queueReconciliation": {
       "reportedCap": 23,
       "uniqueCount": 21,
-      "basis": "Deduplicate product IDs across packets and owner additions. KCD1/Subnautica 2 already appear in existing packets; do not count new routes as additional titles. Reported 23 requires reconciliation."
+      "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue."
     },
     "withheld": [
       {
@@ -398,6 +399,11 @@
         "verdict": "NO_TITLE_SCREEN"
       },
       {
+        "storeId": "9PNG83MDD6SH",
+        "title": "LIMBO",
+        "verdict": "FAIL"
+      },
+      {
         "storeId": "9PLH7R84GJWP",
         "title": "Well Dweller",
         "verdict": "INCONCLUSIVE"
@@ -519,7 +525,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1027.48375695,
+  "remainingWallMinutes": 1026.41463645,
   "scenarios": [
     {
       "label": "slow observed",
@@ -560,8 +566,8 @@
     "matrixWorking": 7,
     "attemptedMatrix": 14,
     "ratio": 0.5,
-    "receiptAugmentedAttempted": 15,
-    "receiptAugmentedRatio": 0.4666666666666667,
+    "receiptAugmentedAttempted": 16,
+    "receiptAugmentedRatio": 0.4375,
     "titleScreenOrBeyond": 10,
     "postTitleScreenAdmissionRatio": 0.7,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -588,7 +594,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 79.03721207307693,
+  "requiredAverageMinutesPerAddition": 78.95497203461538,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

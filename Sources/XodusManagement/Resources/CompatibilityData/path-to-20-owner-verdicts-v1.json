@@ -5,13 +5,27 @@
     "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
     "routeCommit": "5b944e3",
     "reportedQueueCap": 23,
-    "basis": "Coordinator reports S1 routes added; S2 packets being prepared. Pipeline capacity only, not completed packets or launch authorization.",
+    "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue.",
+    "reconciledUniqueCount": 21,
     "items": [
       {"storeId": "9P3T7HVKM6D0", "title": "Kingdom Come: Deliverance", "batch": "packet preparation pending"},
       {"storeId": "9PJPCB188SVG", "title": "Subnautica 2", "batch": "packet preparation pending"}
     ]
   },
   "items": [
+    {
+      "storeId": "9PNG83MDD6SH",
+      "title": "LIMBO",
+      "verdict": "FAIL",
+      "reportedAt": "2026-10-22T05:19:12.362+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": null,
+      "gates": {"menu": "not-passed"},
+      "nextGate": "startup diagnosis",
+      "ownerStream": "S1",
+      "blocker": "Passive failed before title screen: shader compiler error, CLI 1 / Wine 1 at 22 seconds. S1 researching alternative route; no retry authorization inferred.",
+      "scope": "Coordinator-reported failed attempt; no run ID or receipt path supplied. Not a title-screen pass or strict WORKING."
+    },
     {
       "storeId": "9PLH7R84GJWP",
       "title": "Well Dweller",

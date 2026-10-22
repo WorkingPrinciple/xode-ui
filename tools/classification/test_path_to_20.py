@@ -164,6 +164,13 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["nextGate"], "qualification hold")
         self.assertFalse(row["strictWorking"])
 
+    def test_limbo_failed_attempt_does_not_pass_menu(self):
+        row = next(row for row in self.packet["items"] if row["storeId"] == "9PNG83MDD6SH")
+        self.assertEqual(row["verdict"], "FAIL")
+        self.assertEqual(row["gates"]["menu"]["status"], "not-passed")
+        self.assertEqual(row["nextGate"], "startup diagnosis")
+        self.assertFalse(row["strictWorking"])
+
 
 if __name__ == "__main__":
     unittest.main()

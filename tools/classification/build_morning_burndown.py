@@ -136,9 +136,8 @@ def refresh(tracker):
               "queueReconciliation": {
                   "reportedCap": additions["reportedQueueCap"] if additions else None,
                   "uniqueCount": len(queued),
-                  "basis": "Deduplicate product IDs across packets and owner additions. "
-                  "KCD1/Subnautica 2 already appear in existing packets; do not count "
-                  "new routes as additional titles. Reported 23 requires reconciliation."},
+                  "basis": additions["basis"] if additions else
+                  "Deduplicate product IDs across packets."},
               "withheld": list(withheld.values()),
               "samples": [
                   {"title": "Halls of Torment", "startKind": "actual no-input passive",
@@ -216,7 +215,7 @@ def render_summary(packet):
              f"One serial, continuously available lane yields **{slow['serialCycleSlots']}"
              f"/{mid['serialCycleSlots']}/{fast['serialCycleSlots']}** slow/mid/fast cycles, "
              f"capped by **{len(packet['inputs']['queued'])} pipeline titles** "
-             "(deduplicated; reported cap 23 pending reconciliation): "
+             "(historical deduplicated packet baseline, not an executable queue): "
              f"conditional totals **{slow['conditionalTotalWorking']}/"
              f"{mid['conditionalTotalWorking']}/{fast['conditionalTotalWorking']}**. "
              "These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.\n\n"
