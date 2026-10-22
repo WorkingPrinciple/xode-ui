@@ -48,6 +48,12 @@ enum LibraryAccessChecks {
               && LibrarySupportVisibility.issues(productID: "FIXTURE00001", installed: false,
                   packageFormat: nil, compatibility: nil, catalogue: nil).isEmpty,
               "#44: A title absent from the shipped database remains visible by default without a generic unknown blocker")
+        for format in [nil, "Unknown", "Win32"] as [String?] {
+            let unclassified = OfflineGameCompatibility.Entry(title: "Unclassified", packageFormat: format,
+                pcPackageIdentified: true, antiCheat: "none", technologyReferences: [], referencePlatforms: [])
+            check(!unclassified.supported01,
+                  "#44: Supported-by-default visibility does not create sourced MSIXVC clearance for \(format ?? "missing")")
+        }
         for technology in [Optional("none"), "Easy Anti-Cheat", "unknown", nil] {
             var input = rawCatalogue ?? [:]
             var product = rawProducts["9P4NV23Q6QC2"] ?? [:]

@@ -47,7 +47,8 @@ struct OfflineGameCompatibility: Codable {
         }
 
         var supported01: Bool {
-            antiCheat.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "none"
+            packageFormat?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "MSIXVC"
+                && antiCheat.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "none"
                 && GameSupportPolicy.issues(packageFormat: packageFormat, antiCheat: antiCheat).isEmpty
         }
     }
