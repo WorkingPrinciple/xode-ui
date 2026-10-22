@@ -99,6 +99,8 @@ struct LocalInstalledGameView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
+            ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
             HStack(spacing: 16) {
                 InstalledArtworkView(game: game).frame(width: 72, height: 96).clipped()
                 Text(game.title).font(.title2.bold())
@@ -107,7 +109,9 @@ struct LocalInstalledGameView: View {
                 close: dismiss.callAsFunction)
             GameCompatibilityFacts(productID: game.storeId, packageFormat: game.packageType?.label,
                 compatibility: operations.compatibility[game.storeId], checking: false)
-            Spacer(minLength: 0)
+            GameSaveLocationView(productID: game.storeId)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            }
             HStack { Spacer(); Button("Done", action: dismiss.callAsFunction).keyboardShortcut(.cancelAction) }
         }
         .padding(28).frame(width: 560, height: 480)

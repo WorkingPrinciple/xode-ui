@@ -258,6 +258,20 @@ claim app-driven E2E or cloud saves beyond that scope. Missing evidence,
 installation completeness alone cannot produce the badge. The evidence
 ledger remains read-only to this consumer; no title is promoted by UI code.
 
+Details also has a read-only **Save location** section. Its bundled citation
+projection in `LaunchRecipes/save-locations-v1.json` preserves S4's exact
+v4/v5 Windows paths, source URLs, scope and frozen packet commit/hash identities;
+it never expands Windows variables into guessed Wine paths. A title's local
+ledger `saveObservation.saveDirectory`, when an accessible real directory, is
+labelled **Observed save directory**. Existing default Minecraft and Fallout
+Documents folders are shown separately as **Folder found - save data not
+verified**. In particular, Fallout's GDK container save location remains
+unresolved; the Documents folder's existence does not verify it.
+**Open folder** opens Finder only for a checked existing local directory,
+revalidating on click. Cited-only paths have no folder action. No save bytes,
+prefixes, providers or settings are changed, and this section makes no retention
+or cloud-sync claim. Missing, inaccessible and moved paths remain explicit.
+
 Native Minecraft launcher detection in the next candidate records the
 actual `.app` path and `CFBundleShortVersionString`, checks its official
 bundle ID and executable, and distinguishes missing, ready and repair-needed

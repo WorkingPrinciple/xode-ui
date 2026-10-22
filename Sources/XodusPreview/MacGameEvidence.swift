@@ -35,6 +35,9 @@ struct MacGameEvidence: Decodable, Sendable {
         let caption: String
     }
     struct Game: Decodable, Sendable {
+        struct SaveObservation: Decodable, Sendable {
+            let saveDirectory: String?
+        }
         let productId: String
         let title: String
         let verdict: Verdict
@@ -45,6 +48,7 @@ struct MacGameEvidence: Decodable, Sendable {
         let owner: String
         let blocker: String?
         let launchAttempted: Bool?
+        let saveObservation: SaveObservation?
 
         var verifiedWorkingEvidence: Screenshot? {
             verdict == .working && launchAttempted != false ? screenshots.first : nil

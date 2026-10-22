@@ -89,6 +89,7 @@ struct LiveProductView: View {
                             checking: operations.precheckingProductID == product.id)
                         evidence
                         MacGameEvidenceView(record: macEvidence.games[product.id], detailed: true)
+                        GameSaveLocationView(productID: product.id)
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
                             HStack {
                                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)

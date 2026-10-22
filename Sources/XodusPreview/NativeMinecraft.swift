@@ -168,6 +168,7 @@ struct NativeMinecraftCard<Artwork: View>: View {
             }
         }
         .sheet(isPresented: $showsDetails) {
+            ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Minecraft: Java Edition").font(.title2)
                 Text("Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your Ode to X account.")
@@ -184,8 +185,10 @@ struct NativeMinecraftCard<Artwork: View>: View {
                 }
                 Button("Check launcher") { Task { await minecraft.refresh() } }
                 MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"], detailed: true)
+                GameSaveLocationView(productID: "9PJ8266BHFWN")
                 Button("Done") { showsDetails = false }.keyboardShortcut(.cancelAction)
-            }.padding(24).frame(width: 540)
+            }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+            }.frame(width: 540, height: 640)
         }
     }
 }

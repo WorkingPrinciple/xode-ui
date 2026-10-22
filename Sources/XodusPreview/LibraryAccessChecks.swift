@@ -160,6 +160,7 @@ enum LibraryAccessChecks {
             """, uid: 501) == 124,
               "Native Minecraft detects only this user's bundled Minecraft Java executable, without reading credential-bearing arguments")
         try minecraftInstallationChecks(check: check)
+        try saveLocationChecks(check: check)
         let partial = working.replacingOccurrences(of: #""verdict":"WORKING""#,
                                                    with: #""verdict":"TITLE_SCREEN_ONLY""#)
         let unknown = working.replacingOccurrences(of: #""verdict":"WORKING""#,
@@ -191,6 +192,14 @@ enum LibraryAccessChecks {
                   == ["9MW9469V91LM", "BQVQTL3PCH05", "9PJ8266BHFWN"]
               && mixedGames.last?.verdict == .unknown && mixedGames.last?.provenEngine == nil,
               "An unknown verdict beside all three valid WORKING entries preserves their evidence badges")
+        var recordedRow = baseGame
+        recordedRow["saveObservation"] = ["saveDirectory": "/synthetic/recorded-save-folder",
+                                         "loadedWorld": "Ignored by location display"]
+        mixed["games"] = [recordedRow]
+        let savedEvidence = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+        check(savedEvidence.saveObservation?.saveDirectory == "/synthetic/recorded-save-folder"
+              && mixedGames[0].saveObservation == nil,
+              "Save location consumes only the title's optional observed directory, never world/retention claims")
         for invalid in [
             String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "/synthetic/proof.png", with: "https://invalid/proof.png")
         ] {
@@ -411,6 +420,55 @@ enum LibraryAccessChecks {
         let gameBytes = try Data(contentsOf: gameFile), saveBytes = try Data(contentsOf: saveFile)
         check(records.first?.installed == preserved && gameBytes == content && saveBytes == content,
               "SDD-LIB-04: withdrawing access preserves real synthetic game/save bytes and reachable registry record")
+    }
+
+    private static func saveLocationChecks(check: (Bool, String) -> Void) throws {
+        let citations = try GameSaveCitations.load()
+        check(citations.items.count == 12
+              && citations.items.first(where: { $0.productID == "9NLRT31Z4RWM" })?.path
+                  == "%LOCALAPPDATA%\\Packages\\Finji.TUNIC_tys0ffscxatjj\\SystemAppData\\wgs"
+              && citations.items.allSatisfy { $0.scope.contains("not") || $0.scope.contains("Never") },
+              "S4 v4/v5 save citations preserve exact Windows paths and unobserved platform scope")
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/SaveLocationChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Owned save-location fixture cleanup failed: \(error.localizedDescription)") }
+        }
+        check(try GameSaveLocation.observation(productID: "C3KLDKZBHNCZ", recordedPath: nil, home: root) == nil
+              && GameSaveLocation.observation(productID: "9NLRT31Z4RWM", recordedPath: nil, home: root) == nil,
+              "Missing host folders and cited Windows variables never invent an observed or openable location")
+        let fallout = root.appendingPathComponent("Documents/My Games/Fallout4 MS/Saves")
+        try FileManager.default.createDirectory(at: fallout, withIntermediateDirectories: true)
+        let save = fallout.appendingPathComponent("synthetic-save")
+        let bytes = Data("unchanged synthetic save".utf8)
+        try bytes.write(to: save)
+        let found = try GameSaveLocation.observation(productID: "C3KLDKZBHNCZ", recordedPath: nil, home: root)
+        check(found?.folder.path == fallout.path && found?.recorded == false
+              && found?.label == "Folder found · save data not verified"
+              && found?.basis.contains("GDK container save location is unresolved") == true,
+              "An existing Fallout Documents folder does not become a verified GDK save location")
+        let recorded = try GameSaveLocation.observation(productID: "9MW9469V91LM",
+                                                        recordedPath: fallout.path, home: root)
+        let after = try Data(contentsOf: save)
+        check(recorded?.recorded == true && recorded?.label == "Observed save directory"
+              && recorded?.folder.path == fallout.path && after == bytes,
+              "Recorded per-title directory observation is read-only and preserves actual save bytes")
+        let link = root.appendingPathComponent("linked-folder")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: fallout)
+        for invalid in [link.path, save.path, root.path, root.path + "/../outside",
+                        "%LOCALAPPDATA%\\Packages\\example", root.appendingPathComponent("missing").path] {
+            do {
+                _ = try GameSaveLocation.directory(invalid, home: root)
+                check(false, "Invalid, symlink, non-directory or unresolved save folder rejected")
+            } catch { check(true, "Invalid, symlink, non-directory or unresolved save folder rejected") }
+        }
+        let minecraft = root.appendingPathComponent("Library/Application Support/minecraft/saves")
+        try FileManager.default.createDirectory(at: minecraft, withIntermediateDirectories: true)
+        check(try GameSaveLocation.observation(productID: "9PJ8266BHFWN", recordedPath: nil, home: root)?.folder.path == minecraft.path
+              && GameSaveLocation.observation(productID: "UNKNOWN00001", recordedPath: nil, home: root) == nil,
+              "Native Minecraft discovers only its exact existing folder, never a cross-title or guessed prefix")
     }
 
     private static func minecraftInstallationChecks(check: (Bool, String) -> Void) throws {
