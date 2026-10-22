@@ -478,8 +478,9 @@ enum NativeLifecycleChecks {
             importedAt: Date(), usesNativeLifecycle: true)
         let resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
             defaults: defaults, evidence: hallsEvidence)
-        check(resolvedHalls.engine == NativeHallsLaunchRecipe.engine
-              && resolvedHalls.prefix.path == NativeHallsLaunchRecipe.prefix.path
+        check(resolvedHalls.engine == NativeWorkingLaunchRecipe.engine
+              && resolvedHalls.prefix.path == NativeWorkingLaunchRecipe.admitted(
+                productID: hallsGame.storeId, evidence: hallsEvidence)?.prefix.path
               && resolvedHalls.profile?.environment.isEmpty == true
               && resolvedHalls.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
               "Halls exact Apple4/default-COM/runtime/preserved save prefix wins over a conflicting global provider without launching")
@@ -492,6 +493,35 @@ enum NativeLifecycleChecks {
             check(true, "Qualified Halls refuses unobserved fallback or inherited COM/support-library settings")
         }
         defaults.removeObject(forKey: "Xodus.lifecycle.fallback.9NMNMS626R59")
+        let hogwartsJSON = String(decoding: hallsBytes, as: UTF8.self)
+            .replacingOccurrences(of: "9NMNMS626R59", with: "9MT5NJ5W7B8Z")
+            .replacingOccurrences(of: "Halls of Torment", with: "Hogwarts Legacy")
+            .replacingOccurrences(of: "8d7ea6ba-ec75-4cb1-8b96-7300bd467159",
+                                  with: "891d061f-4820-4cd3-9b61-efefa5700be9")
+            .replacingOccurrences(of: "5b39beb9-62b4-4241-9330-33422bbccafd",
+                                  with: "86e8da68-f4b0-48f8-bf7a-46e577ff3488")
+        var hogwartsDocument = try JSONSerialization.jsonObject(with: Data(hogwartsJSON.utf8)) as? [String: Any] ?? [:]
+        var hogwartsRows = hogwartsDocument["games"] as? [[String: Any]] ?? []
+        hogwartsRows[0]["normalQuitRunId"] = "f2471368-2523-4578-8eb8-75c8d4db7040"
+        hogwartsDocument["games"] = hogwartsRows
+        let hogwartsEvidence = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: hogwartsDocument)).games[0]
+        let hogwartsGame = InstalledGame(id: UUID(), title: "Hogwarts Legacy", identityName: "SyntheticHogwarts",
+            version: "1.0.0.0", storeId: "9MT5NJ5W7B8Z", folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        let resolvedHogwarts = try NativeLaunchConfiguration.resolve(game: hogwartsGame,
+            provider: .standaloneWine, defaults: defaults, evidence: hogwartsEvidence)
+        check(resolvedHogwarts.engine == "apple-gptk-4.0b3"
+              && resolvedHogwarts.profile?.executable == "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe"
+              && resolvedHogwarts.profile?.launchEnvironment == ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"]
+              && resolvedHogwarts.prefix.path.hasSuffix("/XodusCLI/prefixes/s3-hogwarts-apple4-v1")
+              && hogwartsEvidence.verifiedWorkingEvidence != nil,
+              "Qualified Hogwarts uses exact published Apple4/STA1/direct exe/existing save prefix with Play eligibility and Working badge")
+        hogwartsRows[0]["normalQuitRunId"] = "00000000-0000-0000-0000-000000000001"
+        hogwartsDocument["games"] = hogwartsRows
+        let wrongQuit = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: hogwartsDocument)).games[0]
+        check(NativeCandidateLaunchCatalogue.issue(productID: hogwartsGame.storeId, evidence: wrongQuit) != nil
+              && NativeCandidateLaunchCatalogue.issue(productID: hogwartsGame.storeId) != nil,
+              "Hogwarts requires its exact ordinary-quit evidence before any STA recipe applies")
         for change in [
             ("WORKING", "GAMEPLAY_PASS"), ("WORKING", "FUTURE_RESULT"),
             ("apple-gptk-4.0b3", "creation-dx11-d3dmetal"),
@@ -609,12 +639,12 @@ enum NativeLifecycleChecks {
               && !profiles.contains(where: { $0.productID == hollowCandidate.productID }),
               "HK local-save mirror is an inactive data candidate, never applied before real saved-relaunch evidence")
         let runtimeCatalogue = try NativeTitleLaunchProfile.RuntimeCatalogue.bundled()
-        check(runtimeCatalogue.items.filter(\.observed).map(\.storeId) == ["9P4NV23Q6QC2"],
-              "Only S2's actually observed Abiotic title-screen setting is active; title screen is not WORKING")
+        check(runtimeCatalogue.items.filter(\.observed).map(\.storeId) == ["9P4NV23Q6QC2", "9MT5NJ5W7B8Z"],
+              "Only observed Abiotic and now-qualified Hogwarts STA settings are active; other diagnostic candidates remain inactive")
         for item in runtimeCatalogue.items where !item.observed {
             check(!profiles.contains(where: {
                 $0.productID == item.storeId && $0.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
-            }), "Pending \(item.storeId) including Hogwarts never auto-applies STA from diagnostic inventory")
+            }), "Pending \(item.storeId) never auto-applies STA from diagnostic inventory")
         }
         let abiotic = profiles.first { $0.productID == "9P4NV23Q6QC2" }
         check(abiotic?.engine == "apple-gptk-4.0b3"
@@ -656,10 +686,10 @@ enum NativeLifecycleChecks {
               && observedAbiotic?.launchEnvironment["XODUS_PRIVATE_CALLER_OWNS_COM"] == nil
               && observedAbiotic?.unsetEnvironment?.contains("CX_APPLEGPTK_LIBD3DSHARED_PATH") == true
               && defaultNMS?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == nil,
-              "Actual tile profile selection consumes only Abiotic's observed S2 settings and preserves working NMS")
-        let pendingID = "9MT5NJ5W7B8Z"
+              "Actual tile profile selection consumes observed Abiotic settings and preserves working NMS")
+        let pendingID = "9PJPCB188SVG"
         check(try NativeTitleLaunchProfile.read(productID: pendingID, defaults: defaults) == nil,
-              "Hogwarts pending S2 diagnostic candidate is not a normal tile launch profile")
+              "An unqualified pending diagnostic candidate is not a normal tile launch profile")
         let pendingProfile = NativeTitleLaunchProfile(version: 1, productID: pendingID,
             engine: "apple-gptk-4.0b3", shimDirectory: nil, environment: ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"])
         try JSONEncoder().encode(pendingProfile).write(to: root.appendingPathComponent(pendingID + ".json"))

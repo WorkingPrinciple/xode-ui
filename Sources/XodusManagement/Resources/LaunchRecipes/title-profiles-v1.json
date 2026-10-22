@@ -35,10 +35,34 @@
   "profiles": [
     {
       "version": 1,
+      "productID": "9MT5NJ5W7B8Z",
+      "title": "Hogwarts Legacy",
+      "publishedSource": "xode-wine f7204ef6893439ac781190ee32bd95776fd63ec7 engines/hogwarts-qualified.json",
+      "publishedSourceSHA256": "a86d88ab5d9bb5b99d43c76c9c0d7ed0046671916150d2815cc89c15a1fd8cde",
+      "qualification": "S3 WORKING: admitted retained checkpoint and ordinary final quit; app E2E unobserved",
+      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/invocation.json",
+      "sourceRecipeSHA256": "a38877dd6822ba9260836ebb832d6dbb53a26d531ee540eb453c2cb5eec1c3ab",
+      "engine": "apple-gptk-4.0b3",
+      "executable": "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe",
+      "timeoutSeconds": 600,
+      "noAutoDismiss": true,
+      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"],
+      "runtime": {
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+        "legacySHA256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+      }
+    },
+    {
+      "version": 1,
       "productID": "9NMNMS626R59",
       "title": "Halls of Torment",
+      "publishedSource": "xode-wine 27b1e67160efd8460761a48e40cf7b23aacbe862 engines/small-game-candidates.json",
+      "publishedSourceSHA256": "4784739ac39f595b71710fec04474cfd284f07d6e4f8d390290297d8336e91d6",
       "qualification": "S3 WORKING with retained local progression and ordinary CLI0/Wine0 quit; app E2E unobserved",
       "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-halls-retention-02/invocation.json",
+      "sourceRecipeSHA256": "15cb88271d2dd916f55a77bb42197033f83878a12f07f811c96de4b1521f363b",
       "engine": "apple-gptk-4.0b3",
       "executable": "Halls of Torment.exe",
       "timeoutSeconds": 300,

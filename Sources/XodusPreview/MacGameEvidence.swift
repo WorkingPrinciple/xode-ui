@@ -47,6 +47,7 @@ struct MacGameEvidence: Decodable, Sendable {
         let engine: String?
         let runId: String?
         let retentionRunId: String?
+        let normalQuitRunId: String?
         let screenshots: [Screenshot]
         let owner: String
         let blocker: String?

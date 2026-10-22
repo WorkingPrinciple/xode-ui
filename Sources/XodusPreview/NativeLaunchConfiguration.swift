@@ -163,7 +163,7 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "9cddef7cf30a9553f2ab3e9b5cffa4d5812c4fd260e03f32bf1e507c2931dd76" else {
+                    == "43db70dfa2dcf371e6d0899d8f34604787603ad3aeb32a48d7fb545761ada25c" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
@@ -451,8 +451,8 @@ struct NativeLaunchConfiguration {
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: provider, evidence: evidence)
-        let qualifiedHalls = NativeHallsLaunchRecipe.admits(productID: game.storeId, evidence: evidence)
-        let candidate = qualifiedHalls ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
+        let qualified = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence)
+        let candidate = qualified != nil ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
             try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))
             guard profile?.engine == candidate.profile, profile?.executable == candidate.manifest_executable else {
@@ -465,12 +465,12 @@ struct NativeLaunchConfiguration {
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
         var entry = try selectEngine(registry: registry,
-                                     provider: qualifiedHalls || profile?.provider != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
+                                     provider: qualified != nil || profile?.provider != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
         try candidate?.validateEngine(entry, fallback: defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)"))
-        if qualifiedHalls {
+        if let qualified {
             guard let profile else { throw NativeLaunchError.invalidProfile }
-            try NativeHallsLaunchRecipe.validate(profile, entry: entry,
+            try qualified.validate(profile, entry: entry,
                 fallback: defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)"))
         }
         if profile?.dllOverrides != nil {
@@ -506,7 +506,7 @@ struct NativeLaunchConfiguration {
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable
         }
-        let prefix = qualifiedHalls ? NativeHallsLaunchRecipe.prefix : URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+        let prefix = qualified?.prefix ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
             "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         if let selected = profile?.shimDirectory, selected != shims.directory.path {

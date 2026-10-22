@@ -89,8 +89,8 @@
     {
       "storeId": "9MT5NJ5W7B8Z",
       "title": "Hogwarts Legacy",
-      "status": "candidate-pending-S3-test",
-      "pendingTest": true,
+      "status": "title-screen-observed",
+      "pendingTest": false,
       "launch": {
         "engine": "apple-gptk-4.0b3",
         "executable": "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe",
@@ -101,14 +101,18 @@
         ]
       },
       "evidence": {
+        "runId": "f2471368-2523-4578-8eb8-75c8d4db7040",
+        "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/runs/f2471368-2523-4578-8eb8-75c8d4db7040/result.json",
+        "cliExitCode": 0,
+        "wineExitCode": 0,
         "priorRunId": "9b93fbfb-0c05-4a9e-a350-a081c3f9faf5",
         "recipePath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/hogwarts-apple4-sta-recipe-v1.json",
-        "observation": "Prior base-profile run failed. Runtime interface activity preceded COM interface/marshal errors, but the log does not establish apartment initialization or MTA causality. STA-only is a controlled candidate, ranked before a sibling-profile change.",
-        "staRunId": null,
-        "titleScreenObserved": false
+        "observation": "S3 proved gameplay and fresh-process retained cave checkpoint; coordinator admitted retention. Final STA-only run f2471368 completed ordinary Exit to Main Menu and EXIT GAME with CLI0/Wine0. Working qualification is CLI-only, not app-tile E2E; earlier base-profile failures remain historical.",
+        "staRunId": "f2471368-2523-4578-8eb8-75c8d4db7040",
+        "titleScreenObserved": true
       },
-      "gameplayQualified": false,
-      "saveRetentionPass": false
+      "gameplayQualified": true,
+      "saveRetentionPass": true
     },
     {
       "storeId": "9NH0MSG29X6L",

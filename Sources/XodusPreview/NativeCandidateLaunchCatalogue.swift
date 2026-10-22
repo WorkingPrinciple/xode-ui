@@ -95,8 +95,12 @@ struct NativeCandidateLaunchCatalogue: Decodable {
 
     static func issue(productID: String, evidence: MacGameEvidence.Game? = nil) -> String? {
         do {
+            if productID == "9MT5NJ5W7B8Z" {
+                return NativeWorkingLaunchRecipe.admitted(productID: productID, evidence: evidence) != nil
+                    ? nil : "The exact qualified Hogwarts recipe requires its matching Working, save and normal-quit evidence."
+            }
             guard let row = try row(productID: productID), !row.admitted else { return nil }
-            if NativeHallsLaunchRecipe.admits(productID: productID, evidence: evidence) { return nil }
+            if NativeWorkingLaunchRecipe.admitted(productID: productID, evidence: evidence) != nil { return nil }
             return row.blocker
                 ?? "This title's candidate launch recipe is not approved for a launch attempt."
         } catch {
@@ -106,36 +110,57 @@ struct NativeCandidateLaunchCatalogue: Decodable {
     }
 }
 
-enum NativeHallsLaunchRecipe {
-    static let productID = "9NMNMS626R59"
+struct NativeWorkingLaunchRecipe {
+    let productID: String
+    let executable: String
+    let prefixName: String
+    let initialRun: String
+    let retentionRun: String
+    let quitRun: String?
+    let timeout: UInt
+    let environment: [String: String]
     static let engine = "apple-gptk-4.0b3"
-    static let executable = "Halls of Torment.exe"
-    static let prefix = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
-        "Library/Application Support/XodusCLI/prefixes/s2-9NMNMS626R59-apple4-passive-v1")
+    private static let recipes = [
+        Self(productID: "9NMNMS626R59", executable: "Halls of Torment.exe",
+             prefixName: "s2-9NMNMS626R59-apple4-passive-v1",
+             initialRun: "8d7ea6ba-ec75-4cb1-8b96-7300bd467159",
+             retentionRun: "5b39beb9-62b4-4241-9330-33422bbccafd", quitRun: nil,
+             timeout: 300, environment: [:]),
+        Self(productID: "9MT5NJ5W7B8Z", executable: "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe",
+             prefixName: "s3-hogwarts-apple4-v1",
+             initialRun: "891d061f-4820-4cd3-9b61-efefa5700be9",
+             retentionRun: "86e8da68-f4b0-48f8-bf7a-46e577ff3488",
+             quitRun: "f2471368-2523-4578-8eb8-75c8d4db7040",
+             timeout: 600, environment: ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"])
+    ]
 
-    static func admits(productID: String, evidence: MacGameEvidence.Game?) -> Bool {
-        guard productID == Self.productID, let evidence else { return false }
-        return evidence.productId == productID && evidence.verdict == .working
-            && evidence.engine == engine && evidence.verifiedWorkingEvidence != nil
-            && evidence.runId == "8d7ea6ba-ec75-4cb1-8b96-7300bd467159"
-            && evidence.retentionRunId == "5b39beb9-62b4-4241-9330-33422bbccafd"
-            && evidence.saveObservation?.retentionVerified == true
-            && evidence.saveObservation?.normalMenuQuitObserved == true
+    var prefix: URL {
+        URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+            "Library/Application Support/XodusCLI/prefixes/\(prefixName)")
     }
 
-    static func validate(
+    static func admitted(productID: String, evidence: MacGameEvidence.Game?) -> Self? {
+        guard let recipe = recipes.first(where: { $0.productID == productID }),
+              let evidence, evidence.productId == productID, evidence.verdict == .working,
+              evidence.engine == engine, evidence.verifiedWorkingEvidence != nil,
+              evidence.runId == recipe.initialRun, evidence.retentionRunId == recipe.retentionRun,
+              recipe.quitRun.map({ evidence.normalQuitRunId == $0 }) ?? true,
+              evidence.saveObservation?.retentionVerified == true,
+              evidence.saveObservation?.normalMenuQuitObserved == true else { return nil }
+        return recipe
+    }
+
+    func validate(
         _ profile: NativeTitleLaunchProfile, entry: NativeEngineRegistry.Entry,
         fallback: String?
     ) throws {
-        guard profile.productID == productID, profile.engine == engine, entry.name == engine,
-            profile.executable == executable, profile.environment.isEmpty,
+        let unset = ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+            + (environment.isEmpty ? ["XODUS_PRIVATE_RUNTIME_COM_STA"] : [])
+        guard profile.productID == productID, profile.engine == Self.engine, entry.name == Self.engine,
+            profile.executable == executable, profile.environment == environment,
             profile.dllOverrides == nil,
-            profile.arguments == ["--exe", executable, "--timeout-seconds", "300", "--no-auto-dismiss"],
-            Set(profile.unsetEnvironment ?? [])
-                == Set([
-                    "XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM",
-                    "CX_APPLEGPTK_LIBD3DSHARED_PATH",
-                ]),
+            profile.arguments == ["--exe", executable, "--timeout-seconds", String(timeout), "--no-auto-dismiss"],
+            Set(profile.unsetEnvironment ?? []) == Set(unset),
             (profile.unsetEnvironment ?? []).allSatisfy({ entry.environment?[$0] == nil }),
             fallback == nil,
             profile.runtime?.primarySHA256

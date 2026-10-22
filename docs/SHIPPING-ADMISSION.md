@@ -278,6 +278,14 @@ No prefix is copied or changed by resolution. Global provider/fallback
 preferences cannot substitute another recipe. Missing, partial, unknown or
 mismatched evidence keeps Launch unavailable; `complete` installation is still
 required before Play. This is CLI-qualified evidence, not app-tile E2E.
+The projection cites S1 `27b1e67160efd8460761a48e40cf7b23aacbe862`.
+Hogwarts similarly consumes S1
+`f7204ef6893439ac781190ee32bd95776fd63ec7` `engines/hogwarts-qualified.json`:
+Apple4 with STA1 only, direct `Phoenix/Binaries/WinGDK/HogwartsLegacy.exe`,
+no game arguments and existing `s3-hogwarts-apple4-v1` prefix. Matching gameplay
+`891d061f`, retention `86e8da68`, ordinary quit `f2471368` and typed
+retention/quit success are required. Its new WORKING record dynamically replaces
+the former quit-pending label; the UI does not write or promote the matrix.
 
 The source-only candidate batch consumes byte-identical S1
 `small-game-candidates.json` at xode-wine `27d9af8ae66b8de9883daca25c62312562c3dfbc`
