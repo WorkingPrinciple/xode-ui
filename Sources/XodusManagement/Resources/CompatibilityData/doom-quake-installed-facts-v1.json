@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "collectedAt": "2026-10-22T01:57:45.915174+00:00",
+  "readOnly": true,
+  "gameLaunches": 0,
+  "decryptedFiles": 0,
+  "scope": "Installed-file facts for S1 row research; no launch commands.",
+  "items": [
+    {
+      "storeId": "9MXND4PQLK3W",
+      "title": "DOOM 64",
+      "gameDir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.Doom641997",
+          "version": "1.8.0.0",
+          "storeId": "9MXND4PQLK3W"
+        },
+        "manifestSha256": "710953a195ba86f3cd5d76550d152f30206deac89daeaf3f727517462d57d5e9",
+        "metadata": {
+          "MSAAppId": [
+            "0000000040273E0C"
+          ],
+          "TitleId": [
+            "7f5169e4"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "DOOM64_x64.exe"
+        ],
+        "engineMarkers": {},
+        "graphicsAPIs": [],
+        "binaries": [
+          {
+            "path": "DOOM64_x64.exe",
+            "sizeBytes": 6320128,
+            "headerSha256": "08ad9f5d6f046e50079407bd27606ad42b218537048eb784027abaf4ffd8ea9c",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          },
+          {
+            "path": "SDL2.dll",
+            "sizeBytes": 1331712,
+            "headerSha256": "c46a3fc444808f3b86a7e757e5202d16f8ea9bf1c6aff2cabc593e7d0f2c9ad2",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "gdi32.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "msvcrt.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "user32.dll",
+              "version.dll",
+              "winmm.dll"
+            ],
+            "graphicsAPIs": [],
+            "dxgi": false,
+            "backendMarkers": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 22,
+          "fileListSha256": "ef17a76c72a3f3cf1906e3a37e2ebb1ab64a06846598479b2e6f45a842cbb505",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": false
+      },
+      "resources": [
+        {
+          "path": "/Users/dragoshont/Games/Xodus/Doom64-Xbox/BNet.kpf",
+          "sizeBytes": 1678271,
+          "sha256": "9e488b85860a911b6927eca3b0ff67a51ee23f38f4c4b260efc45ce37156ea0c",
+          "headerHex": "504b03041400000000006592054f0000",
+          "archiveReadableWithoutDecryption": true,
+          "entryCount": 31,
+          "rendererNamedEntries": []
+        },
+        {
+          "path": "/Users/dragoshont/Games/Xodus/Doom64-Xbox/Doom64.kpf",
+          "sizeBytes": 27813900,
+          "sha256": "92d69c89ecbffa372286f488866f20e7c03478defafa7b1cf8b10055da25e483",
+          "headerHex": "504b0304140000000800d0958a503885",
+          "archiveReadableWithoutDecryption": true,
+          "entryCount": 156,
+          "rendererNamedEntries": [
+            "progs/bilateralBlurMain.shader",
+            "progs/bilateralBlur_H.shader",
+            "progs/bilateralBlur_V.shader",
+            "progs/bnetDisplayGrayscale.shader",
+            "progs/colorPicker.shader",
+            "progs/copyDepthMip.shader",
+            "progs/default.shader",
+            "progs/deinterleave.shader",
+            "progs/distanceField.shader",
+            "progs/doomDisplayTexArray.shader",
+            "progs/doomSceneFilter.shader",
+            "progs/doomSceneMain.shader",
+            "progs/doomSceneNoFilter.shader",
+            "progs/doomSimpleNoAlpha.shader",
+            "progs/downSampleDepth.shader",
+            "progs/dxShaders.bin",
+            "progs/fxaa.shader",
+            "progs/fxaa_fast.shader",
+            "progs/fxaa_main.shader",
+            "progs/motionBlur.shader",
+            "progs/motionBlurMain.shader",
+            "progs/motionBlurVisualize.shader",
+            "progs/sao.shader",
+            "progs/simpleBlur.shader",
+            "progs/SMAA/SMAA_blendWeights.shader"
+          ]
+        },
+        {
+          "path": "/Users/dragoshont/Games/Xodus/Doom64-Xbox/xboxone.kpf",
+          "sizeBytes": 160448,
+          "sha256": "fba5dc1e6d955e8fffed6856aa15095e4d378d022a4985d49f111e763a4c0182",
+          "headerHex": "504b0304140000000800e5b42852d7d2",
+          "archiveReadableWithoutDecryption": true,
+          "entryCount": 63,
+          "rendererNamedEntries": []
+        }
+      ],
+      "topLevelNames": [
+        ".xodus-streaming.msixvc",
+        "BNet.kpf",
+        "DOOM64.WAD",
+        "DOOM64_LargeLogo.png",
+        "DOOM64_Logo.png",
+        "DOOM64_SmallLogo.png",
+        "DOOM64_SplashScreen.png",
+        "DOOM64_StoreLogo.png",
+        "DOOM64_x64.exe",
+        "DOOMSND.DLS",
+        "Doom64.kpf",
+        "MicrosoftGame.config",
+        "SDL2.dll",
+        "appxmanifest.xml",
+        "fmod.dll",
+        "layout_83db20fc-65b0-46ce-83b8-02fef95f0589.xml",
+        "movies",
+        "xboxone.kpf"
+      ],
+      "lastCompleteAdf8Status": {
+        "content_id": "92e95e12-ba7e-41b5-b5d8-ac3faaca8777",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 21,
+        "finished_at": "2026-10-22T01:39:56.759044Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7",
+        "operation": "install-status",
+        "product": "9MXND4PQLK3W",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7/result.json",
+        "run_id": "b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7",
+        "started_at": "2026-10-22T01:39:56.701148Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "publicEngineAndApiProxy": {
+        "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+        "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+        "httpStatus": 200,
+        "sha256": "1fab1b6527e5f6dc9a9849514fd9cec7b997bcd0d1cb54073657b3e1c2eec4f2",
+        "error": null,
+        "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+        "ratings": {},
+        "facts": [
+          "{{Infobox game/row/engine|Kex Engine|build=3.8}}",
+          "|steam appid  = 1148590",
+          "|steam appid side  = ",
+          "{{Game data/saves|Windows|{{p|USERPROFILE}}\\Saved Games\\Nightdive Studios\\DOOM 64\\saves\\}}",
+          "{{Game data/saves|Microsoft Store|{{P|localappdata}}\\Packages\\BethesdaSoftworks.Doom641997_3275kfvn8vcwc\\SystemAppData\\wgs\\}}",
+          "|xbox cloud                = true",
+          "|mouse menu                = true",
+          "|controller support        = true",
+          "|xinput controllers        = true",
+          "# Find a line {{code|seta r_rhirenderfamily \"vulkan\"}}.",
+          "# Set it to either {{code|seta r_rhirenderfamily \"d3d11\"}} or {{code|seta r_rhirenderfamily \"opengl\"}}.",
+          "|direct3d versions      = 11",
+          "|direct3d notes         = ",
+          "|opengl versions        = 3.2",
+          "|opengl notes           = ",
+          "|vulkan versions        = true",
+          "|vulkan notes           = "
+        ],
+        "bodyAvailable": true
+      },
+      "installedEngineName": null,
+      "installedEngineVersion": null,
+      "activeRenderer": null,
+      "launch": null,
+      "interpretation": "Exact manifest executable and package resource names observed read-only. Opaque main executable cannot establish engine version/compiled drivers. KPF/SDL layout agrees with public Kex reference but is not an installed engine-version proof or active-renderer result. Archive listing is capability/layout only, not selected backend."
+    },
+    {
+      "storeId": "9P1Z43KRNQD4",
+      "title": "Quake",
+      "gameDir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.ProjectSilver",
+          "version": "1.0.5603.0",
+          "storeId": "9P1Z43KRNQD4"
+        },
+        "manifestSha256": "bdd4b71ad2841b7df764661f9914df255214cfc79760908d5c450df899e9c5be",
+        "metadata": {
+          "MSAAppId": [
+            "00000000485A1439"
+          ],
+          "TitleId": [
+            "6de3bc2f"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "bastet_WinStore.exe"
+        ],
+        "engineMarkers": {},
+        "graphicsAPIs": [],
+        "binaries": [
+          {
+            "path": "SDL2.dll",
+            "sizeBytes": 1481592,
+            "headerSha256": "52ea4dd296abe995cc1052a3a29325a8306fc888b3d6fea352d2cebdd83e6eaa",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "gdi32.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "user32.dll",
+              "version.dll",
+              "winmm.dll"
+            ],
+            "graphicsAPIs": [],
+            "dxgi": false,
+            "backendMarkers": []
+          },
+          {
+            "path": "bastet_WinStore.exe",
+            "sizeBytes": 14344192,
+            "headerSha256": "e8081bfd7faccd94c43b7adc25cfe5d22e439217024307c4ebd027aecd0103e6",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 63,
+          "fileListSha256": "ad4c91278e3b0c3cd2bf5bee0b0d983a6d6583c5623404f618ca71a766a81262",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": false
+      },
+      "resources": [
+        {
+          "path": "/Users/dragoshont/Games/Xodus/Quake-Xbox/QuakeEX.kpf",
+          "sizeBytes": 14668646,
+          "sha256": "199d057e342ce5b07057a16185cd08b669f4bb09bb00e9a4ce6e78bf328d7daf",
+          "headerHex": "504b0304140000000800d050125db583",
+          "archiveReadableWithoutDecryption": true,
+          "entryCount": 627,
+          "rendererNamedEntries": [
+            "progs/bilateralBlurMain.shader",
+            "progs/bilateralBlur_H.shader",
+            "progs/bilateralBlur_V.shader",
+            "progs/bloom.shader",
+            "progs/copyDepthMip.shader",
+            "progs/default.shader",
+            "progs/displayDepth.shader",
+            "progs/distanceField.shader",
+            "progs/downSampleDepth.shader",
+            "progs/fxaa.shader",
+            "progs/fxaa_fast.shader",
+            "progs/fxaa_main.shader",
+            "progs/gaussianBlur.shader",
+            "progs/motionBlur.shader",
+            "progs/motionBlurMain.shader",
+            "progs/motionBlurVisualize.shader",
+            "progs/sao.shader",
+            "progs/simpleBlur.shader",
+            "progs/velocityPack.shader",
+            "progs/velocityTileGen.shader",
+            "progs/velocityTileNeighborhood.shader",
+            "progs/yuvMovieDisplay.shader",
+            "progs/DOF/bokehBlur.shader",
+            "progs/DOF/bokehCoC.shader",
+            "progs/DOF/bokehCombine.shader"
+          ]
+        }
+      ],
+      "topLevelNames": [
+        ".xodus-streaming.msixvc",
+        "Logo.png",
+        "MicrosoftGame.Config",
+        "Party.dll",
+        "PartyXboxLive.dll",
+        "QuakeEX.kpf",
+        "SDL2.dll",
+        "SmallLogo.png",
+        "SplashScreen.png",
+        "StoreLogo.png",
+        "WideLogo.png",
+        "XCurl.dll",
+        "appxmanifest.xml",
+        "bastet_WinStore.exe",
+        "ctf",
+        "dopa",
+        "hipnotic",
+        "id1",
+        "layout_2fe4d052-1ae5-4d2d-a7a9-5d8bdf0ed8d3.xml",
+        "libHttpClient.GDK.dll",
+        "mg1",
+        "mg3",
+        "resources.pri",
+        "rogue",
+        "xaudio2_9redist.dll"
+      ],
+      "lastCompleteAdf8Status": {
+        "content_id": "6d35384a-e3f6-4acd-a2ae-f35e9b8980a5",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 62,
+        "finished_at": "2026-10-22T01:41:13.969941Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/63b52e2d-687d-4de1-8e05-850661291776",
+        "operation": "install-status",
+        "product": "9P1Z43KRNQD4",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/63b52e2d-687d-4de1-8e05-850661291776/result.json",
+        "run_id": "63b52e2d-687d-4de1-8e05-850661291776",
+        "started_at": "2026-10-22T01:41:13.709785Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "publicEngineAndApiProxy": {
+        "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+        "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+        "httpStatus": 200,
+        "sha256": "96d8a3e021bc15bc293f54d22e54183caa5e2024350557893a13b70670610ffa",
+        "error": null,
+        "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+        "ratings": {},
+        "facts": [
+          "{{Infobox game/row/engine|Kex Engine|build=4.0}}",
+          "|steam appid  = 2310",
+          "|steam appid side = ",
+          "{{Game data/saves|Windows|{{P|userprofile}}\\Saved Games\\Nightdive Studios\\Quake\\*.sav}}",
+          "{{Game data/saves|Microsoft Store|}}",
+          "|xbox cloud                = true",
+          "|mouse menu                = true",
+          "|controller support        = true",
+          "|xinput controllers        = true",
+          "|native 3d notes             = '''Dual-View Rendering'''<br>Use [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] in [https://helixmod.blogspot.com/2017/05/3d-fix-manager.html 3D Fix Manager] for [[Glossary:Native_3D#Side-by-Side_.28SBS.29|SBS]], [[Glossary:Native_3D#Top-and-Bottom_.28TAB.29|TAB]], [[Glossary:Native_3D#Interleaved|Interleaved]] and [[Glossary:Native_3D#Anaglyph|Anaglyph]].<br>Or [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] with [https://github.com/BramTeurlings/3DGameBridgeGUI/releases 3D Game Bridge GUI] for [[Glossary:Native_3D#Eye-Tracked_Lightfield|Eye-Tracked Lightfield]] displays.",
+          "|nvidia 3d vision notes      = '''Dual-View Rendering'''<br>Use [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] for [[Glossary:Native_3D#Frame_Sequential|Frame Sequential]] or [[Glossary:Native_3D#Interleaved|Row Interleaved]].",
+          "|direct3d versions      = ",
+          "|direct3d notes         = ",
+          "|opengl versions        = ",
+          "|opengl notes           = ",
+          "|vulkan versions        = 1.1",
+          "|vulkan notes           = Default renderer. Can be forced manually by using {{code|+r_rhirenderfamily vulkan}} [[Glossary:Command line arguments|Command line argument]].<br>D3D11 can be forced manually with the {{code|+r_rhirenderfamily \"d3d11\" +d3d11_compileShaders 1}} [[Glossary:Command line arguments|Command line argument]]. It will change the renderer setting in the configuration file. It can cause graphical glitches and disables the Steam overlay.",
+          "{{Standard table/row|r_gpuCulling 0|Reportedly improves performance on Vulkan.<ref>{{Refurl|url=https://twitter.com/SVKaiser/status/1428651543641956358|title=SVKaiser - twitter|date=2021-08-21}}</ref>}}"
+        ],
+        "bodyAvailable": true
+      },
+      "installedEngineName": null,
+      "installedEngineVersion": null,
+      "activeRenderer": null,
+      "launch": null,
+      "interpretation": "Exact manifest executable and package resource names observed read-only. Opaque main executable cannot establish engine version/compiled drivers. KPF/SDL layout agrees with public Kex reference but is not an installed engine-version proof or active-renderer result. Archive listing is capability/layout only, not selected backend."
+    }
+  ]
+}
