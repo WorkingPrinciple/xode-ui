@@ -299,7 +299,10 @@ def render_summary(packet):
                  f"{row['minimumPassRateCurrentQueue']:.1%}" if row["minimumPassRateCurrentQueue"] is not None
                  else "impossible" for row in packet["scenarios"]) +
              "** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold "
-             f"{fast['minimumPassRateRawSlots']:.1%} requires more eligible titles than current queue.\n\n"
+             f"{fast['minimumPassRateRawSlots']:.1%} "
+             + ("requires more eligible titles than current queue."
+                if fast["serialCycleSlots"] > len(packet["inputs"]["queued"])
+                else "is no longer limited by the historical queue cap.") + "\n\n"
              f"Biggest measured time sink: **between-run gaps, "
              f"{packet['timeSink']['phaseTotalsMinutes']['between recorded runs']:.1f}min total / "
              f"{packet['timeSink']['minutesPerAddition']:.1f}min per addition** across Halls/Hogwarts. "
