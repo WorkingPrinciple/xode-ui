@@ -4,7 +4,7 @@ import XodusCore
 
 struct RootView: View {
     @EnvironmentObject private var state: AppState
-    @FocusState private var searchFocused: Bool
+    @State private var searchFocused = false
 
     var body: some View {
         ScrollViewReader { proxy in

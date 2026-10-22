@@ -13,7 +13,7 @@ struct CatalogSearchResults {
     private let gamePassProductIDs: Set<String>
 
     init(query: String, ownedGames: [PCGame], storeProducts: [CatalogProduct],
-         gamePassProductIDs: Set<String>) {
+         gamePassProductIDs: Set<String>, gamePassProducts: [CatalogProduct] = []) {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
         var byID: [String: PCGame] = [:]
         for game in ownedGames where byID[game.id] == nil { byID[game.id] = game }
@@ -24,7 +24,10 @@ struct CatalogSearchResults {
                 && matchedIDs.insert($0.id).inserted
         }
         var visibleIDs = matchedIDs
-        self.storeProducts = storeProducts.filter { visibleIDs.insert($0.id).inserted }
+        let passMatches = query.isEmpty ? [] : gamePassProducts.filter {
+            $0.title.localizedCaseInsensitiveContains(query)
+        }
+        self.storeProducts = (storeProducts + passMatches).filter { visibleIDs.insert($0.id).inserted }
         self.gamePassProductIDs = gamePassProductIDs
     }
 

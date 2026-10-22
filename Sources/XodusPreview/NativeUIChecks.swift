@@ -237,6 +237,23 @@ enum NativeUIChecks {
               "Grouped native toolbar search stays compact until native editing or Command-F focus")
         check(NativeToolbarSearch.width(text: "scoped query", focused: false) == 220,
               "A nonempty toolbar query retains the editor and native clear control after focus leaves")
+        var lensFocus = false
+        let searchState = AppState()
+        searchState.navigate(.library)
+        let lens = NativeToolbarSearch(text: .constant(""),
+            focused: Binding(get: { lensFocus }, set: { lensFocus = $0 }),
+            placeholder: "Search all games", openSearch: { searchState.navigate(.discover) })
+        lens.expand()
+        check(lensFocus && searchState.destination == .discover
+              && NativeToolbarSearch.width(text: "", focused: lensFocus) == 220,
+              "Header magnifier explicitly opens the global catalog and expands an empty editor before typing")
+        lensFocus = false
+        searchState.navigate(.downloads)
+        var disabledLens = lens
+        disabledLens.enabled = false
+        disabledLens.expand()
+        check(!lensFocus && searchState.destination == .downloads,
+              "A disabled magnifier cannot navigate or request editor focus")
         for (query, focus, width) in [("", false, CGFloat(32)), ("", true, CGFloat(220)),
                                       ("scoped query", false, CGFloat(220))] {
             let host = NSHostingView(rootView: NativeToolbarSearch(
@@ -245,9 +262,14 @@ enum NativeUIChecks {
             host.frame = CGRect(x: 0, y: 0, width: width, height: 36)
             host.layoutSubtreeIfNeeded()
             let fields = descendants(of: host).compactMap { $0 as? NSSearchField }
-            check(host.window == nil && fields.count == 1
-                  && fields.first.map { abs($0.bounds.width - width) < 1 && $0.window == nil } == true,
-                  "Compact/expanded toolbar layout contains exactly one correctly sized detached native editor")
+            if width == 32 {
+                check(host.window == nil && fields.isEmpty,
+                      "Collapsed header search is an explicit action, not an unusable 32-point native editor")
+            } else {
+                check(host.window == nil && fields.count == 1
+                      && fields.first.map { abs($0.bounds.width - width) < 1 && $0.window == nil } == true,
+                      "Expanded toolbar layout contains one correctly sized detached native editor")
+            }
         }
         var text = "old scope"
         var focused = false

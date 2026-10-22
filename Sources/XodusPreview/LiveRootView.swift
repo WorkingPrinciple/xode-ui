@@ -7,7 +7,7 @@ struct LiveRootView: View {
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
-    @FocusState private var searchFocused: Bool
+    @State private var searchFocused = false
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
     @ObservedObject private var companion = XboxCompanionController.shared
@@ -71,9 +71,7 @@ struct LiveRootView: View {
 #endif
     }
     private var searchEnabled: Bool {
-        state.destination == .discover
-            || (state.destination == .library && !state.showsRecentActivity)
-            || (state.showsRecentActivity && session.recentLibrary != nil)
+        !requiresAccountGate
     }
     private var libraryArtworkAllowed: Bool {
 #if XODUS_SHIPPING
@@ -83,9 +81,7 @@ struct LiveRootView: View {
 #endif
     }
     private var searchPlaceholder: String {
-        state.destination == .library ? (state.showsRecentActivity ? "Search recent activity" : "Search your PC games")
-            : state.destination == .downloads ? "Search Library or Discover"
-            : "Search Discover"
+        "Search all games"
     }
     private var refreshHelp: String {
         if state.destination == .discover {
@@ -128,7 +124,9 @@ struct LiveRootView: View {
                          searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,
                          accountLabel: session.accountLabel,
                          accountSymbol: session.accountSymbol,
-                         libraryContrast: toolbarOverArtwork) {
+                         libraryContrast: toolbarOverArtwork, openSearch: {
+                             state.navigate(.discover)
+                         }) {
                 state.openAccount()
             }
             if state.destination == .library && !state.showsRecentActivity {
@@ -350,7 +348,10 @@ struct LiveRootView: View {
             if !requiresSignIn { GameOperationPresentation(operations: state.gameOperations) }
         }
         .background {
-            Button("Focus search") { searchFocused = true }.keyboardShortcut("f").hidden()
+            Button("Focus search") {
+                state.navigate(.discover)
+                searchFocused = true
+            }.keyboardShortcut("f").hidden()
         }
         }
     }

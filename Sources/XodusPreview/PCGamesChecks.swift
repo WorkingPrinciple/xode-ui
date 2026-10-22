@@ -877,6 +877,17 @@ enum PCGamesChecks {
         let noStore = CatalogSearchResults(query: "ridge", ownedGames: [ridge],
             storeProducts: [], gamePassProductIDs: [])
         check(noStore.ownedMatches.map(\.id) == [ridge.id], "B2: Store failure/omission cannot hide a loaded owned title")
+        let mortis = try publicProduct("9P861V1542BL", title: "Valor Mortis")
+        let global = CatalogSearchResults(query: "mortis", ownedGames: [],
+            storeProducts: [mortis], gamePassProductIDs: [mortis.id],
+            gamePassProducts: [mortis, storeOnly])
+        check(global.storeProducts.map(\.id) == ["9P861V1542BL"]
+              && global.badge(for: mortis.id) == .gamePass && global.ownedMatches.isEmpty,
+              "#40: mortis finds Valor Mortis once across Store and Game Pass without requiring library ownership")
+        let passOnly = CatalogSearchResults(query: "MORTIS", ownedGames: [],
+            storeProducts: [], gamePassProductIDs: [mortis.id], gamePassProducts: [mortis])
+        check(passOnly.storeProducts.map(\.id) == [mortis.id],
+              "#40: Loaded Game Pass matches survive a missing Store page without broadening unrelated results")
         let windows = NSApplication.shared.windows.count
         let neutralInstalled = InstalledGamesController()
         let neutralOperations = GameOperationsController(installed: neutralInstalled)

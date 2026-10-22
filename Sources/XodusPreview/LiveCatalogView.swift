@@ -76,15 +76,15 @@ struct LiveCatalogView: View {
     private var results: CatalogSearchResults {
         CatalogSearchResults(query: query, ownedGames: library.representedGames,
             storeProducts: session.catalogMatches(query: query) ? session.products : [],
-            gamePassProductIDs: session.gamePassProductIDs)
+            gamePassProductIDs: session.gamePassProductIDs, gamePassProducts: session.gamePassProducts)
     }
     private var facts: [String: LibraryCatalogFacts] { art.images.mapValues(\.facts) }
     private var genres: [String] { DiscoverBrowse.genres(products: results.storeProducts, facts: facts) }
     private var visibleCandidates: [CatalogProduct] {
         DiscoverBrowse.visible(products: results.storeProducts, facts: facts, genre: query.isEmpty ? selection.genre : nil)
     }
-    private var visible: [CatalogProduct] { visibleCandidates.filter { isVisible(game($0)) } }
-    private var ownedMatches: [PCGame] { results.ownedMatches.filter { isVisible(game($0)) } }
+    private var visible: [CatalogProduct] { visibleCandidates.filter { !query.isEmpty || isVisible(game($0)) } }
+    private var ownedMatches: [PCGame] { results.ownedMatches.filter { !query.isEmpty || isVisible(game($0)) } }
     private var hiddenUnsupportedCount: Int {
         visibleCandidates.count - visible.count + results.ownedMatches.count - ownedMatches.count
     }
@@ -93,7 +93,7 @@ struct LiveCatalogView: View {
             || (query.isEmpty ? session.supports(.discover) : session.supports(.query)))
     }
     private var storeHeading: String {
-        if !query.isEmpty { return "More games" }
+        if !query.isEmpty { return "Store and Game Pass" }
         return session.catalogCorpus == "pcGamePassDiscovery" ? "PC Game Pass catalog" : "Explore games"
     }
     private var validEmptySearch: Bool {
@@ -104,7 +104,6 @@ struct LiveCatalogView: View {
     private var columns: [GridItem] { LibraryGridLayout.columns }
 
     var body: some View {
-        let results = self.results
         VStack(alignment: .leading, spacing: 28) {
             if operations.hasDownloadStatus {
                 GameOperationProgressView(operations: operations)

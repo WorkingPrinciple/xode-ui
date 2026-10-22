@@ -2,6 +2,19 @@
 
 ## Purpose and authorization
 
+### Header search regression (#40)
+
+The collapsed header lens is an explicit accessible button, not a 32-point
+`NSSearchField`. Clicking it or pressing Command-F opens Discover's global
+catalogue search and focuses a 220-point native editor. AppKit editing owns
+the focus binding through ordinary SwiftUI state; an unattached `FocusState`
+must not reset it. Searches join public Store results with loaded Game Pass
+matches and current library ownership, deduplicating by product ID.
+Search results keep unsupported or unknown-package games visible with their
+real compatibility restrictions; inclusion never grants installation or access.
+The regression case `mortis` includes Valor Mortis (`9P861V1542BL`) without
+requiring it to be owned.
+
 ### Morning CLI-only WORKING additions
 
 The app bundles source-bound Hades II (CrossOver 26.3), Abiotic Factor

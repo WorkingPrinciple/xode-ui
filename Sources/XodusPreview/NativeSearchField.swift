@@ -21,15 +21,34 @@ struct NativeToolbarSearch: View {
     @Binding var focused: Bool
     let placeholder: String
     var enabled = true
+    var openSearch: () -> Void = {}
 
     static func width(text: String, focused: Bool) -> CGFloat {
         focused || !text.isEmpty ? 220 : 32
     }
 
+    func expand() {
+        guard enabled else { return }
+        openSearch()
+        focused = true
+    }
+
     var body: some View {
-        ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
-            .frame(width: Self.width(text: text, focused: focused))
-            .help(placeholder)
+        Group {
+            if Self.width(text: text, focused: focused) == 32 {
+                Button(action: expand) {
+                    Image(systemName: "magnifyingglass").frame(width: 24, height: 24)
+                }
+                .buttonStyle(.plain)
+                .disabled(!enabled)
+                .accessibilityLabel(placeholder)
+                .accessibilityIdentifier("xodus.catalog.openSearch")
+            } else {
+                ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
+            }
+        }
+        .frame(width: Self.width(text: text, focused: focused))
+        .help(placeholder)
     }
 }
 
