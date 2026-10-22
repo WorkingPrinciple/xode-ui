@@ -2337,7 +2337,9 @@
     "Brotato": "Best public proxy; frozen installer UTF-16 parser panic held by S2.",
     "Vampire Survivors": "Proton Platinum but Apple wiki CrossOver unplayable vs Wine perfect; native success is NOT a Windows Store result.",
     "Quake": "Enhanced edition uses Vulkan by default. Shared Steam ID reports may cover original/remaster; no original-version Mac rating substituted. Explicit D3D11 alternative needs S1 approval, not automatic flags.",
-    "TUNIC": "Native Mac rating does not establish Windows compatibility; Proton proxy only."
+    "TUNIC": "Native Mac rating does not establish Windows compatibility; Proton proxy only.",
+    "Halls of Torment": "Public Godot 4 OpenGL/Vulkan capability does not select an active renderer. Installed layout and explicit S1 choice required before emitting a launch preflight.",
+    "DOOM 64": "Kex has Vulkan, D3D11 and OpenGL alternatives. The documented config-file renderer change is not authorized by this lane; explicit S1 recipe required before emitting a launch preflight."
   },
   "rejected": [
     {
@@ -2357,6 +2359,7 @@
     "maximumSerialInstallers": 1,
     "budgetBytes": 21474836480,
     "minimumFreeBytes": 161061273600,
+    "operationalMinimumFreeBytes": 166429982720,
     "stagingMarginBytes": 2147483648,
     "stopOnLoginOrPurchase": true,
     "deletions": false,
@@ -4405,7 +4408,7 @@
       "packageFormat": "MSIXVC",
       "numericProbability": null,
       "profileProposal": {
-        "name": "queue-winecx-nativejson",
+        "name": null,
         "status": "candidate-not-game-qualified"
       },
       "save_path": null,
@@ -5152,7 +5155,7 @@
       "packageFormat": "MSIXVC",
       "numericProbability": null,
       "profileProposal": {
-        "name": "queue-winecx-nativejson",
+        "name": null,
         "status": "candidate-not-game-qualified"
       },
       "save_path": "%LOCALAPPDATA%\\Packages\\BethesdaSoftworks.Doom641997_3275kfvn8vcwc\\SystemAppData\\wgs",

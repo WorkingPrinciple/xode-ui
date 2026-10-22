@@ -1,0 +1,1020 @@
+{
+  "schemaVersion": 1,
+  "scope": "Serial installs only; no launches or deletion",
+  "budgetBytes": 21474836480,
+  "minimumFreeBytes": 161061273600,
+  "installerSha256": "ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d",
+  "statusCliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
+  "items": [
+    {
+      "storeId": "9P9VNSQK1W3K",
+      "title": "Brotato",
+      "root": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+      "state": "failed-parser-panic",
+      "install": {
+        "engine": null,
+        "error": "Child exited with code 101; inspect stderr.log",
+        "error_code": "OPERATION_FAILED",
+        "exit_code": 101,
+        "finished_at": "2026-10-22T01:10:53.818444Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+        "launch_receipt_path": null,
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8c15b0b5-2f15-4a5d-a5a5-7d026453a1ff",
+        "operation": "install",
+        "popup_monitor_error": null,
+        "popups": [],
+        "prefix": null,
+        "product": "9P9VNSQK1W3K",
+        "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8c15b0b5-2f15-4a5d-a5a5-7d026453a1ff/progress.jsonl",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8c15b0b5-2f15-4a5d-a5a5-7d026453a1ff/result.json",
+        "run_id": "8c15b0b5-2f15-4a5d-a5a5-7d026453a1ff",
+        "started_at": "2026-10-22T01:10:51.218316Z",
+        "success": false,
+        "version": 1,
+        "wine": null,
+        "wine_exit_code": null,
+        "wine_termination_signal": null
+      },
+      "reservedBytes": 449249280,
+      "stopPipeline": false,
+      "hold": "S2 owns UTF-16 parser diagnosis; no retry/deletion.",
+      "source": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8c15b0b5-2f15-4a5d-a5a5-7d026453a1ff/result.json"
+    },
+    {
+      "storeId": "9P8NSTDMZ11P",
+      "title": "Inscryption",
+      "root": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+      "reservedBytes": 3613872128,
+      "freeBeforeBytes": 185850322944,
+      "startedAt": "2026-10-22T01:12:03.013762+00:00",
+      "argv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+        "install",
+        "9P8NSTDMZ11P",
+        "--account-profile",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI",
+        "--market",
+        "GB"
+      ],
+      "stopPipeline": false,
+      "state": "complete-not-game-qualified",
+      "matrixSha256": "d92134bcd932ea89b7140582c8db5edcba06465859b6cd609f812fd92059617f",
+      "processExitCode": 0,
+      "freeAfterBytes": 180817817600,
+      "finishedAt": "2026-10-22T01:13:59.737367+00:00",
+      "stderr": "",
+      "install": {
+        "engine": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "finished_at": "2026-10-22T01:13:59.723510Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+        "launch_receipt_path": null,
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/26fdca10-9da2-40f2-82b0-3f6de06752c9",
+        "operation": "install",
+        "popup_monitor_error": null,
+        "popups": [],
+        "prefix": null,
+        "product": "9P8NSTDMZ11P",
+        "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/26fdca10-9da2-40f2-82b0-3f6de06752c9/progress.jsonl",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/26fdca10-9da2-40f2-82b0-3f6de06752c9/result.json",
+        "run_id": "26fdca10-9da2-40f2-82b0-3f6de06752c9",
+        "started_at": "2026-10-22T01:12:03.030848Z",
+        "success": true,
+        "version": 1,
+        "wine": null,
+        "wine_exit_code": null,
+        "wine_termination_signal": null
+      },
+      "installStatus": {
+        "content_id": "d30ac640-4ec1-4d15-96f3-384052f09699",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 248,
+        "finished_at": "2026-10-22T01:14:00.453352Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d2b5b8d7-72c1-49b7-a10c-ced0182058a6",
+        "operation": "install-status",
+        "product": "9P8NSTDMZ11P",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d2b5b8d7-72c1-49b7-a10c-ced0182058a6/result.json",
+        "run_id": "d2b5b8d7-72c1-49b7-a10c-ced0182058a6",
+        "started_at": "2026-10-22T01:13:59.749565Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "statusArgv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+        "install-status",
+        "9P8NSTDMZ11P",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI"
+      ],
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "DevolverDigital.Inscryption",
+          "version": "0.10.10.0",
+          "storeId": "9P8NSTDMZ11P"
+        },
+        "manifestSha256": "487021aeef1da423f8d2bdc446f9fbfca3cbe3d7742b8c759282f61e2018254d",
+        "metadata": {
+          "TitleId": [
+            "63D4F6D0"
+          ],
+          "MSAAppId": [
+            "000000004497783A"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "Inscryption.exe"
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "Inscryption_Data/globalgamemanagers",
+            "Inscryption_Data/globalgamemanagers.assets",
+            "UnityPlayer.dll"
+          ]
+        },
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "binaries": [
+          {
+            "path": "Inscryption.exe",
+            "sizeBytes": 651264,
+            "headerSha256": "65994f0388d24d8fd988e6a66a308f28e889e9fe6083fe1563b1b9c51f01b3bf",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          },
+          {
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 26164360,
+            "headerSha256": "d383b06dd0ae1b9dd89c73362724bf54223231b2f59d86cc186fc11356c6c8f5",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "dxgi": false,
+            "backendMarkers": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 249,
+          "fileListSha256": "685413f8e25e7cad326923f914f8bd4c2247dfbd30cbb8274ca9f20f65d4ef19",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [
+          "Inscryption_Data/Managed/UnityEngine.ClusterRendererModule.dll"
+        ],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": true
+      },
+      "allocatedBytes": 3613872128
+    },
+    {
+      "storeId": "9MSVVM5NS9L6",
+      "title": "DREDGE",
+      "root": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+      "reservedBytes": 858034176,
+      "freeBeforeBytes": 180379955200,
+      "startedAt": "2026-10-22T01:14:43.535381+00:00",
+      "argv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+        "install",
+        "9MSVVM5NS9L6",
+        "--account-profile",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI",
+        "--market",
+        "GB"
+      ],
+      "stopPipeline": false,
+      "state": "complete-not-game-qualified",
+      "matrixSha256": "4a96fc3f749126d92f948f78cb8cd9ac3fb825b8be4007284faff85c33ff79dd",
+      "processExitCode": 0,
+      "freeAfterBytes": 179478290432,
+      "finishedAt": "2026-10-22T01:15:14.030462+00:00",
+      "stderr": "",
+      "install": {
+        "engine": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "finished_at": "2026-10-22T01:15:14.020105Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+        "launch_receipt_path": null,
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bf495c37-ce5b-4e46-ba2a-e988d1dcced5",
+        "operation": "install",
+        "popup_monitor_error": null,
+        "popups": [],
+        "prefix": null,
+        "product": "9MSVVM5NS9L6",
+        "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bf495c37-ce5b-4e46-ba2a-e988d1dcced5/progress.jsonl",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bf495c37-ce5b-4e46-ba2a-e988d1dcced5/result.json",
+        "run_id": "bf495c37-ce5b-4e46-ba2a-e988d1dcced5",
+        "started_at": "2026-10-22T01:14:43.545779Z",
+        "success": true,
+        "version": 1,
+        "wine": null,
+        "wine_exit_code": null,
+        "wine_termination_signal": null
+      },
+      "installStatus": {
+        "content_id": "90a21577-f88b-45f2-bebf-584b301426ca",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 367,
+        "finished_at": "2026-10-22T01:15:14.250662Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/c97f0297-5662-455e-b8e6-493b1e811bd8",
+        "operation": "install-status",
+        "product": "9MSVVM5NS9L6",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/c97f0297-5662-455e-b8e6-493b1e811bd8/result.json",
+        "run_id": "c97f0297-5662-455e-b8e6-493b1e811bd8",
+        "started_at": "2026-10-22T01:15:14.039934Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "statusArgv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+        "install-status",
+        "9MSVVM5NS9L6",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI"
+      ],
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Team17DigitalLimited.ProjectShoal",
+          "version": "1.0.24.0",
+          "storeId": "9MSVVM5NS9L6"
+        },
+        "manifestSha256": "4a579c6d5be39f0456d076982c8453b2c232c093a2f2a6ce87474b25d4e8b5d8",
+        "metadata": {
+          "MSAAppId": [
+            "6958a832-7ca0-47a0-a4d1-0feaa31ffad2"
+          ],
+          "TitleId": [
+            "71b6a9d4"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "DREDGE.exe"
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "DREDGE_Data/globalgamemanagers",
+            "DREDGE_Data/globalgamemanagers.assets",
+            "DREDGE_Data/globalgamemanagers.assets.resS",
+            "UnityPlayer.dll"
+          ]
+        },
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "binaries": [
+          {
+            "path": "DREDGE.exe",
+            "sizeBytes": 655360,
+            "headerSha256": "6d297dbdbe86e37c18ab0433ef3b4dc4b643c856c0647f2ed0079bd9e9465f8c",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          },
+          {
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 28848552,
+            "headerSha256": "6323ffc7845c16c38927677ef45fb48e2bd8c7a2e47ac97a5125e9043c72755c",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "dwmapi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "dxgi": false,
+            "backendMarkers": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 368,
+          "fileListSha256": "91d5b9363ace3caea823d388d14f54c4c2f7b365ce39b3720726a3cd395dd0d4",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [
+          "DREDGE_Data/Managed/UnityEngine.ClusterRendererModule.dll"
+        ],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": true
+      },
+      "allocatedBytes": 858034176
+    },
+    {
+      "storeId": "9PBWWQGXVMKC",
+      "title": "Monster Sanctuary",
+      "root": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+      "reservedBytes": 841916416,
+      "freeBeforeBytes": 179462750208,
+      "startedAt": "2026-10-22T01:15:33.514893+00:00",
+      "argv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+        "install",
+        "9PBWWQGXVMKC",
+        "--account-profile",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI",
+        "--market",
+        "GB"
+      ],
+      "stopPipeline": false,
+      "state": "complete-not-game-qualified",
+      "matrixSha256": "4a96fc3f749126d92f948f78cb8cd9ac3fb825b8be4007284faff85c33ff79dd",
+      "processExitCode": 0,
+      "freeAfterBytes": 178573914112,
+      "finishedAt": "2026-10-22T01:16:00.739788+00:00",
+      "stderr": "",
+      "install": {
+        "engine": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "finished_at": "2026-10-22T01:16:00.730915Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+        "launch_receipt_path": null,
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8add517d-c2be-41af-a7ac-aa0b12cb28c5",
+        "operation": "install",
+        "popup_monitor_error": null,
+        "popups": [],
+        "prefix": null,
+        "product": "9PBWWQGXVMKC",
+        "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8add517d-c2be-41af-a7ac-aa0b12cb28c5/progress.jsonl",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8add517d-c2be-41af-a7ac-aa0b12cb28c5/result.json",
+        "run_id": "8add517d-c2be-41af-a7ac-aa0b12cb28c5",
+        "started_at": "2026-10-22T01:15:33.524169Z",
+        "success": true,
+        "version": 1,
+        "wine": null,
+        "wine_exit_code": null,
+        "wine_termination_signal": null
+      },
+      "installStatus": {
+        "content_id": "e2ab3609-7d59-458a-be9a-12f5f96daa1f",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 1235,
+        "finished_at": "2026-10-22T01:16:01.137537Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/254cea03-56cb-44ad-ad43-01335b5ef1d6",
+        "operation": "install-status",
+        "product": "9PBWWQGXVMKC",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/254cea03-56cb-44ad-ad43-01335b5ef1d6/result.json",
+        "run_id": "254cea03-56cb-44ad-ad43-01335b5ef1d6",
+        "started_at": "2026-10-22T01:16:00.749013Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "statusArgv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+        "install-status",
+        "9PBWWQGXVMKC",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI"
+      ],
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Team17DigitalLimited.MonsterSanctuaryWin10",
+          "version": "2.1.33.0",
+          "storeId": "9PBWWQGXVMKC"
+        },
+        "manifestSha256": "a27f8573233ad60b84343d3d121ef69f2bec7af3bace27f602a1bcae14d79c98",
+        "metadata": {
+          "TitleId": [
+            "7ee189cd"
+          ],
+          "MSAAppId": [
+            "00000000443A3E1E"
+          ],
+          "RequiresXboxLive": [
+            "true"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "Monster Sanctuary.exe"
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "Monster Sanctuary_Data/globalgamemanagers",
+            "Monster Sanctuary_Data/globalgamemanagers.assets",
+            "Monster Sanctuary_Data/globalgamemanagers.assets.resS",
+            "UnityPlayer.dll"
+          ]
+        },
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "binaries": [
+          {
+            "path": "Monster Sanctuary.exe",
+            "sizeBytes": 651264,
+            "headerSha256": "14e5ff420a925e470eba3c6fd002c5be16901136e1a04d36ef33ede764154ee1",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          },
+          {
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 23327176,
+            "headerSha256": "9bc73c959aee1531d36d3b5b86c866d947a716f1e0bc3147f9cf773774ac41cc",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "dwmapi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "windowscodecs.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll",
+              "wsock32.dll"
+            ],
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "dxgi": false,
+            "backendMarkers": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 1236,
+          "fileListSha256": "46f33593029e6e15b7a71593c437e43648d3e269e4002273758194e7987417c3",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [
+          "Monster Sanctuary_Data/Managed/UnityEngine.ClusterRendererModule.dll"
+        ],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": true
+      },
+      "allocatedBytes": 841916416
+    },
+    {
+      "storeId": "9NLRT31Z4RWM",
+      "title": "TUNIC",
+      "root": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+      "reservedBytes": 3025330176,
+      "freeBeforeBytes": 178448429056,
+      "startedAt": "2026-10-22T01:17:29.910071+00:00",
+      "argv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+        "install",
+        "9NLRT31Z4RWM",
+        "--account-profile",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI",
+        "--market",
+        "GB"
+      ],
+      "stopPipeline": false,
+      "state": "complete-not-game-qualified",
+      "matrixSha256": "4a96fc3f749126d92f948f78cb8cd9ac3fb825b8be4007284faff85c33ff79dd",
+      "processExitCode": 0,
+      "freeAfterBytes": 173101756416,
+      "finishedAt": "2026-10-22T01:21:36.941353+00:00",
+      "stderr": "",
+      "install": {
+        "engine": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "finished_at": "2026-10-22T01:21:36.931361Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+        "launch_receipt_path": null,
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bb262dde-8f18-4963-8a12-5c7f27d49550",
+        "operation": "install",
+        "popup_monitor_error": null,
+        "popups": [],
+        "prefix": null,
+        "product": "9NLRT31Z4RWM",
+        "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bb262dde-8f18-4963-8a12-5c7f27d49550/progress.jsonl",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bb262dde-8f18-4963-8a12-5c7f27d49550/result.json",
+        "run_id": "bb262dde-8f18-4963-8a12-5c7f27d49550",
+        "started_at": "2026-10-22T01:17:29.919826Z",
+        "success": true,
+        "version": 1,
+        "wine": null,
+        "wine_exit_code": null,
+        "wine_termination_signal": null
+      },
+      "installStatus": {
+        "content_id": "cd857374-20af-433a-95d7-f76a4d39ae1f",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 11169,
+        "finished_at": "2026-10-22T01:22:42.086693Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/2003560c-c242-4e1d-85fe-8224343b9818",
+        "operation": "install-status",
+        "product": "9NLRT31Z4RWM",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/2003560c-c242-4e1d-85fe-8224343b9818/result.json",
+        "run_id": "2003560c-c242-4e1d-85fe-8224343b9818",
+        "started_at": "2026-10-22T01:21:36.955438Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "statusArgv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+        "install-status",
+        "9NLRT31Z4RWM",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI"
+      ],
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Finji.TUNIC",
+          "version": "1.1.6.0",
+          "storeId": "9NLRT31Z4RWM"
+        },
+        "manifestSha256": "8c641f76dc2406a82dc5ade18f8f1be0af1cf1f9a14e06ee490d78d003137a53",
+        "metadata": {
+          "TitleId": [
+            "6E292826"
+          ],
+          "MSAAppId": [
+            "00000000407CC768"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "Secret Legend.exe"
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "Secret Legend_Data/globalgamemanagers",
+            "Secret Legend_Data/globalgamemanagers.assets",
+            "UnityPlayer.dll"
+          ]
+        },
+        "graphicsAPIs": [
+          "OpenGL"
+        ],
+        "binaries": [
+          {
+            "path": "Secret Legend.exe",
+            "sizeBytes": 655360,
+            "headerSha256": "54a601d3895213fedd003c0312191a24befcf9a6d8149c1ce910bbd6804fd8a9",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          },
+          {
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 28276144,
+            "headerSha256": "03acb875c9cec9e9ff36e12b5d95c42c57e7d4c6e86f8915f3560e1bf2fec622",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "dwmapi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "graphicsAPIs": [
+              "OpenGL"
+            ],
+            "dxgi": false,
+            "backendMarkers": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 11170,
+          "fileListSha256": "75cab93c6f092d932a1ac002fedc65fd475f376b2cbce2f3ac6afa0f4c58d124",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": true
+      },
+      "allocatedBytes": 3025330176
+    },
+    {
+      "storeId": "9NMNMS626R59",
+      "title": "Halls of Torment",
+      "root": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+      "reservedBytes": 2163003392,
+      "freeBeforeBytes": 172908339200,
+      "startedAt": "2026-10-22T01:23:02.142418+00:00",
+      "argv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+        "install",
+        "9NMNMS626R59",
+        "--account-profile",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI",
+        "--market",
+        "GB"
+      ],
+      "stopPipeline": false,
+      "state": "complete-not-game-qualified",
+      "matrixSha256": "70e384aaec603cfd1db9489aedc6afd7362af8187274bd0795dc6811d7583a3a",
+      "processExitCode": 0,
+      "freeAfterBytes": 169989189632,
+      "finishedAt": "2026-10-22T01:24:30.299854+00:00",
+      "stderr": "",
+      "install": {
+        "engine": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "finished_at": "2026-10-22T01:24:30.290803Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+        "launch_receipt_path": null,
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a8660c40-b6c1-4afd-a154-48df378404ab",
+        "operation": "install",
+        "popup_monitor_error": null,
+        "popups": [],
+        "prefix": null,
+        "product": "9NMNMS626R59",
+        "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a8660c40-b6c1-4afd-a154-48df378404ab/progress.jsonl",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a8660c40-b6c1-4afd-a154-48df378404ab/result.json",
+        "run_id": "a8660c40-b6c1-4afd-a154-48df378404ab",
+        "started_at": "2026-10-22T01:23:02.151813Z",
+        "success": true,
+        "version": 1,
+        "wine": null,
+        "wine_exit_code": null,
+        "wine_termination_signal": null
+      },
+      "installStatus": {
+        "content_id": "80dfa5b8-2963-4309-bcde-86902bc9ed38",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 15,
+        "finished_at": "2026-10-22T01:24:30.531634Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0d0ed6ec-4852-44ab-9c20-b25c7b73b107",
+        "operation": "install-status",
+        "product": "9NMNMS626R59",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0d0ed6ec-4852-44ab-9c20-b25c7b73b107/result.json",
+        "run_id": "0d0ed6ec-4852-44ab-9c20-b25c7b73b107",
+        "started_at": "2026-10-22T01:24:30.309528Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "statusArgv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+        "install-status",
+        "9NMNMS626R59",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI"
+      ],
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "11443ChasingCarrotsGmbHCo.HallsofTorment",
+          "version": "1.1.6.0",
+          "storeId": "9NMNMS626R59"
+        },
+        "manifestSha256": "76ebd7eac803daa375812e2e9d14e2b0b7e0322345b86dd1a10044e45be6b504",
+        "metadata": {
+          "MSAAppId": [
+            "000000004956C14C"
+          ],
+          "TitleId": [
+            "65A1BA03"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "Halls of Torment.exe"
+        ],
+        "engineMarkers": {},
+        "graphicsAPIs": [],
+        "binaries": [
+          {
+            "path": "Halls of Torment.exe",
+            "sizeBytes": 57942016,
+            "headerSha256": "1b2c842c976167447ac69a035bfc8308b82ef0be2606060a2203a09a05214438",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 16,
+          "fileListSha256": "ed563c4d84ea69e3fb801bfa1695e3f80982c5848138ea276af50b29e9efd42e",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": false
+      },
+      "allocatedBytes": 2163003392
+    },
+    {
+      "storeId": "9PD5BM2Z8C4L",
+      "title": "Vampire Survivors",
+      "root": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+      "reservedBytes": 1271058432,
+      "freeBeforeBytes": 169998938112,
+      "startedAt": "2026-10-22T01:24:42.761130+00:00",
+      "argv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+        "install",
+        "9PD5BM2Z8C4L",
+        "--account-profile",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI",
+        "--market",
+        "GB"
+      ],
+      "stopPipeline": false,
+      "state": "complete-not-game-qualified",
+      "matrixSha256": "70e384aaec603cfd1db9489aedc6afd7362af8187274bd0795dc6811d7583a3a",
+      "processExitCode": 0,
+      "freeAfterBytes": 168728653824,
+      "finishedAt": "2026-10-22T01:25:14.356024+00:00",
+      "stderr": "",
+      "install": {
+        "engine": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "finished_at": "2026-10-22T01:25:14.346776Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+        "launch_receipt_path": null,
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0f9edc19-2fd6-44fa-bffa-e030122ca8f7",
+        "operation": "install",
+        "popup_monitor_error": null,
+        "popups": [],
+        "prefix": null,
+        "product": "9PD5BM2Z8C4L",
+        "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0f9edc19-2fd6-44fa-bffa-e030122ca8f7/progress.jsonl",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0f9edc19-2fd6-44fa-bffa-e030122ca8f7/result.json",
+        "run_id": "0f9edc19-2fd6-44fa-bffa-e030122ca8f7",
+        "started_at": "2026-10-22T01:24:42.774065Z",
+        "success": true,
+        "version": 1,
+        "wine": null,
+        "wine_exit_code": null,
+        "wine_termination_signal": null
+      },
+      "installStatus": {
+        "content_id": "e69a3844-5a83-45cc-8bcb-af158db7cae9",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 1307,
+        "finished_at": "2026-10-22T01:25:14.864445Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/5235639f-d052-4ca0-816f-1d734446efe5",
+        "operation": "install-status",
+        "product": "9PD5BM2Z8C4L",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/5235639f-d052-4ca0-816f-1d734446efe5/result.json",
+        "run_id": "5235639f-d052-4ca0-816f-1d734446efe5",
+        "started_at": "2026-10-22T01:25:14.365919Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "statusArgv": [
+        "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+        "install-status",
+        "9PD5BM2Z8C4L",
+        "--game-dir",
+        "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+        "--state-dir",
+        "/Users/dragoshont/Library/Application Support/XodusCLI"
+      ],
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "poncle.VampireSurvivors",
+          "version": "1.16.107.0",
+          "storeId": "9PD5BM2Z8C4L"
+        },
+        "manifestSha256": "f0521ca96f2792a2da4dcc575d479866b5605c064f2249c7d2f3666ff25b2ec4",
+        "metadata": {
+          "MSAAppId": [
+            "0000000044A85D43"
+          ],
+          "TitleId": [
+            "65116356"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "VampireSurvivors.exe"
+        ],
+        "engineMarkers": {
+          "Unity": [
+            "UnityPlayer.dll",
+            "VampireSurvivors_Data/globalgamemanagers",
+            "VampireSurvivors_Data/globalgamemanagers.assets",
+            "VampireSurvivors_Data/globalgamemanagers.assets.resS"
+          ]
+        },
+        "graphicsAPIs": [
+          "DX11",
+          "DX12",
+          "OpenGL"
+        ],
+        "binaries": [
+          {
+            "path": "UnityPlayer.dll",
+            "sizeBytes": 33661872,
+            "headerSha256": "e42bd07a3249c3ec8b33ab3606a97cb70f7bd9e99a80e939ff4cdc2a17845f28",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "api-ms-win-core-synch-l1-2-0.dll",
+              "api-ms-win-core-winrt-l1-1-0.dll",
+              "api-ms-win-core-winrt-string-l1-1-0.dll",
+              "bcrypt.dll",
+              "crypt32.dll",
+              "d3d11.dll",
+              "d3d12.dll",
+              "dwmapi.dll",
+              "dxgi.dll",
+              "gdi32.dll",
+              "hid.dll",
+              "imm32.dll",
+              "iphlpapi.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "opengl32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "shlwapi.dll",
+              "user32.dll",
+              "version.dll",
+              "winhttp.dll",
+              "winmm.dll",
+              "ws2_32.dll"
+            ],
+            "graphicsAPIs": [
+              "DX11",
+              "DX12",
+              "OpenGL"
+            ],
+            "dxgi": true,
+            "backendMarkers": []
+          },
+          {
+            "path": "VampireSurvivors.exe",
+            "sizeBytes": 675840,
+            "headerSha256": "029f0dd15af48a39821fb7af33837bde05436c2c7e310c4efe3f8dd69c933b3e",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 1308,
+          "fileListSha256": "10d6493ee6c22ce24aed14f489c9491eecf850d4b5edbb0c1a8de205aadb3780",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [
+          "D3D12/D3D12Core.dll"
+        ],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": true
+      },
+      "allocatedBytes": 1271058432
+    }
+  ]
+}

@@ -21,9 +21,9 @@ PROFILES = {
     "9MSVVM5NS9L6": "creation-dx11-d3dmetal",
     "9PBWWQGXVMKC": "creation-dx11-d3dmetal",
     "9NLRT31Z4RWM": "creation-dx11-d3dmetal",
-    "9NMNMS626R59": "queue-winecx-nativejson",
+    "9NMNMS626R59": None,
     "9PD5BM2Z8C4L": "creation-dx11-d3dmetal",
-    "9MXND4PQLK3W": "queue-winecx-nativejson",
+    "9MXND4PQLK3W": None,
     "9P1Z43KRNQD4": None,
 }
 SOURCES = {
@@ -199,6 +199,12 @@ def build(inputs):
                      "may cover original/remaster; no original-version Mac rating substituted. "
                      "Explicit D3D11 alternative needs S1 approval, not automatic flags.",
             "TUNIC": "Native Mac rating does not establish Windows compatibility; Proton proxy only.",
+            "Halls of Torment": "Public Godot 4 OpenGL/Vulkan capability does not select "
+                                "an active renderer. Installed layout and explicit S1 choice "
+                                "required before emitting a launch preflight.",
+            "DOOM 64": "Kex has Vulkan, D3D11 and OpenGL alternatives. The documented "
+                       "config-file renderer change is not authorized by this lane; "
+                       "explicit S1 recipe required before emitting a launch preflight.",
         },
         "rejected": [
             {"title": "Pentiment", "reason": "Fresh catalogue 10.665 GiB exceeds 8 GiB cap."},
@@ -206,7 +212,9 @@ def build(inputs):
             {"title": "Fallout", "reason": "No admitted exact public positive proxy; avoid weak identity match."},
         ],
         "installPolicy": {"maximumSerialInstallers": 1, "budgetBytes": 20 * 2**30,
-                          "minimumFreeBytes": 150 * 2**30, "stagingMarginBytes": 2 * 2**30,
+                          "minimumFreeBytes": 150 * 2**30,
+                          "operationalMinimumFreeBytes": 155 * 2**30,
+                          "stagingMarginBytes": 2 * 2**30,
                           "stopOnLoginOrPurchase": True, "deletions": False,
                           "gameLaunches": 0, "unknownAntiCheatIsNotNone": True},
         "workingTarget": 20, "verifiedWorkingAtMatrixSnapshot": inputs["workingIds"],
