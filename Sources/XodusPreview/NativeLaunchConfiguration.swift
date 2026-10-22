@@ -467,7 +467,7 @@ struct NativeLaunchConfiguration {
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
         var entry = try selectEngine(registry: registry,
-                                     provider: qualified != nil || profile?.provider != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
+                                     provider: qualified != nil || profile?.engine != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
         try candidate?.validateEngine(entry, fallback: defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)"))
         if let qualified {

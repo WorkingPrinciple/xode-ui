@@ -35,6 +35,28 @@
   "profiles": [
     {
       "version": 1,
+      "productID": "9P9VNSQK1W3K",
+      "title": "Brotato",
+      "qualification": "CLI-only WORKING_CANDIDATE from ebd56e; a1aade app-route regression pending, no WORKING promotion",
+      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-brotato-retention-02/invocation.json",
+      "sourceRecipeSHA256": "a2858fb02420e6c36f974aa8fe5f70a2d8ad3ee9154c6408bd9999b910cb3414",
+      "engine": "apple-gptk-4.0b3",
+      "executable": "Brotato.exe",
+      "noAutoDismiss": true,
+      "environment": {},
+      "unsetEnvironment": [
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
+      "runtime": {
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+        "legacySHA256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+      }
+    },
+    {
+      "version": 1,
       "productID": "9MT5NJ5W7B8Z",
       "title": "Hogwarts Legacy",
       "publishedSource": "xode-wine f7204ef6893439ac781190ee32bd95776fd63ec7 engines/hogwarts-qualified.json",

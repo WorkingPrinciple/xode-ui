@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
 import CryptoKit
+import XodusCore
 import XodusManagement
 
 @MainActor
@@ -681,6 +682,29 @@ enum NativeLifecycleChecks {
         let fallbackNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults, provider: .crossover)
         check(defaultNMS?.engine == "nms-free-gptk3-d3dshared" && fallbackNMS?.engine == "crossover-26.3",
               "Automatic NMS uses the qualified free binding; explicit CrossOver selects its exact separate fallback recipe")
+        let brotatoRegistry = root.appendingPathComponent("brotato-route-registry.json")
+        try JSONSerialization.data(withJSONObject: ["engines": [
+            ["name": "wine-stable", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]],
+            ["name": "apple-gptk-4.0b3", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]]
+        ]]).write(to: brotatoRegistry)
+        defaults.set(brotatoRegistry.path, forKey: "Xodus.lifecycle.registry")
+        defaults.set("wine-stable", forKey: "Xodus.lifecycle.engine.crossover")
+        let brotato = InstalledGame(id: UUID(), title: "Brotato", identityName: "Synthetic.Brotato",
+            version: "1.0", storeId: "9P9VNSQK1W3K", folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        for provider: RuntimeProviderKind? in [nil, .crossover] {
+            let launch = try NativeLaunchConfiguration.resolve(game: brotato, provider: provider, defaults: defaults)
+            check(launch.engine == "apple-gptk-4.0b3"
+                  && launch.profile?.arguments == ["--exe", "Brotato.exe", "--no-auto-dismiss"]
+                  && launch.profile?.environment.isEmpty == true
+                  && Set(launch.profile?.unsetEnvironment ?? []) == Set([
+                    "XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"])
+                  && launch.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
+                  && launch.profile?.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+                  && launch.shims.directory.path.hasSuffix("/Ode to X/Engines/profiles/native-web-shims-v1")
+                  && launch.prefix.path.hasSuffix("/\(brotato.id.uuidString)/apple-gptk-4.0b3"),
+                  "#43: Brotato selects its explicit Apple4/defaultCOM/runtime7106/native-shims/direct-exe recipe, not generic wine-stable or a conflicting default provider")
+        }
         let observedAbiotic = try NativeTitleLaunchProfile.read(productID: "9P4NV23Q6QC2", defaults: defaults)
         check(observedAbiotic?.launchEnvironment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
               && observedAbiotic?.launchEnvironment["XODUS_PRIVATE_CALLER_OWNS_COM"] == nil
