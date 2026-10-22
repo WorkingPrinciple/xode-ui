@@ -125,20 +125,32 @@
     },
     {
       "storeId": "9N8C07SS8C9D", "title": "FINAL FANTASY IV",
-      "verdict": "TITLE_SCREEN_PASS", "reportedAt": "2026-10-22T20:37:38+00:00",
-      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
-      "gates": {"menu": "passed", "quit": "unknown"}, "nextGate": "gameplay", "ownerStream": "S3",
-      "blocker": "PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding.",
-      "scope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied."
+      "verdict": "INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT", "reportedAt": "2026-10-23T00:59:14.722+03:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": "4c62acbd",
+      "gates": {"menu": "passed", "gameplay": "unknown", "save": "not-passed", "relaunch": "not-passed", "quit": "not-passed"},
+      "nextGate": "opening interaction/control budget gap", "ownerStream": "S3/coordinator",
+      "blocker": "900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry.",
+      "scope": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission.",
+      "finalProofs": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+        "sha256": "0c39bd0a8ca43913c488bc2294b724227d41cd6001a7a04e66520d739af6bb14"
+      }
     },
     {
       "storeId": "9P1Z43KRNQD4", "title": "Quake",
-      "verdict": "TITLE_SCREEN_PASS", "reportedAt": "2026-10-23T00:57:48.489+03:00",
-      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
-      "gates": {"menu": "passed", "gameplay": "unknown", "save": "unknown", "relaunch": "unknown", "quit": "not-passed"},
-      "nextGate": "controllable gameplay", "ownerStream": "S3",
-      "blocker": "Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding.",
-      "scope": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
+      "verdict": "INCONCLUSIVE_SAVE/INPUT", "reportedAt": "2026-10-23T01:12:57.877+03:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": "43827ec2-c040-4695-9aa0-39b623107877",
+      "gates": {"menu": "passed", "gameplay": "passed", "save": "not-passed", "relaunch": "not-passed", "quit": "not-passed"},
+      "nextGate": "save/input hold and late quit", "ownerStream": "S3/coordinator",
+      "blocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload.",
+      "scope": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission.",
+      "timingGap": {
+        "quitDeadlineSeconds": 540,
+        "ordinaryQuitStartedAfterDeadline": true,
+        "actualQuitStartSeconds": null,
+        "latenessSeconds": null,
+        "basis": "Coordinator reports late quit>540; exact timing not supplied. Do not substitute reminder or total process span."
+      }
     },
     {
       "storeId": "9PD5BM2Z8C4L", "title": "Vampire Survivors",

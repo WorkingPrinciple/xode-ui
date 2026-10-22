@@ -111,12 +111,31 @@ class PathTo20Tests(unittest.TestCase):
     def test_quake_attract_scene_does_not_qualify_controllable_gameplay(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])
         inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T19:00:00+00:00"
+        report = next(row for row in inputs["ownerVerdicts"]["snapshot"]["items"]
+                      if row["storeId"] == "9P1Z43KRNQD4")
+        report.update(verdict="TITLE_SCREEN_PASS", nextGate="controllable gameplay",
+                      scope="Historical attract/demo passive only")
+        report["gates"]["gameplay"] = "unknown"
         row = next(row for row in build(inputs, {})["items"]
                    if row["storeId"] == "9P1Z43KRNQD4")
         self.assertFalse(row["strictWorking"])
         self.assertEqual(row["gates"]["gameplay"]["status"], "unknown")
         self.assertEqual(row["nextGate"], "controllable gameplay")
         self.assertIn("attract/demo", row["scope"])
+
+    def test_settled_quake_world_and_ffiv_opening_remain_inconclusive(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T19:00:00+00:00"
+        rows = {row["storeId"]: row for row in build(inputs, {})["items"]}
+        quake = rows["9P1Z43KRNQD4"]
+        ffiv = rows["9N8C07SS8C9D"]
+        self.assertEqual(quake["gates"]["gameplay"]["status"], "passed")
+        self.assertEqual(ffiv["gates"]["gameplay"]["status"], "unknown")
+        for row in (quake, ffiv):
+            self.assertFalse(row["strictWorking"])
+            for gate in ("save", "relaunch", "quit"):
+                self.assertEqual(row["gates"][gate]["status"], "not-passed")
+        self.assertIn("neither reminder nor total is actual quit-start time", quake["scope"])
 
     def test_unchanged_gate_preserves_clock_despite_blocker_edit(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])

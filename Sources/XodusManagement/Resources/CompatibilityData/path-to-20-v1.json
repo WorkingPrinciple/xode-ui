@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-22T21:58:27.750383+00:00",
+  "updatedAt": "2026-10-22T22:13:50.978275+00:00",
   "matrixUpdatedAt": "2026-10-22T21:02:00+00:00",
   "collectionInputs": {
-    "collectedAt": "2026-10-22T21:58:27.750383+00:00",
+    "collectedAt": "2026-10-22T22:13:50.978275+00:00",
     "matrix": {
       "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
       "sha256": "e89141ba422818c8605b3ce7ad2cf7a1e2cd24a048a46b1e7d538c6d7601bb75",
@@ -896,7 +896,7 @@
     },
     "ownerVerdicts": {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-      "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+      "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
       "snapshot": {
         "schemaVersion": 1,
         "protectedSessionArchive": {
@@ -1060,37 +1060,51 @@
           {
             "storeId": "9N8C07SS8C9D",
             "title": "FINAL FANTASY IV",
-            "verdict": "TITLE_SCREEN_PASS",
-            "reportedAt": "2026-10-22T20:37:38+00:00",
+            "verdict": "INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT",
+            "reportedAt": "2026-10-23T00:59:14.722+03:00",
             "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-            "runId": null,
+            "runId": "4c62acbd",
             "gates": {
               "menu": "passed",
-              "quit": "unknown"
+              "gameplay": "unknown",
+              "save": "not-passed",
+              "relaunch": "not-passed",
+              "quit": "not-passed"
             },
-            "nextGate": "gameplay",
-            "ownerStream": "S3",
-            "blocker": "PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding.",
-            "scope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied."
+            "nextGate": "opening interaction/control budget gap",
+            "ownerStream": "S3/coordinator",
+            "blocker": "900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry.",
+            "scope": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission.",
+            "finalProofs": {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+              "sha256": "0c39bd0a8ca43913c488bc2294b724227d41cd6001a7a04e66520d739af6bb14"
+            }
           },
           {
             "storeId": "9P1Z43KRNQD4",
             "title": "Quake",
-            "verdict": "TITLE_SCREEN_PASS",
-            "reportedAt": "2026-10-23T00:57:48.489+03:00",
+            "verdict": "INCONCLUSIVE_SAVE/INPUT",
+            "reportedAt": "2026-10-23T01:12:57.877+03:00",
             "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-            "runId": null,
+            "runId": "43827ec2-c040-4695-9aa0-39b623107877",
             "gates": {
               "menu": "passed",
-              "gameplay": "unknown",
-              "save": "unknown",
-              "relaunch": "unknown",
+              "gameplay": "passed",
+              "save": "not-passed",
+              "relaunch": "not-passed",
               "quit": "not-passed"
             },
-            "nextGate": "controllable gameplay",
-            "ownerStream": "S3",
-            "blocker": "Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding.",
-            "scope": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
+            "nextGate": "save/input hold and late quit",
+            "ownerStream": "S3/coordinator",
+            "blocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload.",
+            "scope": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission.",
+            "timingGap": {
+              "quitDeadlineSeconds": 540,
+              "ordinaryQuitStartedAfterDeadline": true,
+              "actualQuitStartSeconds": null,
+              "latenessSeconds": null,
+              "basis": "Coordinator reports late quit>540; exact timing not supplied. Do not substitute reminder or total process span."
+            }
           },
           {
             "storeId": "9PD5BM2Z8C4L",
@@ -3601,14 +3615,14 @@
     },
     "attemptEvidence": {
       "schemaVersion": 1,
-      "auditedAt": "2026-10-22T21:41:00.057519+00:00",
+      "auditedAt": "2026-10-22T22:13:53.799864+00:00",
       "scope": "Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.",
       "retentionPolicy": "Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.",
       "roots": [
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs",
         "/Users/dragoshont/Library/Application Support/XodusCLI/runs"
       ],
-      "jsonDocumentsInspected": 2827,
+      "jsonDocumentsInspected": 2870,
       "gaps": [
         "Unparsed JSON /Users/dragoshont/Library/Application Support/XodusCLI/proofs/valor-mortis-install-v1/package-check.stdout.json: JSONDecodeError"
       ],
@@ -13710,6 +13724,395 @@
           "bytes": 215,
           "sha256": "4278de58cc646e2a71703bdec55d107f52d5e9b1ade8cc2f1913b0fb597f6e67"
         },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/dry-admission.json": {
+          "status": "PRESENT",
+          "bytes": 292,
+          "sha256": "3f6849e8691e703cdc889329464853ca654720cb632e20430fd6beacb52c2fe7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 5674,
+          "sha256": "9a20cdd05de33e3ad10b8fda2938d7a90aee5fb24d9f03d3fa844b9393b57255"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/owned-input-events.json": {
+          "status": "PRESENT",
+          "bytes": 19519,
+          "sha256": "be4aaaa12142877da97849254df0982250ac6ee9d4aa1a3dbfe3c4adc82494ec"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json": {
+          "status": "PRESENT",
+          "bytes": 10441,
+          "sha256": "0c39bd0a8ca43913c488bc2294b724227d41cd6001a7a04e66520d739af6bb14"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-arrival-1000.png": {
+          "status": "PRESENT",
+          "bytes": 416301,
+          "sha256": "fc7b54c1eb8cabfe4a70d493d29d70778ea5903ce54079426b14e1f2807fcd10"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-baron-1000.png": {
+          "status": "PRESENT",
+          "bytes": 682774,
+          "sha256": "3030226884b0b307489450844d99d3387550bbcc3f1128f104c585a18ce7e6e8"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-1000.png": {
+          "status": "PRESENT",
+          "bytes": 562848,
+          "sha256": "be1204cd1b531f4d87b8008161e4a23cfc64de084a783bfa21ad88a93a84c6c9"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-controls-1000.png": {
+          "status": "PRESENT",
+          "bytes": 433698,
+          "sha256": "2c24cd97daf594a757f3af94a5a7e6e8b046937313156afc4e845e8d00d4be67"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-transition-1000.png": {
+          "status": "PRESENT",
+          "bytes": 560297,
+          "sha256": "8855574487a66e9a4f4bb5a35ec25ab29caad710a6c317dfd86f800a282948a7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-02-1000.png": {
+          "status": "PRESENT",
+          "bytes": 506427,
+          "sha256": "4e0d133646fe0b74122a446bc6c99e9f18e87c9f88954666823439967bd35409"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-03-1000.png": {
+          "status": "PRESENT",
+          "bytes": 535182,
+          "sha256": "48f926c86fb9b2bff11717d0f45316ddbb09fb157eb8a466a107f78301fd3cac"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-04-1000.png": {
+          "status": "PRESENT",
+          "bytes": 498456,
+          "sha256": "8068b7950988bc24b7b2e90a885fc914fd4df4d51bc97a130bc4bafb9ca5010c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-05-1000.png": {
+          "status": "PRESENT",
+          "bytes": 537466,
+          "sha256": "fd0d5f2edfad652fba2235e95a0dadaf1d30ff4eb704723c7dac0fd195adeb2a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-06-1000.png": {
+          "status": "PRESENT",
+          "bytes": 507751,
+          "sha256": "14453a2dd7f28acc2ab6c5e2a675a0a7edf6208b94c993de706ad49bc0e2931a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-07-1000.png": {
+          "status": "PRESENT",
+          "bytes": 382793,
+          "sha256": "e9bbc9f59384e4f6b681758fe1f28e40cd8164b9307dfc2aaf7b3a984d1a0d89"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-08-1000.png": {
+          "status": "PRESENT",
+          "bytes": 493927,
+          "sha256": "96e3f09397a187f3430fee0c2f0b6ad3d0e5e6554d413a66cbbf06b8ac9d6293"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-09-1000.png": {
+          "status": "PRESENT",
+          "bytes": 488765,
+          "sha256": "da23f9d997f89262f614ae6714e3aba90518782e961802aa73ce059a05d70fbe"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-10-1000.png": {
+          "status": "PRESENT",
+          "bytes": 494576,
+          "sha256": "6abb9c3cf2f5289f608e031f76af999f5fa9d4438cdcfe605757c602a8c9ebc7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-11-1000.png": {
+          "status": "PRESENT",
+          "bytes": 482926,
+          "sha256": "69b40e5e3b200af788b4705c4c3c812f4b021bc726ab682cf7da128b757c162e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-12-1000.png": {
+          "status": "PRESENT",
+          "bytes": 522928,
+          "sha256": "dcb265e8f863e4f04cbb7da1ad35df844809b7f773230b9461c27a3a71226c11"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-13-1000.png": {
+          "status": "PRESENT",
+          "bytes": 534548,
+          "sha256": "458de1e1503606f3960636ee32d34d2e59b345dc6d4ee75f99fa38837c715924"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-14-1000.png": {
+          "status": "PRESENT",
+          "bytes": 510702,
+          "sha256": "f61ef314b3f729e4b7bf0ebf908380ab117bb474047198da8cc4eecd444ed108"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-15-1000.png": {
+          "status": "PRESENT",
+          "bytes": 493495,
+          "sha256": "97b83eaac851b80a561cf6629cceda62226d78bba89f5194288e0bb48417df9f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-16-1000.png": {
+          "status": "PRESENT",
+          "bytes": 447699,
+          "sha256": "598ec4cc261ed6600df842f865b797069ed4c77b7eeef9faae50b0aeb09a7be4"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-17-1000.png": {
+          "status": "PRESENT",
+          "bytes": 411078,
+          "sha256": "43376f307294f7693cee2a8d7a82b2314af1df2d89e8bdfe02270145c42d9183"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-18-1000.png": {
+          "status": "PRESENT",
+          "bytes": 411344,
+          "sha256": "f3ffd95e4f609018584461fc7b34c49227790efbcfc0c6bec5a0704ae7e3fa27"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-19-1000.png": {
+          "status": "PRESENT",
+          "bytes": 421644,
+          "sha256": "63d8f434e2b6c9dddfcd9b314bc85ee714e13b84ce0092c03e5bdc0838c4db1f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-20-1000.png": {
+          "status": "PRESENT",
+          "bytes": 409838,
+          "sha256": "06c420c4b4e2c5a19123f26d951f2d645e5485270731b17344bee7e6db47c362"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-21-1000.png": {
+          "status": "PRESENT",
+          "bytes": 423786,
+          "sha256": "ce1ac5fd6deb9905c1dd77a0b923a9fe020d2285b5d517b833df4e7d3e9fa3e6"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-22-1000.png": {
+          "status": "PRESENT",
+          "bytes": 440165,
+          "sha256": "b6360a68cafc8ee18e230672337be2704c1bc11e6de43e71e6d8b57be4d9af2c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-23-1000.png": {
+          "status": "PRESENT",
+          "bytes": 453270,
+          "sha256": "a959f56411d944e5b1d050d544d03f273d900c78f89bc436f35d851c2da830a8"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-24-1000.png": {
+          "status": "PRESENT",
+          "bytes": 427076,
+          "sha256": "5df44cb4e9d422b2eb80239afe0d3ebe14d350a35fa2486f02ad85477a5778cb"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-25-1000.png": {
+          "status": "PRESENT",
+          "bytes": 422782,
+          "sha256": "af3932217a7f4812ad3b3648cf746dc0a8fa40f712b1ed808765b83ffaf63304"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-26-1000.png": {
+          "status": "PRESENT",
+          "bytes": 485227,
+          "sha256": "44c05cc1d4daa539a8e448a1f1c9d9633c66360869a6e131e37595f4f974883c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-28-1000.png": {
+          "status": "PRESENT",
+          "bytes": 434051,
+          "sha256": "0a2226664f5f796419f33b4d07670e422dbd27442a12d390069efc4346139328"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-30-1000.png": {
+          "status": "PRESENT",
+          "bytes": 692960,
+          "sha256": "866cedbeb4685ec507395f11921d4d7fb068c489d07a12ca3a9e5a8caca3bba7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-31-1000.png": {
+          "status": "PRESENT",
+          "bytes": 695065,
+          "sha256": "06e98c158ce52cfb0ef7a28fa5ae61cc2681e0e7d17606fc895b34534596d08a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-33-1000.png": {
+          "status": "PRESENT",
+          "bytes": 301251,
+          "sha256": "32b36c95e18d332125bc8a9671650c44398fd406575529876452c847345e4084"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-landing-1000.png": {
+          "status": "PRESENT",
+          "bytes": 500064,
+          "sha256": "7d56951e11ed2aea54cac45e061f50a7bcffcfc11264a5fba1e7899c6302fb60"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-landing-after-1000.png": {
+          "status": "PRESENT",
+          "bytes": 779722,
+          "sha256": "19f3511541a54374d2f80bff43d1f35f94d36f4714788259d952a98731609179"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-main-1000.png": {
+          "status": "PRESENT",
+          "bytes": 119717,
+          "sha256": "6d64d7f0efa86bf84f412b78679582658cdc6fef352527c98c2e5feb863db77e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-mysidia-1000.png": {
+          "status": "PRESENT",
+          "bytes": 415041,
+          "sha256": "996378ccecee098d3b8a2ab8f3573ca81f9d7a661f91d59bee32615495429c9b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-newgame-1000.png": {
+          "status": "PRESENT",
+          "bytes": 39268,
+          "sha256": "bc249265b3f2e604f6c52c7006f965879ca854b918f4ccaf53f2e7b11ea24cdc"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-1000.png": {
+          "status": "PRESENT",
+          "bytes": 38107,
+          "sha256": "c9731ff1bab7f9b73a70279cdb27805df324eee8b2ef71a4733076be572bce79"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-after-wait-1000.png": {
+          "status": "PRESENT",
+          "bytes": 534682,
+          "sha256": "627b47ff3b39141e4a375f865fa4c4ae0b1ec0495f5557bcbf4202281d9d9a8f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-pause-1000.png": {
+          "status": "PRESENT",
+          "bytes": 591132,
+          "sha256": "524cd56fadc3aeff90c1deb5e532e23339670f2cd21a1b788f220ffc10e1fd70"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-quit-probe-1000.png": {
+          "status": "PRESENT",
+          "bytes": 409639,
+          "sha256": "1fd30062116e34ada2c38fa7f7806e8521acb895d11b2c120a0ccfc348f7ca22"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-quit-still-unavailable-1000.png": {
+          "status": "PRESENT",
+          "bytes": 505465,
+          "sha256": "e71623048c579ebfc803e809a2733a11015e00cf923ba3996edf10cabf76e2e7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-ready-1000.png": {
+          "status": "PRESENT",
+          "bytes": 111674,
+          "sha256": "7565883bd8e991183ffc9ff6d9f04772c483fcb5055ad16449d2864d4986896a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-second-battle-1000.png": {
+          "status": "PRESENT",
+          "bytes": 270986,
+          "sha256": "1bd1a03a2d01e81909949466fd2e2758d5059c2437caaa27e1c7a1a51ef6da8f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-second-battle-after-1000.png": {
+          "status": "PRESENT",
+          "bytes": 453391,
+          "sha256": "a8e9d00014ff875dbedd09c64678eecdf4cfd039e484a5522981fa1ee3d3437f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-1000.png": {
+          "status": "PRESENT",
+          "bytes": 254892,
+          "sha256": "2d6e6c5ebb98c995e7bcbdbee8a8aba5d6db6597fa2d0d3592afb96043864adc"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-next-1000.png": {
+          "status": "PRESENT",
+          "bytes": 506027,
+          "sha256": "7635f6333a5a093945e9cc21504fe7dd6bd21185b2a9ddcdc865b1334785991d"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-ready-1000.png": {
+          "status": "PRESENT",
+          "bytes": 345149,
+          "sha256": "daaba9dd0110f8a2f7eb23c2c6e6380075d7b97be3df26c8886936bd59e3feaf"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-transition-1000.png": {
+          "status": "PRESENT",
+          "bytes": 776087,
+          "sha256": "391376c42df6e52a8cd54552b43bc426fb6ee4c593f5889ba48fa1b89d535d92"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-world-title-1000.png": {
+          "status": "PRESENT",
+          "bytes": 61330,
+          "sha256": "fb2493dd9493684aedacf03690eab4910e492dd631071be32a17b9b7b72b4698"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/packet.json": {
+          "status": "PRESENT",
+          "bytes": 13190,
+          "sha256": "39d8a3d1053f6e679b3c9ec1f378a9644ede9d6fb0154538ba739c4d4de82874"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/after-process-exit.json": {
+          "status": "PRESENT",
+          "bytes": 1085,
+          "sha256": "27e76e12b7f31ca34c4037bac64e53ae6095da67efd3b8f7fbfcd33738551fe9"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/before-launch.json": {
+          "status": "PRESENT",
+          "bytes": 572,
+          "sha256": "b6b90273eb1a3884be619f28f5d0e5d54328003c0a42ed3cad2c148ae38da0a3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cleanup-k.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cleanup-w.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cli.stderr.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cli.stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1318,
+          "sha256": "3f7fb3af2631cdf0fe7c671dff2a8cf9655ef692f88ec117b190b5b942a0be95"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 2673,
+          "sha256": "af2a0f6cf783519dd19428b991c14e49573847171c4d30eac16ddc4d97fb0b3e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json": {
+          "status": "PRESENT",
+          "bytes": 3008,
+          "sha256": "cc1f71533a9b788d0397958457724407c87e23e017168f0b6bca95339b090cf4"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/engine-dyld.json": {
+          "status": "PRESENT",
+          "bytes": 272,
+          "sha256": "2085e72e6ff8cdd91d0afa534c68c4cf9c4258bfdac9f9bf5680c7c5d2469881"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 797,
+          "sha256": "85a6988e93e0a00519c4baa1ffef4c64bff808718317a2eec337757c8a143496"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/launch-stage.json": {
+          "status": "PRESENT",
+          "bytes": 191,
+          "sha256": "016922d1efe88d4f8808f8b26ab7c772144cd6d32f4e89ec044f4840707a7376"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/popups.jsonl": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/progress.jsonl": {
+          "status": "MISSING",
+          "sha256": null
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/result.json": {
+          "status": "PRESENT",
+          "bytes": 1411,
+          "sha256": "53b511243fb3e3053a85bb27a81e01853955006f719954f638ecd68f0881df06"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/service.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/stderr.log": {
+          "status": "PRESENT",
+          "bytes": 9085740,
+          "sha256": "017a22f24109b769d19e3ae58d11d60879e06d04422054854653845bd520742b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/stdout.log": {
+          "status": "PRESENT",
+          "bytes": 7865,
+          "sha256": "20080444c5e5a3f9a1046f503b8035447db6c9c9868b0fcf86c16b2d8ab58f75"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/windows.jsonl": {
+          "status": "PRESENT",
+          "bytes": 273,
+          "sha256": "12a6367afcdfbdd700346735a487edea2f641d5d04500e826c96471d98979dbb"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/wine-exit.json": {
+          "status": "PRESENT",
+          "bytes": 32,
+          "sha256": "3173e82ab27c228c724088515f6f0c64dfbcf6986d5cf6a119039396bbe8197c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/quit-reminder.json": {
+          "status": "PRESENT",
+          "bytes": 71,
+          "sha256": "a6102470437eafe98b043c7c75fb9e0fc0a44e61c44c5db76f01114ca39e0cb4"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/run-receipt.json": {
+          "status": "PRESENT",
+          "bytes": 2138,
+          "sha256": "3c97ca87d8d08a6dde1828bee30a3d881249d10692018ac6483588326751946f"
+        },
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hades-abiotic-ready-v1/packets.json": {
           "status": "PRESENT",
           "bytes": 17025,
@@ -15649,6 +16052,285 @@
           "recordedSha256": "46d7299683e0bd05a9ab44d7dce23d9143c8e585f26d6f052e5b49ada36e3a99",
           "matchesRecordedHash": true
         },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/dry-admission.json": {
+          "status": "PRESENT",
+          "bytes": 292,
+          "sha256": "2b70fbe07e0082388c142d7d5b27a56e0d34811faa23e9025c3a9d84daced253"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 2957,
+          "sha256": "5e0b8e495c0635791777749c68c971d80365fc0e15228527c235e1d851df5684"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/owned-input-events.json": {
+          "status": "PRESENT",
+          "bytes": 15510,
+          "sha256": "2f953a7aaa3104530a8edca6552a66b7b35c7ceb63f65916555206406ff37b31"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json": {
+          "status": "PRESENT",
+          "bytes": 6223,
+          "sha256": "3a0a61d5d2d71168aa14ffbea61f18980025fd32120aa6b134c7524b0f708986"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-accessibility-chosen-1000.png": {
+          "status": "PRESENT",
+          "bytes": 184279,
+          "sha256": "631ea3aca3224532d31515ee8cbc65684df79a34c7d3d6c12038573a7d4b4171"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-after-disable-1000.png": {
+          "status": "PRESENT",
+          "bytes": 729833,
+          "sha256": "c50d0f07c941262fc8ad918a6e706dc0689b136e92c03a5d50b1e86882901353"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-auth-back-1000.png": {
+          "status": "PRESENT",
+          "bytes": 184294,
+          "sha256": "d0b794e2363eb00f76a62d174cdbba80e61bfb6b05608911b49dfc0945b248ce"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-campaign-choice-1000.png": {
+          "status": "PRESENT",
+          "bytes": 762292,
+          "sha256": "c33e597dc95ccfe5428897a710b55c2e2dfa135ef2be7f5aec76ed560012aca9"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-current-menu-1000.png": {
+          "status": "PRESENT",
+          "bytes": 401356,
+          "sha256": "fab6d9f6811e1523e414317a5807bc78547f5894d1aa96d4e4d2313853acfdb7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-difficulty-1000.png": {
+          "status": "PRESENT",
+          "bytes": 1029190,
+          "sha256": "7b8677d5125ece5eaecb4c7164c870f4fc64e9129bf3e712c31cedf3c4bf5753"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-disable-selected-1000.png": {
+          "status": "PRESENT",
+          "bytes": 184233,
+          "sha256": "c03a70fa0f65ae2662389ad3d36aff84e761932fe6f322dc91aaa2b227f4fd4b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-final-menu-1000.png": {
+          "status": "PRESENT",
+          "bytes": 300489,
+          "sha256": "5b40215f1e75e3d867685cac0aaceffc8889f7fc4e3afb20b3e2587997cb6c9d"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-foreground-1000.png": {
+          "status": "PRESENT",
+          "bytes": 184233,
+          "sha256": "aeb28e80eabe673e7433cf0d54e9a8a3ff909a9164c07299c3d7044ed37b0cfd"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-main-1000.png": {
+          "status": "PRESENT",
+          "bytes": 215791,
+          "sha256": "580aa9e3ffddf7f4c8367499bf76e50d27700f0fe54c17ce1810f89531afdb4a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-native-quit-selected-1000.png": {
+          "status": "PRESENT",
+          "bytes": 729875,
+          "sha256": "f5daffe7280f1e0734d4ec3a199142d7a1e8fc788ea069b8c7da6cd4088eafda"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-options-back-1000.png": {
+          "status": "PRESENT",
+          "bytes": 184261,
+          "sha256": "038a0218eb7d8a059b4c77f15f954d878ec37e63962ed79abfe6fadaa29205d3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-pause-1000.png": {
+          "status": "PRESENT",
+          "bytes": 429484,
+          "sha256": "fa3fb472b1fc819b90fbec523c87f9f442977126f722ae6f237551fef0933baf"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-down-selected-1000.png": {
+          "status": "PRESENT",
+          "bytes": 730393,
+          "sha256": "085826f2d617aad6199ade9152ac227547187abb0503f02dd9603ec25d5f43db"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-selected-1000.png": {
+          "status": "PRESENT",
+          "bytes": 347656,
+          "sha256": "f604e365c92b5d5e53a6c8e95d1508d87449803279f59eff688ba3cf89c67c15"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-selected-short-1000.png": {
+          "status": "PRESENT",
+          "bytes": 730239,
+          "sha256": "f70e8173a19f0c2d5548a52357998667acace023e6054810a3ba992e31fe266b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-ready-1000.png": {
+          "status": "PRESENT",
+          "bytes": 795576,
+          "sha256": "76db838b5ec8b24c4b39ba905ccdf3969c39b79220537f1a50d7db520da90681"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-resume-check-1000.png": {
+          "status": "PRESENT",
+          "bytes": 892882,
+          "sha256": "c8ab54d1e24cccb49fff56e0260848d0de344d2c2508efa57183c288628459df"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-save-menu-1000.png": {
+          "status": "PRESENT",
+          "bytes": 389458,
+          "sha256": "4e88a46353f33b4f8741830d853b8d80ef4ac3b3e69d6a63867c6f74fc6b8556"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-selection-1000.png": {
+          "status": "PRESENT",
+          "bytes": 184744,
+          "sha256": "4890145a307306a32e24203afaf4735fcb302ae8d2c3f8276aa23395182e651f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-singleplayer-1000.png": {
+          "status": "PRESENT",
+          "bytes": 721310,
+          "sha256": "37517298be9b48b19e1ea6c6e7dd4676908626f471d99e4dff37de78554e9c05"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-title-menu-1000.png": {
+          "status": "PRESENT",
+          "bytes": 200755,
+          "sha256": "27dfbfbc1ffe6740802f9c119c504e444d8b0da34f3318c9d4ccb740196236c6"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-world-moved-1000.png": {
+          "status": "PRESENT",
+          "bytes": 1016027,
+          "sha256": "891627b6dc02e8d6dd64050961d1fa15d5ccd2c4d64981148d8b00d1207345ef"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-world-start-1000.png": {
+          "status": "PRESENT",
+          "bytes": 12475,
+          "sha256": "d91ec2528b87a27878b571dfb6105af080e81baee01dc0ad43e94c7387a4f23b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/packet.json": {
+          "status": "PRESENT",
+          "bytes": 13165,
+          "sha256": "47c4d40b28195bd4dc42417fbf9db66d231f7f675279e39c38df65bd27026468"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/accessibility-disable-click.json": {
+          "status": "PRESENT",
+          "bytes": 196,
+          "sha256": "48a58b5623fde4a6d9605e74604a1e6f00b710904c14302fb1f6165223c706f2"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/after-process-exit.json": {
+          "status": "PRESENT",
+          "bytes": 1426,
+          "sha256": "a53e25175d386297198118733f621ed49f6dc34b25d727889d48ca4d9b6015c1"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/before-launch.json": {
+          "status": "PRESENT",
+          "bytes": 1026,
+          "sha256": "d5a8c64eae1eb4c094fd2146d8d2dff88554011791c4728e441c1fe008596566"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cleanup-k.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cleanup-w.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cli.stderr.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cli.stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1227,
+          "sha256": "53f69e30b03a79d582edbce756e1d0e91a9fec2fdd033ea5c4393f555691ae39"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 3518,
+          "sha256": "152673959c5b170bcfbf85efab021359e905133cfae9f42b8dd163b71f70f3c7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json": {
+          "status": "PRESENT",
+          "bytes": 3114,
+          "sha256": "164826b679a4a5d73e9f644afe777afb900a92a56850b9047b1b5d243fed23d8"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/engine-dyld.json": {
+          "status": "PRESENT",
+          "bytes": 373,
+          "sha256": "864409719149a1eb994d20f88b1e3cf108c9f00692c28d950cd2306049603d03"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 752,
+          "sha256": "f2f6b2da792968e87df6a5ef9e26934e9a5a6a08c0f1b5d4cd21f680d59857d7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/launch-stage.json": {
+          "status": "PRESENT",
+          "bytes": 190,
+          "sha256": "6e0fa946305191bd86a8145e6f2c32ab5b566b3a19d2d169ff0ca4058056b3e2"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/popups.jsonl": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/progress.jsonl": {
+          "status": "MISSING",
+          "sha256": null
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/result.json": {
+          "status": "PRESENT",
+          "bytes": 1320,
+          "sha256": "45f10a9b29557b4aaf78dbc73b65808092063018d1efd622e8ef961be578a75f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/service.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/stderr.log": {
+          "status": "PRESENT",
+          "bytes": 7950646,
+          "sha256": "4bfe322bb2112cc1528430deb717a581abc7c442e06de4aafcad3562c6bed018"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1591,
+          "sha256": "28918f3df43f95788c6d7343fa059f74c9f476be07cc291aad67ce5461875b40"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/windows.jsonl": {
+          "status": "PRESENT",
+          "bytes": 294,
+          "sha256": "107f1b3681ca93a7e8c7eda7c35ed536056bb6a4ca9831d838f232390a3a92cb"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/wine-exit.json": {
+          "status": "PRESENT",
+          "bytes": 32,
+          "sha256": "fac255f6b29d93d501bd0989c2d067825ab2cd2474ed7b762936ce6605487aa6"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/quit-reminder.json": {
+          "status": "PRESENT",
+          "bytes": 71,
+          "sha256": "f9cc9155ed40ce06ae479a6c77a38486ab4190b6debd7dae6a0aed7ce17a93df"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/run-receipt.json": {
+          "status": "PRESENT",
+          "bytes": 2017,
+          "sha256": "1b790b986164512d355019595f323a9a36544c790ec7f11ed65e41a6ea7c7de5"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-after/2/consoleHistory.txt": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-after/2/stderr.txt": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-after/2/stdout.txt": {
+          "status": "PRESENT",
+          "bytes": 28815,
+          "sha256": "5d37f19fd8e5b71dae4079b585e5bd547aa80923a797afb5e2344b053bed061c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-before/2/stderr.txt": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-before/2/stdout.txt": {
+          "status": "PRESENT",
+          "bytes": 20994,
+          "sha256": "5ebbbef10bf3d3058ca3286019385203a251c935e45b535961ae97e179a070a5"
+        },
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-skyrim-direct-world-01/after-process-exit.json": {
           "status": "PRESENT",
           "bytes": 711,
@@ -15796,6 +16478,11 @@
           "status": "PRESENT",
           "bytes": 32,
           "sha256": "1f06bbffad42e791a81975f860768dbd8da18f2b40381fd09c80c4b52e998ee2"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/admission.json": {
+          "status": "PRESENT",
+          "bytes": 1334,
+          "sha256": "f9fe07dfdd6121b967ee5078a1757aea5e09ffe2521633abb816e3d13461b6ad"
         },
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/integrity.json": {
           "status": "PRESENT",
@@ -23934,6 +24621,7 @@
                   "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ranked-top3-crossover-dry-v1/registry.json"
                 ],
                 "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/admission.json",
                   "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/integrity.json",
                   "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/owned-input-events.json",
                   "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json",
@@ -24560,14 +25248,18 @@
           ],
           "sourceRefs": [
             {
+              "source": "matrix",
+              "productId": "9MXND4PQLK3W"
+            },
+            {
               "source": "ownerVerdicts",
               "productId": "9MXND4PQLK3W"
             }
           ],
           "hypothesesStatus": "See existing title scope/blocker and raw diagnostic links; no per-attempt hypothesis verdict invented.",
           "nextDiscriminatingTest": "Not explicitly frozen by this audit; owner must recover the existing test card/diagnosis before any separately authorized retry.",
-          "recordedTitleScope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical.",
-          "recordedBlocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
+          "recordedTitleScope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical. Coordinator now reports runtime fix candidate54c5f5d9/source7cb756a2 built/fixture-validated and worldpacket6170908e dry-verified30/30 pins; conditional S3 one world after S2/S5 slot return, no execution result. Short IDs are reported references, not independently verified full hashes or runtime success.",
+          "recordedBlocker": "Prior Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Runtime-only world packet6170908e conditional on S2/S5 slot return; no new result or reload grant.",
           "gaps": [
             "Historical attempts mentioned only in free-form prose/short IDs may remain unenumerated",
             "Per-attempt failed hypotheses and next discriminating test require source-owner annotation"
@@ -24577,6 +25269,295 @@
         "9N8C07SS8C9D": {
           "title": "FINAL FANTASY IV",
           "attempts": [
+            {
+              "runId": "4c62acbd-ca99-4952-98aa-f400d028adf7",
+              "recordedProduct": "9N8C07SS8C9D",
+              "startedAt": "2026-10-22T21:43:29.922187Z",
+              "finishedAt": "2026-10-22T21:58:35.450696Z",
+              "observedProcessResult": {
+                "exit_code": 1,
+                "wine_exit_code": 0,
+                "wine_termination_signal": null,
+                "error_code": "TIMEOUT",
+                "success": false
+              },
+              "resultPolicy": "Raw process success/exit is not title, gameplay, quit or retention PASS.",
+              "identities": {
+                "cli": [
+                  {
+                    "path": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6/xodus-cli",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json",
+                    "historicalHash": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+                    "hashBasis": "Candidate path label, not independent execution-time hash"
+                  }
+                ],
+                "runtime": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json"
+                  }
+                ],
+                "engine": [
+                  {
+                    "value": "queue-winecx-nativejson",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json"
+                  },
+                  {
+                    "value": "queue-winecx-nativejson",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/result.json"
+                  }
+                ],
+                "prefix": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-final-fantasy-iv-free-runner006-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json"
+                  },
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-final-fantasy-iv-free-runner006-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/result.json"
+                  }
+                ],
+                "registry": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/registry.json",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json"
+                  }
+                ],
+                "gameExecutable": [
+                  {
+                    "value": "FINAL FANTASY IV.exe",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json"
+                  }
+                ],
+                "recordedHashes": [
+                  {
+                    "field": "packetSha256",
+                    "sha256": "39d8a3d1053f6e679b3c9ec1f378a9644ede9d6fb0154538ba739c4d4de82874",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json"
+                  },
+                  {
+                    "field": "packetSha256",
+                    "sha256": "39d8a3d1053f6e679b3c9ec1f378a9644ede9d6fb0154538ba739c4d4de82874",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/run-receipt.json"
+                  },
+                  {
+                    "field": "packetSha256",
+                    "sha256": "39d8a3d1053f6e679b3c9ec1f378a9644ede9d6fb0154538ba739c4d4de82874",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json"
+                  }
+                ]
+              },
+              "artifacts": {
+                "runArtifacts": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/wine-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/quit-reminder.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/run-receipt.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/progress.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/registry.json"
+                ],
+                "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/dry-admission.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/owned-input-events.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-arrival-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-baron-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-controls-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-transition-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-02-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-03-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-04-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-05-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-06-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-07-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-08-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-09-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-10-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-11-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-12-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-13-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-14-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-15-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-16-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-17-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-18-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-19-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-20-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-21-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-22-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-23-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-24-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-25-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-26-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-28-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-30-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-31-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-33-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-landing-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-landing-after-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-mysidia-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-newgame-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-after-wait-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-pause-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-quit-probe-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-quit-still-unavailable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-ready-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-second-battle-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-second-battle-after-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-next-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-ready-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-transition-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-world-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/packet.json"
+                ]
+              },
+              "categories": {
+                "packet": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/packet.json"
+                ],
+                "receipt": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json"
+                ],
+                "log": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/launch/runs/4c62acbd-ca99-4952-98aa-f400d028adf7/progress.jsonl"
+                ],
+                "screenshot": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-arrival-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-baron-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-controls-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-battle-transition-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-02-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-03-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-04-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-05-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-06-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-07-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-08-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-09-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-10-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-11-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-12-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-13-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-14-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-15-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-16-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-17-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-18-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-19-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-20-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-21-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-22-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-23-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-24-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-25-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-26-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-28-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-30-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-31-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-dialogue-33-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-landing-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-landing-after-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-mysidia-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-newgame-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-after-wait-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-opening-pause-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-quit-probe-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-quit-still-unavailable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-ready-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-second-battle-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-second-battle-after-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-next-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-ready-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-throne-transition-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/s3-ffiv-world-title-1000.png"
+                ],
+                "saveDelta": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/before-launch.json"
+                ]
+              },
+              "observationRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+                  "field": "status",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+                  "field": "observed",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+                  "field": "gameplayObserved",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+                  "field": "retentionVerified",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+                  "field": "ordinaryQuitObserved",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/run-world/quit-reminder.json",
+                  "field": "beginOrdinaryQuit",
+                  "scope": "Recorded observation; raw stays local"
+                }
+              ],
+              "hypothesisAndNextTestRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-final-fantasy-iv-full-02/final-evidence/result.json",
+                  "field": "nextAction",
+                  "scope": "Recorded diagnosis, not a new conclusion"
+                }
+              ],
+              "gaps": [
+                "Historical app identity not bound to this run",
+                "Path-labeled identities are not independent execution-time binary hashes",
+                "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
+                "Shared proof-root files are context only; per-run attribution incomplete"
+              ]
+            },
             {
               "runId": "fe94138b-8634-44f8-98d9-58c7409df5fe",
               "recordedProduct": "9N8C07SS8C9D",
@@ -24766,13 +25747,13 @@
           ],
           "hypothesesStatus": "See existing title scope/blocker and raw diagnostic links; no per-attempt hypothesis verdict invented.",
           "nextDiscriminatingTest": "Not explicitly frozen by this audit; owner must recover the existing test card/diagnosis before any separately authorized retry.",
-          "recordedTitleScope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied.",
-          "recordedBlocker": "PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding.",
+          "recordedTitleScope": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission.",
+          "recordedBlocker": "900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry.",
           "gaps": [
             "Historical attempts mentioned only in free-form prose/short IDs may remain unenumerated",
             "Per-attempt failed hypotheses and next discriminating test require source-owner annotation"
           ],
-          "nextGate": "gameplay"
+          "nextGate": "opening interaction/control budget gap"
         },
         "9NGH1FK0RJGL": {
           "title": "Wasteland Remastered",
@@ -31189,6 +32170,10 @@
           ],
           "sourceRefs": [
             {
+              "source": "matrix",
+              "productId": "9NQVHHW88XW9"
+            },
+            {
               "source": "ownerVerdicts",
               "productId": "9NQVHHW88XW9"
             }
@@ -31955,6 +32940,256 @@
                 "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
                 "Shared proof-root files are context only; per-run attribution incomplete"
               ]
+            },
+            {
+              "runId": "43827ec2-c040-4695-9aa0-39b623107877",
+              "recordedProduct": "9P1Z43KRNQD4",
+              "startedAt": "2026-10-22T21:59:05.313216Z",
+              "finishedAt": "2026-10-22T22:12:07.132503Z",
+              "observedProcessResult": {
+                "exit_code": 0,
+                "wine_exit_code": 0,
+                "wine_termination_signal": null,
+                "error_code": null,
+                "success": true
+              },
+              "resultPolicy": "Raw process success/exit is not title, gameplay, quit or retention PASS.",
+              "identities": {
+                "cli": [
+                  {
+                    "path": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6/xodus-cli",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json",
+                    "historicalHash": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+                    "hashBasis": "Candidate path label, not independent execution-time hash"
+                  }
+                ],
+                "runtime": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json"
+                  }
+                ],
+                "engine": [
+                  {
+                    "value": "creation-dx11-d3dmetal",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json"
+                  },
+                  {
+                    "value": "creation-dx11-d3dmetal",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/result.json"
+                  }
+                ],
+                "prefix": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-quake-free-runner006-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json"
+                  },
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-quake-free-runner006-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/result.json"
+                  }
+                ],
+                "registry": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/registry.json",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json"
+                  }
+                ],
+                "gameExecutable": [
+                  {
+                    "value": "bastet_WinStore.exe",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json"
+                  }
+                ],
+                "recordedHashes": [
+                  {
+                    "field": "packetSha256",
+                    "sha256": "47c4d40b28195bd4dc42417fbf9db66d231f7f675279e39c38df65bd27026468",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json"
+                  },
+                  {
+                    "field": "packetSha256",
+                    "sha256": "47c4d40b28195bd4dc42417fbf9db66d231f7f675279e39c38df65bd27026468",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/run-receipt.json"
+                  },
+                  {
+                    "field": "packetSha256",
+                    "sha256": "47c4d40b28195bd4dc42417fbf9db66d231f7f675279e39c38df65bd27026468",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json"
+                  }
+                ]
+              },
+              "artifacts": {
+                "runArtifacts": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/accessibility-disable-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/wine-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/quit-reminder.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/run-receipt.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/progress.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/registry.json"
+                ],
+                "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/dry-admission.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/owned-input-events.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-accessibility-chosen-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-after-disable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-auth-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-campaign-choice-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-current-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-difficulty-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-disable-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-final-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-foreground-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-native-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-options-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-pause-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-down-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-selected-short-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-ready-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-resume-check-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-save-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-selection-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-singleplayer-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-title-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-world-moved-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-world-start-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/packet.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-after/2/consoleHistory.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-after/2/stderr.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-after/2/stdout.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-before/2/stderr.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/saves-before/2/stdout.txt"
+                ]
+              },
+              "categories": {
+                "packet": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/packet.json"
+                ],
+                "receipt": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json"
+                ],
+                "log": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/launch/runs/43827ec2-c040-4695-9aa0-39b623107877/progress.jsonl"
+                ],
+                "screenshot": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-accessibility-chosen-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-after-disable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-auth-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-campaign-choice-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-current-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-difficulty-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-disable-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-final-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-foreground-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-native-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-options-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-pause-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-down-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-quit-selected-short-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-ready-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-resume-check-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-save-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-selection-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-singleplayer-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-title-menu-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-world-moved-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-world-start-1000.png"
+                ],
+                "saveDelta": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/s3-quake-save-menu-1000.png"
+                ]
+              },
+              "observationRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "status",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "worldObservation",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "gameplayCandidateObserved",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "retentionVerified",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "ordinaryQuitObserved",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/run-world/quit-reminder.json",
+                  "field": "beginOrdinaryQuit",
+                  "scope": "Recorded observation; raw stays local"
+                }
+              ],
+              "hypothesisAndNextTestRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "saveGap",
+                  "scope": "Recorded diagnosis, not a new conclusion"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "diagnosticLines",
+                  "scope": "Recorded diagnosis, not a new conclusion"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json",
+                  "field": "nextAction",
+                  "scope": "Recorded diagnosis, not a new conclusion"
+                }
+              ],
+              "gaps": [
+                "Historical app identity not bound to this run",
+                "Path-labeled identities are not independent execution-time binary hashes",
+                "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
+                "Shared proof-root files are context only; per-run attribution incomplete"
+              ]
             }
           ],
           "sourceRefs": [
@@ -31965,13 +33200,13 @@
           ],
           "hypothesesStatus": "See existing title scope/blocker and raw diagnostic links; no per-attempt hypothesis verdict invented.",
           "nextDiscriminatingTest": "Not explicitly frozen by this audit; owner must recover the existing test card/diagnosis before any separately authorized retry.",
-          "recordedTitleScope": "Coordinator latest report: gameplay render only, not strict WORKING. Run identity not supplied.",
-          "recordedBlocker": "Gameplay rendered; passive forced end247, no ordinary quit or retained-save qualification.",
+          "recordedTitleScope": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission.",
+          "recordedBlocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload.",
           "gaps": [
             "Historical attempts mentioned only in free-form prose/short IDs may remain unenumerated",
             "Per-attempt failed hypotheses and next discriminating test require source-owner annotation"
           ],
-          "nextGate": "full retention test"
+          "nextGate": "save/input hold and late quit"
         },
         "9P2J5D12GJL5": {
           "title": "Oblivion GOTY (2009)",
@@ -32337,13 +33572,13 @@
           ],
           "hypothesesStatus": "See existing title scope/blocker and raw diagnostic links; no per-attempt hypothesis verdict invented.",
           "nextDiscriminatingTest": "Not explicitly frozen by this audit; owner must recover the existing test card/diagnosis before any separately authorized retry.",
-          "recordedTitleScope": "S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json. Runtime pair/shim overlay bytes omitted from RAM-stage sizing. Not evidence of host110GiB floor failure or game-rendering incompatibility.",
-          "recordedBlocker": "Before Wine: ENOSPC copying runtime/shims into six executable directories on RAM stage, despite118GiB host free. Bounded source fix authorized, no retry yet.",
+          "recordedTitleScope": "Historical S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json failed before Wine with runtime pair/shim overlay bytes omitted from RAM-stage sizing. Coordinator now reports owned matcher packet67a1aabf blocked by112GiB precheck at111.56GiB even after exact owned incremental reclaim. Packet-specific112GiB does not replace global110/110/105 policy. No new execution or game-rendering incompatibility established.",
+          "recordedBlocker": "Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result.",
           "gaps": [
             "Historical attempts mentioned only in free-form prose/short IDs may remain unenumerated",
             "Per-attempt failed hypotheses and next discriminating test require source-owner annotation"
           ],
-          "nextGate": "RAM-stage accounting fix"
+          "nextGate": "owned matcher packet disk precheck"
         },
         "9P4NV23Q6QC2": {
           "title": "Abiotic Factor",
@@ -34207,6 +35442,7 @@
               "categories": {},
               "gaps": [
                 "Referenced attempt only; full run ID/result not located",
+                "Previously indexed attempt absent from current bounded scan; retained, not erased",
                 "Previously indexed attempt absent from current bounded scan; retained, not erased",
                 "Previously indexed attempt absent from current bounded scan; retained, not erased",
                 "Previously indexed attempt absent from current bounded scan; retained, not erased",
@@ -44532,13 +45768,13 @@
       },
       "coverage": {
         "titleCount": 29,
-        "launchResultAttempts": 152,
+        "launchResultAttempts": 154,
         "unresolvedReferenceCount": 6,
-        "artifactCount": 3288,
-        "presentArtifacts": 3124,
-        "missingArtifacts": 164,
+        "artifactCount": 3423,
+        "presentArtifacts": 3257,
+        "missingArtifacts": 166,
         "recordedHashDiscrepancies": 0,
-        "attemptsWithIdentityGaps": 158,
+        "attemptsWithIdentityGaps": 160,
         "unresolvedReferencesPolicy": "May include non-launch/support references or short-ID duplicates; not additional proven game attempts."
       },
       "specialistIndexes": [
@@ -44622,7 +45858,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:41:54.984442+00:00",
-      "sameGateObservedHours": 17.275768316944443,
+      "sameGateObservedHours": 17.532220509166667,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after fresh18dcee0d loaded S3Retention world (typedS3-Retention, game filteredhyphen), same drgload/LabAssistant/$5/ducttape first pocketcell, then ordinary LeaveGame\u2192YesQuit\u2192mainmenuQuit\u2192Quit CLI0/Wine0 in294.9s under300. Earlier900s worlde5ec1841 reached real cafeteria movement/interactions40-55FPS after first-user setup but TIMEOUTCLI1/Wine0, not ordinary quit. Changed placed/droppedobject NOT observed. Explicit coordinator admission uses retained world/scientist/inventory marker and final normalexit. Actual Container grew3\u21926payloads; fullT2/T3 continuity, opaque7384\u21927421B payload after finalquit. Apple4/adf8/7106/Shipping/STA1 only unchanged.",
@@ -44688,7 +45924,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "01cda87b",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -44709,7 +45945,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T21:02:52.061519+00:00",
-      "sameGateObservedHours": 0.92658024,
+      "sameGateObservedHours": 1.183032432222222,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted.",
@@ -44771,7 +46007,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:17:29.883816+00:00",
-      "sameGateObservedHours": 17.682740713055555,
+      "sameGateObservedHours": 17.93919290527778,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after sole final300s fresh80cbf59d loads Crossroads/Nights2 (previously1)/Grasp10, save updated22Oct06:47AM, no movement/interaction, ordinary PauseQuit\u2192OK\u2192mainQuit CLI0/Wine0 within209s. Preceding900s d9e1ff58 reached natural death and Crossroads but TIMEOUTCLI1/Wine1; remains INCONCLUSIVE in its own right. Final verification explicitly admitted despite that timeout. ActualCONTAINER45056\u219256141B, complete T2/T3 hashes identical. Earlier replayed shade dialogue is not global retention failure. Known window-monitor10s warning separately accepted and does not replace actualWine0. No further Hades launches.",
@@ -44858,7 +46094,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted natural-death combat rather than a two-minute rerun. Apple4 defaultCOM/noargs/adf8/7106: selected Swordsman, moved through camp, entered Haunted Caverns and reached real skeleton combat at60FPS. First natural death16s unlocked First Try/Quest Stone and banked17gold. Ordinary menu Quit/Yes quit now CLI0/Wine0. Fresh process retained17gold and visible QuestStone. Second attack/movement attempt dealt400damage and2kills before natural death15s, bank53gold. Returned camp and ordinary Quit/Yes quit now again CLI0/Wine0. Stopped actual local-save payload changed size5520 to9876 and fullSHA f4e03df7... to9d22356b...; metadata-only/settings are not used as retention proof. No two-minute survival, mid-run resume, cloud-save or app-tile E2E claim.",
@@ -44944,7 +46180,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 19.11029723833333,
+      "sameGateObservedHours": 19.366749430555554,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen Apple4/adf8/7106 with STA1 only: created drgload xodus, healed with displayed G, completed relative Look Around, walked from cave through exterior cliff path following Professor Fig at39-47FPS D3D12/Metal4. Coordinator independently confirmed movement. Initial1800s891d061f and300s86e8da68 hit wall caps; these were not normal quits. Fresh86e8da68 retained named level1 character and loaded cave healing checkpoint, bypassing character creation/carriage intro; coordinator reviewed screenshots and accepted this checkpoint retention, waiving later cave-exit requirement. Final new600s f2471368 again loaded that character/world and completed ordinary Escape SAVE/LOAD AND EXIT\u2192EXIT TO MAIN MENU\u2192Space Yes\u2192main-menu EXIT GAME\u2192Space Yes/Quit to OS. Actual CLI0/Wine0, no WM_CLOSE/forcedkill, PID73417 gone. Coordinator's WORKING condition now satisfied; app-tile E2E remains separate/unobserved.",
@@ -45010,7 +46246,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Corrected actual S5 app-tile run6eb24065 with native JSON registrations, native-web-only shims and7106 pair passes user initialization, King's Pass rendering, movement, jump, attacks and focus healing. Coordinator explicitly replaced the bench gate with normal Quit to Menu save. Both container .xgs hashes+mtimes changed; post-quit slot1 card King's Pass/17M/0geo/5masks. Normal close Wine0/CLI0. Actual unchanged S5 tile relaunch902a364c displayed exactly the same card, Continue loaded real King's Pass, movement worked and5masks/broken soul vessel retained the death state. Zero-geo HUD counter is hidden; card0 is observed, not an invented HUD numeral. Second normal save/quit/WM_CLOSE Wine0/CLI0; both owned process pairs gone, exactprefix-k1/-w0. Coordinator reviewed screenshots and explicitly admitted HK as third WORKING title. No bench/cloud claim.",
@@ -45079,7 +46315,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "User explicitly admitted WORKING and directed move-on. Official signed native launcher3.41.29-2.6.12, Java latest26.3 ARM64: actual single-player world/HUD, W+jump movement, clean saved-world shutdown, launcher relaunch to new Java PID76415 and retained New World reloaded. S2/S5 native Ode provider integration remains pending; not a Wine or Bedrock claim.",
@@ -45158,7 +46394,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:00:36.510816+00:00",
-      "sameGateObservedHours": 15.964233213055556,
+      "sameGateObservedHours": 16.220685405277777,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING8 after extended d919efb9 completed SKATE TO ROCKFORD'S, unlocked ROCKFORD'S HOUSE and immediately ordinaryExit/SpaceDesktopCLI0/Wine0 in954.85s. Sole fresh ab231868 main menu hasContinue/Chapters; ChapterSelect retains selectable SKATE TO ROCKFORD'S and ROCKFORD'S HOUSE. Esc/mainExitCLI0/Wine0 in193.4s; exactprefix-w0. Both quit before75% caps. Payload3544\u21925503B and fullT2/T3/T4 continuity verified. Same Apple4/adf8/7106/STA/two-native private registry. No further exploration/chapter replay.",
@@ -45239,7 +46475,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T19:58:34.919517+00:00",
-      "sameGateObservedHours": 1.9980085738888889,
+      "sameGateObservedHours": 2.2544607661111113,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinatorindependentlyadmittedninthtitle: worldcca9c74f andfreshretry0667822b retainedS3/Wolf/114G/BlobEggx1+movement; actualSaveQuit/titleExit0/0 bothruns; world\u2192retry27968B SHA4ba6af91 unchanged; afterretry27984B SHA6b271c30. PriorreloadINFRA0x80072746excluded.",
@@ -45314,7 +46550,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "CrossOver actual EmphiV24 world, movement, autosave, ordinary WM_CLOSE and fresh-process retained-world relaunch verified. Historical ffc4 CrossOver Wine exit0 is independent of its POPUP_MONITOR_FAILED helper error. S1 additionally qualified free nms-free-gptk3-d3dshared: real EmphiV24 walking/strafe/scanner/tutorial progress, changed Slot1Auto data/meta, ordinary quit CLI0, same-prefix relaunch with updated0:06 playtime/03:23save and retained Gather Ferrite Dust objective in-world around60FPS, second normal quit CLI0. PIDs52582/65739 gone, ownprefix-k1/-w0, finished00:26:30 within original1200s grant. S3 inspected relaunch-world.png and relaunch-trial-result.json. Earlier free-load failures are historical, not the current outcome. App-driven NMS E2E remains unobserved.",
@@ -45386,7 +46622,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "d9399bec-129a-4c6a-b46b-0e0a0bd3f921",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45426,7 +46662,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:40:57.657042+00:00",
-      "sameGateObservedHours": 0.2916925947222222,
+      "sameGateObservedHours": 0.5481447869444445,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report.",
@@ -45506,7 +46742,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:48:55.482548+00:00",
-      "sameGateObservedHours": 1.1589632875,
+      "sameGateObservedHours": 1.4154154797222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator independently admitted title10. CLI68f world a9ee48eb obtained WoodenStick/equippedJ; fresh a27be511 retained both and actual movement. Both observed QuitToTitleScreen then titleQuit, CLI0/Wine0, PIDgone beforecleanup. T2T3 exact9331B SHA3a7fb537; T4 SHA1b116832. Shrine NOT reached. World quit548.735s missed540 by8.735s; reload quit148.718s within180. CLI only, not app E2E; prior timeouts retained as evidence, not provider-fault claims.",
@@ -45518,85 +46754,6 @@
         "d928b209-1819-4a97-b70f-b160c7e45e73"
       ],
       "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9NLRT31Z4RWM"
-    },
-    {
-      "storeId": "9N8C07SS8C9D",
-      "title": "FINAL FANTASY IV",
-      "verdict": "TITLE_SCREEN_PASS",
-      "strictWorking": false,
-      "gates": {
-        "menu": {
-          "status": "passed",
-          "basis": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied."
-        },
-        "gameplay": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "quit": {
-          "status": "unknown",
-          "basis": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied."
-        },
-        "relaunch": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "save": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        }
-      },
-      "nextGate": "gameplay",
-      "ownerStream": "S3",
-      "blocker": "PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding.",
-      "evidence": [
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
-          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
-          "runId": null,
-          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
-        }
-      ],
-      "packetReferences": [
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
-          "sha256": "789ee39d7a4c67d1ca7aaded4e8a861ab954ad23875efb2e7fa9401b724fb844",
-          "storeId": "9N8C07SS8C9D",
-          "collection": "items",
-          "kind": "packet"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-          "sha256": "4dba390adfc9188ff95e03e081459582808215a6966a3e02027e42169786d55b",
-          "store_id": "9N8C07SS8C9D",
-          "kind": "S1-candidate-only"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/preflight-game-candidates.json",
-          "sha256": "2dbde3d110ca1457814eec4b4f2f5ca431a97872ee83f30a05ed0d143ba76cfe",
-          "store_id": "9N8C07SS8C9D",
-          "kind": "S1-candidate-only"
-        },
-        {
-          "storeId": "9N8C07SS8C9D",
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
-          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
-        }
-      ],
-      "s1RowPresent": true,
-      "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 1.3347325022222223,
-      "stuckOver2Hours": false,
-      "historicalGateAge": "unknown before tracker first observation",
-      "scope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied.",
-      "attemptHistory": [
-        "fe94138b-8634-44f8-98d9-58c7409df5fe"
-      ],
-      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9N8C07SS8C9D"
     },
     {
       "storeId": "9NGLST31DG26",
@@ -45636,7 +46793,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "3e488e23",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45659,7 +46816,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T05:35:29.577516+00:00",
-      "sameGateObservedHours": 16.38282579638889,
+      "sameGateObservedHours": 16.63927798861111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator-reported retry 3e488e23 INCONCLUSIVE. Earlier 01a6bdcf gameplay timeout is historical. Forced -k cleanup does not pass ordinary quit.",
@@ -45716,7 +46873,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 19.344022109166666,
+      "sameGateObservedHours": 19.60047430138889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45782,7 +46939,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed exact Windows package. Actual corrected Apple4/adf8/7106 trace421f naturally exits0 in8.68s with no observed owned window/screenshot/input. Both real WINEDEBUG/XODUS_WINE_DEBUG active; no explicit causal exception or game-level reason. CLI0 is not rendering/gameplay PASS. Exactprefix-k1/-w0. Separate coordinator-authorized API trace6a266eb2 naturally exits0 in9.94s, also no window/input/capture; S1 interpreting actual trace.",
@@ -45853,7 +47010,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45900,7 +47057,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45947,7 +47104,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "21f1ed27",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -45974,7 +47131,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:33:42.080722+00:00",
-      "sameGateObservedHours": 0.4126860169444444,
+      "sameGateObservedHours": 0.6691382091666666,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S3 settled21f1ed27: external-consent-stop/finalresult explicitly overrides original runner forcedCleanup=null, preserved historically. Runner fixed for future, not retroactive proof. No gameplay/save/reload or legal agreement acceptance. Earlier passive/prerequisite attempts retained; license GRANTED does not authorize legal consent.",
@@ -46043,7 +47200,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46094,7 +47251,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "db247a1f",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46126,7 +47283,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:30:53.508207+00:00",
-      "sameGateObservedHours": 0.45951171555555553,
+      "sameGateObservedHours": 0.7159639077777779,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical. Coordinator now reports runtime fix candidate54c5f5d9/source7cb756a2 built/fixture-validated and worldpacket6170908e dry-verified30/30 pins; conditional S3 one world after S2/S5 slot return, no execution result. Short IDs are reported references, not independently verified full hashes or runtime success.",
@@ -46178,7 +47335,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "a452bd89",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46205,7 +47362,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T04:28:41.158529+00:00",
-      "sameGateObservedHours": 17.496275515,
+      "sameGateObservedHours": 17.752727707222224,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator report only, not an independently inspected receipt. Matrix verdict supersedes once recorded.",
@@ -46258,7 +47415,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46327,7 +47484,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46374,10 +47531,90 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
+    },
+    {
+      "storeId": "9N8C07SS8C9D",
+      "title": "FINAL FANTASY IV",
+      "verdict": "INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT",
+      "strictWorking": false,
+      "gates": {
+        "menu": {
+          "status": "passed",
+          "basis": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission."
+        },
+        "gameplay": {
+          "status": "unknown",
+          "basis": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission."
+        },
+        "quit": {
+          "status": "not-passed",
+          "basis": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission."
+        },
+        "relaunch": {
+          "status": "not-passed",
+          "basis": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission."
+        },
+        "save": {
+          "status": "not-passed",
+          "basis": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission."
+        }
+      },
+      "nextGate": "opening interaction/control budget gap",
+      "ownerStream": "S3/coordinator",
+      "blocker": "900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry.",
+      "evidence": [
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
+          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
+          "runId": "4c62acbd",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
+        }
+      ],
+      "packetReferences": [
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
+          "sha256": "789ee39d7a4c67d1ca7aaded4e8a861ab954ad23875efb2e7fa9401b724fb844",
+          "storeId": "9N8C07SS8C9D",
+          "collection": "items",
+          "kind": "packet"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+          "sha256": "4dba390adfc9188ff95e03e081459582808215a6966a3e02027e42169786d55b",
+          "store_id": "9N8C07SS8C9D",
+          "kind": "S1-candidate-only"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/preflight-game-candidates.json",
+          "sha256": "2dbde3d110ca1457814eec4b4f2f5ca431a97872ee83f30a05ed0d143ba76cfe",
+          "store_id": "9N8C07SS8C9D",
+          "kind": "S1-candidate-only"
+        },
+        {
+          "storeId": "9N8C07SS8C9D",
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
+          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
+        }
+      ],
+      "s1RowPresent": true,
+      "gateFirstObservedAt": "2026-10-22T22:13:50.978275+00:00",
+      "sameGateObservedHours": 0,
+      "stuckOver2Hours": false,
+      "historicalGateAge": "unknown before tracker first observation",
+      "scope": "Coordinator settled world4c62acbd: rendered scripted airship/Mysidia/battles/Baron throne, not observed free control. Opening interaction/control budget gap, not renderer diagnosis. Coordinator verified run22/22 and final56/56 hashes; S4 independently verified final result hash only. Prior PRESS ANY BUTTON passive remains historical; no WORKING admission.",
+      "attemptHistory": [
+        "4c62acbd-ca99-4952-98aa-f400d028adf7",
+        "fe94138b-8634-44f8-98d9-58c7409df5fe"
+      ],
+      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9N8C07SS8C9D"
     },
     {
       "storeId": "9PMN4DGRT1LN",
@@ -46421,7 +47658,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 19.344022109166666,
+      "sameGateObservedHours": 19.60047430138889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46485,7 +47722,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Fresh adf8 complete117. Actual direct Fallout4.exe run16403e9f on creation-dx11-d3dmetal/adf8/7106 with explicit local-saves1/online1 renders signed-in menu60FPS, new-game video, interactive character creation and first-person bathroom world. Forward input accepted and F5 visibly showed Quicksaving. Retention NOT qualified: no .fos/.xgs found in exact prefix or actual host Fallout4 MS/Saves/Fallout4/Saves; discovery only adds Plugins.txt/UserDownloadedContent.txt, not saves. At300s ordinary exact-title/staged-image WM_CLOSE matched1, then actual Wine5/CLI5; exactprefix-k1/-w0, staged game gone. Old undriven-launcher timeout3c418e3d remains historical, not a graphics failure.",
@@ -46559,7 +47796,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46606,7 +47843,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 19.344022109166666,
+      "sameGateObservedHours": 19.60047430138889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46653,7 +47890,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46700,7 +47937,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46747,7 +47984,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "3b833cc7",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46774,7 +48011,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 19.11029723833333,
+      "sameGateObservedHours": 19.366749430555554,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged.",
@@ -46843,7 +48080,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46924,7 +48161,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -46971,7 +48208,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 19.344022109166666,
+      "sameGateObservedHours": 19.60047430138889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -47052,7 +48289,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:39:46.049930+00:00",
-      "sameGateObservedHours": 4.311583459166666,
+      "sameGateObservedHours": 4.568035651388889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen004/518e7fb9/null-display1/sameprefix worldd756b27d: real awakening/right-arrow movement/forest/log descent, repeated first-spike-gap deaths. LoadChapter appears but only initialforestthumbnail observed; no post-gap checkpoint/new thumbnail. Ordinary QuitLimboCLI0/Wine0 in812.16s, processgone before-k1/-w0. Quit started late,75%policy NOT satisfied. Provider158->206B delta is opaque; no reload consumed or retention claim.",
@@ -47107,7 +48344,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -47154,7 +48391,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -47201,7 +48438,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "f1339edf-f389-44a5-b2e6-2ca01357dc86",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47235,7 +48472,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:58:27.750383+00:00",
-      "sameGateObservedHours": 0,
+      "sameGateObservedHours": 0.2564521922222222,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Historical S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json failed before Wine with runtime pair/shim overlay bytes omitted from RAM-stage sizing. Coordinator now reports owned matcher packet67a1aabf blocked by112GiB precheck at111.56GiB even after exact owned incremental reclaim. Packet-specific112GiB does not replace global110/110/105 policy. No new execution or game-rendering incompatibility established.",
@@ -47249,33 +48486,33 @@
     {
       "storeId": "9P1Z43KRNQD4",
       "title": "Quake",
-      "verdict": "TITLE_SCREEN_PASS",
+      "verdict": "INCONCLUSIVE_SAVE/INPUT",
       "strictWorking": false,
       "gates": {
         "menu": {
           "status": "passed",
-          "basis": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
+          "basis": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission."
         },
         "gameplay": {
-          "status": "unknown",
-          "basis": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
+          "status": "passed",
+          "basis": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission."
         },
         "quit": {
           "status": "not-passed",
-          "basis": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
+          "basis": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission."
         },
         "relaunch": {
-          "status": "unknown",
-          "basis": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
+          "status": "not-passed",
+          "basis": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission."
         },
         "save": {
-          "status": "unknown",
-          "basis": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
+          "status": "not-passed",
+          "basis": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission."
         }
       },
-      "nextGate": "controllable gameplay",
-      "ownerStream": "S3",
-      "blocker": "Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding.",
+      "nextGate": "save/input hold and late quit",
+      "ownerStream": "S3/coordinator",
+      "blocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload.",
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
@@ -47287,8 +48524,8 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
-          "runId": null,
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
+          "runId": "43827ec2-c040-4695-9aa0-39b623107877",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
       ],
@@ -47318,13 +48555,14 @@
         }
       ],
       "s1RowPresent": true,
-      "gateFirstObservedAt": "2026-10-22T21:58:27.750383+00:00",
+      "gateFirstObservedAt": "2026-10-22T22:13:50.978275+00:00",
       "sameGateObservedHours": 0,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
-      "scope": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied.",
+      "scope": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission.",
       "attemptHistory": [
-        "23b51063-1985-4562-8ada-aff7760bad63"
+        "23b51063-1985-4562-8ada-aff7760bad63",
+        "43827ec2-c040-4695-9aa0-39b623107877"
       ],
       "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9P1Z43KRNQD4"
     },
@@ -47395,7 +48633,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; no launch/rendering qualification."
@@ -47442,7 +48680,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 19.344022109166666,
+      "sameGateObservedHours": 19.60047430138889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -47489,7 +48727,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 19.37652330083333,
+      "sameGateObservedHours": 19.632975493055557,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -47570,7 +48808,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:52:53.364646+00:00",
-      "sameGateObservedHours": 4.0928849269444445,
+      "sameGateObservedHours": 4.349337119166666,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Historical manifestlauncherfa08c5f8 PLAY spawnedchild then vanished,launcher0/0 notgameplay. Soleauthorized directexe28648e14 retainedsameprefix/defaultCOM/creationDX11/adf8/7106 changesonlyexe.22Oct17:39:25-17:39:42Z17.58s actualSkyrimSE.exe/macPID36400/window26655 titleSkyrim Special Edition MS, spontaneouslyexited5/5 beforecapture/input. No world/menu/gameplay/save/reload. All3saveinventoriesremainempty. Gamegone beforeexactprefix-k1/-w0. No additionalretry.",
@@ -47624,7 +48862,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 19.344022109166666,
+      "sameGateObservedHours": 19.60047430138889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -47671,7 +48909,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "c5e0b3ba-95c8-4d10-bf34-495f1a6110fe",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -47705,7 +48943,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.6841021277777778,
+      "sameGateObservedHours": 0.9405543199999999,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; subnautica2-bootstrap-passive-vc14-v1/verdict.json. Rendering not gameplay/retention/normal quit. Earlier evidenceReceipt identifies historical blocked attempt only. Existing package license GRANTED does not grant legal consent.",
@@ -47749,7 +48987,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "30e44a64-ce07-4e43-bb79-77a175729226",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47765,7 +49003,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.6841021277777778,
+      "sameGateObservedHours": 0.9405543199999999,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; valor-mortis-apple4-passive-vcoverrides-v1/verdict.json. IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca off-screen lookup before any separately authorized retry; log fingerprint not proven causal diagnosis.",
@@ -47814,7 +49052,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47841,7 +49079,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 1.3347325022222223,
+      "sameGateObservedHours": 1.5911846944444445,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report, no gameplay or retention admission. DQ overlay sequence not a proven causal attribution.",
@@ -47884,7 +49122,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47912,7 +49150,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 1.3347325022222223,
+      "sameGateObservedHours": 1.5911846944444445,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report: startup config failure, no proven staged-file parity or fix, no launch authorization.",
@@ -47959,7 +49197,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "02b8a29b5bd41b7ade7bf23b1ca9fc43857f51d754aa63f642510f7c0ef49c56",
+          "sha256": "93e49e9d40c1655d8a73b6c4b395a38b56ff9755a595831fac6f0c65d21f4530",
           "runId": "9c31530d",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47988,7 +49226,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:01:01.161758+00:00",
-      "sameGateObservedHours": 15.957385729166665,
+      "sameGateObservedHours": 16.21383792138889,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator reports run 9c31530d reached gameplay but timed out. Supersedes old actual-title retest pending claim; gameplay reach alone is not strict WORKING.",

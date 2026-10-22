@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T21:58:27.858651+00:00",
+  "checkedAt": "2026-10-22T22:13:53.926033+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 12,
@@ -32,7 +32,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "eeded06aa4f76bc4d7b78c39c45505d41ce9d7a5e74e4ac221c18b8989faf0d1"
+      "sha256": "c3eb686d3bb78190d184c9b05a0a173235885c6b74feddc8a69ba6af0428fefa"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -90,7 +90,7 @@
       "rank": 6,
       "storeId": "9N8C07SS8C9D",
       "title": "FINAL FANTASY IV",
-      "verdict": "TITLE_SCREEN_PASS",
+      "verdict": "INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 519434240,
       "planningBudgetBytes": 519434240,
@@ -99,7 +99,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "CrossOver candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding.",
+      "blocker": "900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -150,7 +150,7 @@
       "rank": 8,
       "storeId": "9P1Z43KRNQD4",
       "title": "Quake",
-      "verdict": "TITLE_SCREEN_PASS",
+      "verdict": "INCONCLUSIVE_SAVE/INPUT",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 1761398784,
       "planningBudgetBytes": 1761398784,
@@ -159,7 +159,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding.",
+      "blocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,

@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T21:58:27.750383+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-22T22:13:50.978275+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -16,7 +16,6 @@ Updated 2026-10-22T21:58:27.750383+00:00; **12/20 strict WORKING**. Title qualif
 | No Man's Sky | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Stardew Valley | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | TUNIC | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
-| FINAL FANTASY IV | TITLE_SCREEN_PASS | passed | ? | ? | ? | ? | gameplay / S3 | PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding. | - |
 | A Game About Digging A Hole | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked: sold 1 stone, $5 upgrade not bought, no save shown. Title menu has no Exit; ended with exact-prefix -k cleanup, not normal quit. No retained-save qualification. | >2h |
 | Age of Empires IV: Anniversary Edition | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | >2h |
@@ -29,6 +28,7 @@ Updated 2026-10-22T21:58:27.750383+00:00; **12/20 strict WORKING**. Title qualif
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored® Definitive Edition (PC) | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Dome Keeper | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
+| FINAL FANTASY IV | INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT | passed | ? | not passed | not passed | not passed | opening interaction/control budget gap / S3/coordinator | 900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry. | - |
 | Fable | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Fallout 4 | INCONCLUSIVE | ? | ? | ? | ? | ? | save-provider diagnosis / S2/S3 | Delete-missing candidateadvancesfailuretoCreateUpdateinvalidarg butstillnopayload; mouse-lookweird reportedbyuser, exactsignatureunresolved; exit5afterTDesktop. NoWORKING/reload. | >2h |
 | Forever Ago | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
@@ -43,7 +43,7 @@ Updated 2026-10-22T21:58:27.750383+00:00; **12/20 strict WORKING**. Title qualif
 | Minishoot' Adventures | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | owned matcher packet disk precheck / S2 | Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result. | - |
-| Quake | TITLE_SCREEN_PASS | passed | ? | not passed | ? | ? | controllable gameplay / S3 | Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding. | - |
+| Quake | INCONCLUSIVE_SAVE/INPUT | passed | passed | not passed | not passed | not passed | save/input hold and late quit / S3/coordinator | New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload. | - |
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
@@ -61,9 +61,9 @@ Full blockers, source hashes and packet references are in `path-to-20-v1.json`. 
 
 ## Retained attempt evidence
 
-Audit 2026-10-22T21:41:00.057519+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
+Audit 2026-10-22T22:13:53.799864+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
 
-Coverage: 29 titles, 152 launch-result attempts, 6 unresolved references; 3124 present / 164 missing artifact links. This is bounded discovery, not a complete historical archive.
+Coverage: 29 titles, 154 launch-result attempts, 6 unresolved references; 3257 present / 166 missing artifact links. This is bounded discovery, not a complete historical archive.
 
 Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.
 
@@ -76,7 +76,7 @@ Exact run identities, artifact paths/hashes, failed-hypothesis context and expli
 | Hollow Knight: Voidheart Edition / `9MW9469V91LM` | 6 | 6 attempts incomplete; title hypothesis/test annotations incomplete |
 | Stardew Valley / `9MWR1NC6VQ6L` | 9 | 9 attempts incomplete; title hypothesis/test annotations incomplete |
 | DOOM 64 / `9MXND4PQLK3W` | 2 | 2 attempts incomplete; title hypothesis/test annotations incomplete |
-| FINAL FANTASY IV / `9N8C07SS8C9D` | 1 | 1 attempts incomplete; title hypothesis/test annotations incomplete |
+| FINAL FANTASY IV / `9N8C07SS8C9D` | 2 | 2 attempts incomplete; title hypothesis/test annotations incomplete |
 | Wasteland Remastered / `9NGH1FK0RJGL` | 1 | 1 attempts incomplete; title hypothesis/test annotations incomplete |
 | A Game About Digging A Hole / `9NGLST31DG26` | 7 | 7 attempts incomplete; title hypothesis/test annotations incomplete |
 | Mixtape / `9NH0MSG29X6L` | 10 | 10 attempts incomplete; title hypothesis/test annotations incomplete |
@@ -84,7 +84,7 @@ Exact run identities, artifact paths/hashes, failed-hypothesis context and expli
 | Halls of Torment / `9NMNMS626R59` | 3 | 3 attempts incomplete; title hypothesis/test annotations incomplete |
 | Bluey's Happy Snaps / `9NQVHHW88XW9` | 3 | 3 attempts incomplete; title hypothesis/test annotations incomplete |
 | Skyrim Special Edition / `9P03JGQ4S1GC` | 4 | 4 attempts incomplete; title hypothesis/test annotations incomplete |
-| Quake / `9P1Z43KRNQD4` | 1 | 1 attempts incomplete; title hypothesis/test annotations incomplete |
+| Quake / `9P1Z43KRNQD4` | 2 | 2 attempts incomplete; title hypothesis/test annotations incomplete |
 | Oblivion GOTY (2009) / `9P2J5D12GJL5` | 3 | 3 attempts incomplete; title hypothesis/test annotations incomplete |
 | Abiotic Factor / `9P4NV23Q6QC2` | 16 | 16 attempts incomplete; title hypothesis/test annotations incomplete |
 | Valor Mortis / `9P861V1542BL` | 4 | 4 attempts incomplete; title hypothesis/test annotations incomplete |
