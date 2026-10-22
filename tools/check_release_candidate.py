@@ -167,7 +167,10 @@ class ReleaseCandidateChecks(unittest.TestCase):
         self.assertEqual(release.PRODUCER_COMMIT, refresh_tool.PRODUCER)
         self.assertEqual(release.PRODUCER_TREE, refresh_tool.PRODUCER_TREE)
         self.assertEqual(release.PRODUCER_MANIFEST_SHA256, refresh_tool.PRODUCER_MANIFEST_SHA256)
-        self.assertEqual(release.UNNOTARIZED_PAIR, (pins.CLI_SHA256, pins.WINDOWS_HELPER_SHA256))
+        self.assertEqual(release.UNNOTARIZED_PAIR, (
+            "a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664",
+            "0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7"))
+        self.assertNotEqual(release.UNNOTARIZED_PAIR[0], pins.CLI_SHA256)
 
     def test_refresh_rejects_mismatched_payload_or_producer(self):
         with tempfile.TemporaryDirectory() as temporary:

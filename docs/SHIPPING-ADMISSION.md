@@ -22,6 +22,14 @@ evidence that the installed service covers this title. Failed product IDs and
 error codes are disclosed under **About these games**, not treated as an empty
 successful search.
 
+The coordinator approved signed CLI `3ea56ed1` / producer `974ac81` for the full
+local app, lifecycle included. Its lifecycle source is unchanged from `f54654d`;
+the exact source passed 393 workspace tests. S5's read-only service probe returned
+Valor Mortis and Asphalt Legends successfully in RO/ro-RO with explicit
+`resolvedLanguage: neutral`. This authorizes candidate packaging, not a claim
+that installed UI or Brotato runtime acceptance has already passed. The prior
+notarized-release exception is not extended to this unnotarized local candidate.
+
 Product links (#42) resolve Microsoft's public `/store/productId/<id>` route
 with explicit market and locale, follow only matching Microsoft/Xbox redirects,
 and require a successful Xbox page with a matching canonical slug, ID and locale.

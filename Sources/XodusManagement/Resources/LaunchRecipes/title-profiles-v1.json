@@ -37,7 +37,7 @@
       "version": 1,
       "productID": "9P9VNSQK1W3K",
       "title": "Brotato",
-      "qualification": "CLI-only WORKING_CANDIDATE from ebd56e; a1aade app-route regression pending, no WORKING promotion",
+      "qualification": "CLI-only WORKING_CANDIDATE from ebd56e; a1aade generic route failed, Apple4 app-route regression with 3ea56ed1 pending, no WORKING promotion",
       "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-brotato-retention-02/invocation.json",
       "sourceRecipeSHA256": "a2858fb02420e6c36f974aa8fe5f70a2d8ad3ee9154c6408bd9999b910cb3414",
       "engine": "apple-gptk-4.0b3",
