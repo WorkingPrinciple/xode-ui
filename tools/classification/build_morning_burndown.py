@@ -173,10 +173,12 @@ def refresh(tracker):
               "launchDiskPolicy": {
                   "minimumFreeGiB": LAUNCH_MINIMUM_FREE_GIB,
                   "minimumFreeBytes": LAUNCH_MINIMUM_FREE_GIB * 2**30,
+                  "stagingMinimumFreeGiB": 110,
+                  "runningAbortBelowGiB": 105,
                   "source": "Coordinator relayed user decision 2026-10-22: "
                   "110 GiB launch floor replaces 153 GiB during Valor Mortis download.",
-                  "scope": "Launch admission only; no new install, retry or runtime grant. "
-                  "Historical install/staging thresholds are not launch guards.",
+                  "scope": "User confirmed 110 prelaunch / 110 staging / 105 running abort. "
+                  "No new install, retry or runtime grant.",
               },
               "timezoneInterpretation": "User extended deadline by 12 hours to "
               "23 October 13:26 EEST (UTC+03), not UTC; coordinator reported "

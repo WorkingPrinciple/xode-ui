@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T17:39:46.049930+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T17:52:53.364646+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -45,7 +45,7 @@ Updated 2026-10-22T17:39:46.049930+00:00; **8/20 strict WORKING**. Brotato candi
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Skyrim Special Edition | INCONCLUSIVE | not passed | ? | ? | ? | ? | startup diagnosis / S1 | Launcher reached, but game child exited with no window; no gameplay. S1 diagnosing; launcher is not game title-screen evidence. | >2h |
+| Skyrim Special Edition | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Directexe spontaneouslyexits5/5 in17.58s. COM80040154 remainsnoncausal logevidence. Exactprefixstopped; no additionalretry. | - |
 | South of Midnight | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Stardew Valley | CANCELLED | ? | ? | ? | ? | ? | menu / S2 | Tooling bug cancellation, runner 004 fix; attempt not consumed. No title outcome or gate qualification inferred. | >2h |
 | Subnautica 2 | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |

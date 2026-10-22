@@ -1,17 +1,19 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T17:39:46.049930+00:00",
+    "asOf": "2026-10-22T17:52:53.364646+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
       "minimumFreeBytes": 118111600640,
+      "stagingMinimumFreeGiB": 110,
+      "runningAbortBelowGiB": 105,
       "source": "Coordinator relayed user decision 2026-10-22: 110 GiB launch floor replaces 153 GiB during Valor Mortis download.",
-      "scope": "Launch admission only; no new install, retry or runtime grant. Historical install/staging thresholds are not launch guards."
+      "scope": "User confirmed 110 prelaunch / 110 staging / 105 running abort. No new install, retry or runtime grant."
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
-    "trackerMatrixSha256": "ed42e65730c5c22f63f82a8dae30ab0d9cd38e8fb08f538192ef0380b1609e4a",
+    "trackerMatrixSha256": "18c3aeb1c3cbf01204d3cc028122a0628a94874d2753b22c1704e5fef2261ebf",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -557,7 +559,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1006.2325011666667,
+  "remainingWallMinutes": 993.1105892333333,
   "scenarios": [
     {
       "label": "slow observed",
@@ -626,7 +628,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 83.85270843055555,
+  "requiredAverageMinutesPerAddition": 82.75921576944444,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

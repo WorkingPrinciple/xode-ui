@@ -86,23 +86,24 @@ Free-title/acquisition and parked-prefix options: `free-morning-candidates-v1.md
 **Morning user decision only**, not an install queue; fresh Owned read proved no additions.
 
 **Disk:** 155.017 GiB at 09:08 EEST after cleanup, not a fresh measurement. Install margin
-157 GiB (historical install margin, not launch guard); launch prestart now
-**110 GiB**, user-directed during Valor Mortis download, replacing 153 GiB.
-Old 152 GiB abort policy conflicts with the lowered prestart floor; runtime
-owners/coordinator must reconcile it before admitting a lower-disk launch.
-No abort threshold is invented here. No steady depletion forecast.
+157 GiB was the historical install margin; user now confirms **110 GiB
+prelaunch / 110 GiB staging-download / 105 GiB running abort** during Valor
+Mortis download. S2 runner 006 applies 110/105 per coordinator.
+Coordinator reports 133 GiB free at this decision (not a new S4 disk sample):
+23 GiB gross margin before remaining download, prefix and transient growth.
+No steady depletion forecast or new concurrent-download admission.
 Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T17:39:46.049930+00:00: **8/20** strict: Abiotic Factor, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, Bluey's Happy Snaps, Brotato, DEATHLOOP, DOOM 64, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, FINAL FANTASY IV, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, Minishoot' Adventures, Monster Sanctuary, Nine Sols, Oblivion GOTY (2009), Quake, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Stardew Valley, Subnautica 2, TUNIC, Valor Mortis, Vampire Survivors, Wasteland Remastered, Well Dweller. Refresh every30min and owner verdict.
+Living tracker 2026-10-22T17:52:53.364646+00:00: **8/20** strict: Abiotic Factor, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, Bluey's Happy Snaps, Brotato, DEATHLOOP, DOOM 64, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, FINAL FANTASY IV, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, Minishoot' Adventures, Monster Sanctuary, Nine Sols, Oblivion GOTY (2009), Quake, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, South of Midnight, Stardew Valley, Subnautica 2, TUNIC, Valor Mortis, Vampire Survivors, Wasteland Remastered, Well Dweller. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 13:26 EEST** (user +12h extension); 16.77h from 2026-10-22T17:39:46.049930+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **11/15/22** slow/mid/fast cycles, capped by **21 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **19/23/29**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 13:26 EEST** (user +12h extension); 16.55h from 2026-10-22T17:52:53.364646+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **11/15/22** slow/mid/fast cycles, capped by **21 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **19/23/29**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
 Launch admission floor: **110 GiB** (user-directed, replaces 153 GiB during Valor Mortis download). No fresh disk reading or extra executable capacity inferred.
 
-Need **12** additions; slow scenario leaves **1**. Required mean: **83.9min/addition**. Brotato CLI promotion can add one without another full cycle. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
+Need **12** additions; slow scenario leaves **1**. Required mean: **82.8min/addition**. Brotato CLI promotion can add one without another full cycle. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 
 Observed admission ratio: **8/16 matrix attempts (50.0%)**; including receipt/owner-reported attempts: **8/17 (47.1%)**. Matrix post-title-screen subset: **8/10**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **109.1%/80.0%/57.1%** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold 54.5% requires more eligible titles than current queue.
 
