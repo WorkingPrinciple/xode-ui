@@ -236,11 +236,15 @@ enum LibraryAccessChecks {
                                                    with: #""verdict":"FUTURE_RESULT_V2""#)
         let unknownGame = try MacGameEvidence.decode(Data(unknown.utf8)).games[0]
         let partialGame = try MacGameEvidence.decode(Data(partial.utf8)).games[0]
+        let inconclusive = try MacGameEvidence.decode(Data(
+            working.replacingOccurrences(of: "WORKING", with: "INCONCLUSIVE").utf8)).games[0]
         check(unknownGame.verdict == .unknown && unknownGame.verifiedWorkingEvidence == nil
               && unknownGame.provenEngine == nil && unknownGame.statusLabel == "Result not recognized"
               && partialGame.verdict == .titleScreen && partialGame.verifiedWorkingEvidence == nil
-              && partialGame.provenEngine == nil && partialGame.statusLabel == "Title screen only",
-              "Future and title-screen-only verdicts stay distinct non-WORKING entries without automatic engine selection")
+              && partialGame.provenEngine == nil && partialGame.statusLabel == "Title screen only"
+              && inconclusive.verdict == .inconclusive && inconclusive.verifiedWorkingEvidence == nil
+              && inconclusive.provenEngine == nil && inconclusive.statusLabel == "Inconclusive",
+              "Future, title-screen-only and inconclusive verdicts stay distinct and never promote engine or working evidence")
         let mixedWorking = try MacGameEvidence.decode(Data(working.utf8))
         var mixed = try JSONSerialization.jsonObject(with: Data(working.utf8)) as? [String: Any] ?? [:]
         let baseGame = (mixed["games"] as? [[String: Any]])?.first ?? [:]
@@ -254,13 +258,20 @@ enum LibraryAccessChecks {
         future["productId"] = "FUTURE000001"
         future["verdict"] = "FUTURE_RESULT_V2"
         rows.append(future)
+        var unresolved = baseGame
+        unresolved["productId"] = "FIXTURE00007"
+        unresolved["verdict"] = "INCONCLUSIVE"
+        rows.append(unresolved)
         mixed["games"] = rows
         let mixedGames = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games
-        check(mixedWorking.games[0].verifiedWorkingEvidence != nil && mixedGames.count == 4
+        check(mixedWorking.games[0].verifiedWorkingEvidence != nil && mixedGames.count == 5
               && mixedGames.filter { $0.verifiedWorkingEvidence != nil }.map(\.productId)
                   == ["9MW9469V91LM", "BQVQTL3PCH05", "9PJ8266BHFWN"]
-              && mixedGames.last?.verdict == .unknown && mixedGames.last?.provenEngine == nil,
-              "An unknown verdict beside all three valid WORKING entries preserves their evidence badges")
+              && mixedGames[3].verdict == .unknown && mixedGames[3].provenEngine == nil
+              && mixedGames[4].verdict == .inconclusive && mixedGames[4].provenEngine == nil
+              && mixedGames[4].verifiedWorkingEvidence == nil
+              && mixedGames[4].statusLabel == "Inconclusive",
+              "Unknown and inconclusive verdicts preserve neighboring WORKING badges without gaining evidence or engine promotion")
         let bundledEvidence = try MacGameEvidence.bundled.get()
         let newWorkingIDs = Set(["9PCR3Z2MSM4T", "9P4NV23Q6QC2", "9NH0MSG29X6L"])
         check(Set(bundledEvidence.games.map(\.productId)) == newWorkingIDs

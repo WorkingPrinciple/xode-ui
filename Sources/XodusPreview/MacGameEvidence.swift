@@ -11,6 +11,7 @@ struct MacGameEvidence: Decodable, Sendable {
         case working = "WORKING"
         case workingCandidate = "WORKING_CANDIDATE"
         case titleScreen = "TITLE_SCREEN_ONLY"
+        case inconclusive = "INCONCLUSIVE"
         case unknown = "UNRECOGNIZED"
 
         init(from decoder: Decoder) throws {
@@ -29,6 +30,7 @@ struct MacGameEvidence: Decodable, Sendable {
             case .failed: "Doesn't start yet"
             case .blocked, .notTested: "Not tested on Mac yet"
             case .excluded: "Excluded from Mac testing"
+            case .inconclusive: "Inconclusive"
             }
         }
     }

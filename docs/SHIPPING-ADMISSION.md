@@ -414,8 +414,13 @@ Schema version 1 has `updatedAt` and `games[]`,
 with `productId`, `title`, `verdict`, `scope`, `engine`, optional `runId`,
 `screenshots[]` (`path`, `caption`), `owner`, and optional `blocker`.
 Supported verdicts are `GAMEPLAY_PASS`, `MENU_PASS`, `BLOCKED`, `FAIL`,
-`NOT_TESTED`, `WORKING`, `TITLE_SCREEN_ONLY`, and `ANTI_CHEAT_EXCLUDED`.
+`NOT_TESTED`, `WORKING`, `WORKING_CANDIDATE`, `TITLE_SCREEN_ONLY`,
+`INCONCLUSIVE`, and `ANTI_CHEAT_EXCLUDED`.
 `TITLE_SCREEN_ONLY` remains a partial observation, not gameplay or WORKING.
+`INCONCLUSIVE` is a known unresolved outcome, not an unknown verdict or a
+working result; it never supplies a verified-working badge or automatic engine
+selection. `WORKING_CANDIDATE` remains scoped to its recorded candidate evidence
+and never supplies either promotion.
 Unknown future verdict strings render as "Result not recognized" for that
 entry only; they never receive a working badge or supply an automatic engine,
 and do not hide other valid entries. Other schema/path validation remains strict.
