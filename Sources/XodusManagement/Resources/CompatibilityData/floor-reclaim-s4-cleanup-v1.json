@@ -1,0 +1,14 @@
+{
+  "completedAt": "2026-10-22T05:57:10.232008+00:00",
+  "exactPath": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/.build/out",
+  "allocatedBytesBefore": 117927936,
+  "freeBytesBefore": 165228732416,
+  "freeBytesAfter": 165347860480,
+  "absentAfter": true,
+  "quiescenceCheck": "lsof -nP +D exact path: exit 1, empty stdout/stderr immediately before deletion",
+  "pathCheck": "Existing exact directory, not symlink; resolved path equals authorized path",
+  "logsEvidenceUntouched": true,
+  "authorization": "Coordinator direct instruction: delete only S4 regenerable .build/out once unused",
+  "freeDeltaCaveat": "119128064-byte volume delta is observed, not attributable solely to this deletion in shared environment.",
+  "otherDeletedPaths": []
+}

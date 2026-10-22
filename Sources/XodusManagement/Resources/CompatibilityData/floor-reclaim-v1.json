@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "collectedAt": "2026-10-22T05:57:33.406498+00:00",
+  "freeBytes": 165346148352,
+  "thresholdBytes": 100000000,
+  "deletedPaths": [],
+  "priorAuthorizedCleanup": {
+    "completedAt": "2026-10-22T05:57:10.232008+00:00",
+    "exactPath": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/.build/out",
+    "allocatedBytesBefore": 117927936,
+    "freeBytesBefore": 165228732416,
+    "freeBytesAfter": 165347860480,
+    "absentAfter": true,
+    "quiescenceCheck": "lsof -nP +D exact path: exit 1, empty stdout/stderr immediately before deletion",
+    "pathCheck": "Existing exact directory, not symlink; resolved path equals authorized path",
+    "logsEvidenceUntouched": true,
+    "authorization": "Coordinator direct instruction: delete only S4 regenerable .build/out once unused",
+    "freeDeltaCaveat": "119128064-byte volume delta is observed, not attributable solely to this deletion in shared environment.",
+    "otherDeletedPaths": []
+  },
+  "sources": [
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
+      "sha256": "fd0c4ecf5ee2e23b3708fd4ca0b0351d4cf699ee4c077235f6b631f6b083f498"
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/packets.json",
+      "sha256": "88a7ae27f8dd69b84e653b3061e105643088a889a8dadb4c63ce7e4b15041bca"
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch3-eight-v1/packets.json",
+      "sha256": "2ef7ae5a1979cb506af3fd54609723894f44186b64c78ab639c1aabc66dfdca3"
+    },
+    {
+      "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+      "sha256": "c7177a40c32841f35c8e26180e1c481f94eb78c4e3c4c03a0d53c54481c8c684"
+    }
+  ],
+  "referenceScope": "Three frozen passive packet files plus owner-verdict metadata; not exhaustive runtime reference proof. Recheck processes immediately before any separately approved deletion.",
+  "items": [
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0fd3291c-b0a1-44bd-a536-c80a2405893c/progress.jsonl",
+      "allocatedBytes": 248320000,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T22:44:12.968891Z",
+      "productId": "9P3T7HVKM6D0",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0fd3291c-b0a1-44bd-a536-c80a2405893c/result.json",
+      "receiptSha256": "7570583695ed4baec74d11d0cfe6975fecaf70d8e9c96570460696c518cf202c",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1e0c7e13-55ed-41a3-9537-6cf5e6a7b83a/progress.jsonl",
+      "allocatedBytes": 371081216,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T22:45:22.769947Z",
+      "productId": "9P2J5D12GJL5",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1e0c7e13-55ed-41a3-9537-6cf5e6a7b83a/result.json",
+      "receiptSha256": "e1f4df88c71b28583abcdc76443594d8ce51a73a7bfffbbf1e1d3eae5cb9fdad",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/3a4f828b-37c0-4b81-80a7-a508cff2fae2/progress.jsonl",
+      "allocatedBytes": 160698368,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-22T00:10:07.710456Z",
+      "productId": "9NCJWHHMVHR0",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/3a4f828b-37c0-4b81-80a7-a508cff2fae2/result.json",
+      "receiptSha256": "18e834b35d9d389451f1dfdf74f9194657fb76e809c5ff44abd12b19e9c54aa5",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/4c251e73-d1c2-4dfb-adb0-ccf1f952c327/progress.jsonl",
+      "allocatedBytes": 174972928,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T23:36:23.747988Z",
+      "productId": "9P1N07XDL1D4",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/4c251e73-d1c2-4dfb-adb0-ccf1f952c327/result.json",
+      "receiptSha256": "c4806c82d20c94c4d204ee4091a1ead6fd148cc78ccf08e6204806d8370d6ca3",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/6f32dbe6-ff82-444f-abd8-ed9b7995be1b/progress.jsonl",
+      "allocatedBytes": 927227904,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T22:55:28.228887Z",
+      "productId": "9MT5NJ5W7B8Z",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/6f32dbe6-ff82-444f-abd8-ed9b7995be1b/result.json",
+      "receiptSha256": "99e87f8328a982c988a05c10214bb1cb30c2422ce2a8d6156716d83d31a5b9fe",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/93d2b7db-8ca8-470c-b9bb-f690c212d372/progress.jsonl",
+      "allocatedBytes": 237948928,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T22:01:31.531994Z",
+      "productId": "C3KLDKZBHNCZ",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/93d2b7db-8ca8-470c-b9bb-f690c212d372/result.json",
+      "receiptSha256": "a9ebee122c97dcae1c6d2f65c4486467b7ff6e411738609a316415d592282652",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/9bfec523-0c29-4da1-8af1-e7b867130ea3/progress.jsonl",
+      "allocatedBytes": 132714496,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T21:47:59.161374Z",
+      "productId": "9PCR3Z2MSM4T",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/9bfec523-0c29-4da1-8af1-e7b867130ea3/result.json",
+      "receiptSha256": "a579da93b5203d7d4064ff8104141446d7547d0b42763a01de33d316bf6cfc56",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bbbf3af0-80b8-491d-85fb-511cd0390024/progress.jsonl",
+      "allocatedBytes": 103755776,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T23:33:53.357482Z",
+      "productId": "9NFB47H2SDRX",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bbbf3af0-80b8-491d-85fb-511cd0390024/result.json",
+      "receiptSha256": "bf8249d63da8a8da7a44680286c92ebe83542565aca3eea8f5a7618071605974",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/c38a4145-8d48-4211-b8b2-98df888e3d40/progress.jsonl",
+      "allocatedBytes": 237289472,
+      "owner": "S2",
+      "category": "retained install evidence, NOT staging",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "finishedAt": "2026-10-21T22:00:35.026307Z",
+      "productId": "9P03JGQ4S1GC",
+      "receiptRetain": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/c38a4145-8d48-4211-b8b2-98df888e3d40/result.json",
+      "receiptSha256": "aeedcabab735f4b218fac2db390cacc271485ee4ce781ebb6d425aa7917b8e9a",
+      "reason": "S2 owner explicitly holds all runs/proofs. Temporary mounted HFS staging was already ejected. Do not discard retained progress evidence."
+    },
+    {
+      "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-super-spork/.build/out",
+      "allocatedBytes": 0,
+      "existsAtSample": false,
+      "owner": "S5 / dragoshont",
+      "category": "rebuildable compiler output, owner-confirmed",
+      "safeCandidate": false,
+      "deleteAuthorized": false,
+      "reason": "S5 direct report: root .build/out only, no active build/open files; not release candidate or live app input. Rebuild via swift build/tools/check.sh. Owner/coordinator deletion approval still required. All nested source/.build/out under local-candidates/retained release evidence remain protected. If absent at sample, no remaining reclaim credited."
+    }
+  ],
+  "prefixDisposition": "No owner-cleared >100MB abandoned prefix established. S2 holds pass/comparison/pending prefixes; LIMBO failed prefix already removed and yields zero new reclaim. Age or absence from frozen packets alone is not safety.",
+  "duplicatesDisposition": "No owner-cleared byte-identical redundant evidence copy established. Proofs/retained release evidence remain held.",
+  "s2OwnerReportAt": "2026-10-22T05:55Z",
+  "policy": "Proposal only, no deletion authorization. Allocated bytes are not guaranteed physical APFS reclaim. Never delete parent runs, .build root, release candidates, proofs, saves, payloads or linked targets."
+}
