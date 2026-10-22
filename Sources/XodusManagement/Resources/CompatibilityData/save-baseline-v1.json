@@ -1,0 +1,844 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-22T02:16:00.278961+00:00",
+  "readOnly": true,
+  "gameLaunches": 0,
+  "saveContentsParsed": false,
+  "retentionPass": false,
+  "spec": {
+    "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/retention-checks.md",
+    "commit": "dbfae0b",
+    "sha256": "6b4404849fd5c8afffab6ed58a0f87ee435d03182e113c025a9d1c32fd98be87"
+  },
+  "passivePlan": {
+    "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
+    "sha256": "ac054a1d67a16df00b449b834245d81f78e8063a4b36c15869618916c578f72a"
+  },
+  "policy": "Observation baseline only, not retroactive pre-launch T0. All hashes provisional with respect to process quiescence; no processes stopped or absence certified. Stable-during-read only rejects observed read races, not later changes. Missing/unmapped roots never prove no save. No save contents decoded. Candidate settings/backups/deletion markers are inventoried without treating them as gameplay. Full account paths local only.",
+  "items": [
+    {
+      "storeId": "9P9VNSQK1W3K",
+      "title": "Brotato",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9P9VNSQK1W3K-apple-gptk-4.0b3-ebd56e-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "R/Brotato"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9P8NSTDMZ11P",
+      "title": "Inscryption",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9P8NSTDMZ11P-creation-dx11-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [
+        {
+          "path": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox/SaveFile-Backup.gwsave",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox/SaveFile-Backup.gwsave",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox/SaveFile.gwsave",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox/SaveFile.gwsave",
+          "status": "absent"
+        }
+      ],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "L/Packages/DevolverDigital.Inscryption_6kzv4j18v0c96/SystemAppData/wgs"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9MSVVM5NS9L6",
+      "title": "DREDGE",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9MSVVM5NS9L6-creation-dx11-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "LL/Black Salt Games/DREDGE/saves"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9PBWWQGXVMKC",
+      "title": "Monster Sanctuary",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9PBWWQGXVMKC-creation-dx11-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [
+        {
+          "path": "/Users/dragoshont/Documents/My Games/Monster Sanctuary",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/My Games/Monster Sanctuary",
+          "status": "absent"
+        }
+      ],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "D/My Games/Monster Sanctuary"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9NLRT31Z4RWM",
+      "title": "TUNIC",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9NLRT31Z4RWM-creation-dx11-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "L/Packages/Finji.TUNIC_tys0ffscxatjj/SystemAppData/wgs",
+        "LL/Andrew Shouldice/Secret Legend/SAVES"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9PD5BM2Z8C4L",
+      "title": "Vampire Survivors",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9PD5BM2Z8C4L-creation-dx11-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "L/Packages/poncle.VampireSurvivors_9pv5cyp4vwdsr/SystemAppData/wgs",
+        "R/Vampire_Survivors/saves"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9NGH1FK0RJGL",
+      "title": "Wasteland Remastered",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9NGH1FK0RJGL-creation-dx11-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [
+        {
+          "path": "/Users/dragoshont/Documents/My Games/Wasteland Remastered",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/My Games/Wasteland Remastered",
+          "status": "absent"
+        }
+      ],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "D/My Games/Wasteland Remastered"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9NV3L234VGXD",
+      "title": "REPLACED",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9NV3L234VGXD-creation-dx11-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        }
+      ],
+      "roots": [],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "L/Packages/Thunderful.REPLACED-Game_8j53pwgd019sy/SystemAppData/wgs"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9PLH7R84GJWP",
+      "title": "Well Dweller",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1a038dcf-5c42-4567-80f7-7842a2e95ed1/result.json",
+            "sha256": "3cc59ed056a8cdb45821ebdd3dba409dc68654e8ec9dbc88605e91b4ac7ff4c3",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3",
+            "started_at": "2026-10-21T22:14:16.757586Z",
+            "run_id": "1a038dcf-5c42-4567-80f7-7842a2e95ed1",
+            "game_dir": "/Users/dragoshont/Games/Xodus/WellDweller-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "documents": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3/drive_c/users/crossover/Documents",
+            "resolved": "/Users/dragoshont/Documents",
+            "symlink": "/Users/dragoshont/Documents"
+          }
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-dxmt",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b3c82b06-8e37-42f0-b5a1-1a3b36dff37b/result.json",
+            "sha256": "20601aa630d084b37a33da7b8bdcb438194e10094f1b6aac1576353c679f04bb",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-dxmt",
+            "started_at": "2026-10-21T22:17:26.203660Z",
+            "run_id": "b3c82b06-8e37-42f0-b5a1-1a3b36dff37b",
+            "game_dir": "/Users/dragoshont/Games/Xodus/WellDweller-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "effectiveUserStatus": "unmapped; no unrelated user directories traversed"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9PLH7R84GJWP-welldweller-d3dmetal-passive-v1",
+          "binding": "planned-only-not-an-admitted-launch",
+          "exists": false,
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-d3dmetal-v1",
+          "binding": "existing-title-named-directory-launch-receipt-unmapped",
+          "warning": "Do not treat directory name as an admitted actual run.",
+          "exists": true,
+          "status": "present",
+          "documents": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-d3dmetal-v1/drive_c/users/crossover/Documents",
+            "resolved": "/Users/dragoshont/Documents",
+            "symlink": "/Users/dragoshont/Documents"
+          }
+        }
+      ],
+      "roots": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "status": "empty",
+          "fileSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3/drive_c/users/crossover/AppData/Roaming/WellDweller",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3/drive_c/users/crossover/AppData/Roaming/WellDweller",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-d3dmetal-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-d3dmetal-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-d3dmetal-v1/drive_c/users/crossover/AppData/Roaming/WellDweller",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-d3dmetal-v1/drive_c/users/crossover/AppData/Roaming/WellDweller",
+          "status": "absent"
+        }
+      ],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "R/WellDweller"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "no-files-in-observed-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9MT5NJ5W7B8Z",
+      "title": "Hogwarts Legacy",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-retention-03/runs/86e8da68-f4b0-48f8-bf7a-46e577ff3488/result.json",
+            "sha256": "0d3aba3cdbf4dae20bcc7edb7f4b5737d907338c1649405d149d8726f7ff02d8",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1",
+            "started_at": "2026-10-22T02:10:03.435507Z",
+            "run_id": "86e8da68-f4b0-48f8-bf7a-46e577ff3488",
+            "game_dir": "/Users/dragoshont/Games/Xodus/HogwartsLegacy-Xbox",
+            "launch_receipt_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-retention-03/runs/86e8da68-f4b0-48f8-bf7a-46e577ff3488/launch-stage.json"
+          },
+          "exists": true,
+          "status": "present",
+          "documents": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/Documents",
+            "resolved": "/Users/dragoshont/Documents",
+            "symlink": "/Users/dragoshont/Documents"
+          }
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/f9a0b804-019c-4d36-992a-87b41b36c331/result.json",
+            "sha256": "7dfbde1473ab2494f6bfe194424bbb8cf44365797969ffd496f962c1da11bdc1",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3",
+            "started_at": "2026-10-21T23:01:29.306720Z",
+            "run_id": "f9a0b804-019c-4d36-992a-87b41b36c331",
+            "game_dir": "/Users/dragoshont/Games/Xodus/HogwartsLegacy-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "documents": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/Documents",
+            "resolved": "/Users/dragoshont/Documents",
+            "symlink": "/Users/dragoshont/Documents"
+          }
+        }
+      ],
+      "roots": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "files": [
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-1d572f291124c16fa97b/entry-eed7fb532c221943689d/entry-607caa1c04bd89a68452",
+              "sizeBytes": 1188984,
+              "mtimeNs": 1792635191144803750,
+              "sha256": "4f6d0958e4e09aac90d60245169d94a9d1a3981025138405e54069888dfbff84",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            },
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-1d572f291124c16fa97b/entry-eed7fb532c221943689d/entry-cf7449f31c04d7aba313",
+              "sizeBytes": 170020,
+              "mtimeNs": 1792634321777694857,
+              "sha256": "1fa776bb831072e5d4ca629e9cf91b74f1b9bfbae050e5aa91b249c10fe54da4",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            },
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-1d572f291124c16fa97b/entry-eed7fb532c221943689d/entry-6c6b77ad35939ee1f018",
+              "sizeBytes": 168904,
+              "mtimeNs": 1792633977423940995,
+              "sha256": "56db17989c14553507104b8638ddb2582c32b1125c6dcbd9da697d66562f1435",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            },
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-1d572f291124c16fa97b/entry-eed7fb532c221943689d/entry-e844eb461e1faf79ada8",
+              "sizeBytes": 76,
+              "mtimeNs": 1792633977349494508,
+              "sha256": "b132c6e46cad84330b014e30e09d36dff073f5a3642119bfc110a6eb318a6927",
+              "nameOnlyRole": "deletion-marker",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            }
+          ],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "status": "present",
+          "fileSetSha256": "1391f138d1e48edaa7060464ab8be4facfc5fda4857b199dc47900468613479d"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/Packages/WarnerBros.Interactive.PHX_ktmk1xygcecda/SystemAppData/wgs",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/Packages/WarnerBros.Interactive.PHX_ktmk1xygcecda/SystemAppData/wgs",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/Hogwarts Legacy/Saved/SaveGames",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/AppData/Local/Hogwarts Legacy/Saved/SaveGames",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-apple4-v1/drive_c/users/crossover/Documents/Hogwarts Legacy",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/Hogwarts Legacy",
+          "status": "empty",
+          "fileSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/Packages/WarnerBros.Interactive.PHX_ktmk1xygcecda/SystemAppData/wgs",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/Packages/WarnerBros.Interactive.PHX_ktmk1xygcecda/SystemAppData/wgs",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/Hogwarts Legacy/Saved/SaveGames",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/Hogwarts Legacy/Saved/SaveGames",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/Documents/Hogwarts Legacy",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/Hogwarts Legacy",
+          "status": "empty",
+          "fileSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "path": "/Users/dragoshont/Documents/Hogwarts Legacy",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/Hogwarts Legacy",
+          "status": "empty",
+          "fileSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "L/Packages/WarnerBros.Interactive.PHX_ktmk1xygcecda/SystemAppData/wgs",
+        "L/Hogwarts Legacy/Saved/SaveGames"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "captured-existing-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9PCR3Z2MSM4T",
+      "title": "Hades II",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a735042f-8e41-4975-9b07-e0f5167da407/result.json",
+            "sha256": "47f39aaa8c711abd8de2a42dbe076b490d598811b75381e00f0dab6a75bbb06d",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3",
+            "started_at": "2026-10-21T22:35:08.694017Z",
+            "run_id": "a735042f-8e41-4975-9b07-e0f5167da407",
+            "game_dir": "/Users/dragoshont/Games/Xodus/HadesII-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "documents": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/Documents",
+            "resolved": "/Users/dragoshont/Documents",
+            "symlink": "/Users/dragoshont/Documents"
+          }
+        }
+      ],
+      "roots": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "files": [
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-eb0f967d0a60466877b6/entry-eed7fb532c221943689d/entry-013700f14d8fb5a326a7",
+              "sizeBytes": 426,
+              "mtimeNs": 1792622167489876957,
+              "sha256": "559abf7db59d2d7a32c58122cff5085151985d2a708ec34e5da8e76c3f5feea6",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            }
+          ],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "status": "present",
+          "fileSetSha256": "79d865fedb9e51ece8cf35c424235274664c32fbff0d3772de9ed94a1428aab8"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/Saved Games/Hades II",
+          "files": [
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/Saved Games/Hades II/entry-707ecd16a21a2d4bbf86",
+              "sizeBytes": 42703,
+              "mtimeNs": 1792622414020302258,
+              "sha256": "f44e1833bad25ddeb210e754fd9fe0aa4f877d90bf4adc20112e305618b4f952",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            }
+          ],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/Saved Games/Hades II",
+          "status": "present",
+          "fileSetSha256": "acdac09640703f949552d737969e05b165386ff007ba0b07ab5177e46dda7eb0"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/Documents/Saved Games/Hades II",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/Saved Games/Hades II",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hades-cross-26-3/drive_c/users/crossover/Documents/Hades II",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/Hades II",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Documents/Saved Games/Hades II",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/Saved Games/Hades II",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Documents/Hades II",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/Hades II",
+          "status": "absent"
+        }
+      ],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "S/Hades II",
+        "D/Saved Games/Hades II",
+        "D/Hades II"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "captured-existing-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    },
+    {
+      "storeId": "9P4NV23Q6QC2",
+      "title": "Abiotic Factor",
+      "prefixes": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-wine-stable",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/abiotic-wine-stable/runs/c45900c3-f26a-4a4b-96d2-267ea387a57d/result.json",
+            "sha256": "78df2264054239f3c91c1000752d18e2321e178d08a99cdcb97d0346bf2eb775",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-wine-stable",
+            "started_at": "2026-10-21T21:21:32.859738Z",
+            "run_id": "c45900c3-f26a-4a4b-96d2-267ea387a57d",
+            "game_dir": "/Users/dragoshont/Games/Xodus/AbioticFactor-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "effectiveUserStatus": "unmapped; no unrelated user directories traversed"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-free-runtime-pair",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/abiotic-free-runtime-pair/runs/bb16db7c-b187-47c9-ba4a-f804a0cc2c15/result.json",
+            "sha256": "9ba476980d75e35a50a5a1510e82f43ea78f8560fb91cfa6dc7e6e01df7ece5d",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-free-runtime-pair",
+            "started_at": "2026-10-21T21:23:08.454362Z",
+            "run_id": "bb16db7c-b187-47c9-ba4a-f804a0cc2c15",
+            "game_dir": "/Users/dragoshont/Games/Xodus/AbioticFactor-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "effectiveUserStatus": "unmapped; no unrelated user directories traversed"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/guid-runtime-online/runs/e33aad79-0561-46da-9eed-64aa71b9d8e0/result.json",
+            "sha256": "acd15ee3902f90c0f93dc6ce0ea7fd574e831fe8734a892f63b6324b29f49ea3",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3",
+            "started_at": "2026-10-21T22:32:08.145086Z",
+            "run_id": "e33aad79-0561-46da-9eed-64aa71b9d8e0",
+            "game_dir": "/Users/dragoshont/Games/Xodus/AbioticFactor-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "documents": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3/drive_c/users/crossover/Documents",
+            "resolved": "/Users/dragoshont/Documents",
+            "symlink": "/Users/dragoshont/Documents"
+          }
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-free-system32",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/abiotic-free-system32/runs/82445542-b18b-404a-a160-dccbf5832c37/result.json",
+            "sha256": "96b7bc4e132112b9b419758fc71ace6a2728fd3097737af998a1c7514f2d7725",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-free-system32",
+            "started_at": "2026-10-21T21:26:59.378332Z",
+            "run_id": "82445542-b18b-404a-a160-dccbf5832c37",
+            "game_dir": "/Users/dragoshont/Games/Xodus/AbioticFactor-Xbox",
+            "launch_receipt_path": null
+          },
+          "exists": true,
+          "status": "present",
+          "effectiveUserStatus": "unmapped; no unrelated user directories traversed"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3",
+          "binding": "existing-launch-receipt",
+          "receipt": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/abiotic-shipping-sta/runs/ac5e2934-9cbc-4905-8afe-b345c4a788bf/result.json",
+            "sha256": "b33f9e910e58050f2f727d1960ef09f5b67d9957b6a0b4ba91c4e95bd9c63811",
+            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3",
+            "started_at": "2026-10-22T00:54:31.387016Z",
+            "run_id": "ac5e2934-9cbc-4905-8afe-b345c4a788bf",
+            "game_dir": "/Users/dragoshont/Games/Xodus/AbioticFactor-Xbox",
+            "launch_receipt_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/abiotic-shipping-sta/runs/ac5e2934-9cbc-4905-8afe-b345c4a788bf/launch-stage.json"
+          },
+          "exists": true,
+          "status": "present",
+          "documents": {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/Documents",
+            "resolved": "/Users/dragoshont/Documents",
+            "symlink": "/Users/dragoshont/Documents"
+          }
+        }
+      ],
+      "roots": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3/drive_c/users/crossover/AppData/Local/AbioticFactor/Saved/SaveGames",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3/drive_c/users/crossover/AppData/Local/AbioticFactor/Saved/SaveGames",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-crossover-26-3/drive_c/users/crossover/Documents/AbioticFactor",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/AbioticFactor",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "files": [
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-e74ef9d77e7bd6342f71/entry-eed7fb532c221943689d/entry-e6ff6bee916e177ff59c",
+              "sizeBytes": 1718,
+              "mtimeNs": 1792630502311181249,
+              "sha256": "91a9b75e5a9cfce684307e253a702498815a8503e6a649d6d933d94d8c1bfbea",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            },
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-e74ef9d77e7bd6342f71/entry-eed7fb532c221943689d/entry-fbbb8d9e782ccba41588",
+              "sizeBytes": 441,
+              "mtimeNs": 1792630502109819830,
+              "sha256": "f6b17e360d03770dc117ddee825d550b5c1e8159c8bc9f8d4adf3af86b7dfc3f",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            },
+            {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves/entry-e74ef9d77e7bd6342f71/entry-eed7fb532c221943689d/entry-894558c1faf9b91d7d4f",
+              "sizeBytes": 1504,
+              "mtimeNs": 1792630551538643815,
+              "sha256": "a7da9db9bd107a619fde7f4338057fb7757cf01ef3a5f8deeb91552882ce843f",
+              "nameOnlyRole": "unclassified-candidate",
+              "gameplayPayloadEstablished": false,
+              "status": "stable-during-read"
+            }
+          ],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/AppData/Local/XodusPrivateContainerSaves",
+          "status": "present",
+          "fileSetSha256": "8c02344f6036385173f3d3f3c22555672f3ed593e3a3b55d16cae60d1d9953e8"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/AppData/Local/AbioticFactor/Saved/SaveGames",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/AppData/Local/AbioticFactor/Saved/SaveGames",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3/drive_c/users/crossover/Documents/AbioticFactor",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/AbioticFactor",
+          "status": "absent"
+        },
+        {
+          "path": "/Users/dragoshont/Documents/AbioticFactor",
+          "files": [],
+          "symlinks": [],
+          "errors": [],
+          "absentMeans": "Candidate path absent at observation, not proof of no save.",
+          "resolvedRoot": "/Users/dragoshont/Documents/AbioticFactor",
+          "status": "absent"
+        }
+      ],
+      "candidateRouteStatus": "Discovery only; effective payload route unverified",
+      "candidateTemplates": [
+        "L/XodusPrivateContainerSaves",
+        "L/AbioticFactor/Saved/SaveGames",
+        "D/AbioticFactor"
+      ],
+      "templatePolicy": "Templates remain unbound where a prefix or effective user directory is absent; not an absent effective payload claim.",
+      "snapshotStatus": "captured-existing-candidates",
+      "unmappedWarning": "No effective payload namespace inferred for absent or unlaunched prefixes."
+    }
+  ],
+  "finishedAt": "2026-10-22T02:16:00.286916+00:00",
+  "summary": {
+    "titleCount": 12,
+    "fileObservations": 9,
+    "rootStatusCounts": {
+      "absent": 22,
+      "empty": 4,
+      "present": 4
+    },
+    "fileStatusCounts": {
+      "stable-during-read": 9
+    }
+  },
+  "pathPrivacy": "Nested candidate paths use deterministic SHA-256 aliases; exact filenames/account paths remain solely in hash-bound local receipt.",
+  "localReceipt": {
+    "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/save-baseline-v1-scoped-full.json",
+    "sha256": "44411464166b4a0599c0e1a6ede536af24c13b1b2158dcf4a400828257a94edf"
+  }
+}
