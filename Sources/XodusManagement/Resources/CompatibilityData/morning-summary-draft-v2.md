@@ -1,6 +1,6 @@
-# Ode to X: morning draft
+# Ode to X: morning draft v2
 
-Draft at 05:23 EEST, 22 October 2026; refresh before sharing.
+Draft updated 05:24 EEST, 22 October 2026; refresh before sharing.
 
 **Goal: 20 genuinely WORKING titles; current count: 3.** WORKING requires
 gameplay, saved progress, a new-process reload and normal shutdown, not just
@@ -43,7 +43,7 @@ the app's incomplete-operation report is separately under S5 investigation.
 | Prefix user-folder isolation | User decision pending (`docs/proposals/prefix-user-folders.md`, app `08d3a33`). Do not move existing Documents/saves or change prefix links without scoped approval. |
 | WineGStreamer | DEFER. No demonstrated title-level audio/video blocker justifies a build yet; exact host ABI/source and free dependency closure must be established first. |
 | 16 MiB boundary | User decision on runtime rebuild: frozen provider rejects exactly 16 MiB. S2 no-game probe proves the boundary defect, **not** that it causes Fallout's missing saves. |
-| App RC `1f598fc` | Notarized, **not installed**. Installed app remains `cdd54a1`. S5 installation waits for S3 focus handback; it does not promote the CLI/runtime fixes above. DMG SHA: `62cad99fc352361ab38373496af440e5621df575a51e975c83f915e2cdefaef0`. |
+| App RC `1f598fc` | **Installed at 05:24 under S3's release.** 10/11 candidate tiles accepted; TUNIC remains under investigation. Rollbacks `cdd54a1` and `8140bb2` kept. This does not promote the CLI/runtime fixes above. |
 
 **Disk:** 157.38 GiB free at 05:23 EEST. The earlier build-growth burst ended;
 its depletion ETA is obsolete. No steady consumption forecast. Install hold
@@ -53,6 +53,7 @@ and 155+2 GiB staging margin remain; passive preparation uses its separate
 Sources: `morning-status-v1.json` (`83280e1`), `s3-preflight-next-v1.json`
 (`982f810`), `save-baseline-v1.json` (`f7dcfea`); authoritative S3 matrix updated
 02:15:10Z; coordinator's latest Hogwarts/RC decisions. RC receipt:
-S5 `.build/local-candidates/Ode-release-g8eao8y7/release-receipt.json`.
+S5 `.build/local-candidates/Ode-switchover-buf1ry__/switch-over-receipt.json`,
+SHA `b9d0f28bf65c0c46b5b16f63d519a56625eefa840586775eb512bbcfc97aa4fb`.
 Provider evidence: XodusCLI/proofs/`frozen-provider-no-game-v1/storage-receipt.json`.
 Dry batch: XodusCLI/proofs/`passive-batch2-eight-v1/packets.json`.
