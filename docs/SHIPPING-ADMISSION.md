@@ -12,8 +12,15 @@ must not reset it. Searches join public Store results with loaded Game Pass
 matches and current library ownership, deduplicating by product ID.
 Search results keep unsupported or unknown-package games visible with their
 real compatibility restrictions; inclusion never grants installation or access.
-The regression case `mortis` includes Valor Mortis (`9P861V1542BL`) without
-requiring it to be owned.
+The regression case `mortis` requires Valor Mortis (`9P861V1542BL`) without
+requiring it to be owned. Installed-source `305ea58` observation confirmed the
+lens and all eight verified title badges, but Store queries for `mortis` and
+Asphalt failed through the paired service; price and cancellation acceptance
+remain incomplete. Direct public Store Edge search omitted Valor Mortis while
+Xbox's Romanian search returned its exact ID. Source-union tests are not
+evidence that the installed service covers this title. Failed product IDs and
+error codes are disclosed under **About these games**, not treated as an empty
+successful search.
 
 Product links (#42) resolve Microsoft's public `/store/productId/<id>` route
 with explicit market and locale, follow only matching Microsoft/Xbox redirects,

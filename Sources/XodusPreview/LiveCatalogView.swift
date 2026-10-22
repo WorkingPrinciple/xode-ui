@@ -434,6 +434,10 @@ struct LiveCatalogView: View {
                 if let error = session.catalogError { Text(error) }
                 if !session.discoveryFailures.isEmpty {
                     Text("Some games couldn't be loaded. Refresh to try again.")
+                    ForEach(session.discoveryFailures) { failure in
+                        Text("\(failure.productID): \(failure.error.code)")
+                            .accessibilityIdentifier("xodus.catalog.failure.\(failure.productID)")
+                    }
                 }
             }
             .font(.callout).foregroundStyle(.secondary).textSelection(.enabled).padding(.top, 12)
