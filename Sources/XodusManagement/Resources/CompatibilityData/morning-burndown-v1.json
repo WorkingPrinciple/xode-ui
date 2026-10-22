@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T21:40:57.657042+00:00",
+    "asOf": "2026-10-22T21:46:31.339197+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 12,
-    "trackerMatrixSha256": "5cc7884074639a79e6132236d213cc8e340e8d6404f86249d8b7bd0b39e4d66b",
+    "trackerMatrixSha256": "e89141ba422818c8605b3ce7ad2cf7a1e2cd24a048a46b1e7d538c6d7601bb75",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -239,6 +239,16 @@
     },
     "attemptedMatrixRows": [
       {
+        "storeId": "9MXND4PQLK3W",
+        "title": "DOOM 64",
+        "verdict": "INFRA_BETHESDA_USER_ID"
+      },
+      {
+        "storeId": "9NQVHHW88XW9",
+        "title": "Bluey's Happy Snaps",
+        "verdict": "HUMAN_CONSENT_HOLD"
+      },
+      {
         "storeId": "9MSVVM5NS9L6",
         "title": "DREDGE",
         "verdict": "INCONCLUSIVE"
@@ -311,7 +321,7 @@
       {
         "storeId": "9MWR1NC6VQ6L",
         "title": "Stardew Valley",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "WORKING"
       },
       {
         "storeId": "9PK087LNGJC5",
@@ -615,7 +625,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 765.0390493,
+  "remainingWallMinutes": 759.47768005,
   "scenarios": [
     {
       "label": "slow observed",
@@ -653,12 +663,12 @@
   ],
   "observedAdmissionRatio": {
     "working": 12,
-    "matrixWorking": 11,
-    "attemptedMatrix": 19,
-    "ratio": 0.5789473684210527,
+    "matrixWorking": 12,
+    "attemptedMatrix": 21,
+    "ratio": 0.5714285714285714,
     "receiptAugmentedAttempted": 29,
     "receiptAugmentedRatio": 0.41379310344827586,
-    "titleScreenOrBeyond": 11,
+    "titleScreenOrBeyond": 12,
     "postTitleScreenAdmissionRatio": 1.0,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
   },
@@ -684,7 +694,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 95.6298811625,
+  "requiredAverageMinutesPerAddition": 94.93471000625,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

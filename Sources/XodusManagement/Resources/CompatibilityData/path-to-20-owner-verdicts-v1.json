@@ -264,6 +264,12 @@
       "finalIntegrity": {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/integrity.json",
         "sha256": "c793d7a57b069c31a3a620236dd0728b5f7d78c5c29cd7d9933f06ed9f288ad6"
+      },
+      "admissionEvidence": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/admission.json",
+        "sha256": "f9fe07dfdd6121b967ee5078a1757aea5e09ffe2521633abb816e3d13461b6ad",
+        "sourceCommit": "3879d1f",
+        "scope": "S4 read and hash-verified later coordinator admission supplement. Original candidate result and final manifest unchanged. Bundled CLI route only; no GUI Play, cloud saves or app E2E claim."
       }
     },
     {
