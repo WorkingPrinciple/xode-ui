@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T07:31:17.413061+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T08:02:18.115711+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -13,7 +13,7 @@ Updated 2026-10-22T07:31:17.413061+00:00; **8/20 strict WORKING**. Brotato candi
 | Mixtape | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | No Man's Sky | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | LIMBO | TITLE_SCREEN_PASS | passed | ? | not passed | ? | ? | gameplay / S3 | Promoted to S3 full test; opt-in null-display runtime candidate only, not frozen release. No input/gameplay/save/reload qualified. CLI0/Wine0 only after forced -k0/-w0; prefix retained. | - |
-| A Game About Digging A Hole | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked: sold 1 stone, $5 upgrade not bought, no save shown. Title menu has no Exit; ended with exact-prefix -k cleanup, not normal quit. No retained-save qualification. | - |
+| A Game About Digging A Hole | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked: sold 1 stone, $5 upgrade not bought, no save shown. Title menu has no Exit; ended with exact-prefix -k cleanup, not normal quit. No retained-save qualification. | >2h |
 | Age of Empires IV: Anniversary Edition | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | >2h |
 | Beast of Reincarnation | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
@@ -53,7 +53,7 @@ Updated 2026-10-22T07:31:17.413061+00:00; **8/20 strict WORKING**. Brotato candi
 | Valor Mortis | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Vampire Survivors | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Wasteland Remastered | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
-| Well Dweller | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked after actual gameplay reached; TIMEOUT, CLI 1 / Wine 0, no save marker. No clean quit or retention qualification; no retry authorized. | - |
+| Well Dweller | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked after actual gameplay reached; TIMEOUT, CLI 1 / Wine 0, no save marker. No clean quit or retention qualification; no retry authorized. | >2h |
 
 Unknown gates never inferred passed from install status, source row, screenshots or cache files. Strict matrix WORKING or newer explicit coordinator admission admits title-specific gate semantics. WORKING_CANDIDATE excluded. Stall clock is observed same next gate, not source mtime/global matrix updatedAt; historical age unavailable until measured. >2h alerts include held/queued lanes but do not override holds or authorize runs.
 
