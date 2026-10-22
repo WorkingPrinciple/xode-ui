@@ -153,6 +153,10 @@ def build(inputs, previous):
                      "stuckOver2Hours": age > 2 and next_gate != "complete",
                      "historicalGateAge": "unknown before tracker first observation",
                      "scope": scope})
+        history = inputs.get("attemptEvidence", {}).get("titles", {}).get(sid)
+        if history is not None:
+            rows[-1]["attemptHistory"] = [attempt["runId"] for attempt in history["attempts"]]
+            rows[-1]["evidenceAuditRef"] = "collectionInputs.attemptEvidence.titles." + sid
     rows.sort(key=lambda row: (not row["strictWorking"],
                               {"quit": 0, "gameplay / CLI promotion hold": 1, "save": 2,
                                "gameplay": 3}.get(row["nextGate"], 4), row["title"]))
@@ -171,7 +175,7 @@ def build(inputs, previous):
             "items": rows}
 
 
-def refresh():
+def refresh(audit_evidence=False):
     base = source(DATA / "morning-status-v1.json")
     catalogue = load_json(DATA / "s3-preflight-catalogue-v1.json")
     closed = {row["storeId"] for row in catalogue["blockedItems"]}
@@ -191,6 +195,11 @@ def refresh():
               "packetRows": packets, "s1": [source(path) for path in sorted(S1.glob("*candidates.json"))],
               "candidateSource": {"path": base["path"], "sha256": base["sha256"]}}
     previous = load_json(OUTPUT) if OUTPUT.exists() else {}
+    if audit_evidence:
+        from audit_attempt_evidence import audit
+        inputs["attemptEvidence"] = audit(inputs, previous.get("collectionInputs", {}).get("attemptEvidence"))
+    elif previous.get("collectionInputs", {}).get("attemptEvidence"):
+        inputs["attemptEvidence"] = previous["collectionInputs"]["attemptEvidence"]
     inputs["ownerVerdicts"]["receipts"] = {}
     for report in inputs["ownerVerdicts"]["snapshot"]["items"]:
         if report.get("receiptPath"):
@@ -239,6 +248,27 @@ def render(packet):
     lines.extend(["", packet["policy"], "", "Full blockers, source hashes and packet "
                   "references are in `path-to-20-v1.json`. Stall time starts at the "
                   "first tracker observation; earlier unknown age is not reported as zero."])
+    audit = packet["collectionInputs"].get("attemptEvidence")
+    if audit:
+        coverage = audit.get("coverage", {})
+        lines.extend(["", "## Retained attempt evidence", "",
+                      "Audit " + audit["auditedAt"] + ". " + audit["scope"], "",
+                      f"Coverage: {coverage.get('titleCount', '?')} titles, "
+                      f"{coverage.get('launchResultAttempts', '?')} launch-result attempts, "
+                      f"{coverage.get('unresolvedReferenceCount', '?')} unresolved references; "
+                      f"{coverage.get('presentArtifacts', '?')} present / "
+                      f"{coverage.get('missingArtifacts', '?')} missing artifact links. "
+                      "This is bounded discovery, not a complete historical archive.", "",
+                      audit["retentionPolicy"], "",
+                      "Exact run identities, artifact paths/hashes, failed-hypothesis context and "
+                      "explicit gaps: `collectionInputs.attemptEvidence` in the same JSON index. "
+                      "Shared proof-root artifacts are context, not automatically attributed to a run.", "",
+                      "| Title / product | Indexed attempts | Identity/link gaps |",
+                      "|---|---|---|"])
+        for sid, title in sorted(audit["titles"].items()):
+            count = sum(bool(attempt["gaps"]) for attempt in title["attempts"])
+            lines.append(f"| {title['title']} / `{sid}` | {len(title['attempts'])} | "
+                         f"{count} attempts incomplete; title hypothesis/test annotations incomplete |")
     (DATA / "path-to-20-v1.md").write_text("\n".join(lines) + "\n")
     text = SUMMARY.read_text()
     text = re.sub(r"\*\*Goal: 20 genuinely WORKING titles; current count: \d+\.\*\*",
@@ -264,9 +294,11 @@ def render(packet):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--refresh", action="store_true")
+    parser.add_argument("--audit-evidence", action="store_true",
+                        help="Hash retained local launch evidence into the existing tracker; no execution")
     args = parser.parse_args()
     if args.refresh:
-        packet = refresh()
+        packet = refresh(audit_evidence=args.audit_evidence)
         OUTPUT.write_text(json.dumps(packet, indent=2, ensure_ascii=True) + "\n")
         render(packet)
         from build_morning_burndown import refresh as refresh_burndown, render_summary

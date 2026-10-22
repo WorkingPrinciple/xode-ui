@@ -152,7 +152,7 @@ def build():
             "not proof that unknown prefix/transient growth fits. Admission remains conditional.",
         },
         "sources": sources, "items": items,
-        "ownerUpdate": "Monster admitted WORKING by coordinator22:57; TUNIC inconclusive, Stardew retention YES/quit "
+        "ownerUpdate": "Monster and TUNIC admitted WORKING; Stardew retention YES/quit "
         "unobserved, Valor prefix VC++ prerequisite missing; strict count unchanged.",
     }
 

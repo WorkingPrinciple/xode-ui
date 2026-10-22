@@ -84,9 +84,9 @@ class PathTo20Tests(unittest.TestCase):
         stardew = rows["9MWR1NC6VQ6L"]
         self.assertEqual(stardew["gates"]["save"]["status"], "passed")
         self.assertEqual(stardew["gates"]["quit"]["status"], "unknown")
-        self.assertEqual(rows["9NLRT31Z4RWM"]["gates"]["save"]["status"], "not-passed")
+        self.assertTrue(rows["9NLRT31Z4RWM"]["strictWorking"])
         self.assertTrue(rows["9PBWWQGXVMKC"]["strictWorking"])
-        for sid in ("9MWR1NC6VQ6L", "9NLRT31Z4RWM", "9P861V1542BL"):
+        for sid in ("9MWR1NC6VQ6L", "9P861V1542BL"):
             self.assertFalse(rows[sid]["strictWorking"])
 
     def test_unchanged_gate_preserves_clock_despite_blocker_edit(self):

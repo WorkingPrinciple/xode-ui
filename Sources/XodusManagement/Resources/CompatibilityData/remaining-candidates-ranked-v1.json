@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T20:38:22.828937+00:00",
+  "checkedAt": "2026-10-22T20:51:46.666764+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
-  "strictWorking": 9,
-  "needed": 11,
+  "strictWorking": 10,
+  "needed": 10,
   "disk": {
     "coordinatorReportedFreeGiB": 127,
     "prelaunchGiB": 110,
@@ -33,7 +33,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "244f7713bfd9310ec789312ec28811d5773f70aac40833090be72fb31947f7cf"
+      "sha256": "8ba8af4be65453d09bb81683883cd6eca9b1713bd9204bbdd205350ee4dd3cd8"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -143,37 +143,6 @@
         "manifestSha256": "f0521ca96f2792a2da4dcc575d479866b5605c064f2249c7d2f3666ff25b2ec4",
         "storeIds": [
           "9PD5BM2Z8C4L"
-        ]
-      },
-      "installVerification": null
-    },
-    {
-      "rank": 5,
-      "storeId": "9NLRT31Z4RWM",
-      "title": "TUNIC",
-      "verdict": "INCONCLUSIVE",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
-      "downloadSizeBytes": 2994102272,
-      "planningBudgetBytes": 2994102272,
-      "incrementalDownloadBudgetBytes": 0,
-      "fitsGrossMargin": true,
-      "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
-      "expectedRoute": "Free Wine proposed by S1; prior Apple4 candidate, new route/card unqualified",
-      "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass.",
-      "needsUserClaim": false,
-      "needsLicenseCheck": false,
-      "needsDownload": false,
-      "pipelineExtensionCandidate": false,
-      "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
-      "rankingBasis": "World/reload INCONCLUSIVE; stick not retained without normal quit, qualification hold.",
-      "inventoryEvidence": {
-        "root": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
-        "manifest": "/Users/dragoshont/Games/Xodus/Tunic-Xbox/MicrosoftGame.Config",
-        "manifestSha256": "8c641f76dc2406a82dc5ade18f8f1be0af1cf1f9a14e06ee490d78d003137a53",
-        "storeIds": [
-          "000000000000",
-          "9NLRT31Z4RWM"
         ]
       },
       "installVerification": null
@@ -1696,5 +1665,5 @@
       "installVerification": null
     }
   ],
-  "ownerUpdate": "Monster admitted WORKING by coordinator22:57; TUNIC inconclusive, Stardew retention YES/quit unobserved, Valor prefix VC++ prerequisite missing; strict count unchanged."
+  "ownerUpdate": "Monster and TUNIC admitted WORKING; Stardew retention YES/quit unobserved, Valor prefix VC++ prerequisite missing; strict count unchanged."
 }

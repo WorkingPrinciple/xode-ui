@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T20:38:22.713375+00:00",
+    "asOf": "2026-10-22T20:51:44.237349+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -12,8 +12,8 @@
       "scope": "User confirmed 110 prelaunch / 110 staging / 105 running abort. No new install, retry or runtime grant."
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
-    "strictWorkingCount": 9,
-    "trackerMatrixSha256": "79b7dc1b302ac3691b22e7dc128de63ce08e01fcb27380af24a2483b01355d9b",
+    "strictWorkingCount": 10,
+    "trackerMatrixSha256": "cf1004218ea5cf6aeda1022522ed9dea42bd7e2b774f9a4ba9f8458eaa22dee1",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -32,11 +32,6 @@
       {
         "storeId": "9MSVVM5NS9L6",
         "title": "DREDGE",
-        "batch": "passive-small-eight-v1"
-      },
-      {
-        "storeId": "9NLRT31Z4RWM",
-        "title": "TUNIC",
         "batch": "passive-small-eight-v1"
       },
       {
@@ -152,7 +147,7 @@
     },
     "queueReconciliation": {
       "reportedCap": 23,
-      "uniqueCount": 20,
+      "uniqueCount": 19,
       "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue."
     },
     "withheld": [
@@ -345,7 +340,7 @@
       {
         "storeId": "9NLRT31Z4RWM",
         "title": "TUNIC",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "WORKING"
       }
     ],
     "attemptedTrackerRows": [
@@ -392,6 +387,11 @@
       {
         "storeId": "BQVQTL3PCH05",
         "title": "No Man's Sky",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9NLRT31Z4RWM",
+        "title": "TUNIC",
         "verdict": "WORKING"
       },
       {
@@ -458,11 +458,6 @@
         "storeId": "9PJPCB188SVG",
         "title": "Subnautica 2",
         "verdict": "BLOCKED_PREREQ"
-      },
-      {
-        "storeId": "9NLRT31Z4RWM",
-        "title": "TUNIC",
-        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9P861V1542BL",
@@ -619,17 +614,17 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 827.62144375,
+  "remainingWallMinutes": 814.26271085,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
       "serialCycleSlots": 9,
       "queueCappedAdditions": 9,
-      "conditionalTotalWorking": 18,
-      "gapTo20": 2,
-      "minimumPassRateRawSlots": 1.2222222222222223,
-      "minimumPassRateCurrentQueue": 1.2222222222222223,
+      "conditionalTotalWorking": 19,
+      "gapTo20": 1,
+      "minimumPassRateRawSlots": 1.1111111111111112,
+      "minimumPassRateCurrentQueue": 1.1111111111111112,
       "targetPossibleCurrentQueue": false
     },
     {
@@ -637,10 +632,10 @@
       "minutesPerTitle": 65.71552045,
       "serialCycleSlots": 12,
       "queueCappedAdditions": 12,
-      "conditionalTotalWorking": 21,
+      "conditionalTotalWorking": 22,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.9166666666666666,
-      "minimumPassRateCurrentQueue": 0.9166666666666666,
+      "minimumPassRateRawSlots": 0.8333333333333334,
+      "minimumPassRateCurrentQueue": 0.8333333333333334,
       "targetPossibleCurrentQueue": true
     },
     {
@@ -648,22 +643,22 @@
       "minutesPerTitle": 43.9128694,
       "serialCycleSlots": 18,
       "queueCappedAdditions": 18,
-      "conditionalTotalWorking": 27,
+      "conditionalTotalWorking": 28,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.6111111111111112,
-      "minimumPassRateCurrentQueue": 0.6111111111111112,
+      "minimumPassRateRawSlots": 0.5555555555555556,
+      "minimumPassRateCurrentQueue": 0.5555555555555556,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
-    "working": 9,
-    "matrixWorking": 9,
+    "working": 10,
+    "matrixWorking": 10,
     "attemptedMatrix": 19,
-    "ratio": 0.47368421052631576,
+    "ratio": 0.5263157894736842,
     "receiptAugmentedAttempted": 27,
-    "receiptAugmentedRatio": 0.3333333333333333,
-    "titleScreenOrBeyond": 10,
-    "postTitleScreenAdmissionRatio": 0.9,
+    "receiptAugmentedRatio": 0.37037037037037035,
+    "titleScreenOrBeyond": 11,
+    "postTitleScreenAdmissionRatio": 0.9090909090909091,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
   },
   "timeSink": {
@@ -688,7 +683,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 75.23831306818182,
+  "requiredAverageMinutesPerAddition": 81.426271085,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

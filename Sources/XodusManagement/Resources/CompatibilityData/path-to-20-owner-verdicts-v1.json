@@ -102,15 +102,15 @@
     {
       "storeId": "9NLRT31Z4RWM",
       "title": "TUNIC",
-      "verdict": "INCONCLUSIVE",
-      "reportedAt": "2026-10-22T19:51:42.038+00:00",
+      "verdict": "WORKING",
+      "reportedAt": "2026-10-22T20:47:32+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "931f693e",
-      "gates": {"menu": "passed", "gameplay": "passed", "quit": "not-passed", "relaunch": "passed", "save": "not-passed"},
-      "nextGate": "qualification hold",
-      "ownerStream": "S3/coordinator",
-      "blocker": "Full d928b209 overran quit deadline; reload931f693e quit navigation also INCONCLUSIVE. Stick not retained after no normal quit; no WORKING or runtime save-regression conclusion.",
-      "scope": "Coordinator 22:51 report and matrix: real beach/path/cavern and WoodenStick pickup; no shrine,900s timeout. Fresh Continue loaded cavern but empty inventory/closed chest. QuitToTitle then incorrect Up-wrap reloaded beach,300s timeout. Relaunch gate means world loaded, not marker retention."
+      "runId": "a27be511",
+      "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "relaunch": "passed", "save": "passed"},
+      "nextGate": "complete",
+      "ownerStream": "S3",
+      "blocker": null,
+      "scope": "Coordinator independently admits WORKING10: worlda9ee48eb/reloada27be511 ordinary0/0, retained WoodenStick/equipmentJ and fresh movement. World-to-reload9331B SHA3a7fb537, after1b116832. Reload quit148.718s<180, exit212.898s/PIDgone beforecleanup. No shrine reached or required. Preserve earlierd928b209/931f693e inconclusives and world quit8.735s late operator deviation. S3 reports historical3a/9b rawbytes only hashes before legitimate writes, not recoverable retroactively."
     },
     {
       "storeId": "9P861V1542BL",
