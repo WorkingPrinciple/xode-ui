@@ -159,6 +159,17 @@ class RetentionTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "outside"):
                 retention.load_packet(packet, retention.sha(packet), "world")
 
+    def test_external_forced_stop_is_not_normal_exit(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            self.assertIsNone(retention.external_stop_reason(base))
+            (base / "external-consent-stop.json").write_text(json.dumps({
+                "reason": "HUMAN_CONSENT_HOLD", "forcedCleanup": True,
+            }))
+            self.assertEqual(
+                retention.external_stop_reason(base), "HUMAN_CONSENT_HOLD"
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

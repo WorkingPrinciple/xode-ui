@@ -68,7 +68,7 @@
   ],
   "retentionRunner": {
     "source": "tools/s3/retention-run.py",
-    "sourceSha256": "1056068dfdc217063b8ce323cc417146ba51be452b25cff7ce5af52d92258a2f",
+    "sourceSha256": "d313ed5a0c9bea94f4ae0d4a3df1303524926b0a2238396a1a123c39a8488f38",
     "guardTests": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/s3 -p 'test_*.py'",
     "dryInvocation": "python3 tools/s3/retention-run.py dry PACKET_PATH PACKET_SHA256 world",
     "runInvocation": "python3 tools/s3/retention-run.py run PACKET_PATH PACKET_SHA256 world --screen-release EXPLICIT_HANDOFF_REFERENCE",
@@ -83,6 +83,33 @@
     }
   },
   "verifiedArchives": [
+    {
+      "title": "DOOM 64",
+      "path": "s3-doom64-full-01/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "e84dc7865da4bb8a981135de04c597c5b1cb65ec90e932bc61c37fd8542a4d4e",
+      "verifiedFiles": 13,
+      "resultSha256": "e423d72be5cb89f2773323d8f428e4088bb822c587fa473990a5e1c0333c1499",
+      "run": "db247a1f-7e26-4482-82de-a209ef6c95f6",
+      "admission": "INFRA_BETHESDA_USER_ID; no gameplay/save/reload",
+      "observed": "Start led to FirstPartyFailedToRetrieveUserId. Cancel returned to main. Observed Quit Game, Quit DOOM?, keyboard-selected Yes and Enter; actual CLI0/Wine0 before exact-prefix cleanup.",
+      "diagnosis": "stderr.log:1489 POST api.bethesda.net via XUserGetTokenAndSignatureUtf16Async;1492 single sign-on token error0x80070057;1500 FirstPartyFailedToRetrieveUserId. S2 owns diagnosis. No account login or retry attempted.",
+      "inputCaveat": "Clicking Yes coordinates returned to main because activation followed highlighted selection rather than assumed clicked label. Final keyboard-highlighted Yes capture plus Enter and actual exit establish ordinary quit.",
+      "runArchiveManifestSha256": "fde2aa9b86a6dfe42f4c720bd1de6fdee063e7e798aa7de48edf870f71449b95"
+    },
+    {
+      "title": "Bluey's Happy Snaps",
+      "path": "s3-bluey-full-01/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "9426e4b58e04da34ec43caa6b2ecad4c9f31c22198862dfc0df362554fa8c8e3",
+      "verifiedFiles": 6,
+      "resultSha256": "24a6e130e964197e0f79de9622b6376b6f839306bc0c6d4217e526584742b3fe",
+      "run": "21f1ed27-f8c9-4a0e-baf0-c784a49ac4e3",
+      "admission": "HUMAN_CONSENT_HOLD; no gameplay/ordinary quit/reload",
+      "observed": "Acknowledgement Continue led to EULA / Privacy Policy / Terms of Use screen with Accept. No Accept or subsequent legal input sent. Exact-prefix forced cleanup-k0/-w0; all game/Wine/helper processes gone.",
+      "attributionGap": "Original runner receipt reports forcedCleanup=null because external consent stop attribution was not yet wired. Original remains unchanged; run-world/external-consent-stop.json and final retention-result explicitly establish forced stop, not ordinary quit, despite CLI0/Wine0. Runner now reads external consent stop receipts.",
+      "runArchiveManifestSha256": "2105c046df6a9a856ea61fcf522da9b0af0e1082749886a9046d89ed4589e2c3"
+    },
     {
       "title": "TUNIC",
       "phase": "world-cli68f-01",

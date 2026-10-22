@@ -95,6 +95,16 @@ def phase_environment(selected):
     return env
 
 
+def external_stop_reason(evidence):
+    path = evidence / "external-consent-stop.json"
+    if not path.is_file():
+        return None
+    receipt = json.loads(path.read_text())
+    if receipt.get("forcedCleanup") is not True or not receipt.get("reason"):
+        raise RuntimeError("External stop receipt is missing forced-cleanup attribution.")
+    return receipt["reason"]
+
+
 def cleanup(server, env, evidence):
     outcomes = []
     for flag in ("-k", "-w"):
@@ -246,6 +256,7 @@ def main():
         except BaseException:
             if cleanup_result is None:
                 cleanup_result = cleanup(server, env, evidence)
+            forced = forced or external_stop_reason(evidence)
             if process.poll() is None:
                 process.terminate()
                 process.wait(timeout=5)
