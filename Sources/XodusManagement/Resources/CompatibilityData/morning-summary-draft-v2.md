@@ -30,14 +30,16 @@ reached but TIMEOUT/CLI1/Wine0 and no save marker; no retry grant.
 Fallout save diagnosis remains separate.
 **Digging:** retry `3e488e23` INCONCLUSIVE/parked: sold 1 stone,
 $5 upgrade not bought, no save shown; no title-menu Exit, ended with -k cleanup.
-Stardew passive reported running at 08:35 EEST; no later verdict inferred.
+**Stardew:** `db74c3c4` CANCELLED by tooling bug (runner 004 fix);
+attempt not consumed, no title failure inferred.
 Batch 2/3 are dry queued packets, not title-screen passes or unrestricted grants.
 Coordinator reports pipeline cap 23 from S1 `5b944e3` KCD1/Subnautica 2 routes;
 S2 packets are being prepared. Both product IDs already exist in old packets:
 S1 census confirms no additional unique installed titles: historical packet
 baseline remains 21, not 23 unique titles or an executable queue.
-**LIMBO:** native `b80ba697` BLOCKED_SAVE_ERROR; null-display retry
-packet `821885ca` reported running at 09:23 EEST, no verdict inferred.
+**LIMBO:** candidate-only TITLE_SCREEN_PASS (`15dc80fd`), opt-in null-display
+runtime; no input/gameplay/save/reload. CLI0/Wine0 followed forced -k0/-w0,
+not normal quit. Promoted to S3 full test; prefix held, frozen release unqualified.
 **Skyrim:** INCONCLUSIVE (`fa08c5f8`); launcher reached, game child
 exited without a window or gameplay. S1 diagnosing; launcher is not a title-screen pass.
 **DREDGE:** reload `a452bd89` retained its save, but quit exited 255:
@@ -49,6 +51,7 @@ CLI `ebd56e` promotion **PENDING** (`3f2e500`); user-folder isolation **PENDING*
 (`08d3a33`); WineGStreamer **DEFER** pending actual media failure/ABI proof;
 16 MiB boundary rebuild **DEFER**, not proven Fallout causality.
 **RC `42f793d` installed**; Halls/Hogwarts Verified working, TUNIC Play.
+New release DMG `c7487d8` accepted and stapled (HFS+); switch-over pending.
 Receipt `Ode-switchover-rewcsnje/switch-over-receipt.json`, SHA `0e3f7f81...`;
 rollbacks retained. Play is not gameplay qualification.
 
@@ -69,12 +72,12 @@ Free-title/acquisition and parked-prefix options: `free-morning-candidates-v1.md
 157 GiB; passive prestart 153/abort 152 GiB. No steady depletion forecast.
 Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T06:30:15.276558+00:00: **8/20** strict: Abiotic Factor, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, Bluey's Happy Snaps, Brotato, DEATHLOOP, DOOM 64, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, FINAL FANTASY IV, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, Minishoot' Adventures, Monster Sanctuary, Nine Sols, Oblivion GOTY (2009), Quake, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, South of Midnight, Stardew Valley, Subnautica 2, TUNIC, Valor Mortis, Vampire Survivors, Wasteland Remastered. Refresh every30min and owner verdict.
+Living tracker 2026-10-22T06:31:22.901872+00:00: **8/20** strict: Abiotic Factor, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, Bluey's Happy Snaps, Brotato, DEATHLOOP, DOOM 64, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, FINAL FANTASY IV, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, Minishoot' Adventures, Monster Sanctuary, Nine Sols, Oblivion GOTY (2009), Quake, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, South of Midnight, Stardew Valley, Subnautica 2, TUNIC, Valor Mortis, Vampire Survivors, Wasteland Remastered. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 13:26 EEST** (user +12h extension); 27.93h from 2026-10-22T06:30:15.276558+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **19/25/38** slow/mid/fast cycles, capped by **21 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **27/29/29**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 13:26 EEST** (user +12h extension); 27.91h from 2026-10-22T06:31:22.901872+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **19/25/38** slow/mid/fast cycles, capped by **21 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **27/29/29**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
 Need **12** additions; slow scenario leaves **0**. Required mean: **139.6min/addition**. Brotato CLI promotion can add one without another full cycle. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 

@@ -172,7 +172,7 @@ def refresh(tracker):
                              "c2e01ff4-e716-402e-b144-7a7aafdc1ca2"),
         "finish": read_result("s3-brotato-retention-02",
                               "430e9c33-7b7e-47d8-838f-d154a8fb1f48")}
-    not_attempted = {"UNTESTED", "NOT_TESTED", "BLOCKED"}
+    not_attempted = {"UNTESTED", "NOT_TESTED", "BLOCKED", "CANCELLED"}
     inputs["attemptedMatrixRows"] = [
         {"storeId": row["productId"], "title": row["title"], "verdict": row["verdict"]}
         for row in tracker["collectionInputs"]["matrix"]["snapshot"]["games"]

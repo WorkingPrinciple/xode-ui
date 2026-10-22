@@ -14,6 +14,19 @@
   },
   "items": [
     {
+      "storeId": "9MWR1NC6VQ6L",
+      "title": "Stardew Valley",
+      "verdict": "CANCELLED",
+      "reportedAt": "2026-10-22T06:30:58+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "db74c3c4",
+      "gates": {},
+      "nextGate": "menu",
+      "ownerStream": "S2",
+      "blocker": "Tooling bug cancellation, runner 004 fix; attempt not consumed. No title outcome or gate qualification inferred.",
+      "scope": "Coordinator-reported CANCELLED db74c3c4. Exclude from title-attempt denominator."
+    },
+    {
       "storeId": "9P03JGQ4S1GC",
       "title": "Skyrim Special Edition",
       "verdict": "INCONCLUSIVE",
@@ -42,15 +55,17 @@
     {
       "storeId": "9PNG83MDD6SH",
       "title": "LIMBO",
-      "verdict": "BLOCKED_SAVE_ERROR",
-      "reportedAt": "2026-10-22T06:23:20.855+00:00",
-      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "b80ba697",
-      "gates": {"menu": "unknown", "save": "not-passed"},
-      "nextGate": "save-error diagnosis",
-      "ownerStream": "S1/S2",
-      "blocker": "Native run BLOCKED_SAVE_ERROR. Null-display retry packet 821885ca running at report time; no result or qualification inferred.",
-      "scope": "Coordinator-reported native run b80ba697 blocked by save error. Earlier shader-compiler passive failure remains historical. Retry running is status only."
+      "verdict": "TITLE_SCREEN_PASS",
+      "reportedAt": "2026-10-22T06:30:58+00:00",
+      "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d",
+      "runId": "15dc80fd-9663-43f2-b855-fcc73cf4aae7",
+      "evidenceReceipt": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/limbo-null-display-retry-v1/attempt/receipt.json",
+      "evidenceSha256": "1d8d452fe2efad332e0b4a5362d8ea2518cbe10c23128be507c02bbf91429ea3",
+      "gates": {"menu": "passed", "quit": "not-passed", "save": "unknown"},
+      "nextGate": "gameplay",
+      "ownerStream": "S3",
+      "blocker": "Promoted to S3 full test; opt-in null-display runtime candidate only, not frozen release. No input/gameplay/save/reload qualified. CLI0/Wine0 only after forced -k0/-w0; prefix retained.",
+      "scope": "S2 observed actual LIMBO/PRESS ANY KEY TO START in 120-second passive 15dc80fd, XODUS_PRIVATE_LIMBO_NULL_DISPLAY=1, pair518e7fb9/new legacy0ef1ce51. Candidate-specific title pass supersedes save-blocked startup only on this route; not WORKING or release qualification."
     },
     {
       "storeId": "9PLH7R84GJWP",

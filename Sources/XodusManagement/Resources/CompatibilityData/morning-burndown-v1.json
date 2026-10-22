@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T06:30:15.276558+00:00",
+    "asOf": "2026-10-22T06:31:22.901872+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
@@ -367,6 +367,11 @@
         "verdict": "WORKING"
       },
       {
+        "storeId": "9PNG83MDD6SH",
+        "title": "LIMBO",
+        "verdict": "TITLE_SCREEN_PASS"
+      },
+      {
         "storeId": "9NGLST31DG26",
         "title": "A Game About Digging A Hole",
         "verdict": "INCONCLUSIVE"
@@ -395,11 +400,6 @@
         "storeId": "9P8NSTDMZ11P",
         "title": "Inscryption",
         "verdict": "NO_TITLE_SCREEN"
-      },
-      {
-        "storeId": "9PNG83MDD6SH",
-        "title": "LIMBO",
-        "verdict": "BLOCKED_SAVE_ERROR"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -528,7 +528,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1675.7453907000001,
+  "remainingWallMinutes": 1674.6183021333334,
   "scenarios": [
     {
       "label": "slow observed",
@@ -597,7 +597,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 139.64544922500002,
+  "requiredAverageMinutesPerAddition": 139.5515251777778,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

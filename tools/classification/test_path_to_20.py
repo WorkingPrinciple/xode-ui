@@ -165,13 +165,15 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["nextGate"], "qualification hold")
         self.assertFalse(row["strictWorking"])
 
-    def test_limbo_save_error_is_not_qualification(self):
+    def test_limbo_candidate_title_pass_is_not_working(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])
         inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T06:00:00+00:00"
         row = next(row for row in build(inputs, {})["items"] if row["storeId"] == "9PNG83MDD6SH")
-        self.assertEqual(row["verdict"], "BLOCKED_SAVE_ERROR")
-        self.assertEqual(row["gates"]["save"]["status"], "not-passed")
-        self.assertEqual(row["nextGate"], "save-error diagnosis")
+        self.assertEqual(row["verdict"], "TITLE_SCREEN_PASS")
+        self.assertEqual(row["gates"]["menu"]["status"], "passed")
+        self.assertEqual(row["gates"]["quit"]["status"], "not-passed")
+        self.assertNotEqual(row["gates"]["save"]["status"], "passed")
+        self.assertEqual(row["nextGate"], "gameplay")
         self.assertFalse(row["strictWorking"])
 
     def test_digging_timeout_is_not_working(self):
