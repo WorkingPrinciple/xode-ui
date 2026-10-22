@@ -2,6 +2,29 @@
   "schemaVersion": 1,
   "items": [
     {
+      "storeId": "9P4NV23Q6QC2",
+      "title": "Abiotic Factor",
+      "verdict": "WORKING",
+      "reportedAt": "2026-10-22T04:41:21.289+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "18dcee0d-1705-469e-8f67-48924b239258",
+      "firstWorldRunId": "e5ec1841",
+      "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-abiotic-qualification-reload-01/runs/18dcee0d-1705-469e-8f67-48924b239258/result.json",
+      "engine": "apple-gptk-4.0b3",
+      "cliIdentity": "adf8",
+      "gates": {
+        "menu": "passed",
+        "gameplay": "passed",
+        "save": "passed",
+        "relaunch": "passed",
+        "quit": "passed"
+      },
+      "nextGate": "complete",
+      "ownerStream": "S3",
+      "blocker": null,
+      "scope": "Coordinator personally verified WORKING: first world e5ec1841, fresh reload 18dcee0d retained same world, character and inventory ($5 and duct tape). Apple GPTK 4.0b3 with adf8; result independently confirms CLI 0 and Wine 0. Save marker is coordinator-observed. App E2E remains unobserved."
+    },
+    {
       "storeId": "9PCR3Z2MSM4T",
       "title": "Hades II",
       "verdict": "WORKING",

@@ -2,7 +2,7 @@
 
 22 October 2026; live gate timestamp below, disk snapshot separately dated.
 
-**Goal: 20 genuinely WORKING titles; current count: 6.** Gameplay, retained
+**Goal: 20 genuinely WORKING titles; current count: 7.** Gameplay, retained
 progress and normal shutdown required; eligibility/cloud/app E2E are separate.
 
 ## What works / nearest additions
@@ -15,12 +15,13 @@ progress and normal shutdown required; eligibility/cloud/app E2E are separate.
 | Halls of Torment | `s3-halls-retention-02`; combat, gold/Quest Stone retention, normal quit. |
 | Hogwarts | `f2471368`; retained checkpoint plus ordinary Quit to OS, CLI0/Wine0. |
 | Hades II | `80cbf59d`; coordinator verified fresh reload Crossroads, Nights 2; CLI0/Wine0. App E2E unobserved. |
+| Abiotic Factor | `e5ec1841` world / `18dcee0d` fresh reload; same world, character, $5 and duct tape. Apple4/adf8, CLI0/Wine0; coordinator verified. App E2E unobserved. |
 
 **Brotato:** newer matrix proves gameplay/Chunky unlock, fresh-process retention
 and normal quits (`12ebe02b`, `430e9c33`); candidate only, CLI promotion pending.
 **Hades II:** checkpoint retention now WORKING; earlier conversation-marker
 failure is historical and not the accepted checkpoint criterion.
-**Abiotic:** gameplay/retention remain. **Mixtape:** title screen/normal quit,
+**Mixtape:** title screen/normal quit,
 no gameplay/checkpoint; no unchanged automatic retry. **Inscryption:** NO_TITLE_SCREEN (`3b833cc7`);
 CLI0 is not success. Well needs actual-title engine retest; Fallout save diagnosis.
 Batch 2/3 are dry queued packets, not title-screen passes or unrestricted grants.
@@ -49,16 +50,16 @@ Free-title/acquisition and parked-prefix options: `free-morning-candidates-v1.md
 157 GiB; passive prestart 153/abort 152 GiB. No steady depletion forecast.
 Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T04:28:41.158529+00:00: **6/20** strict: Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: none observed yet; pre-tracker gate ages unknown. Refresh every30min and owner verdict.
+Living tracker 2026-10-22T04:41:54.984442+00:00: **7/20** strict: Abiotic Factor, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, Bluey's Happy Snaps, DEATHLOOP, DOOM 64, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, FINAL FANTASY IV, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Monster Sanctuary, Nine Sols, Oblivion GOTY (2009), Quake, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Stardew Valley, Subnautica 2, TUNIC, Valor Mortis, Vampire Survivors, Wasteland Remastered, Well Dweller. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 01:26 EEST**; 17.96h from 2026-10-22T04:28:41.158529+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **12/16/24** slow/mid/fast cycles, capped by **21 queued dry packets**: conditional totals **18/22/27**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 01:26 EEST**; 17.73h from 2026-10-22T04:41:54.984442+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **12/16/24** slow/mid/fast cycles, capped by **21 queued dry packets**: conditional totals **19/23/28**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
-Need **14** additions; slow scenario leaves **2**. Required mean: **77.0min/addition**. Brotato CLI promotion can add one without another full cycle. Engine fixes (Inscryption/Well/Mixtape) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Queue already covers 14; catalogue alone cannot cure slow throughput. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
+Need **13** additions; slow scenario leaves **1**. Required mean: **81.9min/addition**. Brotato CLI promotion can add one without another full cycle. Engine fixes (Inscryption/Well/Mixtape) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Queue already covers 13; catalogue alone cannot cure slow throughput. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 
-Observed admission ratio: **6/14 matrix attempts (42.9%)**; including receipt/owner-reported attempts: **6/15 (40.0%)**. Matrix post-title-screen subset: **6/10**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **116.7%/87.5%/66.7%** of queue-capped attempts (slow >100% impossible). Fast raw-slot threshold 58.3% requires more eligible titles than current queue.
+Observed admission ratio: **6/14 matrix attempts (42.9%)**; including receipt/owner-reported attempts: **7/15 (46.7%)**. Matrix post-title-screen subset: **6/10**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **108.3%/81.2%/61.9%** of queue-capped attempts (slow >100% impossible). Fast raw-slot threshold 54.2% requires more eligible titles than current queue.
 
 Biggest measured time sink: **between-run gaps, 69.8min total / 34.9min per addition** across Halls/Hogwarts. Unallocated, not proven screen waiting; operator/other waits and within-run startup/play/save splits unavailable.
 <!-- burndown:end -->

@@ -109,6 +109,17 @@ class PathTo20Tests(unittest.TestCase):
         self.assertIsNone(row["blocker"])
         self.assertIn("Nights 2", row["scope"])
 
+    def test_abiotic_owner_admission_retains_qualification_evidence(self):
+        row = next(row for row in self.packet["items"] if row["storeId"] == "9P4NV23Q6QC2")
+        self.assertTrue(row["strictWorking"])
+        self.assertEqual(row["nextGate"], "complete")
+        self.assertTrue(all(gate["status"] == "passed" for gate in row["gates"].values()))
+        self.assertIsNone(row["blocker"])
+        self.assertIn("$5 and duct tape", row["scope"])
+        self.assertTrue(any(evidence.get("snapshot", {}).get("run_id") ==
+                            "18dcee0d-1705-469e-8f67-48924b239258"
+                            for evidence in row["evidence"]))
+
     def test_observed_menu_quit_does_not_override_failed_exit(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])
         source_row = next(row for row in inputs["matrix"]["snapshot"]["games"]
