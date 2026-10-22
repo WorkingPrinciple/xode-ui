@@ -1,6 +1,7 @@
 """Deterministic guard tests only; none launches Wine or a game."""
 
 import importlib.util
+import copy
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -16,6 +17,139 @@ SPEC.loader.exec_module(retention)
 
 
 class RetentionTests(unittest.TestCase):
+    def bound_fixture(self, base):
+        base = base.resolve()
+        world, _ = self.fixture(base)
+        root = base / "title-save"
+        source = base / "original-source"
+        source.write_bytes(b"original runner")
+        selected = {
+            "phase": "reload", "prefix": str(base / "prefix"),
+            "stateDir": str(base / "fresh-reload/launch"),
+            "argv": ["cli", "--state-dir", str(base / "fresh-reload/launch"),
+                     "--timeout-seconds", "600"],
+            "environment": {}, "unsetEnvironment": [], "titleEnvironment": {},
+        }
+        original_reload = copy.deepcopy(selected)
+        original_reload["argv"][-1] = "300"
+        original = {
+            "sourceHashes": {str(source): retention.sha(source)},
+            "saveRoots": [str(root)],
+            "phases": [
+                {"phase": "world", "stateDir": str(world / "launch")},
+                original_reload,
+            ],
+        }
+        packet_path = base / "original.json"
+        packet_path.write_text(json.dumps(original))
+        receipt_path = world / "run-receipt.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["packetSha256"] = retention.sha(packet_path)
+        receipt_path.write_text(json.dumps(receipt))
+        (world / "integrity.json").write_text(json.dumps({
+            str(path.relative_to(world)): retention.sha(path)
+            for path in world.rglob("*") if path.is_file()
+        }))
+        packet = {
+            "saveRoots": [str(root)],
+            "reloadWorldBinding": {
+                "originalPacketPath": str(packet_path),
+                "originalPacketSha256": retention.sha(packet_path),
+                "worldBase": str(world),
+                "receiptSha256": retention.sha(receipt_path),
+                "observationSha256": retention.sha(world / "manual-observation.json"),
+                "integritySha256": retention.sha(world / "integrity.json"),
+            },
+        }
+        return packet, selected, [root], world, source
+
+    def test_bound_reload_reuses_original_world_without_receipt_rewrite(self):
+        with TemporaryDirectory() as temporary:
+            packet, selected, roots, world, source = self.bound_fixture(Path(temporary))
+            original_receipt = (world / "run-receipt.json").read_bytes()
+            snapshot = source.with_name("frozen-source")
+            snapshot.write_bytes(source.read_bytes())
+            source.write_bytes(b"new runner implementation")
+            packet["reloadWorldBinding"]["sourceSnapshots"] = {str(source): str(snapshot)}
+            result = retention.authorize_bound_reload(packet, selected, roots)
+            self.assertEqual(len(retention.content(result)), 1)
+            self.assertEqual((world / "run-receipt.json").read_bytes(), original_receipt)
+
+    def test_bound_reload_rejects_changed_evidence_source_payload_and_recipe(self):
+        for mutation in (
+            "packet", "receipt", "observation", "integrity", "archive", "before",
+            "source", "snapshot", "save", "save-redirect", "recipe", "roots",
+            "redirect", "world-mismatch", "forced",
+        ):
+            with self.subTest(mutation=mutation), TemporaryDirectory() as temporary:
+                packet, selected, roots, world, source = self.bound_fixture(Path(temporary))
+                if mutation == "packet":
+                    Path(packet["reloadWorldBinding"]["originalPacketPath"]).write_text("{}")
+                elif mutation == "receipt":
+                    (world / "run-receipt.json").write_text("{}")
+                elif mutation == "observation":
+                    (world / "manual-observation.json").write_text("{}")
+                elif mutation == "integrity":
+                    (world / "integrity.json").write_text("{}")
+                elif mutation == "archive":
+                    (world / "saves-after/0/progress.xgs").write_bytes(b"changed")
+                elif mutation == "before":
+                    (world / "before-launch.json").write_text("[]")
+                elif mutation == "source":
+                    source.write_bytes(b"changed")
+                elif mutation == "snapshot":
+                    alias = source.with_name("snapshot-alias")
+                    alias.symlink_to(source)
+                    packet["reloadWorldBinding"]["sourceSnapshots"] = {str(source): str(alias)}
+                elif mutation == "save":
+                    (roots[0] / "progress.xgs").write_bytes(b"changed")
+                elif mutation == "save-redirect":
+                    save = roots[0] / "progress.xgs"
+                    target = world.parent / "redirected-save"
+                    target.write_bytes(save.read_bytes())
+                    save.unlink()
+                    save.symlink_to(target)
+                elif mutation == "recipe":
+                    selected["argv"][0] = "other-cli"
+                elif mutation == "roots":
+                    packet["saveRoots"] = []
+                elif mutation == "redirect":
+                    alias = world.parent / "redirected-world"
+                    alias.symlink_to(world, target_is_directory=True)
+                    packet["reloadWorldBinding"]["worldBase"] = str(alias)
+                elif mutation == "world-mismatch":
+                    packet["reloadWorldBinding"]["worldBase"] = str(world.parent / "other-world")
+                else:
+                    (world / "external-stop-reason.json").write_text(json.dumps({
+                        "forcedStop": True, "reason": "external stop",
+                    }))
+                with self.assertRaises(RuntimeError):
+                    retention.authorize_bound_reload(packet, selected, roots)
+
+    def test_bound_reload_allows_changed_logs_but_only_returns_gameplay_marker(self):
+        with TemporaryDirectory() as temporary:
+            packet, selected, roots, world, _ = self.bound_fixture(Path(temporary))
+            (roots[0] / "stdout.log").write_bytes(b"later attempt diagnostic log")
+            result = retention.authorize_bound_reload(packet, selected, roots)
+            self.assertEqual(list(retention.content(result)), [(str(roots[0]), "progress.xgs")])
+
+    def test_bound_reload_rechecks_archived_before_launch_identity(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary).resolve()
+            packet, selected, roots, _, _ = self.bound_fixture(base)
+            packet.update(hold="unit test; no launch", diskFloorBeforeLaunchGiB=0)
+            previous = retention.authorize_bound_reload(packet, selected, roots)
+            (roots[0] / "progress.xgs").write_bytes(b"changed after authorization")
+            with patch("sys.argv", [
+                "retention-run.py", "run", str(base / "fresh.json"),
+                "frozen", "reload", "--screen-release", "unit test",
+            ]), patch.object(retention, "load_packet", return_value=(packet, selected, roots)), \
+                patch.object(retention, "authorize_bound_reload", return_value=previous), \
+                patch.object(retention.subprocess, "Popen") as launch:
+                with self.assertRaisesRegex(RuntimeError, "continuity"):
+                    retention.main()
+                launch.assert_not_called()
+
     def test_snapshot_copies_bytes_and_hashes(self):
         with TemporaryDirectory() as temporary:
             base = Path(temporary)

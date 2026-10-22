@@ -184,6 +184,74 @@ def authorize_reload(base, expected_packet):
     return after
 
 
+def authorize_bound_reload(packet, selected, roots):
+    binding = packet["reloadWorldBinding"]
+    source = Path(binding["originalPacketPath"])
+    world = Path(binding["worldBase"])
+    if source != source.resolve() or world != world.resolve():
+        raise RuntimeError("Reload world binding redirected.")
+    if sha(source) != binding["originalPacketSha256"]:
+        raise RuntimeError("Original world packet identity changed.")
+    original = json.loads(source.read_text())
+    original_world, = [phase for phase in original["phases"] if phase["phase"] == "world"]
+    original_reload, = [phase for phase in original["phases"] if phase["phase"] == "reload"]
+    if world != source.parent / "run-world" or Path(original_world["stateDir"]).parent != world:
+        raise RuntimeError("Reload world base does not match original packet.")
+    snapshots = binding.get("sourceSnapshots", {})
+    if set(snapshots) - set(original["sourceHashes"]):
+        raise RuntimeError("Reload snapshot is not an original source.")
+    for name, digest in original["sourceHashes"].items():
+        path = Path(snapshots.get(name, name))
+        if path != path.resolve() or sha(path) != digest:
+            raise RuntimeError(f"Original world source identity changed: {name}")
+    if packet["saveRoots"] != original["saveRoots"] or packet.get(
+        "externalSaveMappings", []
+    ) != original.get("externalSaveMappings", []):
+        raise RuntimeError("Reload world save roots changed.")
+    for field in ("prefix", "environment", "unsetEnvironment", "titleEnvironment"):
+        if selected[field] != original_reload[field]:
+            raise RuntimeError(f"Reload world recipe changed: {field}")
+    expected_argv = list(original_reload["argv"])
+    for option in ("--state-dir", "--timeout-seconds"):
+        index = expected_argv.index(option) + 1
+        expected_argv[index] = selected["argv"][index]
+    if selected["argv"] != expected_argv:
+        raise RuntimeError("Reload world argv recipe changed.")
+    for name, key in (
+        ("run-receipt.json", "receiptSha256"),
+        ("manual-observation.json", "observationSha256"),
+        ("integrity.json", "integritySha256"),
+    ):
+        path = world / name
+        if path != path.resolve() or sha(path) != binding[key]:
+            raise RuntimeError(f"Bound world evidence identity changed: {name}")
+    for name, digest in json.loads((world / "integrity.json").read_text()).items():
+        path = world / name
+        if not path.resolve().is_relative_to(world) or path != path.resolve() or sha(path) != digest:
+            raise RuntimeError("Bound world evidence archive changed or redirected.")
+    after = authorize_reload(source.parent, binding["originalPacketSha256"])
+    values = content(after)
+    observed = json.loads((world / "manual-observation.json").read_text())
+    markers = observed["gameplaySaveFiles"]
+    identities = set()
+    for marker in markers:
+        root = Path(marker["root"])
+        path = root / marker["path"]
+        identity = (str(root), marker["path"])
+        if root not in roots or path != path.resolve() or not path.is_relative_to(root):
+            raise RuntimeError("Bound gameplay save redirected or outside approved roots.")
+        if (path.stat().st_size, sha(path)) != values[identity]:
+            raise RuntimeError("Current bound gameplay save identity changed.")
+        identities.add(identity)
+    return [
+        {**record, "files": [
+            item for item in record["files"]
+            if (record["root"], item["path"]) in identities
+        ]}
+        for record in after
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("dry", "run"))
@@ -194,7 +262,13 @@ def main():
     args = parser.parse_args()
     packet, selected, roots = load_packet(args.packet, args.sha256, args.phase)
     base = args.packet.parent
-    previous = authorize_reload(base, args.sha256) if args.phase == "reload" else None
+    previous = None
+    if args.phase == "reload":
+        previous = (
+            authorize_bound_reload(packet, selected, roots)
+            if "reloadWorldBinding" in packet
+            else authorize_reload(base, args.sha256)
+        )
     if args.action == "dry":
         print(json.dumps({
             "sourceAndStateChecks": "PASS", "phase": args.phase,
@@ -211,8 +285,12 @@ def main():
     env = phase_environment(selected)
     before = snapshot(roots, evidence / "saves-before")
     write(evidence / "before-launch.json", before)
-    if previous is not None and content(before) != content(previous):
-        raise RuntimeError("Stopped T2/T3 save continuity differs; no launch.")
+    if previous is not None:
+        current, expected = content(before), content(previous)
+        if "reloadWorldBinding" in packet:
+            current = {identity: current.get(identity) for identity in expected}
+        if current != expected:
+            raise RuntimeError("Stopped T2/T3 save continuity differs; no launch.")
     if shutil.disk_usage(base).free < packet["diskFloorBeforeLaunchGiB"] * 2**30:
         raise RuntimeError("Save archiving left less than 110GiB; no launch.")
     write(evidence / "invocation.json", {

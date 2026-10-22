@@ -97,8 +97,10 @@
   ],
   "retentionRunner": {
     "source": "tools/s3/retention-run.py",
-    "sourceSha256": "5812c872399a908efddb0ec0f8d2b42b5f6daea0e34a801d761340ca7655b4fd",
-    "guardTestCount": 17,
+    "sourceSha256": "f581f64f4d43a01f342efa4ee405a93a2e3249921011c300d5a3606b43634678",
+    "guardTestCount": 21,
+    "frozenPreviousSource": "s3-runner5812-frozen-source/retention-run.py (byte-identical SHA5812c872399a908efddb0ec0f8d2b42b5f6daea0e34a801d761340ca7655b4fd; no signing claim or implicit packet repin)",
+    "reloadWorldBinding": "Optional reload-only binding names originalPacketPath/originalPacketSha256, canonical worldBase, receiptSha256, observationSha256 and integritySha256. Rechecks all original sources (optional sourceSnapshots may substitute only byte-identical frozen sources), original authorize_reload, complete original integrity and raw archives, unchanged recipe/roots, and current gameplay marker bytes. Before launch, freshly archived gameplay bytes must match again; unrelated log changes are allowed. Original receipts remain untouched; unbound behavior stays unchanged.",
     "externalStopAttribution": "Both legacy external-consent-stop.json forcedCleanup=true and external-stop-reason.json forcedStop=true require descriptive reasons. Reconcile on normal CLI completion, not just exceptions. Reload rejects external stops even when a historical original receipt has forcedCleanup null; original historical bytes stay untouched. Frozen packets referencing an earlier runner require explicit rebind.",
     "externalSaveMappings": "Optional frozen packet mappings bind exact title-owned prefixPath to its canonical resolvedPath outside the prefix. Both must still resolve identically and the canonical target must be a listed saveRoot; generic Documents parents and redirected mappings are rejected. No broad host-folder snapshots.",
     "guardTests": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/s3 -p 'test_*.py'",
@@ -115,6 +117,22 @@
     }
   },
   "verifiedArchives": [
+    {
+      "title": "DOOM 64",
+      "path": "s1-doom64-paircd43-preparation-v1/run-world/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "7b261e66107ab8b2aa6698deed81b9375b2d0435a8d0a24eb304f47581111247",
+      "resultSha256": "e5eedf0c4fd5c749a419e4d0b66915db9130554fdbaac23f53d7ff2a0beb8945",
+      "packetSha256": "3d27b7f654176ee554366f99dbaab47325bbef9942cfc9bfeae0c1dd5e8e5b0f",
+      "run": "4f061291-3071-4687-9327-4b9fc124271b",
+      "admission": "INCONCLUSIVE_START_INPUT_NO_TRANSITION",
+      "observed": "One Start Enter100 showed no menu/auth transition; passive capture returned to explicitly labelled DEMO, excluded. Quit began Escape100 before540; title Back Escape100 unchanged. No second Start or alternative input.",
+      "stop": "Stopped repeated unchanged input fingerprint by exact-prefix-k0/-w0 at295.518s. CLI0/Wine0 remain forced, not ordinary quit. Frozen5812 correctly reconciled descriptive external-stop reason.",
+      "boundary": "No current FirstParty/GetTokenAndSignature fingerprint; auth-fix success or failure is unproven. No gameplay save, no retry/reload admitted.",
+      "runFilesVerified": 30,
+      "rawArchiveFilesVerified": 8,
+      "runManifestSha256": "5354192d01074c4d19c43736e419a4c1d37b85995ec1314447a887e8b30eed4a"
+    },
     {
       "title": "Dishonored Definitive Edition",
       "path": "s3-dishonored-de-full-01/final-evidence",
