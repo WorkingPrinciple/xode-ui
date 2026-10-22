@@ -980,6 +980,22 @@ enum PCGamesChecks {
               && linkRequests.allSatisfy { $0.httpMethod == "GET" && $0.value(forHTTPHeaderField: "Authorization") == nil }
               && linkRequests.first?.url?.query?.contains("locale=ro-RO") == true,
               "#42: Microsoft's ID resolver supplies the canonical slug/ID in the requested locale without credentials or title guessing")
+        let englishRO = CatalogLocale.preferred(region: "RO", languages: ["en-US"])
+        let englishTransport = PCGamesMockTransport([
+            .init(status: 302, data: Data(), location: "https://www.microsoft.com/ro-ro/store/productId/9P861V1542BL?market=RO&locale=en-US"),
+            .init(status: 302, data: Data(), location: canonicalMortis),
+            .init(status: 200, data: Data("<link rel=\"canonical\" href=\"\(canonicalMortis)\">".utf8))
+        ])
+        let englishResolved = try await XboxProductLink.resolve(productID: mortis.id, market: englishRO.market,
+            language: englishRO.language, transport: englishTransport)
+        check(englishRO.market == "RO" && englishRO.language == "en-US"
+              && englishResolved.absoluteString == canonicalMortis,
+              "#42: English-only Romanian Macs accept Microsoft's actual market-correct ro-RO redirect, without fabricating a locale or switching price market")
+        check(XboxProductLink.canonical(URL(string: canonicalMortis.lowercased())!,
+              productID: mortis.id, market: "RO", language: "en-US")
+              && !XboxProductLink.canonical(URL(string: canonicalMortis.replacingOccurrences(of: "ro-RO", with: "en-US"))!,
+                  productID: mortis.id, market: "RO", language: "en-US"),
+              "#42: Resolver-selected locale comparison ignores URL casing but still rejects a foreign price market for English-only Romanian Macs")
         for target in [
             "https://www.xbox.com/en-US/games/store/valor-mortis/9P861V1542BL",
             "https://www.xbox.com/ro-RO/games/store",

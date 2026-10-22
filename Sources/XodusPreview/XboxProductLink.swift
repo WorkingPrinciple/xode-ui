@@ -11,13 +11,17 @@ enum CatalogLocale {
 }
 
 enum XboxProductLink {
-    static func canonical(_ url: URL, productID: String, language: String) -> Bool {
+    static func canonical(_ url: URL, productID: String, market: String, language: String) -> Bool {
         let parts = url.path.split(separator: "/")
+        guard let locale = parts.first.map(String.init),
+              PCGamesClient.language(locale) == locale,
+              Locale(identifier: locale).region?.identifier == market else { return false }
+        let requestedRegionMatches = Locale(identifier: language).region?.identifier == market
         return url.scheme == "https" && url.host == "www.xbox.com"
             && url.user == nil && url.password == nil && url.port == nil
             && url.query == nil && url.fragment == nil
             && parts.count == 5
-            && parts[0].lowercased() == language.lowercased()
+            && (!requestedRegionMatches || parts[0].lowercased() == language.lowercased())
             && parts[1] == "games" && parts[2] == "store"
             && !parts[3].isEmpty && parts[3] != "." && parts[3] != ".."
             && parts[4].uppercased() == productID.uppercased()
@@ -27,8 +31,7 @@ enum XboxProductLink {
                         transport: any PCGamesTransport = PCGamesHTTP()) async throws -> URL {
         guard PCGamesClient.validProductID(productID),
               PCGamesClient.market(market) == market,
-              PCGamesClient.language(language) == language,
-              language.split(separator: "-").last?.uppercased() == market else {
+              PCGamesClient.language(language) == language else {
             throw PCGamesError.invalidResponse
         }
         var components = URLComponents(string: "https://www.microsoft.com/store/productId/\(productID)")!
@@ -44,14 +47,14 @@ enum XboxProductLink {
             if [301, 302, 303, 307, 308].contains(response.status) {
                 guard let location = response.location,
                       let next = URL(string: location, relativeTo: endpoint)?.absoluteURL,
-                      allowedRedirect(next, productID: productID, language: language) else {
+                      allowedRedirect(next, productID: productID, market: market, language: language) else {
                     throw PCGamesError.invalidResponse
                 }
                 endpoint = next
                 continue
             }
             guard response.status == 200 else { throw PCGamesError.http(response.status) }
-            guard canonical(endpoint, productID: productID, language: language),
+            guard canonical(endpoint, productID: productID, market: market, language: language),
                   let html = String(data: response.data, encoding: .utf8) else {
                 throw PCGamesError.invalidResponse
             }
@@ -69,7 +72,7 @@ enum XboxProductLink {
                 }
                 if values["rel"]?.lowercased() == "canonical",
                    let value = values["href"], let url = URL(string: value),
-                   canonical(url, productID: productID, language: language),
+                   canonical(url, productID: productID, market: market, language: language),
                    url.path.lowercased() == endpoint.path.lowercased() {
                     return url
                 }
@@ -79,11 +82,11 @@ enum XboxProductLink {
         throw PCGamesError.invalidResponse
     }
 
-    private static func allowedRedirect(_ url: URL, productID: String, language: String) -> Bool {
-        if canonical(url, productID: productID, language: language) { return true }
+    private static func allowedRedirect(_ url: URL, productID: String, market: String, language: String) -> Bool {
+        if canonical(url, productID: productID, market: market, language: language) { return true }
         if url.host == "xbox.com", var normalized = URLComponents(url: url, resolvingAgainstBaseURL: false) {
             normalized.host = "www.xbox.com"
-            if let target = normalized.url, canonical(target, productID: productID, language: language) {
+            if let target = normalized.url, canonical(target, productID: productID, market: market, language: language) {
                 return true
             }
         }
@@ -91,7 +94,9 @@ enum XboxProductLink {
         let productRoute = Array(parts.suffix(3)).map(String.init)
         return url.scheme == "https" && url.host == "www.microsoft.com"
             && url.user == nil && url.password == nil && url.port == nil && url.fragment == nil
-            && (parts.count == 3 || (parts.count == 4 && parts[0].lowercased() == language.lowercased()))
+            && (parts.count == 3 || (parts.count == 4
+                && (parts[0].lowercased() == language.lowercased()
+                    || Locale(identifier: String(parts[0])).region?.identifier == market)))
             && productRoute == ["store", "productId", productID]
     }
 }

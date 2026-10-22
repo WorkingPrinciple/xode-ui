@@ -25,6 +25,9 @@ Live startup takes the device's market and a preferred language matching that
 market when available (for example RO with preferred en-US/ro-RO selects ro-RO),
 rather than silently using US prices and links. Explicit test connections keep
 their explicit test scope.
+For an English-only Mac in Romania, Microsoft's resolver chooses the actual
+market-correct ro-RO product route; that returned canonical locale is accepted
+without inventing a slug or requiring an unavailable preferred language.
 
 Acquisition (#41) is a confirmed external-page fallback, not an in-app licence
 grant. Microsoft's documented [grant-free-products API](https://learn.microsoft.com/en-us/windows/uwp/monetize/grant-free-products)
