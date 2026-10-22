@@ -2934,8 +2934,8 @@
         },
         "source": {
           "enum": [
-            "MicrosoftStoreEdge:v9.0/searchResults",
-            "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"
+            "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults",
+            "MicrosoftStoreEdge:v9.0/searchResults"
           ]
         },
         "checkedAt": {
@@ -3033,8 +3033,8 @@
         },
         "source": {
           "enum": [
-            "MicrosoftStoreEdge:v9.0/searchResults",
-            "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"
+            "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults",
+            "MicrosoftStoreEdge:v9.0/searchResults"
           ]
         },
         "checkedAt": {
