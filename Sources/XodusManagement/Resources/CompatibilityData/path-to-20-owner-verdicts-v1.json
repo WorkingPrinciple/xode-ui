@@ -1,5 +1,27 @@
 {
   "schemaVersion": 1,
+  "protectedHistoricalEvidenceIndex": {
+    "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
+    "reportedAt": "2026-10-22T21:11:12.017+00:00",
+    "index": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-evidence-index-01/index.json",
+      "sha256": "419d24bb8be3e7320fed8a7a021897dbef0a6e8a6fcbb34ccfce0b9092f57a29"
+    },
+    "integrity": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-evidence-index-01/integrity.json",
+      "sha256": "83f7861c31a59ecbf7821d52b247d10d8fc38ab4d2f9385e5c12b230669f1a58"
+    },
+    "ownerReportedCoverage": {
+      "existingFiles": 2168,
+      "s3ProofRoots": 41,
+      "missingReferencedScreenshots": 0,
+      "changedDuringHash": 0
+    },
+    "verificationScope": "S4 verified the two index-file hashes only. Coverage and unchanged-file observations are S3-reported; not independently rehashed here. Overlaps S4 audit, not additive coverage.",
+    "recoverabilityGap": "Historical pre-write save bytes may only have hashes; file inventory does not retroactively establish or archive a baseline.",
+    "sourceCommits": ["0bd1982", "16cf4f2"],
+    "rawEvidencePolicy": "Protected local only; no raw evidence, credentials or save contents copied into git. No ledger admission change."
+  },
   "queueAdditions": {
     "reportedAt": "2026-10-22T04:59:55.152+00:00",
     "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
