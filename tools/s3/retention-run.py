@@ -129,6 +129,12 @@ def authorize_reload(base, expected_packet):
         raise RuntimeError("Actual world gameplay and ordinary quit need evidence.")
     if not observed.get("screenshots") or not observed.get("gameplaySaveFiles"):
         raise RuntimeError("Missing observed screenshots or gameplay save markers.")
+    for screenshot in observed["screenshots"]:
+        path = world / screenshot["path"]
+        if not path.resolve().is_relative_to(world.resolve()) or (
+            sha(path) != screenshot["sha256"]
+        ):
+            raise RuntimeError("Observed screenshot archive is missing or changed.")
     after = json.loads((world / "after-process-exit.json").read_text())
     before = content(json.loads((world / "before-launch.json").read_text()))
     for record in after:

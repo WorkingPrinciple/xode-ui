@@ -68,12 +68,19 @@
   ],
   "retentionRunner": {
     "source": "tools/s3/retention-run.py",
-    "sourceSha256": "4911818162d830c05e6a1ee651116657955da5441fc8940c982c72aade99d90b",
+    "sourceSha256": "1056068dfdc217063b8ce323cc417146ba51be452b25cff7ce5af52d92258a2f",
     "guardTests": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/s3 -p 'test_*.py'",
     "dryInvocation": "python3 tools/s3/retention-run.py dry PACKET_PATH PACKET_SHA256 world",
     "runInvocation": "python3 tools/s3/retention-run.py run PACKET_PATH PACKET_SHA256 world --screen-release EXPLICIT_HANDOFF_REFERENCE",
     "boundary": "Preparation/dry checks are not game execution evidence. Run only under the current title grant after explicit screen handback. Manual observed gameplay, actual quit controls and gameplay save files must be recorded separately; CLI0 is not qualification.",
-    "reloadGate": "Requires actual world CLI0/Wine0, stopped prefix, observed gameplay/ordinary quit, changed nonempty gameplay payload, intact archived raw bytes and exact stopped T2/T3 continuity. Forced cleanup cannot qualify."
+    "reloadGate": "Requires actual world CLI0/Wine0, stopped prefix, observed gameplay/ordinary quit, hash-bound retained screenshots, changed nonempty gameplay payload, intact archived raw bytes and exact stopped T2/T3 continuity. Forced cleanup cannot qualify.",
+    "manualObservationShape": {
+      "location": "run-world/manual-observation.json, populated only from actual observed execution",
+      "gameplayObserved": "boolean",
+      "ordinaryQuitObserved": "boolean",
+      "screenshots": [{"path": "world-relative retained screenshot path", "sha256": "actual screenshot hash"}],
+      "gameplaySaveFiles": [{"root": "exact packet-bound save root", "path": "relative gameplay payload path"}]
+    }
   },
   "verifiedArchives": [
     {

@@ -46,6 +46,8 @@ class RetentionTests(unittest.TestCase):
         (root / "progress.xgs").write_bytes(b"retained progress")
         world = base / "run-world"
         world.mkdir()
+        screenshot = world / "observed-menu-and-gameplay.png"
+        screenshot.write_bytes(b"unit-test archive integrity stand-in, not gameplay")
         after = retention.snapshot([root], world / "saves-after")
         documents = {
             "run-receipt.json": {
@@ -55,7 +57,9 @@ class RetentionTests(unittest.TestCase):
             },
             "manual-observation.json": {
                 "gameplayObserved": True, "ordinaryQuitObserved": True,
-                "screenshots": ["observed-menu-and-gameplay.png"],
+                "screenshots": [{
+                    "path": screenshot.name, "sha256": retention.sha(screenshot),
+                }],
                 "gameplaySaveFiles": [{"root": str(root), "path": "progress.xgs"}],
             },
             "before-launch.json": [{"root": str(root), "exists": True, "files": []}],
@@ -102,6 +106,14 @@ class RetentionTests(unittest.TestCase):
                 json.dumps(documents["after-process-exit.json"])
             )
             with self.assertRaisesRegex(RuntimeError, "did not change"):
+                retention.authorize_reload(base, "frozen")
+
+    def test_changed_screenshot_blocks_reload(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            world, _ = self.fixture(base)
+            (world / "observed-menu-and-gameplay.png").write_bytes(b"changed")
+            with self.assertRaisesRegex(RuntimeError, "screenshot"):
                 retention.authorize_reload(base, "frozen")
 
 
