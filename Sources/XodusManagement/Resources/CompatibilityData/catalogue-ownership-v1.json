@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "collectedAt": "2026-10-22T02:30:02.109008+00:00",
+  "collectionInputs": {
+    "collectedAt": "2026-10-22T02:30:02.109008+00:00",
+    "freeBytes": 168928473088,
+    "receipt": {
+      "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+      "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+      "command": "ode.account.read.v1",
+      "section": "library",
+      "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+    },
+    "collectionSummary": {
+      "complete": true,
+      "checkedAt": "2026-10-22T02:27:15Z",
+      "totalProductCount": 0,
+      "accountBindingVerified": true,
+      "error": null,
+      "items": []
+    },
+    "candidates": [
+      {
+        "storeId": "C17GQF31D617",
+        "title": "INSIDE",
+        "downloadSizeBytes": 2272137216
+      },
+      {
+        "storeId": "9N3LGKGF3CC2",
+        "title": "Nine Sols",
+        "downloadSizeBytes": 6598336512
+      },
+      {
+        "storeId": "9PFRTPRQ569Q",
+        "title": "Blue Prince",
+        "downloadSizeBytes": 4276469760
+      },
+      {
+        "storeId": "9N116V0599HB",
+        "title": "Hollow Knight: Silksong",
+        "downloadSizeBytes": 8278790144
+      },
+      {
+        "storeId": "9N5PKH0KW2L1",
+        "title": "Minishoot' Adventures",
+        "downloadSizeBytes": 424927232
+      },
+      {
+        "storeId": "9NRH78B682L8",
+        "title": "SUPERHOT: MIND CONTROL DELETE",
+        "downloadSizeBytes": 2390278144
+      },
+      {
+        "storeId": "9P8XKV2D5DZ5",
+        "title": "Dome Keeper",
+        "downloadSizeBytes": 1291444224
+      },
+      {
+        "storeId": "9NTRS771L8HL",
+        "title": "Disco Elysium - The Final Cut",
+        "downloadSizeBytes": 10378952704
+      }
+    ],
+    "appSource": [
+      {
+        "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusPreview/PCGamesController.swift",
+        "sha256": "2e12b359e32eceee14d5e9874ea2fc46515e1b426bde1592273b2446f6fa8c2a"
+      },
+      {
+        "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusPreview/LibraryPresentation.swift",
+        "sha256": "914808e9520391398ceb42754b2f9e82425e47ff56d9e6d04b899072e58ef067"
+      }
+    ],
+    "cataloguePacket": {
+      "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-catalogue-v1.json",
+      "sha256": "11a80d2a636d0ae4fb9069f7b9a4e68ba31d24453ed41776ede6202e11117653"
+    }
+  },
+  "sourcePolicy": "Same app PCGamesController unified library read and LibraryPresentation Owned predicate; not public catalogue, installed roots or install-status. Exact account binding verified before/after; raw account hash and unrelated library retained only in local receipt.",
+  "readOnly": true,
+  "loginAttempts": 0,
+  "installs": 0,
+  "gameLaunches": 0,
+  "collectionCaveat": "The provider returned a complete empty active-game collection. No Owned-filter grant was observed; ownership remains unknown. Game Pass/subscription entitlements may not appear as owned products. Do not infer purchase rights, denial of Game Pass access or install authorization from this empty read.",
+  "items": [
+    {
+      "storeId": "C17GQF31D617",
+      "title": "INSIDE",
+      "downloadSizeBytes": 2272137216,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    },
+    {
+      "storeId": "9N3LGKGF3CC2",
+      "title": "Nine Sols",
+      "downloadSizeBytes": 6598336512,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    },
+    {
+      "storeId": "9PFRTPRQ569Q",
+      "title": "Blue Prince",
+      "downloadSizeBytes": 4276469760,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    },
+    {
+      "storeId": "9N116V0599HB",
+      "title": "Hollow Knight: Silksong",
+      "downloadSizeBytes": 8278790144,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    },
+    {
+      "storeId": "9N5PKH0KW2L1",
+      "title": "Minishoot' Adventures",
+      "downloadSizeBytes": 424927232,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    },
+    {
+      "storeId": "9NRH78B682L8",
+      "title": "SUPERHOT: MIND CONTROL DELETE",
+      "downloadSizeBytes": 2390278144,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    },
+    {
+      "storeId": "9P8XKV2D5DZ5",
+      "title": "Dome Keeper",
+      "downloadSizeBytes": 1291444224,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    },
+    {
+      "storeId": "9NTRS771L8HL",
+      "title": "Disco Elysium - The Final Cut",
+      "downloadSizeBytes": 10378952704,
+      "ownership": "unknown",
+      "acquisitionKind": null,
+      "source": {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/catalogue-ownership-read-v1.json",
+        "sha256": "fef4c5fc74a2579690129f32e8b5c7533cd401a410f95d24c8ab450013f944de",
+        "command": "ode.account.read.v1",
+        "section": "library",
+        "endpoint": "https://collections.mp.microsoft.com/v7.0/collections/query"
+      },
+      "ownedFilterMatch": false,
+      "decisionBasis": "No non-subscription grant for this exact product ID in the complete active PC collection. Coordinator interpretation: the empty Owned listing does not establish ownership or Game Pass access either way.",
+      "fits155Plus2GiBNow": false,
+      "installAuthorized": false,
+      "launch": null
+    }
+  ],
+  "approvalRequiredInstallQueue": [],
+  "queuePolicy": "Single-title disk fit against observed free bytes minus155+2GiB; not additive batch admission. Recheck immediately before any approved batch. Per-batch20GiB cap remains; anti-cheat/offline unknowns unchanged. No install authorized; coordinator approval required per batch."
+}
