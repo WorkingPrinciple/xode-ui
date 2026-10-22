@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T21:30:53.508207+00:00",
+    "asOf": "2026-10-22T21:33:42.080722+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -90,11 +90,6 @@
         "batch": "passive-batch2-eight-v1"
       },
       {
-        "storeId": "9PJPCB188SVG",
-        "title": "Subnautica 2 (Game Preview)",
-        "batch": "passive-batch3-eight-v1"
-      },
-      {
         "storeId": "9P2J5D12GJL5",
         "title": "The Elder Scrolls IV: Oblivion GOTY (PC, 2009)",
         "batch": "passive-batch3-eight-v1"
@@ -117,11 +112,6 @@
       {
         "storeId": "9NCJWHHMVHR0",
         "title": "Keeper",
-        "batch": "passive-batch3-eight-v1"
-      },
-      {
-        "storeId": "9NQVHHW88XW9",
-        "title": "Bluey's Happy Snaps",
         "batch": "passive-batch3-eight-v1"
       }
     ],
@@ -147,7 +137,7 @@
     },
     "queueReconciliation": {
       "reportedCap": 23,
-      "uniqueCount": 19,
+      "uniqueCount": 17,
       "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue."
     },
     "withheld": [
@@ -162,6 +152,18 @@
         "title": "Well Dweller",
         "batch": "passive-small-eight-v1",
         "blocker": "actual gameplay reached; TIMEOUT, no save marker; parked"
+      },
+      {
+        "storeId": "9NQVHHW88XW9",
+        "title": "Bluey's Happy Snaps",
+        "batch": "passive-batch3-eight-v1",
+        "blocker": "Human legal consent required; not ready capacity without user decision"
+      },
+      {
+        "storeId": "9PJPCB188SVG",
+        "title": "Subnautica 2 (Game Preview)",
+        "batch": "passive-batch3-eight-v1",
+        "blocker": "Human legal consent required; not ready capacity without user decision"
       }
     ],
     "samples": [
@@ -411,12 +413,12 @@
       {
         "storeId": "9NQVHHW88XW9",
         "title": "Bluey's Happy Snaps",
-        "verdict": "ACKNOWLEDGEMENT_SCREEN_RENDERING"
+        "verdict": "HUMAN_CONSENT_HOLD"
       },
       {
         "storeId": "9MXND4PQLK3W",
         "title": "DOOM 64",
-        "verdict": "INFRA_USER_ID"
+        "verdict": "INFRA_BETHESDA_USER_ID"
       },
       {
         "storeId": "9MSVVM5NS9L6",
@@ -618,7 +620,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 775.10819655,
+  "remainingWallMinutes": 772.2986546333334,
   "scenarios": [
     {
       "label": "slow observed",
@@ -687,7 +689,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 86.12313295,
+  "requiredAverageMinutesPerAddition": 85.81096162592593,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

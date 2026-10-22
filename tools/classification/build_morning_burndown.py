@@ -169,6 +169,11 @@ def refresh(tracker):
         for row in additions["items"]:
             queued.setdefault(row["storeId"], row)
     queued = {sid: row for sid, row in queued.items() if sid not in working}
+    for row in tracker["items"]:
+        if row["verdict"] == "HUMAN_CONSENT_HOLD":
+            sid = row["storeId"]
+            withheld[sid] = {**queued.pop(sid, {"storeId": sid, "title": row["title"]}),
+                             "blocker": "Human legal consent required; not ready capacity without user decision"}
     inputs = {"asOf": tracker["updatedAt"], "deadline": DEADLINE,
               "launchDiskPolicy": {
                   "minimumFreeGiB": LAUNCH_MINIMUM_FREE_GIB,

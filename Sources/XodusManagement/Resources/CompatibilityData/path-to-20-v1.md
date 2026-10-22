@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T21:30:53.508207+00:00; **11/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-22T21:33:42.080722+00:00; **11/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -21,9 +21,9 @@ Updated 2026-10-22T21:30:53.508207+00:00; **11/20 strict WORKING**. Title qualif
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | >2h |
 | Beast of Reincarnation | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Bluey's Happy Snaps | ACKNOWLEDGEMENT_SCREEN_RENDERING | not passed | ? | not passed | ? | ? | acknowledgement Continue / gameplay / S3 | VC prerequisite resolved; animated Gameloft acknowledgement/Continue60FPS, passive only/forced end0. No main menu, gameplay, retention or ordinary quit admission. | - |
+| Bluey's Happy Snaps | HUMAN_CONSENT_HOLD | not passed | ? | not passed | ? | ? | human EULA/privacy/ToU consent / user/coordinator | Acknowledgement Continue reached EULA/Privacy/Terms Accept. NO Accept sent; HUMAN CONSENT HOLD. Forced exact-k0/-w0, not ordinary quit despite0/0. | - |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
-| DOOM 64 | INFRA_USER_ID | passed | ? | passed | ? | ? | infrastructure user-ID hold / S2/coordinator | Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized. | - |
+| DOOM 64 | INFRA_BETHESDA_USER_ID | passed | ? | passed | ? | ? | infrastructure user-ID hold / S2/coordinator | Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized. | - |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored® Definitive Edition (PC) | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
@@ -61,9 +61,9 @@ Full blockers, source hashes and packet references are in `path-to-20-v1.json`. 
 
 ## Retained attempt evidence
 
-Audit 2026-10-22T21:30:56.745990+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
+Audit 2026-10-22T21:33:45.162104+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
 
-Coverage: 29 titles, 149 launch-result attempts, 6 unresolved references; 3017 present / 161 missing artifact links. This is bounded discovery, not a complete historical archive.
+Coverage: 29 titles, 150 launch-result attempts, 6 unresolved references; 3056 present / 162 missing artifact links. This is bounded discovery, not a complete historical archive.
 
 Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.
 
@@ -82,7 +82,7 @@ Exact run identities, artifact paths/hashes, failed-hypothesis context and expli
 | Mixtape / `9NH0MSG29X6L` | 10 | 10 attempts incomplete; title hypothesis/test annotations incomplete |
 | TUNIC / `9NLRT31Z4RWM` | 5 | 5 attempts incomplete; title hypothesis/test annotations incomplete |
 | Halls of Torment / `9NMNMS626R59` | 3 | 3 attempts incomplete; title hypothesis/test annotations incomplete |
-| Bluey's Happy Snaps / `9NQVHHW88XW9` | 2 | 2 attempts incomplete; title hypothesis/test annotations incomplete |
+| Bluey's Happy Snaps / `9NQVHHW88XW9` | 3 | 3 attempts incomplete; title hypothesis/test annotations incomplete |
 | Skyrim Special Edition / `9P03JGQ4S1GC` | 4 | 4 attempts incomplete; title hypothesis/test annotations incomplete |
 | Quake / `9P1Z43KRNQD4` | 1 | 1 attempts incomplete; title hypothesis/test annotations incomplete |
 | Oblivion GOTY (2009) / `9P2J5D12GJL5` | 2 | 2 attempts incomplete; title hypothesis/test annotations incomplete |

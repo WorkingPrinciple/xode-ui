@@ -101,13 +101,17 @@
   "items": [
     {
       "storeId": "9MXND4PQLK3W", "title": "DOOM 64",
-      "verdict": "INFRA_USER_ID", "reportedAt": "2026-10-22T21:30:29.231+00:00",
+      "verdict": "INFRA_BETHESDA_USER_ID", "reportedAt": "2026-10-22T21:33:02.200+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
       "runId": "db247a1f",
+      "finalProofs": [
+        {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/final-evidence/retention-result.json", "sha256": "e423d72be5cb89f2773323d8f428e4088bb822c587fa473990a5e1c0333c1499"},
+        {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/final-evidence/integrity.json", "sha256": "e84dc7865da4bb8a981135de04c597c5b1cb65ec90e932bc61c37fd8542a4d4e"}
+      ],
       "gates": {"menu": "passed", "quit": "passed", "gameplay": "unknown", "save": "unknown", "relaunch": "unknown"},
       "nextGate": "infrastructure user-ID hold", "ownerStream": "S2/coordinator",
       "blocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
-      "scope": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
+      "scope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical."
     },
     {
       "storeId": "9P2J5D12GJL5", "title": "Oblivion GOTY (2009)",
@@ -165,17 +169,21 @@
       {
         "storeId": "9NQVHHW88XW9",
         "title": "Bluey's Happy Snaps",
-        "verdict": "ACKNOWLEDGEMENT_SCREEN_RENDERING",
-        "reportedAt": "2026-10-22T21:16:36.509+00:00",
+        "verdict": "HUMAN_CONSENT_HOLD",
+        "reportedAt": "2026-10-22T21:33:02.200+00:00",
         "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d",
-        "runId": "ebc1342a-216e-466a-a506-bc6517bba7a5",
+        "runId": "21f1ed27",
+        "finalProofs": [
+          {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-bluey-full-01/final-evidence/retention-result.json", "sha256": "24a6e130e964197e0f79de9622b6376b6f839306bc0c6d4217e526584742b3fe"},
+          {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-bluey-full-01/final-evidence/integrity.json", "sha256": "9426e4b58e04da34ec43caa6b2ecad4c9f31c22198862dfc0df362554fa8c8e3"}
+        ],
         "evidenceReceipt": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/bluey-happy-snaps-passive-cli68f-v1/attempt/receipt.json",
         "evidenceSha256": "d251c9601529febdace2ffb161af44c091496e103229b978266a025d1db28a22",
         "gates": {"menu": "not-passed", "quit": "not-passed"},
-        "nextGate": "acknowledgement Continue / gameplay",
-        "ownerStream": "S3",
-        "blocker": "VC prerequisite resolved; animated Gameloft acknowledgement/Continue60FPS, passive only/forced end0. No main menu, gameplay, retention or ordinary quit admission.",
-        "scope": "S2 index56e3acbd; bluey-happy-snaps-passive-vc14-v1/verdict.json. Official redist/native-first CRT clears prior prerequisite dialog. Earlier evidenceReceipt identifies historical blocked attempt, not this new run."
+        "nextGate": "human EULA/privacy/ToU consent",
+        "ownerStream": "user/coordinator",
+        "blocker": "Acknowledgement Continue reached EULA/Privacy/Terms Accept. NO Accept sent; HUMAN CONSENT HOLD. Forced exact-k0/-w0, not ordinary quit despite0/0.",
+        "scope": "S3 settled21f1ed27: external-consent-stop/finalresult explicitly overrides original runner forcedCleanup=null, preserved historically. Runner fixed for future, not retroactive proof. No gameplay/save/reload or legal agreement acceptance. Earlier passive/prerequisite attempts retained; license GRANTED does not authorize legal consent."
       },
       {
         "storeId": "9PJPCB188SVG",

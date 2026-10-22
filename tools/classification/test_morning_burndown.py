@@ -109,11 +109,19 @@ class BurnDownTests(unittest.TestCase):
         evidence = inputs["pendingPacketQueueEvidence"]
         self.assertEqual(evidence["reportedQueueCap"], 23)
         for row in evidence["items"]:
-            queued = next(item for item in inputs["queued"]
+            queued = next(item for item in inputs["queued"] + inputs["withheld"]
                           if item["storeId"] == row["storeId"])
             self.assertIn(queued["batch"], ("packet preparation pending",
                                           "passive-batch2-eight-v1", "passive-batch3-eight-v1"))
         self.assertEqual(inputs["queueReconciliation"]["uniqueCount"], len(inputs["queued"]))
+
+    def test_human_consent_titles_are_not_ready_capacity(self):
+        inputs = load_json(OUTPUT)["inputs"]
+        queued = {row["storeId"] for row in inputs["queued"]}
+        held = {row["storeId"]: row for row in inputs["withheld"]}
+        for sid in ("9NQVHHW88XW9", "9PJPCB188SVG"):
+            self.assertNotIn(sid, queued)
+            self.assertIn("Human legal consent", held[sid]["blocker"])
 
 
 if __name__ == "__main__":
