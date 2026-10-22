@@ -110,6 +110,22 @@ enum LibraryAccessChecks {
         let working = String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "WORKING")
         check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verdict == .working,
               "An externally qualified WORKING record preserves its scoped evidence without granting Windows package admission")
+        check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verifiedWorkingEvidence?.path == "/synthetic/proof.png"
+              && decodedEvidence.games.first?.verifiedWorkingEvidence == nil,
+              "Only an exact WORKING ledger entry with recorded evidence earns the per-title Verified working badge")
+        for verdict in ["GAMEPLAY_PASS", "MENU_PASS", "BLOCKED", "FAIL", "NOT_TESTED", "ANTI_CHEAT_EXCLUDED"] {
+            let candidate = working.replacingOccurrences(of: "WORKING", with: verdict)
+            check(try MacGameEvidence.decode(Data(candidate.utf8)).games.first?.verifiedWorkingEvidence == nil,
+                  "\(verdict) never becomes Verified working from screenshots, engine selection or installation")
+        }
+        let noProof = working.replacingOccurrences(
+            of: #""screenshots":[{"path":"/synthetic/proof.png","caption":"Synthetic path only"}]"#,
+            with: #""screenshots":[]"#)
+        let neverLaunched = working.replacingOccurrences(of: #""blocker":null"#,
+                                                         with: #""blocker":null,"launchAttempted":false"#)
+        check(try MacGameEvidence.decode(Data(noProof.utf8)).games.first?.verifiedWorkingEvidence == nil
+              && MacGameEvidence.decode(Data(neverLaunched.utf8)).games.first?.verifiedWorkingEvidence == nil,
+              "Missing evidence and explicit no-launch records cannot display a Verified working badge")
         check(MacGameEvidence.Verdict.gameplay.label == "Playable, not fully verified"
               && MacGameEvidence.Verdict.working.label == "Works on Mac"
               && MacGameEvidence.Verdict.blocked.label == "Not tested on Mac yet"
@@ -143,6 +159,7 @@ enum LibraryAccessChecks {
             125 502 /Users/other/Library/Application Support/minecraft/runtime/java-runtime/bin/java
             """, uid: 501) == 124,
               "Native Minecraft detects only this user's bundled Minecraft Java executable, without reading credential-bearing arguments")
+        try minecraftInstallationChecks(check: check)
         for invalid in [
             String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "SHIPPED"),
             String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "/synthetic/proof.png", with: "https://invalid/proof.png")
@@ -364,5 +381,68 @@ enum LibraryAccessChecks {
         let gameBytes = try Data(contentsOf: gameFile), saveBytes = try Data(contentsOf: saveFile)
         check(records.first?.installed == preserved && gameBytes == content && saveBytes == content,
               "SDD-LIB-04: withdrawing access preserves real synthetic game/save bytes and reachable registry record")
+    }
+
+    private static func minecraftInstallationChecks(check: (Bool, String) -> Void) throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/NativeMinecraftChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Owned Minecraft test fixture cleanup failed: \(error.localizedDescription)") }
+        }
+        let app = root.appendingPathComponent("Minecraft.app")
+        check(NativeMinecraftInstallation.inspect(nil).state == .missing
+              && NativeMinecraftInstallation.inspect(app).action == "Install launcher",
+              "Absent official launcher offers Install launcher, never game Play or an installed claim")
+        let contents = app.appendingPathComponent("Contents")
+        let executable = contents.appendingPathComponent("MacOS/launcher")
+        try FileManager.default.createDirectory(at: executable.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let plist = contents.appendingPathComponent("Info.plist")
+        var info: [String: String] = ["CFBundleIdentifier": NativeMinecraft.bundleIdentifier,
+                                    "CFBundleExecutable": "launcher", "CFBundleShortVersionString": "2.6.12"]
+        func writeInfo() throws {
+            try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: plist)
+        }
+        try writeInfo()
+        let broken = NativeMinecraftInstallation.inspect(app)
+        check(broken.state == .repair && broken.action == "Repair launcher"
+              && broken.path == app.path && broken.version == "2.6.12" && broken.problem != nil,
+              "An incomplete launcher preserves its actual path/version and offers explicit repair, not Open")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let ready = NativeMinecraftInstallation.inspect(app)
+        check(ready.state == .ready && ready.action == "Open" && ready.path == app.path
+              && ready.version == "2.6.12" && ready.problem == nil,
+              "A complete official launcher reports exact path/version and Open without claiming the Java game is running")
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: executable.path)
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "A non-executable launcher cannot expose Open")
+        try FileManager.default.removeItem(at: executable)
+        try FileManager.default.createDirectory(at: executable, withIntermediateDirectories: false)
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "A directory with the launcher's executable name cannot expose Open")
+        try FileManager.default.removeItem(at: executable)
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        info["CFBundleIdentifier"] = "example.impostor"
+        try writeInfo()
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "A different app at Minecraft.app cannot pass official launcher detection")
+        info["CFBundleIdentifier"] = NativeMinecraft.bundleIdentifier
+        info["CFBundleExecutable"] = "../launcher"
+        try writeInfo()
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "Launcher executable metadata cannot traverse outside Contents/MacOS")
+        info["CFBundleExecutable"] = "launcher"
+        info.removeValue(forKey: "CFBundleShortVersionString")
+        try writeInfo()
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "An unreadable launcher version is reported as repair-needed rather than silently invented")
+        try Data("not a property list".utf8).write(to: plist)
+        check(NativeMinecraftInstallation.inspect(app).problem != nil,
+              "Corrupt launcher metadata surfaces a recovery explanation")
+        check(NativeMinecraft.downloadURL.absoluteString == "https://www.minecraft.net/download",
+              "Install and repair lead to official manual launcher setup, never delete worlds or silently install")
     }
 }

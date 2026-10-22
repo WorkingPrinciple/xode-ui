@@ -564,6 +564,9 @@ struct LiveLibraryView: View {
                                         .padding(12)
                                 }
                             Text(game.title).font(.headline).lineLimit(1)
+                            if macEvidence.games[game.storeId]?.verifiedWorkingEvidence != nil {
+                                MacGameEvidenceView(record: macEvidence.games[game.storeId])
+                            }
                             HStack {
                                 InstalledPackageTypeLabel(game: game)
                                 Spacer()
@@ -714,6 +717,9 @@ struct LiveLibraryView: View {
             LibraryGameInformation(access: game.flatMap(LibraryAccess.init),
                                    gamePass: game?.gamePass == true,
                                    facts: facts, xbox: xbox, compact: compact)
+            if macEvidence.games[id]?.verifiedWorkingEvidence != nil {
+                MacGameEvidenceView(record: macEvidence.games[id])
+            }
         }
     }
 

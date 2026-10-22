@@ -222,6 +222,27 @@ Only `WORKING` is labelled "Works on Mac"; `GAMEPLAY_PASS` is "Playable, not
 fully verified". `BLOCKED` without an explicit `launchAttempted:true` remains
 "Not tested on Mac yet", so installer failures never become launch claims.
 
+The next source candidate renders `WORKING` entries with at least one
+recorded local screenshot as a **Verified working** badge on library cards,
+the hero and Continue Playing. The badge opens that title's evidence path;
+Details also shows the path and the full observation scope. It does not
+claim app-driven E2E or cloud saves beyond that scope. Missing evidence,
+`launchAttempted:false`, all other verdicts, absent/invalid ledgers and
+installation completeness alone cannot produce the badge. The evidence
+ledger remains read-only to this consumer; no title is promoted by UI code.
+
+Native Minecraft launcher detection in the next candidate records the
+actual `.app` path and `CFBundleShortVersionString`, checks its official
+bundle ID and executable, and distinguishes missing, ready and repair-needed
+installations. Missing offers **Install launcher**, a complete launcher offers
+**Open**, and invalid/unreadable metadata or a missing executable offers
+**Repair launcher** with an explanation. Install/repair open the official
+Minecraft download page for manual setup, not a simulated installation or
+automatic deletion/reinstall. Details includes path, version and **Check
+launcher**. Java process detection remains separate; a ready launcher never
+claims the game is running or an MSIXVC package is complete. These source
+changes do not activate or replace the installed c22029c RC.
+
 In unified-account mode, the app discovers complete game configurations under
 `~/Games/Xodus` and registers native lifecycle records without launcher scripts
 or a file-picker step. Invalid sibling folders are reported separately and

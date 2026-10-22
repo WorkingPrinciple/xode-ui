@@ -3,20 +3,80 @@ import AppKit
 import Darwin
 import SwiftUI
 
+struct NativeMinecraftInstallation: Equatable, Sendable {
+    enum State: Sendable { case checking, missing, ready, repair }
+    let state: State
+    var path: String? = nil
+    var version: String? = nil
+    var problem: String? = nil
+
+    var action: String {
+        switch state {
+        case .checking: "Checking launcher"
+        case .missing: "Install launcher"
+        case .ready: "Open"
+        case .repair: "Repair launcher"
+        }
+    }
+
+    static func inspect(_ candidate: URL?) -> Self {
+        guard let candidate, FileManager.default.fileExists(atPath: candidate.path) else {
+            return Self(state: .missing)
+        }
+        var observedVersion: String?
+        do {
+            let plist = candidate.appendingPathComponent("Contents/Info.plist")
+            let bytes = try InstalledGameFiles.readRegular(plist, maximumBytes: 1_048_576)
+            guard let info = try PropertyListSerialization.propertyList(from: bytes, format: nil) as? [String: Any],
+                  info["CFBundleIdentifier"] as? String == NativeMinecraft.bundleIdentifier else {
+                return Self(state: .repair, path: candidate.path,
+                            problem: "This location doesn't contain the official Minecraft Launcher. Reinstall it from Minecraft's website.")
+            }
+            let version = (info["CFBundleShortVersionString"] as? String)
+                .flatMap { $0.isEmpty || $0.utf8.count > 128
+                    || $0.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains) ? nil : $0 }
+            observedVersion = version
+            guard let name = info["CFBundleExecutable"] as? String,
+                  !name.isEmpty, name != ".", name != "..", !name.contains("/"), !name.contains("\\"),
+                  !name.utf8.contains(0), let version else {
+                return Self(state: .repair, path: candidate.path, version: version,
+                            problem: "Minecraft Launcher is incomplete or its version couldn't be read. Reinstall the official launcher; keep your Minecraft worlds.")
+            }
+            let executable = candidate.appendingPathComponent("Contents/MacOS").appendingPathComponent(name)
+            try GameScriptFiles.checkPath(executable)
+            guard try executable.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true,
+                  FileManager.default.isExecutableFile(atPath: executable.path) else {
+                return Self(state: .repair, path: candidate.path, version: version,
+                            problem: "Minecraft Launcher's executable is missing or can't run. Reinstall the official launcher; keep your Minecraft worlds.")
+            }
+            return Self(state: .ready, path: candidate.path, version: version)
+        } catch {
+            return Self(state: .repair, path: candidate.path, version: observedVersion,
+                        problem: "Minecraft Launcher couldn't be inspected. Check access to its location or reinstall the official launcher.")
+        }
+    }
+}
+
 @MainActor
 final class NativeMinecraft: ObservableObject {
     static let shared = NativeMinecraft()
-    static let bundleIdentifier = "com.mojang.minecraftlauncher"
+    nonisolated static let bundleIdentifier = "com.mojang.minecraftlauncher"
+    static let downloadURL = URL(string: "https://www.minecraft.net/download")!
     @Published private(set) var app: URL?
+    @Published private(set) var installation = NativeMinecraftInstallation(state: .checking)
     @Published private(set) var javaPID: Int32?
     @Published private(set) var errorMessage: String?
 
     func refresh() async {
         let located = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.bundleIdentifier)
-        let candidate = located ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Applications/Minecraft.app")
-        if Bundle(url: candidate)?.bundleIdentifier == Self.bundleIdentifier {
-            app = candidate
-        } else { app = nil }
+        let candidates = [
+            URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Applications/Minecraft.app"),
+            URL(fileURLWithPath: "/Applications/Minecraft.app")
+        ]
+        let candidate = ((located.map { [$0] } ?? []) + candidates)
+            .first { FileManager.default.fileExists(atPath: $0.path) }
+        installation = await Task.detached { NativeMinecraftInstallation.inspect(candidate) }.value
+        app = installation.state == .ready ? candidate : nil
         do {
             javaPID = try await Task.detached {
                 let process = Process()
@@ -49,8 +109,11 @@ final class NativeMinecraft: ObservableObject {
     }
 
     func open() {
-        guard let app, Bundle(url: app)?.bundleIdentifier == Self.bundleIdentifier else {
-            errorMessage = "The official macOS Minecraft Launcher couldn't be found."
+        let current = NativeMinecraftInstallation.inspect(app)
+        installation = current
+        guard current.state == .ready, let app else {
+            self.app = nil
+            errorMessage = current.problem ?? "The official macOS Minecraft Launcher couldn't be found. Install it from Minecraft's website."
             return
         }
         NSWorkspace.shared.openApplication(at: app, configuration: .init()) { _, error in
@@ -70,21 +133,30 @@ struct NativeMinecraftCard<Artwork: View>: View {
     var body: some View {
         LibraryCover(title: "Minecraft: Java Edition", openLabel: "Details for",
                      alwaysShowsActions: true, open: { showsDetails = true }, artwork: artwork) {
-            Label("Native launcher", systemImage: "desktopcomputer")
+            Label(minecraft.installation.version.map { "Native launcher · \($0)" } ?? "Native launcher",
+                  systemImage: "desktopcomputer")
+                .help(minecraft.installation.path ?? "Official macOS Minecraft Launcher")
             MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"])
             if minecraft.javaPID != nil { Text("Minecraft Java is running") }
             if let error = minecraft.errorMessage {
                 Text(error).fixedSize(horizontal: false, vertical: true)
             }
+            if let problem = minecraft.installation.problem {
+                Text(problem).fixedSize(horizontal: false, vertical: true)
+            }
         } actions: {
             LibraryGlassCluster {
-            if minecraft.app != nil {
+            if minecraft.installation.state == .ready {
                 Button("Open") { minecraft.open() }
                     .modifier(LibraryActionStyle(primary: false))
                     .accessibilityLabel("Open Minecraft's official native launcher")
                     .accessibilityIdentifier("xodus.native.minecraft.open")
+            } else if minecraft.installation.state == .checking {
+                ProgressView("Checking launcher").controlSize(.small)
             } else {
-                Link("Download native launcher", destination: URL(string: "https://www.minecraft.net/download")!)
+                Link(minecraft.installation.action, destination: NativeMinecraft.downloadURL)
+                    .accessibilityIdentifier("xodus.native.minecraft.recover")
+                    .help("Opens Minecraft's official download page. Install or reinstall the launcher there; Ode to X does not delete your worlds.")
             }
                 Menu {
                     Button("Details") { showsDetails = true }
@@ -99,6 +171,18 @@ struct NativeMinecraftCard<Artwork: View>: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Minecraft: Java Edition").font(.title2)
                 Text("Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your Ode to X account.")
+                if let path = minecraft.installation.path {
+                    LabeledContent("Launcher", value: path).textSelection(.enabled)
+                }
+                if let version = minecraft.installation.version {
+                    LabeledContent("Version", value: version)
+                }
+                if let problem = minecraft.installation.problem { Text(problem) }
+                if minecraft.installation.state == .missing || minecraft.installation.state == .repair {
+                    Link(minecraft.installation.action, destination: NativeMinecraft.downloadURL)
+                    Text("Install or reinstall the official launcher from this page. Your worlds are not removed by Ode to X.")
+                }
+                Button("Check launcher") { Task { await minecraft.refresh() } }
                 MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"], detailed: true)
                 Button("Done") { showsDetails = false }.keyboardShortcut(.cancelAction)
             }.padding(24).frame(width: 540)

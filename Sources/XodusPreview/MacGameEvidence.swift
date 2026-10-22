@@ -37,6 +37,10 @@ struct MacGameEvidence: Decodable, Sendable {
         let blocker: String?
         let launchAttempted: Bool?
 
+        var verifiedWorkingEvidence: Screenshot? {
+            verdict == .working && launchAttempted != false ? screenshots.first : nil
+        }
+
         var statusLabel: String {
             if launchAttempted == false { return Verdict.notTested.label }
             if verdict == .blocked, launchAttempted == true { return Verdict.failed.label }
@@ -131,16 +135,23 @@ struct MacGameEvidenceView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if let proof = record.screenshots.first {
                     Button { open(proof) } label: {
-                        Label(status(record), systemImage: "photo")
+                        Label(status(record),
+                              systemImage: record.verifiedWorkingEvidence != nil ? "checkmark.seal" : "photo")
                     }
                     .buttonStyle(.link)
-                    .accessibilityLabel("\(record.verdict.label). Open screenshot for \(record.title)")
+                    .accessibilityIdentifier(record.verifiedWorkingEvidence != nil
+                        ? "xodus.evidence.verifiedWorking" : "xodus.evidence.screenshot")
+                    .accessibilityLabel("\(status(record)). Open screenshot for \(record.title)")
+                    .help("Recorded evidence: \(proof.path)\n\(record.scope)")
                     .contextMenu {
                         if detailed {
                             ForEach(Array(record.screenshots.enumerated()), id: \.offset) { _, image in
                                 Button(image.caption) { open(image) }
                             }
                         }
+                    }
+                    if detailed, record.verifiedWorkingEvidence != nil {
+                        Text(proof.path).font(.caption).textSelection(.enabled)
                     }
                 } else {
                     Label(status(record), systemImage: "questionmark.circle")
@@ -164,7 +175,8 @@ struct MacGameEvidenceView: View {
 
     private func status(_ record: MacGameEvidence.Game) -> String {
         let engine = record.statusLabel == MacGameEvidence.Verdict.notTested.label ? nil : record.engineLabel
-        return record.statusLabel + (engine.map { " · " + $0 } ?? "")
+        let label = record.verifiedWorkingEvidence != nil ? "Verified working" : record.statusLabel
+        return label + (engine.map { " · " + $0 } ?? "")
     }
 
     private func open(_ proof: MacGameEvidence.Screenshot) {
