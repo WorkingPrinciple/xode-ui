@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-22T06:08:12.090575+00:00",
+  "authorization": "User-directed via coordinator 2026-10-22T06:07:18.672Z: all seven exact parked DREDGE/Balatro/Well directories; router confirms no active packet/queue or retries, scoped exclusive ownership S4.",
+  "historicalPacketReferences": "Retained historical packets reference DREDGE/Well. Coordinator explicitly retired active use; historical evidence remains unchanged.",
+  "ownerClearance": {
+    "S2": "Cleared exact s2 DREDGE/Well/Balatro prefixes; frozen packet execution withdrawn, preserve sibling locks.",
+    "S3": "Cleared DREDGE/Well; no subsequent launch; current queue Digging/Fallout/Skyrim only. Requested S1 Balatro confirmation.",
+    "S1": "Before execution confirmed no active use, hold or queued launches/probes/retries for s3-balatro-free-v1 or three s3-well prefixes.",
+    "router": "Explicitly confirmed all seven paths in scope and no active queue/packet references or retries."
+  },
+  "freeBytesBefore": 164174987264,
+  "items": [
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9MSVVM5NS9L6-creation-dx11-d3dmetal-passive-v1",
+      "allocatedBytesBefore": 496648192,
+      "lsof": "exit 1, empty stdout/stderr",
+      "deleted": true
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-balatro-apple4-exit-v1",
+      "allocatedBytesBefore": 495976448,
+      "lsof": "exit 1, empty stdout/stderr",
+      "deleted": true
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-balatro-free-v1",
+      "allocatedBytesBefore": 495976448,
+      "lsof": "exit 1, empty stdout/stderr",
+      "deleted": true
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9PLH7R84GJWP-welldweller-d3dmetal-passive-v1",
+      "allocatedBytesBefore": 496676864,
+      "lsof": "exit 1, empty stdout/stderr",
+      "deleted": true
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3",
+      "allocatedBytesBefore": 349233152,
+      "lsof": "exit 1, empty stdout/stderr",
+      "deleted": true
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-d3dmetal-v1",
+      "allocatedBytesBefore": 481828864,
+      "lsof": "exit 1, empty stdout/stderr",
+      "deleted": true
+    },
+    {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-dxmt",
+      "allocatedBytesBefore": 383983616,
+      "lsof": "exit 1, empty stdout/stderr",
+      "deleted": true
+    }
+  ],
+  "completed": true,
+  "preserved": "All proofs/logs/receipts/screenshots/game installs and lifecycle lock files outside the seven directories; symlink targets never followed.",
+  "completedAt": "2026-10-22T06:08:15.235353+00:00",
+  "allocatedBytesRemoved": 3200323584,
+  "freeBytesAfter": 166448152576,
+  "observedVolumeFreeDeltaBytes": 2273165312,
+  "deltaCaveat": "Shared volume/APFS delta is observed, not guaranteed attributable physical reclaim."
+}
