@@ -49,7 +49,8 @@ def calculate(inputs):
                           "minimumPassRateCurrentQueue": needed / additions if additions else None,
                           "targetPossibleCurrentQueue": additions >= needed})
     attempted = inputs["attemptedMatrixRows"]
-    passed = sum(row["verdict"] == "WORKING" for row in attempted)
+    matrix_passed = sum(row["verdict"] == "WORKING" for row in attempted)
+    passed = inputs["strictWorkingCount"]
     reached_menu = sum(row["verdict"] in {"WORKING", "WORKING_CANDIDATE",
                                          "GAMEPLAY_PASS", "TITLE_SCREEN_ONLY", "TITLE_SCREEN_PASS"} for row in attempted)
     intervals = {}
@@ -71,12 +72,13 @@ def calculate(inputs):
                 dt.datetime.fromisoformat(run["startedAt"])).total_seconds() / 60
     return {"schemaVersion": 1, "inputs": inputs, "observedCycles": cycles,
             "remainingWallMinutes": minutes, "scenarios": scenarios,
-            "observedAdmissionRatio": {"working": passed, "attemptedMatrix": len(attempted),
-                                       "ratio": passed / len(attempted) if attempted else None,
+            "observedAdmissionRatio": {"working": passed, "matrixWorking": matrix_passed,
+                                       "attemptedMatrix": len(attempted),
+                                       "ratio": matrix_passed / len(attempted) if attempted else None,
                                        "receiptAugmentedAttempted": len(inputs["attemptedTrackerRows"]),
                                        "receiptAugmentedRatio": passed / len(inputs["attemptedTrackerRows"]),
                                        "titleScreenOrBeyond": reached_menu,
-                                       "postTitleScreenAdmissionRatio": passed / reached_menu if reached_menu else None,
+                                       "postTitleScreenAdmissionRatio": matrix_passed / reached_menu if reached_menu else None,
                                        "meaning": "Snapshot WORKING/attempted, not a probability or final failure "
                                        "rate. Incomplete and CLI-held attempts remain denominator; "
                                        "native Minecraft included as admitted matrix row."},
@@ -210,16 +212,16 @@ def render_summary(packet):
              "Brotato CLI promotion can add one without another full cycle. "
              "Engine fixes (Inscryption/Well/Mixtape) and eight catalogue titles "
              "(entitlement/disk/approval) are excluded alternatives, not extra time. "
-             "Queue already covers 15; catalogue alone cannot cure slow throughput. "
+             f"Queue already covers {20-packet['inputs']['strictWorkingCount']}; catalogue alone cannot cure slow throughput. "
              "Inputs/hashes: `morning-burndown-v1.json`; "
              "S1 spec `dfe6ad5`, `retention-passive-batches.md`.\n"
-             f"\nObserved admission ratio: **{packet['observedAdmissionRatio']['working']}/"
+             f"\nObserved admission ratio: **{packet['observedAdmissionRatio']['matrixWorking']}/"
              f"{packet['observedAdmissionRatio']['attemptedMatrix']} matrix attempts "
              f"({packet['observedAdmissionRatio']['ratio']:.1%})**; including receipt/owner-reported "
              f"attempts: **{packet['observedAdmissionRatio']['working']}/"
              f"{packet['observedAdmissionRatio']['receiptAugmentedAttempted']} "
              f"({packet['observedAdmissionRatio']['receiptAugmentedRatio']:.1%})**. "
-             f"Post-title-screen subset: **{packet['observedAdmissionRatio']['working']}/"
+             f"Matrix post-title-screen subset: **{packet['observedAdmissionRatio']['matrixWorking']}/"
              f"{packet['observedAdmissionRatio']['titleScreenOrBeyond']}**. "
              "Unfinished tests included; no probabilities. Minimum "
              "pass rates slow/mid/fast: **" + "/".join(

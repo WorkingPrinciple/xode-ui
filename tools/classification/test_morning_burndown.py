@@ -18,7 +18,9 @@ class BurnDownTests(unittest.TestCase):
                          len(packet["inputs"]["queued"]))
         ratio = packet["observedAdmissionRatio"]
         self.assertEqual(ratio["working"], packet["inputs"]["strictWorkingCount"])
-        self.assertEqual(ratio["ratio"], ratio["working"] / ratio["attemptedMatrix"])
+        self.assertEqual(ratio["ratio"], ratio["matrixWorking"] / ratio["attemptedMatrix"])
+        self.assertEqual(ratio["receiptAugmentedRatio"],
+                         ratio["working"] / ratio["receiptAugmentedAttempted"])
         needed = 20 - packet["inputs"]["strictWorkingCount"]
         for scenario in packet["scenarios"]:
             self.assertEqual(scenario["minimumPassRateCurrentQueue"],

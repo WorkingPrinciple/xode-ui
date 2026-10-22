@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T04:14:26.295330+00:00",
+    "asOf": "2026-10-22T04:17:29.883816+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
-    "strictWorkingCount": 5,
+    "strictWorkingCount": 6,
     "trackerMatrixSha256": "a729ab6331955fdee4e47e3eea7d54fa90030ebc8877b9974ddf4a8b2d6bb3c7",
     "packetSources": [
       {
@@ -299,6 +299,11 @@
     ],
     "attemptedTrackerRows": [
       {
+        "storeId": "9PCR3Z2MSM4T",
+        "title": "Hades II",
+        "verdict": "WORKING"
+      },
+      {
         "storeId": "9NMNMS626R59",
         "title": "Halls of Torment",
         "verdict": "WORKING"
@@ -322,11 +327,6 @@
         "storeId": "BQVQTL3PCH05",
         "title": "No Man's Sky",
         "verdict": "WORKING"
-      },
-      {
-        "storeId": "9PCR3Z2MSM4T",
-        "title": "Hades II",
-        "verdict": "GAMEPLAY_PASS"
       },
       {
         "storeId": "9P4NV23Q6QC2",
@@ -490,17 +490,17 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1091.5617445,
+  "remainingWallMinutes": 1088.5019364,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
       "serialCycleSlots": 12,
       "queueCappedAdditions": 12,
-      "conditionalTotalWorking": 17,
-      "gapTo20": 3,
-      "minimumPassRateRawSlots": 1.25,
-      "minimumPassRateCurrentQueue": 1.25,
+      "conditionalTotalWorking": 18,
+      "gapTo20": 2,
+      "minimumPassRateRawSlots": 1.1666666666666667,
+      "minimumPassRateCurrentQueue": 1.1666666666666667,
       "targetPossibleCurrentQueue": false
     },
     {
@@ -508,10 +508,10 @@
       "minutesPerTitle": 65.71552045,
       "serialCycleSlots": 16,
       "queueCappedAdditions": 16,
-      "conditionalTotalWorking": 21,
+      "conditionalTotalWorking": 22,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.9375,
-      "minimumPassRateCurrentQueue": 0.9375,
+      "minimumPassRateRawSlots": 0.875,
+      "minimumPassRateCurrentQueue": 0.875,
       "targetPossibleCurrentQueue": true
     },
     {
@@ -519,19 +519,20 @@
       "minutesPerTitle": 43.9128694,
       "serialCycleSlots": 24,
       "queueCappedAdditions": 21,
-      "conditionalTotalWorking": 26,
+      "conditionalTotalWorking": 27,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.625,
-      "minimumPassRateCurrentQueue": 0.7142857142857143,
+      "minimumPassRateRawSlots": 0.5833333333333334,
+      "minimumPassRateCurrentQueue": 0.6666666666666666,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
-    "working": 5,
+    "working": 6,
+    "matrixWorking": 5,
     "attemptedMatrix": 13,
     "ratio": 0.38461538461538464,
     "receiptAugmentedAttempted": 15,
-    "receiptAugmentedRatio": 0.3333333333333333,
+    "receiptAugmentedRatio": 0.4,
     "titleScreenOrBeyond": 10,
     "postTitleScreenAdmissionRatio": 0.5,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -558,7 +559,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 72.77078296666667,
+  "requiredAverageMinutesPerAddition": 77.7501383142857,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

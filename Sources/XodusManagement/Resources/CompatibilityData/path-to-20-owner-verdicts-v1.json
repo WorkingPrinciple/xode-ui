@@ -2,6 +2,26 @@
   "schemaVersion": 1,
   "items": [
     {
+      "storeId": "9PCR3Z2MSM4T",
+      "title": "Hades II",
+      "verdict": "WORKING",
+      "reportedAt": "2026-10-22T04:16:14.922+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "80cbf59d-5b51-4241-a492-f73b79fe7e5a",
+      "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hades-checkpoint-reload-02/runs/80cbf59d-5b51-4241-a492-f73b79fe7e5a/result.json",
+      "gates": {
+        "menu": "passed",
+        "gameplay": "passed",
+        "save": "passed",
+        "relaunch": "passed",
+        "quit": "passed"
+      },
+      "nextGate": "complete",
+      "ownerStream": "S3",
+      "blocker": null,
+      "scope": "Coordinator personally verified strict WORKING: fresh reload save slot Crossroads, Nights 2; CLI 0 and Wine 0. Result receipt independently confirms exits; save marker is coordinator-observed. Prior conversation-marker failure remains historical, not the accepted checkpoint criterion. App E2E remains unobserved."
+    },
+    {
       "storeId": "9MSVVM5NS9L6",
       "title": "DREDGE",
       "verdict": "INCONCLUSIVE",

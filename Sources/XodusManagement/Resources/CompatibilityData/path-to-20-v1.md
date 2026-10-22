@@ -1,15 +1,15 @@
 # Path to 20
 
-Updated 2026-10-22T04:14:26.295330+00:00; **5/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T04:17:29.883816+00:00; **6/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
+| Hades II | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Halls of Torment | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Hogwarts Legacy | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Hollow Knight: Voidheart Edition | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Minecraft: Java Edition with Minecraft Launcher | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | No Man's Sky | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
-| Hades II | GAMEPLAY_PASS | passed | passed | passed | ? | ? | save / S3 | Conversation marker not retained on shippingadf8 despite payload delta/continuity. Coordinator admits ONE escape/natural-death checkpoint test with Nights/resource increment; no additional retries if it fails. Existing prefix retained/stopped. | - |
 | Abiotic Factor | TITLE_SCREEN_ONLY | passed | ? | ? | ? | ? | gameplay / S3 | Full world/play/save/quit/relaunch qualification still pending; coordinator schedules same successful STA-only recipe after Fallout/Hogwarts. Discover actual local save root, no invented path. No remaining reproduction of the prior PreInit exit in this changed title run; no global COM default. | - |
 | Mixtape | TITLE_SCREEN_PASS | passed | ? | passed | ? | ? | gameplay / S3 | Controllable gameplay, completed chapter/checkpoint and fresh-process retained progression remain unverified inside the admitted600s bound. No unchanged automatic retry. | - |
 | A Game About Digging A Hole | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | RegionPolicyEvaluator factory error and COM marshal IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca HRESULT80004002; factory-error causality unproven. Exact-prefix cleanup complete. | - |
@@ -55,6 +55,6 @@ Updated 2026-10-22T04:14:26.295330+00:00; **5/20 strict WORKING**. Brotato candi
 | Wasteland Remastered | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | - |
 | Well Dweller | FAIL | ? | ? | ? | ? | ? | actual-title candidate retest / S3 | CrossOver8x/16x MSAA HRESULT80070057 reproduced by S1. Old vanilla-Wine DXMT host lacks Metal-view symbols. New welldweller-d3dmetal and distributor-patched welldweller-winecx-dxmt pass MSAA and real swapchain Present/readback probes; actual-game retest pending. | - |
 
-Unknown gates never inferred passed from install status, source row, screenshots or cache files. Strict matrix WORKING admits title-specific gate semantics. WORKING_CANDIDATE excluded. Stall clock is observed same next gate, not source mtime/global matrix updatedAt; historical age unavailable until measured. >2h alerts include held/queued lanes but do not override holds or authorize runs.
+Unknown gates never inferred passed from install status, source row, screenshots or cache files. Strict matrix WORKING or newer explicit coordinator admission admits title-specific gate semantics. WORKING_CANDIDATE excluded. Stall clock is observed same next gate, not source mtime/global matrix updatedAt; historical age unavailable until measured. >2h alerts include held/queued lanes but do not override holds or authorize runs.
 
 Full blockers, source hashes and packet references are in `path-to-20-v1.json`. Stall time starts at the first tracker observation; earlier unknown age is not reported as zero.

@@ -39,6 +39,7 @@ def build(inputs, previous):
     for sid, candidate in candidates.items():
         observed = matrix.get(sid, {})
         verdict = observed.get("verdict", candidate.get("state", "UNTESTED"))
+        scope = observed.get("scope")
         gates = {name: {"status": "unknown", "basis": "Not explicitly admitted"} for name in GATES}
         next_gate = "menu"
         owner = "S2/S3"
@@ -96,11 +97,15 @@ def build(inputs, previous):
             evidence.append({"path": passive["path"], "sha256": passive["sha256"],
                              "runId": passive["runId"]})
         reports = inputs.get("ownerVerdicts")
-        if reports and (not observed or verdict in {"UNTESTED", "NOT_TESTED"}):
+        if reports:
             report = next((row for row in reports["snapshot"]["items"]
                            if row["storeId"] == sid), None)
-            if report:
+            matrix_time = inputs["matrix"]["snapshot"].get("updatedAt")
+            newer = report and matrix_time and dt.datetime.fromisoformat(
+                report["reportedAt"]) > dt.datetime.fromisoformat(matrix_time)
+            if report and (not observed or verdict in {"UNTESTED", "NOT_TESTED"} or newer):
                 verdict = report["verdict"]
+                scope = report["scope"]
                 next_gate, owner, blocker = (
                     report["nextGate"], report["ownerStream"], report["blocker"])
                 for name, status in report["gates"].items():
@@ -108,6 +113,10 @@ def build(inputs, previous):
                 evidence.append({"path": reports["path"], "sha256": reports["sha256"],
                                  "runId": report["runId"],
                                  "sourceSession": report["sourceSession"]})
+                if report.get("receiptPath"):
+                    receipt = reports.get("receipts", {}).get(sid)
+                    if receipt:
+                        evidence.append(receipt)
         if candidate.get("catalogueOnly"):
             next_gate, owner = "catalogue hold / entitlement / disk", "user/coordinator"
             blocker = "Catalogue closed tonight; membership is not entitlement; no install grant"
@@ -134,7 +143,7 @@ def build(inputs, previous):
                      "gateFirstObservedAt": first, "sameGateObservedHours": age,
                      "stuckOver2Hours": age > 2 and next_gate != "complete",
                      "historicalGateAge": "unknown before tracker first observation",
-                     "scope": observed.get("scope")})
+                     "scope": scope})
     rows.sort(key=lambda row: (not row["strictWorking"],
                               {"quit": 0, "gameplay / CLI promotion hold": 1, "save": 2,
                                "gameplay": 3}.get(row["nextGate"], 4), row["title"]))
@@ -144,7 +153,7 @@ def build(inputs, previous):
             "target": 20, "strictWorkingCount": working, "remainingTo20": max(0, 20 - working),
             "gameLaunches": 0, "policy": "Unknown gates never inferred passed from "
             "install status, source row, screenshots or cache files. Strict matrix "
-            "WORKING admits title-specific gate semantics. WORKING_CANDIDATE excluded. "
+            "WORKING or newer explicit coordinator admission admits title-specific gate semantics. WORKING_CANDIDATE excluded. "
             "Stall clock is observed same next gate, not source mtime/global matrix "
             "updatedAt; historical age unavailable until measured. >2h alerts include "
             "held/queued lanes but do not override holds or authorize runs.",
@@ -173,6 +182,15 @@ def refresh():
               "packetRows": packets, "s1": [source(path) for path in sorted(S1.glob("*candidates.json"))],
               "candidateSource": {"path": base["path"], "sha256": base["sha256"]}}
     previous = load_json(OUTPUT) if OUTPUT.exists() else {}
+    inputs["ownerVerdicts"]["receipts"] = {}
+    for report in inputs["ownerVerdicts"]["snapshot"]["items"]:
+        if report.get("receiptPath"):
+            receipt = source(Path(report["receiptPath"]))
+            result = receipt["snapshot"]
+            if (result["run_id"] != report["runId"] or result["product"] != report["storeId"]
+                    or result["exit_code"] != 0 or result["wine_exit_code"] != 0):
+                raise ValueError("Owner WORKING report has inconsistent exit receipt")
+            inputs["ownerVerdicts"]["receipts"][report["storeId"]] = receipt
     brotato = HOME / "Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/9P9VNSQK1W3K/receipt.json"
     if brotato.exists():
         raw = brotato.read_bytes()

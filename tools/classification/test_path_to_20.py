@@ -14,8 +14,11 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(build(self.packet["collectionInputs"], self.packet), self.packet)
         admitted = sum(row["verdict"] == "WORKING" for row in
                        self.packet["collectionInputs"]["matrix"]["snapshot"]["games"])
-        self.assertEqual(self.packet["strictWorkingCount"], admitted)
-        self.assertEqual(self.packet["remainingTo20"], max(0, 20 - admitted))
+        self.assertGreaterEqual(self.packet["strictWorkingCount"], admitted)
+        self.assertEqual(self.packet["strictWorkingCount"],
+                         sum(row["strictWorking"] for row in self.packet["items"]))
+        self.assertEqual(self.packet["remainingTo20"],
+                         max(0, 20 - self.packet["strictWorkingCount"]))
         rows = {row["storeId"]: row for row in self.packet["items"]}
         self.assertEqual(len(rows), len(self.packet["items"]))
         self.assertEqual(rows["9NMNMS626R59"]["verdict"], "WORKING")
@@ -97,6 +100,14 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["gates"]["relaunch"]["status"], "passed")
         self.assertEqual(row["gates"]["quit"]["status"], "not-passed")
         self.assertEqual(row["nextGate"], "ordinary quit")
+
+    def test_newer_hades_admission_overrides_stale_matrix(self):
+        row = next(row for row in self.packet["items"] if row["storeId"] == "9PCR3Z2MSM4T")
+        self.assertTrue(row["strictWorking"])
+        self.assertEqual(row["verdict"], "WORKING")
+        self.assertTrue(all(gate["status"] == "passed" for gate in row["gates"].values()))
+        self.assertIsNone(row["blocker"])
+        self.assertIn("Nights 2", row["scope"])
 
 
 if __name__ == "__main__":
