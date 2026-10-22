@@ -30,8 +30,14 @@ class PathTo20Tests(unittest.TestCase):
         self.assertFalse(brotato["strictWorking"])
         self.assertEqual(brotato["verdict"], "WORKING_CANDIDATE")
         self.assertEqual(brotato["gates"]["menu"]["status"], "passed")
-        self.assertEqual(brotato["gates"]["quit"]["status"], "not-passed")
-        self.assertEqual(brotato["gates"]["save"]["status"], "unknown")
+        source_row = next((row for row in self.packet["collectionInputs"]["matrix"]["snapshot"]["games"]
+                           if row["productId"] == brotato["storeId"]), {})
+        if source_row.get("saveObservation", {}).get("retentionVerified"):
+            self.assertEqual(brotato["nextGate"], "CLI promotion")
+            self.assertTrue(all(gate["status"] == "passed" for gate in brotato["gates"].values()))
+        else:
+            self.assertEqual(brotato["gates"]["quit"]["status"], "not-passed")
+            self.assertEqual(brotato["gates"]["save"]["status"], "unknown")
         for row in rows.values():
             self.assertTrue(row["nextGate"])
             self.assertTrue(row["ownerStream"])
@@ -56,6 +62,15 @@ class PathTo20Tests(unittest.TestCase):
                    if row["storeId"] == candidate["storeId"])
         self.assertFalse(row["stuckOver2Hours"])
         self.assertEqual(row["gateFirstObservedAt"], inputs["collectedAt"])
+
+    def test_unchanged_gate_preserves_clock_despite_blocker_edit(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        previous = copy.deepcopy(self.packet)
+        candidate = next(row for row in previous["items"] if row["nextGate"] != "complete")
+        candidate["blocker"] = "different prose, not gate progress"
+        row = next(row for row in build(inputs, previous)["items"]
+                   if row["storeId"] == candidate["storeId"])
+        self.assertEqual(row["gateFirstObservedAt"], candidate["gateFirstObservedAt"])
 
 
 if __name__ == "__main__":

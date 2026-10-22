@@ -52,10 +52,11 @@ def build(inputs, previous):
                 gate.update(status="passed", basis="Admitted strict WORKING matrix verdict; "
                             "native/roguelite-specific acceptance retained in matrix scope")
             next_gate, owner, blocker = "complete", observed.get("owner", "S3"), None
-        elif verdict in {"TITLE_SCREEN_ONLY", "GAMEPLAY_PASS"}:
+        elif verdict in {"TITLE_SCREEN_ONLY", "GAMEPLAY_PASS", "WORKING_CANDIDATE"}:
             gates["menu"].update(status="passed", basis="Admitted matrix " + verdict)
             next_gate, owner = "gameplay", "S3"
-            if verdict == "GAMEPLAY_PASS":
+            if verdict == "GAMEPLAY_PASS" or (
+                    verdict == "WORKING_CANDIDATE" and observed.get("saveObservation", {}).get("retentionVerified")):
                 gates["gameplay"].update(status="passed", basis="Admitted matrix gameplay")
                 next_gate = "save"
         save = observed.get("saveObservation") or {}
@@ -67,13 +68,15 @@ def build(inputs, previous):
         if save.get("normalMenuQuitObserved") is True:
             gates["quit"].update(status="passed", basis="Explicit matrix normalMenuQuitObserved")
         if sid == "9P9VNSQK1W3K" and verdict != "WORKING":
-            verdict, next_gate, owner = "WORKING_CANDIDATE", "gameplay / CLI promotion hold", "S3/S2/user"
+            qualified = save.get("retentionVerified") and save.get("normalMenuQuitObserved")
+            verdict, next_gate, owner = "WORKING_CANDIDATE", (
+                "CLI promotion" if qualified else "gameplay / CLI promotion hold"), "S2/user" if qualified else "S3/S2/user"
             blocker = "Coordinator reports WORKING_CANDIDATE; CLI ebd56e promotion "
             blocker += "pending. Does not count strict WORKING. Individual gates require owner receipt."
             evidence.append({"kind": "coordinator-verdict", "observedAt": timestamp,
                              "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"})
             receipt = inputs.get("brotatoReceipt")
-            if receipt:
+            if receipt and not qualified:
                 gates["menu"].update(status="passed", basis="S2 explicit TITLE_SCREEN_PASS; "
                                     "direct ebd56e only, no input")
                 gates["quit"].update(status="not-passed", basis="S2 reports forced exact-prefix "
@@ -81,6 +84,17 @@ def build(inputs, previous):
                 evidence.append({"path": receipt["path"], "sha256": receipt["sha256"]})
                 blocker += " S2 confirms only menu; gameplay/relaunch/save untested, "
                 blocker += "ordinary quit not passed. Candidate label is not full qualification."
+            elif qualified:
+                blocker = observed["blocker"]
+        passive = inputs.get("passiveVerdicts", {}).get(sid)
+        if passive and not observed:
+            verdict = passive["verdict"]
+            if verdict == "NO_TITLE_SCREEN":
+                gates["menu"].update(status="not-passed", basis="Owned passive NO_TITLE_SCREEN")
+                next_gate, owner = "startup diagnosis", "S1/S2"
+                blocker = "No title screen in admitted passive; CLI0 does not establish rendering."
+            evidence.append({"path": passive["path"], "sha256": passive["sha256"],
+                             "runId": passive["runId"]})
         if candidate.get("catalogueOnly"):
             next_gate, owner = "catalogue hold / entitlement / disk", "user/coordinator"
             blocker = "Catalogue closed tonight; membership is not entitlement; no install grant"
@@ -152,6 +166,18 @@ def refresh():
                                     "sha256": hashlib.sha256(raw).hexdigest(),
                                     "ownerReport": "S2 direct report 2026-10-22: TITLE_SCREEN_PASS "
                                     "only, forced exact-prefix shutdown; no gameplay/save/relaunch"}
+    inputs["passiveVerdicts"] = {}
+    for receipt in sorted((HOME / "Library/Application Support/XodusCLI/proofs/passive-small-eight-v1").glob("*/receipt.json")):
+        record = source(receipt)
+        data = record["snapshot"]
+        verdict = data.get("visual_classification")
+        if verdict == "NO_TITLE_SCREEN":
+            inputs["passiveVerdicts"][receipt.parent.name] = {
+                "verdict": verdict, "path": record["path"], "sha256": record["sha256"],
+                "runId": data["result"]["run_id"]}
+    spec = S1 / "retention-passive-batches.md"
+    inputs["retentionSpec"] = {"path": str(spec), "sha256": hashlib.sha256(spec.read_bytes()).hexdigest(),
+                               "reportedCommit": "dfe6ad5"}
     return build(inputs, previous)
 
 
@@ -187,8 +213,8 @@ def render(packet):
         "none observed yet; pre-tracker gate ages unknown")
     text += (marker + f"\nLiving tracker {packet['updatedAt']}: "
              f"**{packet['strictWorkingCount']}/20** strict: {working}. "
-             "Brotato WORKING_CANDIDATE awaits CLI promotion and full gates: "
-             "S2 proves menu only, forced quit; gameplay/save/relaunch untested. "
+             "Brotato WORKING_CANDIDATE remains excluded; see current row for "
+             "gate evidence and CLI promotion hold. "
              f"Same-gate >2h: {stuck}. Refresh every30min and owner verdict.\n"
              "<!-- living-tracker:end -->\n")
     SUMMARY.write_text(text)
@@ -202,6 +228,8 @@ def main():
         packet = refresh()
         OUTPUT.write_text(json.dumps(packet, indent=2, ensure_ascii=True) + "\n")
         render(packet)
+        from build_morning_burndown import refresh as refresh_burndown, render_summary
+        render_summary(refresh_burndown(packet))
     else:
         packet = load_json(OUTPUT)
         previous = {"items": packet["items"]}

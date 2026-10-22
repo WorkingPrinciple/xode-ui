@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "inputs": {
+    "asOf": "2026-10-22T02:54:01.800096+00:00",
+    "deadline": "2026-10-23T01:26:00+03:00",
+    "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
+    "strictWorkingCount": 5,
+    "trackerMatrixSha256": "0ece0966963915f49f82a6df2f66cad6361e8941ee6b9d52b8102a1ab93ab019",
+    "packetSources": [
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
+        "sha256": "fd0c4ecf5ee2e23b3708fd4ca0b0351d4cf699ee4c077235f6b631f6b083f498"
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/packets.json",
+        "sha256": "88a7ae27f8dd69b84e653b3061e105643088a889a8dadb4c63ce7e4b15041bca"
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch3-eight-v1/packets.json",
+        "sha256": "2ef7ae5a1979cb506af3fd54609723894f44186b64c78ab639c1aabc66dfdca3"
+      }
+    ],
+    "queued": [
+      {
+        "storeId": "9MSVVM5NS9L6",
+        "title": "DREDGE",
+        "batch": "passive-small-eight-v1"
+      },
+      {
+        "storeId": "9PBWWQGXVMKC",
+        "title": "Monster Sanctuary",
+        "batch": "passive-small-eight-v1"
+      },
+      {
+        "storeId": "9NLRT31Z4RWM",
+        "title": "TUNIC",
+        "batch": "passive-small-eight-v1"
+      },
+      {
+        "storeId": "9PD5BM2Z8C4L",
+        "title": "Vampire Survivors",
+        "batch": "passive-small-eight-v1"
+      },
+      {
+        "storeId": "9NGH1FK0RJGL",
+        "title": "Wasteland Remastered",
+        "batch": "passive-small-eight-v1"
+      },
+      {
+        "storeId": "9NV3L234VGXD",
+        "title": "REPLACED",
+        "batch": "passive-small-eight-v1"
+      },
+      {
+        "storeId": "9PNG83MDD6SH",
+        "title": "LIMBO",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9MWR1NC6VQ6L",
+        "title": "Stardew Valley",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9P3T7HVKM6D0",
+        "title": "Kingdom Come: Deliverance",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9P03JGQ4S1GC",
+        "title": "The Elder Scrolls V: Skyrim Special Edition (PC)",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9N8C07SS8C9D",
+        "title": "FINAL FANTASY IV",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9P1N07XDL1D4",
+        "title": "Dishonored\u00ae Definitive Edition (PC)",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9MXND4PQLK3W",
+        "title": "DOOM 64",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9P1Z43KRNQD4",
+        "title": "Quake",
+        "batch": "passive-batch2-eight-v1"
+      },
+      {
+        "storeId": "9PJPCB188SVG",
+        "title": "Subnautica 2 (Game Preview)",
+        "batch": "passive-batch3-eight-v1"
+      },
+      {
+        "storeId": "9P2J5D12GJL5",
+        "title": "The Elder Scrolls IV: Oblivion GOTY (PC, 2009)",
+        "batch": "passive-batch3-eight-v1"
+      },
+      {
+        "storeId": "9NFB47H2SDRX",
+        "title": "Forever Ago",
+        "batch": "passive-batch3-eight-v1"
+      },
+      {
+        "storeId": "9P5Z4530318L",
+        "title": "DEATHLOOP",
+        "batch": "passive-batch3-eight-v1"
+      },
+      {
+        "storeId": "9NXWSWBM4H6T",
+        "title": "Beast of Reincarnation",
+        "batch": "passive-batch3-eight-v1"
+      },
+      {
+        "storeId": "9NCJWHHMVHR0",
+        "title": "Keeper",
+        "batch": "passive-batch3-eight-v1"
+      },
+      {
+        "storeId": "9NQVHHW88XW9",
+        "title": "Bluey's Happy Snaps",
+        "batch": "passive-batch3-eight-v1"
+      }
+    ],
+    "withheld": [
+      {
+        "storeId": "9P9VNSQK1W3K",
+        "title": "Brotato",
+        "batch": "passive-small-eight-v1",
+        "blocker": "CLI promotion; candidate not strict"
+      },
+      {
+        "storeId": "9P8NSTDMZ11P",
+        "title": "Inscryption",
+        "batch": "passive-small-eight-v1",
+        "blocker": "NO_TITLE_SCREEN; startup diagnosis"
+      },
+      {
+        "storeId": "9PLH7R84GJWP",
+        "title": "Well Dweller",
+        "batch": "passive-small-eight-v1",
+        "blocker": "engine host probes only; actual-title retest"
+      },
+      {
+        "storeId": "9NH0MSG29X6L",
+        "title": "Mixtape",
+        "batch": "passive-batch3-eight-v1",
+        "blocker": "S3-only CRT/STA diagnostic route; excluded passive"
+      }
+    ],
+    "samples": [
+      {
+        "title": "Halls of Torment",
+        "startKind": "actual no-input passive",
+        "start": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-sta-9NMNMS626R59-small-noargs/runs/3f10098a-1cfe-4312-9877-d2c6a032b8a3/result.json",
+          "sha256": "dc83a75509d67dbc0f02ad7e74dafacb13b00289115dff2225b43e405295feb4",
+          "startedAt": "2026-10-22T01:45:31.003697Z",
+          "finishedAt": "2026-10-22T01:47:31.663830Z",
+          "runId": "3f10098a-1cfe-4312-9877-d2c6a032b8a3"
+        },
+        "finish": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-halls-retention-02/runs/5b39beb9-62b4-4241-9330-33422bbccafd/result.json",
+          "sha256": "54ca900c65451b72cb65f115da14e4bd47a906450bd1e8e54bc6420458262823",
+          "startedAt": "2026-10-22T02:26:36.789414Z",
+          "finishedAt": "2026-10-22T02:29:25.775861Z",
+          "runId": "5b39beb9-62b4-4241-9330-33422bbccafd"
+        }
+      },
+      {
+        "title": "Hogwarts Legacy",
+        "startKind": "earliest bound STA title probe; not independently asserted no-input passive; broader proxy cycle",
+        "start": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/hogwarts-apple4-sta/runs/5b4e4975-2a36-4b14-8da4-72ba52e4fc7c/result.json",
+          "sha256": "a6e4f4be36d8864e053a0778d21ffa1e43578cb7813ffa5668bb4e0e39b9a8b5",
+          "startedAt": "2026-10-22T01:10:29.041967Z",
+          "finishedAt": "2026-10-22T01:20:37.021867Z",
+          "runId": "5b4e4975-2a36-4b14-8da4-72ba52e4fc7c"
+        },
+        "finish": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/runs/f2471368-2523-4578-8eb8-75c8d4db7040/result.json",
+          "sha256": "61057f80d6d0dbca421364c2a540c36fe3b54d211caaab5c7b590b342a2107c9",
+          "startedAt": "2026-10-22T02:29:39.115468Z",
+          "finishedAt": "2026-10-22T02:38:00.132257Z",
+          "runId": "f2471368-2523-4578-8eb8-75c8d4db7040"
+        }
+      }
+    ],
+    "endpointPolicy": "End = final qualifying process exit for an admitted WORKING matrix row, not time of coordinator message or file mtime. Minecraft lacks a passive cycle; HK/NMS lack a paired comparable passive start here. Brotato is not strict; Inscryption is an observed failure, not a completed cycle.",
+    "blockerClasses": {
+      "catalogue": {
+        "count": 8,
+        "gate": "entitlement + disk + batch approval; membership alone insufficient; closed, not baseline capacity"
+      },
+      "CLI promotion": {
+        "count": 1,
+        "title": "Brotato",
+        "gate": "user promotion/admission; new matrix proves all title gates, no fresh full cycle assumed"
+      },
+      "engine/recipe": {
+        "count": 3,
+        "titles": [
+          "Inscryption",
+          "Well Dweller",
+          "Mixtape"
+        ],
+        "gate": "diagnosis/retest or S3-only diagnostic recipe; not confirmed common engine root cause"
+      }
+    },
+    "candidateComparisonExcludedFromStrictSamples": {
+      "title": "Brotato",
+      "status": "WORKING_CANDIDATE; CLI promotion only",
+      "start": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/9P9VNSQK1W3K/runs/c2e01ff4-e716-402e-b144-7a7aafdc1ca2/result.json",
+        "sha256": "fdc679ef113cb3f2d79fd6cc4fe212a711a87aef92795266a394b78e7b677d80",
+        "startedAt": "2026-10-22T02:30:12.241279Z",
+        "finishedAt": "2026-10-22T02:32:13.001024Z",
+        "runId": "c2e01ff4-e716-402e-b144-7a7aafdc1ca2"
+      },
+      "finish": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-retention-02/runs/430e9c33-7b7e-47d8-838f-d154a8fb1f48/result.json",
+        "sha256": "146f8381cc8039013d3c238c0daa563b3682a2b5435326519c8d3100ca094704",
+        "startedAt": "2026-10-22T02:44:27.367385Z",
+        "finishedAt": "2026-10-22T02:48:43.074218Z",
+        "runId": "430e9c33-7b7e-47d8-838f-d154a8fb1f48"
+      }
+    }
+  },
+  "observedCycles": [
+    {
+      "title": "Halls of Torment",
+      "startKind": "actual no-input passive",
+      "start": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-sta-9NMNMS626R59-small-noargs/runs/3f10098a-1cfe-4312-9877-d2c6a032b8a3/result.json",
+        "sha256": "dc83a75509d67dbc0f02ad7e74dafacb13b00289115dff2225b43e405295feb4",
+        "startedAt": "2026-10-22T01:45:31.003697Z",
+        "finishedAt": "2026-10-22T01:47:31.663830Z",
+        "runId": "3f10098a-1cfe-4312-9877-d2c6a032b8a3"
+      },
+      "finish": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-halls-retention-02/runs/5b39beb9-62b4-4241-9330-33422bbccafd/result.json",
+        "sha256": "54ca900c65451b72cb65f115da14e4bd47a906450bd1e8e54bc6420458262823",
+        "startedAt": "2026-10-22T02:26:36.789414Z",
+        "finishedAt": "2026-10-22T02:29:25.775861Z",
+        "runId": "5b39beb9-62b4-4241-9330-33422bbccafd"
+      },
+      "minutes": 43.9128694
+    },
+    {
+      "title": "Hogwarts Legacy",
+      "startKind": "earliest bound STA title probe; not independently asserted no-input passive; broader proxy cycle",
+      "start": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/hogwarts-apple4-sta/runs/5b4e4975-2a36-4b14-8da4-72ba52e4fc7c/result.json",
+        "sha256": "a6e4f4be36d8864e053a0778d21ffa1e43578cb7813ffa5668bb4e0e39b9a8b5",
+        "startedAt": "2026-10-22T01:10:29.041967Z",
+        "finishedAt": "2026-10-22T01:20:37.021867Z",
+        "runId": "5b4e4975-2a36-4b14-8da4-72ba52e4fc7c"
+      },
+      "finish": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/runs/f2471368-2523-4578-8eb8-75c8d4db7040/result.json",
+        "sha256": "61057f80d6d0dbca421364c2a540c36fe3b54d211caaab5c7b590b342a2107c9",
+        "startedAt": "2026-10-22T02:29:39.115468Z",
+        "finishedAt": "2026-10-22T02:38:00.132257Z",
+        "runId": "f2471368-2523-4578-8eb8-75c8d4db7040"
+      },
+      "minutes": 87.51817150000001
+    }
+  ],
+  "remainingWallMinutes": 1171.9699984,
+  "scenarios": [
+    {
+      "label": "slow observed",
+      "minutesPerTitle": 87.51817150000001,
+      "serialCycleSlots": 13,
+      "queueCappedAdditions": 13,
+      "conditionalTotalWorking": 18,
+      "gapTo20": 2
+    },
+    {
+      "label": "sample midpoint",
+      "minutesPerTitle": 65.71552045,
+      "serialCycleSlots": 17,
+      "queueCappedAdditions": 17,
+      "conditionalTotalWorking": 22,
+      "gapTo20": 0
+    },
+    {
+      "label": "fast observed",
+      "minutesPerTitle": 43.9128694,
+      "serialCycleSlots": 26,
+      "queueCappedAdditions": 21,
+      "conditionalTotalWorking": 26,
+      "gapTo20": 0
+    }
+  ],
+  "requiredAverageMinutesPerAddition": 78.13133322666665,
+  "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
+  "blockerClasses": {
+    "catalogue": {
+      "count": 8,
+      "gate": "entitlement + disk + batch approval; membership alone insufficient; closed, not baseline capacity"
+    },
+    "CLI promotion": {
+      "count": 1,
+      "title": "Brotato",
+      "gate": "user promotion/admission; new matrix proves all title gates, no fresh full cycle assumed"
+    },
+    "engine/recipe": {
+      "count": 3,
+      "titles": [
+        "Inscryption",
+        "Well Dweller",
+        "Mixtape"
+      ],
+      "gate": "diagnosis/retest or S3-only diagnostic recipe; not confirmed common engine root cause"
+    }
+  }
+}
