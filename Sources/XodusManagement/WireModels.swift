@@ -170,6 +170,40 @@ public struct ProductEvidence: Codable, Equatable, Sendable, Identifiable {
     public let inventory: ProductInventory
     public var id: String { editionID }
 }
+
+public enum CatalogGamePassListingStatus: String, Codable, Sendable {
+    case known, unknown
+}
+
+public struct CatalogGamePassPlan: Codable, Equatable, Sendable, Identifiable {
+    public let id: String
+    public let name: String?
+
+    public init(id: String, name: String?) {
+        self.id = id
+        self.name = name
+    }
+}
+
+public struct CatalogGamePassListing: Codable, Equatable, Sendable {
+    public let status: CatalogGamePassListingStatus
+    public let plans: [CatalogGamePassPlan]
+    public let completeness: String
+    public let market: String
+    public let checkedAt: String
+    public let source: String
+
+    public init(status: CatalogGamePassListingStatus, plans: [CatalogGamePassPlan],
+                completeness: String, market: String, checkedAt: String, source: String) {
+        self.status = status
+        self.plans = plans
+        self.completeness = completeness
+        self.market = market
+        self.checkedAt = checkedAt
+        self.source = source
+    }
+}
+
 public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
     public let productID: String
     public let title: String
@@ -183,13 +217,15 @@ public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
     public let resolvedLanguage: String?
     public let artwork: [CatalogArtworkReference]
     public let artworkStatus: CatalogArtworkStatus
+    public let gamePass: CatalogGamePassListing?
     public var id: String { productID }
 
     public func validatePublicScope(market: String, language: String) throws {
         try validatePublicScope(market: market, language: language, requiresPCCandidate: true)
     }
 
-    fileprivate func validatePublicScope(market: String, language: String, requiresPCCandidate: Bool) throws {
+    fileprivate func validatePublicScope(market: String, language: String, requiresPCCandidate: Bool,
+                                         allowsGamePassListing: Bool = false) throws {
         try CatalogArtworkReference.validate(artwork, status: artworkStatus)
         guard artwork.allSatisfy({ $0.source == .displayCatalog && $0.role != .tile }) else {
             throw ManagementError.invalidPayload
@@ -206,6 +242,20 @@ public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
                     || (!actual.contains("-") && requested.hasPrefix(actual + "-")) else {
                 throw ManagementError.invalidPayload
             }
+        }
+        if let gamePass {
+            guard allowsGamePassListing, gamePass.market == market, gamePass.completeness == "partial",
+                  gamePass.source == "xbox.com-search", ContractValidator.validDate(gamePass.checkedAt),
+                  gamePass.plans.count <= 32,
+                  gamePass.status != .unknown || gamePass.plans.isEmpty,
+                  Set(gamePass.plans.map(\.id)).count == gamePass.plans.count,
+                  gamePass.plans.allSatisfy({ plan in
+                      !plan.id.isEmpty && plan.id.utf8.count <= 32
+                        && plan.id.utf8.allSatisfy {
+                            (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0)
+                        }
+                        && (plan.name.map { !$0.isEmpty && $0.unicodeScalars.count <= 128 } ?? true)
+                  }) else { throw ManagementError.invalidPayload }
         }
     }
 }
@@ -321,7 +371,12 @@ public struct CatalogQuery: Codable, Equatable, Sendable {
               !ids.isEmpty || nextCursor == nil else {
             throw ManagementError.invalidPayload
         }
-        for product in products { try product.validatePublicScope(market: market, language: language) }
+        let allowsGamePassListing = source == "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"
+        for product in products {
+            try product.validatePublicScope(market: market, language: language,
+                                            requiresPCCandidate: true,
+                                            allowsGamePassListing: allowsGamePassListing)
+        }
     }
 }
 

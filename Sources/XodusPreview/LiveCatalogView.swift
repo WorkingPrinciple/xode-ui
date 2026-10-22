@@ -367,9 +367,15 @@ struct LiveCatalogView: View {
                 .font(.caption).foregroundStyle(.secondary)
                 .accessibilityIdentifier("xodus.catalog.source.\(game.id)")
             if game.gamePass {
-                Text("PC Game Pass · your plan coverage not verified")
+                Text("PC Game Pass catalogue · account coverage not verified")
                     .font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("xodus.catalog.plan.\(game.id)")
+            }
+            if let listing = game.product?.gamePass {
+                Text(CatalogGamePassListingCopy.description(for: listing))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.catalog.subscriptions.\(game.id)")
             }
             if game.pc == nil, !game.owned {
                 Text(library.accessIsCurrent ? "Not in your PC library" : "Ownership not verified")

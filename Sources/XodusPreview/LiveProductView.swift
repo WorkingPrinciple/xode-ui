@@ -257,6 +257,9 @@ struct LiveProductView: View {
             facet("Library", GameDetailFacetCopy.access(acquisition: owned?.acquisitionKind,
                                                       current: library.accessIsCurrent))
             if gamePass { facet("Game Pass catalog", "PC catalogue member - account access checked separately") }
+            if let listing = product.gamePass {
+                facet("Public subscription listings", CatalogGamePassListingCopy.description(for: listing))
+            }
             facet("Installation", GameDetailFacetCopy.installation(installed: installed != nil))
             facet("Mac compatibility", compatibilitySummary)
         }

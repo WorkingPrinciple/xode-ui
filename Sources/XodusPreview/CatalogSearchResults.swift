@@ -6,6 +6,20 @@ enum CatalogAccessBadge: String {
     case owned = "Owned", gamePass = "Game Pass"
 }
 
+enum CatalogGamePassListingCopy {
+    static func description(for listing: CatalogGamePassListing) -> String {
+        switch listing.status {
+        case .unknown:
+            return "Subscription listings unavailable; this is not an exclusion."
+        case .known where listing.plans.isEmpty:
+            return "No subscriptions listed in this partial Xbox result; absence is not exclusion."
+        case .known:
+            let names = listing.plans.map { $0.name ?? "Unlabelled subscription (\($0.id))" }
+            return "Listed subscriptions (partial; account coverage unknown): \(names.joined(separator: ", "))."
+        }
+    }
+}
+
 struct CatalogSearchResults {
     let ownedMatches: [PCGame]
     let storeProducts: [CatalogProduct]

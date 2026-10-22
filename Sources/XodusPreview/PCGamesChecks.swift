@@ -891,6 +891,22 @@ enum PCGamesChecks {
         check(passOnly.sourceLabel(for: mortis.id) == "PC Game Pass catalogue"
               && passOnly.sourceLabel(for: "FIXTURE00001") == "Xbox / Microsoft Store",
               "#44: Source labels distinguish PC Game Pass membership from public Store discovery without claiming account coverage")
+        let romanianPassListing = CatalogGamePassListing(status: .known,
+            plans: [CatalogGamePassPlan(id: "CFQ7TTC0KGQ8", name: "Game Pass pentru PC")],
+            completeness: "partial", market: "RO", checkedAt: "2026-10-22T12:00:00Z",
+            source: "xbox.com-search")
+        check(CatalogGamePassListingCopy.description(for: romanianPassListing)
+                == "Listed subscriptions (partial; account coverage unknown): Game Pass pentru PC.",
+              "#44: The UI preserves the service's exact market-local subscription label and disclaims account coverage")
+        let emptyPassListing = CatalogGamePassListing(status: .known, plans: [],
+            completeness: "partial", market: "RO", checkedAt: "2026-10-22T12:00:00Z",
+            source: "xbox.com-search")
+        let unknownPassListing = CatalogGamePassListing(status: .unknown, plans: [],
+            completeness: "partial", market: "RO", checkedAt: "2026-10-22T12:00:00Z",
+            source: "xbox.com-search")
+        check(CatalogGamePassListingCopy.description(for: emptyPassListing).contains("absence is not exclusion")
+              && CatalogGamePassListingCopy.description(for: unknownPassListing).contains("not an exclusion"),
+              "#44: Known-empty and unknown subscription listings never imply excluded access")
         check(DiscoverCopy.sourceDescription(query: "", corpus: "observedPublicProducts")
                 .contains("Previously loaded public product details")
               && DiscoverCopy.sourceDescription(query: "", corpus: "pcGamePassDiscovery")

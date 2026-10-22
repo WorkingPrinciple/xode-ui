@@ -449,10 +449,106 @@ actor Checks {
         neutralProduct["market"] = .string("RO")
         neutralProduct["language"] = .string("ro-RO")
         neutralProduct["resolvedLanguage"] = .string("neutral")
+        neutralProduct["gamePass"] = .object([
+            "status": .string("known"),
+            "plans": .array([.object([
+                "id": .string("CFQ7TTC0KGQ8"),
+                "name": .string("Game Pass pentru PC")
+            ])]),
+            "completeness": .string("partial"),
+            "market": .string("RO"),
+            "checkedAt": discoveryData["checkedAt"] ?? .null,
+            "source": .string("xbox.com-search")
+        ])
         combinedQuery["products"] = .array([.object(neutralProduct)])
-        try JSONValue.object(combinedQuery).decode(CatalogQuery.self).validatePublicScope(
+        let tieredQuery = try JSONValue.object(combinedQuery).decode(CatalogQuery.self)
+        try tieredQuery.validatePublicScope(
             query: "original fixture query", market: "RO", language: "ro-RO", limit: 8)
-        check(true, "#40: Combined Xbox/Store query admits explicit neutral metadata while retaining exact Romanian request scope")
+        try validator.validate(.object(combinedQuery), definition: "queryData")
+        check(tieredQuery.products.first?.gamePass?.plans.first?.name == "Game Pass pentru PC",
+              "#44: Xbox search plan ID and exact market-local label decode and validate without a tier inference")
+        var invalidTierQuery = combinedQuery
+        var knownEmptyTierProduct = neutralProduct
+        knownEmptyTierProduct["gamePass"] = .object([
+            "status": .string("known"), "plans": .array([]), "completeness": .string("partial"),
+            "market": .string("RO"), "checkedAt": discoveryData["checkedAt"] ?? .null,
+            "source": .string("xbox.com-search")
+        ])
+        var knownEmptyQueryFrame = combinedQuery
+        knownEmptyQueryFrame["products"] = .array([.object(knownEmptyTierProduct)])
+        try validator.validate(.object(knownEmptyQueryFrame), definition: "queryData")
+        let knownEmptyQuery = try JSONValue.object(knownEmptyQueryFrame).decode(CatalogQuery.self)
+        try knownEmptyQuery.validatePublicScope(query: "original fixture query", market: "RO",
+                                                language: "ro-RO", limit: 8)
+        check(knownEmptyQuery.products.first?.gamePass?.plans.isEmpty == true,
+              "#44: Known-empty listings are accepted as partial observations, not exclusions")
+        var invalidTierProduct = neutralProduct
+        invalidTierProduct["gamePass"] = .object([
+            "status": .string("unknown"),
+            "plans": .array([.object(["id": .string("CFQ7TTC0KGQ8"), "name": .string("Game Pass for PC")])]),
+            "completeness": .string("partial"), "market": .string("RO"),
+            "checkedAt": discoveryData["checkedAt"] ?? .null, "source": .string("xbox.com-search")
+        ])
+        invalidTierQuery["products"] = .array([.object(invalidTierProduct)])
+        do {
+            try validator.validate(.object(invalidTierQuery), definition: "queryData")
+            check(false, "#44: Unknown listing cannot claim plans")
+        } catch { check(true, "#44: Unknown listing cannot claim plans") }
+        invalidTierProduct["gamePass"] = .object([
+            "status": .string("known"), "plans": .array([]), "completeness": .string("partial"),
+            "market": .string("US"), "checkedAt": discoveryData["checkedAt"] ?? .null,
+            "source": .string("xbox.com-search")
+        ])
+        invalidTierQuery["products"] = .array([.object(invalidTierProduct)])
+        do {
+            try JSONValue.object(invalidTierQuery).decode(CatalogQuery.self)
+                .validatePublicScope(query: "original fixture query", market: "RO", language: "ro-RO", limit: 8)
+            check(false, "#44: Tier listing cannot cross market boundaries")
+        } catch { check(error as? ManagementError == .invalidPayload, "#44: Tier listing cannot cross market boundaries") }
+        var edgeTierQuery = queryPage
+        var edgeTierProduct = queryProduct
+        edgeTierProduct["gamePass"] = neutralProduct["gamePass"]
+        edgeTierQuery["products"] = .array([.object(edgeTierProduct)])
+        do {
+            try validator.validate(.object(edgeTierQuery), definition: "queryData")
+            check(false, "#44: Schema rejects Xbox-only listing metadata on a Store Edge continuation")
+        } catch { check(true, "#44: Schema rejects Xbox-only listing metadata on a Store Edge continuation") }
+        do {
+            try JSONValue.object(edgeTierQuery).decode(CatalogQuery.self)
+                .validatePublicScope(query: "original fixture query", market: "US", language: "en-US", limit: 8)
+            check(false, "#44: Store Edge continuation cannot claim xbox.com listing metadata")
+        } catch { check(error as? ManagementError == .invalidPayload,
+                        "#44: Store Edge continuation cannot claim xbox.com listing metadata") }
+        var discoveryWithTier = discoveryData.object ?? [:]
+        var discoveryProductWithTier = productObject
+        discoveryProductWithTier["gamePass"] = neutralProduct["gamePass"]
+        discoveryWithTier["products"] = .array([.object(discoveryProductWithTier)])
+        do {
+            try validator.validate(.object(discoveryWithTier), definition: "discoveryData")
+            check(false, "#44: Schema reserves listing metadata for catalog.query")
+        } catch { check(true, "#44: Schema reserves listing metadata for catalog.query") }
+        do {
+            try JSONValue.object(discoveryWithTier).decode(CatalogDiscovery.self)
+                .validatePublicScope(market: "RO", language: "ro-RO", limit: 8)
+            check(false, "#44: PC Game Pass discovery cannot use query-only Xbox search listing")
+        } catch { check(error as? ManagementError == .invalidPayload,
+                        "#44: PC Game Pass discovery cannot use query-only Xbox search listing") }
+        do {
+            try validator.validate(.object(["product": .object(discoveryProductWithTier)]),
+                                   definition: "productData")
+            check(false, "#44: Schema excludes query-only listing metadata from product.get")
+        } catch { check(true, "#44: Schema excludes query-only listing metadata from product.get") }
+        let cachedSearchWithTier: [String: JSONValue] = [
+            "products": .array([.object(discoveryProductWithTier)]),
+            "corpus": .string("observedPublicProducts"),
+            "completeness": .string("partial"),
+            "nextCursor": .null,
+            "cacheRevision": .unsigned(0)
+        ]
+        do {
+            try validator.validate(.object(cachedSearchWithTier), definition: "searchData")
+            check(false, "#44: Schema excludes query-only listing metadata from cached public search")
+        } catch { check(true, "#44: Schema excludes query-only listing metadata from cached public search") }
         combinedQuery["source"] = .string("UnverifiedSearch")
         do {
             try JSONValue.object(combinedQuery).decode(CatalogQuery.self).validatePublicScope(

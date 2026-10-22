@@ -47,11 +47,13 @@ access, runtime inspection, and Verified working evidence remain independent.
 The shipped classification database and its evidence are not rewritten.
 
 Game Pass metadata uses a small Xbox sphere in a green circle, not a wrapping
-pill. Discover identifies PC-library, PC Game Pass and Xbox/Store sources. Its
-current contract establishes PC catalogue membership, not per-title membership
-in Ultimate, Standard or Core, nor the account's named plan. Until source-backed
-tier data is supplied, the UI labels PC Game Pass and explicitly says plan
-coverage is not verified; it must not invent membership or an access grant.
+pill. Discover identifies PC-library, PC Game Pass and Xbox/Store sources. The
+Xbox search response may now provide source-backed, market-local subscription
+listing names and IDs. The listing is explicitly partial: missing IDs and
+known-empty or unknown results do not imply exclusion. The UI shows any returned
+names as partial public listings and keeps account-plan coverage unverified.
+It does not infer tiers or platforms from IDs/names, nor grant install access
+from public listing data.
 
 Product links (#42) resolve Microsoft's public `/store/productId/<id>` route
 with explicit market and locale, follow only matching Microsoft/Xbox redirects,
