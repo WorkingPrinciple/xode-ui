@@ -66,6 +66,15 @@
       "boundary": "Retained passive acknowledgement screenshot was viewed and shows Continue. Exact quit labels remain a hold; obtain actual title/menu evidence before full gameplay. No ToS, consent or privacy acceptance. Preserve native-first VC overrides and prerequisite-bearing prefix. No launch before explicit screen return."
     }
   ],
+  "retentionRunner": {
+    "source": "tools/s3/retention-run.py",
+    "sourceSha256": "4911818162d830c05e6a1ee651116657955da5441fc8940c982c72aade99d90b",
+    "guardTests": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/s3 -p 'test_*.py'",
+    "dryInvocation": "python3 tools/s3/retention-run.py dry PACKET_PATH PACKET_SHA256 world",
+    "runInvocation": "python3 tools/s3/retention-run.py run PACKET_PATH PACKET_SHA256 world --screen-release EXPLICIT_HANDOFF_REFERENCE",
+    "boundary": "Preparation/dry checks are not game execution evidence. Run only under the current title grant after explicit screen handback. Manual observed gameplay, actual quit controls and gameplay save files must be recorded separately; CLI0 is not qualification.",
+    "reloadGate": "Requires actual world CLI0/Wine0, stopped prefix, observed gameplay/ordinary quit, changed nonempty gameplay payload, intact archived raw bytes and exact stopped T2/T3 continuity. Forced cleanup cannot qualify."
+  },
   "verifiedArchives": [
     {
       "title": "TUNIC",
