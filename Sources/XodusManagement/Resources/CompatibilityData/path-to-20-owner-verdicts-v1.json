@@ -234,6 +234,17 @@
       "reportedAt": "2026-10-22T21:02:03.279+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
       "runId": "01cda87b",
+      "finalProofs": [
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+          "sha256": "f3819226b4f5069afe89480327188a139a5eb923ed1c033a1dc1b3756af80e0d"
+        },
+        {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/integrity.json",
+          "sha256": "5266450382c7bd5bf7ab5895112c99e38679b1154b471abce15978e581b23b23"
+        }
+      ],
+      "finalProofScope": "S3 finalized66-file integrity; raw world/reload-before/reload-after archives verified. Quit starts246.587/138.930 within540/180, actual Quit0/0 both. Bundled-route-equivalent only, NOT GUI Play. Global tried-games ingestion error/cards NotTested remains separate issue43 failure.",
       "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "relaunch": "passed", "save": "passed"},
       "nextGate": "complete",
       "ownerStream": "S3",

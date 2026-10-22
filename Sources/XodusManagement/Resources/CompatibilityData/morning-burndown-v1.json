@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T21:02:52.061519+00:00",
+    "asOf": "2026-10-22T21:04:14.805468+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 11,
-    "trackerMatrixSha256": "cf1004218ea5cf6aeda1022522ed9dea42bd7e2b774f9a4ba9f8458eaa22dee1",
+    "trackerMatrixSha256": "5cc7884074639a79e6132236d213cc8e340e8d6404f86249d8b7bd0b39e4d66b",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -249,7 +249,7 @@
       {
         "storeId": "9P9VNSQK1W3K",
         "title": "Brotato",
-        "verdict": "WORKING_CANDIDATE"
+        "verdict": "WORKING"
       },
       {
         "storeId": "9NMNMS626R59",
@@ -608,7 +608,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 803.1323080166666,
+  "remainingWallMinutes": 801.7532422,
   "scenarios": [
     {
       "label": "slow observed",
@@ -646,13 +646,13 @@
   ],
   "observedAdmissionRatio": {
     "working": 11,
-    "matrixWorking": 10,
+    "matrixWorking": 11,
     "attemptedMatrix": 19,
-    "ratio": 0.5263157894736842,
+    "ratio": 0.5789473684210527,
     "receiptAugmentedAttempted": 27,
     "receiptAugmentedRatio": 0.4074074074074074,
     "titleScreenOrBeyond": 11,
-    "postTitleScreenAdmissionRatio": 0.9090909090909091,
+    "postTitleScreenAdmissionRatio": 1.0,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
   },
   "timeSink": {
@@ -677,7 +677,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 89.23692311296296,
+  "requiredAverageMinutesPerAddition": 89.08369357777778,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

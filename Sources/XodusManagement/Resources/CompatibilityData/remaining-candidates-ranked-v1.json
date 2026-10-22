@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T21:02:54.451925+00:00",
+  "checkedAt": "2026-10-22T21:04:17.195712+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 11,
@@ -33,7 +33,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "82c444ac3ee0da6505cfa5dfa3af741e820d092278d846c0bf3a8a311283fc80"
+      "sha256": "2a064f333fdd8ae4d772b9bef93fbae02a7aa8cab07e063d13371bd9442449ba"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -70,7 +70,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "CrossOver candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission.",
+      "blocker": "Final111dd574 input attribution unresolved: helper1/empty output, exit255 near click is not proof of delivery. Preserve evidence; fix and validate helper off-screen before any separately granted retry.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -997,7 +997,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Unresolved; S1 route required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Parked: mouse-look issue, no payload after Save, exit5; no WORKING or reload.",
+      "blocker": "Delete-missing candidateadvancesfailuretoCreateUpdateinvalidarg butstillnopayload; mouse-lookweird reportedbyuser, exactsignatureunresolved; exit5afterTDesktop. NoWORKING/reload.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,

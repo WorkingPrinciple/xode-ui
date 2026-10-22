@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T21:02:52.061519+00:00; **11/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-22T21:04:14.805468+00:00; **11/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -29,7 +29,7 @@ Updated 2026-10-22T21:02:52.061519+00:00; **11/20 strict WORKING**. Title qualif
 | Dishonored® Definitive Edition (PC) | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Dome Keeper | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Fable | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
-| Fallout 4 | INCONCLUSIVE | passed | passed | not passed | ? | not passed | save-provider diagnosis / S2/S3 | Parked: mouse-look issue, no payload after Save, exit5; no WORKING or reload. | >2h |
+| Fallout 4 | INCONCLUSIVE | ? | ? | ? | ? | ? | save-provider diagnosis / S2/S3 | Delete-missing candidateadvancesfailuretoCreateUpdateinvalidarg butstillnopayload; mouse-lookweird reportedbyuser, exactsignatureunresolved; exit5afterTDesktop. NoWORKING/reload. | >2h |
 | Forever Ago | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | High On Life 2 | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Hollow Knight: Silksong | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
@@ -48,7 +48,7 @@ Updated 2026-10-22T21:02:52.061519+00:00; **11/20 strict WORKING**. Title qualif
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Skyrim Special Edition | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Directexe spontaneouslyexits5/5 in17.58s. COM80040154 remainsnoncausal logevidence. Exactprefixstopped; no additionalretry. | >2h |
 | South of Midnight | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
-| Stardew Valley | INCONCLUSIVE | passed | passed | ? | passed | passed | ordinary quit / S3 | Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission. | - |
+| Stardew Valley | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Final111dd574 input attribution unresolved: helper1/empty output, exit255 near click is not proof of delivery. Preserve evidence; fix and validate helper off-screen before any separately granted retry. | - |
 | Subnautica 2 | BLOCKED_PREREQ | not passed | ? | not passed | ? | ? | prefix prerequisite setup / S2 | VC++2015-2022 redist-required dialog, no title screen. Native-first VC prerequisite candidate approved by coordinator; rerun waits for S3 screen release, not automatic. | - |
 | Valor Mortis | INCONCLUSIVE | not passed | ? | ? | ? | ? | prefix prerequisite setup / S2 | Passive792b6f4e blocked by missing VC++ redistributable prerequisite in prefix. S2 setup required; no title/gameplay/retention qualification or new launch grant. | - |
 | Vampire Survivors | INCONCLUSIVE | not passed | ? | not passed | ? | ? | qualification hold / S2/coordinator | Parked: exit3/no window after DQ overlay; no automatic retry. | - |
@@ -61,7 +61,7 @@ Full blockers, source hashes and packet references are in `path-to-20-v1.json`. 
 
 ## Retained attempt evidence
 
-Audit 2026-10-22T21:02:54.340702+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
+Audit 2026-10-22T21:04:17.085178+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
 
 Coverage: 27 titles, 143 launch-result attempts, 5 unresolved references; 2819 present / 155 missing artifact links. This is bounded discovery, not a complete historical archive.
 
