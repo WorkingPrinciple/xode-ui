@@ -1,5 +1,40 @@
 {
   "schemaVersion": 1,
+  "protectedSaveArchiveGapAudit": {
+    "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
+    "reportedAt": "2026-10-22T21:13:57.929+00:00",
+    "index": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-save-archive-gap-audit-01/index.json",
+      "sha256": "657834799cc63c03a7333e5ddd695dfd93435c1a00ac05f7e0bd0e5f571fb44c"
+    },
+    "integrity": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-save-archive-gap-audit-01/integrity.json",
+      "sha256": "847629cbeaed956f2f902e210d3c57b57ddb90599ac37616d3b58ed580574dc3"
+    },
+    "ownerReportedCoverage": {
+      "historicalSnapshotJsons": 48,
+      "matchedUniqueSaveHashes": 2,
+      "unmatchedUniqueSaveHashes": 55,
+      "searchedInventoryFiles": 2168
+    },
+    "scope": "S4 verified index and integrity file hashes only; counts are S3-reported. Unmatched hashes are bounded inventory coverage gaps, NOT proof bytes are absent elsewhere. No live save read/write or reconstruction.",
+    "separateBrotatoFormat": "Brotato raw archives separately verified66/66; do not apply older snapshot-format gap counts to it.",
+    "sourceCommit": "2823af0",
+    "helperStatus": "Candidate C helper b758f2b compiled but NOT actual-receiver validated or adopted."
+  },
+  "appUiIngestionStatus": {
+    "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+    "reportedAt": "2026-10-22T21:13:57.929+00:00",
+    "sourceFix": "43ed7dc",
+    "sourceIndex": "c77b2fe",
+    "cliCandidate": "3cdbf1dd",
+    "sourceBehavior": "Missing/null optional screenshots decode as empty; malformed types and required identity still fail, with distinct read/schema diagnostics.",
+    "ownerReportedChecks": "Synthetic331/0 plus build and candidate checks passed; not independently rerun by S4.",
+    "deploymentState": "Signed candidate staged, NOT installed. Prior switch refused normal quit; no force-kill, exact refusing component unknown.",
+    "productionUiAccepted": false,
+    "issue43Passed": false,
+    "scope": "Source/candidate evidence does not resolve installed production UI failure or establish GUI Play-click qualification."
+  },
   "protectedHistoricalEvidenceIndex": {
     "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
     "reportedAt": "2026-10-22T21:11:12.017+00:00",
