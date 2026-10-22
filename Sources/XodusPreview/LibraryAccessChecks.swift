@@ -160,14 +160,44 @@ enum LibraryAccessChecks {
             """, uid: 501) == 124,
               "Native Minecraft detects only this user's bundled Minecraft Java executable, without reading credential-bearing arguments")
         try minecraftInstallationChecks(check: check)
+        let partial = working.replacingOccurrences(of: #""verdict":"WORKING""#,
+                                                   with: #""verdict":"TITLE_SCREEN_ONLY""#)
+        let unknown = working.replacingOccurrences(of: #""verdict":"WORKING""#,
+                                                   with: #""verdict":"FUTURE_RESULT_V2""#)
+        let unknownGame = try MacGameEvidence.decode(Data(unknown.utf8)).games[0]
+        let partialGame = try MacGameEvidence.decode(Data(partial.utf8)).games[0]
+        check(unknownGame.verdict == .unknown && unknownGame.verifiedWorkingEvidence == nil
+              && unknownGame.provenEngine == nil && unknownGame.statusLabel == "Result not recognized"
+              && partialGame.verdict == .titleScreen && partialGame.verifiedWorkingEvidence == nil
+              && partialGame.provenEngine == nil && partialGame.statusLabel == "Title screen only",
+              "Future and title-screen-only verdicts stay distinct non-WORKING entries without automatic engine selection")
+        let mixedWorking = try MacGameEvidence.decode(Data(working.utf8))
+        var mixed = try JSONSerialization.jsonObject(with: Data(working.utf8)) as? [String: Any] ?? [:]
+        let baseGame = (mixed["games"] as? [[String: Any]])?.first ?? [:]
+        var rows: [[String: Any]] = []
+        for id in ["9MW9469V91LM", "BQVQTL3PCH05", "9PJ8266BHFWN"] {
+            var row = baseGame
+            row["productId"] = id
+            rows.append(row)
+        }
+        var future = baseGame
+        future["productId"] = "FUTURE000001"
+        future["verdict"] = "FUTURE_RESULT_V2"
+        rows.append(future)
+        mixed["games"] = rows
+        let mixedGames = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games
+        check(mixedWorking.games[0].verifiedWorkingEvidence != nil && mixedGames.count == 4
+              && mixedGames.filter { $0.verifiedWorkingEvidence != nil }.map(\.productId)
+                  == ["9MW9469V91LM", "BQVQTL3PCH05", "9PJ8266BHFWN"]
+              && mixedGames.last?.verdict == .unknown && mixedGames.last?.provenEngine == nil,
+              "An unknown verdict beside all three valid WORKING entries preserves their evidence badges")
         for invalid in [
-            String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "SHIPPED"),
             String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "/synthetic/proof.png", with: "https://invalid/proof.png")
         ] {
             do {
                 _ = try MacGameEvidence.decode(Data(invalid.utf8))
-                check(false, "Unknown verdicts and nonlocal screenshot references are rejected")
-            } catch { check(true, "Unknown verdicts and nonlocal screenshot references are rejected") }
+                check(false, "Nonlocal screenshot references are rejected")
+            } catch { check(true, "Nonlocal screenshot references are rejected") }
         }
         check(GameSupportPolicy.packageFormat(observed: "Win32", classified: "MSIXVC") == "MSIXVC"
               && GameSupportPolicy.packageFormat(observed: "Unknown", classified: "MSIXVC") == "MSIXVC"

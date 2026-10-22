@@ -235,7 +235,12 @@ Schema version 1 has `updatedAt` and `games[]`,
 with `productId`, `title`, `verdict`, `scope`, `engine`, optional `runId`,
 `screenshots[]` (`path`, `caption`), `owner`, and optional `blocker`.
 Supported verdicts are `GAMEPLAY_PASS`, `MENU_PASS`, `BLOCKED`, `FAIL`,
-`NOT_TESTED`, `WORKING`, and `ANTI_CHEAT_EXCLUDED`. Engine and run ID may be
+`NOT_TESTED`, `WORKING`, `TITLE_SCREEN_ONLY`, and `ANTI_CHEAT_EXCLUDED`.
+`TITLE_SCREEN_ONLY` remains a partial observation, not gameplay or WORKING.
+Unknown future verdict strings render as "Result not recognized" for that
+entry only; they never receive a working badge or supply an automatic engine,
+and do not hide other valid entries. Other schema/path validation remains strict.
+Engine and run ID may be
 null when not recorded. The library reloads it every five
 seconds, exposes compact verdict/engine copy on cards, and opens recorded local
 screenshots. Full observation scope is available in Details, not on the cards. These observations

@@ -9,12 +9,21 @@ struct MacGameEvidence: Decodable, Sendable {
         case gameplay = "GAMEPLAY_PASS", menu = "MENU_PASS", blocked = "BLOCKED"
         case failed = "FAIL", notTested = "NOT_TESTED", excluded = "ANTI_CHEAT_EXCLUDED"
         case working = "WORKING"
+        case titleScreen = "TITLE_SCREEN_ONLY"
+        case unknown = "UNRECOGNIZED"
+
+        init(from decoder: Decoder) throws {
+            let raw = try decoder.singleValueContainer().decode(String.self)
+            self = Self(rawValue: raw) ?? .unknown
+        }
 
         var label: String {
             switch self {
             case .gameplay: "Playable, not fully verified"
             case .working: "Works on Mac"
             case .menu: "Starts, not yet playable"
+            case .titleScreen: "Title screen only"
+            case .unknown: "Result not recognized"
             case .failed: "Doesn't start yet"
             case .blocked, .notTested: "Not tested on Mac yet"
             case .excluded: "Not supported yet"
