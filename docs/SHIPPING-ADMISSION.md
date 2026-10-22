@@ -74,6 +74,13 @@ checksum-checked setup, leaving the shared registry and tested prefix alone.
 Fresh app prefixes remain separate from the tested CLI prefix; the new adf8
 CLI and actual tile/save/relaunch path still need app acceptance.
 
+`hollow-knight-local-saves-candidate-v1.json` is deliberately absent from the
+active profile catalogue. It prepares a CrossOver mirror for private local
+saves, but must not change the live HK run or its relaunch recipe unless the
+real bench-save relaunch fails to retain the save and the coordinator admits
+the correction. A missing `ps` environment entry is not evidence that Wine's
+Windows process did not receive a variable and does not trigger this candidate.
+
 The CLI receives the explicitly selected engine/registry, a game-and-engine
 private prefix, mandatory `--shim-dir`, and the profile environment. The
 shim-only `Engines/profiles/native-web-shims-v1` directory supplies Windows.Web,

@@ -287,6 +287,14 @@ enum NativeLifecycleChecks {
 
     private static func titleRecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
         let profiles = try NativeTitleLaunchProfile.bundledProfiles()
+        let hollowCandidate = try JSONDecoder().decode(NativeTitleLaunchProfile.self,
+            from: Data(contentsOf: LaunchRecipeResources.hollowKnightSaveCandidateURL()))
+        check(hollowCandidate.productID == "9MW9469V91LM"
+              && hollowCandidate.environment["XODUS_PRIVATE_LOCAL_SAVES"] == "1"
+              && hollowCandidate.crossOverEnvironment == ["XODUS_PRIVATE_LOCAL_SAVES": "1"]
+              && hollowCandidate.launchEnvironment["CX_ENV"] == "XODUS_PRIVATE_LOCAL_SAVES='1'"
+              && !profiles.contains(where: { $0.productID == hollowCandidate.productID }),
+              "HK local-save mirror is an inactive data candidate, never applied before real saved-relaunch evidence")
         for id in ["9NH0MSG29X6L", "9PJPCB188SVG", "9NXWSWBM4H6T", "9NQVHHW88XW9"] {
             let profile = profiles.first { $0.productID == id }
             check(profile?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "productID": "9MW9469V91LM",
+  "title": "Hollow Knight",
+  "qualification": "inactive candidate only; not applied",
+  "applyCondition": "Only after S3's real bench-save relaunch fails to retain that save and the coordinator authorizes the correction.",
+  "engine": "hollowknight-crossover-nativejson",
+  "environment": {
+    "XODUS_PRIVATE_LOCAL_SAVES": "1",
+    "XODUS_XBL_ONLINE": "1",
+    "XODUS_WINE_DEBUG": "-all,warn+gdkc,err+all,+msgbox"
+  },
+  "crossOverEnvironment": {
+    "XODUS_PRIVATE_LOCAL_SAVES": "1"
+  }
+}
