@@ -10,7 +10,6 @@ Readiness and avoided download first, then compact payload/route evidence; not n
 
 | Rank | Title / ID | State | Catalog GiB | Route proposal | Claim / download | Blocker |
 |---|---|---|---|---|---|---|
-| 2 | Stardew Valley / `9MWR1NC6VQ6L` | manifest present; prior installed inventory, not fresh install-status | 0.678 | CrossOver candidate | False / False | Final111dd574 input attribution unresolved: helper1/empty output, exit255 near click is not proof of delivery. Preserve evidence; fix and validate helper off-screen before any separately granted retry. |
 | 4 | Vampire Survivors / `9PD5BM2Z8C4L` | manifest present; prior installed inventory, not fresh install-status | 1.158 | Free Wine proposed by S1; prior Apple4 candidate, new route/card unqualified | False / False | Parked: exit3/no window after DQ overlay; no automatic retry. |
 | 6 | FINAL FANTASY IV / `9N8C07SS8C9D` | manifest present; prior installed inventory, not fresh install-status | 0.484 | CrossOver candidate | False / False | PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding. |
 | 7 | Wasteland Remastered / `9NGH1FK0RJGL` | manifest present; prior installed inventory, not fresh install-status | 2.859 | Apple4 candidate | False / False | Parked: local load_game_config0x8007000d before ticket socket; installed config missing MSAAppId, staged parity unknown. |

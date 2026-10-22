@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T21:33:42.080722+00:00",
+    "asOf": "2026-10-22T21:40:57.657042+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -12,7 +12,7 @@
       "scope": "User confirmed 110 prelaunch / 110 staging / 105 running abort. No new install, retry or runtime grant."
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
-    "strictWorkingCount": 11,
+    "strictWorkingCount": 12,
     "trackerMatrixSha256": "5cc7884074639a79e6132236d213cc8e340e8d6404f86249d8b7bd0b39e4d66b",
     "packetSources": [
       {
@@ -52,11 +52,6 @@
       {
         "storeId": "9PNG83MDD6SH",
         "title": "LIMBO",
-        "batch": "passive-batch2-eight-v1"
-      },
-      {
-        "storeId": "9MWR1NC6VQ6L",
-        "title": "Stardew Valley",
         "batch": "passive-batch2-eight-v1"
       },
       {
@@ -137,7 +132,7 @@
     },
     "queueReconciliation": {
       "reportedCap": 23,
-      "uniqueCount": 17,
+      "uniqueCount": 16,
       "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue."
     },
     "withheld": [
@@ -391,6 +386,11 @@
         "verdict": "WORKING"
       },
       {
+        "storeId": "9MWR1NC6VQ6L",
+        "title": "Stardew Valley",
+        "verdict": "WORKING"
+      },
+      {
         "storeId": "9NLRT31Z4RWM",
         "title": "TUNIC",
         "verdict": "WORKING"
@@ -453,11 +453,6 @@
       {
         "storeId": "9P03JGQ4S1GC",
         "title": "Skyrim Special Edition",
-        "verdict": "INCONCLUSIVE"
-      },
-      {
-        "storeId": "9MWR1NC6VQ6L",
-        "title": "Stardew Valley",
         "verdict": "INCONCLUSIVE"
       },
       {
@@ -620,49 +615,49 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 772.2986546333334,
+  "remainingWallMinutes": 765.0390493,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
       "serialCycleSlots": 8,
       "queueCappedAdditions": 8,
-      "conditionalTotalWorking": 19,
-      "gapTo20": 1,
-      "minimumPassRateRawSlots": 1.125,
-      "minimumPassRateCurrentQueue": 1.125,
-      "targetPossibleCurrentQueue": false
+      "conditionalTotalWorking": 20,
+      "gapTo20": 0,
+      "minimumPassRateRawSlots": 1.0,
+      "minimumPassRateCurrentQueue": 1.0,
+      "targetPossibleCurrentQueue": true
     },
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
       "serialCycleSlots": 11,
       "queueCappedAdditions": 11,
-      "conditionalTotalWorking": 22,
+      "conditionalTotalWorking": 23,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.8181818181818182,
-      "minimumPassRateCurrentQueue": 0.8181818181818182,
+      "minimumPassRateRawSlots": 0.7272727272727273,
+      "minimumPassRateCurrentQueue": 0.7272727272727273,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
       "serialCycleSlots": 17,
-      "queueCappedAdditions": 17,
+      "queueCappedAdditions": 16,
       "conditionalTotalWorking": 28,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5294117647058824,
-      "minimumPassRateCurrentQueue": 0.5294117647058824,
+      "minimumPassRateRawSlots": 0.47058823529411764,
+      "minimumPassRateCurrentQueue": 0.5,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
-    "working": 11,
+    "working": 12,
     "matrixWorking": 11,
     "attemptedMatrix": 19,
     "ratio": 0.5789473684210527,
     "receiptAugmentedAttempted": 29,
-    "receiptAugmentedRatio": 0.3793103448275862,
+    "receiptAugmentedRatio": 0.41379310344827586,
     "titleScreenOrBeyond": 11,
     "postTitleScreenAdmissionRatio": 1.0,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -689,7 +684,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 85.81096162592593,
+  "requiredAverageMinutesPerAddition": 95.6298811625,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

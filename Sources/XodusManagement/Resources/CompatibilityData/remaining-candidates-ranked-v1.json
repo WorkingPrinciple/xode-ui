@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T21:33:45.285821+00:00",
+  "checkedAt": "2026-10-22T21:41:00.171568+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
-  "strictWorking": 11,
-  "needed": 9,
+  "strictWorking": 12,
+  "needed": 8,
   "disk": {
     "coordinatorReportedFreeGiB": 127,
     "prelaunchGiB": 110,
@@ -32,7 +32,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "49587ac75f0af3a6015433ca04ab7835aee464720921878ae8c84b333330f78b"
+      "sha256": "38e8bc4da09883bb58708ab8ca4ec607cfd76fe384ee488e04e7bd95953496f0"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -56,36 +56,6 @@
     }
   ],
   "items": [
-    {
-      "rank": 2,
-      "storeId": "9MWR1NC6VQ6L",
-      "title": "Stardew Valley",
-      "verdict": "INCONCLUSIVE",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
-      "downloadSizeBytes": 727924736,
-      "planningBudgetBytes": 727924736,
-      "incrementalDownloadBudgetBytes": 0,
-      "fitsGrossMargin": true,
-      "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
-      "expectedRoute": "CrossOver candidate",
-      "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Final111dd574 input attribution unresolved: helper1/empty output, exit255 near click is not proof of delivery. Preserve evidence; fix and validate helper off-screen before any separately granted retry.",
-      "needsUserClaim": false,
-      "needsLicenseCheck": false,
-      "needsDownload": false,
-      "pipelineExtensionCandidate": false,
-      "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
-      "rankingBasis": "Fresh reload retained Day2 progress; observed final quit still required.",
-      "inventoryEvidence": {
-        "root": "/Users/dragoshont/Games/Xodus/StardewValley-Xbox",
-        "manifest": "/Users/dragoshont/Games/Xodus/StardewValley-Xbox/MicrosoftGame.Config",
-        "manifestSha256": "7220b14e4c23def9675cbd3ab64f9f3fedf3b42fc9d9fa553e0e3afb45b85804",
-        "storeIds": [
-          "9MWR1NC6VQ6L"
-        ]
-      },
-      "installVerification": null
-    },
     {
       "rank": 4,
       "storeId": "9PD5BM2Z8C4L",

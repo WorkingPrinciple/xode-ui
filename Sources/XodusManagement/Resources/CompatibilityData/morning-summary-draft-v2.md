@@ -2,7 +2,7 @@
 
 22 October 2026; live gate timestamp below, disk snapshot separately dated.
 
-**Goal: 20 genuinely WORKING titles; current count: 11.** Gameplay, retained
+**Goal: 20 genuinely WORKING titles; current count: 12.** Gameplay, retained
 progress and normal shutdown required; eligibility/cloud/app E2E are separate.
 
 ## What works / nearest additions
@@ -49,7 +49,13 @@ $5 upgrade not bought, no save shown; no title-menu Exit, ended with -k cleanup.
 payloads show saved progress. Fresh `22d78ea2` LOAD retained farmer/farm/Day2/
 15 seeds and movement: retention YES. Final ExitGame input was unobserved;
 CLI255 alone is insufficient. Latest `111dd574` also confirms retention, but
-ordinary quit attribution is under review (helper exit1); do not count yet.
+ordinary quit attribution remains INCONCLUSIVE (helper exit1).
+Coordinator now admits WORKING#12 from fresh `d9399bec`: retained Day2/15seeds,
+actual Exit To Desktop attributed to exact PID/flushed down1/up1/helper0,
+PID gone before cleanup/noUnhandled. Title-specific expected255 is NOT CLI0
+and never sufficient alone. Prior world proves gameplay; isolated fresh movement
+animation was not captured. Final archive11/11 hashes verified; no GUI Play-click
+or engine promotion inferred. Historical attempts retain their original verdicts.
 Earlier `db74c3c4` tooling cancellation remains an unconsumed historical attempt.
 **Monster Sanctuary:** now coordinator-admitted WORKING9 at 22:57 EEST.
 Historical world `cca9c74f` PASS-candidate with S3/Wolf,8XP,
@@ -186,18 +192,18 @@ exact-k0/-w0 is forced cleanup, not normal quit despite0/0. Final Bluey/DOOM64
 retention-result and integrity hashes are pinned in the existing owner index.
 Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T21:33:42.080722+00:00: **11/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Well Dweller. Refresh every30min and owner verdict.
+Living tracker 2026-10-22T21:40:57.657042+00:00: **12/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, Stardew Valley, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Well Dweller. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 13:26 EEST** (user +12h extension); 12.87h from 2026-10-22T21:33:42.080722+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **8/11/17** slow/mid/fast cycles, capped by **17 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **19/22/28**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 13:26 EEST** (user +12h extension); 12.75h from 2026-10-22T21:40:57.657042+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **8/11/17** slow/mid/fast cycles, capped by **16 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **20/23/28**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
 Launch admission floor: **110 GiB** (user-directed, replaces 153 GiB during Valor Mortis download). No fresh disk reading or extra executable capacity inferred.
 
-Need **9** additions; slow scenario leaves **1**. Required mean: **85.8min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
+Need **8** additions; slow scenario leaves **0**. Required mean: **95.6min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 
-Observed admission ratio: **11/19 matrix attempts (57.9%)**; including receipt/owner-reported attempts: **11/29 (37.9%)**. Matrix post-title-screen subset: **11/11**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **112.5%/81.8%/52.9%** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold 52.9% is no longer limited by the historical queue cap.
+Observed admission ratio: **11/19 matrix attempts (57.9%)**; including receipt/owner-reported attempts: **12/29 (41.4%)**. Matrix post-title-screen subset: **11/11**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **100.0%/72.7%/50.0%** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold 47.1% requires more eligible titles than current queue.
 
 Biggest measured time sink: **between-run gaps, 69.8min total / 34.9min per addition** across Halls/Hogwarts. Unallocated, not proven screen waiting; operator/other waits and within-run startup/play/save splits unavailable.
 <!-- burndown:end -->

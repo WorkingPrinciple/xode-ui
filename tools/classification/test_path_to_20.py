@@ -84,6 +84,10 @@ class PathTo20Tests(unittest.TestCase):
     def test_tonight_reports_do_not_promote_incomplete_runs(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])
         inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T19:00:00+00:00"
+        report = next(row for row in inputs["ownerVerdicts"]["snapshot"]["items"]
+                      if row["storeId"] == "9MWR1NC6VQ6L")
+        report.update(verdict="INCONCLUSIVE", runId="111dd574", nextGate="ordinary quit")
+        report["gates"]["quit"] = "unknown"
         rows = {row["storeId"]: row for row in build(inputs, {})["items"]}
         stardew = rows["9MWR1NC6VQ6L"]
         self.assertEqual(stardew["gates"]["save"]["status"], "passed")
@@ -92,6 +96,17 @@ class PathTo20Tests(unittest.TestCase):
         self.assertTrue(rows["9PBWWQGXVMKC"]["strictWorking"])
         for sid in ("9MWR1NC6VQ6L", "9P861V1542BL"):
             self.assertFalse(rows[sid]["strictWorking"])
+
+    def test_stardew_admission_is_attributed_title_specific_not_exit_zero(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T19:00:00+00:00"
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9MWR1NC6VQ6L")
+        self.assertTrue(row["strictWorking"])
+        self.assertEqual(row["gates"]["quit"]["status"], "passed")
+        self.assertIn("title-specific expected255", row["scope"])
+        self.assertIn("Historical111dd574 remains INCONCLUSIVE", row["scope"])
+        self.assertIn("movement animation not captured", row["scope"])
 
     def test_unchanged_gate_preserves_clock_despite_blocker_edit(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])

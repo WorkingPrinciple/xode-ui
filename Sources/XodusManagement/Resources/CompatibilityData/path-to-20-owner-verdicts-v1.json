@@ -248,15 +248,23 @@
     {
       "storeId": "9MWR1NC6VQ6L",
       "title": "Stardew Valley",
-      "verdict": "INCONCLUSIVE",
-      "reportedAt": "2026-10-22T20:35:59+00:00",
+      "verdict": "WORKING",
+      "reportedAt": "2026-10-23T00:40:00.117+03:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "111dd574",
-      "gates": {"menu": "passed", "gameplay": "passed", "save": "passed", "relaunch": "passed", "quit": "unknown"},
-      "nextGate": "ordinary quit",
+      "runId": "d9399bec-129a-4c6a-b46b-0e0a0bd3f921",
+      "gates": {"menu": "passed", "gameplay": "passed", "save": "passed", "relaunch": "passed", "quit": "passed"},
+      "nextGate": "complete",
       "ownerStream": "S3",
-      "blocker": "Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission.",
-      "scope": "Coordinator latest report:111dd574 retention confirmed but ordinary quit attribution under review/helper exit1. Earlier22d78ea2 retained Day2/s3/proof Farm/15seeds. Neither expected255 nor retained payload alone proves normal quit; keep strict count9."
+      "blocker": null,
+      "scope": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report.",
+      "finalProofs": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json",
+        "sha256": "7a0f9dc43a1c8e838b24d0bfd6eab1e9bd7c22a6de7b7987745c4f081839cfd0"
+      },
+      "finalIntegrity": {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/integrity.json",
+        "sha256": "c793d7a57b069c31a3a620236dd0728b5f7d78c5c29cd7d9933f06ed9f288ad6"
+      }
     },
     {
       "storeId": "9P03JGQ4S1GC",

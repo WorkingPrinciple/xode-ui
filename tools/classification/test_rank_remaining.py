@@ -8,7 +8,8 @@ class RemainingRankingTests(unittest.TestCase):
         packet = build()
         self.assertEqual([row["storeId"] for row in packet["items"]],
                          [sid for sid in ORDER if sid not in {
-                             "9PBWWQGXVMKC", "9NLRT31Z4RWM", "9P9VNSQK1W3K"}])
+                             "9PBWWQGXVMKC", "9NLRT31Z4RWM", "9P9VNSQK1W3K",
+                             "9MWR1NC6VQ6L"}])
         self.assertEqual(len(ORDER), len(set(ORDER)))
         self.assertEqual(packet["disk"]["grossMarginGiB"], 17)
         self.assertEqual(packet["disk"]["abortBelowGiB"], 105)

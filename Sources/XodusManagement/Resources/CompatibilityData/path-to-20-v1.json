@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-22T21:33:42.080722+00:00",
+  "updatedAt": "2026-10-22T21:40:57.657042+00:00",
   "matrixUpdatedAt": "2026-10-22T21:02:00+00:00",
   "collectionInputs": {
-    "collectedAt": "2026-10-22T21:33:42.080722+00:00",
+    "collectedAt": "2026-10-22T21:40:57.657042+00:00",
     "matrix": {
       "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
       "sha256": "5cc7884074639a79e6132236d213cc8e340e8d6404f86249d8b7bd0b39e4d66b",
@@ -859,7 +859,7 @@
     },
     "ownerVerdicts": {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-      "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+      "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
       "snapshot": {
         "schemaVersion": 1,
         "protectedSessionArchive": {
@@ -1210,21 +1210,29 @@
           {
             "storeId": "9MWR1NC6VQ6L",
             "title": "Stardew Valley",
-            "verdict": "INCONCLUSIVE",
-            "reportedAt": "2026-10-22T20:35:59+00:00",
+            "verdict": "WORKING",
+            "reportedAt": "2026-10-23T00:40:00.117+03:00",
             "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-            "runId": "111dd574",
+            "runId": "d9399bec-129a-4c6a-b46b-0e0a0bd3f921",
             "gates": {
               "menu": "passed",
               "gameplay": "passed",
               "save": "passed",
               "relaunch": "passed",
-              "quit": "unknown"
+              "quit": "passed"
             },
-            "nextGate": "ordinary quit",
+            "nextGate": "complete",
             "ownerStream": "S3",
-            "blocker": "Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission.",
-            "scope": "Coordinator latest report:111dd574 retention confirmed but ordinary quit attribution under review/helper exit1. Earlier22d78ea2 retained Day2/s3/proof Farm/15seeds. Neither expected255 nor retained payload alone proves normal quit; keep strict count9."
+            "blocker": null,
+            "scope": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report.",
+            "finalProofs": {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json",
+              "sha256": "7a0f9dc43a1c8e838b24d0bfd6eab1e9bd7c22a6de7b7987745c4f081839cfd0"
+            },
+            "finalIntegrity": {
+              "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/integrity.json",
+              "sha256": "c793d7a57b069c31a3a620236dd0728b5f7d78c5c29cd7d9933f06ed9f288ad6"
+            }
           },
           {
             "storeId": "9P03JGQ4S1GC",
@@ -3548,14 +3556,14 @@
     },
     "attemptEvidence": {
       "schemaVersion": 1,
-      "auditedAt": "2026-10-22T21:33:45.162104+00:00",
+      "auditedAt": "2026-10-22T21:41:00.057519+00:00",
       "scope": "Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.",
       "retentionPolicy": "Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.",
       "roots": [
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs",
         "/Users/dragoshont/Library/Application Support/XodusCLI/runs"
       ],
-      "jsonDocumentsInspected": 2793,
+      "jsonDocumentsInspected": 2827,
       "gaps": [
         "Unparsed JSON /Users/dragoshont/Library/Application Support/XodusCLI/proofs/valor-mortis-install-v1/package-check.stdout.json: JSONDecodeError"
       ],
@@ -9015,6 +9023,190 @@
           "status": "PRESENT",
           "bytes": 1310,
           "sha256": "d46e9bd2955e17468c345b6bc1e7a13388c607fbe05384d96473fe18b4a9ef0c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json": {
+          "status": "PRESENT",
+          "bytes": 2181,
+          "sha256": "f08b103a66ce954de7e8ddd4c07ebf7fa75461739a10f07ec5142a5e7ffa744c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-1.json": {
+          "status": "PRESENT",
+          "bytes": 4,
+          "sha256": "ace810d7e2cbb4f8c40ce09dc8e191ae466adb4e1a7d49c59f2215b411d38b05"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-2.json": {
+          "status": "PRESENT",
+          "bytes": 4,
+          "sha256": "ace810d7e2cbb4f8c40ce09dc8e191ae466adb4e1a7d49c59f2215b411d38b05"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-3.json": {
+          "status": "PRESENT",
+          "bytes": 4,
+          "sha256": "ace810d7e2cbb4f8c40ce09dc8e191ae466adb4e1a7d49c59f2215b411d38b05"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-4.json": {
+          "status": "PRESENT",
+          "bytes": 4,
+          "sha256": "ace810d7e2cbb4f8c40ce09dc8e191ae466adb4e1a7d49c59f2215b411d38b05"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli-pid.json": {
+          "status": "PRESENT",
+          "bytes": 19,
+          "sha256": "770de515eabeac0d2febbacd22df61e9f0f9eb14aef5e9f90be965f81bd06255"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli.stderr.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli.stdout.jsonl": {
+          "status": "PRESENT",
+          "bytes": 2027,
+          "sha256": "b88d81bd1281ea9f55a1787340b7f1d59c21bcc815110c291d6b06a54f89865c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/focus-handback.json": {
+          "status": "PRESENT",
+          "bytes": 569,
+          "sha256": "731860c9088a1c2ae82cac44da13b90cccffbed0a25a748b0482dba953eb8ea1"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-1.json": {
+          "status": "PRESENT",
+          "bytes": 23516,
+          "sha256": "02597345b6f76128fdb56cc7bcb9ee6b35d16dc66e5d712202a4fc744dd11918"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-2.json": {
+          "status": "PRESENT",
+          "bytes": 23516,
+          "sha256": "02597345b6f76128fdb56cc7bcb9ee6b35d16dc66e5d712202a4fc744dd11918"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-3.json": {
+          "status": "PRESENT",
+          "bytes": 23516,
+          "sha256": "02597345b6f76128fdb56cc7bcb9ee6b35d16dc66e5d712202a4fc744dd11918"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-4.json": {
+          "status": "PRESENT",
+          "bytes": 23516,
+          "sha256": "02597345b6f76128fdb56cc7bcb9ee6b35d16dc66e5d712202a4fc744dd11918"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/observations.json": {
+          "status": "PRESENT",
+          "bytes": 108261,
+          "sha256": "a492c77e49056858a04b9736d3ffc8ed61618da0ac8a092b4b039a99a3ab2995"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/pending-receipt.json": {
+          "status": "PRESENT",
+          "bytes": 109461,
+          "sha256": "42814126dcabbaf2f82d596093b59d6e0eb7cd7502ed9127b7e6e431943f7a03"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/receipt.json": {
+          "status": "PRESENT",
+          "bytes": 112013,
+          "sha256": "f6b967a5e6a266038caeaa994fb4840b14284440ca31b1a4f72d3d60f87c243a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/engine-dyld.json": {
+          "status": "PRESENT",
+          "bytes": 2,
+          "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 725,
+          "sha256": "c99615d5f034dd297c9697af1571e5eb32da6edebeb65a0f4be03735f4fa2960"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/launch-stage.json": {
+          "status": "PRESENT",
+          "bytes": 183,
+          "sha256": "eed19bc6243175a74dd5498a5fb8873f44b88ef794137bdc83af8c89c29e2ae9"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/popups.jsonl": {
+          "status": "PRESENT",
+          "bytes": 746,
+          "sha256": "6a58889059ea238b7be241d79b9388c56800010203babcfb44467bcd9b7a6f31"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/progress.jsonl": {
+          "status": "MISSING",
+          "sha256": null
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/result.json": {
+          "status": "PRESENT",
+          "bytes": 2335,
+          "sha256": "a5f9b3c65244f8a7d5175843a0115b5565047a7985fbf1c440f78f556e57ec5f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/service.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/stderr.log": {
+          "status": "PRESENT",
+          "bytes": 173184,
+          "sha256": "22b717eeb3ca0b152eea1eef2bc901a69b6f344549b8aa7ba33af925a483f1d7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1012,
+          "sha256": "2219494c81d37133c0bb4f329fec66d73d05050c65fe5766fdce98ec5fb975b9"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/windows.jsonl": {
+          "status": "PRESENT",
+          "bytes": 746,
+          "sha256": "6a58889059ea238b7be241d79b9388c56800010203babcfb44467bcd9b7a6f31"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/wine-exit.json": {
+          "status": "PRESENT",
+          "bytes": 32,
+          "sha256": "dac1aa09534b6f1c0fa6f94322a849dd5718dc0f863b6f717b2cb89e4180d38c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-1.json": {
+          "status": "PRESENT",
+          "bytes": 3791,
+          "sha256": "9fb048b8de8778fd2421f95ea5df1aeda37e46b67ff7d1cfea39c4d3c50397e3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-2.json": {
+          "status": "PRESENT",
+          "bytes": 3791,
+          "sha256": "9fb048b8de8778fd2421f95ea5df1aeda37e46b67ff7d1cfea39c4d3c50397e3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-3.json": {
+          "status": "PRESENT",
+          "bytes": 4244,
+          "sha256": "3323ef2f199c3f57fd74df08bc1fe973a6fc59e889a30de1569fc1b34a0d0f9c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-4.json": {
+          "status": "PRESENT",
+          "bytes": 4244,
+          "sha256": "3323ef2f199c3f57fd74df08bc1fe973a6fc59e889a30de1569fc1b34a0d0f9c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/dry-admission.json": {
+          "status": "PRESENT",
+          "bytes": 776,
+          "sha256": "9ca59a20a0743bc942f8f5a9678edf366d2235bc4a2690315b7de2cc75268517"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/exe-baseline.json": {
+          "status": "PRESENT",
+          "bytes": 652,
+          "sha256": "cf68eeb801db0dfa6b429cb3a515b561c7744f4fe2128f382ea2fa0b312b2459"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/packets.json": {
+          "status": "PRESENT",
+          "bytes": 34530,
+          "sha256": "458a0264c38213db0988d70104ecb86e2973764e945242eb0f033a106619e842"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/preflight-abort-1/attempt/engine-registry.json": {
+          "status": "PRESENT",
+          "bytes": 493172,
+          "sha256": "6f9437b2f6beefcae9bda49007d9cd3db68930d3d9d68194c08abf4525728bf2"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/preflight-abort-1/note.json": {
+          "status": "PRESENT",
+          "bytes": 359,
+          "sha256": "09ef3c7788a63f72bcae2845e62ea754dfc0838d93b4b1146cc5e08d2bf78473"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/verdict.json": {
+          "status": "PRESENT",
+          "bytes": 1952,
+          "sha256": "f9b6ef0915f1d54404befe364682f2ae9bfbad0d4436a197a6aad5f3193c2677"
         },
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli68f-v1/attempt/authorization.json": {
           "status": "PRESENT",
@@ -15559,6 +15751,170 @@
           "status": "PRESENT",
           "bytes": 32,
           "sha256": "1f06bbffad42e791a81975f860768dbd8da18f2b40381fd09c80c4b52e998ee2"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 1125,
+          "sha256": "c793d7a57b069c31a3a620236dd0728b5f7d78c5c29cd7d9933f06ed9f288ad6"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/owned-input-events.json": {
+          "status": "PRESENT",
+          "bytes": 1631,
+          "sha256": "0301c806b473a623565d7359daec2cd2c1919e13018c302005f23922321ef7e3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json": {
+          "status": "PRESENT",
+          "bytes": 2649,
+          "sha256": "7a0f9dc43a1c8e838b24d0bfd6eab1e9bd7c22a6de7b7987745c4f081839cfd0"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-loaded-1000.png": {
+          "status": "PRESENT",
+          "bytes": 18271,
+          "sha256": "488d7bdbbaa04cb069e1f55ca595c86115bd69f176929fa1a7c100927f1c8bb5"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-moved-1000.png": {
+          "status": "PRESENT",
+          "bytes": 119532,
+          "sha256": "69d8c7e6a7214dadeba3c74f4c142e2d8bc2b64af32a2ec8ec1b484ae1b96695"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-pre-exit-1000.png": {
+          "status": "PRESENT",
+          "bytes": 67769,
+          "sha256": "be03d5c3e55c238ef34c70b3ea103890fcb510f4ca2a25f57f07636c6e85b4a8"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-retained-1000.png": {
+          "status": "PRESENT",
+          "bytes": 175108,
+          "sha256": "2e6e23b8cf2b4951f9dc4976f8c42fe3c092f42d87f2b2052895b1ae20ba0059"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-slot-ready-1000.png": {
+          "status": "PRESENT",
+          "bytes": 107307,
+          "sha256": "bf1493052c9d3466155033ee5ba898a4f8116313cf1cff291e8897e6a813b33d"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/packet.json": {
+          "status": "PRESENT",
+          "bytes": 28658,
+          "sha256": "3b4e9aa027a539718e4bf668de3f9789eb0df08ae8d0f030baa3493ed1eab8b0"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/after-process-exit.json": {
+          "status": "PRESENT",
+          "bytes": 2560,
+          "sha256": "75d9ffc2090755e3c20ea287bc1df782bee97b5cf7b6dee2475c2d79473d4115"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/before-launch.json": {
+          "status": "PRESENT",
+          "bytes": 2560,
+          "sha256": "56cc3b20882e18f741d0272ca14836d684d20927322dc47d9180636385c4b3e3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cleanup-k.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cleanup-w.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cli.stderr.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cli.stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1347,
+          "sha256": "a20213d6e14d4915396f0816c69e8e35408ec844e419a730b97009343b62d611"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/exit-desktop-click.json": {
+          "status": "PRESENT",
+          "bytes": 168,
+          "sha256": "1ea984b438672b073cab5779957837fbba8fd600b2cbaa6bd5941a4234e08373"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/exit-tab-click.json": {
+          "status": "PRESENT",
+          "bytes": 166,
+          "sha256": "d23466d6b78fc6b4b46f5546d9a1e4c1c82346a100e68e99a7c49c1191a7b7ff"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/farmer-click.json": {
+          "status": "PRESENT",
+          "bytes": 168,
+          "sha256": "10639799f324402a2c22de1079ac684281f2f6481d5d36cc7368f8127be63815"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 5396,
+          "sha256": "f9db53eead18a63e8dc63cc9ad157d0bbb3e02af1079c8e0c440d70f7d0d096a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json": {
+          "status": "PRESENT",
+          "bytes": 2221,
+          "sha256": "df7319ff058b379a99798897f60e60d7b92cf29a4b4e220951e7296adfa865b5"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/engine-dyld.json": {
+          "status": "PRESENT",
+          "bytes": 2,
+          "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 754,
+          "sha256": "3ef7917ff7c2278ffc6e2e8afa7e3846189e7af2b90d8b4fa925b1d2acc69c5b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/launch-stage.json": {
+          "status": "PRESENT",
+          "bytes": 189,
+          "sha256": "5560d7fec71a7ec2e252952111cc29257a0c1c8de762cc79c08043a42a6ba9db"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/popups.jsonl": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/progress.jsonl": {
+          "status": "MISSING",
+          "sha256": null
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/result.json": {
+          "status": "PRESENT",
+          "bytes": 1440,
+          "sha256": "0d08c73a9d6bf68343f88f063b4b3fdf8b7876315e3ddb147c06d1cc53bd85c7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/service.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/stderr.log": {
+          "status": "PRESENT",
+          "bytes": 373248,
+          "sha256": "887c175eed097b6d1fbed47be8ffd578a3e6a89fab4dc696904848a328979e0d"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/stdout.log": {
+          "status": "PRESENT",
+          "bytes": 500,
+          "sha256": "ceb5d52b63e70644c9f3ebf6ac00f897b236cddaec3bdadfbc765833d9d8e4f6"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/windows.jsonl": {
+          "status": "PRESENT",
+          "bytes": 265,
+          "sha256": "d4654caf2de4bc0e1b1ad3278f37e91e454a50055bb439961e6985c7e2dc7b31"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/wine-exit.json": {
+          "status": "PRESENT",
+          "bytes": 34,
+          "sha256": "2773024937faef37b700d764da759a41e29fa1c2131247064e8b3e318c57eb58"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/load-click.json": {
+          "status": "PRESENT",
+          "bytes": 168,
+          "sha256": "a2df65666602293bd52da393b4d268c032318ddc4d484a379116697afdbe16a7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/run-receipt.json": {
+          "status": "PRESENT",
+          "bytes": 474,
+          "sha256": "589c78c941c18d1fa11039d3171381de463767879a3675b9947ff8469e115097"
         },
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-full-01/final-cli68f-01-evidence/after-process-exit.json": {
           "status": "PRESENT",
@@ -23427,6 +23783,177 @@
               ]
             },
             {
+              "runId": "d9399bec-129a-4c6a-b46b-0e0a0bd3f921",
+              "recordedProduct": "9MWR1NC6VQ6L",
+              "startedAt": "2026-10-22T21:34:47.419622Z",
+              "finishedAt": "2026-10-22T21:37:18.055959Z",
+              "observedProcessResult": {
+                "exit_code": 255,
+                "wine_exit_code": 255,
+                "wine_termination_signal": null,
+                "error_code": "OPERATION_FAILED",
+                "success": false
+              },
+              "resultPolicy": "Raw process success/exit is not title, gameplay, quit or retention PASS.",
+              "identities": {
+                "cli": [
+                  {
+                    "path": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6/xodus-cli",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json",
+                    "historicalHash": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+                    "hashBasis": "Candidate path label, not independent execution-time hash"
+                  }
+                ],
+                "runtime": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json"
+                  }
+                ],
+                "engine": [
+                  {
+                    "value": "hollowknight-crossover-nativejson",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json"
+                  },
+                  {
+                    "value": "hollowknight-crossover-nativejson",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/result.json"
+                  }
+                ],
+                "prefix": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-stardew-crossover-full-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json"
+                  },
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-stardew-crossover-full-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/result.json"
+                  }
+                ],
+                "registry": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ranked-top3-crossover-dry-v1/registry.json",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json"
+                  }
+                ],
+                "gameExecutable": [
+                  {
+                    "value": "Stardew Valley.exe",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json"
+                  }
+                ],
+                "recordedHashes": [
+                  {
+                    "field": "packetSha256",
+                    "sha256": "3b4e9aa027a539718e4bf668de3f9789eb0df08ae8d0f030baa3493ed1eab8b0",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json"
+                  },
+                  {
+                    "field": "packetSha256",
+                    "sha256": "3b4e9aa027a539718e4bf668de3f9789eb0df08ae8d0f030baa3493ed1eab8b0",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json"
+                  },
+                  {
+                    "field": "packetSha256",
+                    "sha256": "3b4e9aa027a539718e4bf668de3f9789eb0df08ae8d0f030baa3493ed1eab8b0",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/run-receipt.json"
+                  }
+                ]
+              },
+              "artifacts": {
+                "runArtifacts": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/exit-desktop-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/exit-tab-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/farmer-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/wine-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/load-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/run-receipt.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/progress.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ranked-top3-crossover-dry-v1/registry.json"
+                ],
+                "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/owned-input-events.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-loaded-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-moved-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-pre-exit-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-retained-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-slot-ready-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/packet.json"
+                ]
+              },
+              "categories": {
+                "packet": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/packet.json"
+                ],
+                "receipt": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json"
+                ],
+                "log": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/launch/runs/d9399bec-129a-4c6a-b46b-0e0a0bd3f921/progress.jsonl"
+                ],
+                "screenshot": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-loaded-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-moved-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-pre-exit-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-retained-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/s3-stardew-audited-slot-ready-1000.png"
+                ],
+                "saveDelta": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/run/before-launch.json"
+                ]
+              },
+              "observationRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json",
+                  "field": "status",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-stardew-attributed-reload-01/final-evidence/result.json",
+                  "field": "ordinaryQuit",
+                  "scope": "Recorded observation; raw stays local"
+                }
+              ],
+              "hypothesisAndNextTestRefs": [],
+              "gaps": [
+                "Historical app identity not bound to this run",
+                "Path-labeled identities are not independent execution-time binary hashes",
+                "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
+                "Shared proof-root files are context only; per-run attribution incomplete"
+              ]
+            },
+            {
               "runId": "db74c3c4-dbfa-4e70-8cd0-3387f44f8586",
               "recordedProduct": "9MWR1NC6VQ6L",
               "startedAt": "2026-10-22T06:26:36.978145Z",
@@ -23587,13 +24114,13 @@
           ],
           "hypothesesStatus": "See existing title scope/blocker and raw diagnostic links; no per-attempt hypothesis verdict invented.",
           "nextDiscriminatingTest": "Not explicitly frozen by this audit; owner must recover the existing test card/diagnosis before any separately authorized retry.",
-          "recordedTitleScope": "Coordinator latest report:111dd574 retention confirmed but ordinary quit attribution under review/helper exit1. Earlier22d78ea2 retained Day2/s3/proof Farm/15seeds. Neither expected255 nor retained payload alone proves normal quit; keep strict count9.",
-          "recordedBlocker": "Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission.",
+          "recordedTitleScope": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report.",
+          "recordedBlocker": null,
           "gaps": [
             "Historical attempts mentioned only in free-form prose/short IDs may remain unenumerated",
             "Per-attempt failed hypotheses and next discriminating test require source-owner annotation"
           ],
-          "nextGate": "ordinary quit"
+          "nextGate": "complete"
         },
         "9MXND4PQLK3W": {
           "title": "DOOM 64",
@@ -31405,6 +31932,189 @@
           "title": "Oblivion GOTY (2009)",
           "attempts": [
             {
+              "runId": "e62fd04f-1708-4fab-a3cf-75b040faedb1",
+              "recordedProduct": "9P2J5D12GJL5",
+              "startedAt": "2026-10-22T21:32:20.138167Z",
+              "finishedAt": "2026-10-22T21:34:20.651250Z",
+              "observedProcessResult": {
+                "exit_code": 0,
+                "wine_exit_code": 0,
+                "wine_termination_signal": null,
+                "error_code": null,
+                "success": true
+              },
+              "resultPolicy": "Raw process success/exit is not title, gameplay, quit or retention PASS.",
+              "identities": {
+                "cli": [
+                  {
+                    "path": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/372773bd9583ed21b1ac8f6f5a642bfd759750f954660e06b5ce08cda2256e2c/xodus-cli",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json",
+                    "historicalHash": "372773bd9583ed21b1ac8f6f5a642bfd759750f954660e06b5ce08cda2256e2c",
+                    "hashBasis": "Candidate path label, not independent execution-time hash"
+                  }
+                ],
+                "runtime": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json"
+                  }
+                ],
+                "engine": [
+                  {
+                    "value": "hollowknight-crossover-nativejson",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json"
+                  },
+                  {
+                    "value": "hollowknight-crossover-nativejson",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/result.json"
+                  }
+                ],
+                "prefix": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-oblivion-goty-crossover-passive-cli3727-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json"
+                  },
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-oblivion-goty-crossover-passive-cli3727-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/result.json"
+                  }
+                ],
+                "registry": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ranked-top3-crossover-dry-v1/registry.json",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json"
+                  }
+                ],
+                "gameExecutable": [
+                  {
+                    "value": "Launcher.exe",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json"
+                  }
+                ],
+                "recordedHashes": [
+                  {
+                    "field": "packetSha256",
+                    "sha256": "458a0264c38213db0988d70104ecb86e2973764e945242eb0f033a106619e842",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/verdict.json"
+                  },
+                  {
+                    "field": "registry_sha256",
+                    "sha256": "3e0f0385fef87b4a8e542726ae78ab083f2a08df99fc4caf3cfc93e0ea1f52ce",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json"
+                  },
+                  {
+                    "field": "source_registry_sha256",
+                    "sha256": "3e0f0385fef87b4a8e542726ae78ab083f2a08df99fc4caf3cfc93e0ea1f52ce",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json"
+                  }
+                ]
+              },
+              "artifacts": {
+                "runArtifacts": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/authorization.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-1.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-2.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-3.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/capture-4.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli-pid.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli.stdout.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/focus-handback.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-1.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-2.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-3.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/matched-processes-4.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/observations.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/pending-receipt.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/receipt.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/wine-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-1.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-2.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-3.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/window-diagnostics-4.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/progress.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ranked-top3-crossover-dry-v1/registry.json"
+                ],
+                "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/dry-admission.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/exe-baseline.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/packets.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/preflight-abort-1/attempt/engine-registry.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/preflight-abort-1/note.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/verdict.json"
+                ]
+              },
+              "categories": {
+                "packet": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/packets.json"
+                ],
+                "receipt": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/receipt.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/result.json"
+                ],
+                "log": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/cli.stdout.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/runs/e62fd04f-1708-4fab-a3cf-75b040faedb1/progress.jsonl"
+                ],
+                "screenshot": [],
+                "saveDelta": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/exe-baseline.json"
+                ]
+              },
+              "observationRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/receipt.json",
+                  "field": "observations",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/receipt.json",
+                  "field": "visual_classification",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/pending-receipt.json",
+                  "field": "observations",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/attempt/pending-receipt.json",
+                  "field": "visual_classification",
+                  "scope": "Recorded observation; raw stays local"
+                }
+              ],
+              "hypothesisAndNextTestRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/oblivion-goty-crossover-passive-cli3727-v1/verdict.json",
+                  "field": "nextHypothesis",
+                  "scope": "Recorded diagnosis, not a new conclusion"
+                }
+              ],
+              "gaps": [
+                "Historical app identity not bound to this run",
+                "Path-labeled identities are not independent execution-time binary hashes",
+                "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
+                "No retained screenshot artifact found in bounded search",
+                "Shared proof-root files are context only; per-run attribution incomplete"
+              ]
+            },
+            {
               "runId": "f1339edf-f389-44a5-b2e6-2ca01357dc86",
               "recordedProduct": "9P2J5D12GJL5",
               "startedAt": "2026-10-22T21:14:01.321532Z",
@@ -33452,6 +34162,7 @@
               "categories": {},
               "gaps": [
                 "Referenced attempt only; full run ID/result not located",
+                "Previously indexed attempt absent from current bounded scan; retained, not erased",
                 "Previously indexed attempt absent from current bounded scan; retained, not erased",
                 "Previously indexed attempt absent from current bounded scan; retained, not erased",
                 "Previously indexed attempt absent from current bounded scan; retained, not erased"
@@ -43776,13 +44487,13 @@
       },
       "coverage": {
         "titleCount": 29,
-        "launchResultAttempts": 150,
+        "launchResultAttempts": 152,
         "unresolvedReferenceCount": 6,
-        "artifactCount": 3218,
-        "presentArtifacts": 3056,
-        "missingArtifacts": 162,
+        "artifactCount": 3288,
+        "presentArtifacts": 3124,
+        "missingArtifacts": 164,
         "recordedHashDiscrepancies": 0,
-        "attemptsWithIdentityGaps": 156,
+        "attemptsWithIdentityGaps": 158,
         "unresolvedReferencesPolicy": "May include non-launch/support references or short-ID duplicates; not additional proven game attempts."
       },
       "specialistIndexes": [
@@ -43812,8 +44523,8 @@
     }
   },
   "target": 20,
-  "strictWorkingCount": 11,
-  "remainingTo20": 9,
+  "strictWorkingCount": 12,
+  "remainingTo20": 8,
   "gameLaunches": 0,
   "policy": "Unknown gates never inferred passed from install status, source row, screenshots or cache files. Strict matrix WORKING or newer explicit coordinator admission admits title-specific gate semantics. WORKING_CANDIDATE excluded. Stall clock is observed same next gate, not source mtime/global matrix updatedAt; historical age unavailable until measured. >2h alerts include held/queued lanes but do not override holds or authorize runs.",
   "refreshPolicy": "Every 30 minutes via attached session automation and when a session reports a verdict. Same-session refresh only; no background games.",
@@ -43866,7 +44577,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:41:54.984442+00:00",
-      "sameGateObservedHours": 16.8630823,
+      "sameGateObservedHours": 16.984075722222222,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after fresh18dcee0d loaded S3Retention world (typedS3-Retention, game filteredhyphen), same drgload/LabAssistant/$5/ducttape first pocketcell, then ordinary LeaveGame\u2192YesQuit\u2192mainmenuQuit\u2192Quit CLI0/Wine0 in294.9s under300. Earlier900s worlde5ec1841 reached real cafeteria movement/interactions40-55FPS after first-user setup but TIMEOUTCLI1/Wine0, not ordinary quit. Changed placed/droppedobject NOT observed. Explicit coordinator admission uses retained world/scientist/inventory marker and final normalexit. Actual Container grew3\u21926payloads; fullT2/T3 continuity, opaque7384\u21927421B payload after finalquit. Apple4/adf8/7106/Shipping/STA1 only unchanged.",
@@ -43932,7 +44643,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "01cda87b",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -43953,7 +44664,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T21:02:52.061519+00:00",
-      "sameGateObservedHours": 0.5138942230555555,
+      "sameGateObservedHours": 0.6348876452777777,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted.",
@@ -44015,7 +44726,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:17:29.883816+00:00",
-      "sameGateObservedHours": 17.27005469611111,
+      "sameGateObservedHours": 17.391048118333334,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after sole final300s fresh80cbf59d loads Crossroads/Nights2 (previously1)/Grasp10, save updated22Oct06:47AM, no movement/interaction, ordinary PauseQuit\u2192OK\u2192mainQuit CLI0/Wine0 within209s. Preceding900s d9e1ff58 reached natural death and Crossroads but TIMEOUTCLI1/Wine1; remains INCONCLUSIVE in its own right. Final verification explicitly admitted despite that timeout. ActualCONTAINER45056\u219256141B, complete T2/T3 hashes identical. Earlier replayed shade dialogue is not global retention failure. Known window-monitor10s warning separately accepted and does not replace actualWine0. No further Hades launches.",
@@ -44102,7 +44813,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted natural-death combat rather than a two-minute rerun. Apple4 defaultCOM/noargs/adf8/7106: selected Swordsman, moved through camp, entered Haunted Caverns and reached real skeleton combat at60FPS. First natural death16s unlocked First Try/Quest Stone and banked17gold. Ordinary menu Quit/Yes quit now CLI0/Wine0. Fresh process retained17gold and visible QuestStone. Second attack/movement attempt dealt400damage and2kills before natural death15s, bank53gold. Returned camp and ordinary Quit/Yes quit now again CLI0/Wine0. Stopped actual local-save payload changed size5520 to9876 and fullSHA f4e03df7... to9d22356b...; metadata-only/settings are not used as retention proof. No two-minute survival, mid-run resume, cloud-save or app-tile E2E claim.",
@@ -44188,7 +44899,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 18.69761122138889,
+      "sameGateObservedHours": 18.81860464361111,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen Apple4/adf8/7106 with STA1 only: created drgload xodus, healed with displayed G, completed relative Look Around, walked from cave through exterior cliff path following Professor Fig at39-47FPS D3D12/Metal4. Coordinator independently confirmed movement. Initial1800s891d061f and300s86e8da68 hit wall caps; these were not normal quits. Fresh86e8da68 retained named level1 character and loaded cave healing checkpoint, bypassing character creation/carriage intro; coordinator reviewed screenshots and accepted this checkpoint retention, waiving later cave-exit requirement. Final new600s f2471368 again loaded that character/world and completed ordinary Escape SAVE/LOAD AND EXIT\u2192EXIT TO MAIN MENU\u2192Space Yes\u2192main-menu EXIT GAME\u2192Space Yes/Quit to OS. Actual CLI0/Wine0, no WM_CLOSE/forcedkill, PID73417 gone. Coordinator's WORKING condition now satisfied; app-tile E2E remains separate/unobserved.",
@@ -44254,7 +44965,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Corrected actual S5 app-tile run6eb24065 with native JSON registrations, native-web-only shims and7106 pair passes user initialization, King's Pass rendering, movement, jump, attacks and focus healing. Coordinator explicitly replaced the bench gate with normal Quit to Menu save. Both container .xgs hashes+mtimes changed; post-quit slot1 card King's Pass/17M/0geo/5masks. Normal close Wine0/CLI0. Actual unchanged S5 tile relaunch902a364c displayed exactly the same card, Continue loaded real King's Pass, movement worked and5masks/broken soul vessel retained the death state. Zero-geo HUD counter is hidden; card0 is observed, not an invented HUD numeral. Second normal save/quit/WM_CLOSE Wine0/CLI0; both owned process pairs gone, exactprefix-k1/-w0. Coordinator reviewed screenshots and explicitly admitted HK as third WORKING title. No bench/cloud claim.",
@@ -44323,7 +45034,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "User explicitly admitted WORKING and directed move-on. Official signed native launcher3.41.29-2.6.12, Java latest26.3 ARM64: actual single-player world/HUD, W+jump movement, clean saved-world shutdown, launcher relaunch to new Java PID76415 and retained New World reloaded. S2/S5 native Ode provider integration remains pending; not a Wine or Bedrock claim.",
@@ -44402,7 +45113,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:00:36.510816+00:00",
-      "sameGateObservedHours": 15.55154719611111,
+      "sameGateObservedHours": 15.672540618333333,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING8 after extended d919efb9 completed SKATE TO ROCKFORD'S, unlocked ROCKFORD'S HOUSE and immediately ordinaryExit/SpaceDesktopCLI0/Wine0 in954.85s. Sole fresh ab231868 main menu hasContinue/Chapters; ChapterSelect retains selectable SKATE TO ROCKFORD'S and ROCKFORD'S HOUSE. Esc/mainExitCLI0/Wine0 in193.4s; exactprefix-w0. Both quit before75% caps. Payload3544\u21925503B and fullT2/T3/T4 continuity verified. Same Apple4/adf8/7106/STA/two-native private registry. No further exploration/chapter replay.",
@@ -44483,7 +45194,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T19:58:34.919517+00:00",
-      "sameGateObservedHours": 1.5853225569444445,
+      "sameGateObservedHours": 1.7063159791666664,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinatorindependentlyadmittedninthtitle: worldcca9c74f andfreshretry0667822b retainedS3/Wolf/114G/BlobEggx1+movement; actualSaveQuit/titleExit0/0 bothruns; world\u2192retry27968B SHA4ba6af91 unchanged; afterretry27984B SHA6b271c30. PriorreloadINFRA0x80072746excluded.",
@@ -44558,7 +45269,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "CrossOver actual EmphiV24 world, movement, autosave, ordinary WM_CLOSE and fresh-process retained-world relaunch verified. Historical ffc4 CrossOver Wine exit0 is independent of its POPUP_MONITOR_FAILED helper error. S1 additionally qualified free nms-free-gptk3-d3dshared: real EmphiV24 walking/strafe/scanner/tutorial progress, changed Slot1Auto data/meta, ordinary quit CLI0, same-prefix relaunch with updated0:06 playtime/03:23save and retained Gather Ferrite Dust objective in-world around60FPS, second normal quit CLI0. PIDs52582/65739 gone, ownprefix-k1/-w0, finished00:26:30 within original1200s grant. S3 inspected relaunch-world.png and relaunch-trial-result.json. Earlier free-load failures are historical, not the current outcome. App-driven NMS E2E remains unobserved.",
@@ -44587,6 +45298,105 @@
         "31862bad-e04f-4282-a540-f3a82f12a61f"
       ],
       "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.BQVQTL3PCH05"
+    },
+    {
+      "storeId": "9MWR1NC6VQ6L",
+      "title": "Stardew Valley",
+      "verdict": "WORKING",
+      "strictWorking": true,
+      "gates": {
+        "menu": {
+          "status": "passed",
+          "basis": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report."
+        },
+        "gameplay": {
+          "status": "passed",
+          "basis": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report."
+        },
+        "quit": {
+          "status": "passed",
+          "basis": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report."
+        },
+        "relaunch": {
+          "status": "passed",
+          "basis": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report."
+        },
+        "save": {
+          "status": "passed",
+          "basis": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report."
+        }
+      },
+      "nextGate": "complete",
+      "ownerStream": "S3",
+      "blocker": null,
+      "evidence": [
+        {
+          "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
+          "sha256": "5cc7884074639a79e6132236d213cc8e340e8d6404f86249d8b7bd0b39e4d66b",
+          "productId": "9MWR1NC6VQ6L"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
+          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
+          "runId": "d9399bec-129a-4c6a-b46b-0e0a0bd3f921",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
+        }
+      ],
+      "packetReferences": [
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
+          "sha256": "789ee39d7a4c67d1ca7aaded4e8a861ab954ad23875efb2e7fa9401b724fb844",
+          "storeId": "9MWR1NC6VQ6L",
+          "collection": "items",
+          "kind": "packet"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+          "sha256": "4dba390adfc9188ff95e03e081459582808215a6966a3e02027e42169786d55b",
+          "store_id": "9MWR1NC6VQ6L",
+          "kind": "S1-candidate-only"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/preflight-game-candidates.json",
+          "sha256": "2dbde3d110ca1457814eec4b4f2f5ca431a97872ee83f30a05ed0d143ba76cfe",
+          "store_id": "9MWR1NC6VQ6L",
+          "kind": "S1-candidate-only"
+        },
+        {
+          "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
+          "sha256": "0b8b78c055cbea68cde4f7ea989d418bfb6cd826e5e16b3db2aacf8f8d59ce43",
+          "productId": "9MWR1NC6VQ6L",
+          "collection": "games",
+          "kind": "authoritative-matrix"
+        },
+        {
+          "storeId": "9MWR1NC6VQ6L",
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
+          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
+        }
+      ],
+      "s1RowPresent": true,
+      "gateFirstObservedAt": "2026-10-22T21:40:57.657042+00:00",
+      "sameGateObservedHours": 0,
+      "stuckOver2Hours": false,
+      "historicalGateAge": "unknown before tracker first observation",
+      "scope": "Coordinator-admitted WORKING#12 under title-specific expected255 rule, NOT CLI0. Prior world465d526c proves gameplay/sleep to Day2/15seeds. Fresh d9399bec retains s3/proof Farm/Day2/15seeds; observed Exit To Desktop with exact PID/flushed down1/up1/helper0, PIDgone before cleanup and noUnhandled. Isolated fresh movement animation not captured; prior world gameplay proven. Coordinator independently viewed captures/raw input/result/world record. S4 verified final archive11/11 hashes. Historical111dd574 remains INCONCLUSIVE/helper1; 255 alone never proves quit. No GUI Play-click or engine promotion inferred. Final result remains a pre-admission candidate artifact; coordinator admission is this newer report.",
+      "attemptHistory": [
+        "111dd574-a6ce-4e82-984a-46175e9cb221",
+        "22d78ea2-e2a5-4fec-97db-112e52b30d28",
+        "3ceb34c9-853e-4d17-b358-7abf0e77c92f",
+        "465d526c-021d-44de-b0ab-8211addc2656",
+        "4a6fe259-b9d4-4617-8389-43a2e4ae41f2",
+        "5d6f220f-cc49-4e63-862b-8250422aa30b",
+        "5eaba6c8-25eb-4280-b7c6-314978775541",
+        "d9399bec-129a-4c6a-b46b-0e0a0bd3f921",
+        "db74c3c4-dbfa-4e70-8cd0-3387f44f8586"
+      ],
+      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9MWR1NC6VQ6L"
     },
     {
       "storeId": "9NLRT31Z4RWM",
@@ -44651,7 +45461,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:48:55.482548+00:00",
-      "sameGateObservedHours": 0.7462772705555556,
+      "sameGateObservedHours": 0.8672706927777778,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator independently admitted title10. CLI68f world a9ee48eb obtained WoodenStick/equippedJ; fresh a27be511 retained both and actual movement. Both observed QuitToTitleScreen then titleQuit, CLI0/Wine0, PIDgone beforecleanup. T2T3 exact9331B SHA3a7fb537; T4 SHA1b116832. Shrine NOT reached. World quit548.735s missed540 by8.735s; reload quit148.718s within180. CLI only, not app E2E; prior timeouts retained as evidence, not provider-fault claims.",
@@ -44701,7 +45511,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -44734,7 +45544,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.9220464852777778,
+      "sameGateObservedHours": 1.0430399075,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied.",
@@ -44781,7 +45591,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "3e488e23",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -44804,7 +45614,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T05:35:29.577516+00:00",
-      "sameGateObservedHours": 15.970139779444445,
+      "sameGateObservedHours": 16.09113320166667,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator-reported retry 3e488e23 INCONCLUSIVE. Earlier 01a6bdcf gameplay timeout is historical. Forced -k cleanup does not pass ordinary quit.",
@@ -44861,7 +45671,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.931336092222224,
+      "sameGateObservedHours": 19.052329514444445,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44927,7 +45737,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed exact Windows package. Actual corrected Apple4/adf8/7106 trace421f naturally exits0 in8.68s with no observed owned window/screenshot/input. Both real WINEDEBUG/XODUS_WINE_DEBUG active; no explicit causal exception or game-level reason. CLI0 is not rendering/gameplay PASS. Exactprefix-k1/-w0. Separate coordinator-authorized API trace6a266eb2 naturally exits0 in9.94s, also no window/input/capture; S1 interpreting actual trace.",
@@ -44998,7 +45808,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45045,7 +45855,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45087,7 +45897,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "21f1ed27",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -45114,7 +45924,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:33:42.080722+00:00",
-      "sameGateObservedHours": 0,
+      "sameGateObservedHours": 0.12099342222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S3 settled21f1ed27: external-consent-stop/finalresult explicitly overrides original runner forcedCleanup=null, preserved historically. Runner fixed for future, not retroactive proof. No gameplay/save/reload or legal agreement acceptance. Earlier passive/prerequisite attempts retained; license GRANTED does not authorize legal consent.",
@@ -45183,7 +45993,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45229,7 +46039,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "db247a1f",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45261,7 +46071,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:30:53.508207+00:00",
-      "sameGateObservedHours": 0.04682569861111111,
+      "sameGateObservedHours": 0.16781912083333334,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical.",
@@ -45313,7 +46123,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "a452bd89",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45340,7 +46150,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T04:28:41.158529+00:00",
-      "sameGateObservedHours": 17.083589498055556,
+      "sameGateObservedHours": 17.204582920277776,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator report only, not an independently inspected receipt. Matrix verdict supersedes once recorded.",
@@ -45393,7 +46203,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45462,7 +46272,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45509,7 +46319,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45556,7 +46366,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.931336092222224,
+      "sameGateObservedHours": 19.052329514444445,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45620,7 +46430,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Fresh adf8 complete117. Actual direct Fallout4.exe run16403e9f on creation-dx11-d3dmetal/adf8/7106 with explicit local-saves1/online1 renders signed-in menu60FPS, new-game video, interactive character creation and first-person bathroom world. Forward input accepted and F5 visibly showed Quicksaving. Retention NOT qualified: no .fos/.xgs found in exact prefix or actual host Fallout4 MS/Saves/Fallout4/Saves; discovery only adds Plugins.txt/UserDownloadedContent.txt, not saves. At300s ordinary exact-title/staged-image WM_CLOSE matched1, then actual Wine5/CLI5; exactprefix-k1/-w0, staged game gone. Old undriven-launcher timeout3c418e3d remains historical, not a graphics failure.",
@@ -45694,7 +46504,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45741,7 +46551,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.931336092222224,
+      "sameGateObservedHours": 19.052329514444445,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45788,7 +46598,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45835,7 +46645,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45882,7 +46692,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "3b833cc7",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45909,7 +46719,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 18.69761122138889,
+      "sameGateObservedHours": 18.81860464361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged.",
@@ -45978,7 +46788,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46059,7 +46869,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -46106,7 +46916,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.931336092222224,
+      "sameGateObservedHours": 19.052329514444445,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46187,7 +46997,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:39:46.049930+00:00",
-      "sameGateObservedHours": 3.8988974422222222,
+      "sameGateObservedHours": 4.019890864444444,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen004/518e7fb9/null-display1/sameprefix worldd756b27d: real awakening/right-arrow movement/forest/log descent, repeated first-spike-gap deaths. LoadChapter appears but only initialforestthumbnail observed; no post-gap checkpoint/new thumbnail. Ordinary QuitLimboCLI0/Wine0 in812.16s, processgone before-k1/-w0. Quit started late,75%policy NOT satisfied. Provider158->206B delta is opaque; no reload consumed or retention claim.",
@@ -46242,7 +47052,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46289,7 +47099,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46336,7 +47146,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "f1339edf-f389-44a5-b2e6-2ca01357dc86",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46370,11 +47180,12 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.27141611083333333,
+      "sameGateObservedHours": 0.39240953305555554,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json. Runtime pair/shim overlay bytes omitted from RAM-stage sizing. Not evidence of host110GiB floor failure or game-rendering incompatibility.",
       "attemptHistory": [
+        "e62fd04f-1708-4fab-a3cf-75b040faedb1",
         "f1339edf-f389-44a5-b2e6-2ca01357dc86",
         "1e0c7e13-55ed-41a3-9537-6cf5e6a7b83a"
       ],
@@ -46421,7 +47232,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46453,7 +47264,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.9220464852777778,
+      "sameGateObservedHours": 1.0430399075,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report: gameplay render only, not strict WORKING. Run identity not supplied.",
@@ -46529,7 +47340,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; no launch/rendering qualification."
@@ -46576,7 +47387,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.931336092222224,
+      "sameGateObservedHours": 19.052329514444445,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46623,7 +47434,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.96383728388889,
+      "sameGateObservedHours": 19.08483070611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46704,7 +47515,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:52:53.364646+00:00",
-      "sameGateObservedHours": 3.68019891,
+      "sameGateObservedHours": 3.8011923322222225,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Historical manifestlauncherfa08c5f8 PLAY spawnedchild then vanished,launcher0/0 notgameplay. Soleauthorized directexe28648e14 retainedsameprefix/defaultCOM/creationDX11/adf8/7106 changesonlyexe.22Oct17:39:25-17:39:42Z17.58s actualSkyrimSE.exe/macPID36400/window26655 titleSkyrim Special Edition MS, spontaneouslyexited5/5 beforecapture/input. No world/menu/gameplay/save/reload. All3saveinventoriesremainempty. Gamegone beforeexactprefix-k1/-w0. No additionalretry.",
@@ -46758,102 +47569,10 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.931336092222224,
+      "sameGateObservedHours": 19.052329514444445,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
-    },
-    {
-      "storeId": "9MWR1NC6VQ6L",
-      "title": "Stardew Valley",
-      "verdict": "INCONCLUSIVE",
-      "strictWorking": false,
-      "gates": {
-        "menu": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "gameplay": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "quit": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "relaunch": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "save": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        }
-      },
-      "nextGate": "menu",
-      "ownerStream": "S2/S3",
-      "blocker": "Final111dd574 input attribution unresolved: helper1/empty output, exit255 near click is not proof of delivery. Preserve evidence; fix and validate helper off-screen before any separately granted retry.",
-      "evidence": [
-        {
-          "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "5cc7884074639a79e6132236d213cc8e340e8d6404f86249d8b7bd0b39e4d66b",
-          "productId": "9MWR1NC6VQ6L"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
-          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
-        }
-      ],
-      "packetReferences": [
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
-          "sha256": "789ee39d7a4c67d1ca7aaded4e8a861ab954ad23875efb2e7fa9401b724fb844",
-          "storeId": "9MWR1NC6VQ6L",
-          "collection": "items",
-          "kind": "packet"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-          "sha256": "4dba390adfc9188ff95e03e081459582808215a6966a3e02027e42169786d55b",
-          "store_id": "9MWR1NC6VQ6L",
-          "kind": "S1-candidate-only"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/preflight-game-candidates.json",
-          "sha256": "2dbde3d110ca1457814eec4b4f2f5ca431a97872ee83f30a05ed0d143ba76cfe",
-          "store_id": "9MWR1NC6VQ6L",
-          "kind": "S1-candidate-only"
-        },
-        {
-          "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "0b8b78c055cbea68cde4f7ea989d418bfb6cd826e5e16b3db2aacf8f8d59ce43",
-          "productId": "9MWR1NC6VQ6L",
-          "collection": "games",
-          "kind": "authoritative-matrix"
-        },
-        {
-          "storeId": "9MWR1NC6VQ6L",
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
-          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
-        }
-      ],
-      "s1RowPresent": true,
-      "gateFirstObservedAt": "2026-10-22T21:04:14.805468+00:00",
-      "sameGateObservedHours": 0.49090979277777774,
-      "stuckOver2Hours": false,
-      "historicalGateAge": "unknown before tracker first observation",
-      "scope": "465d526c world and fresh22d78ea2 retained s3/proof Farm/Day2/15ParsnipSeeds. Final111dd574 again loaded retained marker; actual ExitPage captured, one ExitToDesktop click attempted at1239,786. CLI255/Wine255 and PIDgone, but helper1/empty output leaves input attribution INCONCLUSIVE. No retry granted.",
-      "attemptHistory": [
-        "111dd574-a6ce-4e82-984a-46175e9cb221",
-        "22d78ea2-e2a5-4fec-97db-112e52b30d28",
-        "3ceb34c9-853e-4d17-b358-7abf0e77c92f",
-        "465d526c-021d-44de-b0ab-8211addc2656",
-        "4a6fe259-b9d4-4617-8389-43a2e4ae41f2",
-        "5d6f220f-cc49-4e63-862b-8250422aa30b",
-        "5eaba6c8-25eb-4280-b7c6-314978775541",
-        "db74c3c4-dbfa-4e70-8cd0-3387f44f8586"
-      ],
-      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9MWR1NC6VQ6L"
     },
     {
       "storeId": "9PJPCB188SVG",
@@ -46897,7 +47616,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "c5e0b3ba-95c8-4d10-bf34-495f1a6110fe",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -46931,7 +47650,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.27141611083333333,
+      "sameGateObservedHours": 0.39240953305555554,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; subnautica2-bootstrap-passive-vc14-v1/verdict.json. Rendering not gameplay/retention/normal quit. Earlier evidenceReceipt identifies historical blocked attempt only. Existing package license GRANTED does not grant legal consent.",
@@ -46975,7 +47694,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "30e44a64-ce07-4e43-bb79-77a175729226",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46991,7 +47710,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.27141611083333333,
+      "sameGateObservedHours": 0.39240953305555554,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; valor-mortis-apple4-passive-vcoverrides-v1/verdict.json. IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca off-screen lookup before any separately authorized retry; log fingerprint not proven causal diagnosis.",
@@ -47040,7 +47759,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47067,7 +47786,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.9220464852777778,
+      "sameGateObservedHours": 1.0430399075,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report, no gameplay or retention admission. DQ overlay sequence not a proven causal attribution.",
@@ -47110,7 +47829,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47138,7 +47857,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.9220464852777778,
+      "sameGateObservedHours": 1.0430399075,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report: startup config failure, no proven staged-file parity or fix, no launch authorization.",
@@ -47185,7 +47904,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "e0877a3a2c88a0b560cb8291a78ed505adaa423f1d17faa2af4112dd17984ab9",
+          "sha256": "b23d093e86465866484485d155863b24d87587cecfbda74f208e3650cbd72bda",
           "runId": "9c31530d",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -47214,7 +47933,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:01:01.161758+00:00",
-      "sameGateObservedHours": 15.544699712222222,
+      "sameGateObservedHours": 15.665693134444444,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator reports run 9c31530d reached gameplay but timed out. Supersedes old actual-title retest pending claim; gameplay reach alone is not strict WORKING.",
