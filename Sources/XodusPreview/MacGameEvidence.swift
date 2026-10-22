@@ -42,6 +42,12 @@ struct MacGameEvidence: Decodable, Sendable {
             let retentionVerified: Bool?
             let normalMenuQuitObserved: Bool?
         }
+
+        private enum CodingKeys: String, CodingKey {
+            case productId, title, verdict, scope, engine, runId, retentionRunId, normalQuitRunId
+            case screenshots, owner, blocker, launchAttempted, saveObservation, app_e2e
+        }
+
         let productId: String
         let title: String
         let verdict: Verdict
@@ -56,6 +62,24 @@ struct MacGameEvidence: Decodable, Sendable {
         let launchAttempted: Bool?
         let saveObservation: SaveObservation?
         let app_e2e: String?
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            productId = try container.decode(String.self, forKey: .productId)
+            title = try container.decode(String.self, forKey: .title)
+            verdict = try container.decode(Verdict.self, forKey: .verdict)
+            scope = try container.decode(String.self, forKey: .scope)
+            engine = try container.decodeIfPresent(String.self, forKey: .engine)
+            runId = try container.decodeIfPresent(String.self, forKey: .runId)
+            retentionRunId = try container.decodeIfPresent(String.self, forKey: .retentionRunId)
+            normalQuitRunId = try container.decodeIfPresent(String.self, forKey: .normalQuitRunId)
+            screenshots = try container.decodeIfPresent([Screenshot].self, forKey: .screenshots) ?? []
+            owner = try container.decode(String.self, forKey: .owner)
+            blocker = try container.decodeIfPresent(String.self, forKey: .blocker)
+            launchAttempted = try container.decodeIfPresent(Bool.self, forKey: .launchAttempted)
+            saveObservation = try container.decodeIfPresent(SaveObservation.self, forKey: .saveObservation)
+            app_e2e = try container.decodeIfPresent(String.self, forKey: .app_e2e)
+        }
 
         var verificationScopeLabel: String? {
             app_e2e == "unobserved" || verdict == .workingCandidate
@@ -143,6 +167,18 @@ struct MacGameEvidence: Decodable, Sendable {
     }
 }
 
+enum MacGameEvidenceDiagnostic {
+    static let bundledUnavailable = "The app's bundled Mac test evidence couldn't be loaded."
+
+    static func unreadable(path: String) -> String {
+        "Mac test evidence couldn't be read at \(path). Check file access."
+    }
+
+    static func invalid(path: String) -> String {
+        "Mac test evidence at \(path) is invalid. Check its JSON structure and required fields."
+    }
+}
+
 @MainActor
 final class MacGameEvidenceStore: ObservableObject {
     static let shared = MacGameEvidenceStore()
@@ -155,29 +191,51 @@ final class MacGameEvidenceStore: ObservableObject {
             .appendingPathComponent("Library/Application Support/Ode to X/Evidence/tried-games.json")
         let selected = defaults.string(forKey: "Xodus.evidence.triedGames").flatMap { $0.isEmpty ? nil : $0 }
         let path = selected ?? defaultURL.path
+        let bundled: MacGameEvidence
         do {
-            let bundled = try MacGameEvidence.bundled.get()
-            if selected == nil && !FileManager.default.fileExists(atPath: path) {
-                games = Dictionary(uniqueKeysWithValues: bundled.games.map { ($0.productId, $0) })
-                errorMessage = nil
-                lastBytes = nil
-                return
-            }
-            let bytes = try await Task.detached {
+            bundled = try MacGameEvidence.bundled.get()
+        } catch {
+            games = [:]
+            errorMessage = MacGameEvidenceDiagnostic.bundledUnavailable
+            return
+        }
+        if selected == nil && !FileManager.default.fileExists(atPath: path) {
+            games = Dictionary(uniqueKeysWithValues: bundled.games.map { ($0.productId, $0) })
+            errorMessage = nil
+            lastBytes = nil
+            return
+        }
+        let bytes: Data
+        do {
+            bytes = try await Task.detached {
                 let url = URL(fileURLWithPath: path)
                 try GameScriptFiles.checkPath(url)
                 return try InstalledGameFiles.readRegular(url, maximumBytes: 1_048_576)
             }.value
-            guard bytes != lastBytes || errorMessage != nil else { return }
-            let catalogue = try MacGameEvidence.decode(bytes)
-            games = selected == nil ? try bundled.merging(catalogue)
-                : Dictionary(uniqueKeysWithValues: catalogue.games.map { ($0.productId, $0) })
-            lastBytes = bytes
-            errorMessage = nil
         } catch {
             games = [:]
-            errorMessage = "Mac test evidence couldn't be read at \(path). Check the ledger's format and file access."
+            errorMessage = MacGameEvidenceDiagnostic.unreadable(path: path)
+            return
         }
+        guard bytes != lastBytes || errorMessage != nil else { return }
+        let catalogue: MacGameEvidence
+        do {
+            catalogue = try MacGameEvidence.decode(bytes)
+        } catch {
+            games = [:]
+            errorMessage = MacGameEvidenceDiagnostic.invalid(path: path)
+            return
+        }
+        do {
+            games = selected == nil ? try bundled.merging(catalogue)
+                : Dictionary(uniqueKeysWithValues: catalogue.games.map { ($0.productId, $0) })
+        } catch {
+            games = [:]
+            errorMessage = MacGameEvidenceDiagnostic.invalid(path: path)
+            return
+        }
+        lastBytes = bytes
+        errorMessage = nil
     }
 }
 

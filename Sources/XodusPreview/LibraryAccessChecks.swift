@@ -116,6 +116,53 @@ enum LibraryAccessChecks {
         check(decodedEvidence.games.first?.scope.contains("save persistence unverified") == true
               && decodedEvidence.games.first?.screenshots.count == 1,
               "Mac evidence keeps observation scope and screenshot references without inventing save proof")
+        let partialEvidence = Data("""
+            {"schemaVersion":1,"updatedAt":"2026-10-21T00:00:00Z","games":[
+            {"productId":"FIXTURE00001","title":"Missing screenshots","verdict":"NOT_TESTED",
+             "scope":"No app test.","owner":"test"},
+            {"productId":"FIXTURE00002","title":"Brotato candidate","verdict":"WORKING_CANDIDATE",
+             "scope":"CLI result only.","owner":"test"},
+            {"productId":"FIXTURE00003","title":"Screenshot retained","verdict":"GAMEPLAY_PASS",
+             "scope":"Gameplay observed.","owner":"test",
+             "screenshots":[{"path":"/synthetic/third.png","caption":"Synthetic"}]}]}
+            """.utf8)
+        let decodedPartial = try MacGameEvidence.decode(partialEvidence)
+        let missingScreenshots = decodedPartial.games.filter {
+            $0.productId == "FIXTURE00001" || $0.productId == "FIXTURE00002"
+        }
+        let candidate = decodedPartial.games.first { $0.productId == "FIXTURE00002" }
+        check(decodedPartial.games.count == 3 && missingScreenshots.count == 2
+              && missingScreenshots.allSatisfy { $0.screenshots.isEmpty }
+              && candidate?.verdict == .workingCandidate
+              && candidate?.statusLabel == "Candidate · CLI only"
+              && candidate?.verifiedWorkingEvidence == nil
+              && decodedPartial.games.first { $0.productId == "FIXTURE00003" }?.screenshots.count == 1,
+              "Missing optional screenshots retain both ledger rows, preserve the candidate verdict and keep existing proof")
+        let malformedScreenshots = String(decoding: partialEvidence, as: UTF8.self)
+            .replacingOccurrences(of: #""screenshots":[{"path":"/synthetic/third.png","caption":"Synthetic"}]"#,
+                                  with: #""screenshots":[42]"#)
+        var rejectedMalformedScreenshots = false
+        do {
+            _ = try MacGameEvidence.decode(Data(malformedScreenshots.utf8))
+        } catch {
+            rejectedMalformedScreenshots = true
+        }
+        check(rejectedMalformedScreenshots,
+              "Malformed screenshot evidence still fails decoding instead of being discarded")
+        let missingIdentity = String(decoding: partialEvidence, as: UTF8.self)
+            .replacingOccurrences(of: #""title":"Missing screenshots","#, with: "")
+        var rejectedMissingIdentity = false
+        do {
+            _ = try MacGameEvidence.decode(Data(missingIdentity.utf8))
+        } catch {
+            rejectedMissingIdentity = true
+        }
+        check(rejectedMissingIdentity, "Required evidence identity fields remain strict")
+        let fileError = MacGameEvidenceDiagnostic.unreadable(path: "/private/tried-games.json")
+        let schemaError = MacGameEvidenceDiagnostic.invalid(path: "/private/tried-games.json")
+        check(fileError != schemaError && fileError.contains("file access")
+              && schemaError.contains("JSON structure") && !schemaError.contains("OSStatus"),
+              "Evidence read and schema errors have distinct diagnostics without exposing raw errors")
         let notTested = String(decoding: evidence, as: UTF8.self)
             .replacingOccurrences(of: #""engine":"synthetic""#, with: #""engine":null"#)
             .replacingOccurrences(of: "GAMEPLAY_PASS", with: "NOT_TESTED")
