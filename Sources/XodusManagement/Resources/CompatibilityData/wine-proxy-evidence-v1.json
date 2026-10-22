@@ -1,0 +1,2776 @@
+{
+  "schemaVersion": 1,
+  "readOnlyCollection": true,
+  "gameLaunches": 0,
+  "sourcePolicy": "HTTP receipts and extracted fields only; unavailable sources yield null, never a rating inferred from search summaries.",
+  "items": [
+    {
+      "storeId": "9MT5NJ5W7B8Z",
+      "title": "Hogwarts Legacy",
+      "originalRank": 1,
+      "steamAppId": "990080",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Hogwarts_Legacy?action=raw",
+        "checkedAt": "2026-10-22T00:37:41.527328+00:00",
+        "httpStatus": 200,
+        "sha256": "e9966e0afc393886c386009bacd7f96e38a49f75e1f5a2181f831d616ed19564",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Hogwarts_Legacy?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "Perfect",
+          "wine": "Perfect"
+        },
+        "methodReferences": [
+          {
+            "date": "2023-12",
+            "device": "Macbook pro m3 pro - 18 GB",
+            "os": "macOS 13.2",
+            "method": "Crossover 23.7",
+            "store": null,
+            "version": "",
+            "framerate": "40-50"
+          },
+          {
+            "date": "2023-12",
+            "device": "Mac Studio M1 Ultra 20 CPU/48 GPU 64gb ram",
+            "os": "macOS 13.2",
+            "method": "Crossover 23.7.1",
+            "store": null,
+            "version": "",
+            "framerate": "30-45 fps"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "990080"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/hogwarts-legacy",
+        "checkedAt": "2026-10-22T00:36:16.596933+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "CodeWeavers slug linked by the AppleGamingWiki title page.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/hogwarts-legacy"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/990080.json",
+        "checkedAt": "2026-10-22T00:37:41.568326+00:00",
+        "httpStatus": 200,
+        "sha256": "dfb8cf6045b46c678c56a7a9a02dde4b3762f89ad905b224ba7709e1af129275",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/990080.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.81,
+          "tier": "gold",
+          "total": 809,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/990080"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=990080&l=english",
+        "checkedAt": "2026-10-22T00:37:41.687215+00:00",
+        "httpStatus": 200,
+        "sha256": "4271258074bb9ee9bc074f8f79c665edf6fc56f632c1d5b4c3492cb6e9ab93db",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=990080&l=english",
+        "name": "Hogwarts Legacy",
+        "drmNotice": "Denuvo Anti-Tampering",
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "BQVQTL3PCH05",
+      "title": "No Man's Sky",
+      "originalRank": 2,
+      "steamAppId": "275850",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/No_Man%27s_Sky?action=raw",
+        "checkedAt": "2026-10-22T00:37:41.527884+00:00",
+        "httpStatus": 200,
+        "sha256": "37c722ebf647370d4d5b4aec756c70046557b892cfd79ac089b102c86365ddb0",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/No_Man%27s_Sky?action=raw",
+        "ratings": {
+          "native": "perfect",
+          "rosetta 2": "na",
+          "crossover": "Unplayable"
+        },
+        "methodReferences": [
+          {
+            "date": "2022-02-23",
+            "device": "iMac M1 8MB RAM 8CORE GPU",
+            "os": "macOS 12.2 Monterey",
+            "method": "CrossOver 21.1",
+            "store": "Steam",
+            "version": null,
+            "framerate": ""
+          },
+          {
+            "date": "2022-04-01",
+            "device": "MacBook Pro M1 8GB/8-Core/8-Core",
+            "os": "macOS 12.2 Monterey",
+            "method": "CrossOver 21.2",
+            "store": "Steam",
+            "version": null,
+            "framerate": ""
+          },
+          {
+            "date": "2024-07-28",
+            "device": "MacBook M1 Pro 16\" 2021 16 GB RAM",
+            "os": "macOS Sequoia",
+            "method": "CrossOver 24",
+            "store": "Gog",
+            "version": null,
+            "framerate": ""
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/no-man-s-sky",
+        "checkedAt": "2026-10-22T00:36:16.597319+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/no-man-s-sky"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/275850.json",
+        "checkedAt": "2026-10-22T00:37:41.562939+00:00",
+        "httpStatus": 200,
+        "sha256": "27d58e2350bf1bc7da49dd403dac327d2271f114c13eed2b867c68fd28da2c64",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/275850.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.82,
+          "tier": "gold",
+          "total": 1780,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/275850"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=275850&l=english",
+        "checkedAt": "2026-10-22T00:37:41.684016+00:00",
+        "httpStatus": 200,
+        "sha256": "674a22b07fdd5e1b5dd9ccb20affa6a06e3e4ac63f8ded83f3f90d6205d0f325",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=275850&l=english",
+        "name": "No Man's Sky",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NGLST31DG26",
+      "title": "A Game About Digging A Hole\u2122",
+      "originalRank": 3,
+      "steamAppId": "3244220",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/A_Game_About_Digging_a_Hole?action=raw",
+        "checkedAt": "2026-10-22T00:37:41.528061+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/a-game-about-digging-a-hole",
+        "checkedAt": "2026-10-22T00:36:16.587057+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/a-game-about-digging-a-hole"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/3244220.json",
+        "checkedAt": "2026-10-22T00:37:41.573400+00:00",
+        "httpStatus": 200,
+        "sha256": "9a92e73e639927fbc86e0707d4db856dbd5841ebb5b53f2e91193d95ecf18cb1",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/3244220.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.73,
+          "tier": "platinum",
+          "total": 38,
+          "trendingTier": "gold"
+        },
+        "reportUrl": "https://www.protondb.com/app/3244220"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=3244220&l=english",
+        "checkedAt": "2026-10-22T00:37:41.680374+00:00",
+        "httpStatus": 200,
+        "sha256": "7252a8bfd41273a5a179b43586c718cbf3623884452a203740df25450f00670f",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=3244220&l=english",
+        "name": "A Game About Digging A Hole\u2122",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9PLH7R84GJWP",
+      "title": "Well Dweller",
+      "originalRank": 4,
+      "steamAppId": "3699590",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Well_Dweller?action=raw",
+        "checkedAt": "2026-10-22T00:37:41.528221+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/well-dweller",
+        "checkedAt": "2026-10-22T00:36:16.597872+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/well-dweller"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/3699590.json",
+        "checkedAt": "2026-10-22T00:37:41.561134+00:00",
+        "httpStatus": 200,
+        "sha256": "58b3c4198d818bfcf4ac0ae512ba10da77044ff6a5940b72a1b36b0e2cb7629e",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/3699590.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "moderate",
+          "score": 0.68,
+          "tier": "platinum",
+          "total": 8,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/3699590"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=3699590&l=english",
+        "checkedAt": "2026-10-22T00:37:41.805186+00:00",
+        "httpStatus": 200,
+        "sha256": "1ee75e1315259001d118f0c12346c71f0ad7974fca9074875d7354dafd7fcd1f",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=3699590&l=english",
+        "name": "Well Dweller",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9PK087LNGJC5",
+      "title": "Balatro",
+      "originalRank": 5,
+      "steamAppId": "2379780",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Balatro?action=raw",
+        "checkedAt": "2026-10-22T00:37:41.911366+00:00",
+        "httpStatus": 200,
+        "sha256": "bf6097e5c172a64d9ce1fdeb8022c2babe26d75235b267083f5a58682e2a4f3e",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Balatro?action=raw",
+        "ratings": {
+          "native": "perfect",
+          "rosetta 2": "na",
+          "crossover": "perfect"
+        },
+        "methodReferences": [
+          {
+            "date": "2024-05-11",
+            "device": "MacBook Air M1 2020 8GB RAM",
+            "os": "Ventura",
+            "method": "Native",
+            "store": "Steam",
+            "version": null,
+            "framerate": null
+          },
+          {
+            "date": "2024-02-21",
+            "device": "MacBook Pro M1 2021 16GB RAM",
+            "os": "Monterey",
+            "method": "Native",
+            "store": "Steam",
+            "version": null,
+            "framerate": null
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/balatro",
+        "checkedAt": "2026-10-22T00:36:16.965137+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/balatro"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/2379780.json",
+        "checkedAt": "2026-10-22T00:37:41.945431+00:00",
+        "httpStatus": 200,
+        "sha256": "cd09c720e79cd6045110be7b91dc403c32f71d0efe755c6ee76e109220225267",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2379780.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.96,
+          "tier": "platinum",
+          "total": 514,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/2379780"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=2379780&l=english",
+        "checkedAt": "2026-10-22T00:37:42.032272+00:00",
+        "httpStatus": 200,
+        "sha256": "8156073fa86fbe88ae4640a45808bbcc30d525b332aefe327dad71c57aa8758e",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=2379780&l=english",
+        "name": "Balatro",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9PNG83MDD6SH",
+      "title": "LIMBO",
+      "originalRank": 6,
+      "steamAppId": "48000",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Limbo?action=raw",
+        "checkedAt": "2026-10-22T00:37:41.915073+00:00",
+        "httpStatus": 200,
+        "sha256": "0e333c22e85966c7b65ce44ff640816ab83ad3d15d78f9ed5585b28f7add578f",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Limbo?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "perfect",
+          "crossover": "playable",
+          "wine": "unknown"
+        },
+        "methodReferences": [
+          {
+            "date": "12.01.2023",
+            "device": "MacBook Pro M1 2020 16 GB RAM",
+            "os": " MacOS 13.1",
+            "method": "Crossover 21",
+            "store": null,
+            "version": "",
+            "framerate": ""
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": true,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "48000"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/limbo",
+        "checkedAt": "2026-10-22T00:36:17.054989+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "CodeWeavers slug linked by the AppleGamingWiki title page.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/limbo"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/48000.json",
+        "checkedAt": "2026-10-22T00:37:41.949033+00:00",
+        "httpStatus": 200,
+        "sha256": "a8c006cad735728f124b3ed6ca67d1a4abe098689a6fc14854e0b7e4cca9b5ac",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/48000.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.86,
+          "tier": "platinum",
+          "total": 68,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/48000"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=48000&l=english",
+        "checkedAt": "2026-10-22T00:37:42.036933+00:00",
+        "httpStatus": 200,
+        "sha256": "36831597520014c06dbbd224c0bf7090a0096bbaf0c8e1dada575b69b0671154",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=48000&l=english",
+        "name": "LIMBO",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9MWR1NC6VQ6L",
+      "title": "Stardew Valley",
+      "originalRank": 7,
+      "steamAppId": "413150",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Stardew_Valley?action=raw",
+        "checkedAt": "2026-10-22T00:37:41.943434+00:00",
+        "httpStatus": 200,
+        "sha256": "ae5f85a29e5516e75fc05900d422ce1bd4cf86aa12a15a94ed32bfee1b5cd1fd",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Stardew_Valley?action=raw",
+        "ratings": {
+          "native": "perfect",
+          "rosetta 2": "perfect",
+          "crossover": "unknown",
+          "wine": "unknown"
+        },
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "413150"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/stardew-valley",
+        "checkedAt": "2026-10-22T00:36:17.075887+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/stardew-valley"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/413150.json",
+        "checkedAt": "2026-10-22T00:37:41.964113+00:00",
+        "httpStatus": 200,
+        "sha256": "0b22c616f87f7615fa2b3675d31af17bc9fb2cef75a7595b18280626abefe54b",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/413150.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.96,
+          "tier": "platinum",
+          "total": 395,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/413150"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=413150&l=english",
+        "checkedAt": "2026-10-22T00:37:42.051672+00:00",
+        "httpStatus": 200,
+        "sha256": "39ad7e87baba4ed3e25b528c795c14eca3afa6fd096c9d3d1112bd3267ded7a6",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=413150&l=english",
+        "name": "Stardew Valley",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NV3L234VGXD",
+      "title": "REPLACED",
+      "originalRank": 8,
+      "steamAppId": "1663850",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Replaced?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.035568+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/replaced",
+        "checkedAt": "2026-10-22T00:36:17.387945+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/replaced"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1663850.json",
+        "checkedAt": "2026-10-22T00:37:42.055300+00:00",
+        "httpStatus": 200,
+        "sha256": "40d086ebd165e4a754b1542f699cfe899bbcd242a22fddfe12602567b428c885",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1663850.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.9,
+          "tier": "platinum",
+          "total": 34,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/1663850"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1663850&l=english",
+        "checkedAt": "2026-10-22T00:37:42.142703+00:00",
+        "httpStatus": 200,
+        "sha256": "c6be4b525d8d13349997fe24267dbb59f396f707812d9bef1f18849d54c0b751",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1663850&l=english",
+        "name": "REPLACED",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NH0MSG29X6L",
+      "title": "Mixtape",
+      "originalRank": 9,
+      "steamAppId": "2582320",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Mixtape?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.265995+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/mixtape",
+        "checkedAt": "2026-10-22T00:36:17.415945+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/mixtape"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/2582320.json",
+        "checkedAt": "2026-10-22T00:37:42.293578+00:00",
+        "httpStatus": 200,
+        "sha256": "adae809226097bc1ee463b0fc63048184a6bdc30386cdef1cfafb4f03f42f8f0",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2582320.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.65,
+          "tier": "gold",
+          "total": 25,
+          "trendingTier": "gold"
+        },
+        "reportUrl": "https://www.protondb.com/app/2582320"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=2582320&l=english",
+        "checkedAt": "2026-10-22T00:37:42.505764+00:00",
+        "httpStatus": 200,
+        "sha256": "98337b5f07bc1f57f6357d800ab8ffccfb934c6428872509da8fc4dfd507a9eb",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=2582320&l=english",
+        "name": "Mixtape",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9PJPCB188SVG",
+      "title": "Subnautica 2 (Game Preview)",
+      "originalRank": 10,
+      "steamAppId": "1962700",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Subnautica_2?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.278854+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/subnautica-2",
+        "checkedAt": "2026-10-22T00:36:17.439884+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/subnautica-2"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1962700.json",
+        "checkedAt": "2026-10-22T00:37:42.295218+00:00",
+        "httpStatus": 200,
+        "sha256": "e91394ed5f8729ffb06868691bc658f511e3dd3d728eede1e8160b23862a086a",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1962700.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.84,
+          "tier": "platinum",
+          "total": 477,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/1962700"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1962700&l=english",
+        "checkedAt": "2026-10-22T00:37:42.509726+00:00",
+        "httpStatus": 200,
+        "sha256": "28ed9f90bed476677b6e2114c227cc1199881f93202517f7fa6fd337939a73a9",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1962700&l=english",
+        "name": "Subnautica 2",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9P2J5D12GJL5",
+      "title": "The Elder Scrolls IV: Oblivion Game of the Year Edition (PC) \u2013 2009",
+      "originalRank": 11,
+      "steamAppId": "22330",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/The_Elder_Scrolls_IV:_Oblivion?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.313538+00:00",
+        "httpStatus": 200,
+        "sha256": "69655f3eba66f77eb8690f2cbaad5141a79a63ddc733ab09025c9a3b7a2e4fc1",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/The_Elder_Scrolls_IV:_Oblivion?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "playable",
+          "wine": "runs"
+        },
+        "methodReferences": [
+          {
+            "date": "14 August 2021",
+            "device": "MacBook Pro M1 2020 8GB RAM",
+            "os": "MacOS Big Sur 11.5.1",
+            "method": "CrossOver 21",
+            "store": "Steam",
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "21/10/2023",
+            "device": "Macbook Pro M1 Pro 2021 16GB RAM 16 Core GPU",
+            "os": "",
+            "method": "Steam/Game Porting Toolkit",
+            "store": null,
+            "version": "",
+            "framerate": "10-15"
+          },
+          {
+            "date": "",
+            "device": "MacBook Air M1 2020 8 GB RAM",
+            "os": "",
+            "method": "",
+            "store": null,
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "7 Sep 2021",
+            "device": "Mac M1 16 GB RAM",
+            "os": "Windows 11 (latest Insider ISO)",
+            "method": "Parallels 17",
+            "store": null,
+            "version": "",
+            "framerate": "50~60 FPS"
+          },
+          {
+            "date": "6 April 2022",
+            "device": "MacBook Pro M1 Max 32 core GPU 32 GB RAM",
+            "os": "Windows 11 ARM ",
+            "method": "Parallels 17",
+            "store": null,
+            "version": "",
+            "framerate": "50-120 FPS"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": true,
+            "mentionsUnplayable": true,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": true,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": true,
+            "mentionsDRM": false,
+            "mentionsGPTK": true,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/the-elder-scrolls-iv-oblivion",
+        "checkedAt": "2026-10-22T00:36:17.616924+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/the-elder-scrolls-iv-oblivion"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/22330.json",
+        "checkedAt": "2026-10-22T00:37:42.333818+00:00",
+        "httpStatus": 200,
+        "sha256": "82c93817a0a2e93333d65e5220578cf3df90adbda261e484b8673e3136faa6a3",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/22330.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.8,
+          "tier": "gold",
+          "total": 329,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/22330"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=22330&l=english",
+        "checkedAt": "2026-10-22T00:37:42.423186+00:00",
+        "httpStatus": 200,
+        "sha256": "0be16e2b59112ec0f5035c4974ea1e1b834b0e56baad7330bb00480e988c65c6",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=22330&l=english",
+        "name": "The Elder Scrolls IV: Oblivion\u00ae Game of the Year Edition (2009)",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9PJ8266BHFWN",
+      "title": "Minecraft: Java Edition",
+      "originalRank": 12,
+      "steamAppId": null,
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Minecraft?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.373577+00:00",
+        "httpStatus": 200,
+        "sha256": "acc889457632627020a358aa034637bcb7548c8d9a8d4f901f788bbaed8a5fd4",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Minecraft?action=raw",
+        "ratings": {
+          "native": "perfect",
+          "rosetta 2": "perfect",
+          "crossover": "unplayable",
+          "wine": "unknown"
+        },
+        "methodReferences": [
+          {
+            "date": "2021-11-13",
+            "device": "Macbook Air M1 8 Core GPU 8 GB RAM",
+            "os": "macOS 12.0.1",
+            "method": "Normal / Optifine / Using Sildur's Vibrant Shaders v1.29 High-MB",
+            "store": "",
+            "version": "1.17.1",
+            "framerate": "45-60 FPS / 100-180 FPS / 30-60 FPS"
+          },
+          {
+            "date": "2024-1-15",
+            "device": "Mac mini M2 8GB",
+            "os": "Asahi Linux",
+            "method": "Prism Launcher",
+            "store": null,
+            "version": "1.20.1",
+            "framerate": " \u224890 FPS"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": true,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/minecraft",
+        "checkedAt": "2026-10-22T00:36:17.790813+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "CodeWeavers slug linked by the AppleGamingWiki title page.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/minecraft"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/",
+        "summary": null,
+        "reportUrl": null,
+        "checkedAt": "2026-10-22T00:37:42.373577+00:00",
+        "error": "Minecraft Java has no matching Steam app; no proxy substituted."
+      },
+      "steamDRM": null,
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9P3T7HVKM6D0",
+      "title": "Kingdom Come: Deliverance",
+      "originalRank": 13,
+      "steamAppId": "379430",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Kingdom_Come:_Deliverance?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.390937+00:00",
+        "httpStatus": 200,
+        "sha256": "3038628de2aeafa4e0a128649c54597633fac96fb00ecdd83948bbc47809edf2",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Kingdom_Come:_Deliverance?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "playable",
+          "wine": "playable"
+        },
+        "methodReferences": [
+          {
+            "date": "27.01.2022",
+            "device": "MacBook Pro 16 M1 Max 32 GB RAM",
+            "os": "macOS Monterey 12.1",
+            "method": "CrossOver 21.1",
+            "store": null,
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "",
+            "device": "MacBook Air M1 2020 8 GB RAM",
+            "os": "",
+            "method": "",
+            "store": null,
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "2025-01-27",
+            "device": "Macbook Pro 16\" M4 Pro",
+            "os": "MacOS Sequoia 15.2",
+            "method": "Crossover + CXPatcher",
+            "store": "Steam",
+            "version": "24.0.5 + GPTK 2.0",
+            "framerate": "60-80fps"
+          },
+          {
+            "date": "2024-09-22",
+            "device": "MacBook Pro M3 Pro",
+            "os": "macOS Sequoia 15.0",
+            "method": "Whisky 2.3.3",
+            "store": null,
+            "version": "",
+            "framerate": "60 FPS with VSync on"
+          },
+          {
+            "date": "06.01.2023",
+            "device": "MacBook Pro 16 M1 Pro 32 GB RAM",
+            "os": "macOS Monterey 12.6",
+            "method": "Parallels 18.1.0",
+            "store": null,
+            "version": "1.9.6.0 (ver_01_09_592824_663_master)",
+            "framerate": "30-60"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": true,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": true,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": true
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "379430"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/kingdom-come-deliverance",
+        "checkedAt": "2026-10-22T00:36:17.822230+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "CodeWeavers slug linked by the AppleGamingWiki title page.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/kingdom-come-deliverance"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/379430.json",
+        "checkedAt": "2026-10-22T00:37:42.416588+00:00",
+        "httpStatus": 200,
+        "sha256": "e6ad3a1b7942b27984ba8a458367a3afda88986be8951aeb2d45b072066c5951",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/379430.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.82,
+          "tier": "gold",
+          "total": 566,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/379430"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=379430&l=english",
+        "checkedAt": "2026-10-22T00:37:42.505848+00:00",
+        "httpStatus": 200,
+        "sha256": "47eead95e7da4a13385fe11697c3a22cb297e3cd482f44ed91d90fd49dd67fdb",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=379430&l=english",
+        "name": "Kingdom Come: Deliverance",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9P03JGQ4S1GC",
+      "title": "The Elder Scrolls V: Skyrim Special Edition (PC)",
+      "originalRank": 14,
+      "steamAppId": "489830",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/The_Elder_Scrolls_V:_Skyrim_Special_Edition?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.664134+00:00",
+        "httpStatus": 200,
+        "sha256": "3c6feb6da7683c58e34832459acec95f809e93c8d8540611526e2eb183174048",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/The_Elder_Scrolls_V:_Skyrim_Special_Edition?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "perfect",
+          "wine": "perfect"
+        },
+        "methodReferences": [
+          {
+            "date": "2023-12-10",
+            "device": "iMac M1 2021 8 GB RAM 8 Core GPU",
+            "os": "macOS Sonoma 14.3 ",
+            "method": "CrossOver 23.7.1",
+            "store": null,
+            "version": "Latest Steam version",
+            "framerate": "50~60 FPS"
+          },
+          {
+            "date": "2024-09-13",
+            "device": "MacBook Pro 14\" M3 Max 64GB RAM",
+            "os": "macOS 14.6.1",
+            "method": "[[Game Porting Toolkit]]",
+            "store": "Steam",
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "2021-06-20",
+            "device": "MacBook Pro M1 2020 8GB RAM",
+            "os": "macOS 11.3 Beta 8",
+            "method": "Windows ARM Build 21359 on Parallels 16.5",
+            "store": "",
+            "version": "",
+            "framerate": "30 FPS"
+          },
+          {
+            "date": "2021-09-07",
+            "device": "Mac M1 16 GB RAM",
+            "os": "Windows 11 (latest Insider ISO)",
+            "method": "Parallels 17",
+            "store": null,
+            "version": "",
+            "framerate": "50~60 FPS"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": true,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "489830"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/the-elder-scrolls-v-skyrim-special-edition",
+        "checkedAt": "2026-10-22T00:36:17.850436+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "CodeWeavers slug linked by the AppleGamingWiki title page.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/the-elder-scrolls-v-skyrim-special-edition"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/489830.json",
+        "checkedAt": "2026-10-22T00:37:42.697878+00:00",
+        "httpStatus": 200,
+        "sha256": "fff5dcc5da1f96aad790648e7c08301af6273073286544e102af7e02591b0efe",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/489830.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.81,
+          "tier": "gold",
+          "total": 1003,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/489830"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=489830&l=english",
+        "checkedAt": "2026-10-22T00:37:42.803023+00:00",
+        "httpStatus": 200,
+        "sha256": "dd918a04a46da605b09797ea93395b619ee8645092dd7f5028142a7424627edb",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=489830&l=english",
+        "name": "The Elder Scrolls V: Skyrim Special Edition",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "C3KLDKZBHNCZ",
+      "title": "Fallout 4",
+      "originalRank": 15,
+      "steamAppId": "377160",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Fallout_4?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.742417+00:00",
+        "httpStatus": 200,
+        "sha256": "ef919746893d09e55e44d0af6530ec0b6a8150599cf89e966e5219021a311c80",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Fallout_4?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "perfect",
+          "wine": "Playable"
+        },
+        "methodReferences": [
+          {
+            "date": "2021-01-23",
+            "device": "MacBook Air M1 2020 8 GB RAM",
+            "os": "macOS 11.1",
+            "method": "Parallels 16 using Windows 10 Pro Inside Preview Build 21286",
+            "store": null,
+            "version": "",
+            "framerate": "Approximately 30 FPS"
+          },
+          {
+            "date": "2025-03-11",
+            "device": "MacBook Pro 16\" M4 Pro 24 GB RAM",
+            "os": "macOS 15.1",
+            "method": " Crossover 25",
+            "store": null,
+            "version": "",
+            "framerate": "60 fps"
+          },
+          {
+            "date": "2024-02-19",
+            "device": "MacBook Pro 16\" M2 Pro 16 GB RAM",
+            "os": "macOS 14.3",
+            "method": "whisky 2.2.3",
+            "store": null,
+            "version": "",
+            "framerate": "0 fps"
+          },
+          {
+            "date": "2024-11-12",
+            "device": "MacBook Pro 16\" M4 Pro 24 GB RAM",
+            "os": "macOS 15.1",
+            "method": "whisky 2.3.4",
+            "store": null,
+            "version": "",
+            "framerate": "60 fps"
+          },
+          {
+            "date": "2022-09-27",
+            "device": "Mac Studio 2022 32 GB RAM",
+            "os": "macOS 12.5",
+            "method": "Parallels 18.0.2",
+            "store": null,
+            "version": "",
+            "framerate": "30-40fps"
+          },
+          {
+            "date": "2021-01-23",
+            "device": "MacBook Air 2020 8 GB RAM",
+            "os": "macOS 11.1",
+            "method": "CrossOver 20",
+            "store": null,
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "2021-04-10",
+            "device": "MacBook Air M1 2020 8 GB RAM",
+            "os": "macOS 11.3 Beta (20E5196f)",
+            "method": "Windows ARM Build 21354.1000 on Parallels 16.3.2",
+            "store": "Cracked",
+            "version": "",
+            "framerate": "Low"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": true
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "377160"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/fallout-4",
+        "checkedAt": "2026-10-22T00:36:17.880908+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "CodeWeavers slug linked by the AppleGamingWiki title page.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/fallout-4"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/377160.json",
+        "checkedAt": "2026-10-22T00:37:42.761440+00:00",
+        "httpStatus": 200,
+        "sha256": "552c4b80ae0002e7e441c27e5b3a36bc72f88972ebf6db284891ff5015a8315f",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/377160.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.79,
+          "tier": "gold",
+          "total": 911,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/377160"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=377160&l=english",
+        "checkedAt": "2026-10-22T00:37:42.848248+00:00",
+        "httpStatus": 200,
+        "sha256": "d4dc09dd8d14ea4bf82720304a2d17c5538dcc0825bff472759059b2e5a8114f",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=377160&l=english",
+        "name": "Fallout 4",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9N8C07SS8C9D",
+      "title": "FINAL FANTASY IV",
+      "originalRank": 16,
+      "steamAppId": "1173800",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Final_Fantasy_IV?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.746737+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/final-fantasy-iv-1",
+        "checkedAt": "2026-10-22T00:36:18.098376+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Exact 2D/Pixel Remaster listing located via indexed search; not the FFIV 3D listing.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": true,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/final-fantasy-iv"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1173800.json",
+        "checkedAt": "2026-10-22T00:37:42.765394+00:00",
+        "httpStatus": 200,
+        "sha256": "5b8b2b29f6002bb7e1266968389b6f4578190b97a2b5d4b684a73978f60c59b3",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1173800.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "good",
+          "score": 0.79,
+          "tier": "platinum",
+          "total": 24,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/1173800"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1173800&l=english",
+        "checkedAt": "2026-10-22T00:37:42.855064+00:00",
+        "httpStatus": 200,
+        "sha256": "28d6514aa0edcca7fe94e995f84b191201384e2dfc1e551eff47d512f847765d",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1173800&l=english",
+        "name": "FINAL FANTASY IV",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NGH1FK0RJGL",
+      "title": "Wasteland Remastered",
+      "originalRank": 17,
+      "steamAppId": "875800",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Wasteland_Remastered?action=raw",
+        "checkedAt": "2026-10-22T00:37:42.749474+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/wasteland-remastered",
+        "checkedAt": "2026-10-22T00:36:18.219818+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/wasteland-remastered"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/875800.json",
+        "checkedAt": "2026-10-22T00:37:42.769892+00:00",
+        "httpStatus": 200,
+        "sha256": "15798188b8f5f212edc34e791e0a41458edffebd5cdf647b57205f2b4c0a72b1",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/875800.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "moderate",
+          "score": 0.35,
+          "tier": "gold",
+          "total": 12,
+          "trendingTier": "gold"
+        },
+        "reportUrl": "https://www.protondb.com/app/875800"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=875800&l=english",
+        "checkedAt": "2026-10-22T00:37:42.978166+00:00",
+        "httpStatus": 200,
+        "sha256": "4f08caccb151a0238ee8d865f14625347fc8bdf40b292b177c5a75936f124e2e",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=875800&l=english",
+        "name": "Wasteland Remastered",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9P1N07XDL1D4",
+      "title": "Dishonored\u00ae Definitive Edition (PC)",
+      "originalRank": 18,
+      "steamAppId": "205100",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Dishonored?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.099735+00:00",
+        "httpStatus": 200,
+        "sha256": "2369faecde8c906b6b8488516ae18b78709999fb1032933a5ec86988e8042ee9",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Dishonored?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "perfect",
+          "wine": "playable"
+        },
+        "methodReferences": [
+          {
+            "date": "2026-01-20",
+            "device": "Mac mini M4 Pro 48 GB RAM",
+            "os": "macOS 26.2",
+            "method": "Crossover 25.1.1.38624",
+            "store": "https://store.steampowered.com/app/217980/Dishonored/",
+            "version": "",
+            "framerate": "Uknown FPS, but runs well"
+          },
+          {
+            "date": "2021-05-12",
+            "device": "MacBook Air M1 2020 8 GB RAM",
+            "os": "macOS 11.3.1",
+            "method": "Parallels 16.5 Windows ARM Build 12376",
+            "store": "GOG.com",
+            "version": "",
+            "framerate": "Approximately 45 FPS"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "205100"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/dishonored",
+        "checkedAt": "2026-10-22T00:36:18.239034+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "CodeWeavers slug linked by the AppleGamingWiki title page.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/dishonored"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/205100.json",
+        "checkedAt": "2026-10-22T00:37:43.119716+00:00",
+        "httpStatus": 200,
+        "sha256": "bced6e72c9b6370fe3ef950acd83cdd71e52c4996a4fc03aa1564f690769d4c2",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/205100.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.9,
+          "tier": "platinum",
+          "total": 582,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/205100"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=205100&l=english",
+        "checkedAt": "2026-10-22T00:37:43.208883+00:00",
+        "httpStatus": 200,
+        "sha256": "a776bef244433fefc7e131eeeb8cf45b4ed338d9badfbc55fe1b73c94e015d36",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=205100&l=english",
+        "name": "Dishonored",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NFB47H2SDRX",
+      "title": "Forever Ago",
+      "originalRank": 19,
+      "steamAppId": "1215940",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Forever_Ago?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.126176+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/forever-ago",
+        "checkedAt": "2026-10-22T00:36:18.436597+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/forever-ago"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1215940.json",
+        "checkedAt": "2026-10-22T00:37:43.144683+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "summary": null,
+        "reportUrl": "https://www.protondb.com/app/1215940"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1215940&l=english",
+        "checkedAt": "2026-10-22T00:37:43.342207+00:00",
+        "httpStatus": 200,
+        "sha256": "f5c7ec97bfd5d2c3f76180299a74cc66dbf2fc0e65bb9567ce6b4e4f767ecd24",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1215940&l=english",
+        "name": "Forever Ago",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9P5Z4530318L",
+      "title": "DEATHLOOP",
+      "originalRank": 20,
+      "steamAppId": "1252330",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Deathloop?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.150346+00:00",
+        "httpStatus": 200,
+        "sha256": "7a3d7a3aaff991f418b21ddc9ed3ea1d59eb9fa058b1a759435aa26d15d1b264",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Deathloop?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "perfect",
+          "wine": "unplayable"
+        },
+        "methodReferences": [
+          {
+            "date": "2026-01-04",
+            "device": "MacBook M1 Max 14\" 2021 32 GB RAM",
+            "os": "macOS 14 Sonoma",
+            "method": "CrossOver Preview (decembre 2025) ",
+            "store": null,
+            "version": "",
+            "framerate": "30-45fps"
+          },
+          {
+            "date": "6/28/23",
+            "device": "Mac Studio M2 Max 32 GB RAM",
+            "os": "",
+            "method": "Wine ",
+            "store": null,
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "",
+            "device": "MacBook M1 Pro 16\" 2021 16 GB RAM",
+            "os": "",
+            "method": "Parallels 18",
+            "store": null,
+            "version": "",
+            "framerate": ""
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": true,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/deathloop",
+        "checkedAt": "2026-10-22T00:36:18.493849+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/deathloop"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1252330.json",
+        "checkedAt": "2026-10-22T00:37:43.171137+00:00",
+        "httpStatus": 200,
+        "sha256": "1230d06c2f4d233bdff3cfef9fb56d7e80e1900a09107cc6e835b4f9886b37cb",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1252330.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.52,
+          "tier": "silver",
+          "total": 269,
+          "trendingTier": "gold"
+        },
+        "reportUrl": "https://www.protondb.com/app/1252330"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1252330&l=english",
+        "checkedAt": "2026-10-22T00:37:43.267094+00:00",
+        "httpStatus": 200,
+        "sha256": "b89313774da3b77390b4ff95304d4480d3cdbf85824d84f08de43bdc085ec961",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1252330&l=english",
+        "name": "DEATHLOOP",
+        "drmNotice": "Denuvo Anti-tamper",
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NXWSWBM4H6T",
+      "title": "Beast of Reincarnation",
+      "originalRank": 21,
+      "steamAppId": "2001760",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Beast_of_Reincarnation?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.213569+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/beast-of-reincarnation",
+        "checkedAt": "2026-10-22T00:36:18.609155+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/beast-of-reincarnation"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/2001760.json",
+        "checkedAt": "2026-10-22T00:37:43.231393+00:00",
+        "httpStatus": 200,
+        "sha256": "9883a9d471ea1dabfa88a750fed49da563b2235d91145849ba9de255d33b3f93",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2001760.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.82,
+          "tier": "platinum",
+          "total": 28,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/2001760"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=2001760&l=english",
+        "checkedAt": "2026-10-22T00:37:43.318365+00:00",
+        "httpStatus": 200,
+        "sha256": "da3ce9130df69540058f0d2965c1264fc9561625cb6d51c7d25c02e562ec5048",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=2001760&l=english",
+        "name": "Beast of Reincarnation",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NCJWHHMVHR0",
+      "title": "Keeper",
+      "originalRank": 22,
+      "steamAppId": "3043580",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Keeper?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.466048+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/keeper",
+        "checkedAt": "2026-10-22T00:36:18.860855+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/keeper"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/3043580.json",
+        "checkedAt": "2026-10-22T00:37:43.486366+00:00",
+        "httpStatus": 200,
+        "sha256": "80587965b115db1dd7e4a87e2229e4c86437bbf70f01ff95da7fda8aa148642d",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/3043580.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "good",
+          "score": 0.74,
+          "tier": "platinum",
+          "total": 18,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/3043580"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=3043580&l=english",
+        "checkedAt": "2026-10-22T00:37:43.575842+00:00",
+        "httpStatus": 200,
+        "sha256": "2550e58b20a197b86dcedb25fa7d5ce0b69d0bf7dd0b251d3387cbe5cb4f9a26",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=3043580&l=english",
+        "name": "Keeper",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NQVHHW88XW9",
+      "title": "Bluey's Happy Snaps",
+      "originalRank": 23,
+      "steamAppId": "3064040",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Bluey%27s_Happy_Snaps?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.504051+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/bluey-s-happy-snaps",
+        "checkedAt": "2026-10-22T00:36:18.883350+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/bluey-s-happy-snaps"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/3064040.json",
+        "checkedAt": "2026-10-22T00:37:43.521330+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "summary": null,
+        "reportUrl": "https://www.protondb.com/app/3064040"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=3064040&l=english",
+        "checkedAt": "2026-10-22T00:37:43.728993+00:00",
+        "httpStatus": 200,
+        "sha256": "aac5d5617ab299f6ce69427227e97524cc18041e19b947615ffcee443d137a5d",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=3064040&l=english",
+        "name": "Bluey's Happy Snaps",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9P861V1542BL",
+      "title": "Valor Mortis",
+      "originalRank": 24,
+      "steamAppId": "2828710",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Valor_Mortis?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.575475+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/valor-mortis",
+        "checkedAt": "2026-10-22T00:36:18.946470+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/valor-mortis"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/2828710.json",
+        "checkedAt": "2026-10-22T00:37:43.613700+00:00",
+        "httpStatus": 200,
+        "sha256": "dd7c3c6e93622bbdd408f813766afe97af118b26fca47f856b93112cdb05fee0",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2828710.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "moderate",
+          "score": 0.47,
+          "tier": "gold",
+          "total": 12,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/2828710"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=2828710&l=english",
+        "checkedAt": "2026-10-22T00:37:43.700809+00:00",
+        "httpStatus": 200,
+        "sha256": "37564a6ab3d293143a9fdbb3d8c8f2acfbfa11706d8899eef95914f8efcbf558",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=2828710&l=english",
+        "name": "Valor Mortis",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NJCVGS6T30K",
+      "title": "South of Midnight",
+      "originalRank": 25,
+      "steamAppId": "1934570",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/South_of_Midnight?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.598008+00:00",
+        "httpStatus": 200,
+        "sha256": "937ad182836a5675f671f4462b1217e0bc825c12627de429acc90a4d6aeb2ab4",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/South_of_Midnight?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "perfect",
+          "wine": "unknown"
+        },
+        "methodReferences": [
+          {
+            "date": "2025-04-06",
+            "device": "MacBook ProM1 Max",
+            "os": "macOS Sequoia 15.4",
+            "method": "Crossover 25",
+            "store": null,
+            "version": "Early Access",
+            "framerate": "60fps"
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": "1934570"
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/south-of-midnight",
+        "checkedAt": "2026-10-22T00:36:19.144440+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/south-of-midnight"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1934570.json",
+        "checkedAt": "2026-10-22T00:37:43.633951+00:00",
+        "httpStatus": 200,
+        "sha256": "f3ae21297bd9f8a5914e05686ba6f7e49d973f1ea1aba828e694ea907ba81369",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1934570.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "moderate",
+          "score": 0.77,
+          "tier": "platinum",
+          "total": 13,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/1934570"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1934570&l=english",
+        "checkedAt": "2026-10-22T00:37:43.832849+00:00",
+        "httpStatus": 200,
+        "sha256": "fedd3e53968a2b1274a57362c1bf3c24bab58991405178889a805c2700fda314",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1934570&l=english",
+        "name": "South of Midnight",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9N94NCGM1Q2N",
+      "title": "Age of Empires IV: Anniversary Edition",
+      "originalRank": 26,
+      "steamAppId": "1466860",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Age_of_Empires_IV?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.803920+00:00",
+        "httpStatus": 200,
+        "sha256": "08570d3cd36317af1401b631d2832fb40faaa4d7661eb60f90d2e0a84356b285",
+        "error": null,
+        "resolvedUrl": "https://www.applegamingwiki.com/wiki/Age_of_Empires_IV?action=raw",
+        "ratings": {
+          "native": "na",
+          "rosetta 2": "na",
+          "crossover": "Unplayable",
+          "wine": "unplayable"
+        },
+        "methodReferences": [
+          {
+            "date": "Aug 19, 2023",
+            "device": "MacBook Pro M1 Max 2021 32 GB RAM 24 GPU Cores",
+            "os": "13.4.1 (c) Ventura",
+            "method": "Crossover 23.0.0",
+            "store": "Steam",
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "Mar 31, 2022",
+            "device": "M1 Max Macbook Pro 16 inch 64GB",
+            "os": "Mac OS Monterrey 12.3",
+            "method": "Crossover 21.1",
+            "store": "Steam",
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "Jan 29, 2024",
+            "device": "M4 Pro Macbook Pro 14 inch 24GB",
+            "os": "Mac OS Sequoia 15.2",
+            "method": "Crossover 24.0.7",
+            "store": "Steam",
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "Mar 31, 2022",
+            "device": "M1 Max Macbook Pro 16 inch 64GB",
+            "os": "Mac OS Monterrey 12.3",
+            "method": "Windows 11 ARM on Parallels 17",
+            "store": "Steam",
+            "version": "",
+            "framerate": ""
+          },
+          {
+            "date": "Aug 15, 2022",
+            "device": "M2 MacBook Air 16GB",
+            "os": "Mac OS Monterrey 12.5",
+            "method": "Windows 11 ARM on Parallels 18",
+            "store": "Steam",
+            "version": "",
+            "framerate": ""
+          }
+        ],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "reported",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/age-of-empires-iv",
+        "checkedAt": "2026-10-22T00:36:19.346338+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/age-of-empires-iv"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1466860.json",
+        "checkedAt": "2026-10-22T00:37:43.821128+00:00",
+        "httpStatus": 200,
+        "sha256": "c8f9fee8cab644fc78bf6484dec7afa2e137be9a7abbd4354901933929f8d540",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1466860.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.63,
+          "tier": "gold",
+          "total": 357,
+          "trendingTier": "gold"
+        },
+        "reportUrl": "https://www.protondb.com/app/1466860"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1466860&l=english",
+        "checkedAt": "2026-10-22T00:37:44.038764+00:00",
+        "httpStatus": 200,
+        "sha256": "90dbfc91ecaf8a8b7860742f9251c254ace7ed3a5cc3006046964886d3aa1aa1",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1466860&l=english",
+        "name": "Age of Empires IV: Anniversary Edition",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9PPBNCXP0096",
+      "title": "Resonance: A Plague Tale Legacy",
+      "originalRank": 27,
+      "steamAppId": "2713000",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Resonance:_A_Plague_Tale_Legacy?action=raw",
+        "checkedAt": "2026-10-22T00:37:43.929746+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/resonance-a-plague-tale-legacy",
+        "checkedAt": "2026-10-22T00:36:19.368603+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/resonance-a-plague-tale-legacy"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/2713000.json",
+        "checkedAt": "2026-10-22T00:37:43.949839+00:00",
+        "httpStatus": 200,
+        "sha256": "31893fd7c11648e21ca39e8cf865d34a5c89906bd542312413403110bc9aa283",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2713000.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.82,
+          "tier": "platinum",
+          "total": 44,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/2713000"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=2713000&l=english",
+        "checkedAt": "2026-10-22T00:37:44.038824+00:00",
+        "httpStatus": 200,
+        "sha256": "47913ac25a72cd7247eabf5ebb3297e30413800154935e4c92256687c1474ceb",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=2713000&l=english",
+        "name": "Resonance: A Plague Tale Legacy",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9NF6XPSBTTGB",
+      "title": "High On Life 2",
+      "originalRank": 28,
+      "steamAppId": "2069250",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/High_On_Life_2?action=raw",
+        "checkedAt": "2026-10-22T00:37:44.035320+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/high-on-life-2",
+        "checkedAt": "2026-10-22T00:36:19.472598+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/high-on-life-2"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/2069250.json",
+        "checkedAt": "2026-10-22T00:37:44.071125+00:00",
+        "httpStatus": 200,
+        "sha256": "28901d71014e955da65b7d3bf3eb75a99f89ab11640be0ee4aedf8ffa4e65b3f",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2069250.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "good",
+          "score": 0.82,
+          "tier": "platinum",
+          "total": 18,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/2069250"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=2069250&l=english",
+        "checkedAt": "2026-10-22T00:37:44.274330+00:00",
+        "httpStatus": 200,
+        "sha256": "cf60035500dbd7d94bf0a954feb4af467df23dc977b0dea8a9845e4fcfbadfb6",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=2069250&l=english",
+        "name": "High On Life 2",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9N4W31HSMVVD",
+      "title": "Kingdom Come: Deliverance II",
+      "originalRank": 29,
+      "steamAppId": "1771300",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Kingdom_Come:_Deliverance_II?action=raw",
+        "checkedAt": "2026-10-22T00:37:44.069363+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/kingdom-come-deliverance-ii",
+        "checkedAt": "2026-10-22T00:36:19.741911+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/kingdom-come-deliverance-ii"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/1771300.json",
+        "checkedAt": "2026-10-22T00:37:44.090603+00:00",
+        "httpStatus": 200,
+        "sha256": "de0963e75b37b14b4aba361b687099c95d30e0673cc419a185cd5b17ad72867c",
+        "error": null,
+        "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1771300.json",
+        "summary": {
+          "bestReportedTier": "platinum",
+          "confidence": "strong",
+          "score": 0.94,
+          "tier": "platinum",
+          "total": 323,
+          "trendingTier": "platinum"
+        },
+        "reportUrl": "https://www.protondb.com/app/1771300"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=1771300&l=english",
+        "checkedAt": "2026-10-22T00:37:44.177288+00:00",
+        "httpStatus": 200,
+        "sha256": "cb40ab9ac0bf4e423bb72b9d0f50c6b7c22630fc98b18ffbaed39568b71d9885",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=1771300&l=english",
+        "name": "Kingdom Come: Deliverance II",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    },
+    {
+      "storeId": "9PMN4DGRT1LN",
+      "title": "Fable",
+      "originalRank": 30,
+      "steamAppId": "2769570",
+      "appleGamingWiki": {
+        "url": "https://www.applegamingwiki.com/wiki/Fable_(2026)?action=raw",
+        "checkedAt": "2026-10-22T00:37:44.268536+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "ratings": {},
+        "methodReferences": [],
+        "noteSignals": {
+          "crossover": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          },
+          "wine": {
+            "mentionsCrashOrFreeze": false,
+            "mentionsUnplayable": false,
+            "mentionsLowFPS": false,
+            "mentionsDRM": false,
+            "mentionsGPTK": false,
+            "mentionsWhisky": false
+          }
+        },
+        "status": "unavailable-or-no-rating",
+        "identityBasis": "Exact title page candidate; Steam app ID must match when present.",
+        "steamAppId": null
+      },
+      "codeWeavers": {
+        "url": "https://www.codeweavers.com/compatibility/crossover/fable-2026",
+        "checkedAt": "2026-10-22T00:36:19.755408+00:00",
+        "httpStatus": 403,
+        "sha256": null,
+        "error": "HTTP Error 403: Forbidden",
+        "rating": null,
+        "identityBasis": "Title-derived candidate URL, not an established database entry.",
+        "status": "unavailable",
+        "urlChangedSinceBlockedAttempt": false,
+        "blockedAttemptUrl": "https://www.codeweavers.com/compatibility/crossover/fable-2026"
+      },
+      "protonDB": {
+        "url": "https://www.protondb.com/api/v1/reports/summaries/2769570.json",
+        "checkedAt": "2026-10-22T00:37:44.293871+00:00",
+        "httpStatus": 404,
+        "sha256": null,
+        "error": "HTTP Error 404: Not Found",
+        "summary": null,
+        "reportUrl": "https://www.protondb.com/app/2769570"
+      },
+      "steamDRM": {
+        "url": "https://store.steampowered.com/api/appdetails?appids=2769570&l=english",
+        "checkedAt": "2026-10-22T00:37:44.503538+00:00",
+        "httpStatus": 200,
+        "sha256": "d26fc7c52a92f8658c589a61271d44e78b2cda0142384d5ad186d11009727f6c",
+        "error": null,
+        "resolvedUrl": "https://store.steampowered.com/api/appdetails?appids=2769570&l=english",
+        "name": "Fable",
+        "drmNotice": null,
+        "externalAccountNotice": null,
+        "noticeAbsenceProvesDRMFree": false
+      },
+      "proxyScope": "PC/Steam version or explicitly scoped native macOS entry, not Xbox/MSIXVC runtime, entitlement, sign-in or gameplay qualification."
+    }
+  ]
+}
