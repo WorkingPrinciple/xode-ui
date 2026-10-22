@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T21:46:31.451170+00:00",
+  "checkedAt": "2026-10-22T21:58:27.858651+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 12,
@@ -32,7 +32,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "50adc1f48ef07bf8949d153a41ce19791689d6d9ac3dd25b16e653b06034aab8"
+      "sha256": "eeded06aa4f76bc4d7b78c39c45505d41ce9d7a5e74e4ac221c18b8989faf0d1"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -150,7 +150,7 @@
       "rank": 8,
       "storeId": "9P1Z43KRNQD4",
       "title": "Quake",
-      "verdict": "GAMEPLAY_PASS",
+      "verdict": "TITLE_SCREEN_PASS",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 1761398784,
       "planningBudgetBytes": 1761398784,
@@ -159,7 +159,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Gameplay rendered; passive forced end247, no ordinary quit or retained-save qualification.",
+      "blocker": "Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -189,7 +189,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
+      "blocker": "Prior Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Runtime-only world packet6170908e conditional on S2/S5 slot return; no new result or reload grant.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -352,7 +352,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "CrossOver candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Before Wine: ENOSPC copying runtime/shims into six executable directories on RAM stage, despite118GiB host free. Bounded source fix authorized, no retry yet.",
+      "blocker": "Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,

@@ -108,6 +108,16 @@ class PathTo20Tests(unittest.TestCase):
         self.assertIn("Historical111dd574 remains INCONCLUSIVE", row["scope"])
         self.assertIn("movement animation not captured", row["scope"])
 
+    def test_quake_attract_scene_does_not_qualify_controllable_gameplay(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T19:00:00+00:00"
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9P1Z43KRNQD4")
+        self.assertFalse(row["strictWorking"])
+        self.assertEqual(row["gates"]["gameplay"]["status"], "unknown")
+        self.assertEqual(row["nextGate"], "controllable gameplay")
+        self.assertIn("attract/demo", row["scope"])
+
     def test_unchanged_gate_preserves_clock_despite_blocker_edit(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])
         previous = copy.deepcopy(self.packet)

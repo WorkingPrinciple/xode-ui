@@ -160,8 +160,9 @@ Latest S2 passives: Bluey `a46723e9` and Subnautica 2 `76c3b3bf` are both
 not title screens. Forced cleanup0/0 and process0 do not qualify normal quit.
 Native-first VC prerequisite candidate approved by coordinator; reruns wait
 for S3 screen release. Both remain installed and license-GRANTED.
-FFIV reached PRESS ANY BUTTON/passive0, Quake rendered gameplay but ended
-forced247; neither is full-qualified. Vampire Survivors exit3/no window after
+FFIV reached PRESS ANY BUTTON/passive0. Quake rendered an attract/demo FPS
+scene, NOT observed controllable gameplay, and ended forced247; neither is
+full-qualified. Vampire Survivors exit3/no window after
 DQ overlay and Wasteland load_game_config0x8007000d before ticket socket are
 parked. Wasteland installed config lacks MSAAppId; staged parity remains
 unknown. TUNIC's later WORKING10 admission is above.
@@ -179,10 +180,16 @@ Passive0/forced endings are not normal quits or full qualification.
 Valor VC resolved but exit1/no window with COM marshal0x80004002/mismatched
 Uninitialize fingerprint, parked. Oblivion failed before Wine with RAM-stage
 overlay accounting/injection ENOSPC despite118GiB host free; bounded source
-fix authorized, no retry yet. No extra WORKING title or new research scope.
+fix authorized. Latest owned matcher packet67a1aabf is blocked by its112GiB
+precheck at coordinator-reported111.56GiB after exact owned incremental reclaim.
+No retry/pass result; this packet-specific floor does not replace110/110/105.
+No extra WORKING title or new research scope.
 DOOM64 later full attempt `db247a1f` is INFRA/userID: Start triggered
 Bethesda.net FirstPartyFailedToRetrieveUserId, no gameplay/save. Cancel to main
-then QuitDOOM/Yes ordinary0/0; no retry/reload. Not compatibility FAIL or WORKING.
+then QuitDOOM/Yes ordinary0/0; no gameplay/save/reload. Not compatibility FAIL or
+WORKING. Later runtime candidate54c5f5d9/source7cb756a2 built/fixture-validated;
+runtime-only worldpacket6170908e dry-verified30/30 pins per coordinator.
+Conditional S3 one-world attempt waits for S2/S5 slot return; no result yet.
 S5's off-screen known-INCONCLUSIVE copy fix is approved, not evidence
 promotion or ledger rewrite; production UI acceptance remains separate.
 Bluey full `21f1ed27` subsequently reached EULA/Privacy/Terms Accept after
@@ -192,16 +199,16 @@ exact-k0/-w0 is forced cleanup, not normal quit despite0/0. Final Bluey/DOOM64
 retention-result and integrity hashes are pinned in the existing owner index.
 Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T21:54:14.740266+00:00: **12/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, Stardew Valley, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Well Dweller. Refresh every30min and owner verdict.
+Living tracker 2026-10-22T21:58:27.750383+00:00: **12/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, Stardew Valley, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Well Dweller. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 13:26 EEST** (user +12h extension); 12.53h from 2026-10-22T21:54:14.740266+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **8/11/17** slow/mid/fast cycles, capped by **16 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **20/23/28**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 13:26 EEST** (user +12h extension); 12.46h from 2026-10-22T21:58:27.750383+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **8/11/17** slow/mid/fast cycles, capped by **16 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **20/23/28**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
 Launch admission floor: **110 GiB** (user-directed, replaces 153 GiB during Valor Mortis download). No fresh disk reading or extra executable capacity inferred.
 
-Need **8** additions; slow scenario leaves **0**. Required mean: **94.0min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
+Need **8** additions; slow scenario leaves **0**. Required mean: **93.4min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 
 Observed admission ratio: **12/21 matrix attempts (57.1%)**; including receipt/owner-reported attempts: **12/29 (41.4%)**. Matrix post-title-screen subset: **12/12**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **100.0%/72.7%/50.0%** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold 47.1% requires more eligible titles than current queue.
 

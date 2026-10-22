@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T21:54:14.740266+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-22T21:58:27.750383+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -24,7 +24,7 @@ Updated 2026-10-22T21:54:14.740266+00:00; **12/20 strict WORKING**. Title qualif
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Bluey's Happy Snaps | HUMAN_CONSENT_HOLD | not passed | ? | not passed | ? | ? | human EULA/privacy/ToU consent / user/coordinator | Acknowledgement Continue reached EULA/Privacy/Terms Accept. NO Accept sent; HUMAN CONSENT HOLD. Forced exact-k0/-w0, not ordinary quit despite0/0. | - |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
-| DOOM 64 | INFRA_BETHESDA_USER_ID | passed | ? | passed | ? | ? | infrastructure user-ID hold / S2/coordinator | Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized. | - |
+| DOOM 64 | INFRA_BETHESDA_USER_ID | passed | ? | passed | ? | ? | infrastructure user-ID hold / S1/S3/coordinator | Prior Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Runtime-only world packet6170908e conditional on S2/S5 slot return; no new result or reload grant. | - |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored® Definitive Edition (PC) | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
@@ -42,8 +42,8 @@ Updated 2026-10-22T21:54:14.740266+00:00; **12/20 strict WORKING**. Title qualif
 | LIMBO | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Firstspikegap not cleared; no confirmed newcheckpoint/retention. Ordinary0/0 established but75%quit rule missed. No automatic retry/reload. | >2h |
 | Minishoot' Adventures | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | RAM-stage accounting fix / S2 | Before Wine: ENOSPC copying runtime/shims into six executable directories on RAM stage, despite118GiB host free. Bounded source fix authorized, no retry yet. | - |
-| Quake | GAMEPLAY_PASS | passed | passed | not passed | ? | ? | full retention test / S3 | Gameplay rendered; passive forced end247, no ordinary quit or retained-save qualification. | - |
+| Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | owned matcher packet disk precheck / S2 | Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result. | - |
+| Quake | TITLE_SCREEN_PASS | passed | ? | not passed | ? | ? | controllable gameplay / S3 | Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding. | - |
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |

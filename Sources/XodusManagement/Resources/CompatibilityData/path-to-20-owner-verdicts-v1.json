@@ -101,7 +101,7 @@
   "items": [
     {
       "storeId": "9MXND4PQLK3W", "title": "DOOM 64",
-      "verdict": "INFRA_BETHESDA_USER_ID", "reportedAt": "2026-10-22T21:33:02.200+00:00",
+      "verdict": "INFRA_BETHESDA_USER_ID", "reportedAt": "2026-10-23T00:57:48.489+03:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
       "runId": "db247a1f",
       "finalProofs": [
@@ -109,19 +109,19 @@
         {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/final-evidence/integrity.json", "sha256": "e84dc7865da4bb8a981135de04c597c5b1cb65ec90e932bc61c37fd8542a4d4e"}
       ],
       "gates": {"menu": "passed", "quit": "passed", "gameplay": "unknown", "save": "unknown", "relaunch": "unknown"},
-      "nextGate": "infrastructure user-ID hold", "ownerStream": "S2/coordinator",
-      "blocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
-      "scope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical."
+      "nextGate": "infrastructure user-ID hold", "ownerStream": "S1/S3/coordinator",
+      "blocker": "Prior Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Runtime-only world packet6170908e conditional on S2/S5 slot return; no new result or reload grant.",
+      "scope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical. Coordinator now reports runtime fix candidate54c5f5d9/source7cb756a2 built/fixture-validated and worldpacket6170908e dry-verified30/30 pins; conditional S3 one world after S2/S5 slot return, no execution result. Short IDs are reported references, not independently verified full hashes or runtime success."
     },
     {
       "storeId": "9P2J5D12GJL5", "title": "Oblivion GOTY (2009)",
-      "verdict": "PRE_WINE_STAGE_ENOSPC", "reportedAt": "2026-10-22T21:16:36.509+00:00",
+      "verdict": "PRE_WINE_STAGE_ENOSPC", "reportedAt": "2026-10-23T00:57:48.489+03:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
       "runId": "f1339edf-f389-44a5-b2e6-2ca01357dc86",
       "gates": {"menu": "not-passed"},
-      "nextGate": "RAM-stage accounting fix", "ownerStream": "S2",
-      "blocker": "Before Wine: ENOSPC copying runtime/shims into six executable directories on RAM stage, despite118GiB host free. Bounded source fix authorized, no retry yet.",
-      "scope": "S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json. Runtime pair/shim overlay bytes omitted from RAM-stage sizing. Not evidence of host110GiB floor failure or game-rendering incompatibility."
+      "nextGate": "owned matcher packet disk precheck", "ownerStream": "S2",
+      "blocker": "Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result.",
+      "scope": "Historical S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json failed before Wine with runtime pair/shim overlay bytes omitted from RAM-stage sizing. Coordinator now reports owned matcher packet67a1aabf blocked by112GiB precheck at111.56GiB even after exact owned incremental reclaim. Packet-specific112GiB does not replace global110/110/105 policy. No new execution or game-rendering incompatibility established."
     },
     {
       "storeId": "9N8C07SS8C9D", "title": "FINAL FANTASY IV",
@@ -133,12 +133,12 @@
     },
     {
       "storeId": "9P1Z43KRNQD4", "title": "Quake",
-      "verdict": "GAMEPLAY_PASS", "reportedAt": "2026-10-22T20:37:38+00:00",
+      "verdict": "TITLE_SCREEN_PASS", "reportedAt": "2026-10-23T00:57:48.489+03:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
-      "gates": {"menu": "passed", "gameplay": "passed", "quit": "not-passed"},
-      "nextGate": "full retention test", "ownerStream": "S3",
-      "blocker": "Gameplay rendered; passive forced end247, no ordinary quit or retained-save qualification.",
-      "scope": "Coordinator latest report: gameplay render only, not strict WORKING. Run identity not supplied."
+      "gates": {"menu": "passed", "gameplay": "unknown", "save": "unknown", "relaunch": "unknown", "quit": "not-passed"},
+      "nextGate": "controllable gameplay", "ownerStream": "S3",
+      "blocker": "Rendered attract/demo FPS scene only, NOT observed controllable gameplay. Passive forced end247; gameplay, retained save and ordinary quit qualification outstanding.",
+      "scope": "Coordinator correction from S3 passive capture review: rendered attract/demo FPS scene, not observed controllable gameplay or a qualifying gameplay pass. Historical gameplay-render wording was overstated; no strict WORKING. Run identity not supplied."
     },
     {
       "storeId": "9PD5BM2Z8C4L", "title": "Vampire Survivors",

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T21:54:14.740266+00:00",
+    "asOf": "2026-10-22T21:58:27.750383+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -458,7 +458,7 @@
       {
         "storeId": "9P1Z43KRNQD4",
         "title": "Quake",
-        "verdict": "GAMEPLAY_PASS"
+        "verdict": "TITLE_SCREEN_PASS"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -625,7 +625,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 751.7543289,
+  "remainingWallMinutes": 747.5374936166667,
   "scenarios": [
     {
       "label": "slow observed",
@@ -694,7 +694,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 93.9692911125,
+  "requiredAverageMinutesPerAddition": 93.44218670208333,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
