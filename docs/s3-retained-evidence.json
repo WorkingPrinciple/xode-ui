@@ -46,6 +46,26 @@
     "latest": ["TUNIC", "Brotato"],
     "boundary": "Title qualification does not establish installed GUI Play or app evidence ingestion."
   },
+  "offscreenPreparedNext": [
+    {
+      "title": "DOOM 64",
+      "packet": "s3-doom64-full-01/packet.json",
+      "sha256": "170acbc1e5b52f5f5a29670ba54865cd9173fc631835f6cfac19197a6ca55584",
+      "dryAdmissionSha256": "9de4bb6ad8c83ec5cb21c4e9e58fd7a0dbad1839a943b31e7adaee7f3f3bed90",
+      "source": "doom64-passive-cli68f-v1-card-8647",
+      "executionAuthorized": false,
+      "boundary": "Passive title rendering only. Reuse exact retained prefix and recipe; only fresh state paths and 900/300s caps differ. Actual Save Game/Load Game/Quit prompt wiring must be observed; no guessed input counts. Quit begins by 540/180s. No launch before explicit screen return."
+    },
+    {
+      "title": "Bluey's Happy Snaps",
+      "packet": "s3-bluey-full-01/packet.json",
+      "sha256": "8ad67045e04a2de331227fabe1974faad10e38b590ea747f2f22e19cb40d0189",
+      "dryAdmissionSha256": "acf00f15fc81ef48cd1d54d22d286c8770e197fa4f76557ca400a09f721d8e43",
+      "source": "bluey-happy-snaps-passive-vc14-v1",
+      "executionAuthorized": false,
+      "boundary": "Retained passive acknowledgement screenshot was viewed and shows Continue. Exact quit labels remain a hold; obtain actual title/menu evidence before full gameplay. No ToS, consent or privacy acceptance. Preserve native-first VC overrides and prerequisite-bearing prefix. No launch before explicit screen return."
+    }
+  ],
   "verifiedArchives": [
     {
       "title": "TUNIC",
