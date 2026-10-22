@@ -446,6 +446,63 @@ enum NativeLifecycleChecks {
         } catch NativeLaunchError.candidateBlocked {
             check(true, "Halls blocks direct profile resolution, not only its visible Play action")
         }
+        let hallsDocument: [String: Any] = [
+            "schemaVersion": 1, "updatedAt": "2026-10-22T00:00:00Z",
+            "games": [[
+                "productId": "9NMNMS626R59", "title": "Halls of Torment", "verdict": "WORKING",
+                "scope": "Synthetic exact recipe admission regression", "engine": "apple-gptk-4.0b3",
+                "runId": "8d7ea6ba-ec75-4cb1-8b96-7300bd467159",
+                "retentionRunId": "5b39beb9-62b4-4241-9330-33422bbccafd", "owner": "test",
+                "screenshots": [["path": "/synthetic/halls.png", "caption": "Synthetic evidence"]],
+                "saveObservation": ["retentionVerified": true, "normalMenuQuitObserved": true]
+            ]]
+        ]
+        let hallsBytes = try JSONSerialization.data(withJSONObject: hallsDocument)
+        let hallsEvidence = try MacGameEvidence.decode(hallsBytes).games[0]
+        let hallsProfile = try NativeTitleLaunchProfile.read(productID: "9NMNMS626R59", defaults: defaults,
+            provider: .standaloneWine, evidence: hallsEvidence)
+        check(NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59", evidence: hallsEvidence) == nil
+              && hallsEvidence.verifiedWorkingEvidence != nil && hallsProfile?.engine == "apple-gptk-4.0b3"
+              && hallsProfile?.arguments == ["--exe", "Halls of Torment.exe", "--timeout-seconds", "300", "--no-auto-dismiss"],
+              "Exact admitted Halls WORKING evidence replaces Launch unavailable with Play eligibility and a Working badge")
+        let hallsRegistry = root.appendingPathComponent("halls-registry.json")
+        let hallsRegistryBytes = try JSONSerialization.data(withJSONObject: ["engines": [[
+            "name": "apple-gptk-4.0b3", "kind": "free", "wine": "/usr/bin/true",
+            "smoke_test": ["status": "pass"], "environment": ["KEEP": "unchanged"]
+        ]]])
+        try hallsRegistryBytes.write(to: hallsRegistry)
+        defaults.set(hallsRegistry.path, forKey: "Xodus.lifecycle.registry")
+        defaults.set("unavailable-global-engine", forKey: "Xodus.lifecycle.engine.standaloneWine")
+        let hallsGame = InstalledGame(id: UUID(), title: "Halls of Torment", identityName: "SyntheticHalls",
+            version: "1.0.0.0", storeId: "9NMNMS626R59", folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        let resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
+            defaults: defaults, evidence: hallsEvidence)
+        check(resolvedHalls.engine == NativeHallsLaunchRecipe.engine
+              && resolvedHalls.prefix.path == NativeHallsLaunchRecipe.prefix.path
+              && resolvedHalls.profile?.environment.isEmpty == true
+              && resolvedHalls.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+              "Halls exact Apple4/default-COM/runtime/preserved save prefix wins over a conflicting global provider without launching")
+        defaults.set("creation-dx11-d3dshared", forKey: "Xodus.lifecycle.fallback.9NMNMS626R59")
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: nil,
+                defaults: defaults, evidence: hallsEvidence)
+            check(false, "Halls may not substitute a sibling fallback")
+        } catch NativeLaunchError.invalidProfile {
+            check(true, "Qualified Halls refuses unobserved fallback or inherited COM/support-library settings")
+        }
+        defaults.removeObject(forKey: "Xodus.lifecycle.fallback.9NMNMS626R59")
+        for change in [
+            ("WORKING", "GAMEPLAY_PASS"), ("WORKING", "FUTURE_RESULT"),
+            ("apple-gptk-4.0b3", "creation-dx11-d3dmetal"),
+            ("5b39beb9-62b4-4241-9330-33422bbccafd", "00000000-0000-0000-0000-000000000001")
+        ] {
+            let changed = String(decoding: hallsBytes, as: UTF8.self)
+                .replacingOccurrences(of: change.0, with: change.1)
+            let evidence = try MacGameEvidence.decode(Data(changed.utf8)).games[0]
+            check(NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59", evidence: evidence) != nil,
+                  "Halls partial/unknown/mismatched engine or retention proof cannot bypass its frozen blocked row")
+        }
         let raw = try JSONSerialization.jsonObject(with: Data(contentsOf:
             LaunchRecipeResources.candidateProfilesURL("small-game-candidates"))) as? [String: Any] ?? [:]
         let sample = (raw["profiles"] as? [[String: Any]])?.first ?? [:]

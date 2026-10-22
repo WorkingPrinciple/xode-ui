@@ -266,6 +266,19 @@ unknown regardless of retention metadata.
 
 ### Published candidate launch rows
 
+Halls supersedes its frozen blocked candidate row only when the read-only matrix
+contains S3's exact `WORKING` evidence: first run
+`8d7ea6ba-ec75-4cb1-8b96-7300bd467159`, retained run
+`5b39beb9-62b4-4241-9330-33422bbccafd`, Apple4, a screenshot, verified retention
+and ordinary menu quit. Its published `s3-halls-retention-02/invocation.json`
+binds Apple4/default COM, direct `Halls of Torment.exe`, no game arguments,
+adf8/7106/native-web shims and the existing
+`XodusCLI/prefixes/s2-9NMNMS626R59-apple4-passive-v1` save prefix.
+No prefix is copied or changed by resolution. Global provider/fallback
+preferences cannot substitute another recipe. Missing, partial, unknown or
+mismatched evidence keeps Launch unavailable; `complete` installation is still
+required before Play. This is CLI-qualified evidence, not app-tile E2E.
+
 The source-only candidate batch consumes byte-identical S1
 `small-game-candidates.json` at xode-wine `27d9af8ae66b8de9883daca25c62312562c3dfbc`
 (including the four candidates first published at `1282f7a92221a3cd70498f322b1d8b5efdeed1f0`,

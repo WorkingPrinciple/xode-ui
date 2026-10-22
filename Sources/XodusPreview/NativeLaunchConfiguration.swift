@@ -300,8 +300,9 @@ struct NativeTitleLaunchProfile: Codable {
         return profiles
     }
 
-    static func read(productID: String, defaults: UserDefaults, provider: RuntimeProviderKind? = nil) throws -> Self? {
-        if let issue = NativeCandidateLaunchCatalogue.issue(productID: productID) {
+    static func read(productID: String, defaults: UserDefaults, provider: RuntimeProviderKind? = nil,
+                     evidence: MacGameEvidence.Game? = nil) throws -> Self? {
+        if let issue = NativeCandidateLaunchCatalogue.issue(productID: productID, evidence: evidence) {
             throw NativeLaunchError.candidateBlocked(issue)
         }
         let bundled = try bundledProfiles().filter { $0.productID == productID }
@@ -445,11 +446,13 @@ struct NativeLaunchConfiguration {
                         defaults: UserDefaults = .standard,
                         runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
                         shims: NativeShimReference = .approved,
-                        provenEngine: String? = nil) throws -> Self {
+                        provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
-        var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults, provider: provider)
-        let candidate = try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
+        var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
+                                                       provider: provider, evidence: evidence)
+        let qualifiedHalls = NativeHallsLaunchRecipe.admits(productID: game.storeId, evidence: evidence)
+        let candidate = qualifiedHalls ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
             try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))
             guard profile?.engine == candidate.profile, profile?.executable == candidate.manifest_executable else {
@@ -462,9 +465,14 @@ struct NativeLaunchConfiguration {
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
         var entry = try selectEngine(registry: registry,
-                                     provider: profile?.provider != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
+                                     provider: qualifiedHalls || profile?.provider != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
         try candidate?.validateEngine(entry, fallback: defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)"))
+        if qualifiedHalls {
+            guard let profile else { throw NativeLaunchError.invalidProfile }
+            try NativeHallsLaunchRecipe.validate(profile, entry: entry,
+                fallback: defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)"))
+        }
         if profile?.dllOverrides != nil {
             guard entry.name == profile?.engine,
                   defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)") == nil,
@@ -498,7 +506,7 @@ struct NativeLaunchConfiguration {
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable
         }
-        let prefix = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+        let prefix = qualifiedHalls ? NativeHallsLaunchRecipe.prefix : URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
             "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         if let selected = profile?.shimDirectory, selected != shims.directory.path {

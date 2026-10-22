@@ -319,7 +319,8 @@ final class InstalledGamesController: ObservableObject {
             playErrors[game.id] = "Not supported yet. " + issues.map(\.detail).joined(separator: " ")
             return
         }
-        if let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId) {
+        if let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+            evidence: MacGameEvidenceStore.shared.games[game.storeId]) {
             playErrors[game.id] = issue
             Self.launchLog.error("Candidate launch unavailable: \(game.storeId, privacy: .public): \(issue, privacy: .public)")
             return
@@ -493,7 +494,8 @@ final class InstalledGamesController: ObservableObject {
             installationStatuses[game.id] = result
             installationErrors[game.id] = result.success ? nil : result.explanation
             nativeInspectionDates[game.id] = ContinuousClock.now
-            if result.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId) == nil {
+            if result.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+                evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil {
                 launchableIDs.insert(game.id)
                 packageErrors[game.id] = nil
             } else { launchableIDs.remove(game.id) }
@@ -525,7 +527,8 @@ final class InstalledGamesController: ObservableObject {
             }
             let launch = try NativeLaunchConfiguration.resolve(game: game,
                 provider: game.engineOverride ?? defaultEngine(),
-                provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine)
+                provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine,
+                evidence: MacGameEvidenceStore.shared.games[game.storeId])
             let arguments = try await launch.arguments()
             let executables = try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder)).executables
             let existingWindows = NativeGameForeground.windowIDs()
@@ -898,7 +901,8 @@ final class InstalledGamesController: ObservableObject {
         guard inspectionGeneration == generation, !applicationTerminating else { return }
         let nativeComplete = Set(installationStatuses.filter { $0.value.status == .complete }.map(\.key))
         let candidateBlocked = Set(games.filter {
-            NativeCandidateLaunchCatalogue.issue(productID: $0.storeId) != nil
+            NativeCandidateLaunchCatalogue.issue(productID: $0.storeId,
+                evidence: MacGameEvidenceStore.shared.games[$0.storeId]) != nil
         }.map(\.id))
         launchableIDs = result.0.union(nativeComplete).intersection(games.map(\.id)).subtracting(candidateBlocked)
         packageErrors = result.3

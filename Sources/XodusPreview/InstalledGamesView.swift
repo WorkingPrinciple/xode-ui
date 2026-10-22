@@ -205,6 +205,7 @@ struct InstalledPackageTypeLabel: View {
 struct InstalledPlayButton: View {
     @ObservedObject var library: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
+    @ObservedObject private var evidenceStore = MacGameEvidenceStore.shared
     let game: InstalledGame
     var usesGlass = false
     var prominent = true
@@ -296,7 +297,8 @@ struct InstalledPlayButton: View {
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
             GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
                               operations: operations, enabled: false, primary: prominent)
-        } else if !canStop, !launching, let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId) {
+        } else if !canStop, !launching, let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+            evidence: evidenceStore.games[game.storeId]) {
             Label("Launch unavailable", systemImage: "exclamationmark.circle")
                 .font(.caption).help(issue)
                 .accessibilityLabel("Launch unavailable for \(game.title). \(issue)")
