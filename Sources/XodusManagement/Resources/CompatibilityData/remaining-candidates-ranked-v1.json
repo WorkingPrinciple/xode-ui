@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T19:53:50.535267+00:00",
+  "checkedAt": "2026-10-22T20:00:34.328744+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
-  "strictWorking": 8,
-  "needed": 12,
+  "strictWorking": 9,
+  "needed": 11,
   "disk": {
     "coordinatorReportedFreeGiB": 127,
     "prelaunchGiB": 110,
@@ -35,7 +35,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "3a018aec421323bd7c0a78c8007dd23f0cd44dd90a76b0b79e939479881d024f"
+      "sha256": "17e9ea47e95c8b9fb5b3a041f3214170f71be0e62b7cf3aae6b641791c429961"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -52,6 +52,10 @@
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/free-morning-candidates-v1.json",
       "sha256": "48fe8002ab43f4f027a6ae64e4909cbc3e72356fa1ddb9872e9d3b33b7d4f3d8"
+    },
+    {
+      "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/pipeline-install-entitlement-v1.json",
+      "sha256": "2a0e98c6f4b440627c3f5f839ffc4bb496ab0120e378996fc4cf60ea23b5bc00"
     }
   ],
   "items": [
@@ -82,7 +86,8 @@
         "storeIds": [
           "9P9VNSQK1W3K"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 2,
@@ -111,36 +116,8 @@
         "storeIds": [
           "9MWR1NC6VQ6L"
         ]
-      }
-    },
-    {
-      "rank": 3,
-      "storeId": "9PBWWQGXVMKC",
-      "title": "Monster Sanctuary",
-      "verdict": "INCONCLUSIVE",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
-      "downloadSizeBytes": 822587392,
-      "planningBudgetBytes": 822587392,
-      "incrementalDownloadBudgetBytes": 0,
-      "fitsGrossMargin": true,
-      "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
-      "expectedRoute": "Free Wine proposed by S1; prior Apple4 candidate, new route/card unqualified",
-      "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "World PASS-candidate with ordinary SaveQuit/titleExit0/0; reload 0d057caf INFRA RPS sign-in, no retention. Monster retry pending, not WORKING.",
-      "needsUserClaim": false,
-      "needsLicenseCheck": false,
-      "needsDownload": false,
-      "pipelineExtensionCandidate": false,
-      "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
-      "rankingBasis": "World PASS-candidate; reload blocked by RPS sign-in infrastructure, retry pending.",
-      "inventoryEvidence": {
-        "root": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
-        "manifest": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox/MicrosoftGame.Config",
-        "manifestSha256": "a27f8573233ad60b84343d3d121ef69f2bec7af3bace27f602a1bcae14d79c98",
-        "storeIds": [
-          "9PBWWQGXVMKC"
-        ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 4,
@@ -169,7 +146,8 @@
         "storeIds": [
           "9PD5BM2Z8C4L"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 5,
@@ -199,7 +177,8 @@
           "000000000000",
           "9NLRT31Z4RWM"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 6,
@@ -228,7 +207,8 @@
         "storeIds": [
           "9N8C07SS8C9D"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 7,
@@ -257,7 +237,8 @@
         "storeIds": [
           "9NGH1FK0RJGL"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 8,
@@ -286,7 +267,8 @@
         "storeIds": [
           "9P1Z43KRNQD4"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 9,
@@ -315,7 +297,8 @@
         "storeIds": [
           "9MXND4PQLK3W"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 10,
@@ -344,7 +327,8 @@
         "storeIds": [
           "9NV3L234VGXD"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 11,
@@ -373,14 +357,15 @@
         "storeIds": [
           "9P861V1542BL"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 12,
       "storeId": "9NQVHHW88XW9",
       "title": "Bluey's Happy Snaps",
       "verdict": "UNTESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:37.152142+00:00",
       "downloadSizeBytes": 3518705664,
       "planningBudgetBytes": 3518705664,
       "incrementalDownloadBudgetBytes": 0,
@@ -402,6 +387,41 @@
         "storeIds": [
           "9NQVHHW88XW9"
         ]
+      },
+      "installVerification": {
+        "storeId": "9NQVHHW88XW9",
+        "title": "Bluey's Happy Snaps",
+        "root": "/Users/dragoshont/Games/Xodus/BlueysHappySnaps-Xbox",
+        "checkedAt": "2026-10-22T19:58:37.152142+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "92858aa7-7f62-4877-ad35-d3e5eb35a38d",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 76,
+          "finished_at": "2026-10-22T19:58:37.141755Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/BlueysHappySnaps-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/8dc3142b-04fd-41df-a84c-42375bca32a3",
+          "operation": "install-status",
+          "product": "9NQVHHW88XW9",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/8dc3142b-04fd-41df-a84c-42375bca32a3/result.json",
+          "run_id": "8dc3142b-04fd-41df-a84c-42375bca32a3",
+          "started_at": "2026-10-22T19:58:36.849283Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NQVHHW88XW9-install-status.json",
+          "sha256": "071d83d8ad8ff669752ebb888b1948bd558770874bc828b3c7e2129bbe324219"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -409,7 +429,7 @@
       "storeId": "9P2J5D12GJL5",
       "title": "Oblivion GOTY (2009)",
       "verdict": "NOT_TESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:40.388256+00:00",
       "downloadSizeBytes": 29208236032,
       "planningBudgetBytes": 29208236032,
       "incrementalDownloadBudgetBytes": 0,
@@ -431,6 +451,41 @@
         "storeIds": [
           "9P2J5D12GJL5"
         ]
+      },
+      "installVerification": {
+        "storeId": "9P2J5D12GJL5",
+        "title": "Oblivion GOTY (2009)",
+        "root": "/Users/dragoshont/Games/Xodus/OblivionGOTY2009-Xbox",
+        "checkedAt": "2026-10-22T19:58:40.388256+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "61226e31-cf5e-4c2d-9dc6-1c93598504e8",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 411,
+          "finished_at": "2026-10-22T19:58:40.375114Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/OblivionGOTY2009-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/fd002c54-be16-47e5-9612-91484dd2b49d",
+          "operation": "install-status",
+          "product": "9P2J5D12GJL5",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/fd002c54-be16-47e5-9612-91484dd2b49d/result.json",
+          "run_id": "fd002c54-be16-47e5-9612-91484dd2b49d",
+          "started_at": "2026-10-22T19:58:38.269667Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P2J5D12GJL5-install-status.json",
+          "sha256": "9160c177ee723ce4fbce7df1d6e7f4fd9752e4ad1a1718f0fded7a67fd7daa10"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -438,7 +493,7 @@
       "storeId": "9P3T7HVKM6D0",
       "title": "Kingdom Come: Deliverance",
       "verdict": "NOT_TESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:45.904712+00:00",
       "downloadSizeBytes": 79613956096,
       "planningBudgetBytes": 79613956096,
       "incrementalDownloadBudgetBytes": 0,
@@ -460,6 +515,41 @@
         "storeIds": [
           "9P3T7HVKM6D0"
         ]
+      },
+      "installVerification": {
+        "storeId": "9P3T7HVKM6D0",
+        "title": "Kingdom Come: Deliverance",
+        "root": "/Users/dragoshont/Games/Xodus/KingdomComeDeliverance-Xbox",
+        "checkedAt": "2026-10-22T19:58:45.904712+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "ce7cee0a-e938-4cc8-a55f-df6d5d8a5bab",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 166,
+          "finished_at": "2026-10-22T19:58:45.888949Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/KingdomComeDeliverance-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/d58e8520-9a03-4935-bc23-5c69d8cd110c",
+          "operation": "install-status",
+          "product": "9P3T7HVKM6D0",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/d58e8520-9a03-4935-bc23-5c69d8cd110c/result.json",
+          "run_id": "d58e8520-9a03-4935-bc23-5c69d8cd110c",
+          "started_at": "2026-10-22T19:58:40.396249Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P3T7HVKM6D0-install-status.json",
+          "sha256": "2aa64058cb8953a5728cda6a1ab4f696f4201bd92d1814f0a4bc96e814a9dc75"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -467,7 +557,7 @@
       "storeId": "9PJPCB188SVG",
       "title": "Subnautica 2",
       "verdict": "NOT_TESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:38.261991+00:00",
       "downloadSizeBytes": 14788407296,
       "planningBudgetBytes": 14788407296,
       "incrementalDownloadBudgetBytes": 0,
@@ -489,6 +579,41 @@
         "storeIds": [
           "9PJPCB188SVG"
         ]
+      },
+      "installVerification": {
+        "storeId": "9PJPCB188SVG",
+        "title": "Subnautica 2",
+        "root": "/Users/dragoshont/Games/Xodus/Subnautica2-Xbox",
+        "checkedAt": "2026-10-22T19:58:38.261991+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "2b20bafd-957b-4776-a491-80157cbb90e2",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 278,
+          "finished_at": "2026-10-22T19:58:38.249926Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Subnautica2-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/289d3a2c-1a44-4b44-9660-fe66c070039e",
+          "operation": "install-status",
+          "product": "9PJPCB188SVG",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/289d3a2c-1a44-4b44-9660-fe66c070039e/result.json",
+          "run_id": "289d3a2c-1a44-4b44-9660-fe66c070039e",
+          "started_at": "2026-10-22T19:58:37.160538Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9PJPCB188SVG-install-status.json",
+          "sha256": "a6477d9a1e5e80d23599bfa1439f17a9c46dc39f9284ed99d0fdaa7d31b880c8"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -496,7 +621,7 @@
       "storeId": "9NFB47H2SDRX",
       "title": "Forever Ago",
       "verdict": "UNTESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:46.758984+00:00",
       "downloadSizeBytes": 9471352832,
       "planningBudgetBytes": 9471352832,
       "incrementalDownloadBudgetBytes": 0,
@@ -518,6 +643,41 @@
         "storeIds": [
           "9NFB47H2SDRX"
         ]
+      },
+      "installVerification": {
+        "storeId": "9NFB47H2SDRX",
+        "title": "Forever Ago",
+        "root": "/Users/dragoshont/Games/Xodus/ForeverAgo-Xbox",
+        "checkedAt": "2026-10-22T19:58:46.758984+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "2dff0f2a-fd10-473d-85db-868f7e6a7e35",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 421,
+          "finished_at": "2026-10-22T19:58:46.746660Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/ForeverAgo-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/8cd4157b-c749-4e4c-9a1b-90e1216ea1cd",
+          "operation": "install-status",
+          "product": "9NFB47H2SDRX",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/8cd4157b-c749-4e4c-9a1b-90e1216ea1cd/result.json",
+          "run_id": "8cd4157b-c749-4e4c-9a1b-90e1216ea1cd",
+          "started_at": "2026-10-22T19:58:45.912517Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NFB47H2SDRX-install-status.json",
+          "sha256": "50c4df8b306f92d57176af7f245d8124bf3a576dcbe94824e2335bcb1d2dd54e"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -525,7 +685,7 @@
       "storeId": "9NCJWHHMVHR0",
       "title": "Keeper",
       "verdict": "UNTESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:48.773417+00:00",
       "downloadSizeBytes": 27329888256,
       "planningBudgetBytes": 27329888256,
       "incrementalDownloadBudgetBytes": 0,
@@ -547,6 +707,41 @@
         "storeIds": [
           "9NCJWHHMVHR0"
         ]
+      },
+      "installVerification": {
+        "storeId": "9NCJWHHMVHR0",
+        "title": "Keeper",
+        "root": "/Users/dragoshont/Games/Xodus/Keeper-Xbox",
+        "checkedAt": "2026-10-22T19:58:48.773417+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "44458d9c-25d1-41c6-8590-3dca85f5d3b6",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 82,
+          "finished_at": "2026-10-22T19:58:48.760245Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Keeper-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/f5ac4614-a488-4413-98c7-1b8b715537cc",
+          "operation": "install-status",
+          "product": "9NCJWHHMVHR0",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/f5ac4614-a488-4413-98c7-1b8b715537cc/result.json",
+          "run_id": "f5ac4614-a488-4413-98c7-1b8b715537cc",
+          "started_at": "2026-10-22T19:58:46.767892Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NCJWHHMVHR0-install-status.json",
+          "sha256": "65327e51b9686676c18bb499be2e39a054dd501cd383e2979dcdce532485f23a"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -554,7 +749,7 @@
       "storeId": "9P5Z4530318L",
       "title": "DEATHLOOP",
       "verdict": "UNTESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:51.231516+00:00",
       "downloadSizeBytes": 33464537088,
       "planningBudgetBytes": 33464537088,
       "incrementalDownloadBudgetBytes": 0,
@@ -576,6 +771,41 @@
         "storeIds": [
           "9P5Z4530318L"
         ]
+      },
+      "installVerification": {
+        "storeId": "9P5Z4530318L",
+        "title": "DEATHLOOP",
+        "root": "/Users/dragoshont/Games/Xodus/Deathloop-Xbox",
+        "checkedAt": "2026-10-22T19:58:51.231516+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "bfc20305-9099-46bc-8f65-ca6f5163831b",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 740,
+          "finished_at": "2026-10-22T19:58:51.217399Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Deathloop-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/1c784d7b-c56c-4fac-aa5a-3cc6257822fc",
+          "operation": "install-status",
+          "product": "9P5Z4530318L",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/1c784d7b-c56c-4fac-aa5a-3cc6257822fc/result.json",
+          "run_id": "1c784d7b-c56c-4fac-aa5a-3cc6257822fc",
+          "started_at": "2026-10-22T19:58:48.781883Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P5Z4530318L-install-status.json",
+          "sha256": "21f4719144cc33355892ef0b6a9e0d3724b3cadb1473cc6ca25db8c664c9512e"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -583,7 +813,7 @@
       "storeId": "9NXWSWBM4H6T",
       "title": "Beast of Reincarnation",
       "verdict": "UNTESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:53.608315+00:00",
       "downloadSizeBytes": 34673172480,
       "planningBudgetBytes": 34673172480,
       "incrementalDownloadBudgetBytes": 0,
@@ -605,6 +835,41 @@
         "storeIds": [
           "9NXWSWBM4H6T"
         ]
+      },
+      "installVerification": {
+        "storeId": "9NXWSWBM4H6T",
+        "title": "Beast of Reincarnation",
+        "root": "/Users/dragoshont/Games/Xodus/BeastOfReincarnation-Xbox",
+        "checkedAt": "2026-10-22T19:58:53.608315+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "b59198cb-4811-42c1-95d3-655f48da1b43",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 106,
+          "finished_at": "2026-10-22T19:58:53.592997Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/BeastOfReincarnation-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/abaa2fb7-2d86-4067-bba2-fd5c2a9232c5",
+          "operation": "install-status",
+          "product": "9NXWSWBM4H6T",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/abaa2fb7-2d86-4067-bba2-fd5c2a9232c5/result.json",
+          "run_id": "abaa2fb7-2d86-4067-bba2-fd5c2a9232c5",
+          "started_at": "2026-10-22T19:58:51.239253Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NXWSWBM4H6T-install-status.json",
+          "sha256": "4a083d5bf509e138fecdfb977fae0e2eb2f75219f335ae55dd960c62dc4ebad6"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -612,7 +877,7 @@
       "storeId": "9P1N07XDL1D4",
       "title": "Dishonored\u00ae Definitive Edition (PC)",
       "verdict": "UNTESTED",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
+      "installState": "complete; fresh read-only install-status 2026-10-22T19:58:57.754873+00:00",
       "downloadSizeBytes": 17511350272,
       "planningBudgetBytes": 17511350272,
       "incrementalDownloadBudgetBytes": 0,
@@ -634,6 +899,41 @@
         "storeIds": [
           "9P1N07XDL1D4"
         ]
+      },
+      "installVerification": {
+        "storeId": "9P1N07XDL1D4",
+        "title": "Dishonored\u00ae Definitive Edition (PC)",
+        "root": "/Users/dragoshont/Games/Xodus/DishonoredDefinitive-Xbox",
+        "checkedAt": "2026-10-22T19:58:57.754873+00:00",
+        "processExitCode": 0,
+        "installStatus": {
+          "content_id": "6f4b5989-6054-48c4-ba84-04a597d750e3",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 11196,
+          "finished_at": "2026-10-22T19:58:57.742660Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/DishonoredDefinitive-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/77efea7e-8241-4365-ab54-ef84baf7cf76",
+          "operation": "install-status",
+          "product": "9P1N07XDL1D4",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/status-state/runs/77efea7e-8241-4365-ab54-ef84baf7cf76/result.json",
+          "run_id": "77efea7e-8241-4365-ab54-ef84baf7cf76",
+          "started_at": "2026-10-22T19:58:53.616062Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "installStatusReceipt": {
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P1N07XDL1D4-install-status.json",
+          "sha256": "f11e2f749803bd39a8705e6f2afdbb2971c7907ef319f6ee4bf99b822073cf7a"
+        },
+        "entitlement": "unknown",
+        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "launchAuthorized": false,
+        "acquisitionAttempted": false
       }
     },
     {
@@ -663,7 +963,8 @@
         "storeIds": [
           "9P03JGQ4S1GC"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 22,
@@ -692,7 +993,8 @@
         "storeIds": [
           "C3KLDKZBHNCZ"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 23,
@@ -721,7 +1023,8 @@
         "storeIds": [
           "9P8NSTDMZ11P"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 24,
@@ -751,7 +1054,8 @@
           "9PNG83MDD6SH",
           "**REPLACE WITH STOREID**"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 25,
@@ -773,7 +1077,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 26,
@@ -795,7 +1100,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 27,
@@ -817,7 +1123,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 28,
@@ -839,7 +1146,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 29,
@@ -861,7 +1169,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 30,
@@ -883,7 +1192,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 31,
@@ -905,7 +1215,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 32,
@@ -927,7 +1238,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 33,
@@ -949,7 +1261,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 34,
@@ -971,7 +1284,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 35,
@@ -993,7 +1307,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 36,
@@ -1015,7 +1330,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 37,
@@ -1037,7 +1353,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 38,
@@ -1067,7 +1384,8 @@
           "000000000000",
           "9MSVVM5NS9L6"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 39,
@@ -1097,7 +1415,8 @@
           "000000000000",
           "9PLH7R84GJWP"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 40,
@@ -1126,7 +1445,8 @@
         "storeIds": [
           "9NGLST31DG26"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 41,
@@ -1155,7 +1475,8 @@
         "storeIds": [
           "9PK087LNGJC5"
         ]
-      }
+      },
+      "installVerification": null
     },
     {
       "rank": 42,
@@ -1177,7 +1498,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 43,
@@ -1199,7 +1521,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 44,
@@ -1221,7 +1544,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 45,
@@ -1243,7 +1567,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 46,
@@ -1265,7 +1590,8 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     },
     {
       "rank": 47,
@@ -1287,8 +1613,9 @@
       "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
-      "inventoryEvidence": null
+      "inventoryEvidence": null,
+      "installVerification": null
     }
   ],
-  "ownerUpdate": "Monster reload INFRA, TUNIC inconclusive, Stardew retention YES/quit unobserved, Valor prefix VC++ prerequisite missing; strict count unchanged."
+  "ownerUpdate": "Monster admitted WORKING by coordinator22:57; TUNIC inconclusive, Stardew retention YES/quit unobserved, Valor prefix VC++ prerequisite missing; strict count unchanged."
 }

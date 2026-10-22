@@ -55,16 +55,19 @@ def build():
     v5 = source("s3-ready-packets-v5.json")
     catalogue = source("s3-preflight-catalogue-v1.json")
     free = source("free-morning-candidates-v1.json")
+    verified = {row["storeId"]: row for row in
+                source("pipeline-install-entitlement-v1.json")["items"]}
     rows = {row["storeId"]: dict(row) for row in v4["items"] + v5["items"]}
     rows.update({row["storeId"]: row for row in catalogue["blockedItems"]})
     free_rows = {row["storeId"]: row for row in free["candidates"]}
     remaining = {row["storeId"]: row for row in tracker["items"] if not row["strictWorking"]}
     inventory = installed_inventory()
     installed = {sid: item for item in inventory for sid in item["storeIds"]}
-    if set(ORDER) != set(remaining) | set(free_rows) or len(ORDER) != len(set(ORDER)):
+    active_order = [sid for sid in ORDER if sid in remaining or sid in free_rows]
+    if set(active_order) != set(remaining) | set(free_rows) or len(ORDER) != len(set(ORDER)):
         raise ValueError("Ranking must cover every remaining tracked/free candidate exactly once")
     items = []
-    for sid in ORDER:
+    for sid in active_order:
         row = rows.get(sid, {})
         candidate = remaining.get(sid, free_rows.get(sid))
         is_free = sid in free_rows
@@ -94,13 +97,19 @@ def build():
                  "partial streaming payload" if partial else
                  "manifest present; prior installed inventory, not fresh install-status"
                  if present else "not installed in current manifest inventory")
+        verification = verified.get(sid)
+        if verification and present and verification["root"] == installed[sid]["root"]:
+            status = verification["installStatus"]
+            if (verification["processExitCode"] == 0 and status["success"]
+                    and status["status"] == "complete" and status["product"] == sid):
+                state = "complete; fresh read-only install-status " + verification["checkedAt"]
         incremental = 0 if present and not partial else budget
         blocker = candidate.get("blocker", "User must claim exact free offer; license and install unconfirmed.")
         needs_download = not present or partial
-        extension = (len(items) >= 10 and not needs_download and not is_free
+        extension = (ORDER.index(sid) >= 10 and not needs_download and not is_free
                      and candidate.get("verdict") in {"UNTESTED", "NOT_TESTED"})
         items.append({
-            "rank": len(items) + 1, "storeId": sid, "title": candidate["title"],
+            "rank": ORDER.index(sid) + 1, "storeId": sid, "title": candidate["title"],
             "verdict": candidate.get("verdict", "UNTESTED"), "installState": state,
             "downloadSizeBytes": size, "planningBudgetBytes": budget,
             "incrementalDownloadBudgetBytes": incremental,
@@ -118,6 +127,7 @@ def build():
             "rankingBasis": REASONS.get(sid, "Installed candidates before new downloads; "
                                       "holds, large downloads and unclear routes ranked later."),
             "inventoryEvidence": installed.get(sid),
+            "installVerification": verification,
         })
     return {
         "schemaVersion": 1, "checkedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -142,7 +152,7 @@ def build():
             "not proof that unknown prefix/transient growth fits. Admission remains conditional.",
         },
         "sources": sources, "items": items,
-        "ownerUpdate": "Monster reload INFRA, TUNIC inconclusive, Stardew retention YES/quit "
+        "ownerUpdate": "Monster admitted WORKING by coordinator22:57; TUNIC inconclusive, Stardew retention YES/quit "
         "unobserved, Valor prefix VC++ prerequisite missing; strict count unchanged.",
     }
 

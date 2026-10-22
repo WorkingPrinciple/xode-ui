@@ -16,15 +16,15 @@
     {
       "storeId": "9PBWWQGXVMKC",
       "title": "Monster Sanctuary",
-      "verdict": "INCONCLUSIVE",
-      "reportedAt": "2026-10-22T19:51:42.038+00:00",
+      "verdict": "WORKING",
+      "reportedAt": "2026-10-22T19:57:16.859+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
       "runId": "0d057caf",
-      "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "save": "unknown", "relaunch": "unknown"},
-      "nextGate": "infrastructure retry",
-      "ownerStream": "S2/S3",
-      "blocker": "World PASS-candidate with ordinary SaveQuit/titleExit0/0; reload 0d057caf INFRA RPS sign-in, no retention. Monster retry pending, not WORKING.",
-      "scope": "Coordinator 22:51 report and matrix: world cca9c74f S3/Wolf, 8XP,14earnedGold,BlobEgg,SmallPotion and27968B save. Quit gate reflects world only; reload timed out at sign-in0x80072746. No qualified fresh-process retention."
+      "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "save": "passed", "relaunch": "passed"},
+      "nextGate": "complete",
+      "ownerStream": "S3",
+      "blocker": null,
+      "scope": "Coordinator explicitly verified Monster Sanctuary WORKING at22:57EEST, strict9/20. Prior world cca9c74f and reload0d057caf INFRA remain historical attempts; this is a newer coordinator admission, not a claim that0d057caf passed. New successful retry identity not yet supplied to S4."
     },
     {
       "storeId": "9NLRT31Z4RWM",

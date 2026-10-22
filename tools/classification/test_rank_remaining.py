@@ -6,7 +6,8 @@ from rank_remaining import ORDER, build
 class RemainingRankingTests(unittest.TestCase):
     def test_complete_unique_pool_and_no_download_admission(self):
         packet = build()
-        self.assertEqual([row["storeId"] for row in packet["items"]], ORDER)
+        self.assertEqual([row["storeId"] for row in packet["items"]],
+                         [sid for sid in ORDER if sid != "9PBWWQGXVMKC"])
         self.assertEqual(len(ORDER), len(set(ORDER)))
         self.assertEqual(packet["disk"]["grossMarginGiB"], 17)
         self.assertEqual(packet["disk"]["abortBelowGiB"], 105)
