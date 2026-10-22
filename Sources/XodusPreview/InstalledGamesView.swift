@@ -241,6 +241,56 @@ struct InstalledPlayButton: View {
         operations.supportIssues(productID: game.storeId, packageFormat: game.packageType?.label)
     }
 
+    private var nativeAction: NativeInstallationStatus.Action {
+        library.installationStatuses[game.id]?.action ?? .check
+    }
+
+    private var nativeActionTitle: String {
+        if library.checkingInstallations.contains(game.id) { return "Checking" }
+        switch nativeAction {
+        case .play: return "Play"
+        case .install: return "Install"
+        case .resume: return "Resume"
+        case .repair: return "Repair"
+        case .check: return "Check installation"
+        }
+    }
+
+    @ViewBuilder private var nativeInstallationButton: some View {
+        Button {
+            let action = nativeAction
+            Task {
+                let product = PCGame(id: game.storeId, title: game.title, artwork: nil)
+                switch action {
+                case .check: await library.checkInstallation(game)
+                case .install, .resume: await operations.resume(product, installed: game)
+                case .repair: await operations.repair(product, installed: game)
+                case .play: await library.play(game)
+                }
+            }
+        } label: {
+            if heroStyle {
+                Label(nativeActionTitle, systemImage: nativeAction == .repair ? "wrench"
+                      : nativeAction == .check ? "checkmark.shield" : "arrow.down.circle")
+                    .font(.title3.weight(.semibold)).frame(minHeight: 28).padding(.horizontal, 12)
+            } else { Text(nativeActionTitle) }
+        }
+        .modifier(LibraryActionStyle(primary: prominent, usesGlass: usesGlass))
+        .modifier(LibraryHeroControlSize(enabled: heroStyle))
+        .disabled(library.checkingInstallations.contains(game.id) || library.editing || library.choosing
+                  || library.applicationTerminating
+                  || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
+        .accessibilityLabel("\(nativeActionTitle) for \(game.title)")
+        .accessibilityIdentifier("xodus.installed.readinessAction")
+        if library.checkingInstallations.contains(game.id) {
+            ProgressView().controlSize(.small).accessibilityLabel("Checking installation of \(game.title)")
+        }
+        if attention == nil,
+           let reason = library.installationErrors[game.id] ?? library.installationStatuses[game.id]?.explanation {
+            Text(reason).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     @ViewBuilder var body: some View {
         if operations.operation?.productID == game.storeId
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
@@ -248,6 +298,8 @@ struct InstalledPlayButton: View {
                               operations: operations, enabled: false, primary: prominent)
         } else if !canStop, !launching, !unsupportedIssues.isEmpty {
             LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: heroStyle)
+        } else if !canStop, !launching, library.requiresNativeInstallationStatus(game), nativeAction != .play {
+            nativeInstallationButton
         } else {
             actionButton
             if library.updateStatus(for: game).hasUpdate {
@@ -280,6 +332,7 @@ struct InstalledPlayButton: View {
                     || library.runningGameID != nil || library.stoppingGameID != nil
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
+                  || library.checkingInstallations.contains(game.id)
                   || library.accountDisconnecting || !library.accountAccessAllowed)
         .accessibilityLabel(opensAttention ? "\(title) for \(game.title)"
              : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"

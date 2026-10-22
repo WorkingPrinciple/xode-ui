@@ -25,6 +25,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var historyError: String?
     @Published private(set) var packageErrors: [UUID: String] = [:]
     @Published private(set) var checkingInstallations = Set<UUID>()
+    @Published private(set) var installationStatuses: [UUID: NativeInstallationStatus] = [:]
+    @Published private(set) var installationErrors: [UUID: String] = [:]
     @Published private(set) var playLogs: [UUID: URL] = [:]
     @Published private(set) var playNotices: [UUID: String] = [:]
     @Published private(set) var stoppingGameID: UUID?
@@ -44,7 +46,12 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var accountAccessAllowed = false
     @Published private(set) var accountAccessMessage = "Reconnect Xbox services to play this game."
     var applicationTerminating = false {
-        didSet { if applicationTerminating { foregroundHandoff?.cancel() } }
+        didSet {
+            if applicationTerminating {
+                foregroundHandoff?.cancel()
+                for task in nativeInspectionTasks.values { task.cancel() }
+            }
+        }
     }
     private let store: InstalledGameStore
     private let launchingDuration: Duration
@@ -57,6 +64,8 @@ final class InstalledGamesController: ObservableObject {
     private let nativeLauncher = NativeGameLifecycle()
     private var nativeLaunchTask: Task<Void, Never>?
     private var nativeForegroundTask: Task<Void, Never>?
+    private var nativeInspectionTasks: [UUID: Task<NativeInstallationStatus, Error>] = [:]
+    private var nativeInspectionDates: [UUID: ContinuousClock.Instant] = [:]
     private var playingTask: Task<Void, Never>?
     private var runToken: UUID?
     private var stopToken: UUID?
@@ -206,6 +215,10 @@ final class InstalledGamesController: ObservableObject {
             playErrors[game.id] = nil
             playLogs[game.id] = nil
             runIDs[game.id] = nil
+            nativeInspectionTasks[game.id]?.cancel()
+            installationStatuses[game.id] = nil
+            installationErrors[game.id] = nil
+            nativeInspectionDates[game.id] = nil
             error = nil
         } catch { self.error = InstalledGameError.storage.localizedDescription }
     }
@@ -279,6 +292,10 @@ final class InstalledGamesController: ObservableObject {
         playLogs = [:]
         playNotices = [:]
         packageErrors = [:]
+        for task in nativeInspectionTasks.values { task.cancel() }
+        installationStatuses = [:]
+        installationErrors = [:]
+        nativeInspectionDates = [:]
         loaded = false
     }
 
@@ -412,6 +429,77 @@ final class InstalledGamesController: ObservableObject {
     func useUnifiedAccount(_ session: LiveSession) {
         usesUnifiedAccount = true
         unifiedSession = session
+        launchableIDs = []
+    }
+
+    func requiresNativeInstallationStatus(_ game: InstalledGame) -> Bool {
+        usesUnifiedAccount || game.usesNativeLifecycle == true
+    }
+
+    func refreshNativeInstallationStatuses() async {
+        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
+              !applicationTerminating, runningGameID == nil, stoppingGameID == nil,
+              unifiedSession?.nativeInstallStatusConfiguration != nil else { return }
+        for game in games where requiresNativeInstallationStatus(game) {
+            guard !Task.isCancelled, !mutationActive, !editing, runningGameID == nil,
+                  !applicationTerminating else { return }
+            let ttl: Duration = installationStatuses[game.id]?.status == .complete ? .seconds(120) : .seconds(15)
+            if let last = nativeInspectionDates[game.id], ContinuousClock.now < last.advanced(by: ttl) { continue }
+            _ = await inspectNativeInstallation(game)
+        }
+    }
+
+    private func inspectNativeInstallation(_ game: InstalledGame) async -> NativeInstallationStatus? {
+        if let pending = nativeInspectionTasks[game.id] {
+            do { return try await pending.value }
+            catch {
+                if loaded, !applicationTerminating, games.contains(game) {
+                    installationErrors[game.id] = "The installation couldn't be checked. \(error.localizedDescription)"
+                }
+                return nil
+            }
+        }
+        guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
+            installationErrors[game.id] = "The verified local service isn't connected. Reconnect Ode to X and check again."
+            return nil
+        }
+        guard nativeInspectionTasks.count < 2, loaded, !mutationActive, !applicationTerminating,
+              games.contains(game) else {
+            installationErrors[game.id] = "Wait for the current installation check or operation, then try again."
+            return nil
+        }
+        let query = NativeInstallationQuery()
+        let task = Task {
+            try await query.run(configuration: configuration, product: game.storeId,
+                                gameDirectory: URL(fileURLWithPath: game.folder))
+        }
+        nativeInspectionTasks[game.id] = task
+        checkingInstallations.insert(game.id)
+        defer {
+            nativeInspectionTasks[game.id] = nil
+            checkingInstallations.remove(game.id)
+        }
+        do {
+            let result = try await withTaskCancellationHandler {
+                try await task.value
+            } onCancel: { task.cancel() }
+            guard !applicationTerminating, loaded, games.contains(game) else { return nil }
+            installationStatuses[game.id] = result
+            installationErrors[game.id] = result.success ? nil : result.explanation
+            nativeInspectionDates[game.id] = ContinuousClock.now
+            if result.status == .complete {
+                launchableIDs.insert(game.id)
+                packageErrors[game.id] = nil
+            } else { launchableIDs.remove(game.id) }
+            return result
+        } catch {
+            guard !applicationTerminating, loaded, games.contains(game) else { return nil }
+            installationStatuses[game.id] = nil
+            installationErrors[game.id] = "The installation couldn't be checked. \(error.localizedDescription)"
+            nativeInspectionDates[game.id] = ContinuousClock.now
+            launchableIDs.remove(game.id)
+            return nil
+        }
     }
 
     private func playNative(_ game: InstalledGame) async {
@@ -420,7 +508,15 @@ final class InstalledGamesController: ObservableObject {
             playErrors[game.id] = "Reconnect your Xbox account before playing this installation."
             return
         }
+        let token = UUID()
+        runToken = token
+        runningGameID = game.id
+        playState = .launching
+        launchStarted = false
         do {
+            guard await inspectNativeInstallation(game)?.status == .complete else {
+                throw NativeLaunchError.installationNotReady
+            }
             let launch = try NativeLaunchConfiguration.resolve(game: game,
                 provider: game.engineOverride ?? defaultEngine(),
                 provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine)
@@ -429,12 +525,8 @@ final class InstalledGamesController: ObservableObject {
             let existingWindows = NativeGameForeground.windowIDs()
             guard accountAccessAllowed, session.accountHash == account,
                   session.nativeLifecycleConfiguration?.executable == configuration.executable,
-                  runningGameID == nil, !accountDisconnecting, !applicationTerminating,
+                  runningGameID == game.id, runToken == token, !accountDisconnecting, !applicationTerminating,
                   games.contains(game) else { throw GameScriptError.busy }
-            let token = UUID()
-            runToken = token
-            runningGameID = game.id
-            playState = .launching
             playErrors[game.id] = nil
             playLogs[game.id] = nil
             playNotices[game.id] = nil
@@ -485,6 +577,7 @@ final class InstalledGamesController: ObservableObject {
                 nativeLaunchTask = nil
             }
         } catch {
+            finished(token: token, gameID: game.id, status: 1)
             playErrors[game.id] = (error as? NativeLaunchError)?.localizedDescription
                 ?? (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
             Self.launchLog.error("Play failed before launch: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
@@ -615,6 +708,10 @@ final class InstalledGamesController: ObservableObject {
     func checkInstallation(_ game: InstalledGame) async {
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
               !applicationTerminating, runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
+        if requiresNativeInstallationStatus(game) {
+            _ = await inspectNativeInstallation(game)
+            return
+        }
         editing = true
         checkingInstallations.insert(game.id)
         defer { checkingInstallations.remove(game.id); editing = false }
@@ -623,9 +720,18 @@ final class InstalledGamesController: ObservableObject {
 
     func reserveMutation(gameID: UUID?) throws {
         guard loaded, !editing, !choosing, !mutationActive, !serviceSignInActive, !accountDisconnecting, !applicationTerminating,
+              gameID.map({ nativeInspectionTasks[$0] == nil }) ?? true,
               gameID == nil || runningGameID != gameID else { throw GameScriptError.busy }
         mutationActive = true
         mutationGameID = gameID
+        if let gameID {
+            installationStatuses[gameID] = nil
+            installationErrors[gameID] = nil
+            nativeInspectionDates[gameID] = nil
+            if games.first(where: { $0.id == gameID }).map(requiresNativeInstallationStatus) == true {
+                launchableIDs.remove(gameID)
+            }
+        }
     }
 
     func releaseMutation() {
@@ -668,6 +774,9 @@ final class InstalledGamesController: ObservableObject {
         defer { editing = false }
         applySavedGames(try await store.remove(id: id))
         launchableIDs.remove(id)
+        installationStatuses[id] = nil
+        installationErrors[id] = nil
+        nativeInspectionDates[id] = nil
         playErrors[id] = nil
         playLogs[id] = nil
         runIDs[id] = nil
@@ -733,6 +842,7 @@ final class InstalledGamesController: ObservableObject {
         inspectionGeneration = generation
         let entries = games
         let inspectPackage = inspectPackage
+        let nativeIDs = Set(entries.filter(requiresNativeInstallationStatus).map(\.id))
         let result = await Task.detached(priority: .utility) {
             var launchable: Set<UUID> = []
             var publishers: [UUID: String] = [:]
@@ -755,6 +865,7 @@ final class InstalledGamesController: ObservableObject {
                     }
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId else { throw InstalledGameError.invalidConfig }
+                    if nativeIDs.contains(game.id) { continue }
                     if config.placeholderOnly {
                         placeholders.insert(game.id)
                         failures[game.id] = InstalledGameError.placeholderContent.localizedDescription
@@ -769,7 +880,8 @@ final class InstalledGamesController: ObservableObject {
             return (launchable, publishers, packageTypes, failures, placeholders)
         }.value
         guard inspectionGeneration == generation, !applicationTerminating else { return }
-        launchableIDs = result.0.intersection(games.map(\.id))
+        let nativeComplete = Set(installationStatuses.filter { $0.value.status == .complete }.map(\.key))
+        launchableIDs = result.0.union(nativeComplete).intersection(games.map(\.id))
         packageErrors = result.3
         placeholderIDs = result.4.intersection(games.map(\.id))
         var latestSaved: [InstalledGame]?

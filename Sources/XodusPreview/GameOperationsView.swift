@@ -406,7 +406,8 @@ struct GameInstallConsentView: View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    Text(consent.installedID == nil ? consent.game.title : "Check for update or repair")
+                    Text(consent.resuming ? "Resume installation"
+                         : consent.installedID == nil ? consent.game.title : "Check for update or repair")
                         .font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
                     if consent.installedID != nil { Text(consent.game.title).font(.headline) }
                 }
@@ -450,7 +451,9 @@ struct GameInstallConsentView: View {
                 if consent.compatibility?.supported == true || consent.nativeAccountHash != nil {
                     Section {
                         Text(consent.nativeAccountHash != nil
-                             ? "The account-bound service verifies package access before downloading. Repair downloads all package files again. Keep a separate backup of saves stored inside the game folder."
+                             ? consent.resuming
+                                ? "The account-bound service verifies package access and continues the interrupted download. Existing verified package data is reused."
+                                : "The account-bound service verifies package access before downloading. Repair downloads all package files again. Keep a separate backup of saves stored inside the game folder."
                              : consent.installedID == nil
                              ? "Ode to X verifies free space again before download. Additional working space can be required while package files are staged and expanded."
                              : "Ode to X checks changed or missing files in this folder. Your saves and installed entry are kept.")
@@ -464,7 +467,9 @@ struct GameInstallConsentView: View {
                 Spacer()
                 Button("Cancel") { Task { await operations.cancelInstallConsent() } }.keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("xodus.install.cancelConsent")
-                Button(consent.installedID == nil ? "Install" : "Check and repair") { operations.confirmInstall(consent) }
+                Button(consent.resuming ? "Resume" : consent.installedID == nil ? "Install" : "Check and repair") {
+                    operations.confirmInstall(consent)
+                }
                     .disabled(!operations.canConfirmInstall).keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("xodus.install.confirm")

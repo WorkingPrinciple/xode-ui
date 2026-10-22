@@ -357,6 +357,7 @@ struct LiveLibraryView: View {
                 await macEvidence.refresh()
                 await installed.discoverNativeInstallations()
                 await NativeMinecraft.shared.refresh()
+                if NSApp.isActive { await installed.refreshNativeInstallationStatuses() }
                 do { try await Task.sleep(for: .seconds(5)) }
                 catch { return }
             }

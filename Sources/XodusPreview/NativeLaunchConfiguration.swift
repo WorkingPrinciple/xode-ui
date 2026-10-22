@@ -220,7 +220,8 @@ struct NativeLaunchConfiguration {
 }
 
 enum NativeLaunchError: Error, LocalizedError {
-    case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable
+    case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable,
+         installationNotReady
     var errorDescription: String? {
         switch self {
         case .runtimeNotQualified:
@@ -235,6 +236,8 @@ enum NativeLaunchError: Error, LocalizedError {
             "The title's local launch profile is invalid. Check its product ID and use the verified native-web-shims-v1 folder, separate from the game runtime."
         case .shimsUnavailable:
             "The native sign-in components are missing or have changed. Restore native-web-shims-v1 before playing."
+        case .installationNotReady:
+            "This installation isn't verified complete. Check it, resume the download or repair it before playing."
         }
     }
 }

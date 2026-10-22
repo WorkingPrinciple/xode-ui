@@ -550,7 +550,10 @@ actor GameScriptRunner {
 }
 
 struct GameOperationRecord: Codable, Identifiable, Sendable {
-    enum Kind: String, Codable { case install, repair, uninstall }
+    enum Kind: String, Codable {
+        case install, resume, repair, uninstall
+        var nativeOperation: String { self == .resume ? "install" : rawValue }
+    }
     let id: String
     let kind: Kind
     let productID: String
@@ -565,6 +568,7 @@ struct GameOperationRecord: Codable, Identifiable, Sendable {
               destination.utf8.count <= 4096, !destination.split(separator: "/").contains(".."),
               !destination.split(separator: "/").contains("."),
               nativeAccountHash.map(XboxAccountBinding.valid) ?? true,
+              kind != .resume || nativeAccountHash != nil,
               kind == .install ? installedID == nil : installedID != nil else { throw GameScriptError.storage }
     }
 }

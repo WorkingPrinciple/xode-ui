@@ -67,6 +67,8 @@ enum NativeLifecycleChecks {
             success=code == 0, exit_code=code,
             error_code="CANCELLED" if cancelled else "OPERATION_FAILED" if code else None,
             game_dir=game, log_dir=str(log), result_path=str(log / "result.json"), progress_path=str(progress))
+        result["warnings"] = [dict(code="POPUP_MONITOR_FAILED", message="Synthetic monitor timeout")]
+        result["popup_monitor_error"] = "Synthetic monitor timeout"
         write(log / "result.json", json.dumps(result))
         if operation == "uninstall":
             result["success"] = False
@@ -99,7 +101,7 @@ enum NativeLifecycleChecks {
             throw error
         }
         check(result.success && result.exitCode == 0 && received.last?.bytesDone == 25 && !runner.isRunning,
-              "Native lifecycle: actual synthetic child result and persisted receipt agree after streamed progress")
+              "Native lifecycle: actual synthetic child receipt agrees; a popup warning does not override clean exit")
         try Data("""
             <Game><Identity Name="Fixture.Native" Version="1.0.0.0"/><StoreId>FIXTURE00001</StoreId></Game>
             """.utf8).write(to: game.appendingPathComponent("MicrosoftGame.config"))
@@ -111,12 +113,12 @@ enum NativeLifecycleChecks {
         installed.releaseMutation()
         let saved = try await store.load().first
         check(saved?.usesNativeLifecycle == true && saved?.launcher == ""
-              && saved.map { installed.launchableIDs.contains($0.id) } == true,
-              "Native lifecycle: StoreID-bound installation persists and becomes locally ready without an invented launcher script")
+              && saved.map { installed.launchableIDs.contains($0.id) } == false,
+              "Native lifecycle: metadata registration persists but cannot invent authoritative installation completeness")
         let reloaded = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
         await reloaded.load()
-        check(reloaded.games.first?.usesNativeLifecycle == true && reloaded.launchableIDs.count == 1,
-              "Native lifecycle: native installation routing survives registry reload")
+        check(reloaded.games.first?.usesNativeLifecycle == true && reloaded.launchableIDs.isEmpty,
+              "Native lifecycle: registry reload preserves routing without promoting cached metadata to Play")
         let discovery = root.appendingPathComponent("discovery")
         let discoveredGame = discovery.appendingPathComponent("new-game")
         let brokenGame = discovery.appendingPathComponent("broken-game")
@@ -277,5 +279,125 @@ enum NativeLifecycleChecks {
             _ = try await reference.validate()
             check(false, "A changed local legacy DLL requires selecting the updated pair")
         } catch { check(true, "A changed local legacy DLL requires selecting the updated pair") }
+        try await installationStatusChecks(root: root, check: check)
+    }
+
+    private static func installationStatusChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let executable = root.appendingPathComponent("synthetic-install-status")
+        try Data(#"""
+        #!/usr/bin/python3
+        import json, pathlib, sys, time, uuid
+        assert len(sys.argv) == 7 and sys.argv[1] == "install-status"
+        options = dict(zip(sys.argv[3::2], sys.argv[4::2]))
+        assert set(options) == {"--game-dir", "--state-dir"}
+        game = pathlib.Path(options["--game-dir"])
+        state = pathlib.Path(options["--state-dir"])
+        mode = game.name
+        if mode == "timeout":
+            time.sleep(5)
+        run_id = str(uuid.uuid4())
+        log = state / "runs" / run_id
+        log.mkdir(parents=True, mode=0o700)
+        status = None if mode == "busy" else "partial" if mode in {"partial", "metadata"} else "missing" if mode == "missing" else "complete"
+        code = 1 if mode == "busy" else 0
+        result = dict(version=1, operation="install-status", product=sys.argv[2],
+            run_id=run_id, game_dir=str(game), log_dir=str(log),
+            result_path=str(log / "result.json"), success=code == 0, exit_code=code,
+            status=status, error_code="RESOURCE_BUSY" if code else None,
+            reason_code="MANIFEST_INVALID" if mode == "metadata" else "PAYLOAD_INCOMPLETE" if mode == "partial" else None)
+        if mode == "wrong-product":
+            result["product"] = "FIXTURE00002"
+        if mode == "wrong-directory":
+            result["game_dir"] = str(game.parent)
+        if mode == "wrong-run":
+            result["run_id"] = "not-a-uuid"
+        if mode == "wrong-exit":
+            result["exit_code"] = 1
+        receipt = log / "result.json"
+        receipt.write_text(json.dumps(result))
+        receipt.chmod(0o600)
+        if mode == "mismatch":
+            result["status"] = "partial"
+        print(json.dumps(result))
+        sys.exit(code)
+        """#.utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let configuration = BackendConfiguration(executable: executable, stateDirectory: root.appendingPathComponent("manage"))
+        let query = NativeInstallationQuery()
+        let actions: [(String, NativeInstallationStatus.Action)] = [
+            ("complete", .play), ("partial", .resume), ("missing", .install), ("metadata", .repair), ("busy", .check)
+        ]
+        for (mode, action) in actions {
+            let result = try await query.run(configuration: configuration, product: "FIXTURE00001",
+                gameDirectory: root.appendingPathComponent(mode), stateDirectory: root.appendingPathComponent("status-\(mode)"))
+            check(result.action == action && (mode == "busy" ? !result.success : result.success),
+                  "Read-only native status \(mode) selects \(action); query success alone never grants Play")
+            if mode == "busy" {
+                check(result.status == nil && result.explanation?.contains("in use") == true,
+                      "RESOURCE_BUSY stays an explicit unavailable check, never partial/repair")
+            }
+        }
+        do {
+            _ = try await query.run(configuration: configuration, product: "FIXTURE00001",
+                gameDirectory: root.appendingPathComponent("mismatch"), stateDirectory: root.appendingPathComponent("status-mismatch"))
+            check(false, "Readiness stdout and persisted receipt must agree")
+        } catch GameScriptError.statusMismatch {
+            check(true, "Readiness stdout/status disagreement cannot admit Play")
+        }
+        for mode in ["wrong-product", "wrong-directory", "wrong-run", "wrong-exit"] {
+            do {
+                _ = try await query.run(configuration: configuration, product: "FIXTURE00001",
+                    gameDirectory: root.appendingPathComponent(mode), stateDirectory: root.appendingPathComponent("status-\(mode)"))
+                check(false, "Readiness must bind the requested product, directory, run and actual exit")
+            } catch GameScriptError.invalidReceipt {
+                check(true, "Readiness rejects \(mode) rather than admitting Play")
+            }
+        }
+        do {
+            _ = try await query.run(configuration: configuration, product: "FIXTURE00001",
+                gameDirectory: root.appendingPathComponent("timeout"), stateDirectory: root.appendingPathComponent("status-timeout"),
+                timeout: .milliseconds(100))
+            check(false, "A stuck read-only inspector must time out")
+        } catch GameScriptError.timeout {
+            check(!query.isRunning, "A stuck read-only inspector is bounded and its exact child is joined")
+        }
+        let cancelledQuery = Task {
+            try await query.run(configuration: configuration, product: "FIXTURE00001",
+                gameDirectory: root.appendingPathComponent("timeout"), stateDirectory: root.appendingPathComponent("status-cancel"))
+        }
+        let startDeadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !query.isRunning && ContinuousClock.now < startDeadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(query.isRunning, "Read-only cancellation exercises an actually started child")
+        cancelledQuery.cancel()
+        do {
+            _ = try await cancelledQuery.value
+            check(false, "Cancelling the read-only check must propagate cancellation")
+        } catch is CancellationError {
+            check(!query.isRunning, "Cancelling the read-only check joins its exact child before returning")
+        }
+        let inside = root.appendingPathComponent("complete/forbidden-status")
+        do {
+            _ = try await query.run(configuration: configuration, product: "FIXTURE00001",
+                gameDirectory: root.appendingPathComponent("complete"), stateDirectory: inside)
+            check(false, "Inspection evidence must stay outside the game")
+        } catch GameScriptError.invalidDestination {
+            check(!FileManager.default.fileExists(atPath: inside.path),
+                  "Read-only inspection rejects an in-game evidence directory before creating it")
+        }
+        let resume = GameOperationRecord(id: InstalledGamesController.runID(), kind: .resume,
+            productID: "FIXTURE00001", title: "Synthetic resume", destination: root.appendingPathComponent("game").path,
+            installedID: UUID(), nativeAccountHash: String(repeating: "a", count: 64))
+        try resume.validate()
+        check(resume.kind.nativeOperation == "install",
+              "Native Resume uses incremental install, not Repair's full redownload")
+        let legacyResume = GameOperationRecord(id: InstalledGamesController.runID(), kind: .resume,
+            productID: "FIXTURE00001", title: "Synthetic resume", destination: root.appendingPathComponent("game").path,
+            installedID: UUID())
+        do {
+            try legacyResume.validate()
+            check(false, "Resume cannot fall back to a legacy script")
+        } catch { check(true, "Resume requires the explicit account-bound native operation journal") }
     }
 }

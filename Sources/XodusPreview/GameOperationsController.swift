@@ -13,6 +13,7 @@ struct GameInstallConsent: Identifiable, Sendable {
     var compatibility: GameCompatibilityResult?
     var checkError: String?
     var nativeAccountHash: String?
+    var resuming = false
 }
 
 @MainActor
@@ -667,14 +668,20 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
-    func repair(_ game: PCGame, installed installedGame: InstalledGame) async {
+    func resume(_ game: PCGame, installed installedGame: InstalledGame) async {
+        await repair(game, installed: installedGame, resuming: true)
+    }
+
+    func repair(_ game: PCGame, installed installedGame: InstalledGame, resuming: Bool = false) async {
         guard canStartMutation, !installingDirectly, installed.games.contains(installedGame),
-              installedGame.storeId == game.id else { return }
+              installedGame.storeId == game.id, !resuming || usesUnifiedAccount,
+              !installed.checkingInstallations.contains(installedGame.id) else { return }
         directInstallProductID = game.id
         installingDirectly = true
         directInstallCancelled = false
         defer { installingDirectly = false; directInstallProductID = nil }
         await prepareInstall(game, repairing: installedGame)
+        installConsent?.resuming = resuming
         guard !directInstallCancelled else { installConsent = nil; return }
         guard let consent = installConsent else { return }
         if consentAdmitted(consent) {
@@ -797,7 +804,7 @@ final class GameOperationsController: ObservableObject {
         resetFeedback(productID: consent.game.id)
         installConsent = nil
         let record = GameOperationRecord(id: InstalledGamesController.runID(),
-            kind: consent.installedID == nil ? .install : .repair, productID: consent.game.id,
+            kind: consent.resuming ? .resume : consent.installedID == nil ? .install : .repair, productID: consent.game.id,
             title: consent.game.title, destination: consent.destination.path, installedID: consent.installedID,
             nativeAccountHash: consent.nativeAccountHash)
         if let id = consent.installedID,
@@ -925,7 +932,7 @@ final class GameOperationsController: ObservableObject {
         }
         do {
             let value = try await nativeRunner.run(configuration: configuration, accountHash: account,
-                operation: record.kind.rawValue, product: record.productID,
+                operation: record.kind.nativeOperation, product: record.productID,
                 gameDirectory: URL(fileURLWithPath: record.destination), runID: record.id,
                 onProgress: { [weak self] value in self?.publishProgress(value, runID: record.id) })
             log = URL(fileURLWithPath: value.logDirectory)
@@ -1100,7 +1107,7 @@ final class GameOperationsController: ObservableObject {
             if let account = record.nativeAccountHash {
                 guard account == nativeAccount else { throw GameScriptError.runtimeUnavailable }
                 let result = try NativeGameLifecycle.readResult(state: NativeGameLifecycle.directory(runID: record.id),
-                    operation: record.kind.rawValue, product: record.productID,
+                    operation: record.kind.nativeOperation, product: record.productID,
                     gameDirectory: URL(fileURLWithPath: record.destination))
                 log = URL(fileURLWithPath: result.logDirectory)
                 try await completeNative(record, result: result)

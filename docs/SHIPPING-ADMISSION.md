@@ -53,7 +53,7 @@ Optional per-title launch profiles live in the selected profile directory as
 `STOREID.json`, with this shape:
 
 ```json
-{"version":1,"productID":"BQVQTL3PCH05","shimDirectory":"/absolute/shims","environment":{"CX_ENV":"explicit adapter options"}}
+{"version":1,"productID":"BQVQTL3PCH05","engine":"exact-registry-engine","environment":{"CX_ENV":"explicit adapter options"}}
 ```
 
 The CLI receives the explicitly selected engine/registry, a game-and-engine
@@ -68,9 +68,9 @@ remain the CLI's responsibility.
 
 An optional exact `engine` in a title profile binds its current qualified recipe
 ahead of historical gameplay evidence, while explicit provider selections still
-win. The local lifecycle candidate is pinned to CLI `ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d`,
-producer `d30de0f313fda91635f38dc714dc9040a20d3082`, tree
-`287a8b60f4289ec2f32cfe4bedb34be03b520ba3`. This candidate applies the
+win. The next local lifecycle candidate is pinned to CLI `adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604`,
+producer `a86d2f654b29dd33203022013fd63b34826d47cd`, tree
+`6044d5fff819393de39fae577ba9dd9bddbe795d`. This candidate applies the
 selected registry engine's checksum-checked `prefix_registry_imports` after
 overlays and before launch, so a fresh Hollow Knight native-JSON prefix does
 not rely on registrations left by a historical test.
@@ -120,7 +120,19 @@ fully verified". `BLOCKED` without an explicit `launchAttempted:true` remains
 In unified-account mode, the app discovers complete game configurations under
 `~/Games/Xodus` and registers native lifecycle records without launcher scripts
 or a file-picker step. Invalid sibling folders are reported separately and
-never suppress valid imports. Minecraft uses a separate **Native launcher**
+never suppress valid imports. Registration alone does not grant Play: a
+read-only, account-independent `install-status` query must return `complete`.
+The app checks again before each native Play request. `missing` offers Install;
+`partial` offers Resume, or Repair for invalid manifest/product/package
+metadata. Resume uses incremental `install`, not Repair's full redownload.
+`RESOURCE_BUSY` and failed checks offer Check installation, never inferred
+partial/repair. Checks have a bounded timeout, join cancelled children, and
+keep their evidence outside the game folder; they do not launch Wine or
+access the account. A complete snapshot is not license or gameplay proof.
+Popup-monitor warnings never convert an otherwise clean game exit into an
+app failure.
+
+Minecraft uses a separate **Native launcher**
 route, matched to `com.mojang.minecraftlauncher`; its Java status checks only
 owned process IDs and executable paths, never credential-bearing Java arguments.
 
@@ -251,6 +263,51 @@ reboot/locked-Keychain coverage or notarization. Gatekeeper still reports
 `Unnotarized Developer ID` (exit 3); no bypass was applied.
 
 ## Signing and saved-account access
+
+### 0.1 release-gate checklist
+
+These are release requirements, not claims that the current candidate passed.
+Keep the live game/app unchanged until its save, clean quit and tile-relaunch
+handoff; build and install the next candidate only after that handoff.
+
+- [ ] Freeze and private-push the app source, producer source/tree, CLI/helper
+  identities, runtime pair, engine recipe, shim inventory and compatibility
+  data. Record each local command, source commit, exit code and log path.
+- [ ] Run `tools/check.sh` and the classification validator locally. A source
+  check or synthetic lifecycle process is not an `app_e2e` result.
+- [ ] For **each release title**, run the coordinator's `app_e2e` gate against
+  the exact installed signed app: authoritative installation status; actual
+  tile launch; signed-in menu where required; controllable gameplay; changed
+  save; clean in-game quit; actual tile relaunch; load and verify that save.
+  Record run IDs, exact process births/window owners, full-display screenshots
+  and engine/runtime/recipe identities. This repository has no local executable
+  named `app_e2e`; use the coordinator-configured gate, not an invented command
+  or a direct CLI launch substituted for the tile.
+- [ ] Exercise real install, progress/cancel, resume, repair, uninstall and
+  remove-from-library flows. Check Install/Resume/Play from authoritative
+  completeness, preserve saved games, and reject unsupported titles with their
+  actual format/anti-cheat reason. Inspect every required button state.
+- [ ] Review every title's CLI result, actual Wine exit code/signal, game log
+  and matching crash reports. A clean exit must remain clean when popup
+  monitoring only warns; a missing crash report alone is not crash-free proof.
+  Unresolved launch/game crashes block that title's acceptance.
+- [ ] Build a fresh Developer-ID candidate with the frozen inputs above,
+  preserve the old app, and verify `codesign --verify --deep --strict "$APP"`.
+  Keep credential stores, installed games, prefixes and private evidence out
+  of the submission archive.
+- [ ] Create the app ZIP with `ditto -c -k --keepParent "$APP" "$ZIP"` and submit
+  with `xcrun notarytool submit "$ZIP" --keychain-profile notary --wait
+  --output-format json`. Save the external submission JSON and require
+  `Accepted`; inspect the notary log on any other result. Never extract profile
+  credentials or edit the sealed app receipt to assert success.
+- [ ] Run `xcrun stapler staple "$APP"` and `xcrun stapler validate "$APP"`,
+  then repeat strict signature verification and
+  `spctl --assess --type execute --verbose=4 "$APP"`. Require a successful
+  notarized Developer-ID assessment, without removing quarantine or disabling
+  Gatekeeper. Recreate the distribution ZIP after stapling and record its hash.
+- [ ] Install/open that exact stapled candidate and repeat saved-account,
+  app-update/save-preservation and each accepted title's `app_e2e` check.
+  Notarization alone does not qualify gameplay, sign-in or update persistence.
 
 Use the owner's valid Developer ID Application identity for new candidates.
 Do not re-sign a preserved working engine in place. Sign a separate candidate

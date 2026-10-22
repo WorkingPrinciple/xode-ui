@@ -221,6 +221,12 @@ final class LiveSession: ObservableObject {
               configuration.executableIdentity?.executable == configuration.executable else { return nil }
         return configuration
     }
+    var nativeInstallStatusConfiguration: BackendConfiguration? {
+        guard !applicationTerminating, let configuration = connectedConfiguration,
+              configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256,
+              configuration.executableIdentity?.executable == configuration.executable else { return nil }
+        return configuration
+    }
     var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
     var accountJourneyTitle: String {
         if signingOut { return "Signing out of Ode to X" }
