@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T17:21:01.189734+00:00",
+    "asOf": "2026-10-22T17:21:30.504106+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
@@ -486,7 +486,7 @@
       "sha256": "0e3f7f812d4330709b30b8671deb125b67dc98f1467e7d43ee9adda78dbdc7f3",
       "revision": "42f793d",
       "installed": true,
-      "sourceStatus": "missing; historical installation evidence only, not reverified"
+      "sourceStatus": "LOST (missing); historical installation evidence only, not reverified"
     }
   },
   "observedCycles": [
@@ -529,7 +529,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1024.9801711,
+  "remainingWallMinutes": 1024.4915982333334,
   "scenarios": [
     {
       "label": "slow observed",
@@ -598,7 +598,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 85.41501425833333,
+  "requiredAverageMinutesPerAddition": 85.37429985277778,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

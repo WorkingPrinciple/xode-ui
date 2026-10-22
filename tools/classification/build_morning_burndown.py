@@ -20,7 +20,7 @@ def recheck_historical_receipt(previous):
     try:
         raw = Path(receipt["path"]).read_bytes()
     except FileNotFoundError:
-        receipt["sourceStatus"] = "missing; historical installation evidence only, not reverified"
+        receipt["sourceStatus"] = "LOST (missing); historical installation evidence only, not reverified"
         print("WARNING: historical release receipt unavailable:", receipt["path"])
     else:
         if hashlib.sha256(raw).hexdigest() != receipt["sha256"]:
