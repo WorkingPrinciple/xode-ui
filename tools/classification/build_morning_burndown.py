@@ -12,7 +12,7 @@ from inspect_queue import DATA, load_json
 
 PROOFS = Path.home() / "Library/Application Support/XodusCLI/proofs"
 OUTPUT = DATA / "morning-burndown-v1.json"
-DEADLINE = "2026-10-23T01:26:00+03:00"
+DEADLINE = "2026-10-23T13:26:00+03:00"
 
 
 def read_result(directory, run):
@@ -128,8 +128,9 @@ def refresh(tracker):
             queued.setdefault(row["storeId"], row)
     queued = {sid: row for sid, row in queued.items() if sid not in working}
     inputs = {"asOf": tracker["updatedAt"], "deadline": DEADLINE,
-              "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), "
-              "not 01:26 UTC; measured from current 22 October morning snapshot",
+              "timezoneInterpretation": "User extended deadline by 12 hours to "
+              "23 October 13:26 EEST (UTC+03), not UTC; coordinator reported "
+              "2026-10-22T06:02:34.865Z.",
               "strictWorkingCount": tracker["strictWorkingCount"],
               "trackerMatrixSha256": tracker["collectionInputs"]["matrix"]["sha256"],
               "packetSources": sources, "queued": list(queued.values()),
@@ -209,7 +210,7 @@ def render_summary(packet):
     slow, mid, fast = packet["scenarios"]
     samples = packet["observedCycles"]
     text += ("\n<!-- burndown:start -->\n## Burn-down estimate (not promised passes)\n\n"
-             f"Deadline **23 Oct 01:26 EEST**; {packet['remainingWallMinutes'] / 60:.2f}h "
+             f"Deadline **23 Oct 13:26 EEST** (user +12h extension); {packet['remainingWallMinutes'] / 60:.2f}h "
              f"from {packet['inputs']['asOf']}. Halls passive-to-qualified: "
              f"**{samples[0]['minutes']:.1f}min**; Hogwarts title-probe-to-qualified proxy: "
              f"**{samples[1]['minutes']:.1f}min** (no bound passive start). "
@@ -226,7 +227,8 @@ def render_summary(packet):
              "Brotato CLI promotion can add one without another full cycle. "
              "Qualification/recipe holds (Inscryption/Well) and eight catalogue titles "
              "(entitlement/disk/approval) are excluded alternatives, not extra time. "
-             f"Queue already covers {20-packet['inputs']['strictWorkingCount']}; catalogue alone cannot cure slow throughput. "
+             "Historical packet count is not proof of executable capacity; parked/failed "
+             "routes still need their gates resolved. "
              "Inputs/hashes: `morning-burndown-v1.json`; "
              "S1 spec `dfe6ad5`, `retention-passive-batches.md`.\n"
              f"\nObserved admission ratio: **{packet['observedAdmissionRatio']['matrixWorking']}/"
@@ -241,7 +243,7 @@ def render_summary(packet):
              "pass rates slow/mid/fast: **" + "/".join(
                  f"{row['minimumPassRateCurrentQueue']:.1%}" if row["minimumPassRateCurrentQueue"] is not None
                  else "impossible" for row in packet["scenarios"]) +
-             "** of queue-capped attempts (slow >100% impossible). Fast raw-slot threshold "
+             "** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold "
              f"{fast['minimumPassRateRawSlots']:.1%} requires more eligible titles than current queue.\n\n"
              f"Biggest measured time sink: **between-run gaps, "
              f"{packet['timeSink']['phaseTotalsMinutes']['between recorded runs']:.1f}min total / "

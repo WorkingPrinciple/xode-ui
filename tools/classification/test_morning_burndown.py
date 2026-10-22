@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from build_morning_burndown import OUTPUT, calculate
+from build_morning_burndown import DEADLINE, OUTPUT, calculate
 from inspect_queue import load_json
 
 
@@ -32,6 +32,10 @@ class BurnDownTests(unittest.TestCase):
         inputs["asOf"] = inputs["deadline"]
         self.assertTrue(all(row["queueCappedAdditions"] == 0
                             for row in calculate(inputs)["scenarios"]))
+
+    def test_user_extended_deadline_is_preserved(self):
+        self.assertEqual(DEADLINE, "2026-10-23T13:26:00+03:00")
+        self.assertEqual(load_json(OUTPUT)["inputs"]["deadline"], DEADLINE)
 
     def test_reported_queue_additions_are_not_claimed_completed_packets(self):
         inputs = load_json(OUTPUT)["inputs"]
