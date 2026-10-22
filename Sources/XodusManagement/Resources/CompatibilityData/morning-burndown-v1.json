@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T04:41:54.984442+00:00",
+    "asOf": "2026-10-22T04:59:15.994354+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
     "strictWorkingCount": 7,
-    "trackerMatrixSha256": "aeb667421c5c2fc28e2871ba79b19ab75e1cd844ef2e03821540d94b0ae34b46",
+    "trackerMatrixSha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -259,7 +259,7 @@
       {
         "storeId": "9P4NV23Q6QC2",
         "title": "Abiotic Factor",
-        "verdict": "TITLE_SCREEN_ONLY"
+        "verdict": "WORKING"
       },
       {
         "storeId": "9PCR3Z2MSM4T",
@@ -495,51 +495,51 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1064.0835926333334,
+  "remainingWallMinutes": 1046.7334274333332,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
-      "serialCycleSlots": 12,
-      "queueCappedAdditions": 12,
-      "conditionalTotalWorking": 19,
-      "gapTo20": 1,
-      "minimumPassRateRawSlots": 1.0833333333333333,
-      "minimumPassRateCurrentQueue": 1.0833333333333333,
+      "serialCycleSlots": 11,
+      "queueCappedAdditions": 11,
+      "conditionalTotalWorking": 18,
+      "gapTo20": 2,
+      "minimumPassRateRawSlots": 1.1818181818181819,
+      "minimumPassRateCurrentQueue": 1.1818181818181819,
       "targetPossibleCurrentQueue": false
     },
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 16,
-      "queueCappedAdditions": 16,
-      "conditionalTotalWorking": 23,
+      "serialCycleSlots": 15,
+      "queueCappedAdditions": 15,
+      "conditionalTotalWorking": 22,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.8125,
-      "minimumPassRateCurrentQueue": 0.8125,
+      "minimumPassRateRawSlots": 0.8666666666666667,
+      "minimumPassRateCurrentQueue": 0.8666666666666667,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 24,
+      "serialCycleSlots": 23,
       "queueCappedAdditions": 21,
       "conditionalTotalWorking": 28,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5416666666666666,
+      "minimumPassRateRawSlots": 0.5652173913043478,
       "minimumPassRateCurrentQueue": 0.6190476190476191,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
     "working": 7,
-    "matrixWorking": 6,
+    "matrixWorking": 7,
     "attemptedMatrix": 14,
-    "ratio": 0.42857142857142855,
+    "ratio": 0.5,
     "receiptAugmentedAttempted": 15,
     "receiptAugmentedRatio": 0.4666666666666667,
     "titleScreenOrBeyond": 10,
-    "postTitleScreenAdmissionRatio": 0.6,
+    "postTitleScreenAdmissionRatio": 0.7,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
   },
   "timeSink": {
@@ -564,7 +564,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 81.85258404871796,
+  "requiredAverageMinutesPerAddition": 80.51795595641025,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

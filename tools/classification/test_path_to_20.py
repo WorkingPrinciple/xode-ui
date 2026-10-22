@@ -102,7 +102,13 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["nextGate"], "ordinary quit")
 
     def test_newer_hades_admission_overrides_stale_matrix(self):
-        row = next(row for row in self.packet["items"] if row["storeId"] == "9PCR3Z2MSM4T")
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T03:24:22+00:00"
+        source_row = next(row for row in inputs["matrix"]["snapshot"]["games"]
+                          if row["productId"] == "9PCR3Z2MSM4T")
+        source_row["verdict"] = "GAMEPLAY_PASS"
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9PCR3Z2MSM4T")
         self.assertTrue(row["strictWorking"])
         self.assertEqual(row["verdict"], "WORKING")
         self.assertTrue(all(gate["status"] == "passed" for gate in row["gates"].values()))
@@ -110,7 +116,13 @@ class PathTo20Tests(unittest.TestCase):
         self.assertIn("Nights 2", row["scope"])
 
     def test_abiotic_owner_admission_retains_qualification_evidence(self):
-        row = next(row for row in self.packet["items"] if row["storeId"] == "9P4NV23Q6QC2")
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T03:24:22+00:00"
+        source_row = next(row for row in inputs["matrix"]["snapshot"]["games"]
+                          if row["productId"] == "9P4NV23Q6QC2")
+        source_row["verdict"] = "TITLE_SCREEN_ONLY"
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9P4NV23Q6QC2")
         self.assertTrue(row["strictWorking"])
         self.assertEqual(row["nextGate"], "complete")
         self.assertTrue(all(gate["status"] == "passed" for gate in row["gates"].values()))

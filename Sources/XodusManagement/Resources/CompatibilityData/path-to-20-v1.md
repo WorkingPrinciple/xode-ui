@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T04:41:54.984442+00:00; **7/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T04:59:15.994354+00:00; **7/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -18,7 +18,7 @@ Updated 2026-10-22T04:41:54.984442+00:00; **7/20 strict WORKING**. Brotato candi
 | Beast of Reincarnation | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Bluey's Happy Snaps | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
-| Brotato | WORKING_CANDIDATE | passed | passed | passed | passed | passed | CLI promotion / S2/user | Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count. | - |
+| Brotato | WORKING_CANDIDATE | passed | passed | passed | passed | passed | CLI promotion / S2/user | Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count. | >2h |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | DOOM 64 | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Earlier renderer-selection hold superseded by exact S1 Kex candidate; no title-screen/gameplay/save receipt or execution grant. | >2h |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S2 | Real Wine child255 on actual ordinary mainmenuQuit; cause unresolved, not a CLI status-normalization bug. Exactprefix-k1/-w0. Parked, no retry. | - |
@@ -32,7 +32,7 @@ Updated 2026-10-22T04:41:54.984442+00:00; **7/20 strict WORKING**. Brotato candi
 | High On Life 2 | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Hollow Knight: Silksong | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | INSIDE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Inscryption | NO_TITLE_SCREEN | not passed | ? | ? | ? | ? | startup diagnosis / S1/S2 | No title screen in admitted passive; CLI0 does not establish rendering. | - |
+| Inscryption | NO_TITLE_SCREEN | not passed | ? | ? | ? | ? | startup diagnosis / S1/S2 | No title screen in admitted passive; CLI0 does not establish rendering. | >2h |
 | Keeper | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Kingdom Come: Deliverance | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Kingdom Come: Deliverance II | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
