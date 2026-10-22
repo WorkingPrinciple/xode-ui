@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T05:29:13.970296+00:00",
+    "asOf": "2026-10-22T05:35:29.577516+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
     "strictWorkingCount": 7,
@@ -371,7 +371,7 @@
       {
         "storeId": "9NGLST31DG26",
         "title": "A Game About Digging A Hole",
-        "verdict": "FAIL"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9PK087LNGJC5",
@@ -525,7 +525,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1016.7671617333333,
+  "remainingWallMinutes": 1010.5070414,
   "scenarios": [
     {
       "label": "slow observed",
@@ -594,7 +594,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 78.21285859487179,
+  "requiredAverageMinutesPerAddition": 77.73131087692308,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

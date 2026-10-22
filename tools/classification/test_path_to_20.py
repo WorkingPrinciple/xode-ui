@@ -171,6 +171,17 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["nextGate"], "startup diagnosis")
         self.assertFalse(row["strictWorking"])
 
+    def test_digging_timeout_is_not_working(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T05:00:00+00:00"
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9NGLST31DG26")
+        self.assertEqual(row["verdict"], "INCONCLUSIVE")
+        self.assertEqual(row["gates"]["gameplay"]["status"], "passed")
+        self.assertEqual(row["gates"]["quit"]["status"], "not-passed")
+        self.assertNotEqual(row["gates"]["save"]["status"], "passed")
+        self.assertFalse(row["strictWorking"])
+
 
 if __name__ == "__main__":
     unittest.main()
