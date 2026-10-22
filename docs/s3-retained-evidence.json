@@ -48,6 +48,15 @@
   },
   "offscreenPreparedNext": [
     {
+      "title": "Quake",
+      "status": "PREPARED_NEW_100MS_INPUT_HYPOTHESIS; no launch",
+      "packet": "s3-quake-short-input-01/packet.json",
+      "sha256": "706008870981f36b5728161929f74ce492a451a368ef454bc5bb80b85f83883c",
+      "dryAdmissionSha256": "8606e9ff95fa01c7d56b53cf3ceaa716c4ab2cab9e1a0ecd3eef4fdc8c56c88a",
+      "executionAuthorized": false,
+      "boundary": "Explicit coordinator-assigned new input-duration hypothesis. Only argv fresh-state changes; CLI68f/runtime7106/engine/prefix/env/caps unchanged. One100ms owned key then inspect capture after EVERY transition. Stop on one failed step, new unexpected state or unreachable bounded quit. No console/F5/auth retry. World dry0 PASS; reload dry1 correctly lacks qualifying world, not reload PASS. Requires exact admission and S2 screen return."
+    },
+    {
       "title": "FINAL FANTASY IV",
       "status": "CONSUMED_WORLD_INCONCLUSIVE; no reload or retry",
       "packet": "s3-final-fantasy-iv-full-02/packet.json",
@@ -105,6 +114,23 @@
     }
   },
   "verifiedArchives": [
+    {
+      "title": "DOOM 64",
+      "path": "s1-doom64-pair54c5-preparation-v1/run-world/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "c940080ac4e67890ce823dc7d4b4306b45692a0d82522eea5611df711ff7aca4",
+      "resultSha256": "206c47012fd48c462fb72504d185e3b95d7839e64aa1a7349f678486c20f56a1",
+      "packetSha256": "6170908e01d922bbc330a98046587e637cf2b05257c62b3744b10fe0c11d8615",
+      "run": "1b205431-e7eb-497d-ad1b-cf504e4f3b81",
+      "admission": "BLOCKED_REPEATED_FIRST_PARTY_USER_ID_FAILURE",
+      "observed": "One Start after title rendered repeated FirstPartyFailedToRetrieveUserId with runtimepair54c5. Cancel then observed actual Quit Game/ Quit DOOM?/Yes. No New Game, gameplay, permanent save, auth retry, consent or reload.",
+      "quit": "Observed100ms single steps and recapture each transition; ordinary CLI0/Wine0,214.775s total, no forced stop, exact-k1/-w0.",
+      "quitBeganSeconds": 136.13979291915894,
+      "runFilesVerified": 28,
+      "rawArchiveFilesVerified": 8,
+      "runManifestSha256": "2bd2114947280d7b697d0ae5bed16b9514eb3cc10951f283db88650ae7594c89",
+      "boundary": "No automatic retry. Runtime pointer-fix probe did not resolve the observed user-ID failure; S1/S2 own diagnosis. Historical attempt retained."
+    },
     {
       "title": "FINAL FANTASY IV",
       "path": "s3-final-fantasy-iv-full-02/final-evidence",
