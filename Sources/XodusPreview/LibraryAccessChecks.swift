@@ -113,11 +113,19 @@ enum LibraryAccessChecks {
         check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verifiedWorkingEvidence?.path == "/synthetic/proof.png"
               && decodedEvidence.games.first?.verifiedWorkingEvidence == nil,
               "Only an exact WORKING ledger entry with recorded evidence earns the per-title Verified working badge")
-        for verdict in ["GAMEPLAY_PASS", "MENU_PASS", "BLOCKED", "FAIL", "NOT_TESTED", "ANTI_CHEAT_EXCLUDED"] {
+        for verdict in ["GAMEPLAY_PASS", "MENU_PASS", "BLOCKED", "FAIL", "NOT_TESTED", "ANTI_CHEAT_EXCLUDED", "WORKING_CANDIDATE"] {
             let candidate = working.replacingOccurrences(of: "WORKING", with: verdict)
             check(try MacGameEvidence.decode(Data(candidate.utf8)).games.first?.verifiedWorkingEvidence == nil,
                   "\(verdict) never becomes Verified working from screenshots, engine selection or installation")
         }
+        let workingCandidate = try MacGameEvidence.decode(Data(
+            working.replacingOccurrences(of: "WORKING", with: "WORKING_CANDIDATE").utf8)).games[0]
+        check(workingCandidate.verdict == .workingCandidate
+              && workingCandidate.statusLabel == "Candidate · CLI only"
+              && workingCandidate.verificationScopeLabel == "CLI only · App testing not observed"
+              && workingCandidate.provenEngine == nil
+              && workingCandidate.verifiedWorkingEvidence == nil,
+              "#43: Brotato-style WORKING_CANDIDATE is recognized without promotion, automatic engine selection or app proof")
         let noProof = working.replacingOccurrences(
             of: #""screenshots":[{"path":"/synthetic/proof.png","caption":"Synthetic path only"}]"#,
             with: #""screenshots":[]"#)

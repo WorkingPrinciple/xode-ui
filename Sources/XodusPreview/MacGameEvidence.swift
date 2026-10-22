@@ -9,6 +9,7 @@ struct MacGameEvidence: Decodable, Sendable {
         case gameplay = "GAMEPLAY_PASS", menu = "MENU_PASS", blocked = "BLOCKED"
         case failed = "FAIL", notTested = "NOT_TESTED", excluded = "ANTI_CHEAT_EXCLUDED"
         case working = "WORKING"
+        case workingCandidate = "WORKING_CANDIDATE"
         case titleScreen = "TITLE_SCREEN_ONLY"
         case unknown = "UNRECOGNIZED"
 
@@ -21,6 +22,7 @@ struct MacGameEvidence: Decodable, Sendable {
             switch self {
             case .gameplay: "Playable, not fully verified"
             case .working: "Works on Mac"
+            case .workingCandidate: "Candidate · CLI only"
             case .menu: "Starts, not yet playable"
             case .titleScreen: "Title screen only"
             case .unknown: "Result not recognized"
@@ -56,7 +58,8 @@ struct MacGameEvidence: Decodable, Sendable {
         let app_e2e: String?
 
         var verificationScopeLabel: String? {
-            app_e2e == "unobserved" ? "CLI only · App testing not observed" : nil
+            app_e2e == "unobserved" || verdict == .workingCandidate
+                ? "CLI only · App testing not observed" : nil
         }
 
         var verifiedWorkingEvidence: Screenshot? {
