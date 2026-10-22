@@ -124,6 +124,13 @@ actor PCGamesKeychain: PCGamesRefreshStore {
 struct PCGamesHTTPResponse: Sendable {
     let status: Int
     let data: Data
+    let location: String?
+
+    init(status: Int, data: Data, location: String? = nil) {
+        self.status = status
+        self.data = data
+        self.location = location
+    }
 }
 
 protocol PCGamesTransport: Sendable {
@@ -177,7 +184,8 @@ struct PCGamesHTTP: PCGamesTransport {
                 guard data.count < Self.maximumBytes else { throw PCGamesError.responseTooLarge }
                 data.append(byte)
             }
-            return PCGamesHTTPResponse(status: http.statusCode, data: data)
+            return PCGamesHTTPResponse(status: http.statusCode, data: data,
+                                       location: http.value(forHTTPHeaderField: "Location"))
         } catch is CancellationError { throw CancellationError() }
         catch let error as PCGamesError { throw error }
         catch {

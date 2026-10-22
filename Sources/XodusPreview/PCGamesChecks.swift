@@ -888,6 +888,37 @@ enum PCGamesChecks {
             storeProducts: [], gamePassProductIDs: [mortis.id], gamePassProducts: [mortis])
         check(passOnly.storeProducts.map(\.id) == [mortis.id],
               "#40: Loaded Game Pass matches survive a missing Store page without broadening unrelated results")
+        let canonicalMortis = "https://www.xbox.com/ro-RO/games/store/valor-mortis/9p861v1542bl"
+        let linkTransport = PCGamesMockTransport([
+            .init(status: 302, data: Data(), location: "https://www.microsoft.com/ro-ro/store/productId/9P861V1542BL?market=RO&locale=ro-RO"),
+            .init(status: 302, data: Data(), location: canonicalMortis.replacingOccurrences(of: "www.xbox.com", with: "xbox.com")),
+            .init(status: 301, data: Data(), location: canonicalMortis),
+            .init(status: 200, data: Data("<link rel=\"canonical\" href=\"\(canonicalMortis)\">".utf8))
+        ])
+        let resolvedMortis = try await XboxProductLink.resolve(
+            productID: mortis.id, market: "RO", language: "ro-RO", transport: linkTransport)
+        let linkRequests = await linkTransport.requests
+        check(resolvedMortis.absoluteString == canonicalMortis
+              && linkRequests.count == 4
+              && linkRequests.allSatisfy { $0.httpMethod == "GET" && $0.value(forHTTPHeaderField: "Authorization") == nil }
+              && linkRequests.first?.url?.query?.contains("locale=ro-RO") == true,
+              "#42: Microsoft's ID resolver supplies the canonical slug/ID in the requested locale without credentials or title guessing")
+        for target in [
+            "https://www.xbox.com/en-US/games/store/valor-mortis/9P861V1542BL",
+            "https://www.xbox.com/ro-RO/games/store",
+            "https://www.xbox.com/ro-RO/games/store/valor-mortis/FIXTURE00001",
+            "https://www.xbox.com.evil.invalid/ro-RO/games/store/valor-mortis/9P861V1542BL"
+        ] {
+            let transport = PCGamesMockTransport([.init(status: 302, data: Data(), location: target)])
+            do {
+                _ = try await XboxProductLink.resolve(productID: mortis.id, market: "RO",
+                                                      language: "ro-RO", transport: transport)
+                check(false, "#42: Wrong-locale/product/host/store-root redirect must fail")
+            } catch {
+                check(error as? PCGamesError == .invalidResponse,
+                      "#42: Wrong-locale/product/host/store-root redirect is rejected, not opened")
+            }
+        }
         let windows = NSApplication.shared.windows.count
         let neutralInstalled = InstalledGamesController()
         let neutralOperations = GameOperationsController(installed: neutralInstalled)

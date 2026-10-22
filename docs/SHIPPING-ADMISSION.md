@@ -15,6 +15,13 @@ real compatibility restrictions; inclusion never grants installation or access.
 The regression case `mortis` includes Valor Mortis (`9P861V1542BL`) without
 requiring it to be owned.
 
+Product links (#42) resolve Microsoft's public `/store/productId/<id>` route
+with explicit market and locale, follow only matching Microsoft/Xbox redirects,
+and require a successful Xbox page with a matching canonical slug, ID and locale.
+No slug is synthesized from a title, and a store-root URL is never returned.
+The read-only `--xbox-product-link-check <id> <market> <locale>` development
+command verifies this live without opening a browser or accessing credentials.
+
 ### Morning CLI-only WORKING additions
 
 The app bundles source-bound Hades II (CrossOver 26.3), Abiotic Factor
