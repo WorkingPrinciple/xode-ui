@@ -36,6 +36,7 @@ def calculate(inputs):
         cycles.append({**sample, "minutes": elapsed})
     timings = [row["minutes"] for row in cycles]
     scenarios = []
+    needed = max(0, 20 - inputs["strictWorkingCount"])
     for label, cycle in [("slow observed", max(timings)), ("sample midpoint", statistics.median(timings)),
                          ("fast observed", min(timings))]:
         slots = math.floor(max(0, minutes) / cycle)
@@ -43,9 +44,49 @@ def calculate(inputs):
         total = inputs["strictWorkingCount"] + additions
         scenarios.append({"label": label, "minutesPerTitle": cycle,
                           "serialCycleSlots": slots, "queueCappedAdditions": additions,
-                          "conditionalTotalWorking": total, "gapTo20": max(0, 20 - total)})
+                          "conditionalTotalWorking": total, "gapTo20": max(0, 20 - total),
+                          "minimumPassRateRawSlots": needed / slots if slots else None,
+                          "minimumPassRateCurrentQueue": needed / additions if additions else None,
+                          "targetPossibleCurrentQueue": additions >= needed})
+    attempted = inputs["attemptedMatrixRows"]
+    passed = sum(row["verdict"] == "WORKING" for row in attempted)
+    reached_menu = sum(row["verdict"] in {"WORKING", "WORKING_CANDIDATE",
+                                         "GAMEPLAY_PASS", "TITLE_SCREEN_ONLY"} for row in attempted)
+    intervals = {}
+    for sample in inputs["phaseRuns"]:
+        runs = sample["runs"]
+        active = sum((dt.datetime.fromisoformat(row["finishedAt"]) -
+                      dt.datetime.fromisoformat(row["startedAt"])).total_seconds() / 60
+                     for row in runs)
+        span = (dt.datetime.fromisoformat(runs[-1]["finishedAt"]) -
+                dt.datetime.fromisoformat(runs[0]["startedAt"])).total_seconds() / 60
+        intervals[sample["title"]] = {"betweenRecordedRunsMinutes": span - active,
+                                       "recordedRunMinutes": active}
+    between = sum(row["betweenRecordedRunsMinutes"] for row in intervals.values())
+    phase_totals = {"between recorded runs": between}
+    for sample in inputs["phaseRuns"]:
+        for run in sample["runs"]:
+            phase_totals[run["phase"]] = phase_totals.get(run["phase"], 0) + (
+                dt.datetime.fromisoformat(run["finishedAt"]) -
+                dt.datetime.fromisoformat(run["startedAt"])).total_seconds() / 60
     return {"schemaVersion": 1, "inputs": inputs, "observedCycles": cycles,
             "remainingWallMinutes": minutes, "scenarios": scenarios,
+            "observedAdmissionRatio": {"working": passed, "attemptedMatrix": len(attempted),
+                                       "ratio": passed / len(attempted) if attempted else None,
+                                       "receiptAugmentedAttempted": len(inputs["attemptedTrackerRows"]),
+                                       "receiptAugmentedRatio": passed / len(inputs["attemptedTrackerRows"]),
+                                       "titleScreenOrBeyond": reached_menu,
+                                       "postTitleScreenAdmissionRatio": passed / reached_menu if reached_menu else None,
+                                       "meaning": "Snapshot WORKING/attempted, not a probability or final failure "
+                                       "rate. Incomplete and CLI-held attempts remain denominator; "
+                                       "native Minecraft included as admitted matrix row."},
+            "timeSink": {"byTitle": intervals, "phaseTotalsMinutes": phase_totals,
+                         "largestCategory": max(phase_totals, key=phase_totals.get),
+                         "minutesPerAddition": max(phase_totals.values()) / len(intervals),
+                         "limitation": "Between-run gaps are unallocated wall time, NOT proven "
+                         "screen/operator waiting. Run spans mix startup/play/input/save; no "
+                         "reliable finer split. Largest aggregate category across two cycles, "
+                         "not a universal per-title bottleneck."},
             "requiredAverageMinutesPerAddition": minutes / max(1, 20 - inputs["strictWorkingCount"]),
             "interpretation": "Estimate of capacity, NOT expected successful verdicts or a "
             "confidence interval. One exact passive-to-strict cycle (Halls), one broader "
@@ -115,6 +156,33 @@ def refresh(tracker):
                              "c2e01ff4-e716-402e-b144-7a7aafdc1ca2"),
         "finish": read_result("s3-brotato-retention-02",
                               "430e9c33-7b7e-47d8-838f-d154a8fb1f48")}
+    not_attempted = {"UNTESTED", "NOT_TESTED", "BLOCKED"}
+    inputs["attemptedMatrixRows"] = [
+        {"storeId": row["productId"], "title": row["title"], "verdict": row["verdict"]}
+        for row in tracker["collectionInputs"]["matrix"]["snapshot"]["games"]
+        if row["verdict"] not in not_attempted]
+    inputs["attemptedTrackerRows"] = [
+        {"storeId": row["storeId"], "title": row["title"], "verdict": row["verdict"]}
+        for row in tracker["items"] if row["verdict"] not in not_attempted]
+    inputs["attemptDefinition"] = "Unique title with an actual matrix attempt, including startup "
+    inputs["attemptDefinition"] += "FAIL, title-screen, gameplay, candidate and WORKING; exclude "
+    inputs["attemptDefinition"] += "NOT_TESTED/UNTESTED and inventory BLOCKED without execution. "
+    inputs["attemptDefinition"] += "Also show tracker augmentation for passive verdict not yet in matrix."
+    def phase(directory, run, label):
+        return {**read_result(directory, run), "phase": label}
+    inputs["phaseRuns"] = [
+        {"title": "Halls of Torment", "runs": [
+            {**inputs["samples"][0]["start"], "phase": "initial title probe"},
+            phase("s3-halls-world-01", "8d7ea6ba-ec75-4cb1-8b96-7300bd467159", "world/progress run"),
+            {**inputs["samples"][0]["finish"], "phase": "retention/relaunch run"}]},
+        {"title": "Hogwarts Legacy", "runs": [
+            {**inputs["samples"][1]["start"], "phase": "initial title probe"},
+            phase("s3-hogwarts-sta-world-02", "891d061f-4820-4cd3-9b61-efefa5700be9", "world/progress run"),
+            phase("s3-hogwarts-sta-retention-03", "86e8da68-f4b0-48f8-bf7a-46e577ff3488", "retention/relaunch run"),
+            {**inputs["samples"][1]["finish"], "phase": "quit-only run"}]}]
+    rc = Path("/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-super-spork/.build/local-candidates/Ode-switchover-rewcsnje/switch-over-receipt.json")
+    inputs["installedRcReceipt"] = {"path": str(rc), "sha256": hashlib.sha256(rc.read_bytes()).hexdigest(),
+                                    "revision": "42f793d", "installed": True}
     packet = calculate(inputs)
     OUTPUT.write_text(json.dumps(packet, indent=2) + "\n")
     return packet
@@ -135,18 +203,33 @@ def render_summary(packet):
              f"capped by **{len(packet['inputs']['queued'])} queued dry packets**: "
              f"conditional totals **{slow['conditionalTotalWorking']}/"
              f"{mid['conditionalTotalWorking']}/{fast['conditionalTotalWorking']}**. "
-             "Every attempted title must pass; sleep, focus, disk and failures reduce this. "
-             "No probability assumed; only current admitted count is assured.\n\n"
+             "These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.\n\n"
              f"Need **{20 - packet['inputs']['strictWorkingCount']}** additions; slow scenario "
              f"leaves **{slow['gapTo20']}**. Required mean: "
              f"**{packet['requiredAverageMinutesPerAddition']:.1f}min/addition**. "
              "Brotato CLI promotion can add one without another full cycle. "
-             "Engine/recipe fixes (Inscryption/Well/Mixtape) and eight catalogue "
-             "titles (entitlement/disk/install approval) add alternatives, not time. "
-             "Existing queue already covers 15; catalogue expansion alone cannot cure "
-             "the slow-rate gap. All these blocked lanes are excluded. "
+             "Engine fixes (Inscryption/Well/Mixtape) and eight catalogue titles "
+             "(entitlement/disk/approval) are excluded alternatives, not extra time. "
+             "Queue already covers 15; catalogue alone cannot cure slow throughput. "
              "Inputs/hashes: `morning-burndown-v1.json`; "
-             "S1 retention spec `dfe6ad5`, `retention-passive-batches.md`.\n"
+             "S1 spec `dfe6ad5`, `retention-passive-batches.md`.\n"
+             f"\nObserved admission ratio: **{packet['observedAdmissionRatio']['working']}/"
+             f"{packet['observedAdmissionRatio']['attemptedMatrix']} matrix attempts "
+             f"({packet['observedAdmissionRatio']['ratio']:.1%})**; including Inscryption's "
+             f"receipt-only attempt: **{packet['observedAdmissionRatio']['receiptAugmentedRatio']:.1%}**. "
+             f"Post-title-screen subset: **{packet['observedAdmissionRatio']['working']}/"
+             f"{packet['observedAdmissionRatio']['titleScreenOrBeyond']}**. "
+             "Unfinished tests included; no probabilities. Minimum "
+             "pass rates slow/mid/fast: **" + "/".join(
+                 f"{row['minimumPassRateCurrentQueue']:.1%}" if row["minimumPassRateCurrentQueue"] is not None
+                 else "impossible" for row in packet["scenarios"]) +
+             "** of queue-capped attempts (slow >100% impossible). Fast raw-slot threshold "
+             f"{fast['minimumPassRateRawSlots']:.1%} requires more eligible titles than current queue.\n\n"
+             f"Biggest measured time sink: **between-run gaps, "
+             f"{packet['timeSink']['phaseTotalsMinutes']['between recorded runs']:.1f}min total / "
+             f"{packet['timeSink']['minutesPerAddition']:.1f}min per addition** across Halls/Hogwarts. "
+             "Unallocated, not proven screen waiting; operator/other waits and "
+             "within-run startup/play/save splits unavailable.\n"
              "<!-- burndown:end -->\n")
     path.write_text(text)
 

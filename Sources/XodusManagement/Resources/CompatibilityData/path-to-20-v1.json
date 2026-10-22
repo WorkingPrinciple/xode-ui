@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-22T02:54:01.800096+00:00",
+  "updatedAt": "2026-10-22T02:56:01.623133+00:00",
   "matrixUpdatedAt": "2026-10-22T02:48:43.074218Z",
   "collectionInputs": {
-    "collectedAt": "2026-10-22T02:54:01.800096+00:00",
+    "collectedAt": "2026-10-22T02:56:01.623133+00:00",
     "matrix": {
       "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
       "sha256": "0ece0966963915f49f82a6df2f66cad6361e8941ee6b9d52b8102a1ab93ab019",
@@ -2717,7 +2717,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted natural-death combat rather than a two-minute rerun. Apple4 defaultCOM/noargs/adf8/7106: selected Swordsman, moved through camp, entered Haunted Caverns and reached real skeleton combat at60FPS. First natural death16s unlocked First Try/Quest Stone and banked17gold. Ordinary menu Quit/Yes quit now CLI0/Wine0. Fresh process retained17gold and visible QuestStone. Second attack/movement attempt dealt400damage and2kills before natural death15s, bank53gold. Returned camp and ordinary Quit/Yes quit now again CLI0/Wine0. Stopped actual local-save payload changed size5520 to9876 and fullSHA f4e03df7... to9d22356b...; metadata-only/settings are not used as retention proof. No two-minute survival, mid-run resume, cloud-save or app-tile E2E claim."
@@ -2797,7 +2797,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 0.03642215861111111,
+      "sameGateObservedHours": 0.06970633555555555,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen Apple4/adf8/7106 with STA1 only: created drgload xodus, healed with displayed G, completed relative Look Around, walked from cave through exterior cliff path following Professor Fig at39-47FPS D3D12/Metal4. Coordinator independently confirmed movement. Initial1800s891d061f and300s86e8da68 hit wall caps; these were not normal quits. Fresh86e8da68 retained named level1 character and loaded cave healing checkpoint, bypassing character creation/carriage intro; coordinator reviewed screenshots and accepted this checkpoint retention, waiving later cave-exit requirement. Final new600s f2471368 again loaded that character/world and completed ordinary Escape SAVE/LOAD AND EXIT\u2192EXIT TO MAIN MENU\u2192Space Yes\u2192main-menu EXIT GAME\u2192Space Yes/Quit to OS. Actual CLI0/Wine0, no WM_CLOSE/forcedkill, PID73417 gone. Coordinator's WORKING condition now satisfied; app-tile E2E remains separate/unobserved."
@@ -2854,7 +2854,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Corrected actual S5 app-tile run6eb24065 with native JSON registrations, native-web-only shims and7106 pair passes user initialization, King's Pass rendering, movement, jump, attacks and focus healing. Coordinator explicitly replaced the bench gate with normal Quit to Menu save. Both container .xgs hashes+mtimes changed; post-quit slot1 card King's Pass/17M/0geo/5masks. Normal close Wine0/CLI0. Actual unchanged S5 tile relaunch902a364c displayed exactly the same card, Continue loaded real King's Pass, movement worked and5masks/broken soul vessel retained the death state. Zero-geo HUD counter is hidden; card0 is observed, not an invented HUD numeral. Second normal save/quit/WM_CLOSE Wine0/CLI0; both owned process pairs gone, exactprefix-k1/-w0. Coordinator reviewed screenshots and explicitly admitted HK as third WORKING title. No bench/cloud claim."
@@ -2914,7 +2914,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "User explicitly admitted WORKING and directed move-on. Official signed native launcher3.41.29-2.6.12, Java latest26.3 ARM64: actual single-player world/HUD, W+jump movement, clean saved-world shutdown, launcher relaunch to new Java PID76415 and retained New World reloaded. S2/S5 native Ode provider integration remains pending; not a Wine or Bedrock claim."
@@ -2982,7 +2982,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "CrossOver actual EmphiV24 world, movement, autosave, ordinary WM_CLOSE and fresh-process retained-world relaunch verified. Historical ffc4 CrossOver Wine exit0 is independent of its POPUP_MONITOR_FAILED helper error. S1 additionally qualified free nms-free-gptk3-d3dshared: real EmphiV24 walking/strafe/scanner/tutorial progress, changed Slot1Auto data/meta, ordinary quit CLI0, same-prefix relaunch with updated0:06 playtime/03:23save and retained Gather Ferrite Dust objective in-world around60FPS, second normal quit CLI0. PIDs52582/65739 gone, ownprefix-k1/-w0, finished00:26:30 within original1200s grant. S3 inspected relaunch-world.png and relaunch-trial-result.json. Earlier free-load failures are historical, not the current outcome. App-driven NMS E2E remains unobserved."
@@ -3035,7 +3035,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Corrected419c+6a66 online1 reaches actual F_Opening01 forest at60FPS, Melinoe health30/30 and magic50/50. Movement, camera and staff attack verified. Initial black screen was unfocused rendering pause, fixed by exact-title input. Quit warns without saving before first checkpoint;600s bound elapsed before room exit. Clean quit/save/relaunch still required before WORKING."
@@ -3088,7 +3088,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 actual adf8/7106 Apple4 Shipping runac5e2934 with title-only XODUS_PRIVATE_RUNTIME_COM_STA=1 passed the prior UE PreInit CommandLineCommands exit, loaded MainMenu map and visibly rendered title artwork/PRESS ANYTHING TO BEGIN around58FPS. Caller-owns-COM and inherited d3dshared override unset; no combined sibling change. No game input, actionable post-input menu, world or save-retention claim. Ordinary exact-title/staged-image WM_CLOSE matched1; actual Wine0/CLI0, game93506 gone, ownprefix-k1/-w0. Earlier noargs458ad2d6/-dx111b29e2b2 failures remain historical base results, not the current STA title result."
@@ -3148,7 +3148,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Valid419c+7106 CrossOver retest2ea171c0 stages verified legacycfe7 and still exits1 after23sec before observed window. Earlier d8f1bc40 is invalid corrected-auth evidence: old shim-directory runtime overwrote explicit7106. S1 isolated instrumented traces ongoing; no causal graphics claim."
@@ -3195,7 +3195,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3261,7 +3261,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed exact Windows package. Actual corrected Apple4/adf8/7106 trace421f naturally exits0 in8.68s with no observed owned window/screenshot/input. Both real WINEDEBUG/XODUS_WINE_DEBUG active; no explicit causal exception or game-level reason. CLI0 is not rendering/gameplay PASS. Exactprefix-k1/-w0. Separate coordinator-authorized API trace6a266eb2 naturally exits0 in9.94s, also no window/input/capture; S1 interpreting actual trace."
@@ -3324,7 +3324,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3371,7 +3371,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3434,7 +3434,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3481,7 +3481,7 @@
         },
         {
           "kind": "coordinator-verdict",
-          "observedAt": "2026-10-22T02:54:01.800096+00:00",
+          "observedAt": "2026-10-22T02:56:01.623133+00:00",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
       ],
@@ -3501,7 +3501,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 0.03642215861111111,
+      "sameGateObservedHours": 0.06970633555555555,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Unreleased ebd56e CLI with Apple4/defaultCOM/noargs/7106: selected Well-Rounded/Knife/Danger0, actual Wave1 gameplay and bounded WASD movement at60FPS. Natural death at Wave1/4seconds remaining with47materials/level1; post-run Progress explicitly unlocked Chunky. Returned main menu and ordinaryQuitCLI0/Wine0. Fresh430e9c33 character selection shows newly unlocked Chunky (previously lock), selecting it opens usable Chunky weapon-selection panel. Backed to main menu and ordinaryQuitCLI0/Wine0 again. Actual CONTAINER payload hash changed across gameplay and survives restart. Coordinator-directed WORKING_CANDIDATE only: requires ebd56e CLI promotion, does not count toward strict20 and does not bypass installedadf8's parser failure."
@@ -3564,7 +3564,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3636,7 +3636,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3699,7 +3699,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3746,7 +3746,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3815,7 +3815,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3862,7 +3862,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3931,7 +3931,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3978,7 +3978,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4042,7 +4042,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Fresh adf8 complete117. Actual direct Fallout4.exe run16403e9f on creation-dx11-d3dmetal/adf8/7106 with explicit local-saves1/online1 renders signed-in menu60FPS, new-game video, interactive character creation and first-person bathroom world. Forward input accepted and F5 visibly showed Quicksaving. Retention NOT qualified: no .fos/.xgs found in exact prefix or actual host Fallout4 MS/Saves/Fallout4/Saves; discovery only adds Plugins.txt/UserDownloadedContent.txt, not saves. At300s ordinary exact-title/staged-image WM_CLOSE matched1, then actual Wine5/CLI5; exactprefix-k1/-w0, staged game gone. Old undriven-launcher timeout3c418e3d remains historical, not a graphics failure."
@@ -4105,7 +4105,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4152,7 +4152,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4199,7 +4199,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4246,7 +4246,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4314,7 +4314,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 0.03642215861111111,
+      "sameGateObservedHours": 0.06970633555555555,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4377,7 +4377,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4458,7 +4458,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -4505,7 +4505,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4586,7 +4586,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed,34-file exact Windows package identity matched. Anti-cheat signature scan clean; absence remains unproven."
@@ -4633,7 +4633,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4708,7 +4708,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -4771,7 +4771,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4818,7 +4818,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4893,7 +4893,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -4965,7 +4965,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5037,7 +5037,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; no launch/rendering qualification."
@@ -5084,7 +5084,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5131,7 +5131,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5212,7 +5212,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Signed adf8 read-only install-status independently verifies complete77 actual package files. Old layout-only SkyrimSELauncher.exe.manifest failure is resolved; no reinstall needed. Actual input-qualified game launch remains pending."
@@ -5259,7 +5259,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5340,7 +5340,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed,3828-file exact Windows package identity matched. Anti-cheat signature scan clean; absence remains unproven."
@@ -5415,7 +5415,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -5478,7 +5478,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5525,7 +5525,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5588,7 +5588,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5647,7 +5647,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 0.3026482211111111,
+      "sameGateObservedHours": 0.3359323980555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5713,7 +5713,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 0.27014702944444446,
+      "sameGateObservedHours": 0.3034312063888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed. CrossOver MSAA warnings continue after Return but no game window; independent DXMT attempt exits 3 before rendering."

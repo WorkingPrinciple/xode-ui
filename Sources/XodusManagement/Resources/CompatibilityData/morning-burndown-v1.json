@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T02:54:01.800096+00:00",
+    "asOf": "2026-10-22T02:56:01.623133+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
     "strictWorkingCount": 5,
@@ -229,6 +229,210 @@
         "finishedAt": "2026-10-22T02:48:43.074218Z",
         "runId": "430e9c33-7b7e-47d8-838f-d154a8fb1f48"
       }
+    },
+    "attemptedMatrixRows": [
+      {
+        "storeId": "9P9VNSQK1W3K",
+        "title": "Brotato",
+        "verdict": "WORKING_CANDIDATE"
+      },
+      {
+        "storeId": "9NMNMS626R59",
+        "title": "Halls of Torment",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9MW9469V91LM",
+        "title": "Hollow Knight: Voidheart Edition",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "BQVQTL3PCH05",
+        "title": "No Man's Sky",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9P4NV23Q6QC2",
+        "title": "Abiotic Factor",
+        "verdict": "TITLE_SCREEN_ONLY"
+      },
+      {
+        "storeId": "9PCR3Z2MSM4T",
+        "title": "Hades II",
+        "verdict": "GAMEPLAY_PASS"
+      },
+      {
+        "storeId": "C3KLDKZBHNCZ",
+        "title": "Fallout 4",
+        "verdict": "GAMEPLAY_PASS"
+      },
+      {
+        "storeId": "9NGLST31DG26",
+        "title": "A Game About Digging A Hole",
+        "verdict": "FAIL"
+      },
+      {
+        "storeId": "9PLH7R84GJWP",
+        "title": "Well Dweller",
+        "verdict": "FAIL"
+      },
+      {
+        "storeId": "9MT5NJ5W7B8Z",
+        "title": "Hogwarts Legacy",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9PJ8266BHFWN",
+        "title": "Minecraft: Java Edition with Minecraft Launcher",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9PK087LNGJC5",
+        "title": "Balatro",
+        "verdict": "FAIL"
+      }
+    ],
+    "attemptedTrackerRows": [
+      {
+        "storeId": "9NMNMS626R59",
+        "title": "Halls of Torment",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9MT5NJ5W7B8Z",
+        "title": "Hogwarts Legacy",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9MW9469V91LM",
+        "title": "Hollow Knight: Voidheart Edition",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9PJ8266BHFWN",
+        "title": "Minecraft: Java Edition with Minecraft Launcher",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "BQVQTL3PCH05",
+        "title": "No Man's Sky",
+        "verdict": "WORKING"
+      },
+      {
+        "storeId": "9PCR3Z2MSM4T",
+        "title": "Hades II",
+        "verdict": "GAMEPLAY_PASS"
+      },
+      {
+        "storeId": "9P4NV23Q6QC2",
+        "title": "Abiotic Factor",
+        "verdict": "TITLE_SCREEN_ONLY"
+      },
+      {
+        "storeId": "9NGLST31DG26",
+        "title": "A Game About Digging A Hole",
+        "verdict": "FAIL"
+      },
+      {
+        "storeId": "9PK087LNGJC5",
+        "title": "Balatro",
+        "verdict": "FAIL"
+      },
+      {
+        "storeId": "9P9VNSQK1W3K",
+        "title": "Brotato",
+        "verdict": "WORKING_CANDIDATE"
+      },
+      {
+        "storeId": "C3KLDKZBHNCZ",
+        "title": "Fallout 4",
+        "verdict": "GAMEPLAY_PASS"
+      },
+      {
+        "storeId": "9P8NSTDMZ11P",
+        "title": "Inscryption",
+        "verdict": "NO_TITLE_SCREEN"
+      },
+      {
+        "storeId": "9PLH7R84GJWP",
+        "title": "Well Dweller",
+        "verdict": "FAIL"
+      }
+    ],
+    "attemptDefinition": "Unique title with an actual matrix attempt, including startup FAIL, title-screen, gameplay, candidate and WORKING; exclude NOT_TESTED/UNTESTED and inventory BLOCKED without execution. Also show tracker augmentation for passive verdict not yet in matrix.",
+    "phaseRuns": [
+      {
+        "title": "Halls of Torment",
+        "runs": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-sta-9NMNMS626R59-small-noargs/runs/3f10098a-1cfe-4312-9877-d2c6a032b8a3/result.json",
+            "sha256": "dc83a75509d67dbc0f02ad7e74dafacb13b00289115dff2225b43e405295feb4",
+            "startedAt": "2026-10-22T01:45:31.003697Z",
+            "finishedAt": "2026-10-22T01:47:31.663830Z",
+            "runId": "3f10098a-1cfe-4312-9877-d2c6a032b8a3",
+            "phase": "initial title probe"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-halls-world-01/runs/8d7ea6ba-ec75-4cb1-8b96-7300bd467159/result.json",
+            "sha256": "60b5be6f6adba311a307c90ca7fbaf6abd046fb8f8ec3d57ed59018a429218c2",
+            "startedAt": "2026-10-22T02:22:42.787396Z",
+            "finishedAt": "2026-10-22T02:25:50.568742Z",
+            "runId": "8d7ea6ba-ec75-4cb1-8b96-7300bd467159",
+            "phase": "world/progress run"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-halls-retention-02/runs/5b39beb9-62b4-4241-9330-33422bbccafd/result.json",
+            "sha256": "54ca900c65451b72cb65f115da14e4bd47a906450bd1e8e54bc6420458262823",
+            "startedAt": "2026-10-22T02:26:36.789414Z",
+            "finishedAt": "2026-10-22T02:29:25.775861Z",
+            "runId": "5b39beb9-62b4-4241-9330-33422bbccafd",
+            "phase": "retention/relaunch run"
+          }
+        ]
+      },
+      {
+        "title": "Hogwarts Legacy",
+        "runs": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/hogwarts-apple4-sta/runs/5b4e4975-2a36-4b14-8da4-72ba52e4fc7c/result.json",
+            "sha256": "a6e4f4be36d8864e053a0778d21ffa1e43578cb7813ffa5668bb4e0e39b9a8b5",
+            "startedAt": "2026-10-22T01:10:29.041967Z",
+            "finishedAt": "2026-10-22T01:20:37.021867Z",
+            "runId": "5b4e4975-2a36-4b14-8da4-72ba52e4fc7c",
+            "phase": "initial title probe"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-world-02/runs/891d061f-4820-4cd3-9b61-efefa5700be9/result.json",
+            "sha256": "1a02be475f43fd176321620f126817231eeca23b93a72d5d1c478551dbe317d5",
+            "startedAt": "2026-10-22T01:38:10.231379Z",
+            "finishedAt": "2026-10-22T02:08:16.488050Z",
+            "runId": "891d061f-4820-4cd3-9b61-efefa5700be9",
+            "phase": "world/progress run"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-retention-03/runs/86e8da68-f4b0-48f8-bf7a-46e577ff3488/result.json",
+            "sha256": "0d3aba3cdbf4dae20bcc7edb7f4b5737d907338c1649405d149d8726f7ff02d8",
+            "startedAt": "2026-10-22T02:10:03.435507Z",
+            "finishedAt": "2026-10-22T02:15:10.382500Z",
+            "runId": "86e8da68-f4b0-48f8-bf7a-46e577ff3488",
+            "phase": "retention/relaunch run"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/runs/f2471368-2523-4578-8eb8-75c8d4db7040/result.json",
+            "sha256": "61057f80d6d0dbca421364c2a540c36fe3b54d211caaab5c7b590b342a2107c9",
+            "startedAt": "2026-10-22T02:29:39.115468Z",
+            "finishedAt": "2026-10-22T02:38:00.132257Z",
+            "runId": "f2471368-2523-4578-8eb8-75c8d4db7040",
+            "phase": "quit-only run"
+          }
+        ]
+      }
+    ],
+    "installedRcReceipt": {
+      "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-super-spork/.build/local-candidates/Ode-switchover-rewcsnje/switch-over-receipt.json",
+      "sha256": "0e3f7f812d4330709b30b8671deb125b67dc98f1467e7d43ee9adda78dbdc7f3",
+      "revision": "42f793d",
+      "installed": true
     }
   },
   "observedCycles": [
@@ -271,7 +475,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1171.9699984,
+  "remainingWallMinutes": 1169.9729477833332,
   "scenarios": [
     {
       "label": "slow observed",
@@ -279,7 +483,10 @@
       "serialCycleSlots": 13,
       "queueCappedAdditions": 13,
       "conditionalTotalWorking": 18,
-      "gapTo20": 2
+      "gapTo20": 2,
+      "minimumPassRateRawSlots": 1.1538461538461537,
+      "minimumPassRateCurrentQueue": 1.1538461538461537,
+      "targetPossibleCurrentQueue": false
     },
     {
       "label": "sample midpoint",
@@ -287,7 +494,10 @@
       "serialCycleSlots": 17,
       "queueCappedAdditions": 17,
       "conditionalTotalWorking": 22,
-      "gapTo20": 0
+      "gapTo20": 0,
+      "minimumPassRateRawSlots": 0.8823529411764706,
+      "minimumPassRateCurrentQueue": 0.8823529411764706,
+      "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
@@ -295,10 +505,45 @@
       "serialCycleSlots": 26,
       "queueCappedAdditions": 21,
       "conditionalTotalWorking": 26,
-      "gapTo20": 0
+      "gapTo20": 0,
+      "minimumPassRateRawSlots": 0.5769230769230769,
+      "minimumPassRateCurrentQueue": 0.7142857142857143,
+      "targetPossibleCurrentQueue": true
     }
   ],
-  "requiredAverageMinutesPerAddition": 78.13133322666665,
+  "observedAdmissionRatio": {
+    "working": 5,
+    "attemptedMatrix": 12,
+    "ratio": 0.4166666666666667,
+    "receiptAugmentedAttempted": 13,
+    "receiptAugmentedRatio": 0.38461538461538464,
+    "titleScreenOrBeyond": 9,
+    "postTitleScreenAdmissionRatio": 0.5555555555555556,
+    "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
+  },
+  "timeSink": {
+    "byTitle": {
+      "Halls of Torment": {
+        "betweenRecordedRunsMinutes": 35.955737299999996,
+        "recordedRunMinutes": 7.957132100000001
+      },
+      "Hogwarts Legacy": {
+        "betweenRecordedRunsMinutes": 33.81483228333334,
+        "recordedRunMinutes": 53.70333921666667
+      }
+    },
+    "phaseTotalsMinutes": {
+      "between recorded runs": 69.77056958333333,
+      "initial title probe": 12.144000550000001,
+      "world/progress run": 33.23396695,
+      "retention/relaunch run": 7.932224000000001,
+      "quit-only run": 8.350279816666667
+    },
+    "largestCategory": "between recorded runs",
+    "minutesPerAddition": 34.88528479166666,
+    "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
+  },
+  "requiredAverageMinutesPerAddition": 77.99819651888888,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
