@@ -14,6 +14,79 @@
   },
   "items": [
     {
+      "storeId": "9N8C07SS8C9D", "title": "FINAL FANTASY IV",
+      "verdict": "TITLE_SCREEN_PASS", "reportedAt": "2026-10-22T20:37:38+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
+      "gates": {"menu": "passed", "quit": "unknown"}, "nextGate": "gameplay", "ownerStream": "S3",
+      "blocker": "PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding.",
+      "scope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied."
+    },
+    {
+      "storeId": "9P1Z43KRNQD4", "title": "Quake",
+      "verdict": "GAMEPLAY_PASS", "reportedAt": "2026-10-22T20:37:38+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
+      "gates": {"menu": "passed", "gameplay": "passed", "quit": "not-passed"},
+      "nextGate": "full retention test", "ownerStream": "S3",
+      "blocker": "Gameplay rendered; passive forced end247, no ordinary quit or retained-save qualification.",
+      "scope": "Coordinator latest report: gameplay render only, not strict WORKING. Run identity not supplied."
+    },
+    {
+      "storeId": "9PD5BM2Z8C4L", "title": "Vampire Survivors",
+      "verdict": "INCONCLUSIVE", "reportedAt": "2026-10-22T20:37:38+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
+      "gates": {"menu": "not-passed", "quit": "not-passed"},
+      "nextGate": "qualification hold", "ownerStream": "S2/coordinator",
+      "blocker": "Parked: exit3/no window after DQ overlay; no automatic retry.",
+      "scope": "Coordinator latest report, no gameplay or retention admission. DQ overlay sequence not a proven causal attribution."
+    },
+    {
+      "storeId": "9NGH1FK0RJGL", "title": "Wasteland Remastered",
+      "verdict": "INCONCLUSIVE", "reportedAt": "2026-10-22T20:37:38+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
+      "gates": {"menu": "not-passed"}, "nextGate": "qualification hold", "ownerStream": "S2/coordinator",
+      "blocker": "Parked: local load_game_config0x8007000d before ticket socket; installed config missing MSAAppId, staged parity unknown.",
+      "scope": "Coordinator latest report: startup config failure, no proven staged-file parity or fix, no launch authorization."
+    },
+    {
+      "storeId": "C3KLDKZBHNCZ", "title": "Fallout 4",
+      "verdict": "INCONCLUSIVE", "reportedAt": "2026-10-22T20:37:38+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": "7a1fdf52",
+      "gates": {"menu": "passed", "gameplay": "passed", "save": "not-passed", "quit": "not-passed"},
+      "nextGate": "save-provider diagnosis", "ownerStream": "S2/S3",
+      "blocker": "Parked: mouse-look issue, no payload after Save, exit5; no WORKING or reload.",
+      "scope": "Coordinator latest report and matrix: delete-missing experiment advances failure to CreateUpdate0x80070057 but produces no save payload. Prior0/0 diagnostic does not qualify latest exit5."
+    },
+      {
+        "storeId": "9NQVHHW88XW9",
+        "title": "Bluey's Happy Snaps",
+        "verdict": "BLOCKED_PREREQ",
+        "reportedAt": "2026-10-22T20:37:00+00:00",
+        "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d",
+        "runId": "a46723e9-6255-4f03-9c78-4fc3c0ecd3f6",
+        "evidenceReceipt": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/bluey-happy-snaps-passive-cli68f-v1/attempt/receipt.json",
+        "evidenceSha256": "d251c9601529febdace2ffb161af44c091496e103229b978266a025d1db28a22",
+        "gates": {"menu": "not-passed", "quit": "not-passed"},
+        "nextGate": "prefix prerequisite setup",
+        "ownerStream": "S2",
+        "blocker": "VC++2015-2022 redist-required dialog, no title screen. Native-first VC prerequisite candidate approved by coordinator; rerun waits for S3 screen release, not automatic.",
+        "scope": "S2 passive creation-dx11-d3dmetal/CLI68f349d4; receipt confirms redistributable dialog, gameplay_qualified=false, forced-k0/-w0. Process0 is not title or normal-quit proof. License separately GRANTED."
+      },
+      {
+        "storeId": "9PJPCB188SVG",
+        "title": "Subnautica 2",
+        "verdict": "BLOCKED_PREREQ",
+        "reportedAt": "2026-10-22T20:37:00+00:00",
+        "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d",
+        "runId": "76c3b3bf-e383-4dfc-893d-3ad3ce0b930c",
+        "evidenceReceipt": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/subnautica2-bootstrap-passive-cli68f-v1/attempt/receipt.json",
+        "evidenceSha256": "6e971438d7049ee3a8d4a275d4cbb3f68cf1ce7a1cc4cb6473adda6719c8c1ff",
+        "gates": {"menu": "not-passed", "quit": "not-passed"},
+        "nextGate": "prefix prerequisite setup",
+        "ownerStream": "S2",
+        "blocker": "VC++2015-2022 redist-required dialog, no title screen. Native-first VC prerequisite candidate approved by coordinator; rerun waits for S3 screen release, not automatic.",
+        "scope": "S2 passive apple-gptk-4.0b3/CLI68f349d4; receipt confirms redistributable dialog, gameplay_qualified=false, forced-k0/-w0. Process0 is not title or normal-quit proof. License separately GRANTED."
+      },
+    {
       "storeId": "9PBWWQGXVMKC",
       "title": "Monster Sanctuary",
       "verdict": "WORKING",

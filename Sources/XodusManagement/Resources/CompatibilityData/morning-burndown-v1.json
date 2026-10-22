@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T20:36:22.530702+00:00",
+    "asOf": "2026-10-22T20:38:22.713375+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -395,6 +395,11 @@
         "verdict": "WORKING"
       },
       {
+        "storeId": "9N8C07SS8C9D",
+        "title": "FINAL FANTASY IV",
+        "verdict": "TITLE_SCREEN_PASS"
+      },
+      {
         "storeId": "9NGLST31DG26",
         "title": "A Game About Digging A Hole",
         "verdict": "INCONCLUSIVE"
@@ -403,6 +408,11 @@
         "storeId": "9PK087LNGJC5",
         "title": "Balatro",
         "verdict": "FAIL"
+      },
+      {
+        "storeId": "9NQVHHW88XW9",
+        "title": "Bluey's Happy Snaps",
+        "verdict": "BLOCKED_PREREQ"
       },
       {
         "storeId": "9P9VNSQK1W3K",
@@ -430,6 +440,11 @@
         "verdict": "INCONCLUSIVE"
       },
       {
+        "storeId": "9P1Z43KRNQD4",
+        "title": "Quake",
+        "verdict": "GAMEPLAY_PASS"
+      },
+      {
         "storeId": "9P03JGQ4S1GC",
         "title": "Skyrim Special Edition",
         "verdict": "INCONCLUSIVE"
@@ -440,6 +455,11 @@
         "verdict": "INCONCLUSIVE"
       },
       {
+        "storeId": "9PJPCB188SVG",
+        "title": "Subnautica 2",
+        "verdict": "BLOCKED_PREREQ"
+      },
+      {
         "storeId": "9NLRT31Z4RWM",
         "title": "TUNIC",
         "verdict": "INCONCLUSIVE"
@@ -447,6 +467,16 @@
       {
         "storeId": "9P861V1542BL",
         "title": "Valor Mortis",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
+        "storeId": "9PD5BM2Z8C4L",
+        "title": "Vampire Survivors",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
+        "storeId": "9NGH1FK0RJGL",
+        "title": "Wasteland Remastered",
         "verdict": "INCONCLUSIVE"
       },
       {
@@ -589,7 +619,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 829.6244883,
+  "remainingWallMinutes": 827.62144375,
   "scenarios": [
     {
       "label": "slow observed",
@@ -630,8 +660,8 @@
     "matrixWorking": 9,
     "attemptedMatrix": 19,
     "ratio": 0.47368421052631576,
-    "receiptAugmentedAttempted": 21,
-    "receiptAugmentedRatio": 0.42857142857142855,
+    "receiptAugmentedAttempted": 27,
+    "receiptAugmentedRatio": 0.3333333333333333,
     "titleScreenOrBeyond": 10,
     "postTitleScreenAdmissionRatio": 0.9,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -658,7 +688,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 75.42040802727273,
+  "requiredAverageMinutesPerAddition": 75.23831306818182,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
