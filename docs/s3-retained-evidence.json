@@ -116,6 +116,24 @@
   },
   "verifiedArchives": [
     {
+      "title": "Dishonored Definitive Edition",
+      "path": "s3-dishonored-de-full-01/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "c881dd1701e8d81e3d653559ce33cf8f258b8c464d3ba5f6248495db946448b7",
+      "resultSha256": "bd030161f97f356e3dbf6ed628628456565f468c08e3f4b8431598d8bb05b6cc",
+      "admission": "INCONCLUSIVE_RELOAD_CAP_NO_LOADED_WORLD",
+      "worldRun": "c489e1a6-f8b8-49b3-9511-0393554a69be",
+      "observed": "Returning Home/Dunwall Tower boat and dock rendered, W100 changed position. Actual Save Game/Create New Save produced Returning Home01:52:03. Durable manual sav162686B and provider payload archived; not stage-only.",
+      "manualSaveSha256": "7941eda2eeeca63b03d31fe1bd33c367259db2619a40ddfd0fe887a6462e2684",
+      "worldQuit": "Actual Back to Windows/Yes ordinaryCLI0/Wine0; no forced stop, exact-k1/-w0. Quit path437.474s<540; total678.100s<900.",
+      "reload": "Fresh process actual Load listed exact manual Returning Home01:52:03 plus separate autosave. Next confirmation observer found zero windows BEFORE input:300s cap had stopped game. Quit180 missed; no manual-slot load or retained-world proof.",
+      "worldRunFilesVerified": 77,
+      "worldRawCopiesVerified": 56,
+      "reloadRunFilesVerified": 87,
+      "reloadRawCopiesVerified": 66,
+      "boundary": "No WORKING admission. Timing/retention inconclusive, not renderer or save FAIL. Historical capped reload immutable."
+    },
+    {
       "title": "Quake",
       "path": "s3-quake-short-input-01/final-evidence",
       "manifest": "integrity.json",
