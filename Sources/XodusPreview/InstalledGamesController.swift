@@ -459,7 +459,7 @@ final class InstalledGamesController: ObservableObject {
             do { return try await pending.value }
             catch {
                 if loaded, !applicationTerminating, games.contains(game) {
-                    installationErrors[game.id] = "The installation couldn't be checked. \(error.localizedDescription)"
+                    installationErrors[game.id] = NativeInstallationQuery.failureMessage(error)
                 }
                 return nil
             }
@@ -479,6 +479,7 @@ final class InstalledGamesController: ObservableObject {
                                 gameDirectory: URL(fileURLWithPath: game.folder))
         }
         nativeInspectionTasks[game.id] = task
+        installationErrors[game.id] = nil
         checkingInstallations.insert(game.id)
         defer {
             nativeInspectionTasks[game.id] = nil
@@ -500,7 +501,7 @@ final class InstalledGamesController: ObservableObject {
         } catch {
             guard !applicationTerminating, loaded, games.contains(game) else { return nil }
             installationStatuses[game.id] = nil
-            installationErrors[game.id] = "The installation couldn't be checked. \(error.localizedDescription)"
+            installationErrors[game.id] = NativeInstallationQuery.failureMessage(error)
             nativeInspectionDates[game.id] = ContinuousClock.now
             launchableIDs.remove(game.id)
             return nil

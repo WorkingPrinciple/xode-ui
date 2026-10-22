@@ -257,6 +257,12 @@ claim app-driven E2E or cloud saves beyond that scope. Missing evidence,
 `launchAttempted:false`, all other verdicts, absent/invalid ledgers and
 installation completeness alone cannot produce the badge. The evidence
 ledger remains read-only to this consumer; no title is promoted by UI code.
+An optional `saveObservation.retentionVerified:true`, valid `retentionRunId`,
+and explicit `saveObservation.normalMenuQuitObserved:false` render gameplay
+partials as **Save verified · quit pending**. Prose or a save-directory path
+alone never supplies this status. Explicitly pending quit also prevents a
+`WORKING` entry from displaying the verified badge; unknown verdicts remain
+unknown regardless of retention metadata.
 
 ### Published candidate launch rows
 
@@ -328,7 +334,12 @@ The app checks again before each native Play request. `missing` offers Install;
 `partial` offers Resume, or Repair for invalid manifest/product/package
 metadata. Resume uses incremental `install`, not Repair's full redownload.
 `RESOURCE_BUSY` and failed checks offer Check installation, never inferred
-partial/repair. Checks have a bounded timeout, join cancelled children, and
+partial/repair. Checks have a bounded 120-second deadline: the real TUNIC
+11,169-file inspection takes about 54 seconds, exceeding the previous
+30-second deadline. During inspection the action stays **Checking installation…**
+without a stale failure message. A deadline expiry offers the retryable
+**Check is taking longer than expected** message, not an installation failure.
+Checks join cancelled children and
 keep their evidence outside the game folder; they do not launch Wine or
 access the account. A complete snapshot is not license or gameplay proof.
 Popup-monitor warnings never convert an otherwise clean game exit into an

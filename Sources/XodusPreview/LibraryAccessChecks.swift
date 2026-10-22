@@ -200,6 +200,44 @@ enum LibraryAccessChecks {
         check(savedEvidence.saveObservation?.saveDirectory == "/synthetic/recorded-save-folder"
               && mixedGames[0].saveObservation == nil,
               "Save location consumes only the title's optional observed directory, never world/retention claims")
+        var retentionRow = baseGame
+        retentionRow["verdict"] = "GAMEPLAY_PASS"
+        retentionRow["retentionRunId"] = "00000000-0000-0000-0000-000000000001"
+        retentionRow["saveObservation"] = ["retentionVerified": true, "normalMenuQuitObserved": false]
+        mixed["games"] = [retentionRow]
+        let retainedPartial = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+        check(retainedPartial.statusLabel == "Save verified · quit pending"
+              && retainedPartial.verifiedWorkingEvidence == nil && retainedPartial.verdict == .gameplay,
+              "Explicit fresh-run retention with quit pending remains a truthful partial, never Verified working")
+        for verdict in ["WORKING", "GAMEPLAY_PASS", "FUTURE_RESULT_V2"] {
+            var row = retentionRow
+            row["verdict"] = verdict
+            mixed["games"] = [row]
+            let value = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+            check(value.verifiedWorkingEvidence == nil
+                  && (verdict == "FUTURE_RESULT_V2" ? value.statusLabel == "Result not recognized"
+                      : value.statusLabel == "Save verified · quit pending"),
+                  "\(verdict) cannot bypass an explicitly pending normal quit or promote unknown retention metadata")
+        }
+        let retentionObservations: [[String: Any]] = [
+            ["checkpointRetained": "Prose is not a verified retention flag", "normalMenuQuitObserved": false],
+            ["retentionVerified": false, "normalMenuQuitObserved": false],
+            ["retentionVerified": true],
+            ["retentionVerified": true, "normalMenuQuitObserved": true]
+        ]
+        for observation in retentionObservations {
+            var row = retentionRow
+            row["saveObservation"] = observation
+            mixed["games"] = [row]
+            let value = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+            check(value.statusLabel == "Playable, not fully verified" && value.verifiedWorkingEvidence == nil,
+                  "Missing, negative or completed-quit retention metadata does not invent a save-verified partial or WORKING promotion")
+        }
+        retentionRow["retentionRunId"] = "not-a-run"
+        mixed["games"] = [retentionRow]
+        check(try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0].statusLabel
+                == "Playable, not fully verified",
+              "A save-verified partial requires a valid fresh-process retention run identity")
         for invalid in [
             String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "/synthetic/proof.png", with: "https://invalid/proof.png")
         ] {

@@ -68,11 +68,19 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
 
 @MainActor
 final class NativeInstallationQuery {
+    static let defaultTimeout: Duration = .seconds(120)
     private var process: Process?
     var isRunning: Bool { process?.isRunning == true }
 
+    static func failureMessage(_ error: Error) -> String {
+        if let error = error as? GameScriptError, case .timeout = error {
+            return "Check is taking longer than expected. Try checking the installation again."
+        }
+        return "The installation couldn't be checked. \(error.localizedDescription)"
+    }
+
     func run(configuration: BackendConfiguration, product: String, gameDirectory: URL,
-             stateDirectory: URL? = nil, timeout: Duration = .seconds(30)) async throws -> NativeInstallationStatus {
+             stateDirectory: URL? = nil, timeout: Duration = NativeInstallationQuery.defaultTimeout) async throws -> NativeInstallationStatus {
         guard process == nil, PCGamesClient.validProductID(product) else { throw GameScriptError.busy }
 #if XODUS_SHIPPING
         guard configuration.executableIdentity != nil else { throw GameScriptError.runtimeUnavailable }

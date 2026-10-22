@@ -246,7 +246,7 @@ struct InstalledPlayButton: View {
     }
 
     private var nativeActionTitle: String {
-        if library.checkingInstallations.contains(game.id) { return "Checking" }
+        if library.checkingInstallations.contains(game.id) { return "Checking installation…" }
         switch nativeAction {
         case .play: return "Play"
         case .install: return "Install"
@@ -285,7 +285,7 @@ struct InstalledPlayButton: View {
         if library.checkingInstallations.contains(game.id) {
             ProgressView().controlSize(.small).accessibilityLabel("Checking installation of \(game.title)")
         }
-        if attention == nil,
+        if attention == nil, !library.checkingInstallations.contains(game.id),
            let reason = library.installationErrors[game.id] ?? library.installationStatuses[game.id]?.explanation {
             Text(reason).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }

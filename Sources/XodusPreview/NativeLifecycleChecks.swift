@@ -674,6 +674,8 @@ enum NativeLifecycleChecks {
         mode = game.name
         if mode == "timeout":
             time.sleep(5)
+        if mode == "slow-complete":
+            time.sleep(54)
         run_id = str(uuid.uuid4())
         log = state / "runs" / run_id
         log.mkdir(parents=True, mode=0o700)
@@ -703,6 +705,25 @@ enum NativeLifecycleChecks {
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
         let configuration = BackendConfiguration(executable: executable, stateDirectory: root.appendingPathComponent("manage"))
         let query = NativeInstallationQuery()
+        check(NativeInstallationQuery.defaultTimeout == .seconds(120),
+              "Read-only readiness allows the measured 54-second TUNIC inspection within a bounded 120-second deadline")
+        let slowQuery = Task {
+            try await query.run(configuration: configuration, product: "FIXTURE00001",
+                gameDirectory: root.appendingPathComponent("slow-complete"),
+                stateDirectory: root.appendingPathComponent("status-slow-complete"))
+        }
+        let slowStartDeadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !query.isRunning && ContinuousClock.now < slowStartDeadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(query.isRunning, "The 54-second readiness check keeps its inspection running rather than reporting failure")
+        let slowResult = try await slowQuery.value
+        check(slowResult.action == .play && slowResult.status == .complete && !query.isRunning,
+              "A real 54-second synthetic inspection completes with default timing and preserves the authoritative Play result")
+        check(NativeInstallationQuery.failureMessage(GameScriptError.timeout)
+                == "Check is taking longer than expected. Try checking the installation again."
+              && !NativeInstallationQuery.failureMessage(GameScriptError.invalidReceipt).contains("taking longer"),
+              "Only a readiness deadline produces the retryable taking-longer message; invalid receipts remain explicit failures")
         let actions: [(String, NativeInstallationStatus.Action)] = [
             ("complete", .play), ("partial", .resume), ("missing", .install), ("metadata", .repair), ("busy", .check)
         ]

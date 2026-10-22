@@ -37,6 +37,8 @@ struct MacGameEvidence: Decodable, Sendable {
     struct Game: Decodable, Sendable {
         struct SaveObservation: Decodable, Sendable {
             let saveDirectory: String?
+            let retentionVerified: Bool?
+            let normalMenuQuitObserved: Bool?
         }
         let productId: String
         let title: String
@@ -44,6 +46,7 @@ struct MacGameEvidence: Decodable, Sendable {
         let scope: String
         let engine: String?
         let runId: String?
+        let retentionRunId: String?
         let screenshots: [Screenshot]
         let owner: String
         let blocker: String?
@@ -51,11 +54,23 @@ struct MacGameEvidence: Decodable, Sendable {
         let saveObservation: SaveObservation?
 
         var verifiedWorkingEvidence: Screenshot? {
-            verdict == .working && launchAttempted != false ? screenshots.first : nil
+            verdict == .working && launchAttempted != false
+                && saveObservation?.normalMenuQuitObserved != false ? screenshots.first : nil
+        }
+
+        var saveVerifiedQuitPending: Bool {
+            (verdict == .gameplay || verdict == .working) && launchAttempted != false
+                && saveObservation?.retentionVerified == true
+                && saveObservation?.normalMenuQuitObserved == false
+                && retentionRunId.flatMap(UUID.init(uuidString:)) != nil
         }
 
         var statusLabel: String {
             if launchAttempted == false { return Verdict.notTested.label }
+            if saveVerifiedQuitPending { return "Save verified · quit pending" }
+            if verdict == .working, saveObservation?.normalMenuQuitObserved == false {
+                return "Quit not verified"
+            }
             if verdict == .blocked, launchAttempted == true { return Verdict.failed.label }
             return verdict.label
         }
