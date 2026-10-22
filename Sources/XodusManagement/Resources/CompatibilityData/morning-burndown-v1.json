@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T10:06:18.258031+00:00",
+    "asOf": "2026-10-22T10:37:25.213651+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
@@ -528,7 +528,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1459.6956994833333,
+  "remainingWallMinutes": 1428.5797724833333,
   "scenarios": [
     {
       "label": "slow observed",
@@ -544,22 +544,22 @@
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 22,
+      "serialCycleSlots": 21,
       "queueCappedAdditions": 21,
       "conditionalTotalWorking": 29,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5454545454545454,
+      "minimumPassRateRawSlots": 0.5714285714285714,
       "minimumPassRateCurrentQueue": 0.5714285714285714,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 33,
+      "serialCycleSlots": 32,
       "queueCappedAdditions": 21,
       "conditionalTotalWorking": 29,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.36363636363636365,
+      "minimumPassRateRawSlots": 0.375,
       "minimumPassRateCurrentQueue": 0.5714285714285714,
       "targetPossibleCurrentQueue": true
     }
@@ -597,7 +597,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 121.64130829027778,
+  "requiredAverageMinutesPerAddition": 119.0483143736111,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
