@@ -43,16 +43,16 @@ Keep Digging if STA comparison scheduled. Retain other near-term payloads.
 157 GiB; passive prestart 153/abort 152 GiB. No steady depletion forecast.
 Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T03:26:54.237136+00:00: **5/20** strict: Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: none observed yet; pre-tracker gate ages unknown. Refresh every30min and owner verdict.
+Living tracker 2026-10-22T03:57:15.389427+00:00: **5/20** strict: Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, No Man's Sky. Brotato WORKING_CANDIDATE remains excluded; see current row for gate evidence and CLI promotion hold. Same-gate >2h: none observed yet; pre-tracker gate ages unknown. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 01:26 EEST**; 18.98h from 2026-10-22T03:26:54.237136+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **13/17/25** slow/mid/fast cycles, capped by **21 queued dry packets**: conditional totals **18/22/26**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 01:26 EEST**; 18.48h from 2026-10-22T03:57:15.389427+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **12/16/25** slow/mid/fast cycles, capped by **21 queued dry packets**: conditional totals **17/21/26**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
-Need **15** additions; slow scenario leaves **2**. Required mean: **75.9min/addition**. Brotato CLI promotion can add one without another full cycle. Engine fixes (Inscryption/Well/Mixtape) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Queue already covers 15; catalogue alone cannot cure slow throughput. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
+Need **15** additions; slow scenario leaves **3**. Required mean: **73.9min/addition**. Brotato CLI promotion can add one without another full cycle. Engine fixes (Inscryption/Well/Mixtape) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Queue already covers 15; catalogue alone cannot cure slow throughput. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 
-Observed admission ratio: **5/13 matrix attempts (38.5%)**; including receipt-only attempts: **5/14 (35.7%)**. Post-title-screen subset: **5/10**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **115.4%/88.2%/71.4%** of queue-capped attempts (slow >100% impossible). Fast raw-slot threshold 60.0% requires more eligible titles than current queue.
+Observed admission ratio: **5/13 matrix attempts (38.5%)**; including receipt-only attempts: **5/14 (35.7%)**. Post-title-screen subset: **5/10**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **125.0%/93.8%/71.4%** of queue-capped attempts (slow >100% impossible). Fast raw-slot threshold 60.0% requires more eligible titles than current queue.
 
 Biggest measured time sink: **between-run gaps, 69.8min total / 34.9min per addition** across Halls/Hogwarts. Unallocated, not proven screen waiting; operator/other waits and within-run startup/play/save splits unavailable.
 <!-- burndown:end -->
