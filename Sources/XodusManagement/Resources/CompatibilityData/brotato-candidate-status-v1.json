@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-22T01:39:25.767831+00:00",
+  "candidateBinarySha256": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3",
+  "argv": [
+    "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli",
+    "install-status",
+    "9P9VNSQK1W3K",
+    "--game-dir",
+    "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+    "--state-dir",
+    "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241"
+  ],
+  "processExitCode": 0,
+  "stdout": "{\"content_id\":\"9220cbd0-bb06-4cb9-b81a-44044f3d3b3b\",\"detail\":null,\"error\":null,\"error_code\":null,\"exit_code\":0,\"files_total\":15,\"finished_at\":\"2026-10-22T01:39:25.756587Z\",\"game_dir\":\"/Users/dragoshont/Games/Xodus/Brotato-Xbox\",\"log_dir\":\"/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/ba9df9b8-707a-4505-8646-535439c0a96b\",\"operation\":\"install-status\",\"product\":\"9P9VNSQK1W3K\",\"reason_code\":null,\"result_path\":\"/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/ba9df9b8-707a-4505-8646-535439c0a96b/result.json\",\"run_id\":\"ba9df9b8-707a-4505-8646-535439c0a96b\",\"started_at\":\"2026-10-22T01:39:25.709994Z\",\"status\":\"complete\",\"success\":true,\"version\":1}\n",
+  "stderr": "",
+  "frozenAdf8KnownFailure": {
+    "exitCode": 101,
+    "notOverwritten": true,
+    "source": "Observed stage_small_game.py failed status subprocess after successful47c4391d install; no fake complete receipt"
+  },
+  "completeInAdf8Terms": false,
+  "launchBlockedPendingS2ParserAssessment": true,
+  "result": {
+    "content_id": "9220cbd0-bb06-4cb9-b81a-44044f3d3b3b",
+    "detail": null,
+    "error": null,
+    "error_code": null,
+    "exit_code": 0,
+    "files_total": 15,
+    "finished_at": "2026-10-22T01:39:25.756587Z",
+    "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+    "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/ba9df9b8-707a-4505-8646-535439c0a96b",
+    "operation": "install-status",
+    "product": "9P9VNSQK1W3K",
+    "reason_code": null,
+    "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/ba9df9b8-707a-4505-8646-535439c0a96b/result.json",
+    "run_id": "ba9df9b8-707a-4505-8646-535439c0a96b",
+    "started_at": "2026-10-22T01:39:25.709994Z",
+    "status": "complete",
+    "success": true,
+    "version": 1
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectedAt": "2026-10-22T01:28:42.226857+00:00",
+  "collectedAt": "2026-10-22T01:50:07.639070+00:00",
   "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
   "primaryRuntimeSha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
   "s1RegistrySha256": "3e0f0385fef87b4a8e542726ae78ab083f2a08df99fc4caf3cfc93e0ea1f52ce",
@@ -27215,6 +27215,152 @@
         }
       ]
     },
+    "smallProfiles": {
+      "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+      "sha256": "6a0b6d77f5b8e1d12f6dbc4c92effd55233a3a41adbfe9578d007a0a89188849",
+      "items": [
+        {
+          "title": "Vampire Survivors",
+          "store_id": "9PD5BM2Z8C4L",
+          "game_dir": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+          "manifest_executable": "VampireSurvivors.exe",
+          "manifest_sha256": "f0521ca96f2792a2da4dcc575d479866b5605c064f2249c7d2f3666ff25b2ec4",
+          "install_status_run_id": "5235639f-d052-4ca0-816f-1d734446efe5",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11.1 public candidate",
+          "public_api_source": "https://www.pcgamingwiki.com/wiki/Vampire_Survivors?action=raw",
+          "public_api_evidence": "General-edition Unity player-log reference reports Direct3D11.1. Not exact installed Xbox active-renderer evidence.",
+          "static_capability": "Readable UnityPlayer.dll imports D3D11, D3D12, DXGI and OpenGL32; capabilities do not select active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        {
+          "title": "Halls of Torment",
+          "store_id": "9NMNMS626R59",
+          "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+          "manifest_executable": "Halls of Torment.exe",
+          "manifest_sha256": "76ebd7eac803daa375812e2e9d14e2b0b7e0322345b86dd1a10044e45be6b504",
+          "install_status_run_id": "0d0ed6ec-4852-44ab-9c20-b25c7b73b107",
+          "profile": "apple-gptk-4.0b3",
+          "api": "Default Vulkan candidate; D3D12 and GL alternatives require exact title evidence",
+          "public_api_source": "https://docs.godotengine.org/en/4.3/tutorials/editor/command_line_tutorial.html",
+          "public_api_evidence": "Godot4.3 primary source supports RD Vulkan/D3D12 and compatibility GL when compiled; exact GDK executable build options unobserved.",
+          "static_capability": "Readable unencrypted PCK header Godot4.3.0, GDK feature, no explicit renderer/driver override in 164 project settings; executable opaque.",
+          "metadata_evidence": "engines/halls-renderer-metadata.json",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "ready_for_launch": false,
+          "blocker": "Blocked/unqualified: coordinator owns title-check admission; one WineCX GL3.3 host probe timed out and no further GL probes authorized.",
+          "candidate_argument_sets": [
+            {
+              "order": 1,
+              "profile": "apple-gptk-4.0b3",
+              "game_arguments": [],
+              "target": "Default renderer; Vulkan via installed MoltenVK candidate",
+              "qualification": "Coordinator-selected first title check, not observed Vulkan device/presentation success for this exact recipe."
+            },
+            {
+              "order": 2,
+              "profile": "apple-gptk-4.0b3",
+              "game_arguments": [
+                "--rendering-driver",
+                "d3d12"
+              ],
+              "target": "D3D12 via D3DMetal if exact GDK build includes driver",
+              "qualification": "Host has existing D3D12 gate; title driver/pipeline support unobserved."
+            },
+            {
+              "order": 3,
+              "profile": "apple-gptk-4.0b3",
+              "game_arguments": [
+                "--rendering-driver",
+                "opengl3"
+              ],
+              "target": "GL compatibility if exact GDK build includes driver",
+              "qualification": "Blocked GL route; WineCX host probe timeout is not an Apple4 GL pass or title failure."
+            }
+          ],
+          "status": "blocked, unqualified candidate"
+        },
+        {
+          "title": "Inscryption",
+          "store_id": "9P8NSTDMZ11P",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+          "manifest_executable": "Inscryption.exe",
+          "manifest_sha256": "487021aeef1da423f8d2bdc446f9fbfca3cbe3d7742b8c759282f61e2018254d",
+          "install_status_run_id": "d2b5b8d7-72c1-49b7-a10c-ced0182058a6",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11 public candidate",
+          "public_api_source": "https://www.pcgamingwiki.com/wiki/Inscryption?action=raw",
+          "public_api_evidence": "API table Direct3D11; general edition, not exact Xbox package runtime evidence.",
+          "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        {
+          "title": "DREDGE",
+          "store_id": "9MSVVM5NS9L6",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+          "manifest_executable": "DREDGE.exe",
+          "manifest_sha256": "4a579c6d5be39f0456d076982c8453b2c232c093a2f2a6ce87474b25d4e8b5d8",
+          "install_status_run_id": "c97f0297-5662-455e-b8e6-493b1e811bd8",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11 public candidate",
+          "public_api_source": "https://store.steampowered.com/api/appdetails?appids=1562430",
+          "public_api_evidence": "Publisher-entered Windows requirements: DirectX Version11; not exact Xbox package runtime evidence.",
+          "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        {
+          "title": "Monster Sanctuary",
+          "store_id": "9PBWWQGXVMKC",
+          "game_dir": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+          "manifest_executable": "Monster Sanctuary.exe",
+          "manifest_sha256": "a27f8573233ad60b84343d3d121ef69f2bec7af3bace27f602a1bcae14d79c98",
+          "install_status_run_id": "254cea03-56cb-44ad-ad43-01335b5ef1d6",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX10 public candidate through existing D3D10/11 profile",
+          "public_api_source": "https://store.steampowered.com/api/appdetails?appids=814370",
+          "public_api_evidence": "Publisher-entered Windows requirements: DirectX Version10; not exact Xbox package runtime evidence.",
+          "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        {
+          "title": "TUNIC",
+          "store_id": "9NLRT31Z4RWM",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+          "manifest_executable": "Secret Legend.exe",
+          "manifest_sha256": "8c641f76dc2406a82dc5ade18f8f1be0af1cf1f9a14e06ee490d78d003137a53",
+          "install_status_run_id": "2003560c-c242-4e1d-85fe-8224343b9818",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11 public candidate",
+          "public_api_source": "https://www.pcgamingwiki.com/wiki/Tunic?action=raw",
+          "public_api_evidence": "S4 verified public Direct3D11; optional -force-d3d12 is not selected. Not exact Xbox package runtime evidence.",
+          "static_capability": "Readable UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        }
+      ]
+    },
     "helper": {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py",
       "sha256": "31c354e7414a6d806bf174f0d9b23da27f3be1b8aec4fcb44549c5c47ea21962"
@@ -27397,7 +27543,17 @@
             "Id": "Game"
           },
           "arguments": []
-        }
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9P8NSTDMZ11P",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
       },
       {
         "storeId": "9MSVVM5NS9L6",
@@ -27574,7 +27730,17 @@
             "Id": "Game"
           },
           "arguments": []
-        }
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9MSVVM5NS9L6",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
       },
       {
         "storeId": "9PBWWQGXVMKC",
@@ -27756,7 +27922,17 @@
             "Id": "Game"
           },
           "arguments": []
-        }
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9PBWWQGXVMKC",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
       },
       {
         "storeId": "9NLRT31Z4RWM",
@@ -27931,7 +28107,17 @@
             "Id": "Game"
           },
           "arguments": []
-        }
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9NLRT31Z4RWM",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
       },
       {
         "storeId": "9NMNMS626R59",
@@ -28065,7 +28251,17 @@
             "TargetDeviceFamily": "PC"
           },
           "arguments": []
-        }
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9NMNMS626R59",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
       },
       {
         "storeId": "9PD5BM2Z8C4L",
@@ -28254,7 +28450,551 @@
             "Id": "Game"
           },
           "arguments": []
-        }
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9PD5BM2Z8C4L",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+      },
+      {
+        "storeId": "9P9VNSQK1W3K",
+        "title": "Brotato",
+        "root": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+        "reservedBytes": 449249280,
+        "freeBeforeBytes": 172080717824,
+        "startedAt": "2026-10-22T01:37:33.409125+00:00",
+        "argv": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli",
+          "install",
+          "9P9VNSQK1W3K",
+          "--account-profile",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241"
+        ],
+        "stopPipeline": false,
+        "state": "candidate-install-complete-frozen-status-blocked",
+        "matrixSha256": "70e384aaec603cfd1db9489aedc6afd7362af8187274bd0795dc6811d7583a3a",
+        "installerSha256": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3",
+        "resumesPreservedPartial": true,
+        "processExitCode": 0,
+        "freeAfterBytes": 171626700800,
+        "finishedAt": "2026-10-22T01:37:57.926733+00:00",
+        "stderr": "",
+        "install": {
+          "engine": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "finished_at": "2026-10-22T01:37:57.918357Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+          "launch_receipt_path": null,
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/47c4391d-f7fa-4a73-aba3-a7d5f244c0e1",
+          "operation": "install",
+          "popup_monitor_error": null,
+          "popups": [],
+          "prefix": null,
+          "product": "9P9VNSQK1W3K",
+          "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/47c4391d-f7fa-4a73-aba3-a7d5f244c0e1/progress.jsonl",
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/47c4391d-f7fa-4a73-aba3-a7d5f244c0e1/result.json",
+          "run_id": "47c4391d-f7fa-4a73-aba3-a7d5f244c0e1",
+          "started_at": "2026-10-22T01:37:33.744066Z",
+          "success": true,
+          "version": 1,
+          "warnings": [],
+          "wine": null,
+          "wine_exit_code": null,
+          "wine_termination_signal": null
+        },
+        "statusCandidate": {
+          "schemaVersion": 1,
+          "checkedAt": "2026-10-22T01:50:07.108326Z",
+          "candidateBinarySha256": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3",
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli",
+            "install-status",
+            "9P9VNSQK1W3K",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241"
+          ],
+          "processExitCode": 0,
+          "stdout": "{\"content_id\":\"9220cbd0-bb06-4cb9-b81a-44044f3d3b3b\",\"detail\":null,\"error\":null,\"error_code\":null,\"exit_code\":0,\"files_total\":15,\"finished_at\":\"2026-10-22T01:50:07.108326Z\",\"game_dir\":\"/Users/dragoshont/Games/Xodus/Brotato-Xbox\",\"log_dir\":\"/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5\",\"operation\":\"install-status\",\"product\":\"9P9VNSQK1W3K\",\"reason_code\":null,\"result_path\":\"/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5/result.json\",\"run_id\":\"6bdef134-bedd-4258-9702-5f300294b2c5\",\"started_at\":\"2026-10-22T01:50:07.031685Z\",\"status\":\"complete\",\"success\":true,\"version\":1}\n",
+          "stderr": "",
+          "frozenAdf8KnownFailure": {
+            "exitCode": 101,
+            "notOverwritten": true,
+            "source": "Observed stage_small_game.py failed status subprocess after successful47c4391d install; no fake complete receipt"
+          },
+          "completeInAdf8Terms": false,
+          "launchBlockedPendingS2ParserAssessment": true,
+          "result": {
+            "content_id": "9220cbd0-bb06-4cb9-b81a-44044f3d3b3b",
+            "detail": null,
+            "error": null,
+            "error_code": null,
+            "exit_code": 0,
+            "files_total": 15,
+            "finished_at": "2026-10-22T01:50:07.108326Z",
+            "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+            "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5",
+            "operation": "install-status",
+            "product": "9P9VNSQK1W3K",
+            "reason_code": null,
+            "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5/result.json",
+            "run_id": "6bdef134-bedd-4258-9702-5f300294b2c5",
+            "started_at": "2026-10-22T01:50:07.031685Z",
+            "status": "complete",
+            "success": true,
+            "version": 1
+          }
+        },
+        "frozenStatusFailure": {
+          "exitCode": 101,
+          "notOverwritten": true,
+          "source": "Observed stage_small_game.py failed status subprocess after successful47c4391d install; no fake complete receipt"
+        },
+        "launchBlocked": true,
+        "package": {
+          "root": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+          "identity": {
+            "manifest": "MicrosoftGame.config",
+            "name": "19886SeavenStudio.Brotato",
+            "version": "1.154.0.0",
+            "storeId": "9P9VNSQK1W3K"
+          },
+          "manifestSha256": "4a8bacb245f281be7d9361e7f98490d1f175f2c457c7efb44e46c214bad21ca5",
+          "metadata": {
+            "MSAAppId": [
+              "0000000048DA8F7C"
+            ],
+            "TitleId": [
+              "77BB5AFB"
+            ]
+          },
+          "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+          "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+          "executables": [
+            "Brotato.exe"
+          ],
+          "engineMarkers": {},
+          "graphicsAPIs": [],
+          "binaries": [
+            {
+              "path": "Brotato.exe",
+              "sizeBytes": 55754752,
+              "headerSha256": "628101c15a9d6d6308242667ea3dc6578151326ce8fa39c03c4c140ea9a19b04",
+              "status": "opaque-or-not-PE",
+              "imports": []
+            }
+          ],
+          "antiCheatScan": {
+            "fileCount": 16,
+            "fileListSha256": "5a4810f579c836a1aa7fae8156ab8dc0321e2efc1037cb3df2c2f4472a362c2d",
+            "matches": {},
+            "symlinkCount": 0,
+            "complete": true
+          },
+          "rendererFiles": [],
+          "hasXboxIdentity": true,
+          "hasUnityPlayer": false
+        },
+        "manifest": {
+          "path": "/Users/dragoshont/Games/Xodus/Brotato-Xbox/MicrosoftGame.config",
+          "sha256": "4a8bacb245f281be7d9361e7f98490d1f175f2c457c7efb44e46c214bad21ca5",
+          "attributes": {
+            "Name": "Brotato.exe",
+            "TargetDeviceFamily": "PC",
+            "Id": "Game",
+            "Alias": "Brotato.exe"
+          },
+          "arguments": []
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli",
+          "install-status",
+          "9P9VNSQK1W3K",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241"
+        ],
+        "statusQuerySha256": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3"
+      },
+      {
+        "storeId": "9MXND4PQLK3W",
+        "title": "DOOM 64",
+        "root": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+        "reservedBytes": 114774016,
+        "freeBeforeBytes": 171599806464,
+        "startedAt": "2026-10-22T01:39:46.193541+00:00",
+        "argv": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+          "install",
+          "9MXND4PQLK3W",
+          "--account-profile",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI",
+          "--market",
+          "GB"
+        ],
+        "stopPipeline": false,
+        "state": "complete-not-game-qualified",
+        "matrixSha256": "0b8b78c055cbea68cde4f7ea989d418bfb6cd826e5e16b3db2aacf8f8d59ce43",
+        "installerSha256": "ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d",
+        "resumesPreservedPartial": false,
+        "processExitCode": 0,
+        "freeAfterBytes": 171482791936,
+        "finishedAt": "2026-10-22T01:39:56.691608+00:00",
+        "stderr": "",
+        "install": {
+          "engine": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "finished_at": "2026-10-22T01:39:56.681045Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+          "launch_receipt_path": null,
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/35599d74-bbbd-4141-9c83-fc53ef98b78d",
+          "operation": "install",
+          "popup_monitor_error": null,
+          "popups": [],
+          "prefix": null,
+          "product": "9MXND4PQLK3W",
+          "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/35599d74-bbbd-4141-9c83-fc53ef98b78d/progress.jsonl",
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/35599d74-bbbd-4141-9c83-fc53ef98b78d/result.json",
+          "run_id": "35599d74-bbbd-4141-9c83-fc53ef98b78d",
+          "started_at": "2026-10-22T01:39:46.248008Z",
+          "success": true,
+          "version": 1,
+          "wine": null,
+          "wine_exit_code": null,
+          "wine_termination_signal": null
+        },
+        "statusAttempt": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9MXND4PQLK3W",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "processExitCode": 0,
+          "stdout": "{\"content_id\":\"92e95e12-ba7e-41b5-b5d8-ac3faaca8777\",\"detail\":null,\"error\":null,\"error_code\":null,\"exit_code\":0,\"files_total\":21,\"finished_at\":\"2026-10-22T01:39:56.759044Z\",\"game_dir\":\"/Users/dragoshont/Games/Xodus/Doom64-Xbox\",\"log_dir\":\"/Users/dragoshont/Library/Application Support/XodusCLI/runs/b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7\",\"operation\":\"install-status\",\"product\":\"9MXND4PQLK3W\",\"reason_code\":null,\"result_path\":\"/Users/dragoshont/Library/Application Support/XodusCLI/runs/b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7/result.json\",\"run_id\":\"b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7\",\"started_at\":\"2026-10-22T01:39:56.701148Z\",\"status\":\"complete\",\"success\":true,\"version\":1}\n",
+          "stderr": ""
+        },
+        "statusArgv": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9MXND4PQLK3W",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "installStatus": {
+          "content_id": "92e95e12-ba7e-41b5-b5d8-ac3faaca8777",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 21,
+          "finished_at": "2026-10-22T01:39:56.759044Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7",
+          "operation": "install-status",
+          "product": "9MXND4PQLK3W",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7/result.json",
+          "run_id": "b6cb2c2b-b51f-4a99-8ab7-e5a566835fb7",
+          "started_at": "2026-10-22T01:39:56.701148Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "package": {
+          "root": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+          "identity": {
+            "manifest": "MicrosoftGame.config",
+            "name": "BethesdaSoftworks.Doom641997",
+            "version": "1.8.0.0",
+            "storeId": "9MXND4PQLK3W"
+          },
+          "manifestSha256": "710953a195ba86f3cd5d76550d152f30206deac89daeaf3f727517462d57d5e9",
+          "metadata": {
+            "MSAAppId": [
+              "0000000040273E0C"
+            ],
+            "TitleId": [
+              "7f5169e4"
+            ]
+          },
+          "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+          "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+          "executables": [
+            "DOOM64_x64.exe"
+          ],
+          "engineMarkers": {},
+          "graphicsAPIs": [],
+          "binaries": [
+            {
+              "path": "DOOM64_x64.exe",
+              "sizeBytes": 6320128,
+              "headerSha256": "08ad9f5d6f046e50079407bd27606ad42b218537048eb784027abaf4ffd8ea9c",
+              "status": "opaque-or-not-PE",
+              "imports": []
+            },
+            {
+              "path": "SDL2.dll",
+              "sizeBytes": 1331712,
+              "headerSha256": "c46a3fc444808f3b86a7e757e5202d16f8ea9bf1c6aff2cabc593e7d0f2c9ad2",
+              "status": "parsed",
+              "imports": [
+                "advapi32.dll",
+                "gdi32.dll",
+                "imm32.dll",
+                "kernel32.dll",
+                "msvcrt.dll",
+                "ole32.dll",
+                "oleaut32.dll",
+                "setupapi.dll",
+                "shell32.dll",
+                "user32.dll",
+                "version.dll",
+                "winmm.dll"
+              ],
+              "graphicsAPIs": [],
+              "dxgi": false,
+              "backendMarkers": []
+            }
+          ],
+          "antiCheatScan": {
+            "fileCount": 22,
+            "fileListSha256": "ef17a76c72a3f3cf1906e3a37e2ebb1ab64a06846598479b2e6f45a842cbb505",
+            "matches": {},
+            "symlinkCount": 0,
+            "complete": true
+          },
+          "rendererFiles": [],
+          "hasXboxIdentity": true,
+          "hasUnityPlayer": false
+        },
+        "allocatedBytes": 114774016,
+        "manifest": {
+          "path": "/Users/dragoshont/Games/Xodus/Doom64-Xbox/MicrosoftGame.config",
+          "sha256": "710953a195ba86f3cd5d76550d152f30206deac89daeaf3f727517462d57d5e9",
+          "attributes": {
+            "Name": "DOOM64_x64.exe",
+            "TargetDeviceFamily": "PC",
+            "Id": "Game"
+          },
+          "arguments": []
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9MXND4PQLK3W",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+      },
+      {
+        "storeId": "9P1Z43KRNQD4",
+        "title": "Quake",
+        "root": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+        "reservedBytes": 1811611648,
+        "freeBeforeBytes": 171513483264,
+        "startedAt": "2026-10-22T01:40:29.684140+00:00",
+        "argv": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d/xodus-cli",
+          "install",
+          "9P1Z43KRNQD4",
+          "--account-profile",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI",
+          "--market",
+          "GB"
+        ],
+        "stopPipeline": false,
+        "state": "complete-not-game-qualified",
+        "matrixSha256": "0b8b78c055cbea68cde4f7ea989d418bfb6cd826e5e16b3db2aacf8f8d59ce43",
+        "installerSha256": "ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d",
+        "resumesPreservedPartial": false,
+        "processExitCode": 0,
+        "freeAfterBytes": 169753681920,
+        "finishedAt": "2026-10-22T01:41:13.699113+00:00",
+        "stderr": "",
+        "install": {
+          "engine": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "finished_at": "2026-10-22T01:41:13.689164Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+          "launch_receipt_path": null,
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/238118ca-28d0-460f-87af-eb0859689015",
+          "operation": "install",
+          "popup_monitor_error": null,
+          "popups": [],
+          "prefix": null,
+          "product": "9P1Z43KRNQD4",
+          "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/238118ca-28d0-460f-87af-eb0859689015/progress.jsonl",
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/238118ca-28d0-460f-87af-eb0859689015/result.json",
+          "run_id": "238118ca-28d0-460f-87af-eb0859689015",
+          "started_at": "2026-10-22T01:40:29.694200Z",
+          "success": true,
+          "version": 1,
+          "wine": null,
+          "wine_exit_code": null,
+          "wine_termination_signal": null
+        },
+        "statusAttempt": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9P1Z43KRNQD4",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "processExitCode": 0,
+          "stdout": "{\"content_id\":\"6d35384a-e3f6-4acd-a2ae-f35e9b8980a5\",\"detail\":null,\"error\":null,\"error_code\":null,\"exit_code\":0,\"files_total\":62,\"finished_at\":\"2026-10-22T01:41:13.969941Z\",\"game_dir\":\"/Users/dragoshont/Games/Xodus/Quake-Xbox\",\"log_dir\":\"/Users/dragoshont/Library/Application Support/XodusCLI/runs/63b52e2d-687d-4de1-8e05-850661291776\",\"operation\":\"install-status\",\"product\":\"9P1Z43KRNQD4\",\"reason_code\":null,\"result_path\":\"/Users/dragoshont/Library/Application Support/XodusCLI/runs/63b52e2d-687d-4de1-8e05-850661291776/result.json\",\"run_id\":\"63b52e2d-687d-4de1-8e05-850661291776\",\"started_at\":\"2026-10-22T01:41:13.709785Z\",\"status\":\"complete\",\"success\":true,\"version\":1}\n",
+          "stderr": ""
+        },
+        "statusArgv": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9P1Z43KRNQD4",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "installStatus": {
+          "content_id": "6d35384a-e3f6-4acd-a2ae-f35e9b8980a5",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 62,
+          "finished_at": "2026-10-22T01:41:13.969941Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/63b52e2d-687d-4de1-8e05-850661291776",
+          "operation": "install-status",
+          "product": "9P1Z43KRNQD4",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/63b52e2d-687d-4de1-8e05-850661291776/result.json",
+          "run_id": "63b52e2d-687d-4de1-8e05-850661291776",
+          "started_at": "2026-10-22T01:41:13.709785Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        },
+        "package": {
+          "root": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+          "identity": {
+            "manifest": "MicrosoftGame.config",
+            "name": "BethesdaSoftworks.ProjectSilver",
+            "version": "1.0.5603.0",
+            "storeId": "9P1Z43KRNQD4"
+          },
+          "manifestSha256": "bdd4b71ad2841b7df764661f9914df255214cfc79760908d5c450df899e9c5be",
+          "metadata": {
+            "MSAAppId": [
+              "00000000485A1439"
+            ],
+            "TitleId": [
+              "6de3bc2f"
+            ]
+          },
+          "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+          "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+          "executables": [
+            "bastet_WinStore.exe"
+          ],
+          "engineMarkers": {},
+          "graphicsAPIs": [],
+          "binaries": [
+            {
+              "path": "SDL2.dll",
+              "sizeBytes": 1481592,
+              "headerSha256": "52ea4dd296abe995cc1052a3a29325a8306fc888b3d6fea352d2cebdd83e6eaa",
+              "status": "parsed",
+              "imports": [
+                "advapi32.dll",
+                "gdi32.dll",
+                "imm32.dll",
+                "kernel32.dll",
+                "ole32.dll",
+                "oleaut32.dll",
+                "setupapi.dll",
+                "shell32.dll",
+                "user32.dll",
+                "version.dll",
+                "winmm.dll"
+              ],
+              "graphicsAPIs": [],
+              "dxgi": false,
+              "backendMarkers": []
+            },
+            {
+              "path": "bastet_WinStore.exe",
+              "sizeBytes": 14344192,
+              "headerSha256": "e8081bfd7faccd94c43b7adc25cfe5d22e439217024307c4ebd027aecd0103e6",
+              "status": "opaque-or-not-PE",
+              "imports": []
+            }
+          ],
+          "antiCheatScan": {
+            "fileCount": 63,
+            "fileListSha256": "ad4c91278e3b0c3cd2bf5bee0b0d983a6d6583c5623404f618ca71a766a81262",
+            "matches": {},
+            "symlinkCount": 0,
+            "complete": true
+          },
+          "rendererFiles": [],
+          "hasXboxIdentity": true,
+          "hasUnityPlayer": false
+        },
+        "allocatedBytes": 1811611648,
+        "manifest": {
+          "path": "/Users/dragoshont/Games/Xodus/Quake-Xbox/MicrosoftGame.config",
+          "sha256": "bdd4b71ad2841b7df764661f9914df255214cfc79760908d5c450df899e9c5be",
+          "attributes": {
+            "Name": "bastet_WinStore.exe",
+            "TargetDeviceFamily": "PC",
+            "Id": "Game"
+          },
+          "arguments": []
+        },
+        "statusQuery": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+          "install-status",
+          "9P1Z43KRNQD4",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI"
+        ],
+        "statusQuerySha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
       }
     ],
     "statuses": {
@@ -28265,15 +29005,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 248,
-        "finished_at": "2026-10-22T01:27:20.546085Z",
+        "finished_at": "2026-10-22T01:48:12.541695Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/91485b64-711a-4d75-b556-83ae0482bc7c",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0b39f176-8c41-419a-a474-971e94d1d6a7",
         "operation": "install-status",
         "product": "9P8NSTDMZ11P",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/91485b64-711a-4d75-b556-83ae0482bc7c/result.json",
-        "run_id": "91485b64-711a-4d75-b556-83ae0482bc7c",
-        "started_at": "2026-10-22T01:27:20.140485Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0b39f176-8c41-419a-a474-971e94d1d6a7/result.json",
+        "run_id": "0b39f176-8c41-419a-a474-971e94d1d6a7",
+        "started_at": "2026-10-22T01:48:12.046679Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -28285,15 +29025,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 367,
-        "finished_at": "2026-10-22T01:27:20.855905Z",
+        "finished_at": "2026-10-22T01:48:12.906642Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fee50beb-92b4-490b-9aac-85b1d94eee89",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/80b4392a-a106-407b-b370-0d7767602618",
         "operation": "install-status",
         "product": "9MSVVM5NS9L6",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fee50beb-92b4-490b-9aac-85b1d94eee89/result.json",
-        "run_id": "fee50beb-92b4-490b-9aac-85b1d94eee89",
-        "started_at": "2026-10-22T01:27:20.618669Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/80b4392a-a106-407b-b370-0d7767602618/result.json",
+        "run_id": "80b4392a-a106-407b-b370-0d7767602618",
+        "started_at": "2026-10-22T01:48:12.613040Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -28305,15 +29045,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 1235,
-        "finished_at": "2026-10-22T01:27:21.419577Z",
+        "finished_at": "2026-10-22T01:48:13.570646Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/ae9d1dfa-707e-44cc-be55-ab58c2440a07",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/782b194f-af06-4cc3-8dbe-924a76ffca2d",
         "operation": "install-status",
         "product": "9PBWWQGXVMKC",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/ae9d1dfa-707e-44cc-be55-ab58c2440a07/result.json",
-        "run_id": "ae9d1dfa-707e-44cc-be55-ab58c2440a07",
-        "started_at": "2026-10-22T01:27:20.928298Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/782b194f-af06-4cc3-8dbe-924a76ffca2d/result.json",
+        "run_id": "782b194f-af06-4cc3-8dbe-924a76ffca2d",
+        "started_at": "2026-10-22T01:48:12.977386Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -28325,15 +29065,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 11169,
-        "finished_at": "2026-10-22T01:28:41.246498Z",
+        "finished_at": "2026-10-22T01:50:05.892008Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1fca0025-b2ec-485e-bbdd-c0ea54477e9a",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a1022bfa-059e-4c68-954f-c01a6384f17f",
         "operation": "install-status",
         "product": "9NLRT31Z4RWM",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1fca0025-b2ec-485e-bbdd-c0ea54477e9a/result.json",
-        "run_id": "1fca0025-b2ec-485e-bbdd-c0ea54477e9a",
-        "started_at": "2026-10-22T01:27:21.496959Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a1022bfa-059e-4c68-954f-c01a6384f17f/result.json",
+        "run_id": "a1022bfa-059e-4c68-954f-c01a6384f17f",
+        "started_at": "2026-10-22T01:48:13.643849Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -28345,15 +29085,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 15,
-        "finished_at": "2026-10-22T01:28:41.589519Z",
+        "finished_at": "2026-10-22T01:50:06.256444Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8500c178-aa76-4c2f-8241-7a15d386633e",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fed39cdf-5369-4c9f-a5bf-2d01ee26f170",
         "operation": "install-status",
         "product": "9NMNMS626R59",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8500c178-aa76-4c2f-8241-7a15d386633e/result.json",
-        "run_id": "8500c178-aa76-4c2f-8241-7a15d386633e",
-        "started_at": "2026-10-22T01:28:41.325936Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fed39cdf-5369-4c9f-a5bf-2d01ee26f170/result.json",
+        "run_id": "fed39cdf-5369-4c9f-a5bf-2d01ee26f170",
+        "started_at": "2026-10-22T01:50:05.977445Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -28365,29 +29105,92 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 1307,
-        "finished_at": "2026-10-22T01:28:42.208810Z",
+        "finished_at": "2026-10-22T01:50:06.981847Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/773f7924-83fa-4ce5-a53b-510d9164b16c",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1395e9d4-7a71-4c7b-9fbd-b2c4f233f4ff",
         "operation": "install-status",
         "product": "9PD5BM2Z8C4L",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/773f7924-83fa-4ce5-a53b-510d9164b16c/result.json",
-        "run_id": "773f7924-83fa-4ce5-a53b-510d9164b16c",
-        "started_at": "2026-10-22T01:28:41.657887Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1395e9d4-7a71-4c7b-9fbd-b2c4f233f4ff/result.json",
+        "run_id": "1395e9d4-7a71-4c7b-9fbd-b2c4f233f4ff",
+        "started_at": "2026-10-22T01:50:06.332350Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "9P9VNSQK1W3K": {
+        "content_id": "9220cbd0-bb06-4cb9-b81a-44044f3d3b3b",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 15,
+        "finished_at": "2026-10-22T01:50:07.108326Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5",
+        "operation": "install-status",
+        "product": "9P9VNSQK1W3K",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5/result.json",
+        "run_id": "6bdef134-bedd-4258-9702-5f300294b2c5",
+        "started_at": "2026-10-22T01:50:07.031685Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "9MXND4PQLK3W": {
+        "content_id": "92e95e12-ba7e-41b5-b5d8-ac3faaca8777",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 21,
+        "finished_at": "2026-10-22T01:50:07.269804Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/9c56712e-528c-4460-9365-8f2221030e93",
+        "operation": "install-status",
+        "product": "9MXND4PQLK3W",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/9c56712e-528c-4460-9365-8f2221030e93/result.json",
+        "run_id": "9c56712e-528c-4460-9365-8f2221030e93",
+        "started_at": "2026-10-22T01:50:07.193572Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "9P1Z43KRNQD4": {
+        "content_id": "6d35384a-e3f6-4acd-a2ae-f35e9b8980a5",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 62,
+        "finished_at": "2026-10-22T01:50:07.626936Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b69c6df6-d97d-4ccf-a733-c2dc9ab33df4",
+        "operation": "install-status",
+        "product": "9P1Z43KRNQD4",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b69c6df6-d97d-4ccf-a733-c2dc9ab33df4/result.json",
+        "run_id": "b69c6df6-d97d-4ccf-a733-c2dc9ab33df4",
+        "started_at": "2026-10-22T01:50:07.346557Z",
         "status": "complete",
         "success": true,
         "version": 1
       }
     },
     "outputs": {
-      "9P8NSTDMZ11P": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P8NSTDMZ11P-dc54febee9ea41a5859d8436101e4f71",
-      "9MSVVM5NS9L6": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9MSVVM5NS9L6-4df809e53f0144a2a77aa9650e17d243",
-      "9PBWWQGXVMKC": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PBWWQGXVMKC-da4d3c69d9b24d528a16fd1a4596a46b",
-      "9NLRT31Z4RWM": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NLRT31Z4RWM-2d2721359d4040e4ad56f75568fab0a1",
-      "9NMNMS626R59": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NMNMS626R59-bae0441167ec41b9bc63a85979c7eaf5",
-      "9PD5BM2Z8C4L": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PD5BM2Z8C4L-d63c8b98b5ee46f5abe39360c59d9a2d"
+      "9P8NSTDMZ11P": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P8NSTDMZ11P-2712e95ba1b041e78932769283dd79a3",
+      "9MSVVM5NS9L6": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9MSVVM5NS9L6-ca78e5fa3630490099de7d72cedb1ebf",
+      "9PBWWQGXVMKC": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PBWWQGXVMKC-3e7493db18074b1294e5981e78b4224b",
+      "9NLRT31Z4RWM": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NLRT31Z4RWM-16a633cb6d7742859d222f6d09dc3ba6",
+      "9NMNMS626R59": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NMNMS626R59-6f045727ecf74595b41da4223d8d2ab0",
+      "9PD5BM2Z8C4L": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PD5BM2Z8C4L-d347756cda184274bae3523abdfe337c",
+      "9P9VNSQK1W3K": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P9VNSQK1W3K-63b9a984d53142b684b9ec9cc39988c0",
+      "9MXND4PQLK3W": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9MXND4PQLK3W-ad662401d7754f21a8933454704ee538",
+      "9P1Z43KRNQD4": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P1Z43KRNQD4-d29e2774ff3141b6b1538bbe70b2bbb8"
     },
-    "collectedAt": "2026-10-22T01:28:42.226857+00:00"
+    "collectedAt": "2026-10-22T01:50:07.639070+00:00"
   },
   "items": [
     {
@@ -28774,15 +29577,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 248,
-        "finished_at": "2026-10-22T01:27:20.546085Z",
+        "finished_at": "2026-10-22T01:48:12.541695Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/91485b64-711a-4d75-b556-83ae0482bc7c",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0b39f176-8c41-419a-a474-971e94d1d6a7",
         "operation": "install-status",
         "product": "9P8NSTDMZ11P",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/91485b64-711a-4d75-b556-83ae0482bc7c/result.json",
-        "run_id": "91485b64-711a-4d75-b556-83ae0482bc7c",
-        "started_at": "2026-10-22T01:27:20.140485Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/0b39f176-8c41-419a-a474-971e94d1d6a7/result.json",
+        "run_id": "0b39f176-8c41-419a-a474-971e94d1d6a7",
+        "started_at": "2026-10-22T01:48:12.046679Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -28931,11 +29734,41 @@
             "source_path": "S2 qualified immutable runtime candidate 7106"
           }
         ],
-        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-        "binding": null,
-        "status": "proposal-only-awaiting-S1-binding"
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "binding": {
+          "title": "Inscryption",
+          "store_id": "9P8NSTDMZ11P",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+          "manifest_executable": "Inscryption.exe",
+          "manifest_sha256": "487021aeef1da423f8d2bdc446f9fbfca3cbe3d7742b8c759282f61e2018254d",
+          "install_status_run_id": "d2b5b8d7-72c1-49b7-a10c-ced0182058a6",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11 public candidate",
+          "public_api_source": "https://www.pcgamingwiki.com/wiki/Inscryption?action=raw",
+          "public_api_evidence": "API table Direct3D11; general edition, not exact Xbox package runtime evidence.",
+          "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        "status": "persisted-S1-candidate-not-game-qualified"
       },
       "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9P8NSTDMZ11P",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9P8NSTDMZ11P --game-dir /Users/dragoshont/Games/Xodus/Inscryption-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
         "discovery": {
           "argv": [
             "python3",
@@ -28947,13 +29780,13 @@
             "--close-helper",
             "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe",
             "--output",
-            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P8NSTDMZ11P-dc54febee9ea41a5859d8436101e4f71",
+            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P8NSTDMZ11P-2712e95ba1b041e78932769283dd79a3",
             "--play-seconds",
             "300",
             "--grace-seconds",
             "30"
           ],
-          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9P8NSTDMZ11P --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P8NSTDMZ11P-dc54febee9ea41a5859d8436101e4f71' --play-seconds 300 --grace-seconds 30",
+          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9P8NSTDMZ11P --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9P8NSTDMZ11P-2712e95ba1b041e78932769283dd79a3' --play-seconds 300 --grace-seconds 30",
           "executed": false,
           "saveRetentionPass": false
         },
@@ -29411,15 +30244,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 367,
-        "finished_at": "2026-10-22T01:27:20.855905Z",
+        "finished_at": "2026-10-22T01:48:12.906642Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fee50beb-92b4-490b-9aac-85b1d94eee89",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/80b4392a-a106-407b-b370-0d7767602618",
         "operation": "install-status",
         "product": "9MSVVM5NS9L6",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fee50beb-92b4-490b-9aac-85b1d94eee89/result.json",
-        "run_id": "fee50beb-92b4-490b-9aac-85b1d94eee89",
-        "started_at": "2026-10-22T01:27:20.618669Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/80b4392a-a106-407b-b370-0d7767602618/result.json",
+        "run_id": "80b4392a-a106-407b-b370-0d7767602618",
+        "started_at": "2026-10-22T01:48:12.613040Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -29570,11 +30403,41 @@
             "source_path": "S2 qualified immutable runtime candidate 7106"
           }
         ],
-        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-        "binding": null,
-        "status": "proposal-only-awaiting-S1-binding"
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "binding": {
+          "title": "DREDGE",
+          "store_id": "9MSVVM5NS9L6",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+          "manifest_executable": "DREDGE.exe",
+          "manifest_sha256": "4a579c6d5be39f0456d076982c8453b2c232c093a2f2a6ce87474b25d4e8b5d8",
+          "install_status_run_id": "c97f0297-5662-455e-b8e6-493b1e811bd8",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11 public candidate",
+          "public_api_source": "https://store.steampowered.com/api/appdetails?appids=1562430",
+          "public_api_evidence": "Publisher-entered Windows requirements: DirectX Version11; not exact Xbox package runtime evidence.",
+          "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        "status": "persisted-S1-candidate-not-game-qualified"
       },
       "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9MSVVM5NS9L6",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9MSVVM5NS9L6 --game-dir /Users/dragoshont/Games/Xodus/Dredge-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
         "discovery": {
           "argv": [
             "python3",
@@ -29586,13 +30449,13 @@
             "--close-helper",
             "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe",
             "--output",
-            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9MSVVM5NS9L6-4df809e53f0144a2a77aa9650e17d243",
+            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9MSVVM5NS9L6-ca78e5fa3630490099de7d72cedb1ebf",
             "--play-seconds",
             "300",
             "--grace-seconds",
             "30"
           ],
-          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9MSVVM5NS9L6 --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9MSVVM5NS9L6-4df809e53f0144a2a77aa9650e17d243' --play-seconds 300 --grace-seconds 30",
+          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9MSVVM5NS9L6 --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9MSVVM5NS9L6-ca78e5fa3630490099de7d72cedb1ebf' --play-seconds 300 --grace-seconds 30",
           "executed": false,
           "saveRetentionPass": false
         },
@@ -29950,15 +30813,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 1235,
-        "finished_at": "2026-10-22T01:27:21.419577Z",
+        "finished_at": "2026-10-22T01:48:13.570646Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/ae9d1dfa-707e-44cc-be55-ab58c2440a07",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/782b194f-af06-4cc3-8dbe-924a76ffca2d",
         "operation": "install-status",
         "product": "9PBWWQGXVMKC",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/ae9d1dfa-707e-44cc-be55-ab58c2440a07/result.json",
-        "run_id": "ae9d1dfa-707e-44cc-be55-ab58c2440a07",
-        "started_at": "2026-10-22T01:27:20.928298Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/782b194f-af06-4cc3-8dbe-924a76ffca2d/result.json",
+        "run_id": "782b194f-af06-4cc3-8dbe-924a76ffca2d",
+        "started_at": "2026-10-22T01:48:12.977386Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -30114,11 +30977,41 @@
             "source_path": "S2 qualified immutable runtime candidate 7106"
           }
         ],
-        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-        "binding": null,
-        "status": "proposal-only-awaiting-S1-binding"
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "binding": {
+          "title": "Monster Sanctuary",
+          "store_id": "9PBWWQGXVMKC",
+          "game_dir": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+          "manifest_executable": "Monster Sanctuary.exe",
+          "manifest_sha256": "a27f8573233ad60b84343d3d121ef69f2bec7af3bace27f602a1bcae14d79c98",
+          "install_status_run_id": "254cea03-56cb-44ad-ad43-01335b5ef1d6",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX10 public candidate through existing D3D10/11 profile",
+          "public_api_source": "https://store.steampowered.com/api/appdetails?appids=814370",
+          "public_api_evidence": "Publisher-entered Windows requirements: DirectX Version10; not exact Xbox package runtime evidence.",
+          "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        "status": "persisted-S1-candidate-not-game-qualified"
       },
       "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9PBWWQGXVMKC",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9PBWWQGXVMKC --game-dir /Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
         "discovery": {
           "argv": [
             "python3",
@@ -30130,13 +31023,13 @@
             "--close-helper",
             "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe",
             "--output",
-            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PBWWQGXVMKC-da4d3c69d9b24d528a16fd1a4596a46b",
+            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PBWWQGXVMKC-3e7493db18074b1294e5981e78b4224b",
             "--play-seconds",
             "300",
             "--grace-seconds",
             "30"
           ],
-          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9PBWWQGXVMKC --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PBWWQGXVMKC-da4d3c69d9b24d528a16fd1a4596a46b' --play-seconds 300 --grace-seconds 30",
+          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9PBWWQGXVMKC --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PBWWQGXVMKC-3e7493db18074b1294e5981e78b4224b' --play-seconds 300 --grace-seconds 30",
           "executed": false,
           "saveRetentionPass": false
         },
@@ -30550,15 +31443,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 11169,
-        "finished_at": "2026-10-22T01:28:41.246498Z",
+        "finished_at": "2026-10-22T01:50:05.892008Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1fca0025-b2ec-485e-bbdd-c0ea54477e9a",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a1022bfa-059e-4c68-954f-c01a6384f17f",
         "operation": "install-status",
         "product": "9NLRT31Z4RWM",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1fca0025-b2ec-485e-bbdd-c0ea54477e9a/result.json",
-        "run_id": "1fca0025-b2ec-485e-bbdd-c0ea54477e9a",
-        "started_at": "2026-10-22T01:27:21.496959Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a1022bfa-059e-4c68-954f-c01a6384f17f/result.json",
+        "run_id": "a1022bfa-059e-4c68-954f-c01a6384f17f",
+        "started_at": "2026-10-22T01:48:13.643849Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -30706,11 +31599,41 @@
             "source_path": "S2 qualified immutable runtime candidate 7106"
           }
         ],
-        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-        "binding": null,
-        "status": "proposal-only-awaiting-S1-binding"
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "binding": {
+          "title": "TUNIC",
+          "store_id": "9NLRT31Z4RWM",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+          "manifest_executable": "Secret Legend.exe",
+          "manifest_sha256": "8c641f76dc2406a82dc5ade18f8f1be0af1cf1f9a14e06ee490d78d003137a53",
+          "install_status_run_id": "2003560c-c242-4e1d-85fe-8224343b9818",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11 public candidate",
+          "public_api_source": "https://www.pcgamingwiki.com/wiki/Tunic?action=raw",
+          "public_api_evidence": "S4 verified public Direct3D11; optional -force-d3d12 is not selected. Not exact Xbox package runtime evidence.",
+          "static_capability": "Readable UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        "status": "persisted-S1-candidate-not-game-qualified"
       },
       "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9NLRT31Z4RWM",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9NLRT31Z4RWM --game-dir /Users/dragoshont/Games/Xodus/Tunic-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
         "discovery": {
           "argv": [
             "python3",
@@ -30722,13 +31645,13 @@
             "--close-helper",
             "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe",
             "--output",
-            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NLRT31Z4RWM-2d2721359d4040e4ad56f75568fab0a1",
+            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NLRT31Z4RWM-16a633cb6d7742859d222f6d09dc3ba6",
             "--play-seconds",
             "300",
             "--grace-seconds",
             "30"
           ],
-          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9NLRT31Z4RWM --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NLRT31Z4RWM-2d2721359d4040e4ad56f75568fab0a1' --play-seconds 300 --grace-seconds 30",
+          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9NLRT31Z4RWM --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9NLRT31Z4RWM-16a633cb6d7742859d222f6d09dc3ba6' --play-seconds 300 --grace-seconds 30",
           "executed": false,
           "saveRetentionPass": false
         },
@@ -31153,15 +32076,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 1307,
-        "finished_at": "2026-10-22T01:28:42.208810Z",
+        "finished_at": "2026-10-22T01:50:06.981847Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/773f7924-83fa-4ce5-a53b-510d9164b16c",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1395e9d4-7a71-4c7b-9fbd-b2c4f233f4ff",
         "operation": "install-status",
         "product": "9PD5BM2Z8C4L",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/773f7924-83fa-4ce5-a53b-510d9164b16c/result.json",
-        "run_id": "773f7924-83fa-4ce5-a53b-510d9164b16c",
-        "started_at": "2026-10-22T01:28:41.657887Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/1395e9d4-7a71-4c7b-9fbd-b2c4f233f4ff/result.json",
+        "run_id": "1395e9d4-7a71-4c7b-9fbd-b2c4f233f4ff",
+        "started_at": "2026-10-22T01:50:06.332350Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -31323,11 +32246,41 @@
             "source_path": "S2 qualified immutable runtime candidate 7106"
           }
         ],
-        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-        "binding": null,
-        "status": "proposal-only-awaiting-S1-binding"
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "binding": {
+          "title": "Vampire Survivors",
+          "store_id": "9PD5BM2Z8C4L",
+          "game_dir": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+          "manifest_executable": "VampireSurvivors.exe",
+          "manifest_sha256": "f0521ca96f2792a2da4dcc575d479866b5605c064f2249c7d2f3666ff25b2ec4",
+          "install_status_run_id": "5235639f-d052-4ca0-816f-1d734446efe5",
+          "profile": "creation-dx11-d3dmetal",
+          "api": "DX11.1 public candidate",
+          "public_api_source": "https://www.pcgamingwiki.com/wiki/Vampire_Survivors?action=raw",
+          "public_api_evidence": "General-edition Unity player-log reference reports Direct3D11.1. Not exact installed Xbox active-renderer evidence.",
+          "static_capability": "Readable UnityPlayer.dll imports D3D11, D3D12, DXGI and OpenGL32; capabilities do not select active renderer. Main executable opaque.",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "status": "candidate, not game-qualified"
+        },
+        "status": "persisted-S1-candidate-not-game-qualified"
       },
       "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9PD5BM2Z8C4L",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9PD5BM2Z8C4L --game-dir /Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
         "discovery": {
           "argv": [
             "python3",
@@ -31339,13 +32292,13 @@
             "--close-helper",
             "/Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe",
             "--output",
-            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PD5BM2Z8C4L-d63c8b98b5ee46f5abe39360c59d9a2d",
+            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PD5BM2Z8C4L-d347756cda184274bae3523abdfe337c",
             "--play-seconds",
             "300",
             "--grace-seconds",
             "30"
           ],
-          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9PD5BM2Z8C4L --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PD5BM2Z8C4L-d63c8b98b5ee46f5abe39360c59d9a2d' --play-seconds 300 --grace-seconds 30",
+          "shellCommand": "env -u XODUS_PRIVATE_RUNTIME_COM_STA -u XODUS_PRIVATE_CALLER_OWNS_COM python3 /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/scripts/macos/game-evidence-cycle.py /Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json --store-id 9PD5BM2Z8C4L --discover --close-helper /Users/dragoshont/src/copilot-worktrees/xodus-macos/dragoshont-fluffy-guide/target/diagnostics/close-exact-window-discovery.exe --output '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-small-9PD5BM2Z8C4L-d347756cda184274bae3523abdfe337c' --play-seconds 300 --grace-seconds 30",
           "executed": false,
           "saveRetentionPass": false
         },
@@ -31727,15 +32680,15 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 15,
-        "finished_at": "2026-10-22T01:28:41.589519Z",
+        "finished_at": "2026-10-22T01:50:06.256444Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8500c178-aa76-4c2f-8241-7a15d386633e",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fed39cdf-5369-4c9f-a5bf-2d01ee26f170",
         "operation": "install-status",
         "product": "9NMNMS626R59",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8500c178-aa76-4c2f-8241-7a15d386633e/result.json",
-        "run_id": "8500c178-aa76-4c2f-8241-7a15d386633e",
-        "started_at": "2026-10-22T01:28:41.325936Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/fed39cdf-5369-4c9f-a5bf-2d01ee26f170/result.json",
+        "run_id": "fed39cdf-5369-4c9f-a5bf-2d01ee26f170",
+        "started_at": "2026-10-22T01:50:05.977445Z",
         "status": "complete",
         "success": true,
         "version": 1
@@ -31787,8 +32740,1741 @@
       "launch": null,
       "discovery": null,
       "readyForLaunch": false,
-      "blocker": "Explicit S1 renderer/argument choice required; static/public API capability does not select active renderer."
+      "s1Profile": {
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "sourceSha256": "6a0b6d77f5b8e1d12f6dbc4c92effd55233a3a41adbfe9578d007a0a89188849",
+        "binding": {
+          "title": "Halls of Torment",
+          "store_id": "9NMNMS626R59",
+          "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+          "manifest_executable": "Halls of Torment.exe",
+          "manifest_sha256": "76ebd7eac803daa375812e2e9d14e2b0b7e0322345b86dd1a10044e45be6b504",
+          "install_status_run_id": "0d0ed6ec-4852-44ab-9c20-b25c7b73b107",
+          "profile": "apple-gptk-4.0b3",
+          "api": "Default Vulkan candidate; D3D12 and GL alternatives require exact title evidence",
+          "public_api_source": "https://docs.godotengine.org/en/4.3/tutorials/editor/command_line_tutorial.html",
+          "public_api_evidence": "Godot4.3 primary source supports RD Vulkan/D3D12 and compatibility GL when compiled; exact GDK executable build options unobserved.",
+          "static_capability": "Readable unencrypted PCK header Godot4.3.0, GDK feature, no explicit renderer/driver override in 164 project settings; executable opaque.",
+          "metadata_evidence": "engines/halls-renderer-metadata.json",
+          "game_arguments": [],
+          "title_environment": {},
+          "prepared_prefix": null,
+          "active_renderer_observed": false,
+          "ready_for_launch": false,
+          "blocker": "Blocked/unqualified: coordinator owns title-check admission; one WineCX GL3.3 host probe timed out and no further GL probes authorized.",
+          "candidate_argument_sets": [
+            {
+              "order": 1,
+              "profile": "apple-gptk-4.0b3",
+              "game_arguments": [],
+              "target": "Default renderer; Vulkan via installed MoltenVK candidate",
+              "qualification": "Coordinator-selected first title check, not observed Vulkan device/presentation success for this exact recipe."
+            },
+            {
+              "order": 2,
+              "profile": "apple-gptk-4.0b3",
+              "game_arguments": [
+                "--rendering-driver",
+                "d3d12"
+              ],
+              "target": "D3D12 via D3DMetal if exact GDK build includes driver",
+              "qualification": "Host has existing D3D12 gate; title driver/pipeline support unobserved."
+            },
+            {
+              "order": 3,
+              "profile": "apple-gptk-4.0b3",
+              "game_arguments": [
+                "--rendering-driver",
+                "opengl3"
+              ],
+              "target": "GL compatibility if exact GDK build includes driver",
+              "qualification": "Blocked GL route; WineCX host probe timeout is not an Apple4 GL pass or title failure."
+            }
+          ],
+          "status": "blocked, unqualified candidate"
+        },
+        "status": "blocked-not-game-qualified"
+      },
+      "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9NMNMS626R59",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9NMNMS626R59 --game-dir /Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
+        "install": {
+          "engine": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "finished_at": "2026-10-22T01:24:30.290803Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
+          "launch_receipt_path": null,
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a8660c40-b6c1-4afd-a154-48df378404ab",
+          "operation": "install",
+          "popup_monitor_error": null,
+          "popups": [],
+          "prefix": null,
+          "product": "9NMNMS626R59",
+          "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a8660c40-b6c1-4afd-a154-48df378404ab/progress.jsonl",
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/a8660c40-b6c1-4afd-a154-48df378404ab/result.json",
+          "run_id": "a8660c40-b6c1-4afd-a154-48df378404ab",
+          "started_at": "2026-10-22T01:23:02.151813Z",
+          "success": true,
+          "version": 1,
+          "wine": null,
+          "wine_exit_code": null,
+          "wine_termination_signal": null
+        },
+        "warning": "Installed evidence only; no selected executable launch/discovery command. Do not invent one from API capability."
+      },
+      "blocker": "Blocked/unqualified: coordinator owns title-check admission; one WineCX GL3.3 host probe timed out and no further GL probes authorized."
+    },
+    {
+      "storeId": "9P9VNSQK1W3K",
+      "title": "Brotato",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P9VNSQK1W3K&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 796000256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 794800128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 449249280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 796000256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 794800128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 449249280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 796000256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 794800128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 449249280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Brotato",
+        "appID": 1942280,
+        "source": "https://store.steampowered.com/app/1942280/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1942280&cc=gb&l=english",
+        "minimum": "Minimum:     OS *:  Windows 7+    Processor:  2 Ghz    Memory:  4 GB RAM    Graphics:  128MB, OpenGL 3+    Storage:  200 MB available space",
+        "recommended": "",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "23 Jun, 2023"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "Co-op",
+          "Shared/Split Screen Co-op",
+          "Shared/Split Screen",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Steam Workshop",
+          "Steam Cloud",
+          "Remote Play on TV",
+          "Remote Play Together",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1942280?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 120027
+        }
+      },
+      "downloadSizeBytes": 449249280,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+          "httpStatus": 200,
+          "sha256": "acbeaa4e038f23fc86833153b963d4b6dc7b79045d8322d451df3c0563f10df3",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Godot|name=Godot 3|build=3.7.0|ref=<ref>{{Refcheck|user=Liwsy|date=2026-02-22}}</ref>}}",
+            "|steam appid  = 1942280",
+            "|steam appid side = 2868390, 3281080, 4498220",
+            "{{Game data/saves|Windows|{{p|appdata}}\\Brotato\\{{p|uid}}\\*.json}}",
+            "{{Game data/saves|OS X|{{p|osxhome}}/Library/Application Support/Brotato/{{p|uid}}/*.json}}",
+            "{{Game data/saves|Linux|{{p|linuxhome}}/.local/share/Brotato/{{p|uid}}/save_*.json}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|direct3d versions      = ",
+            "|direct3d notes         = ",
+            "|opengl versions        = 3.3",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = ",
+            "|minGPU   = 128 MB, OpenGL 3+",
+            "|minGPU   = 128 MB, OpenGL 3+",
+            "|minGPU   = 128 MB, OpenGL 3+"
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Brotato?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.704871+00:00",
+          "httpStatus": 200,
+          "sha256": "184b854ce655f4ec683c2fa6c000dff2328fe4417a475686fe62c61af71debb1",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Brotato?action=raw",
+          "ratings": {
+            "native": "perfect",
+            "rosetta 2": "na",
+            "crossover": "perfect",
+            "wine": "perfect"
+          },
+          "facts": [
+            "{{Infobox game/row/engine|Godot|build=3.7.0|ref=<ref>{{Refcheck|user=Liwsy|date=2026-02-22}}</ref>}}",
+            "|steam appid  = 1942280",
+            "|steam appid side = 2868390, 3281080",
+            "|native notes         = Runs by recompiling it with the Godot RE Tools. Perfect, though there are rare/minor stutters introduced by Apples OpenGL translation layer. <ref> Recompile the game with the Godot RE Tools, like explained in the Brotato modding guide: https://steamcommunity.com/sharedfiles/filedetails/?l=danish&id=2931079751 . You get the .pck file of Brotato, by downloading the Game via CrossOver/Wine from Steam, or transferring the files over from a Windows PC. Skip the step with the Steam API and just run it as is, then export it in Godot. You can go into the project settings -> Window and change 1080p to 1200p to make it 16:10, but that introduced some visual issues. To fix the background while playing, open the \"main.tscn\" and lick on \"background\", then change 1080p to 1200p there as well. </ref> <ref>{{Refdevice"
+          ],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1942280.json",
+          "checkedAt": "2026-10-22T01:19:11.722243+00:00",
+          "httpStatus": 200,
+          "sha256": "de7973c0845354b2814a4c37b92eb8a4f40241f94ee49f3b6e87f9feef341155",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1942280.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.87,
+            "tier": "platinum",
+            "total": 230,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1942280"
+        }
+      },
+      "rank": 1,
+      "packageFormat": "MSIXVC",
+      "numericProbability": null,
+      "profileProposal": {
+        "name": "queue-winecx-nativejson",
+        "status": "candidate-not-game-qualified"
+      },
+      "save_path": null,
+      "saveLocation": null,
+      "windowTitle": null,
+      "save_path_scope": "Explicit Microsoft Store row only; null if only general PC path is known. Never expand to a guessed host/Wine directory.",
+      "antiCheat": "unknown",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "mode": "unknown",
+        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+        "type": "unknown"
+      },
+      "supported01": null,
+      "fastPath": {
+        "storeId": "9P9VNSQK1W3K",
+        "title": "Brotato",
+        "phases": {
+          "logo_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "intro_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "tutorial_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "title_to_gameplay": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "keyboard_controls": {
+            "value": "Mouse menu navigation documented; exact title-to-gameplay and movement/confirm keys unconfirmed. Follow visible prompts.",
+            "status": "public-expectation",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "PCGamingWiki Input table explicitly reports mouse menu support."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "gamepad_alternative": {
+            "value": "XInput controller support documented; exact button sequence unconfirmed. Use displayed prompts, not another game's binding.",
+            "status": "public-expectation",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "PCGamingWiki Input table explicitly reports XInput support."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "save_trigger": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "expected_minutes_to_save": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "quit": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "relaunch_indicator": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          }
+        },
+        "warnings": [
+          "Use displayed prompts for unknown keys; no console, cheats, mods, logo-file changes, save overwrite or assumed Continue retention."
+        ]
+      },
+      "saveEvidence": {
+        "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+        "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+        "facts": [
+          "{{Game data/saves|Windows|{{p|appdata}}\\Brotato\\{{p|uid}}\\*.json}}",
+          "{{Game data/saves|OS X|{{p|osxhome}}/Library/Application Support/Brotato/{{p|uid}}/*.json}}",
+          "{{Game data/saves|Linux|{{p|linuxhome}}/.local/share/Brotato/{{p|uid}}/save_*.json}}",
+          "|xbox cloud                = true"
+        ],
+        "limitation": "Cloud support does not prove local runtime sync. General Windows/Steam paths are separate proxies, not Store paths."
+      },
+      "gameDir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+      "manifest": {
+        "path": "/Users/dragoshont/Games/Xodus/Brotato-Xbox/MicrosoftGame.config",
+        "sha256": "4a8bacb245f281be7d9361e7f98490d1f175f2c457c7efb44e46c214bad21ca5",
+        "attributes": {
+          "Name": "Brotato.exe",
+          "TargetDeviceFamily": "PC",
+          "Id": "Game",
+          "Alias": "Brotato.exe"
+        },
+        "arguments": []
+      },
+      "installStatus": {
+        "content_id": "9220cbd0-bb06-4cb9-b81a-44044f3d3b3b",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 15,
+        "finished_at": "2026-10-22T01:50:07.108326Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5",
+        "operation": "install-status",
+        "product": "9P9VNSQK1W3K",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5/result.json",
+        "run_id": "6bdef134-bedd-4258-9702-5f300294b2c5",
+        "started_at": "2026-10-22T01:50:07.031685Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "19886SeavenStudio.Brotato",
+          "version": "1.154.0.0",
+          "storeId": "9P9VNSQK1W3K"
+        },
+        "manifestSha256": "4a8bacb245f281be7d9361e7f98490d1f175f2c457c7efb44e46c214bad21ca5",
+        "metadata": {
+          "MSAAppId": [
+            "0000000048DA8F7C"
+          ],
+          "TitleId": [
+            "77BB5AFB"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "Brotato.exe"
+        ],
+        "engineMarkers": {},
+        "graphicsAPIs": [],
+        "binaries": [
+          {
+            "path": "Brotato.exe",
+            "sizeBytes": 55754752,
+            "headerSha256": "628101c15a9d6d6308242667ea3dc6578151326ce8fa39c03c4c140ea9a19b04",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 16,
+          "fileListSha256": "5a4810f579c836a1aa7fae8156ab8dc0321e2efc1037cb3df2c2f4472a362c2d",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": false
+      },
+      "launch": null,
+      "discovery": null,
+      "readyForLaunch": false,
+      "s1Profile": {
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "sourceSha256": "6a0b6d77f5b8e1d12f6dbc4c92effd55233a3a41adbfe9578d007a0a89188849",
+        "binding": null,
+        "status": "blocked-not-game-qualified"
+      },
+      "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli",
+            "install-status",
+            "9P9VNSQK1W3K",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli' install-status 9P9VNSQK1W3K --game-dir /Users/dragoshont/Games/Xodus/Brotato-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241'",
+          "cliSha256": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3"
+        },
+        "install": {
+          "engine": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "finished_at": "2026-10-22T01:37:57.918357Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+          "launch_receipt_path": null,
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/47c4391d-f7fa-4a73-aba3-a7d5f244c0e1",
+          "operation": "install",
+          "popup_monitor_error": null,
+          "popups": [],
+          "prefix": null,
+          "product": "9P9VNSQK1W3K",
+          "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/47c4391d-f7fa-4a73-aba3-a7d5f244c0e1/progress.jsonl",
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/47c4391d-f7fa-4a73-aba3-a7d5f244c0e1/result.json",
+          "run_id": "47c4391d-f7fa-4a73-aba3-a7d5f244c0e1",
+          "started_at": "2026-10-22T01:37:33.744066Z",
+          "success": true,
+          "version": 1,
+          "warnings": [],
+          "wine": null,
+          "wine_exit_code": null,
+          "wine_termination_signal": null
+        },
+        "warning": "Installed evidence only; no selected executable launch/discovery command. Do not invent one from API capability."
+      },
+      "blocker": "Frozen adf8 status exit101; candidate-only status complete does not clear the frozen launch path.",
+      "statusCandidate": {
+        "schemaVersion": 1,
+        "checkedAt": "2026-10-22T01:50:07.108326Z",
+        "candidateBinarySha256": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3",
+        "argv": [
+          "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3/xodus-cli",
+          "install-status",
+          "9P9VNSQK1W3K",
+          "--game-dir",
+          "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+          "--state-dir",
+          "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241"
+        ],
+        "processExitCode": 0,
+        "stdout": "{\"content_id\":\"9220cbd0-bb06-4cb9-b81a-44044f3d3b3b\",\"detail\":null,\"error\":null,\"error_code\":null,\"exit_code\":0,\"files_total\":15,\"finished_at\":\"2026-10-22T01:50:07.108326Z\",\"game_dir\":\"/Users/dragoshont/Games/Xodus/Brotato-Xbox\",\"log_dir\":\"/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5\",\"operation\":\"install-status\",\"product\":\"9P9VNSQK1W3K\",\"reason_code\":null,\"result_path\":\"/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5/result.json\",\"run_id\":\"6bdef134-bedd-4258-9702-5f300294b2c5\",\"started_at\":\"2026-10-22T01:50:07.031685Z\",\"status\":\"complete\",\"success\":true,\"version\":1}\n",
+        "stderr": "",
+        "frozenAdf8KnownFailure": {
+          "exitCode": 101,
+          "notOverwritten": true,
+          "source": "Observed stage_small_game.py failed status subprocess after successful47c4391d install; no fake complete receipt"
+        },
+        "completeInAdf8Terms": false,
+        "launchBlockedPendingS2ParserAssessment": true,
+        "result": {
+          "content_id": "9220cbd0-bb06-4cb9-b81a-44044f3d3b3b",
+          "detail": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "files_total": 15,
+          "finished_at": "2026-10-22T01:50:07.108326Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5",
+          "operation": "install-status",
+          "product": "9P9VNSQK1W3K",
+          "reason_code": null,
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-brotato-ebd56e-7e444ef7830d40c6ab1849d26a65b241/runs/6bdef134-bedd-4258-9702-5f300294b2c5/result.json",
+          "run_id": "6bdef134-bedd-4258-9702-5f300294b2c5",
+          "started_at": "2026-10-22T01:50:07.031685Z",
+          "status": "complete",
+          "success": true,
+          "version": 1
+        }
+      },
+      "completeInAdf8Terms": false,
+      "frozenStatusFailure": {
+        "exitCode": 101,
+        "notOverwritten": true,
+        "source": "Observed stage_small_game.py failed status subprocess after successful47c4391d install; no fake complete receipt"
+      }
+    },
+    {
+      "storeId": "9MXND4PQLK3W",
+      "title": "DOOM 64",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MXND4PQLK3W&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 292913152,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 107360256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 292913152,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 107360256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 292913152,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 107360256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "DOOM 64",
+        "appID": 1148590,
+        "source": "https://store.steampowered.com/app/1148590/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1148590&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10    Processor:  Intel Core i5-750    Memory:  8 GB RAM    Graphics:  R7 240 | GTX 660 | Intel HD 530",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 10    Processor:  Intel Core i5-2400 | AMD Phenom II X6 1075T 3.0 GHz    Memory:  8 GB RAM    Graphics:  GTX 780 | R9 290X",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "19 Mar, 2020"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Keyboard Only Option",
+          "Playable without Timed Input",
+          "Save Anytime",
+          "Stereo Sound",
+          "Surround Sound",
+          "Partial Controller Support",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1148590?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 8880
+        }
+      },
+      "downloadSizeBytes": 107360256,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+          "httpStatus": 200,
+          "sha256": "1fab1b6527e5f6dc9a9849514fd9cec7b997bcd0d1cb54073657b3e1c2eec4f2",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Kex Engine|build=3.8}}",
+            "|steam appid  = 1148590",
+            "|steam appid side  = ",
+            "{{Game data/saves|Windows|{{p|USERPROFILE}}\\Saved Games\\Nightdive Studios\\DOOM 64\\saves\\}}",
+            "{{Game data/saves|Microsoft Store|{{P|localappdata}}\\Packages\\BethesdaSoftworks.Doom641997_3275kfvn8vcwc\\SystemAppData\\wgs\\}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "# Find a line {{code|seta r_rhirenderfamily \"vulkan\"}}.",
+            "# Set it to either {{code|seta r_rhirenderfamily \"d3d11\"}} or {{code|seta r_rhirenderfamily \"opengl\"}}.",
+            "|direct3d versions      = 11",
+            "|direct3d notes         = ",
+            "|opengl versions        = 3.2",
+            "|opengl notes           = ",
+            "|vulkan versions        = true",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Doom_64?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.661604+00:00",
+          "httpStatus": 200,
+          "sha256": "7a1cebf34bafca4d9cba1a8585752c7faf1698d85677dfd785264360b692b4c7",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Doom_64?action=raw",
+          "ratings": {
+            "native": "na",
+            "rosetta 2": "na",
+            "crossover": "playable",
+            "wine": "unknown"
+          },
+          "facts": [
+            "{{Infobox game/row/engine|Kex Engine|build=3.8}}",
+            "|steam appid  = 1148590",
+            "|steam appid side  = "
+          ],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1148590.json",
+          "checkedAt": "2026-10-22T01:19:11.686417+00:00",
+          "httpStatus": 200,
+          "sha256": "9ae023ae5554e8236009f79aec33411f2a5df0d87673b331fbc0172987d33132",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1148590.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.76,
+            "tier": "gold",
+            "total": 148,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1148590"
+        }
+      },
+      "rank": 8,
+      "packageFormat": "MSIXVC",
+      "numericProbability": null,
+      "profileProposal": {
+        "name": null,
+        "status": "candidate-not-game-qualified"
+      },
+      "save_path": "%LOCALAPPDATA%\\Packages\\BethesdaSoftworks.Doom641997_3275kfvn8vcwc\\SystemAppData\\wgs",
+      "saveLocation": null,
+      "windowTitle": null,
+      "save_path_scope": "Explicit Microsoft Store row only; null if only general PC path is known. Never expand to a guessed host/Wine directory.",
+      "antiCheat": "unknown",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "mode": "unknown",
+        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+        "type": "unknown"
+      },
+      "supported01": null,
+      "fastPath": {
+        "storeId": "9MXND4PQLK3W",
+        "title": "DOOM 64",
+        "phases": {
+          "logo_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "intro_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "tutorial_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "title_to_gameplay": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "keyboard_controls": {
+            "value": "Mouse menu navigation documented; exact title-to-gameplay and movement/confirm keys unconfirmed. Follow visible prompts.",
+            "status": "public-expectation",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "PCGamingWiki Input table explicitly reports mouse menu support."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "gamepad_alternative": {
+            "value": "Left stick movement, right stick horizontal aim, RT fire, A use, Start pause. No password/cheat route.",
+            "status": "public-expectation",
+            "sources": [
+              {
+                "url": "https://www.trueachievements.com/game/DOOM-64/walkthrough",
+                "scope": "2020 remaster Xbox controls, not N64 original",
+                "finding": "Left stick move, right stick horizontal aim, RT fire, A use, Start pause. Password/cheat steps intentionally excluded.",
+                "checkedAt": "2026-10-22"
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "save_trigger": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "expected_minutes_to_save": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "quit": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "relaunch_indicator": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          }
+        },
+        "warnings": [
+          "Use displayed prompts for unknown keys; no console, cheats, mods, logo-file changes, save overwrite or assumed Continue retention."
+        ]
+      },
+      "saveEvidence": {
+        "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+        "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+        "facts": [
+          "{{Game data/saves|Windows|{{p|USERPROFILE}}\\Saved Games\\Nightdive Studios\\DOOM 64\\saves\\}}",
+          "{{Game data/saves|Microsoft Store|{{P|localappdata}}\\Packages\\BethesdaSoftworks.Doom641997_3275kfvn8vcwc\\SystemAppData\\wgs\\}}",
+          "|xbox cloud                = true"
+        ],
+        "limitation": "Cloud support does not prove local runtime sync. General Windows/Steam paths are separate proxies, not Store paths."
+      },
+      "gameDir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+      "manifest": {
+        "path": "/Users/dragoshont/Games/Xodus/Doom64-Xbox/MicrosoftGame.config",
+        "sha256": "710953a195ba86f3cd5d76550d152f30206deac89daeaf3f727517462d57d5e9",
+        "attributes": {
+          "Name": "DOOM64_x64.exe",
+          "TargetDeviceFamily": "PC",
+          "Id": "Game"
+        },
+        "arguments": []
+      },
+      "installStatus": {
+        "content_id": "92e95e12-ba7e-41b5-b5d8-ac3faaca8777",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 21,
+        "finished_at": "2026-10-22T01:50:07.269804Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/9c56712e-528c-4460-9365-8f2221030e93",
+        "operation": "install-status",
+        "product": "9MXND4PQLK3W",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/9c56712e-528c-4460-9365-8f2221030e93/result.json",
+        "run_id": "9c56712e-528c-4460-9365-8f2221030e93",
+        "started_at": "2026-10-22T01:50:07.193572Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.Doom641997",
+          "version": "1.8.0.0",
+          "storeId": "9MXND4PQLK3W"
+        },
+        "manifestSha256": "710953a195ba86f3cd5d76550d152f30206deac89daeaf3f727517462d57d5e9",
+        "metadata": {
+          "MSAAppId": [
+            "0000000040273E0C"
+          ],
+          "TitleId": [
+            "7f5169e4"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "DOOM64_x64.exe"
+        ],
+        "engineMarkers": {},
+        "graphicsAPIs": [],
+        "binaries": [
+          {
+            "path": "DOOM64_x64.exe",
+            "sizeBytes": 6320128,
+            "headerSha256": "08ad9f5d6f046e50079407bd27606ad42b218537048eb784027abaf4ffd8ea9c",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          },
+          {
+            "path": "SDL2.dll",
+            "sizeBytes": 1331712,
+            "headerSha256": "c46a3fc444808f3b86a7e757e5202d16f8ea9bf1c6aff2cabc593e7d0f2c9ad2",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "gdi32.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "msvcrt.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "user32.dll",
+              "version.dll",
+              "winmm.dll"
+            ],
+            "graphicsAPIs": [],
+            "dxgi": false,
+            "backendMarkers": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 22,
+          "fileListSha256": "ef17a76c72a3f3cf1906e3a37e2ebb1ab64a06846598479b2e6f45a842cbb505",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": false
+      },
+      "launch": null,
+      "discovery": null,
+      "readyForLaunch": false,
+      "s1Profile": {
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "sourceSha256": "6a0b6d77f5b8e1d12f6dbc4c92effd55233a3a41adbfe9578d007a0a89188849",
+        "binding": null,
+        "status": "blocked-not-game-qualified"
+      },
+      "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9MXND4PQLK3W",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9MXND4PQLK3W --game-dir /Users/dragoshont/Games/Xodus/Doom64-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
+        "install": {
+          "engine": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "finished_at": "2026-10-22T01:39:56.681045Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Doom64-Xbox",
+          "launch_receipt_path": null,
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/35599d74-bbbd-4141-9c83-fc53ef98b78d",
+          "operation": "install",
+          "popup_monitor_error": null,
+          "popups": [],
+          "prefix": null,
+          "product": "9MXND4PQLK3W",
+          "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/35599d74-bbbd-4141-9c83-fc53ef98b78d/progress.jsonl",
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/35599d74-bbbd-4141-9c83-fc53ef98b78d/result.json",
+          "run_id": "35599d74-bbbd-4141-9c83-fc53ef98b78d",
+          "started_at": "2026-10-22T01:39:46.248008Z",
+          "success": true,
+          "version": 1,
+          "wine": null,
+          "wine_exit_code": null,
+          "wine_termination_signal": null
+        },
+        "warning": "Installed evidence only; no selected executable launch/discovery command. Do not invent one from API capability."
+      },
+      "blocker": "Explicit persisted S1 candidate required before emitting executable launch/discovery commands; API capability does not select active renderer."
+    },
+    {
+      "storeId": "9P1Z43KRNQD4",
+      "title": "Quake",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P1Z43KRNQD4&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105569280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105159680,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1761398784,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105569280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105159680,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1761398784,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Quake",
+        "appID": 2310,
+        "source": "https://store.steampowered.com/app/2310/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=2310&cc=gb&l=english",
+        "minimum": "Minimum Spec (1080p/60 HZ)    Win 10 64-bit version   Intel Core i5-3570 @3.4 GHz or AMD Ryzen 3 1300X @3.5 GHz    NVIDIA GeForce GTX 650 TI (2GB) or AMD HD 7750 (1GB)    8GB System RAM    Minimum 2GB free space on hard drive (additional space required for add-on downloads)    High speed broadband connection required for online play",
+        "recommended": "Recommended Spec (*4K/120 HZ)    Win 10 64-bit version   Intel Core i5-6600k @3.5 GHz or AMD Ryzen 5 1600 @3.2 GHz    NVIDIA GeForce GTX 1070 (8GB) or AMD RX Vega 56 (8GB)    8GB System RAM    Minimum 2GB free space on hard drive (additional space required for add-on downloads)    High speed broadband connection required for online play   *Compatible display required",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "3 Aug, 2007"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "PvP",
+          "Online PvP",
+          "Shared/Split Screen PvP",
+          "Co-op",
+          "Online Co-op",
+          "Shared/Split Screen Co-op",
+          "Shared/Split Screen",
+          "Cross-Platform Multiplayer",
+          "Full controller support",
+          "Steam Cloud",
+          "Remote Play Together",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/2310?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 16558
+        }
+      },
+      "downloadSizeBytes": 1761398784,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+          "httpStatus": 200,
+          "sha256": "96d8a3e021bc15bc293f54d22e54183caa5e2024350557893a13b70670610ffa",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Kex Engine|build=4.0}}",
+            "|steam appid  = 2310",
+            "|steam appid side = ",
+            "{{Game data/saves|Windows|{{P|userprofile}}\\Saved Games\\Nightdive Studios\\Quake\\*.sav}}",
+            "{{Game data/saves|Microsoft Store|}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|native 3d notes             = '''Dual-View Rendering'''<br>Use [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] in [https://helixmod.blogspot.com/2017/05/3d-fix-manager.html 3D Fix Manager] for [[Glossary:Native_3D#Side-by-Side_.28SBS.29|SBS]], [[Glossary:Native_3D#Top-and-Bottom_.28TAB.29|TAB]], [[Glossary:Native_3D#Interleaved|Interleaved]] and [[Glossary:Native_3D#Anaglyph|Anaglyph]].<br>Or [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] with [https://github.com/BramTeurlings/3DGameBridgeGUI/releases 3D Game Bridge GUI] for [[Glossary:Native_3D#Eye-Tracked_Lightfield|Eye-Tracked Lightfield]] displays.",
+            "|nvidia 3d vision notes      = '''Dual-View Rendering'''<br>Use [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] for [[Glossary:Native_3D#Frame_Sequential|Frame Sequential]] or [[Glossary:Native_3D#Interleaved|Row Interleaved]].",
+            "|direct3d versions      = ",
+            "|direct3d notes         = ",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = 1.1",
+            "|vulkan notes           = Default renderer. Can be forced manually by using {{code|+r_rhirenderfamily vulkan}} [[Glossary:Command line arguments|Command line argument]].<br>D3D11 can be forced manually with the {{code|+r_rhirenderfamily \"d3d11\" +d3d11_compileShaders 1}} [[Glossary:Command line arguments|Command line argument]]. It will change the renderer setting in the configuration file. It can cause graphical glitches and disables the Steam overlay.",
+            "{{Standard table/row|r_gpuCulling 0|Reportedly improves performance on Vulkan.<ref>{{Refurl|url=https://twitter.com/SVKaiser/status/1428651543641956358|title=SVKaiser - twitter|date=2021-08-21}}</ref>}}"
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Quake_Enhanced?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.766439+00:00",
+          "httpStatus": 404,
+          "sha256": null,
+          "error": "HTTP Error 404: Not Found",
+          "ratings": {},
+          "facts": [],
+          "bodyAvailable": false
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/2310.json",
+          "checkedAt": "2026-10-22T01:19:11.792595+00:00",
+          "httpStatus": 200,
+          "sha256": "46438035a4e8949772dd08ef3b3e27ce7f820ebbd30c7fe9712c6effa11d5d26",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2310.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.81,
+            "tier": "platinum",
+            "total": 217,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/2310"
+        }
+      },
+      "rank": 9,
+      "packageFormat": "MSIXVC",
+      "numericProbability": null,
+      "profileProposal": {
+        "name": null,
+        "status": "candidate-not-game-qualified"
+      },
+      "save_path": null,
+      "saveLocation": null,
+      "windowTitle": null,
+      "save_path_scope": "Explicit Microsoft Store row only; null if only general PC path is known. Never expand to a guessed host/Wine directory.",
+      "antiCheat": "unknown",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "mode": "unknown",
+        "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+        "type": "unknown"
+      },
+      "supported01": null,
+      "fastPath": {
+        "storeId": "9P1Z43KRNQD4",
+        "title": "Quake",
+        "phases": {
+          "logo_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "intro_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "tutorial_skip": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "title_to_gameplay": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "keyboard_controls": {
+            "value": "Mouse menu navigation documented; exact title-to-gameplay and movement/confirm keys unconfirmed. Follow visible prompts.",
+            "status": "public-expectation",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "PCGamingWiki Input table explicitly reports mouse menu support."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "gamepad_alternative": {
+            "value": "XInput controller support documented; exact button sequence unconfirmed. Use displayed prompts, not another game's binding.",
+            "status": "public-expectation",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "PCGamingWiki Input table explicitly reports XInput support."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "save_trigger": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "expected_minutes_to_save": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "quit": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          },
+          "relaunch_indicator": {
+            "value": null,
+            "status": "unknown",
+            "sources": [
+              {
+                "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+                "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+                "scope": "Inspected exact-title PCGamingWiki article",
+                "finding": "No exact first-save/input/skip instruction admitted for this phase."
+              }
+            ],
+            "limitation": "Public proxy, not observed Store input/retention."
+          }
+        },
+        "warnings": [
+          "Use displayed prompts for unknown keys; no console, cheats, mods, logo-file changes, save overwrite or assumed Continue retention."
+        ]
+      },
+      "saveEvidence": {
+        "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+        "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+        "facts": [
+          "{{Game data/saves|Windows|{{P|userprofile}}\\Saved Games\\Nightdive Studios\\Quake\\*.sav}}",
+          "{{Game data/saves|Microsoft Store|}}",
+          "|xbox cloud                = true"
+        ],
+        "limitation": "Cloud support does not prove local runtime sync. General Windows/Steam paths are separate proxies, not Store paths."
+      },
+      "gameDir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+      "manifest": {
+        "path": "/Users/dragoshont/Games/Xodus/Quake-Xbox/MicrosoftGame.config",
+        "sha256": "bdd4b71ad2841b7df764661f9914df255214cfc79760908d5c450df899e9c5be",
+        "attributes": {
+          "Name": "bastet_WinStore.exe",
+          "TargetDeviceFamily": "PC",
+          "Id": "Game"
+        },
+        "arguments": []
+      },
+      "installStatus": {
+        "content_id": "6d35384a-e3f6-4acd-a2ae-f35e9b8980a5",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 62,
+        "finished_at": "2026-10-22T01:50:07.626936Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b69c6df6-d97d-4ccf-a733-c2dc9ab33df4",
+        "operation": "install-status",
+        "product": "9P1Z43KRNQD4",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b69c6df6-d97d-4ccf-a733-c2dc9ab33df4/result.json",
+        "run_id": "b69c6df6-d97d-4ccf-a733-c2dc9ab33df4",
+        "started_at": "2026-10-22T01:50:07.346557Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "package": {
+        "root": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "BethesdaSoftworks.ProjectSilver",
+          "version": "1.0.5603.0",
+          "storeId": "9P1Z43KRNQD4"
+        },
+        "manifestSha256": "bdd4b71ad2841b7df764661f9914df255214cfc79760908d5c450df899e9c5be",
+        "metadata": {
+          "MSAAppId": [
+            "00000000485A1439"
+          ],
+          "TitleId": [
+            "6de3bc2f"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false.",
+        "executables": [
+          "bastet_WinStore.exe"
+        ],
+        "engineMarkers": {},
+        "graphicsAPIs": [],
+        "binaries": [
+          {
+            "path": "SDL2.dll",
+            "sizeBytes": 1481592,
+            "headerSha256": "52ea4dd296abe995cc1052a3a29325a8306fc888b3d6fea352d2cebdd83e6eaa",
+            "status": "parsed",
+            "imports": [
+              "advapi32.dll",
+              "gdi32.dll",
+              "imm32.dll",
+              "kernel32.dll",
+              "ole32.dll",
+              "oleaut32.dll",
+              "setupapi.dll",
+              "shell32.dll",
+              "user32.dll",
+              "version.dll",
+              "winmm.dll"
+            ],
+            "graphicsAPIs": [],
+            "dxgi": false,
+            "backendMarkers": []
+          },
+          {
+            "path": "bastet_WinStore.exe",
+            "sizeBytes": 14344192,
+            "headerSha256": "e8081bfd7faccd94c43b7adc25cfe5d22e439217024307c4ebd027aecd0103e6",
+            "status": "opaque-or-not-PE",
+            "imports": []
+          }
+        ],
+        "antiCheatScan": {
+          "fileCount": 63,
+          "fileListSha256": "ad4c91278e3b0c3cd2bf5bee0b0d983a6d6583c5623404f618ca71a766a81262",
+          "matches": {},
+          "symlinkCount": 0,
+          "complete": true
+        },
+        "rendererFiles": [],
+        "hasXboxIdentity": true,
+        "hasUnityPlayer": false
+      },
+      "launch": null,
+      "discovery": null,
+      "readyForLaunch": false,
+      "s1Profile": {
+        "source": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/small-game-candidates.json",
+        "sourceSha256": "6a0b6d77f5b8e1d12f6dbc4c92effd55233a3a41adbfe9578d007a0a89188849",
+        "binding": null,
+        "status": "blocked-not-game-qualified"
+      },
+      "preflight": {
+        "statusCommand": {
+          "argv": [
+            "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+            "install-status",
+            "9P1Z43KRNQD4",
+            "--game-dir",
+            "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+            "--state-dir",
+            "/Users/dragoshont/Library/Application Support/XodusCLI"
+          ],
+          "shellCommand": "env '/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli' install-status 9P1Z43KRNQD4 --game-dir /Users/dragoshont/Games/Xodus/Quake-Xbox --state-dir '/Users/dragoshont/Library/Application Support/XodusCLI'",
+          "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+        },
+        "install": {
+          "engine": null,
+          "error": null,
+          "error_code": null,
+          "exit_code": 0,
+          "finished_at": "2026-10-22T01:41:13.689164Z",
+          "game_dir": "/Users/dragoshont/Games/Xodus/Quake-Xbox",
+          "launch_receipt_path": null,
+          "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/238118ca-28d0-460f-87af-eb0859689015",
+          "operation": "install",
+          "popup_monitor_error": null,
+          "popups": [],
+          "prefix": null,
+          "product": "9P1Z43KRNQD4",
+          "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/238118ca-28d0-460f-87af-eb0859689015/progress.jsonl",
+          "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/238118ca-28d0-460f-87af-eb0859689015/result.json",
+          "run_id": "238118ca-28d0-460f-87af-eb0859689015",
+          "started_at": "2026-10-22T01:40:29.694200Z",
+          "success": true,
+          "version": 1,
+          "wine": null,
+          "wine_exit_code": null,
+          "wine_termination_signal": null
+        },
+        "warning": "Installed evidence only; no selected executable launch/discovery command. Do not invent one from API capability."
+      },
+      "blocker": "Explicit persisted S1 candidate required before emitting executable launch/discovery commands; API capability does not select active renderer."
     }
   ],
+  "candidateOrder": [
+    "9P8NSTDMZ11P",
+    "9MSVVM5NS9L6",
+    "9PBWWQGXVMKC",
+    "9NLRT31Z4RWM",
+    "9PD5BM2Z8C4L"
+  ],
+  "workingTarget": 20,
+  "statusPolicy": "items have fresh frozen-adf8 complete status and persisted S1 candidate bindings, not observed gameplay. Explicit S2/S3 lane admission and stopped exclusive prefixes still required. blockedItems have no executable launch/discovery commands; Brotato's candidate-only complete status never substitutes for the preserved frozen-adf8 failure.",
   "scope": "Complete installed additions only. Candidate recipes, not gameplay qualification."
 }

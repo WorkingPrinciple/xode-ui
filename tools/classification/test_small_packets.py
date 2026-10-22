@@ -2,6 +2,8 @@
 
 import copy
 import shlex
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -9,6 +11,7 @@ from build_fast_path_packets import FIELDS
 from build_small_packets import ORDER, build
 from build_small_preflights import build as build_preflight
 from inspect_queue import DATA, load_json
+import stage_small_game
 
 
 class SmallPacketTests(unittest.TestCase):
@@ -71,6 +74,16 @@ class SmallPacketTests(unittest.TestCase):
             self.assertNotIn("--window-title", discovery["argv"])
             self.assertNotIn("--save-dir", discovery["argv"])
             self.assertFalse(discovery["saveRetentionPass"])
+            self.assertEqual(row["s1Profile"]["binding"]["profile"], row["s1Profile"]["name"])
+            self.assertEqual(row["s1Profile"]["status"], "persisted-S1-candidate-not-game-qualified")
+        for row in packet["blockedItems"]:
+            self.assertIsNone(row["launch"])
+            self.assertFalse(row["readyForLaunch"])
+        brotato = next((row for row in packet["blockedItems"]
+                        if row["storeId"] == "9P9VNSQK1W3K"), None)
+        if brotato:
+            self.assertFalse(brotato["completeInAdf8Terms"])
+            self.assertEqual(brotato["frozenStatusFailure"]["exitCode"], 101)
 
     def test_preflight_rejects_false_complete_and_registry_sta(self):
         packet = load_json(DATA / "s3-preflight-small-v1.json")
@@ -85,6 +98,55 @@ class SmallPacketTests(unittest.TestCase):
                 engine.setdefault("environment", {})["XODUS_PRIVATE_RUNTIME_COM_STA"] = "1"
         with self.assertRaisesRegex(ValueError, "COM policy"):
             build_preflight(inputs)
+
+    def test_resume_exception_cannot_change_another_title(self):
+        with patch("sys.argv", ["stage_small_game.py", "9P8NSTDMZ11P", "--resume-brotato"]):
+            with self.assertRaisesRegex(ValueError, "Brotato only"):
+                stage_small_game.main()
+
+    def test_low_disk_never_spawns_or_writes_an_install(self):
+        sid = "9MXND4PQLK3W"
+        state = {"budgetBytes": 20 * 2**30, "minimumFreeBytes": 150 * 2**30,
+                 "items": [{"storeId": "9P9VNSQK1W3K", "reservedBytes": 449249280}]}
+
+        def fixture(path):
+            if path.name == "s3-tried-games.json":
+                return {"games": []}
+            if path.name == "small-game-evidence-v1.json":
+                return {"items": [{"storeId": sid, "title": "Unit fixture",
+                                   "downloadSizeBytes": 2**30}]}
+            return copy.deepcopy(state)
+
+        with tempfile.TemporaryDirectory() as home:
+            with (patch("sys.argv", ["stage_small_game.py", sid]),
+                  patch("stage_small_game.Path.home", return_value=Path(home)),
+                  patch("stage_small_game.sha", side_effect=lambda path: path.parent.name),
+                  patch("stage_small_game.load_json", side_effect=fixture),
+                  patch("stage_small_game.free_bytes", return_value=156 * 2**30),
+                  patch("stage_small_game.write") as write,
+                  patch("stage_small_game.subprocess.run") as process):
+                with self.assertRaisesRegex(ValueError, "155 GiB"):
+                    stage_small_game.main()
+                write.assert_not_called()
+                process.assert_not_called()
+
+    def test_recorded_installs_preserve_floor_budget_and_brotato_exception(self):
+        data = load_json(DATA / "small-game-staging-v1.json")
+        self.assertLessEqual(sum(row["reservedBytes"] for row in data["items"]),
+                             data["budgetBytes"])
+        successful = [row for row in data["items"] if row.get("processExitCode") == 0]
+        self.assertEqual({row["storeId"] for row in successful}, set(ORDER))
+        for row in successful:
+            self.assertGreaterEqual(row["freeAfterBytes"], 155 * 2**30)
+            self.assertTrue(row["install"]["success"])
+            if row.get("resumesPreservedPartial"):
+                self.assertEqual(row["storeId"], "9P9VNSQK1W3K")
+                self.assertEqual(row["installerSha256"], stage_small_game.BROTATO_INSTALLER_SHA)
+                self.assertFalse(row["statusCandidate"]["completeInAdf8Terms"])
+                self.assertTrue(row["launchBlocked"])
+            else:
+                self.assertEqual(row["installStatus"]["status"], "complete")
+                self.assertEqual(row["installStatus"]["exit_code"], 0)
 
 
 if __name__ == "__main__":
