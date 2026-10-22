@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T08:02:18.115711+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T08:33:19.436496+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -12,7 +12,7 @@ Updated 2026-10-22T08:02:18.115711+00:00; **8/20 strict WORKING**. Brotato candi
 | Minecraft: Java Edition with Minecraft Launcher | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Mixtape | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | No Man's Sky | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
-| LIMBO | TITLE_SCREEN_PASS | passed | ? | not passed | ? | ? | gameplay / S3 | Promoted to S3 full test; opt-in null-display runtime candidate only, not frozen release. No input/gameplay/save/reload qualified. CLI0/Wine0 only after forced -k0/-w0; prefix retained. | - |
+| LIMBO | TITLE_SCREEN_PASS | passed | ? | not passed | ? | ? | gameplay / S3 | Promoted to S3 full test; opt-in null-display runtime candidate only, not frozen release. No input/gameplay/save/reload qualified. CLI0/Wine0 only after forced -k0/-w0; prefix retained. | >2h |
 | A Game About Digging A Hole | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked: sold 1 stone, $5 upgrade not bought, no save shown. Title menu has no Exit; ended with exact-prefix -k cleanup, not normal quit. No retained-save qualification. | >2h |
 | Age of Empires IV: Anniversary Edition | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | >2h |
@@ -45,7 +45,7 @@ Updated 2026-10-22T08:02:18.115711+00:00; **8/20 strict WORKING**. Brotato candi
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Skyrim Special Edition | INCONCLUSIVE | not passed | ? | ? | ? | ? | startup diagnosis / S1 | Launcher reached, but game child exited with no window; no gameplay. S1 diagnosing; launcher is not game title-screen evidence. | - |
+| Skyrim Special Edition | INCONCLUSIVE | not passed | ? | ? | ? | ? | startup diagnosis / S1 | Launcher reached, but game child exited with no window; no gameplay. S1 diagnosing; launcher is not game title-screen evidence. | >2h |
 | South of Midnight | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Stardew Valley | CANCELLED | ? | ? | ? | ? | ? | menu / S2 | Tooling bug cancellation, runner 004 fix; attempt not consumed. No title outcome or gate qualification inferred. | >2h |
 | Subnautica 2 | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
