@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T06:04:47.136587+00:00",
+    "asOf": "2026-10-22T06:24:09.716791+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
-    "trackerMatrixSha256": "43c39bb8d738cb36868dccbd651392cca4d951e8dc08042054ae0ced9aed8a6e",
+    "trackerMatrixSha256": "15b33cd6f798ea55e8a4ee197cdac6b0d609b3e4b75cb4a8b8f7406041210d88",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -290,6 +290,11 @@
         "verdict": "GAMEPLAY_PASS"
       },
       {
+        "storeId": "9P03JGQ4S1GC",
+        "title": "Skyrim Special Edition",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
         "storeId": "9NGLST31DG26",
         "title": "A Game About Digging A Hole",
         "verdict": "INCONCLUSIVE"
@@ -312,7 +317,7 @@
       {
         "storeId": "9NH0MSG29X6L",
         "title": "Mixtape",
-        "verdict": "GAMEPLAY_PASS"
+        "verdict": "WORKING"
       },
       {
         "storeId": "9PK087LNGJC5",
@@ -394,7 +399,7 @@
       {
         "storeId": "9PNG83MDD6SH",
         "title": "LIMBO",
-        "verdict": "FAIL"
+        "verdict": "BLOCKED_SAVE_ERROR"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -523,7 +528,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1701.2143902166667,
+  "remainingWallMinutes": 1681.8380534833334,
   "scenarios": [
     {
       "label": "slow observed",
@@ -561,13 +566,13 @@
   ],
   "observedAdmissionRatio": {
     "working": 8,
-    "matrixWorking": 7,
-    "attemptedMatrix": 14,
-    "ratio": 0.5,
+    "matrixWorking": 8,
+    "attemptedMatrix": 15,
+    "ratio": 0.5333333333333333,
     "receiptAugmentedAttempted": 17,
     "receiptAugmentedRatio": 0.47058823529411764,
     "titleScreenOrBeyond": 10,
-    "postTitleScreenAdmissionRatio": 0.7,
+    "postTitleScreenAdmissionRatio": 0.8,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
   },
   "timeSink": {
@@ -592,7 +597,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 141.7678658513889,
+  "requiredAverageMinutesPerAddition": 140.15317112361112,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
