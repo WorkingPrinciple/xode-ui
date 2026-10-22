@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T22:13:50.978275+00:00",
+    "asOf": "2026-10-22T22:19:17.417188+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 12,
-    "trackerMatrixSha256": "e89141ba422818c8605b3ce7ad2cf7a1e2cd24a048a46b1e7d538c6d7601bb75",
+    "trackerMatrixSha256": "d22e63ee51abf2e11b281daf3e17dc2b3585a10ef77ff08bc081b1cfcf1d5ea6",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -239,6 +239,16 @@
     },
     "attemptedMatrixRows": [
       {
+        "storeId": "9N8C07SS8C9D",
+        "title": "FINAL FANTASY IV",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
+        "storeId": "9P1Z43KRNQD4",
+        "title": "Quake",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
         "storeId": "9MXND4PQLK3W",
         "title": "DOOM 64",
         "verdict": "INFRA_BETHESDA_USER_ID"
@@ -433,7 +443,7 @@
       {
         "storeId": "9N8C07SS8C9D",
         "title": "FINAL FANTASY IV",
-        "verdict": "INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "C3KLDKZBHNCZ",
@@ -458,7 +468,7 @@
       {
         "storeId": "9P1Z43KRNQD4",
         "title": "Quake",
-        "verdict": "INCONCLUSIVE_SAVE/INPUT"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -625,7 +635,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 732.1503620833333,
+  "remainingWallMinutes": 726.7097135333333,
   "scenarios": [
     {
       "label": "slow observed",
@@ -664,8 +674,8 @@
   "observedAdmissionRatio": {
     "working": 12,
     "matrixWorking": 12,
-    "attemptedMatrix": 21,
-    "ratio": 0.5714285714285714,
+    "attemptedMatrix": 23,
+    "ratio": 0.5217391304347826,
     "receiptAugmentedAttempted": 29,
     "receiptAugmentedRatio": 0.41379310344827586,
     "titleScreenOrBeyond": 12,
@@ -694,7 +704,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 91.51879526041667,
+  "requiredAverageMinutesPerAddition": 90.83871419166667,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

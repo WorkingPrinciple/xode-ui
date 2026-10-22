@@ -62,7 +62,16 @@
     "deploymentState": "Signed candidate staged, NOT installed. Prior switch refused normal quit; no force-kill, exact refusing component unknown.",
     "productionUiAccepted": false,
     "issue43Passed": false,
-    "scope": "Source/candidate evidence does not resolve installed production UI failure or establish GUI Play-click qualification."
+    "scope": "Source/candidate evidence does not resolve installed production UI failure or establish GUI Play-click qualification.",
+    "latestDeploymentReport": {
+      "reportedAt": "2026-10-23T01:18:39.376+03:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "installedApp": "02ce3b9",
+      "cli": "3cdb unchanged per coordinator",
+      "rollback": "43ed preserved per coordinator",
+      "observation": "S5 live Inconclusive/no verified badge observed.",
+      "limitations": "Filter/Appx/tier unproven; no additional GUI Play, cloud or production UI acceptance claim. Earlier staged-only report retained as history, not current deployment state."
+    }
   },
   "protectedHistoricalEvidenceIndex": {
     "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
@@ -142,14 +151,18 @@
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": "43827ec2-c040-4695-9aa0-39b623107877",
       "gates": {"menu": "passed", "gameplay": "passed", "save": "not-passed", "relaunch": "not-passed", "quit": "not-passed"},
       "nextGate": "save/input hold and late quit", "ownerStream": "S3/coordinator",
-      "blocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload.",
-      "scope": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Ordinary quit observed but timing gate not passed; exact late-quit gap remains pending S3 final archive. No WORKING admission.",
+      "blocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force began593.7008099555969s,53.7008099555969s late against540s. No retry/reload.",
+      "scope": "Coordinator settled world43827ec2 INCONCLUSIVE_SAVE/INPUT. S3 observed actual NewGame Introduction and movement; menu300msDown returned main/attract demo, no extra gameplay credit. GamingPlatformFailedToRetrieveUserId occurred but Back allowed offline SP, not auth-only failure. Historical passive was attract/demo FPS scene, not observed controllable gameplay; this world supplies new gameplay evidence. S4 read run receipt0/0/no force and quit reminder540.305529834s, total781.977555042s; neither reminder nor total is actual quit-start time. Final result now supplies actual ordinary-quit start593.7008099555969s,53.7008099555969s late; timing gate not passed. S4 read final result and verified result/manifest hashes, not independently replayed inputs. No WORKING admission.",
+      "finalProofs": [
+        {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/result.json", "sha256": "3a0a61d5d2d71168aa14ffbea61f18980025fd32120aa6b134c7524b0f708986"},
+        {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-quake-full-02/final-evidence/integrity.json", "sha256": "5e0b8e495c0635791777749c68c971d80365fc0e15228527c235e1d851df5684"}
+      ],
       "timingGap": {
         "quitDeadlineSeconds": 540,
         "ordinaryQuitStartedAfterDeadline": true,
-        "actualQuitStartSeconds": null,
-        "latenessSeconds": null,
-        "basis": "Coordinator reports late quit>540; exact timing not supplied. Do not substitute reminder or total process span."
+        "actualQuitStartSeconds": 593.7008099555969,
+        "latenessSeconds": 53.7008099555969,
+        "basis": "Final result quitBeganSeconds minus quitBySeconds; not reminder or total process span."
       }
     },
     {

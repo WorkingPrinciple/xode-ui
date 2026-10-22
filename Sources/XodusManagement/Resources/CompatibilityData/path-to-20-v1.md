@@ -1,11 +1,11 @@
 # Path to 20
 
-Updated 2026-10-22T22:13:50.978275+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-22T22:19:17.417188+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
 | Abiotic Factor | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
-| Brotato | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
+| Brotato | WORKING | passed | passed | passed | passed | passed | complete / S2/coordinator | Admitted matrix | - |
 | Hades II | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Halls of Torment | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Hogwarts Legacy | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
@@ -21,14 +21,14 @@ Updated 2026-10-22T22:13:50.978275+00:00; **12/20 strict WORKING**. Title qualif
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | >2h |
 | Beast of Reincarnation | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Bluey's Happy Snaps | HUMAN_CONSENT_HOLD | not passed | ? | not passed | ? | ? | human EULA/privacy/ToU consent / user/coordinator | Acknowledgement Continue reached EULA/Privacy/Terms Accept. NO Accept sent; HUMAN CONSENT HOLD. Forced exact-k0/-w0, not ordinary quit despite0/0. | - |
+| Bluey's Happy Snaps | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | Human legal/privacy consent required. No Accept, story, retry or further launch authorized. | - |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
-| DOOM 64 | INFRA_BETHESDA_USER_ID | passed | ? | passed | ? | ? | infrastructure user-ID hold / S1/S3/coordinator | Prior Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Runtime-only world packet6170908e conditional on S2/S5 slot return; no new result or reload grant. | - |
+| DOOM 64 | INFRA_BETHESDA_USER_ID | ? | ? | ? | ? | ? | menu / S2/S3 | stderr.log:1489 POST api.bethesda.net via XUserGetTokenAndSignatureUtf16Async;1492 token error0x80070057;1500 FirstPartyFailedToRetrieveUserId. Read-only auth diagnosis; no retry or login. | - |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored® Definitive Edition (PC) | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Dome Keeper | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| FINAL FANTASY IV | INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT | passed | ? | not passed | not passed | not passed | opening interaction/control budget gap / S3/coordinator | 900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry. | - |
+| FINAL FANTASY IV | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Opening-sequence bound: Escape477.47s exposed no quit. Actual900s cap/CLI1/Wine0, forced exact-k0/-w0. Before/after raw title roots including explicitly mapped host title folder archived. No reload/retry or compatibility FAIL. | - |
 | Fable | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Fallout 4 | INCONCLUSIVE | ? | ? | ? | ? | ? | save-provider diagnosis / S2/S3 | Delete-missing candidateadvancesfailuretoCreateUpdateinvalidarg butstillnopayload; mouse-lookweird reportedbyuser, exactsignatureunresolved; exit5afterTDesktop. NoWORKING/reload. | >2h |
 | Forever Ago | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
@@ -43,7 +43,7 @@ Updated 2026-10-22T22:13:50.978275+00:00; **12/20 strict WORKING**. Title qualif
 | Minishoot' Adventures | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | owned matcher packet disk precheck / S2 | Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result. | - |
-| Quake | INCONCLUSIVE_SAVE/INPUT | passed | passed | not passed | not passed | not passed | save/input hold and late quit / S3/coordinator | New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload. | - |
+| Quake | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Save/menu-input qualification gap, not compatibility FAIL. Actual Main Quit selected with100ms steps then Enter100ms directly CLI0/Wine0, no forced stop. Quit593.701s exceeded540 by53.7s. No reload/retry. Future separately granted menu steps100ms with recapture each transition. | - |
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |

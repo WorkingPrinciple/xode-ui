@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T22:13:53.926033+00:00",
+  "checkedAt": "2026-10-22T22:19:17.520170+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 12,
@@ -32,7 +32,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "c3eb686d3bb78190d184c9b05a0a173235885c6b74feddc8a69ba6af0428fefa"
+      "sha256": "14890159a99dc861a8130ad8e6369e101481bdece65c3a994dd587eb66e7511d"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -90,7 +90,7 @@
       "rank": 6,
       "storeId": "9N8C07SS8C9D",
       "title": "FINAL FANTASY IV",
-      "verdict": "INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT",
+      "verdict": "INCONCLUSIVE",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 519434240,
       "planningBudgetBytes": 519434240,
@@ -99,7 +99,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "CrossOver candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "900s cap reached CLI TIMEOUT1/Wine0 with forced cleanup-k0/-w0, NOT ordinary quit. Scripted opening only; no free control, permanent save or reload. No automatic retry.",
+      "blocker": "Opening-sequence bound: Escape477.47s exposed no quit. Actual900s cap/CLI1/Wine0, forced exact-k0/-w0. Before/after raw title roots including explicitly mapped host title folder archived. No reload/retry or compatibility FAIL.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -150,7 +150,7 @@
       "rank": 8,
       "storeId": "9P1Z43KRNQD4",
       "title": "Quake",
-      "verdict": "INCONCLUSIVE_SAVE/INPUT",
+      "verdict": "INCONCLUSIVE",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 1761398784,
       "planningBudgetBytes": 1761398784,
@@ -159,7 +159,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "New Game Introduction controllable100HP/25shells and W/A position change observed, but no permanent save payload (cfg/log only), no reload. Ordinary main Quit0/0 without force was late beyond540s; exact quit-start lateness not yet supplied. No retry/reload.",
+      "blocker": "Save/menu-input qualification gap, not compatibility FAIL. Actual Main Quit selected with100ms steps then Enter100ms directly CLI0/Wine0, no forced stop. Quit593.701s exceeded540 by53.7s. No reload/retry. Future separately granted menu steps100ms with recapture each transition.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -189,7 +189,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Prior Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Runtime-only world packet6170908e conditional on S2/S5 slot return; no new result or reload grant.",
+      "blocker": "stderr.log:1489 POST api.bethesda.net via XUserGetTokenAndSignatureUtf16Async;1492 token error0x80070057;1500 FirstPartyFailedToRetrieveUserId. Read-only auth diagnosis; no retry or login.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -279,7 +279,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Acknowledgement Continue reached EULA/Privacy/Terms Accept. NO Accept sent; HUMAN CONSENT HOLD. Forced exact-k0/-w0, not ordinary quit despite0/0.",
+      "blocker": "Human legal/privacy consent required. No Accept, story, retry or further launch authorized.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
