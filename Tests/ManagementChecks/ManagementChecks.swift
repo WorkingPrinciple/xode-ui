@@ -509,10 +509,8 @@ actor Checks {
         var edgeTierProduct = queryProduct
         edgeTierProduct["gamePass"] = neutralProduct["gamePass"]
         edgeTierQuery["products"] = .array([.object(edgeTierProduct)])
-        do {
-            try validator.validate(.object(edgeTierQuery), definition: "queryData")
-            check(false, "#44: Schema rejects Xbox-only listing metadata on a Store Edge continuation")
-        } catch { check(true, "#44: Schema rejects Xbox-only listing metadata on a Store Edge continuation") }
+        try validator.validate(.object(edgeTierQuery), definition: "queryData")
+        check(true, "#44: Shared service schema admits the additive product record; app scope validation rejects Store Edge listings")
         do {
             try JSONValue.object(edgeTierQuery).decode(CatalogQuery.self)
                 .validatePublicScope(query: "original fixture query", market: "US", language: "en-US", limit: 8)
@@ -523,21 +521,15 @@ actor Checks {
         var discoveryProductWithTier = productObject
         discoveryProductWithTier["gamePass"] = neutralProduct["gamePass"]
         discoveryWithTier["products"] = .array([.object(discoveryProductWithTier)])
-        do {
-            try validator.validate(.object(discoveryWithTier), definition: "discoveryData")
-            check(false, "#44: Schema reserves listing metadata for catalog.query")
-        } catch { check(true, "#44: Schema reserves listing metadata for catalog.query") }
+        try validator.validate(.object(discoveryWithTier), definition: "discoveryData")
         do {
             try JSONValue.object(discoveryWithTier).decode(CatalogDiscovery.self)
                 .validatePublicScope(market: "RO", language: "ro-RO", limit: 8)
             check(false, "#44: PC Game Pass discovery cannot use query-only Xbox search listing")
         } catch { check(error as? ManagementError == .invalidPayload,
                         "#44: PC Game Pass discovery cannot use query-only Xbox search listing") }
-        do {
-            try validator.validate(.object(["product": .object(discoveryProductWithTier)]),
-                                   definition: "productData")
-            check(false, "#44: Schema excludes query-only listing metadata from product.get")
-        } catch { check(true, "#44: Schema excludes query-only listing metadata from product.get") }
+        try validator.validate(.object(["product": .object(discoveryProductWithTier)]),
+                               definition: "productData")
         let cachedSearchWithTier: [String: JSONValue] = [
             "products": .array([.object(discoveryProductWithTier)]),
             "corpus": .string("observedPublicProducts"),
@@ -545,10 +537,7 @@ actor Checks {
             "nextCursor": .null,
             "cacheRevision": .unsigned(0)
         ]
-        do {
-            try validator.validate(.object(cachedSearchWithTier), definition: "searchData")
-            check(false, "#44: Schema excludes query-only listing metadata from cached public search")
-        } catch { check(true, "#44: Schema excludes query-only listing metadata from cached public search") }
+        try validator.validate(.object(cachedSearchWithTier), definition: "searchData")
         combinedQuery["source"] = .string("UnverifiedSearch")
         do {
             try JSONValue.object(combinedQuery).decode(CatalogQuery.self).validatePublicScope(

@@ -2722,18 +2722,7 @@
       ],
       "properties": {
         "product": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/productRecord"
-            },
-            {
-              "not": {
-                "required": [
-                  "gamePass"
-                ]
-              }
-            }
-          ]
+          "$ref": "#/$defs/productRecord"
         }
       },
       "additionalProperties": false
@@ -2751,18 +2740,7 @@
         "products": {
           "type": "array",
           "items": {
-            "allOf": [
-              {
-                "$ref": "#/$defs/productRecord"
-              },
-              {
-                "not": {
-                  "required": [
-                    "gamePass"
-                  ]
-                }
-              }
-            ]
+            "$ref": "#/$defs/productRecord"
           },
           "maxItems": 100
         },
@@ -2846,18 +2824,7 @@
         "products": {
           "type": "array",
           "items": {
-            "allOf": [
-              {
-                "$ref": "#/$defs/productRecord"
-              },
-              {
-                "not": {
-                  "required": [
-                    "gamePass"
-                  ]
-                }
-              }
-            ]
+            "$ref": "#/$defs/productRecord"
           },
           "maxItems": 16,
           "minItems": 1
@@ -3041,28 +3008,6 @@
             "properties": {
               "failures": {
                 "maxItems": 0
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "source": {
-                "const": "MicrosoftStoreEdge:v9.0/searchResults"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "products": {
-                "items": {
-                  "not": {
-                    "required": [
-                      "gamePass"
-                    ]
-                  }
-                }
               }
             }
           }

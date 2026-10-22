@@ -10,11 +10,11 @@ import re
 import stat
 import sys
 
-PRODUCER = "974ac819db08b69ac3a8a9fd4558b1bd7a8ad400"
-PRODUCER_TREE = "9130ac645655735da5f01f0a0add68f37d6eba2e"
-CLI_SHA256 = "3ea56ed1ea1d5a9b6d15748ecd223dbc5be09d099765cf661b6cd7915db14928"
+PRODUCER = "43429cc052c531029c4e1d86ead56102070b9917"
+PRODUCER_TREE = "3a5ac3f32e5cc33b7f8267205a91249051d31df9"
+CLI_SHA256 = "3cdbf1dde6e136af29af9c8f3f17042abbd9f05eeca05f4f5efd57f27db67bea"
 WINDOWS_HELPER_SHA256 = "0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7"
-PRODUCER_MANIFEST_SHA256 = "d0cae5810e6a33c4251a0fce999a003ef254f89d152ee0d052be13edeb64d1c7"
+PRODUCER_MANIFEST_SHA256 = "1e58c9026e0276e7f60c79e7101214af8c306726c0b99e963061b3050fbffc19"
 FEATURES = {"xodus": [], "xodus-cli": [], "xodus-management": ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,

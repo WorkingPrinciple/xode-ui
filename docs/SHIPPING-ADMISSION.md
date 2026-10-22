@@ -22,13 +22,18 @@ evidence that the installed service covers this title. Failed product IDs and
 error codes are disclosed under **About these games**, not treated as an empty
 successful search.
 
-The coordinator approved signed CLI `3ea56ed1` / producer `974ac81` for the full
-local app, lifecycle included. Its lifecycle source is unchanged from `f54654d`;
-the exact source passed 393 workspace tests. S5's read-only service probe returned
-Valor Mortis and Asphalt Legends successfully in RO/ro-RO with explicit
-`resolvedLanguage: neutral`. This authorizes candidate packaging, not a claim
-that installed UI or Brotato runtime acceptance has already passed. The prior
-notarized-release exception is not extended to this unnotarized local candidate.
+The signed CLI `3ea56ed1` / producer `974ac81` was the earlier search candidate.
+The current approved local candidate uses signed CLI
+`3cdbf1dde6e136af29af9c8f3f17042abbd9f05eeca05f4f5efd57f27db67bea` from producer
+`43429cc052c531029c4e1d86ead56102070b9917` (tree
+`3a5ac3f32e5cc33b7f8267205a91249051d31df9`). S2's frozen source passed 396
+workspace tests, and its signed binary passed strict Developer ID verification.
+Its lifecycle source is unchanged from the earlier candidate; the coordinator
+approved repinning and off-screen packaging. This authorizes candidate
+packaging, not installation or a claim that installed UI or Brotato runtime
+acceptance has passed. The prior notarized-release exception is not extended to
+this unnotarized local candidate. Historical service probes and app acceptance
+remain bound to the exact candidate noted in their receipts.
 
 Installed `122532b` with that signed pair passed the full local check and actual
 AX observation: the lens focused its 220-point editor, `mortis` returned Valor
