@@ -170,9 +170,9 @@ struct LiveCatalogView: View {
             .padding(.top, query.isEmpty && !visible.isEmpty ? 0 : 86)
         }
         .onChange(of: query) { _, _ in selection.genre = nil }
-        .task(id: "\(session.market):\(session.language):\(session.products.map(\.id).joined(separator: ",")):\(library.snapshot?.games.map(\.id).joined(separator: ",") ?? "")") {
+        .task(id: "\(session.market):\(session.language):\(results.storeProducts.map(\.id).joined(separator: ",")):\(library.snapshot?.games.map(\.id).joined(separator: ",") ?? "")") {
             guard allowsArtworkLoading else { return }
-            await art.load(ids: session.products.map(\.id) + (library.snapshot?.games.map(\.id) ?? []),
+            await art.load(ids: results.storeProducts.map(\.id) + (library.snapshot?.games.map(\.id) ?? []),
                            market: session.market, language: session.language)
         }
     }
@@ -349,7 +349,11 @@ struct LiveCatalogView: View {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
             }
             LibraryGameInformation(access: LibraryAccess(game), gamePass: game.gamePass,
-                                   facts: facts[game.id], compact: true)
+                                   facts: facts[game.id], compact: true, showsPrice: true)
+            if game.pc == nil, !game.owned {
+                Text(library.accessIsCurrent ? "Not in your PC library" : "Ownership not verified")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
             LibraryGameSizeView(installed: game.installed, downloadBytes: facts[game.id]?.downloadBytes,
                                 productID: game.id,
@@ -360,6 +364,7 @@ struct LiveCatalogView: View {
             if let match = game.installed { InstalledPlayError(library: installed, game: match) }
             if game.product?.freshness == "cached" { Text("Offline details").font(.caption) }
         } actions: {
+            VStack(alignment: .leading, spacing: 8) {
             LibraryGlassCluster {
                 actions(game, primary: false)
                 if let match = game.installed {
@@ -369,6 +374,12 @@ struct LiveCatalogView: View {
                         .modifier(LibraryActionStyle(primary: false)).labelStyle(.iconOnly)
                         .buttonBorderShape(.circle)
                 }
+            }
+            CatalogAcquisitionAction(productID: game.id, title: game.title,
+                market: session.market, language: session.language,
+                licensed: game.pc != nil || game.owned, gamePass: game.gamePass,
+                commerce: facts[game.id]?.commerce,
+                enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
             }
         }
     }

@@ -2,6 +2,8 @@
 import Foundation
 
 private actor DetailPriorityTransport: PCGamesTransport {
+    let malformedPrice: Bool
+    init(malformedPrice: Bool = false) { self.malformedPrice = malformedPrice }
     private(set) var started = false
     private(set) var finished = false
     private(set) var detailRequests = 0
@@ -17,14 +19,19 @@ private actor DetailPriorityTransport: PCGamesTransport {
         } else {
             detailRequests += 1
         }
-        let data = try JSONSerialization.data(withJSONObject: [
-            "Products": [[
+        var product: [String: Any] = [
                 "ProductId": ids,
                 "LocalizedProperties": [["ProductTitle": "Synthetic game", "Images": [],
                                          "ProductDescription": "Synthetic description."]],
                 "Properties": ["Categories": ["Games"]],
+        ]
+        if malformedPrice {
+            product["DisplaySkuAvailabilities"] = [[
+                "Sku": ["SkuType": "full"],
+                "Availabilities": [["OrderManagementData": ["Price": ["ListPrice": "invalid"]]]]
             ]]
-        ])
+        }
+        let data = try JSONSerialization.data(withJSONObject: ["Products": [product]])
         return PCGamesHTTPResponse(status: 200, data: data)
     }
 
@@ -68,5 +75,11 @@ enum CatalogDetailLoadingChecks {
         check(changedCatalogue.images["FIXTURE00001"] == nil &&
               changedCatalogue.images["FIXTURE00002"]?.product.market == "GB",
               "Old bulk scope cannot replace selected details after a region change")
+        let malformed = LibraryCatalogArtwork(transport: DetailPriorityTransport(malformedPrice: true))
+        await malformed.loadDetail(id: "FIXTURE00002", market: "US", language: "en-US")
+        check(malformed.images["FIXTURE00002"]?.product.title == "Synthetic game"
+              && malformed.images["FIXTURE00002"]?.facts.commerce == nil
+              && malformed.images["FIXTURE00002"]?.detail?.description == "Synthetic description.",
+              "#40/#41: Invalid optional pricing cannot hide catalogue identity/details or manufacture a free offer")
     }
 }

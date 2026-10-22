@@ -86,6 +86,17 @@ final class LibraryCatalogArtwork: ObservableObject {
                     } catch {
                         logger.warning("Optional public detail payload was rejected; library identity and artwork remain separate.")
                     }
+                    var prices: [String: CatalogCommerce] = [:]
+                    do {
+                        let values = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: response.data).Products
+                        guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
+                              values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+                        for value in values {
+                            prices[value.ProductId] = CatalogCommerce.price(value, market: PCGamesClient.market(market))
+                        }
+                    } catch {
+                        logger.warning("Public PC price offers were rejected; prices stay unavailable and no free acquisition is offered.")
+                    }
                     for product in products {
                         let art = product.LocalizedProperties?.first?.Images ?? []
                         func references(_ purposes: [String], portrait: Bool) -> [CatalogArtworkReference] {
@@ -129,7 +140,8 @@ final class LibraryCatalogArtwork: ObservableObject {
                             facts: LibraryCatalogFacts(properties: product.Properties,
                                                        downloadBytes: product.pcDownloadBytes,
                                                        packageFormat: product.pcPackageFormat,
-                                                       pcPackageListed: product.pcPackageListing),
+                                                       pcPackageListed: product.pcPackageListing,
+                                                       commerce: prices[product.ProductId]),
                             detail: detailFacts, product: detail)
                     }
                     requested.formUnion(batch)
@@ -192,21 +204,24 @@ struct LibraryCatalogFacts {
     let downloadBytes: Int64?
     let packageFormat: String?
     let pcPackageListed: Bool?
+    let commerce: CatalogCommerce?
 
     init(genres: [String], capabilities: [LibraryCapability] = [], downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, commerce: CatalogCommerce? = nil) {
         self.genres = Array(genres.prefix(2))
         self.capabilities = capabilities
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
+        self.commerce = commerce
     }
 
     init(properties: PCGamesCatalog.Product.PropertiesDTO?, downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, commerce: CatalogCommerce? = nil) {
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
+        self.commerce = commerce
         var seen = Set<String>()
         genres = Array((properties?.Categories ?? properties?.Category.map { [$0] } ?? [])
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }

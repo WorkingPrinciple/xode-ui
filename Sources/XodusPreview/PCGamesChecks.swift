@@ -889,6 +889,78 @@ enum PCGamesChecks {
         check(passOnly.storeProducts.map(\.id) == [mortis.id],
               "#40: Loaded Game Pass matches survive a missing Store page without broadening unrelated results")
         let canonicalMortis = "https://www.xbox.com/ro-RO/games/store/valor-mortis/9p861v1542bl"
+        let offerNow = GameCompatibilityResult.parseDate("2026-10-22T12:00:00Z")!
+        func commerceProduct(amount: String, sku: String = "full", action: String = "Purchase",
+                             market: String = "RO", platform: String = "Windows.Desktop",
+                             remediation: Bool = false, piRequired: Bool = false,
+                             end: String = "2026-12-01T00:00:00Z") throws -> CatalogCommerce.Product {
+            try JSONDecoder().decode(CatalogCommerce.Product.self, from: response([
+                "ProductId": mortis.id,
+                "DisplaySkuAvailabilities": [[
+                    "Sku": ["SkuType": sku, "Properties": [
+                        "Packages": [["PlatformDependencies": [["PlatformName": "Windows.Desktop"]]]]]],
+                    "Availabilities": [[
+                        "Actions": [action], "Markets": [market], "RemediationRequired": remediation,
+                        "Conditions": ["StartDate": "2026-01-01T00:00:00Z", "EndDate": end,
+                                       "ClientConditions": ["AllowedPlatforms": [["PlatformName": platform]]]],
+                        "OrderManagementData": ["Price": [
+                            "ListPrice": NSDecimalNumber(string: amount), "CurrencyCode": "RON", "IsPIRequired": piRequired]]
+                    ]]
+                ]]
+            ]).data)
+        }
+        let paidPrice = CatalogCommerce.price(try commerceProduct(amount: "199.99"), market: "RO", now: offerNow)
+        let freePrice = CatalogCommerce.price(try commerceProduct(amount: "0"), market: "RO", now: offerNow)
+        let mixedOffers = CatalogCommerce.Product(ProductId: mortis.id, DisplaySkuAvailabilities:
+            (try commerceProduct(amount: "199.99").DisplaySkuAvailabilities ?? [])
+            + (try commerceProduct(amount: "0", sku: "trial").DisplaySkuAvailabilities ?? [])
+            + (try commerceProduct(amount: "0", remediation: true).DisplaySkuAvailabilities ?? [])
+            + (try commerceProduct(amount: "0", action: "License").DisplaySkuAvailabilities ?? []))
+        check(CatalogCommerce.price(mixedOffers, market: "RO", now: offerNow)?.amount == Decimal(string: "199.99"),
+              "#41: Mortis-style paid full offer plus trial, upsell and zero licensing rows remains paid, never free")
+        check(paidPrice?.amount == Decimal(string: "199.99") && paidPrice?.currency == "RON"
+              && paidPrice?.isFree(now: offerNow) == false && freePrice?.isFree(now: offerNow) == true,
+              "#40/#41: Current full-PC public purchase offers preserve exact amount/currency; only a zero price is free")
+        for product in [
+            try commerceProduct(amount: "0", sku: "trial"),
+            try commerceProduct(amount: "0", action: "License"),
+            try commerceProduct(amount: "0", market: "US"),
+            try commerceProduct(amount: "0", platform: "Windows.Xbox"),
+            try commerceProduct(amount: "0", remediation: true),
+            try commerceProduct(amount: "0", piRequired: true),
+            try commerceProduct(amount: "-1"),
+            try commerceProduct(amount: "0", end: "2026-10-21T00:00:00Z")
+        ] {
+            check(CatalogCommerce.price(product, market: "RO", now: offerNow) == nil,
+                  "#41: Trial/licensing-only/wrong-market/console/upsell/payment/negative/expired offers cannot become a free full PC claim")
+        }
+        check(CatalogAcquisition.kind(licensed: false, gamePass: false, commerce: freePrice, now: offerNow) == .free
+              && CatalogAcquisition.kind(licensed: false, gamePass: false, commerce: paidPrice, now: offerNow) == nil
+              && CatalogAcquisition.kind(licensed: false, gamePass: false, commerce: nil, now: offerNow) == nil
+              && CatalogAcquisition.kind(licensed: true, gamePass: true, commerce: freePrice, now: offerNow) == nil
+              && CatalogAcquisition.kind(licensed: false, gamePass: true, commerce: paidPrice, now: offerNow) == .gamePass
+              && CatalogAcquisition.kind(licensed: false, gamePass: false, commerce: freePrice,
+                                         now: offerNow.addingTimeInterval(901)) == nil,
+              "#41: Only unlicensed free/explicit Game Pass members offer external acquisition; paid/unknown/owned/stale free offers cannot purchase or claim")
+        var consent = CatalogAcquisitionConsent()
+        consent.confirm()
+        check(consent.authorization == nil && !consent.isPresented,
+              "#41: Unrequested confirmation cannot authorize a browser action")
+        consent.request()
+        check(consent.isPresented && consent.authorization == nil,
+              "#41: Get first presents consent; it cannot resolve or open a page")
+        consent.cancel()
+        consent.confirm()
+        check(consent.authorization == nil,
+              "#41: Cancelled consent cannot authorize acquisition or browser opening")
+        consent.request()
+        consent.confirm()
+        check(!consent.isPresented && consent.authorization != nil,
+              "#41: Only explicit confirmation releases a single external-page authorization")
+        consent.finish()
+        consent.confirm()
+        check(consent.authorization == nil,
+              "#41: A finished external-page request cannot replay old consent or invent an entitlement")
         let linkTransport = PCGamesMockTransport([
             .init(status: 302, data: Data(), location: "https://www.microsoft.com/ro-ro/store/productId/9P861V1542BL?market=RO&locale=ro-RO"),
             .init(status: 302, data: Data(), location: canonicalMortis.replacingOccurrences(of: "www.xbox.com", with: "xbox.com")),

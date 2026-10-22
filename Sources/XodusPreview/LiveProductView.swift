@@ -173,7 +173,7 @@ struct LiveProductView: View {
                     LibraryLogoTitle(title: product.title, references: art?.logos ?? [],
                                      allowsLoading: allowsArtworkLoading)
                     LibraryGameInformation(access: access, gamePass: gamePass,
-                                           facts: art?.facts, xbox: stats.cache?.games[product.id])
+                                           facts: art?.facts, xbox: stats.cache?.games[product.id], showsPrice: true)
                     LibraryGameSizeView(installed: installed, downloadBytes: art?.facts.downloadBytes,
                                         productID: product.id, pcPackageListed: pcPackageListed,
                                         packageFormat: art?.facts.packageFormat,
@@ -233,6 +233,10 @@ struct LiveProductView: View {
                             .disabled(true)
                             .help("Current ownership or Game Pass access is required to install this game.")
                         }
+                        CatalogAcquisitionAction(productID: product.id, title: product.title,
+                            market: product.market, language: product.language,
+                            licensed: owned != nil, gamePass: gamePass, commerce: art?.facts.commerce,
+                            enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
                     }.controlSize(.large)
                     if installed == nil, operations.precheckingProductID == product.id {
                         ProgressView("Checking Mac compatibility").controlSize(.small)

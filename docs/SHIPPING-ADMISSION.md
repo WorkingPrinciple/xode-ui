@@ -22,6 +22,23 @@ No slug is synthesized from a title, and a store-root URL is never returned.
 The read-only `--xbox-product-link-check <id> <market> <locale>` development
 command verifies this live without opening a browser or accessing credentials.
 
+Acquisition (#41) is a confirmed external-page fallback, not an in-app licence
+grant. Microsoft's documented [grant-free-products API](https://learn.microsoft.com/en-us/windows/uwp/monetize/grant-free-products)
+requires a publisher service identity and a Store ID key; this app's consumer
+sign-in does not establish that capability. No purchase or grant endpoint is
+called. Eligible unlicensed titles show **Get free on xbox.com** or
+**View Game Pass on xbox.com**, explicitly confirm browser opening, and resolve
+the verified product page before opening it. Returning never creates an Owned
+badge: the user must refresh the real PC library.
+
+Public prices use current full-PC purchase offers in the selected market.
+Trials, licensing-only rows, subscription upsells/remediations, console-only,
+expired or unknown offers are not free-game evidence. Paid non-Game-Pass titles
+have no acquisition action. Public Game Pass membership is not an account grant.
+`--catalog-offer-check <saved-json> <market> <locale>` validates saved public
+offers without credentials, browser actions or acquisition. Price failures stay
+explicitly unavailable and cannot hide game identity or grant install access.
+
 ### Morning CLI-only WORKING additions
 
 The app bundles source-bound Hades II (CrossOver 26.3), Abiotic Factor

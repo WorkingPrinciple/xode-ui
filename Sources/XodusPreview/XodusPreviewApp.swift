@@ -31,7 +31,7 @@ enum DevelopmentArguments {
             return arguments.count == 1
         case "--export-preview", "--export-live", "--export-live-data":
             return arguments.count == 2
-        case "--catalog-detail-check", "--xbox-product-link-check":
+        case "--catalog-detail-check", "--catalog-offer-check", "--xbox-product-link-check":
             return arguments.count == 4
         case "--gamepass-compatibility-export":
             return arguments.count == 2
@@ -178,6 +178,9 @@ struct XodusPreviewApp: App {
         if CommandLine.arguments.contains("--game-operation-check") { NativeChecks.launch(gameOperationsOnly: true) }
         if CommandLine.arguments.contains("--catalog-detail-check") {
             exit(PreviewChecks.checkDetailMetadata() ? 0 : 1)
+        }
+        if CommandLine.arguments.contains("--catalog-offer-check") {
+            exit(PreviewChecks.checkOfferMetadata() ? 0 : 1)
         }
         if CommandLine.arguments.contains("--xbox-companion-check") {
             exit(PreviewChecks.checkXboxCompanion() ? 0 : 1)

@@ -525,6 +525,7 @@ struct LibraryGameInformation: View {
     var xbox: LibraryXboxStatsCache.Game?
     var localPlaySeconds: Double? = nil
     var compact = false
+    var showsPrice = false
     @Environment(\.libraryOnHeroMedia) private var onHeroMedia
 
     var body: some View {
@@ -540,6 +541,10 @@ struct LibraryGameInformation: View {
                     Label(compact ? facts.genres[0] : facts.genres.joined(separator: " / "), systemImage: "tag")
                         .lineLimit(compact ? 1 : 2)
                 }
+            }
+            if showsPrice {
+                Label(facts?.commerce.flatMap { $0.isCurrent() ? $0.label : nil } ?? "Price unavailable",
+                      systemImage: "tag")
             }
             if !compact {
                 if let facts, !facts.capabilities.isEmpty {
