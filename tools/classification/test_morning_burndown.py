@@ -1,14 +1,51 @@
 import copy
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
 
-from build_morning_burndown import DEADLINE, OUTPUT, calculate, recheck_historical_receipt
+from build_morning_burndown import (
+    DEADLINE, OUTPUT, calculate, read_current_receipt, recheck_historical_receipt,
+)
 from inspect_queue import load_json
 
 
 class BurnDownTests(unittest.TestCase):
+    def test_current_receipt_checks_identity_scope_and_logs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receipt.json"
+            log = Path(directory) / "check.log"
+            log.write_bytes(b"verified")
+            app = {
+                "path": str(Path.home() / "Applications/Ode to X Local Candidate.app"),
+                "sourceIdentityUnknown": False,
+                "sourceIdentity": {"appSource": {
+                    "commit": "c7487d8cde0c74c927207c17029a9d5008373a9c"}},
+                "checks": [{"exitCode": 0, "log": str(log),
+                            "logSHA256": hashlib.sha256(log.read_bytes()).hexdigest()} for _ in range(4)],
+            }
+            receipt = {"verifiedAt": "2026-10-22T17:22:09+00:00",
+                       "originalSwitchOverReceipt": False, "switchOverPerformed": False,
+                       "lostArtifactsRecovered": False, "apps": [app]}
+
+            def read():
+                path.write_text(json.dumps(receipt))
+                return read_current_receipt(path, hashlib.sha256(path.read_bytes()).hexdigest())
+
+            self.assertFalse(read()["originalSwitchOverReceipt"])
+            receipt["lostArtifactsRecovered"] = True
+            with self.assertRaisesRegex(ValueError, "scope"):
+                read()
+            receipt["lostArtifactsRecovered"] = False
+            app["checks"][0]["exitCode"] = 1
+            with self.assertRaisesRegex(ValueError, "verification failed"):
+                read()
+            app["checks"][0]["exitCode"] = 0
+            log.write_bytes(b"changed")
+            with self.assertRaisesRegex(ValueError, "log hash changed"):
+                read()
+
     def test_missing_historical_release_receipt_is_explicit(self):
         with tempfile.TemporaryDirectory() as directory:
             previous = {"path": str(Path(directory) / "receipt.json"),

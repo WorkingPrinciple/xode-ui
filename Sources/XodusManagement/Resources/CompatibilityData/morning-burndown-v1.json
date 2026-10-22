@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T17:21:30.504106+00:00",
+    "asOf": "2026-10-22T17:23:32.289807+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
@@ -487,6 +487,23 @@
       "revision": "42f793d",
       "installed": true,
       "sourceStatus": "LOST (missing); historical installation evidence only, not reverified"
+    },
+    "currentInstalledRcReceipt": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ode-installed-c7487d8-reverify/current-installed-identity-receipt.json",
+      "sha256": "30f995ad334786bc51114a13402c4356b96e0246f0aa1d6fbf4b46f1e39e3591",
+      "verifiedAt": "2026-10-22T17:22:09.995700+00:00",
+      "revision": "c7487d8cde0c74c927207c17029a9d5008373a9c",
+      "appPath": "/Users/dragoshont/Applications/Ode to X Local Candidate.app",
+      "verificationExitCodes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "originalSwitchOverReceipt": false,
+      "lostArtifactsRecovered": false,
+      "scope": "Current installed identity and signing checks only; no screen/game qualification.",
+      "previousAppSourceIdentity": "UNKNOWN; not identified as 42f793d"
     }
   },
   "observedCycles": [
@@ -529,7 +546,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1024.4915982333334,
+  "remainingWallMinutes": 1022.4618365499999,
   "scenarios": [
     {
       "label": "slow observed",
@@ -598,7 +615,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 85.37429985277778,
+  "requiredAverageMinutesPerAddition": 85.20515304583333,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

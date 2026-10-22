@@ -13,6 +13,33 @@ from inspect_queue import DATA, load_json
 PROOFS = Path.home() / "Library/Application Support/XodusCLI/proofs"
 OUTPUT = DATA / "morning-burndown-v1.json"
 DEADLINE = "2026-10-23T13:26:00+03:00"
+CURRENT_RC = PROOFS / "ode-installed-c7487d8-reverify/current-installed-identity-receipt.json"
+CURRENT_RC_SHA = "30f995ad334786bc51114a13402c4356b96e0246f0aa1d6fbf4b46f1e39e3591"
+
+
+def read_current_receipt(path=CURRENT_RC, expected_sha=CURRENT_RC_SHA):
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha:
+        raise ValueError("Current installed receipt hash changed")
+    receipt = json.loads(raw)
+    app, = [app for app in receipt["apps"] if
+            app["path"] == str(Path.home() / "Applications/Ode to X Local Candidate.app")]
+    if (receipt["originalSwitchOverReceipt"] or receipt["switchOverPerformed"]
+            or receipt["lostArtifactsRecovered"] or app["sourceIdentityUnknown"]
+            or app["sourceIdentity"]["appSource"]["commit"] !=
+            "c7487d8cde0c74c927207c17029a9d5008373a9c"):
+        raise ValueError("Unexpected current installed identity or verification scope")
+    if len(app["checks"]) != 4 or any(check["exitCode"] != 0 for check in app["checks"]):
+        raise ValueError("Installed candidate verification failed")
+    for check in app["checks"]:
+        if hashlib.sha256(Path(check["log"]).read_bytes()).hexdigest() != check["logSHA256"]:
+            raise ValueError("Current verification log hash changed")
+    return {"path": str(path), "sha256": expected_sha, "verifiedAt": receipt["verifiedAt"],
+            "revision": app["sourceIdentity"]["appSource"]["commit"],
+            "appPath": app["path"], "verificationExitCodes": [check["exitCode"] for check in app["checks"]],
+            "originalSwitchOverReceipt": False, "lostArtifactsRecovered": False,
+            "scope": "Current installed identity and signing checks only; no screen/game qualification.",
+            "previousAppSourceIdentity": "UNKNOWN; not identified as 42f793d"}
 
 
 def recheck_historical_receipt(previous):
@@ -212,6 +239,7 @@ def refresh(tracker):
             {**inputs["samples"][1]["finish"], "phase": "quit-only run"}]}]
     inputs["installedRcReceipt"] = recheck_historical_receipt(
         load_json(OUTPUT)["inputs"]["installedRcReceipt"])
+    inputs["currentInstalledRcReceipt"] = read_current_receipt()
     packet = calculate(inputs)
     OUTPUT.write_text(json.dumps(packet, indent=2) + "\n")
     return packet
