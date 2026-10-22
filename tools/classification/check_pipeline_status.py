@@ -13,6 +13,8 @@ from read_catalogue_ownership import BINARY, IDENTITY, now, read_collection
 
 
 async def main():
+    if (DATA / "pipeline-install-entitlement-v1.json").exists():
+        raise ValueError("Preserve existing status/license evidence; do not overwrite or repeat reads")
     if hashlib.sha256(BINARY.read_bytes()).hexdigest() != IDENTITY:
         raise ValueError("Frozen CLI identity mismatch")
     ranked = DATA / "remaining-candidates-ranked-v1.json"

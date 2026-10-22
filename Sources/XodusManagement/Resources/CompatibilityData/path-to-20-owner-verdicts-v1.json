@@ -19,12 +19,12 @@
       "verdict": "WORKING",
       "reportedAt": "2026-10-22T19:57:16.859+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "0d057caf",
+      "runId": "0667822b-36e9-4117-8d3d-0135f39f35cb",
       "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "save": "passed", "relaunch": "passed"},
       "nextGate": "complete",
       "ownerStream": "S3",
       "blocker": null,
-      "scope": "Coordinator explicitly verified Monster Sanctuary WORKING at22:57EEST, strict9/20. Prior world cca9c74f and reload0d057caf INFRA remain historical attempts; this is a newer coordinator admission, not a claim that0d057caf passed. New successful retry identity not yet supplied to S4."
+      "scope": "Coordinator verified WORKING9: world cca9c74f and fresh0667822b retained S3/Wolf/114G/BlobEggx1 and movement; actual SaveQuit/titleExit0/0 both runs. World-to-retry27968B SHA4ba6af91 unchanged, afterretry27984B SHA6b271c30. Prior0d057caf INFRA excluded; app E2E unobserved."
     },
     {
       "storeId": "9NLRT31Z4RWM",
@@ -56,14 +56,14 @@
       "storeId": "9MWR1NC6VQ6L",
       "title": "Stardew Valley",
       "verdict": "INCONCLUSIVE",
-      "reportedAt": "2026-10-22T19:51:42.038+00:00",
+      "reportedAt": "2026-10-22T20:35:59+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "22d78ea2",
+      "runId": "111dd574",
       "gates": {"menu": "passed", "gameplay": "passed", "save": "passed", "relaunch": "passed", "quit": "unknown"},
       "nextGate": "ordinary quit",
       "ownerStream": "S3",
-      "blocker": "Fresh22d78ea2 retained Day2/s3/proof Farm/15ParsnipSeeds; final ExitGame input unobserved, no qualified quit or WORKING promotion.",
-      "scope": "Coordinator 22:51 report: retention YES, quit unobserved. Matrix records real LOAD and movement. CLI255 alone does not qualify; final observed ExitGame proof pending. Historical db74c3c4 tooling cancellation did not consume an attempt."
+      "blocker": "Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission.",
+      "scope": "Coordinator latest report:111dd574 retention confirmed but ordinary quit attribution under review/helper exit1. Earlier22d78ea2 retained Day2/s3/proof Farm/15seeds. Neither expected255 nor retained payload alone proves normal quit; keep strict count9."
     },
     {
       "storeId": "9P03JGQ4S1GC",

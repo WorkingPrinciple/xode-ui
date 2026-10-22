@@ -78,7 +78,9 @@ class PathTo20Tests(unittest.TestCase):
         self.assertFalse(row["strictWorking"])
 
     def test_tonight_reports_do_not_promote_incomplete_runs(self):
-        rows = {row["storeId"]: row for row in self.packet["items"]}
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T19:00:00+00:00"
+        rows = {row["storeId"]: row for row in build(inputs, {})["items"]}
         stardew = rows["9MWR1NC6VQ6L"]
         self.assertEqual(stardew["gates"]["save"]["status"], "passed")
         self.assertEqual(stardew["gates"]["quit"]["status"], "unknown")

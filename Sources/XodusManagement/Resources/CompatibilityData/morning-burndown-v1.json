@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T19:58:34.919517+00:00",
+    "asOf": "2026-10-22T20:36:22.530702+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 9,
-    "trackerMatrixSha256": "b140123bffe6daeed6b0f3d7019b27a11aa4aaa00ecb5c4205b3f37a8692652d",
+    "trackerMatrixSha256": "79b7dc1b302ac3691b22e7dc128de63ce08e01fcb27380af24a2483b01355d9b",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -290,7 +290,7 @@
       {
         "storeId": "C3KLDKZBHNCZ",
         "title": "Fallout 4",
-        "verdict": "GAMEPLAY_PASS"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -340,7 +340,7 @@
       {
         "storeId": "9PBWWQGXVMKC",
         "title": "Monster Sanctuary",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "WORKING"
       },
       {
         "storeId": "9NLRT31Z4RWM",
@@ -417,7 +417,7 @@
       {
         "storeId": "C3KLDKZBHNCZ",
         "title": "Fallout 4",
-        "verdict": "GAMEPLAY_PASS"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9P8NSTDMZ11P",
@@ -589,7 +589,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 867.4180080499999,
+  "remainingWallMinutes": 829.6244883,
   "scenarios": [
     {
       "label": "slow observed",
@@ -605,35 +605,35 @@
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 13,
-      "queueCappedAdditions": 13,
-      "conditionalTotalWorking": 22,
+      "serialCycleSlots": 12,
+      "queueCappedAdditions": 12,
+      "conditionalTotalWorking": 21,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.8461538461538461,
-      "minimumPassRateCurrentQueue": 0.8461538461538461,
+      "minimumPassRateRawSlots": 0.9166666666666666,
+      "minimumPassRateCurrentQueue": 0.9166666666666666,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 19,
-      "queueCappedAdditions": 19,
-      "conditionalTotalWorking": 28,
+      "serialCycleSlots": 18,
+      "queueCappedAdditions": 18,
+      "conditionalTotalWorking": 27,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5789473684210527,
-      "minimumPassRateCurrentQueue": 0.5789473684210527,
+      "minimumPassRateRawSlots": 0.6111111111111112,
+      "minimumPassRateCurrentQueue": 0.6111111111111112,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
     "working": 9,
-    "matrixWorking": 8,
+    "matrixWorking": 9,
     "attemptedMatrix": 19,
-    "ratio": 0.42105263157894735,
+    "ratio": 0.47368421052631576,
     "receiptAugmentedAttempted": 21,
     "receiptAugmentedRatio": 0.42857142857142855,
     "titleScreenOrBeyond": 10,
-    "postTitleScreenAdmissionRatio": 0.8,
+    "postTitleScreenAdmissionRatio": 0.9,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
   },
   "timeSink": {
@@ -658,7 +658,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 78.85618254999999,
+  "requiredAverageMinutesPerAddition": 75.42040802727273,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

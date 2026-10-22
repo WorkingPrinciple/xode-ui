@@ -27,5 +27,8 @@ class PipelineStatusTests(unittest.TestCase):
             path = Path(receipt["path"])
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), receipt["sha256"])
             self.assertEqual(json.loads(path.read_text()), status)
-            if packet["accountProductCount"] == 0:
-                self.assertEqual(row["entitlement"], "unknown")
+            self.assertEqual(row["entitlement"], "GRANTED")
+            license_receipt = row["licenseVerification"]
+            raw = Path(license_receipt["receiptPath"]).read_bytes()
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), license_receipt["receiptSha256"])
+            self.assertEqual(license_receipt["exitCode"], 0)

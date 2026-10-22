@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T20:00:34.328744+00:00",
+  "checkedAt": "2026-10-22T20:36:22.647517+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 9,
@@ -35,7 +35,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "17e9ea47e95c8b9fb5b3a041f3214170f71be0e62b7cf3aae6b641791c429961"
+      "sha256": "111ee5a8b4fbbcf5582e7faa7a23ef80903d3596750897a8a8670ba3894d8158"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -55,7 +55,7 @@
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/pipeline-install-entitlement-v1.json",
-      "sha256": "2a0e98c6f4b440627c3f5f839ffc4bb496ab0120e378996fc4cf60ea23b5bc00"
+      "sha256": "f28efa1ea6986f454764df202a2d45245ce4ad243b0d1bf4eccbbb32e518d632"
     }
   ],
   "items": [
@@ -102,7 +102,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "CrossOver candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Fresh22d78ea2 retained Day2/s3/proof Farm/15ParsnipSeeds; final ExitGame input unobserved, no qualified quit or WORKING promotion.",
+      "blocker": "Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -162,7 +162,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Free Wine proposed by S1; prior Apple4 candidate, new route/card unqualified",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Full d928b209 overran quit deadline; reload931f693e quit navigation also INCONCLUSIVE. Stick not retained after no normal quit; no WORKING or runtime save-regression conclusion.",
+      "blocker": "No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -418,10 +418,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NQVHHW88XW9-install-status.json",
           "sha256": "071d83d8ad8ff669752ebb888b1948bd558770874bc828b3c7e2129bbe324219"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-v1/receipt.json",
+          "receiptSha256": "e3624c1c47935f570e628145d2a39a113ebc372b95c1946857868f8563b075a7",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:03:57Z",
+          "exitCode": 0,
+          "metadataSha256": "2357446b93a05840629b7c3a90e0baa022330293755d33321b575e9c7950d667"
+        }
       }
     },
     {
@@ -482,10 +491,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P2J5D12GJL5-install-status.json",
           "sha256": "9160c177ee723ce4fbce7df1d6e7f4fd9752e4ad1a1718f0fded7a67fd7daa10"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-seven-v1/receipt.json",
+          "receiptSha256": "9b20e4a22f75e98e2617d760ce021762893ee81bcdb8b7ea372dd743a1b69dd0",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:07:00Z",
+          "exitCode": 0,
+          "metadataSha256": "e9500a3e5236ff9769a5847b3e91f4bb822091ebc48820547411c3aeee2f8956"
+        }
       }
     },
     {
@@ -546,10 +564,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P3T7HVKM6D0-install-status.json",
           "sha256": "2aa64058cb8953a5728cda6a1ab4f696f4201bd92d1814f0a4bc96e814a9dc75"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-seven-v1/receipt.json",
+          "receiptSha256": "9b20e4a22f75e98e2617d760ce021762893ee81bcdb8b7ea372dd743a1b69dd0",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:07:06Z",
+          "exitCode": 0,
+          "metadataSha256": "54e9cf40d7abe7955cb17b65c20c781804333661e5bd824e26caa6cbe036206a"
+        }
       }
     },
     {
@@ -610,10 +637,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9PJPCB188SVG-install-status.json",
           "sha256": "a6477d9a1e5e80d23599bfa1439f17a9c46dc39f9284ed99d0fdaa7d31b880c8"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-v1/receipt.json",
+          "receiptSha256": "e3624c1c47935f570e628145d2a39a113ebc372b95c1946857868f8563b075a7",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:04:00Z",
+          "exitCode": 0,
+          "metadataSha256": "4d2bc5a4bcadb41f2766e90263633cc72ea6199ab5b66e14e952b18bbbf8d8fd"
+        }
       }
     },
     {
@@ -674,10 +710,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NFB47H2SDRX-install-status.json",
           "sha256": "50c4df8b306f92d57176af7f245d8124bf3a576dcbe94824e2335bcb1d2dd54e"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-seven-v1/receipt.json",
+          "receiptSha256": "9b20e4a22f75e98e2617d760ce021762893ee81bcdb8b7ea372dd743a1b69dd0",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:07:09Z",
+          "exitCode": 0,
+          "metadataSha256": "ecfd87caa09a8bbb558d947254ef7ceb4e55a4c646e9eb50a770cd90ab621e4c"
+        }
       }
     },
     {
@@ -738,10 +783,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NCJWHHMVHR0-install-status.json",
           "sha256": "65327e51b9686676c18bb499be2e39a054dd501cd383e2979dcdce532485f23a"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-seven-v1/receipt.json",
+          "receiptSha256": "9b20e4a22f75e98e2617d760ce021762893ee81bcdb8b7ea372dd743a1b69dd0",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:07:13Z",
+          "exitCode": 0,
+          "metadataSha256": "d817aa1d1f48890ef06d76cbdf11039db662604f5e0f9a1544ced5ac253d3b5f"
+        }
       }
     },
     {
@@ -802,10 +856,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P5Z4530318L-install-status.json",
           "sha256": "21f4719144cc33355892ef0b6a9e0d3724b3cadb1473cc6ca25db8c664c9512e"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-seven-v1/receipt.json",
+          "receiptSha256": "9b20e4a22f75e98e2617d760ce021762893ee81bcdb8b7ea372dd743a1b69dd0",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:07:17Z",
+          "exitCode": 0,
+          "metadataSha256": "dc3c0663946aed68ec3528f05f7f300302ed14303583dff4046b05e6bb01b223"
+        }
       }
     },
     {
@@ -866,10 +929,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9NXWSWBM4H6T-install-status.json",
           "sha256": "4a083d5bf509e138fecdfb977fae0e2eb2f75219f335ae55dd960c62dc4ebad6"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-seven-v1/receipt.json",
+          "receiptSha256": "9b20e4a22f75e98e2617d760ce021762893ee81bcdb8b7ea372dd743a1b69dd0",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:07:20Z",
+          "exitCode": 0,
+          "metadataSha256": "3a2cea0c22dcdd394fcfac069816551e1dd819ee32dc1b75ba72b94a35840491"
+        }
       }
     },
     {
@@ -930,10 +1002,19 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s4-pipeline-status-dff0ddb47c634605b48ef36ada980d93/9P1N07XDL1D4-install-status.json",
           "sha256": "f11e2f749803bd39a8705e6f2afdbb2971c7907ef319f6ee4bf99b822073cf7a"
         },
-        "entitlement": "unknown",
-        "entitlementBasis": "Exact account-bound Collections grant if returned; absence does not deny subscription access. Local payload is not an entitlement.",
+        "entitlement": "GRANTED",
+        "entitlementBasis": "S2 authorized account-bound live content-license check; no purchase, claim, payload download, launch or key persistence. Point-in-time access, not permanent ownership or anti-cheat clearance.",
         "launchAuthorized": false,
-        "acquisitionAttempted": false
+        "acquisitionAttempted": false,
+        "licenseVerification": {
+          "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s2-entitlement-package-check-seven-v1/receipt.json",
+          "receiptSha256": "9b20e4a22f75e98e2617d760ce021762893ee81bcdb8b7ea372dd743a1b69dd0",
+          "cliSha256": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+          "market": "GB",
+          "finishedAt": "2026-10-22T20:07:23Z",
+          "exitCode": 0,
+          "metadataSha256": "eb7866cfcc674f16abc6106c328643f2b11d1da64ad7935c45faf935a9ddc86f"
+        }
       }
     },
     {
@@ -970,7 +1051,7 @@
       "rank": 22,
       "storeId": "C3KLDKZBHNCZ",
       "title": "Fallout 4",
-      "verdict": "GAMEPLAY_PASS",
+      "verdict": "INCONCLUSIVE",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 29188612096,
       "planningBudgetBytes": 29188612096,
@@ -979,7 +1060,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Unresolved; S1 route required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Manual-save continuation also leaves bothproviders empty after15s waits. NEXT Fallout run HOLD pending S2 no-game frozen-provider16MiB-cap probe; possible cap is HYPOTHESIS, not causal proof. Coordinator futurediagnostic env trace plus bothdebugvars xgameruntime must also retain warn+gdkc per S2 source warningchannel. No causal savefix from WMAdecoder COM errors. No speculative COM/storage mutation; no WORKING.",
+      "blocker": "Delete-missing candidateadvancesfailuretoCreateUpdateinvalidarg butstillnopayload; mouse-lookweird reportedbyuser, exactsignatureunresolved; exit5afterTDesktop. NoWORKING/reload.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
