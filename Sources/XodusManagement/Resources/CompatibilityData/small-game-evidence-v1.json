@@ -1,0 +1,2291 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-22T01:19:14.382661+00:00",
+  "scope": "Public PC/Steam Wine proxies, not Store gameplay qualification",
+  "items": [
+    {
+      "storeId": "9P9VNSQK1W3K",
+      "title": "Brotato",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P9VNSQK1W3K&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 796000256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 794800128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 449249280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 796000256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 794800128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 449249280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 796000256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 794800128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 449249280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Brotato",
+        "appID": 1942280,
+        "source": "https://store.steampowered.com/app/1942280/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1942280&cc=gb&l=english",
+        "minimum": "Minimum:     OS *:  Windows 7+    Processor:  2 Ghz    Memory:  4 GB RAM    Graphics:  128MB, OpenGL 3+    Storage:  200 MB available space",
+        "recommended": "",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "23 Jun, 2023"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "Co-op",
+          "Shared/Split Screen Co-op",
+          "Shared/Split Screen",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Steam Workshop",
+          "Steam Cloud",
+          "Remote Play on TV",
+          "Remote Play Together",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1942280?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 120027
+        }
+      },
+      "downloadSizeBytes": 449249280,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.685617+00:00",
+          "httpStatus": 200,
+          "sha256": "acbeaa4e038f23fc86833153b963d4b6dc7b79045d8322d451df3c0563f10df3",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Brotato?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Godot|name=Godot 3|build=3.7.0|ref=<ref>{{Refcheck|user=Liwsy|date=2026-02-22}}</ref>}}",
+            "|steam appid  = 1942280",
+            "|steam appid side = 2868390, 3281080, 4498220",
+            "{{Game data/saves|Windows|{{p|appdata}}\\Brotato\\{{p|uid}}\\*.json}}",
+            "{{Game data/saves|OS X|{{p|osxhome}}/Library/Application Support/Brotato/{{p|uid}}/*.json}}",
+            "{{Game data/saves|Linux|{{p|linuxhome}}/.local/share/Brotato/{{p|uid}}/save_*.json}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|direct3d versions      = ",
+            "|direct3d notes         = ",
+            "|opengl versions        = 3.3",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = ",
+            "|minGPU   = 128 MB, OpenGL 3+",
+            "|minGPU   = 128 MB, OpenGL 3+",
+            "|minGPU   = 128 MB, OpenGL 3+"
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Brotato?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.704871+00:00",
+          "httpStatus": 200,
+          "sha256": "184b854ce655f4ec683c2fa6c000dff2328fe4417a475686fe62c61af71debb1",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Brotato?action=raw",
+          "ratings": {
+            "native": "perfect",
+            "rosetta 2": "na",
+            "crossover": "perfect",
+            "wine": "perfect"
+          },
+          "facts": [
+            "{{Infobox game/row/engine|Godot|build=3.7.0|ref=<ref>{{Refcheck|user=Liwsy|date=2026-02-22}}</ref>}}",
+            "|steam appid  = 1942280",
+            "|steam appid side = 2868390, 3281080",
+            "|native notes         = Runs by recompiling it with the Godot RE Tools. Perfect, though there are rare/minor stutters introduced by Apples OpenGL translation layer. <ref> Recompile the game with the Godot RE Tools, like explained in the Brotato modding guide: https://steamcommunity.com/sharedfiles/filedetails/?l=danish&id=2931079751 . You get the .pck file of Brotato, by downloading the Game via CrossOver/Wine from Steam, or transferring the files over from a Windows PC. Skip the step with the Steam API and just run it as is, then export it in Godot. You can go into the project settings -> Window and change 1080p to 1200p to make it 16:10, but that introduced some visual issues. To fix the background while playing, open the \"main.tscn\" and lick on \"background\", then change 1080p to 1200p there as well. </ref> <ref>{{Refdevice"
+          ],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1942280.json",
+          "checkedAt": "2026-10-22T01:19:11.722243+00:00",
+          "httpStatus": 200,
+          "sha256": "de7973c0845354b2814a4c37b92eb8a4f40241f94ee49f3b6e87f9feef341155",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1942280.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.87,
+            "tier": "platinum",
+            "total": 230,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1942280"
+        }
+      }
+    },
+    {
+      "storeId": "9PD5BM2Z8C4L",
+      "title": "Vampire Survivors",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PD5BM2Z8C4L&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1581121536,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1243791360,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1596665856,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1581121536,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1243791360,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1596665856,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Vampire Survivors",
+        "appID": 1794680,
+        "source": "https://store.steampowered.com/app/1794680/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1794680&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 64bit    Processor:  x64 architecture with SSE2 instruction set support    Memory:  1 GB RAM    Graphics:  DX11, DX12 capable    Storage:  2500 MB available space",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "20 Oct, 2022"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "Co-op",
+          "Online Co-op",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Steam Cloud",
+          "Remote Play Together",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1794680?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 266633
+        }
+      },
+      "downloadSizeBytes": 1243791360,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Vampire_Survivors?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.722381+00:00",
+          "httpStatus": 200,
+          "sha256": "68c533584ae6eba8aa41fec292d95b4fdec9120bf7c91b268bc3be61e2d33542",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Vampire_Survivors?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Phaser|name=Phaser 3|Former}}",
+            "{{Infobox game/row/engine|Electron|name=Electron|Former|ref=<ref name=\"former engineversion\">{{Refcheck|user=Ngyikp|date=2022-11-25|comment=Verified on Windows version with <code>process.versions.electron</code>}}</ref>|build=15.3.0}}",
+            "{{Infobox game/row/engine|Unity|name=Unity 2021|Former|ref=<ref name=\"engineversion\">{{Refcheck|user=Jams3223|date=2023-08-17}}</ref>|build=2021.3.18f1}}",
+            "{{Infobox game/row/engine|Unity|name=Unity 6|build=6000.0.62f1|ref=<ref>{{Refcheck|user=Ngyikp|date=2026-06-08|comment=From the product version of {{file|UnityPlayer.dll}}}}</ref>}}",
+            "|steam appid  = 1794680",
+            "|steam appid side = 2169090, 2230760, 2313550, 2690330, 2887680, 3210350, 3451100, 3929770, 4781330",
+            "{{Game data/saves|Windows|{{p|appdata}}\\Vampire_Survivors\\saves}}",
+            "{{Game data/saves|Linux|{{p|xdgconfighome}}/Vampire_Survivors_{{p|uid}}/SaveData.sav}}",
+            "{{Game data/saves|Microsoft Store|{{p|localappdata}}\\Packages\\poncle.VampireSurvivors_9pv5cyp4vwdsr\\SystemAppData\\wgs\\{{P|uid}}}}",
+            "{{Game data/saves|OS X|}}",
+            "{{Game data/saves|Steam|{{p|steam}}\\userdata\\{{p|uid}}\\1794680\\remote\\SaveData}}",
+            "{{Game data/saves|Epic Games Launcher|{{p|appdata}}\\Vampire_Survivors_EGS\\{{p|uid}}}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|direct3d versions      = 11.1",
+            "|direct3d notes         = <ref>{{Refcheck|user=Fds29|date=2023-08-23|comment=Checked the Unity player log file.}}</ref>",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Vampire_Survivors?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.748284+00:00",
+          "httpStatus": 200,
+          "sha256": "56e2b38ca84c46f179897679b9bd896ec0814a3671a9587c0b7b50578656424f",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Vampire_Survivors?action=raw",
+          "ratings": {
+            "native": "perfect",
+            "rosetta 2": "Perfect",
+            "crossover": "unplayable",
+            "wine": "perfect"
+          },
+          "facts": [],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1794680.json",
+          "checkedAt": "2026-10-22T01:19:11.779900+00:00",
+          "httpStatus": 200,
+          "sha256": "bdb5c600da15d85f89efe30aeede9c6dd96b1cfeea65047de319ffc174cc36c4",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1794680.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.84,
+            "tier": "platinum",
+            "total": 598,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1794680"
+        }
+      }
+    },
+    {
+      "storeId": "9MXND4PQLK3W",
+      "title": "DOOM 64",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MXND4PQLK3W&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 292913152,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 107360256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 292913152,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 107360256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 292913152,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 107360256,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "DOOM 64",
+        "appID": 1148590,
+        "source": "https://store.steampowered.com/app/1148590/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1148590&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10    Processor:  Intel Core i5-750    Memory:  8 GB RAM    Graphics:  R7 240 | GTX 660 | Intel HD 530",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 10    Processor:  Intel Core i5-2400 | AMD Phenom II X6 1075T 3.0 GHz    Memory:  8 GB RAM    Graphics:  GTX 780 | R9 290X",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "19 Mar, 2020"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Keyboard Only Option",
+          "Playable without Timed Input",
+          "Save Anytime",
+          "Stereo Sound",
+          "Surround Sound",
+          "Partial Controller Support",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1148590?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 8880
+        }
+      },
+      "downloadSizeBytes": 107360256,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.641956+00:00",
+          "httpStatus": 200,
+          "sha256": "1fab1b6527e5f6dc9a9849514fd9cec7b997bcd0d1cb54073657b3e1c2eec4f2",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Kex Engine|build=3.8}}",
+            "|steam appid  = 1148590",
+            "|steam appid side  = ",
+            "{{Game data/saves|Windows|{{p|USERPROFILE}}\\Saved Games\\Nightdive Studios\\DOOM 64\\saves\\}}",
+            "{{Game data/saves|Microsoft Store|{{P|localappdata}}\\Packages\\BethesdaSoftworks.Doom641997_3275kfvn8vcwc\\SystemAppData\\wgs\\}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "# Find a line {{code|seta r_rhirenderfamily \"vulkan\"}}.",
+            "# Set it to either {{code|seta r_rhirenderfamily \"d3d11\"}} or {{code|seta r_rhirenderfamily \"opengl\"}}.",
+            "|direct3d versions      = 11",
+            "|direct3d notes         = ",
+            "|opengl versions        = 3.2",
+            "|opengl notes           = ",
+            "|vulkan versions        = true",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Doom_64?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.661604+00:00",
+          "httpStatus": 200,
+          "sha256": "7a1cebf34bafca4d9cba1a8585752c7faf1698d85677dfd785264360b692b4c7",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Doom_64?action=raw",
+          "ratings": {
+            "native": "na",
+            "rosetta 2": "na",
+            "crossover": "playable",
+            "wine": "unknown"
+          },
+          "facts": [
+            "{{Infobox game/row/engine|Kex Engine|build=3.8}}",
+            "|steam appid  = 1148590",
+            "|steam appid side  = "
+          ],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1148590.json",
+          "checkedAt": "2026-10-22T01:19:11.686417+00:00",
+          "httpStatus": 200,
+          "sha256": "9ae023ae5554e8236009f79aec33411f2a5df0d87673b331fbc0172987d33132",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1148590.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.76,
+            "tier": "gold",
+            "total": 148,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1148590"
+        }
+      }
+    },
+    {
+      "storeId": "9P1Z43KRNQD4",
+      "title": "Quake",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P1Z43KRNQD4&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105569280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105159680,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1761398784,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105569280,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2105159680,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1761398784,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Quake",
+        "appID": 2310,
+        "source": "https://store.steampowered.com/app/2310/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=2310&cc=gb&l=english",
+        "minimum": "Minimum Spec (1080p/60 HZ)    Win 10 64-bit version   Intel Core i5-3570 @3.4 GHz or AMD Ryzen 3 1300X @3.5 GHz    NVIDIA GeForce GTX 650 TI (2GB) or AMD HD 7750 (1GB)    8GB System RAM    Minimum 2GB free space on hard drive (additional space required for add-on downloads)    High speed broadband connection required for online play",
+        "recommended": "Recommended Spec (*4K/120 HZ)    Win 10 64-bit version   Intel Core i5-6600k @3.5 GHz or AMD Ryzen 5 1600 @3.2 GHz    NVIDIA GeForce GTX 1070 (8GB) or AMD RX Vega 56 (8GB)    8GB System RAM    Minimum 2GB free space on hard drive (additional space required for add-on downloads)    High speed broadband connection required for online play   *Compatible display required",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "3 Aug, 2007"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "PvP",
+          "Online PvP",
+          "Shared/Split Screen PvP",
+          "Co-op",
+          "Online Co-op",
+          "Shared/Split Screen Co-op",
+          "Shared/Split Screen",
+          "Cross-Platform Multiplayer",
+          "Full controller support",
+          "Steam Cloud",
+          "Remote Play Together",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/2310?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 16558
+        }
+      },
+      "downloadSizeBytes": 1761398784,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.741848+00:00",
+          "httpStatus": 200,
+          "sha256": "96d8a3e021bc15bc293f54d22e54183caa5e2024350557893a13b70670610ffa",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Quake_Enhanced?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Kex Engine|build=4.0}}",
+            "|steam appid  = 2310",
+            "|steam appid side = ",
+            "{{Game data/saves|Windows|{{P|userprofile}}\\Saved Games\\Nightdive Studios\\Quake\\*.sav}}",
+            "{{Game data/saves|Microsoft Store|}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|native 3d notes             = '''Dual-View Rendering'''<br>Use [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] in [https://helixmod.blogspot.com/2017/05/3d-fix-manager.html 3D Fix Manager] for [[Glossary:Native_3D#Side-by-Side_.28SBS.29|SBS]], [[Glossary:Native_3D#Top-and-Bottom_.28TAB.29|TAB]], [[Glossary:Native_3D#Interleaved|Interleaved]] and [[Glossary:Native_3D#Anaglyph|Anaglyph]].<br>Or [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] with [https://github.com/BramTeurlings/3DGameBridgeGUI/releases 3D Game Bridge GUI] for [[Glossary:Native_3D#Eye-Tracked_Lightfield|Eye-Tracked Lightfield]] displays.",
+            "|nvidia 3d vision notes      = '''Dual-View Rendering'''<br>Use [https://helixmod.blogspot.com/2021/10/quake-opengl-vulkan-dx9-dx11.html Geo-11 fix] for [[Glossary:Native_3D#Frame_Sequential|Frame Sequential]] or [[Glossary:Native_3D#Interleaved|Row Interleaved]].",
+            "|direct3d versions      = ",
+            "|direct3d notes         = ",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = 1.1",
+            "|vulkan notes           = Default renderer. Can be forced manually by using {{code|+r_rhirenderfamily vulkan}} [[Glossary:Command line arguments|Command line argument]].<br>D3D11 can be forced manually with the {{code|+r_rhirenderfamily \"d3d11\" +d3d11_compileShaders 1}} [[Glossary:Command line arguments|Command line argument]]. It will change the renderer setting in the configuration file. It can cause graphical glitches and disables the Steam overlay.",
+            "{{Standard table/row|r_gpuCulling 0|Reportedly improves performance on Vulkan.<ref>{{Refurl|url=https://twitter.com/SVKaiser/status/1428651543641956358|title=SVKaiser - twitter|date=2021-08-21}}</ref>}}"
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Quake_Enhanced?action=raw",
+          "checkedAt": "2026-10-22T01:19:11.766439+00:00",
+          "httpStatus": 404,
+          "sha256": null,
+          "error": "HTTP Error 404: Not Found",
+          "ratings": {},
+          "facts": [],
+          "bodyAvailable": false
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/2310.json",
+          "checkedAt": "2026-10-22T01:19:11.792595+00:00",
+          "httpStatus": 200,
+          "sha256": "46438035a4e8949772dd08ef3b3e27ce7f820ebbd30c7fe9712c6effa11d5d26",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2310.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.81,
+            "tier": "platinum",
+            "total": 217,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/2310"
+        }
+      }
+    },
+    {
+      "storeId": "9P46M5JQ2PTF",
+      "title": "DOOM + DOOM II",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P46M5JQ2PTF&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1467670528,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1467731968,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1125040128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1467670528,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1467731968,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1125040128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "no-exact-Steam-match",
+        "searchURL": "https://store.steampowered.com/api/storesearch/?term=DOOM+%2B+DOOM+II&cc=gb&l=english",
+        "matches": []
+      },
+      "downloadSizeBytes": 1125040128,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Doom_%2B_Doom_II?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.468576+00:00",
+          "httpStatus": 200,
+          "sha256": "e78ce8476a7a88bb467da0d207679bd8c0f73daeb77e0c12c62a7e8f96a7d88b",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Doom_%2B_Doom_II?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Kex Engine|name=Kex Engine|build=4.3}}",
+            "|steam appid  = 2280",
+            "|steam appid side = ",
+            "{{Game data/saves|Steam|{{P|steam}}\\userdata\\{{P|steam}}\\2280}}",
+            "{{Game data/saves|Windows|{{p|userprofile}}\\Saved Games\\Nightdive Studios\\DOOM\\saves\\*.sav}}",
+            "|xbox cloud                = true",
+            "|vsync notes                = May introduce input lag for the Vulkan renderer with Vertical Sync enabled.",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|direct3d versions      = 11",
+            "|direct3d notes         = ",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = true",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Doom_%2B_Doom_II?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.489094+00:00",
+          "httpStatus": 404,
+          "sha256": null,
+          "error": "HTTP Error 404: Not Found",
+          "ratings": {},
+          "facts": [],
+          "bodyAvailable": false
+        }
+      }
+    },
+    {
+      "storeId": "9NLRT31Z4RWM",
+      "title": "TUNIC",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NLRT31Z4RWM&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 3497754624,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 3497320448,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2994102272,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 3497754624,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 3497320448,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2994102272,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "TUNIC",
+        "appID": 553420,
+        "source": "https://store.steampowered.com/app/553420/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=553420&cc=gb&l=english",
+        "minimum": "Minimum:     OS:  Windows 10    Processor:  Intel i5 Quad-Core, 2.7 GHz    Memory:  8 GB RAM    Graphics:  GTX 660 / RX 460    Storage:  2 GB available space    Additional Notes:  Gamepad or Controller Recommended.",
+        "recommended": "Recommended:     OS:  Windows 10    Processor:  Intel i5 Quad-Core, 3 GHz    Memory:  8 GB RAM    Graphics:  GTX 1080 Ti / RX Vega 64    Storage:  2 GB available space    Additional Notes:  Gamepad or Controller Recommended.",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "16 Mar, 2022"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/553420?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 18911
+        }
+      },
+      "downloadSizeBytes": 2994102272,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Tunic?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.830865+00:00",
+          "httpStatus": 200,
+          "sha256": "8cf304671e15aec14e86e9cf69bc5ef49594c0012bfd356a5db95b8d59f7f2e3",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Tunic?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Unity|name=Unity 2020|ref=<ref name=\"engineversion\">{{Refcheck|user=Dave247|date=2022-03-17}}</ref>|build=2020.3.17f1}}",
+            "|steam appid  = 553420",
+            "|steam appid side  = ",
+            "{{Game data/saves|Windows|{{p|userprofile}}\\AppData\\LocalLow\\Andrew Shouldice\\Secret Legend\\SAVES\\}}",
+            "{{Game data/saves|Microsoft Store|{{p|localappdata}}\\Packages\\Finji.TUNIC_tys0ffscxatjj\\SystemAppData\\wgs}}",
+            "{{Game data/saves|OS X|{{p|osxhome}}/Library/Application Support/Andrew Shouldice/Secret Legend/SAVES}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = false",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|direct3d versions      = 11",
+            "|direct3d notes         = Direct3D 12 can be forced using the <code>-force-d3d12</code> [[Glossary:Command line arguments|command line argument]].<ref>{{Refcheck|user=Fds29|date=2022-03-21}}</ref>",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Tunic?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.850742+00:00",
+          "httpStatus": 200,
+          "sha256": "b90f2991ef3df5f10856ad30437c7ac3c06bfa0d540c11e75ff98be9c50836f7",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Tunic?action=raw",
+          "ratings": {
+            "native": "perfect",
+            "rosetta 2": "na",
+            "crossover": "unknown",
+            "wine": "unknown"
+          },
+          "facts": [
+            "|steam appid  = 553420",
+            "|steam appid side  = "
+          ],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/553420.json",
+          "checkedAt": "2026-10-22T01:19:12.883032+00:00",
+          "httpStatus": 200,
+          "sha256": "6a0e7e83d04d48312fbcf971f918ddbc3d0a70647726f4f5c4eed618c2c0b9fb",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/553420.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.91,
+            "tier": "platinum",
+            "total": 98,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/553420"
+        }
+      }
+    },
+    {
+      "storeId": "9P8NSTDMZ11P",
+      "title": "Inscryption",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P8NSTDMZ11P&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 4124626944,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 4123856896,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 3570032640,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 4124626944,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 4123856896,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 3570032640,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Inscryption",
+        "appID": 1092790,
+        "source": "https://store.steampowered.com/app/1092790/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1092790&cc=gb&l=english",
+        "minimum": "Minimum:     OS *:  Windows 7    Processor:  Intel Core i5-760 (4 * 2800); AMD Athlon II X4 645 AM3 (4 * 3100)    Memory:  4 GB RAM    Graphics:  GeForce GTX 550 Ti (3072 VRAM); Radeon HD 6850 (1024 VRAM)    Storage:  3 GB available space",
+        "recommended": "Recommended:     OS:  Windows 10    Processor:  Intel Core i5-3470 (4 * 3200); AMD FX-4350 (4 * 4200)    Memory:  8 GB RAM    Graphics:  GeForce GTX 1050 2048 VRAM; Radeon RX 460  4096 VRAM    Storage:  3 GB available space",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "19 Oct, 2021"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Steam Trading Cards",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1092790?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 149479
+        }
+      },
+      "downloadSizeBytes": 3570032640,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Inscryption?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.889195+00:00",
+          "httpStatus": 200,
+          "sha256": "ac6eaf2c0538a5f398f41a4863ab47beba066bb092105d55ae3d56651ade62cf",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Inscryption?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Unity|name=Unity 2019|ref=<ref name=\"engineversion\">{{Refcheck|user=Baronsmoki|date=2021-10-27}}</ref>|build=2019.4.24f1}}",
+            "|steam appid  = 1092790",
+            "|steam appid side = 1469850, 1753260",
+            "{{Game data/saves|Windows|{{p|game}}\\SaveFile.gwsave}}",
+            "{{Game data/saves|Microsoft Store|{{P|localappdata}}\\Packages\\DevolverDigital.Inscryption_6kzv4j18v0c96\\SystemAppData\\wgs\\}}",
+            "{{Game data/saves|OS X|{{p|game}}/Inscryption.App/SaveFile.gwsave}}",
+            "{{Game data/saves|Linux|}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = false",
+            "|xinput controllers        = unknown",
+            "|direct3d versions      = 11",
+            "|direct3d notes         = ",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Inscryption?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.912783+00:00",
+          "httpStatus": 200,
+          "sha256": "11bbc759f8f2f62b70da8658f83062eda98ecc332e72b1ca9d7e8cdcc15143b0",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Inscryption?action=raw",
+          "ratings": {
+            "native": "perfect",
+            "rosetta 2": "perfect",
+            "crossover": "playable",
+            "wine": "unknown"
+          },
+          "facts": [
+            "{{Infobox game/row/engine|Unity|name=Unity}}",
+            "|steam appid  = 1092790",
+            "|steam appid side = 1469850, 1753260"
+          ],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1092790.json",
+          "checkedAt": "2026-10-22T01:19:12.945952+00:00",
+          "httpStatus": 200,
+          "sha256": "cdc4ecfb8085fc8f1335d9c5cd2e99bb27b91147ad5c782ed7a5097c39a09958",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1092790.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.86,
+            "tier": "platinum",
+            "total": 185,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1092790"
+        }
+      }
+    },
+    {
+      "storeId": "9PBWWQGXVMKC",
+      "title": "Monster Sanctuary",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PBWWQGXVMKC&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 822587392,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 822587392,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Monster Sanctuary",
+        "appID": 814370,
+        "source": "https://store.steampowered.com/app/814370/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=814370&cc=gb&l=english",
+        "minimum": "Minimum:     OS *:  Windows 7    Processor:  Dual-Core, 2.0 GHz    Memory:  2 GB RAM    Graphics:  GeForce 8800 GT 512 MB, Radeon HD 4870 512 MB    DirectX:  Version 10    Storage:  1 GB available space    Sound Card:  Windows Compatible Sound Card",
+        "recommended": "Recommended:     OS:  Windows 10 64-bit    Processor:  Dual-Core, 3.0 GHz    Memory:  4 GB RAM    Graphics:  GeForce GTS 450 or Equivilant    DirectX:  Version 10    Storage:  2 GB available space    Sound Card:  Windows Compatible Sound Card",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "8 Dec, 2020"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Multi-player",
+          "PvP",
+          "Online PvP",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Gamepad Recommended",
+          "DualShock Controller Support",
+          "DualShock Controller Support",
+          "DualSense Controller Support",
+          "DualSense Controller Support",
+          "Steam Cloud",
+          "Steam Leaderboards",
+          "Remote Play on Phone",
+          "Remote Play on Tablet",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/814370?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 12729
+        }
+      },
+      "downloadSizeBytes": 822587392,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Monster_Sanctuary?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.893151+00:00",
+          "httpStatus": 200,
+          "sha256": "670374f99b7c766ca6f80aabda362e8695049f34c5f7b5cb3201b37eb5dea605",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Monster_Sanctuary?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Unity|name=Unity 2018|ref=<ref name=\"engineversion\">{{Refcheck|user=Baronsmoki|date=2022-04-05}}</ref>|build=2018.4.30f1}}",
+            "|steam appid  = 814370",
+            "|steam appid side  = ",
+            "{{Game data/saves|Windows|{{P|userprofile\\Documents}}\\My Games\\Monster Sanctuary\\}}",
+            "{{Game data/saves|Microsoft Store|}}",
+            "{{Game data/saves|OS X|{{p|machome}}/Library/Application Support/Monster Sanctuary/}}",
+            "{{Game data/saves|Linux|{{p|linuxhome}}/.local/share/Monster Sanctuary/}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = unknown",
+            "|direct3d versions      = 11",
+            "|direct3d notes         = ",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Monster_Sanctuary?action=raw",
+          "checkedAt": "2026-10-22T01:19:12.911577+00:00",
+          "httpStatus": 404,
+          "sha256": null,
+          "error": "HTTP Error 404: Not Found",
+          "ratings": {},
+          "facts": [],
+          "bodyAvailable": false
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/814370.json",
+          "checkedAt": "2026-10-22T01:19:12.933787+00:00",
+          "httpStatus": 200,
+          "sha256": "1afd20b5489c1043723eef05967c9ef0a4ba3c4f365ad4b444951901c3e99ae3",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/814370.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "good",
+            "score": 0.73,
+            "tier": "platinum",
+            "total": 22,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/814370"
+        }
+      }
+    },
+    {
+      "storeId": "9MSVVM5NS9L6",
+      "title": "DREDGE",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MSVVM5NS9L6&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1209487360,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1214410752,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 825229312,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1209487360,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1214410752,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 825229312,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1209487360,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 1214410752,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 825229312,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "DREDGE",
+        "appID": 1562430,
+        "source": "https://store.steampowered.com/app/1562430/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1562430&cc=gb&l=english",
+        "minimum": "Minimum:     OS:  Windows 10    Processor:  Intel Core i3-2100 | AMD Phenom II X4 965    Memory:  4 GB RAM    Graphics:  Nvidia 8800 GT 512MB | Radeon HD 6570 1GB    DirectX:  Version 11    Storage:  2 GB available space    Additional Notes:  720p @ 30 FPS",
+        "recommended": "Recommended:     OS:  Windows 10    Processor:  Intel Core i5-2550K | AMD FX-8370    Memory:  6 GB RAM    Graphics:  Nvidia GTS 450 1GB | Radeon HD 5770 1GB    DirectX:  Version 11    Storage:  2 GB available space    Additional Notes:  1080p @ 60 FPS",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "30 Mar, 2023"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Camera Comfort",
+          "Color Alternatives",
+          "Custom Volume Controls",
+          "Adjustable Difficulty",
+          "Keyboard Only Option",
+          "Stereo Sound",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1562430?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 57630
+        }
+      },
+      "downloadSizeBytes": 825229312,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Dredge?action=raw",
+          "checkedAt": "2026-10-22T01:19:13.610320+00:00",
+          "httpStatus": 200,
+          "sha256": "bc86b7b83ceb667a8d8e3bf71d74e6f04b9324218f7360206e2edf66585e6a26",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Dredge?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Unity|name=Unity 2021|ref=<ref name=\"engineversion\">{{Refcheck|user=Jams3223|date=2023-08-08}}</ref>|build=2021.3.5f1}}",
+            "|steam appid  = 1562430",
+            "|steam appid side = 2104240, 2198600, 2198610, 2561440, 2561450",
+            "{{Game data/saves|Windows|{{p|userprofile\\appdata\\locallow}}\\Black Salt Games\\DREDGE\\saves}}",
+            "{{Game data/saves|OS X|}}",
+            "{{Game data/saves|Epic Games Store|{{p|userprofile\\appdata\\locallow}}\\Black Salt Games\\DREDGE\\eos\\saves}}",
+            "{{Game data/saves|GOG.com|{{p|userprofile\\appdata\\locallow}}\\Black Salt Games\\DREDGE\\gog_galaxy\\saves}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = true",
+            "|direct3d versions      = 11",
+            "|direct3d notes         = ",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Dredge?action=raw",
+          "checkedAt": "2026-10-22T01:19:13.630668+00:00",
+          "httpStatus": 404,
+          "sha256": null,
+          "error": "HTTP Error 404: Not Found",
+          "ratings": {},
+          "facts": [],
+          "bodyAvailable": false
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1562430.json",
+          "checkedAt": "2026-10-22T01:19:13.658253+00:00",
+          "httpStatus": 200,
+          "sha256": "18c53ca3fad368bf4327910309ace6d91bbcc059e5f0f538e7d8616ac9b75562",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1562430.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.94,
+            "tier": "platinum",
+            "total": 158,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1562430"
+        }
+      }
+    },
+    {
+      "storeId": "9NX6K9HN4F4K",
+      "title": "Pentiment",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NX6K9HN4F4K&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11916361728,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11876347904,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11451056128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11916361728,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11876347904,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0017",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11451056128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11916361728,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11876347904,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 11451056128,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Pentiment",
+        "appID": 1205520,
+        "source": "https://store.steampowered.com/app/1205520/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=1205520&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS *:  Windows 7 (SP1) 64bit    Processor:  Intel Core i3-3225    Memory:  4 GB RAM    Graphics:  Nvidia GTX 650 Ti    Storage:  12 GB available space",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "14 Nov, 2022"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Full controller support",
+          "DualShock Controller Support",
+          "DualShock Controller Support",
+          "DualSense Controller Support",
+          "DualSense Controller Support",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/1205520?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 9931
+        }
+      },
+      "downloadSizeBytes": 11451056128,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Pentiment?action=raw",
+          "checkedAt": "2026-10-22T01:19:14.119245+00:00",
+          "httpStatus": 200,
+          "sha256": "0a42a22e46cad20f410e86e1742ee373bfeb10cbfa899918ae1cb76e94b7e250",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Pentiment?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Unity|name=Unity 2021|ref=<ref>{{Refcheck|user=Fds29|date=2022-11-15}}</ref>|build=2021.3.5f1}}",
+            "|steam appid  = 1205520",
+            "|steam appid side = 2207830",
+            "{{Game data/saves|Microsoft Store|{{p|localappdata}}\\Packages\\Microsoft.OE-Missouri_8wekyb3d8bbwe\\SystemAppData\\wgs}}",
+            "{{Game data/saves|Steam|{{p|userprofile}}\\Saved Games\\Pentiment | {{p|userprofile}}\\AppData\\LocalLow\\Obsidian Entertainment\\Pentiment\\CloudSync}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = unknown",
+            "|direct3d versions      = ",
+            "|direct3d notes         = ",
+            "|opengl versions        = ",
+            "|opengl notes           = ",
+            "|vulkan versions        = ",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Pentiment?action=raw",
+          "checkedAt": "2026-10-22T01:19:14.141423+00:00",
+          "httpStatus": 200,
+          "sha256": "59486d5b44fdf7ea8f104c218446c0b4200c6d016f2cd34e15aef2dbd5330df5",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Pentiment?action=raw",
+          "ratings": {
+            "native": "na",
+            "rosetta 2": "na",
+            "crossover": "unknown",
+            "wine": "unknown"
+          },
+          "facts": [
+            "|engines      = {{Infobox game/row/engine|Unity|name=Unity Engine}}",
+            "|steam appid  = 1205520",
+            "|steam appid side = "
+          ],
+          "bodyAvailable": true
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/1205520.json",
+          "checkedAt": "2026-10-22T01:19:14.175797+00:00",
+          "httpStatus": 200,
+          "sha256": "d03fbf1cec177ea6933efbe48dfc8dc6ae3e4ce8b7ef82c4eaffbff41bcf130f",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/1205520.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.83,
+            "tier": "platinum",
+            "total": 56,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/1205520"
+        }
+      }
+    },
+    {
+      "storeId": "9NMNMS626R59",
+      "title": "Halls of Torment",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NMNMS626R59&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2520829952,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2151546880,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2520829952,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "XVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 0,
+                "MinVersion": 0,
+                "PlatformName": "Windows.Xbox"
+              }
+            ],
+            "PlatformDependencyXmlBlob": ""
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2151546880,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "matched",
+        "name": "Halls of Torment",
+        "appID": 2218750,
+        "source": "https://store.steampowered.com/app/2218750/",
+        "detailsURL": "https://store.steampowered.com/api/appdetails?appids=2218750&cc=gb&l=english",
+        "minimum": "Minimum:    Requires a 64-bit processor and operating system    OS:  Windows 10 or newer    Processor:  4 Cores / 2.5 GHz+    Memory:  4 GB RAM    Graphics:  Intel Iris Xe / Nvidia GTX 970 / AMD RX 570 (Adrenalin 22.1.2)    Storage:  4 GB available space",
+        "recommended": "Recommended:    Requires a 64-bit processor and operating system    OS:  Windows 10 or newer    Processor:  4 Cores / 3.5 GHz+    Memory:  8 GB RAM    Graphics:  Nvidia GTX 1070 / AMD RX 570 (Adrenalin 22.1.2)    Storage:  4 GB available space",
+        "releaseDate": {
+          "coming_soon": false,
+          "date": "24 Sep, 2024"
+        },
+        "requiredAccount": null,
+        "categories": [
+          "Single-player",
+          "Steam Achievements",
+          "Full controller support",
+          "Steam Trading Cards",
+          "Custom Volume Controls",
+          "Keyboard Only Option",
+          "Mouse Only Option",
+          "Playable without Timed Input",
+          "Steam Cloud",
+          "Family Sharing"
+        ],
+        "scope": "Steam Windows requirements; Xbox Store build may differ.",
+        "popularity": {
+          "source": "https://store.steampowered.com/appreviews/2218750?json=1&language=all&purchase_type=all&num_per_page=0",
+          "metric": "Steam total user reviews, not player count or Xbox popularity",
+          "totalReviews": 31976
+        }
+      },
+      "downloadSizeBytes": 2151546880,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Halls_of_Torment?action=raw",
+          "checkedAt": "2026-10-22T01:19:14.085228+00:00",
+          "httpStatus": 200,
+          "sha256": "dc7d7871be7fe6620e7bc66aff1e8dd8289508403ebfb4c98982b216331811b9",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Halls_of_Torment?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Godot|build=4.3.1.0}}",
+            "|steam appid  = 2218750",
+            "|steam appid side = 2279200, 2316660, 3386980, 3464980, 3919420",
+            "{{Game data/saves|Steam|{{p|steam}}\\userdata\\{{p|uid}}\\2218750\\remote\\}}",
+            "{{Game data/saves|Windows|{{p|steam}}\\userdata\\{{p|uid}}\\2218750\\remote\\}}",
+            "{{Game data/saves|Linux|{{p|steam}}/userdata/{{p|uid}}/2218750/remote/}}",
+            "|xbox cloud                = true",
+            "|mouse menu                = true",
+            "|controller support        = true",
+            "|xinput controllers        = unknown",
+            "|direct3d versions      = ",
+            "|direct3d notes         = ",
+            "|opengl versions        = 3.3",
+            "|opengl notes           = ",
+            "|vulkan versions        = true",
+            "|vulkan notes           = "
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Halls_of_Torment?action=raw",
+          "checkedAt": "2026-10-22T01:19:14.106721+00:00",
+          "httpStatus": 404,
+          "sha256": null,
+          "error": "HTTP Error 404: Not Found",
+          "ratings": {},
+          "facts": [],
+          "bodyAvailable": false
+        },
+        "protonDB": {
+          "url": "https://www.protondb.com/api/v1/reports/summaries/2218750.json",
+          "checkedAt": "2026-10-22T01:19:14.127818+00:00",
+          "httpStatus": 200,
+          "sha256": "54cb988e0cb984c0537127355300d1c925d95e592857050188c6fd5859f775f7",
+          "error": null,
+          "resolvedUrl": "https://www.protondb.com/api/v1/reports/summaries/2218750.json",
+          "summary": {
+            "bestReportedTier": "platinum",
+            "confidence": "strong",
+            "score": 0.85,
+            "tier": "platinum",
+            "total": 61,
+            "trendingTier": "platinum"
+          },
+          "reportUrl": "https://www.protondb.com/app/2218750"
+        }
+      }
+    },
+    {
+      "storeId": "9N42CT1J5WGW",
+      "title": "Fallout",
+      "catalog": {
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9N42CT1J5WGW&market=GB&languages=en-GB",
+        "status": "matched",
+        "packages": [
+          {
+            "skuID": "0010",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2338754560,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          },
+          {
+            "skuID": "0011",
+            "DeviceCapabilities": [],
+            "MaxDownloadSizeInBytes": 2338754560,
+            "MaxInstallSizeInBytes": 0,
+            "PackageFormat": "MSIXVC",
+            "PlatformDependencies": [
+              {
+                "MaxTested": 2814750970478592,
+                "MinVersion": 2814750970478592,
+                "PlatformName": "Windows.Desktop"
+              }
+            ],
+            "PlatformDependencyXmlBlob": null
+          }
+        ]
+      },
+      "steam": {
+        "status": "no-exact-Steam-match",
+        "searchURL": "https://store.steampowered.com/api/storesearch/?term=Fallout&cc=gb&l=english",
+        "matches": [
+          {
+            "name": "Fallout 76",
+            "appID": 1151340
+          },
+          {
+            "name": "Fallout 4",
+            "appID": 377160
+          },
+          {
+            "name": "Fallout: New Vegas",
+            "appID": 22380
+          },
+          {
+            "name": "Fallout 3: Game of the Year Edition",
+            "appID": 22370
+          },
+          {
+            "name": "Fallout Shelter",
+            "appID": 588430
+          }
+        ]
+      },
+      "downloadSizeBytes": 2338754560,
+      "public": {
+        "pcgamingwiki": {
+          "url": "https://www.pcgamingwiki.com/wiki/Fallout?action=raw",
+          "checkedAt": "2026-10-22T01:19:13.572026+00:00",
+          "httpStatus": 200,
+          "sha256": "3978121569664d93b1e94ac0753348a1f05c52d362a1190cf58ee729470f4265",
+          "error": null,
+          "resolvedUrl": "https://www.pcgamingwiki.com/wiki/Fallout?action=raw",
+          "ratings": {},
+          "facts": [
+            "{{Infobox game/row/engine|Fallout Engine}}",
+            "|steam appid  = 38400",
+            "{{Game data/saves|DOS|{{p|game}}\\data\\SAVEGAME\\}}",
+            "{{Game data/saves|Windows|{{p|game}}\\data\\SAVEGAME\\}}",
+            "{{Game data/saves|Microsoft Store|}}",
+            "{{Game data/saves|Mac OS|}}",
+            "{{Game data/saves|OS X|}}",
+            "{{Game data/saves|Linux|}}",
+            "|xbox cloud                = false",
+            "|mouse menu                = true",
+            "|controller support        = false",
+            "|xinput controllers        = unknown",
+            "|direct3d versions      = 9",
+            "|direct3d notes         = Requires the [[#High Resolution Patch|High Resolution Patch]]; default in digital release.",
+            "|opengl versions        = true",
+            "|opengl notes           = Mac OS, OS X, and Linux only.",
+            "|vulkan versions        = ",
+            "|vulkan notes           = ",
+            "{{ii}} Supports the original DirectDraw renderer, as well as the DirectDraw, DirectDraw 7 and Direct3D 9 renderers of the HD patch."
+          ],
+          "bodyAvailable": true
+        },
+        "appleGamingWiki": {
+          "url": "https://www.applegamingwiki.com/wiki/Fallout?action=raw",
+          "checkedAt": "2026-10-22T01:19:13.591573+00:00",
+          "httpStatus": 200,
+          "sha256": "1fe4557c2893a24fbc9ec3fcf0d3b21391e91c26ec449492055d592f965d1ec3",
+          "error": null,
+          "resolvedUrl": "https://www.applegamingwiki.com/wiki/Fallout?action=raw",
+          "ratings": {
+            "native": "perfect",
+            "rosetta 2": "na",
+            "crossover": "unplayable",
+            "wine": "unknown"
+          },
+          "facts": [
+            "{{Infobox game/row/engine|Fallout Engine}}",
+            "|steam appid  = 38400"
+          ],
+          "bodyAvailable": true
+        }
+      }
+    }
+  ]
+}
