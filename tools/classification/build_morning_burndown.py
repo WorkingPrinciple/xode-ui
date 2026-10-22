@@ -51,7 +51,7 @@ def calculate(inputs):
     attempted = inputs["attemptedMatrixRows"]
     passed = sum(row["verdict"] == "WORKING" for row in attempted)
     reached_menu = sum(row["verdict"] in {"WORKING", "WORKING_CANDIDATE",
-                                         "GAMEPLAY_PASS", "TITLE_SCREEN_ONLY"} for row in attempted)
+                                         "GAMEPLAY_PASS", "TITLE_SCREEN_ONLY", "TITLE_SCREEN_PASS"} for row in attempted)
     intervals = {}
     for sample in inputs["phaseRuns"]:
         runs = sample["runs"]
@@ -215,8 +215,10 @@ def render_summary(packet):
              "S1 spec `dfe6ad5`, `retention-passive-batches.md`.\n"
              f"\nObserved admission ratio: **{packet['observedAdmissionRatio']['working']}/"
              f"{packet['observedAdmissionRatio']['attemptedMatrix']} matrix attempts "
-             f"({packet['observedAdmissionRatio']['ratio']:.1%})**; including Inscryption's "
-             f"receipt-only attempt: **{packet['observedAdmissionRatio']['receiptAugmentedRatio']:.1%}**. "
+             f"({packet['observedAdmissionRatio']['ratio']:.1%})**; including receipt-only "
+             f"attempts: **{packet['observedAdmissionRatio']['working']}/"
+             f"{packet['observedAdmissionRatio']['receiptAugmentedAttempted']} "
+             f"({packet['observedAdmissionRatio']['receiptAugmentedRatio']:.1%})**. "
              f"Post-title-screen subset: **{packet['observedAdmissionRatio']['working']}/"
              f"{packet['observedAdmissionRatio']['titleScreenOrBeyond']}**. "
              "Unfinished tests included; no probabilities. Minimum "

@@ -72,6 +72,18 @@ class PathTo20Tests(unittest.TestCase):
                    if row["storeId"] == candidate["storeId"])
         self.assertEqual(row["gateFirstObservedAt"], candidate["gateFirstObservedAt"])
 
+    def test_title_screen_pass_alias_advances_to_gameplay(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        source_row = next(row for row in inputs["matrix"]["snapshot"]["games"]
+                          if row["productId"] == "9NMNMS626R59")
+        source_row["verdict"] = "TITLE_SCREEN_PASS"
+        source_row.pop("saveObservation", None)
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == source_row["productId"])
+        self.assertEqual(row["gates"]["menu"]["status"], "passed")
+        self.assertEqual(row["gates"]["gameplay"]["status"], "unknown")
+        self.assertEqual(row["nextGate"], "gameplay")
+
 
 if __name__ == "__main__":
     unittest.main()

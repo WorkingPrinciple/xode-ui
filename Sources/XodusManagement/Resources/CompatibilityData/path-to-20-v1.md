@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T02:56:01.623133+00:00; **5/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T03:26:54.237136+00:00; **5/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -9,8 +9,9 @@ Updated 2026-10-22T02:56:01.623133+00:00; **5/20 strict WORKING**. Brotato candi
 | Hollow Knight: Voidheart Edition | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Minecraft: Java Edition with Minecraft Launcher | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | No Man's Sky | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
-| Hades II | GAMEPLAY_PASS | passed | passed | ? | ? | ? | save / S3 | Final save/checkpoint and clean quit/relaunch pending; no Xbox cloud-save claim. Game PID77808 and wineserver77721 confirmed gone after exact-prefix-k/w. | - |
+| Hades II | GAMEPLAY_PASS | passed | passed | passed | ? | ? | save / S3 | Conversation marker not retained on shippingadf8 despite payload delta/continuity. Coordinator admits ONE escape/natural-death checkpoint test with Nights/resource increment; no additional retries if it fails. Existing prefix retained/stopped. | - |
 | Abiotic Factor | TITLE_SCREEN_ONLY | passed | ? | ? | ? | ? | gameplay / S3 | Full world/play/save/quit/relaunch qualification still pending; coordinator schedules same successful STA-only recipe after Fallout/Hogwarts. Discover actual local save root, no invented path. No remaining reproduction of the prior PreInit exit in this changed title run; no global COM default. | - |
+| Mixtape | TITLE_SCREEN_PASS | passed | ? | passed | ? | ? | gameplay / S3 | Controllable gameplay, completed chapter/checkpoint and fresh-process retained progression remain unverified inside the admitted600s bound. No unchanged automatic retry. | - |
 | A Game About Digging A Hole | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | RegionPolicyEvaluator factory error and COM marshal IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca HRESULT80004002; factory-error causality unproven. Exact-prefix cleanup complete. | - |
 | Age of Empires IV: Anniversary Edition | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | - |
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | - |
@@ -37,7 +38,6 @@ Updated 2026-10-22T02:56:01.623133+00:00; **5/20 strict WORKING**. Brotato candi
 | Kingdom Come: Deliverance II | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | - |
 | LIMBO | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | - |
 | Minishoot' Adventures | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | - |
-| Mixtape | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | - |
 | Monster Sanctuary | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | - |
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | - |
 | Oblivion GOTY (2009) | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | - |

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T02:56:01.623133+00:00",
+    "asOf": "2026-10-22T03:26:54.237136+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
     "strictWorkingCount": 5,
-    "trackerMatrixSha256": "0ece0966963915f49f82a6df2f66cad6361e8941ee6b9d52b8102a1ab93ab019",
+    "trackerMatrixSha256": "9be480117052896e575c84c88ca50a0720dc7f65e5dab69ac5e3b22d739144c0",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -287,6 +287,11 @@
         "verdict": "WORKING"
       },
       {
+        "storeId": "9NH0MSG29X6L",
+        "title": "Mixtape",
+        "verdict": "TITLE_SCREEN_PASS"
+      },
+      {
         "storeId": "9PK087LNGJC5",
         "title": "Balatro",
         "verdict": "FAIL"
@@ -327,6 +332,11 @@
         "storeId": "9P4NV23Q6QC2",
         "title": "Abiotic Factor",
         "verdict": "TITLE_SCREEN_ONLY"
+      },
+      {
+        "storeId": "9NH0MSG29X6L",
+        "title": "Mixtape",
+        "verdict": "TITLE_SCREEN_PASS"
       },
       {
         "storeId": "9NGLST31DG26",
@@ -475,7 +485,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1169.9729477833332,
+  "remainingWallMinutes": 1139.0960477333333,
   "scenarios": [
     {
       "label": "slow observed",
@@ -502,23 +512,23 @@
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 26,
+      "serialCycleSlots": 25,
       "queueCappedAdditions": 21,
       "conditionalTotalWorking": 26,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5769230769230769,
+      "minimumPassRateRawSlots": 0.6,
       "minimumPassRateCurrentQueue": 0.7142857142857143,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
     "working": 5,
-    "attemptedMatrix": 12,
-    "ratio": 0.4166666666666667,
-    "receiptAugmentedAttempted": 13,
-    "receiptAugmentedRatio": 0.38461538461538464,
-    "titleScreenOrBeyond": 9,
-    "postTitleScreenAdmissionRatio": 0.5555555555555556,
+    "attemptedMatrix": 13,
+    "ratio": 0.38461538461538464,
+    "receiptAugmentedAttempted": 14,
+    "receiptAugmentedRatio": 0.35714285714285715,
+    "titleScreenOrBeyond": 10,
+    "postTitleScreenAdmissionRatio": 0.5,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
   },
   "timeSink": {
@@ -543,7 +553,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 77.99819651888888,
+  "requiredAverageMinutesPerAddition": 75.93973651555555,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

@@ -52,7 +52,7 @@ def build(inputs, previous):
                 gate.update(status="passed", basis="Admitted strict WORKING matrix verdict; "
                             "native/roguelite-specific acceptance retained in matrix scope")
             next_gate, owner, blocker = "complete", observed.get("owner", "S3"), None
-        elif verdict in {"TITLE_SCREEN_ONLY", "GAMEPLAY_PASS", "WORKING_CANDIDATE"}:
+        elif verdict in {"TITLE_SCREEN_ONLY", "TITLE_SCREEN_PASS", "GAMEPLAY_PASS", "WORKING_CANDIDATE"}:
             gates["menu"].update(status="passed", basis="Admitted matrix " + verdict)
             next_gate, owner = "gameplay", "S3"
             if verdict == "GAMEPLAY_PASS" or (
