@@ -95,6 +95,19 @@ def build(inputs, previous):
                 blocker = "No title screen in admitted passive; CLI0 does not establish rendering."
             evidence.append({"path": passive["path"], "sha256": passive["sha256"],
                              "runId": passive["runId"]})
+        reports = inputs.get("ownerVerdicts")
+        if reports and (not observed or verdict in {"UNTESTED", "NOT_TESTED"}):
+            report = next((row for row in reports["snapshot"]["items"]
+                           if row["storeId"] == sid), None)
+            if report:
+                verdict = report["verdict"]
+                next_gate, owner, blocker = (
+                    report["nextGate"], report["ownerStream"], report["blocker"])
+                for name, status in report["gates"].items():
+                    gates[name].update(status=status, basis=report["scope"])
+                evidence.append({"path": reports["path"], "sha256": reports["sha256"],
+                                 "runId": report["runId"],
+                                 "sourceSession": report["sourceSession"]})
         if candidate.get("catalogueOnly"):
             next_gate, owner = "catalogue hold / entitlement / disk", "user/coordinator"
             blocker = "Catalogue closed tonight; membership is not entitlement; no install grant"
@@ -150,6 +163,7 @@ def refresh():
         for row in packet["snapshot"].get("items", []) + packet["snapshot"].get("blockedItems", []):
             packets.append({"storeId": row["storeId"], "path": packet["path"], "sha256": packet["sha256"]})
     inputs = {"collectedAt": now(), "matrix": source(MATRIX),
+              "ownerVerdicts": source(DATA / "path-to-20-owner-verdicts-v1.json"),
               "candidates": [{"storeId": row["storeId"], "title": row["title"],
                               "catalogueOnly": row["storeId"] in closed,
                               "blocker": row.get("blocker"), "state": row["state"],

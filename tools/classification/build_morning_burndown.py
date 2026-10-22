@@ -167,7 +167,7 @@ def refresh(tracker):
     inputs["attemptDefinition"] = "Unique title with an actual matrix attempt, including startup "
     inputs["attemptDefinition"] += "FAIL, title-screen, gameplay, candidate and WORKING; exclude "
     inputs["attemptDefinition"] += "NOT_TESTED/UNTESTED and inventory BLOCKED without execution. "
-    inputs["attemptDefinition"] += "Also show tracker augmentation for passive verdict not yet in matrix."
+    inputs["attemptDefinition"] += "Also show tracker augmentation for passive receipts or owner-reported verdicts not yet in matrix."
     def phase(directory, run, label):
         return {**read_result(directory, run), "phase": label}
     inputs["phaseRuns"] = [
@@ -215,7 +215,7 @@ def render_summary(packet):
              "S1 spec `dfe6ad5`, `retention-passive-batches.md`.\n"
              f"\nObserved admission ratio: **{packet['observedAdmissionRatio']['working']}/"
              f"{packet['observedAdmissionRatio']['attemptedMatrix']} matrix attempts "
-             f"({packet['observedAdmissionRatio']['ratio']:.1%})**; including receipt-only "
+             f"({packet['observedAdmissionRatio']['ratio']:.1%})**; including receipt/owner-reported "
              f"attempts: **{packet['observedAdmissionRatio']['working']}/"
              f"{packet['observedAdmissionRatio']['receiptAugmentedAttempted']} "
              f"({packet['observedAdmissionRatio']['receiptAugmentedRatio']:.1%})**. "

@@ -84,6 +84,20 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["gates"]["gameplay"]["status"], "unknown")
         self.assertEqual(row["nextGate"], "gameplay")
 
+    def test_dredge_retention_is_not_clean_quit_or_working(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["games"] = [
+            row for row in inputs["matrix"]["snapshot"]["games"]
+            if row["productId"] != "9MSVVM5NS9L6"]
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9MSVVM5NS9L6")
+        self.assertEqual(row["verdict"], "INCONCLUSIVE")
+        self.assertFalse(row["strictWorking"])
+        self.assertEqual(row["gates"]["save"]["status"], "passed")
+        self.assertEqual(row["gates"]["relaunch"]["status"], "passed")
+        self.assertEqual(row["gates"]["quit"]["status"], "not-passed")
+        self.assertEqual(row["nextGate"], "ordinary quit")
+
 
 if __name__ == "__main__":
     unittest.main()

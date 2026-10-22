@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "storeId": "9MSVVM5NS9L6",
+      "title": "DREDGE",
+      "verdict": "INCONCLUSIVE",
+      "reportedAt": "2026-10-22T04:13:09.847+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "a452bd89",
+      "gates": {
+        "save": "passed",
+        "relaunch": "passed",
+        "quit": "not-passed"
+      },
+      "nextGate": "ordinary quit",
+      "ownerStream": "S3",
+      "blocker": "Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report.",
+      "scope": "Coordinator report only, not an independently inspected receipt. Matrix verdict supersedes once recorded."
+    }
+  ]
+}
