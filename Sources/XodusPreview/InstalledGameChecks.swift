@@ -203,14 +203,13 @@ enum InstalledGameChecks {
               "Absent private list loads as empty without importing or scanning games")
         await library.importGame(folder: folder, launcher: zero)
         guard let game = library.games.first else { throw InstalledGameError.invalidRegistry }
-        let unadmitted = InstalledGamesController(store: store, compatibilityCatalogue: nil)
-        await unadmitted.load()
-        unadmitted.setAccountAccessAllowed(true)
-        guard let forged = unadmitted.games.first else { throw InstalledGameError.invalidRegistry }
-        await unadmitted.play(forged)
-        check(unadmitted.runningGameID == nil && !unadmitted.launchStarted
-              && unadmitted.playErrors[forged.id]?.contains("Not supported yet") == true,
-              "UI-5: Direct play of an unadmitted installed title is refused before any launcher or engine starts")
+        let unclassified = InstalledGamesController(store: store, compatibilityCatalogue: nil)
+        await unclassified.load()
+        guard let title = unclassified.games.first else { throw InstalledGameError.invalidRegistry }
+        check(unclassified.launchableIDs.contains(title.id)
+              && LibrarySupportVisibility.issues(productID: title.storeId, installed: true,
+                    packageFormat: nil, compatibility: nil, catalogue: nil).isEmpty,
+              "#44: An unclassified installed title retains playable content without a generic unsupported blocker")
         for (format, antiCheat) in [("MSIXVC", "Easy Anti-Cheat"), ("Appx", "none")] {
             let rejectedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
                 market: catalogue.market, packageSource: catalogue.packageSource,
@@ -223,7 +222,7 @@ enum InstalledGameChecks {
             guard let title = rejected.games.first else { throw InstalledGameError.invalidRegistry }
             await rejected.play(title)
             check(rejected.runningGameID == nil && !rejected.launchStarted
-                  && rejected.playErrors[title.id]?.contains("Not supported yet") == true,
+                  && rejected.playErrors[title.id]?.contains(antiCheat == "none" ? format.uppercased() : antiCheat) == true,
                   "UI-5: Direct play rejects \(format) with \(antiCheat) even when account access is allowed")
         }
         NativeUIChecks.checkWelcomePrivacy(installed: library, check: check)

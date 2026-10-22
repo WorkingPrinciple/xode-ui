@@ -426,7 +426,7 @@ struct LiveCatalogView: View {
                   systemImage: "magnifyingglass")
         } description: {
             Text(hiddenUnsupportedCount > 0
-                 ? "Ode to X 0.1 supports MSIXVC games classified without anti-cheat. Show unsupported games to see each reason."
+                 ? "Some games have known package or anti-cheat blockers. Show unsupported games to see each reason."
                  : validEmptySearch ? DiscoverCopy.emptyDescription
                  : selection.genre != nil && query.isEmpty ? "Choose another genre from the loaded selection."
                  : session.catalogMessage(query: query, canRefresh: canRefresh))

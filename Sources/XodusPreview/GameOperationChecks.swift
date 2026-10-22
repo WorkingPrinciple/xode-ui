@@ -352,7 +352,7 @@ enum GameOperationChecks {
                                                     compatibilityCatalogue: blockedCatalogue)
             await blocked.prepareInstall(game)
             check(blocked.installConsent == nil && blocked.operation == nil && !installed.mutationActive
-                  && blocked.error?.contains("Not supported yet") == true,
+                  && blocked.error?.contains(technology == "none" ? format.uppercased() : technology) == true,
                   "UI-5: \(format)/\(technology) is rejected before a compatibility script or download starts")
             let forged = GameInstallConsent(game: game, destination: paths.games.appendingPathComponent("blocked"),
                 freeBytes: 100_000_000_000, installedID: nil,
@@ -362,7 +362,7 @@ enum GameOperationChecks {
             check(!blocked.canConfirmInstall, "UI-5: A positive runtime verdict cannot enable unsupported confirmation")
             blocked.confirmInstall(forged)
             check(blocked.operation == nil && blocked.installConsent == nil && !installed.mutationActive
-                  && blocked.error?.contains("Not supported yet") == true,
+                  && blocked.error?.contains(technology == "none" ? format.uppercased() : technology) == true,
                   "UI-5: Direct confirmation independently rejects unsupported classification")
             let queued = await blocked.runQueuedOperation(GameOperationRecord(
                 id: InstalledGamesController.runID(), kind: .install, productID: game.id,
@@ -994,7 +994,7 @@ enum GameOperationChecks {
                   && !InstalledPlayButton(library: installed, operations: blocked, game: imported).unsupportedIssues.isEmpty,
                   "UI-5: \(technology) cannot expose attention-panel Repair or an installed Play button")
             await blocked.repair(game, installed: imported)
-            check(blocked.operation == nil && blocked.error?.contains("Not supported yet") == true,
+            check(blocked.operation == nil && blocked.error?.contains(technology) == true,
                   "UI-5: Direct installed repair cannot bypass attention-panel admission")
         }
         await installed.play(imported)

@@ -28,7 +28,7 @@ struct MacGameEvidence: Decodable, Sendable {
             case .unknown: "Result not recognized"
             case .failed: "Doesn't start yet"
             case .blocked, .notTested: "Not tested on Mac yet"
-            case .excluded: "Not supported yet"
+            case .excluded: "Excluded from Mac testing"
             }
         }
     }
