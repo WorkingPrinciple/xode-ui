@@ -86,7 +86,7 @@ struct NativeLocalRuntime: Codable {
     }
 
     var reference: NativeRuntimeReference {
-        let primary = URL(fileURLWithPath: primaryPath)
+        let primary = URL(fileURLWithPath: NativeTitleLaunchProfile.expand(primaryPath))
         return NativeRuntimeReference(primary: .init(executable: primary, sha256: primarySHA256),
             legacy: .init(executable: primary.deletingLastPathComponent().appendingPathComponent("xgameruntime_legacy.dll"),
                           sha256: legacySHA256))
@@ -127,28 +127,151 @@ struct NativeShimReference: Sendable {
 }
 
 struct NativeTitleLaunchProfile: Codable {
+    struct PinnedFile: Codable {
+        let path: String
+        let sha256: String
+        var destination: String? = nil
+
+        var url: URL { URL(fileURLWithPath: NativeTitleLaunchProfile.expand(path)) }
+
+        func validate() async throws {
+            let bytes = try await Task.detached {
+                try GameScriptFiles.checkPath(url)
+                return try InstalledGameFiles.readRegular(url, maximumBytes: 67_108_864)
+            }.value
+            guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == sha256 else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
+    }
+
     let version: Int
     let productID: String
     let engine: String?
     let shimDirectory: String?
     let environment: [String: String]
+    var unsetEnvironment: [String]? = nil
+    var crossOverEnvironment: [String: String]? = nil
+    var executable: String? = nil
+    var timeoutSeconds: UInt? = nil
+    var noAutoDismiss: Bool? = nil
+    var runtime: NativeLocalRuntime? = nil
+    var requiredFiles: [PinnedFile]? = nil
+    var prefixRegistryImports: [PinnedFile]? = nil
+    var prefixOverlays: [PinnedFile]? = nil
+
+    private struct Catalogue: Decodable {
+        let version: Int
+        let profiles: [NativeTitleLaunchProfile]
+    }
+
+    static func expand(_ value: String) -> String {
+        value.replacingOccurrences(of: "${HOME}", with: NSHomeDirectory())
+    }
+
+    static func bundledProfiles() throws -> [Self] {
+        let bytes = try Data(contentsOf: LaunchRecipeResources.profilesURL())
+        guard bytes.count <= 1_048_576 else { throw NativeLaunchError.invalidProfile }
+        let catalogue = try JSONDecoder().decode(Catalogue.self, from: bytes)
+        guard catalogue.version == 1, catalogue.profiles.count <= 512,
+              Set(catalogue.profiles.map(\.productID)).count == catalogue.profiles.count else {
+            throw NativeLaunchError.invalidProfile
+        }
+        for profile in catalogue.profiles { try profile.validate(productID: profile.productID) }
+        return catalogue.profiles
+    }
 
     static func read(productID: String, defaults: UserDefaults) throws -> Self? {
+        if let bundled = try bundledProfiles().first(where: { $0.productID == productID }) { return bundled }
         guard let directory = defaults.string(forKey: "Xodus.lifecycle.profileDirectory"), !directory.isEmpty else { return nil }
         let url = URL(fileURLWithPath: directory).appendingPathComponent(productID + ".json")
         try GameScriptFiles.checkPath(url, allowMissing: true)
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         let profile = try JSONDecoder().decode(Self.self, from: InstalledGameFiles.readRegular(url, maximumBytes: 65_536))
-        guard profile.version == 1, profile.productID == productID, profile.environment.count <= 64,
-              profile.environment.allSatisfy({ key, value in
-                  key.range(of: "^[A-Z_][A-Z0-9_]{0,127}$", options: .regularExpression) != nil
+        try profile.validate(productID: productID)
+        return profile
+    }
+
+    private func validate(productID: String) throws {
+        func validKey(_ key: String) -> Bool {
+            key.range(of: "^[A-Z_][A-Z0-9_]{0,127}$", options: .regularExpression) != nil
+        }
+        func relative(_ path: String) -> Bool {
+            !path.isEmpty && !path.hasPrefix("/") && !path.contains("\\") && !path.utf8.contains(0)
+                && path.utf8.count <= 4096
+                && !path.split(separator: "/", omittingEmptySubsequences: false).contains(where: { ["", ".", ".."].contains(String($0)) })
+        }
+        let mirrored = crossOverEnvironment ?? [:]
+        guard version == 1, self.productID == productID, PCGamesClient.validProductID(productID),
+              environment.count <= 64, mirrored.count <= 64,
+              environment.merging(mirrored, uniquingKeysWith: { first, _ in first }).allSatisfy({ key, value in
+                  validKey(key)
                       && value.utf8.count <= 16_384 && !value.utf8.contains(0)
-              }) else { throw NativeLaunchError.invalidProfile }
-        if let directory = profile.shimDirectory {
+              }), mirrored.allSatisfy({ environment[$0.key] == $0.value }),
+              mirrored.isEmpty || environment["CX_ENV"] == nil,
+              (unsetEnvironment ?? []).count <= 64,
+              (unsetEnvironment ?? []).allSatisfy({ validKey($0) && environment[$0] == nil }),
+              executable.map(relative) ?? true,
+              timeoutSeconds.map({ (1...3600).contains($0) }) ?? true else {
+            throw NativeLaunchError.invalidProfile
+        }
+        for file in (requiredFiles ?? []) + (prefixRegistryImports ?? []) + (prefixOverlays ?? []) {
+            guard Self.expand(file.path).hasPrefix("/"), !file.path.utf8.contains(0),
+                  file.sha256.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil,
+                  file.destination.map(relative) ?? true else { throw NativeLaunchError.invalidProfile }
+        }
+        guard (prefixOverlays ?? []).allSatisfy({ $0.destination != nil }) else { throw NativeLaunchError.invalidProfile }
+        if let directory = shimDirectory {
             guard directory.hasPrefix("/") else { throw NativeLaunchError.invalidProfile }
             try GameScriptFiles.checkPath(URL(fileURLWithPath: directory))
         }
-        return profile
+    }
+
+    var launchEnvironment: [String: String] {
+        var result = environment.mapValues(Self.expand)
+        if let mirrored = crossOverEnvironment, !mirrored.isEmpty {
+            result["CX_ENV"] = mirrored.keys.sorted().map {
+                let quoted = Self.expand(mirrored[$0] ?? "").replacingOccurrences(of: "'", with: "'\\''")
+                return "\($0)='\(quoted)'"
+            }.joined(separator: " ")
+        }
+        return result
+    }
+
+    var arguments: [String] {
+        var result: [String] = []
+        if let executable { result += ["--exe", executable] }
+        if let timeoutSeconds { result += ["--timeout-seconds", String(timeoutSeconds)] }
+        if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        return result
+    }
+
+    func registryForLaunch(base: URL, engine: String, outputDirectory: URL? = nil) async throws -> URL {
+        for file in (requiredFiles ?? []) + (prefixRegistryImports ?? []) + (prefixOverlays ?? []) {
+            try await file.validate()
+        }
+        guard prefixRegistryImports != nil || prefixOverlays != nil else { return base }
+        let bytes = try InstalledGameFiles.readRegular(base, maximumBytes: 2_097_152)
+        guard var document = try JSONSerialization.jsonObject(with: bytes) as? [String: Any],
+              var engines = document["engines"] as? [[String: Any]],
+              let index = engines.firstIndex(where: { $0["name"] as? String == engine }) else {
+            throw NativeLaunchError.invalidProfile
+        }
+        if let imports = prefixRegistryImports {
+            engines[index]["prefix_registry_imports"] = imports.map { ["source": $0.url.path, "sha256": $0.sha256] }
+        }
+        if let overlays = prefixOverlays {
+            engines[index]["prefix_overlays"] = overlays.map { ["source": $0.url.path, "destination": $0.destination ?? ""] }
+        }
+        document["engines"] = engines
+        let directory = outputDirectory ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+            "Library/Application Support/Xodus/LaunchRegistries/\(UUID().uuidString)")
+        try GameScriptFiles.checkPath(directory, allowMissing: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
+                                                attributes: [.posixPermissions: 0o700])
+        let output = directory.appendingPathComponent("registry.json")
+        try GameScriptFiles.writePrivate(JSONSerialization.data(withJSONObject: document, options: [.sortedKeys]), to: output)
+        return output
     }
 }
 
@@ -172,12 +295,12 @@ struct NativeLaunchConfiguration {
                         provenEngine: String? = nil) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
-        guard let runtime = runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
+        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults)
+        guard let runtime = profile?.runtime?.reference ?? runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
         guard let registryPath = defaults.string(forKey: "Xodus.lifecycle.registry"),
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
-        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults)
         let entry = try selectEngine(registry: registry, provider: provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
         let engineName = entry.name
@@ -214,8 +337,9 @@ struct NativeLaunchConfiguration {
     func arguments() async throws -> [String] {
         let dll = try await runtime.validate()
         try await shims.validate()
-        return ["--engine", engine, "--registry", registry.path, "--prefix", prefix.path,
-                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path]
+        let selectedRegistry = try await profile?.registryForLaunch(base: registry, engine: engine) ?? registry
+        return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
+                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
     }
 }
 

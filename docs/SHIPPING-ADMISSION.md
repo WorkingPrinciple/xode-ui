@@ -56,6 +56,24 @@ Optional per-title launch profiles live in the selected profile directory as
 {"version":1,"productID":"BQVQTL3PCH05","engine":"exact-registry-engine","environment":{"CX_ENV":"explicit adapter options"}}
 ```
 
+Bundled title bindings in `Sources/XodusManagement/Resources/LaunchRecipes/`
+take precedence over historical local profile files. Other titles still use
+the selected local profile directory. Explicit provider selection remains an
+engine override. The bundled Mixtape, Subnautica 2, Beast of Reincarnation and
+Bluey's Happy Snaps bindings carry the queued COM mode in data, not Swift
+title branches. Abiotic binds the queued GPTK direct-Shipping recipe and
+600-second diagnostic limit. These queued bindings do not establish gameplay.
+
+The NMS binding preserves S3's `f8bb9124` CrossOver 26.3 recipe, its exact
+7106 runtime pair, c2b MoltenVK hash, native-web shims and native-JSON import.
+Structured CrossOver environment values are shell-quoted for the adapter's
+`--env` argument and mirrored in its ambient environment. Required exclusions
+are removed from the inherited environment. The app creates an owned
+per-launch registry document with the same engine name/executable and
+checksum-checked setup, leaving the shared registry and tested prefix alone.
+Fresh app prefixes remain separate from the tested CLI prefix; the new adf8
+CLI and actual tile/save/relaunch path still need app acceptance.
+
 The CLI receives the explicitly selected engine/registry, a game-and-engine
 private prefix, mandatory `--shim-dir`, and the profile environment. The
 shim-only `Engines/profiles/native-web-shims-v1` directory supplies Windows.Web,

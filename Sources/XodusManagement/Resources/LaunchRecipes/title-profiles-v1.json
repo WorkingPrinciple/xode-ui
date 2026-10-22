@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "version": 1,
+      "productID": "9NH0MSG29X6L",
+      "title": "Mixtape",
+      "qualification": "queued, not gameplay-qualified",
+      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
+    },
+    {
+      "version": 1,
+      "productID": "9PJPCB188SVG",
+      "title": "Subnautica 2 (Game Preview)",
+      "qualification": "queued, not gameplay-qualified",
+      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
+    },
+    {
+      "version": 1,
+      "productID": "9NXWSWBM4H6T",
+      "title": "Beast of Reincarnation",
+      "qualification": "queued, not gameplay-qualified",
+      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
+    },
+    {
+      "version": 1,
+      "productID": "9NQVHHW88XW9",
+      "title": "Bluey's Happy Snaps",
+      "qualification": "queued, not gameplay-qualified",
+      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
+    },
+    {
+      "version": 1,
+      "productID": "9P4NV23Q6QC2",
+      "title": "Abiotic Factor",
+      "qualification": "queued, not gameplay-qualified",
+      "sourceRecipe": "com-apartment-20261022/abiotic-sta-recipe.json",
+      "engine": "apple-gptk-4.0b3",
+      "executable": "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
+      "timeoutSeconds": 600,
+      "noAutoDismiss": true,
+      "environment": {
+        "XODUS_PRIVATE_RUNTIME_COM_STA": "1",
+        "WINEDEBUG": "-all,warn+gdkc,warn+xodus_user,err+all",
+        "XODUS_WINE_DEBUG": "-all,warn+gdkc,warn+xodus_user,err+all"
+      },
+      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"],
+      "runtime": {
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+        "legacySHA256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+      }
+    },
+    {
+      "version": 1,
+      "productID": "BQVQTL3PCH05",
+      "title": "No Man's Sky",
+      "qualification": "working direct CLI f8bb9124; app_e2e unobserved; fresh app prefix unqualified",
+      "sourceRecipe": "s3-nms-crossover-working-recipe-v1.json",
+      "engine": "crossover-26.3",
+      "environment": {
+        "WINEDLLOVERRIDES": "xgameruntime=n,b;XCurl=n,b;windows.web=n,b",
+        "CX_LIBVULKAN": "${HOME}/Library/Application Support/Xodus/Runtime-NMS-BQVQTL3PCH05-76/runtime/nms/libMoltenVK.dylib",
+        "MVK_CONFIG_USE_METAL_PRIVATE_API": "1",
+        "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS": "2",
+        "CX_GRAPHICS_BACKEND": "wined3d",
+        "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
+      },
+      "crossOverEnvironment": {
+        "CX_LIBVULKAN": "${HOME}/Library/Application Support/Xodus/Runtime-NMS-BQVQTL3PCH05-76/runtime/nms/libMoltenVK.dylib",
+        "MVK_CONFIG_USE_METAL_PRIVATE_API": "1",
+        "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS": "2",
+        "CX_GRAPHICS_BACKEND": "wined3d",
+        "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
+        "XODUS_PRIVATE_LOCAL_SAVES": "1"
+      },
+      "runtime": {
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+        "legacySHA256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+      },
+      "requiredFiles": [
+        {
+          "path": "${HOME}/Library/Application Support/Xodus/Runtime-NMS-BQVQTL3PCH05-76/runtime/nms/libMoltenVK.dylib",
+          "sha256": "c2b53b24c9f4a29df60bffc73e3da6ec1b4d0d88ebcf40e81acc32ad6ff9b8cc"
+        }
+      ],
+      "prefixRegistryImports": [
+        {
+          "path": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/nms-winecx-msync-v1/native-json.reg",
+          "sha256": "4b91e27c5ae34a0237e2e60678d74117c8f110e261105128ea269058c1962eac"
+        }
+      ],
+      "prefixOverlays": [
+        {
+          "path": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1/windows.web.dll",
+          "sha256": "da4059506a4763b1f5b584c99a36d3c8f2596d5c8d619346958a3ee1c04c3c2e",
+          "destination": "drive_c/windows/system32/windows.web.dll"
+        },
+        {
+          "path": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1/XCurl.dll",
+          "sha256": "238f94356df33e52a5656a763bdf65402f53bab5b47338c4ec91d9cd1163aac3",
+          "destination": "drive_c/windows/system32/XCurl.dll"
+        }
+      ]
+    }
+  ]
+}

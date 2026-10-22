@@ -120,6 +120,7 @@ final class NativeGameLifecycle {
              product: String, gameDirectory: URL, runID: String,
              stateRoot: URL? = nil, launchArguments: [String] = [],
              launchEnvironment: [String: String] = [:],
+             unsetLaunchEnvironment: [String] = [],
              onStarted: () -> Void = {},
              onProgress: (GameScriptProgress) -> Void = { _ in }) async throws -> NativeGameResult {
         guard !active, ["install", "repair", "uninstall", "launch"].contains(operation),
@@ -164,8 +165,9 @@ final class NativeGameLifecycle {
         child.arguments = [operation, product, "--game-dir", gameDirectory.path,
                            "--state-dir", state.path, "--account-hash", accountHash,
                            "--allow-keychain-prompt"] + launchArguments
-        child.environment = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment)
-            .merging(launchEnvironment) { _, selected in selected }
+        var environment = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment)
+        for key in unsetLaunchEnvironment { environment.removeValue(forKey: key) }
+        child.environment = environment.merging(launchEnvironment) { _, selected in selected }
         child.standardInput = FileHandle.nullDevice
         child.standardOutput = output
         child.standardError = diagnostic

@@ -538,7 +538,8 @@ final class InstalledGamesController: ObservableObject {
                     let result = try await nativeLauncher.run(configuration: configuration, accountHash: account,
                         operation: "launch", product: game.storeId,
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
-                        launchArguments: arguments, launchEnvironment: launch.profile?.environment ?? [:], onStarted: {
+                        launchArguments: arguments, launchEnvironment: launch.profile?.launchEnvironment ?? [:],
+                        unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [], onStarted: {
                             Self.launchLog.notice("Launcher started: \(game.storeId, privacy: .public), engine \(launch.engine, privacy: .public)")
                             launchStarted = true
                             playState = .playing

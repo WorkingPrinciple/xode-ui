@@ -59,6 +59,7 @@ enum NativeLifecycleChecks {
         signal.signal(signal.SIGTERM, stop)
         if operation == "launch":
             assert os.environ.get("S5_SYNTHETIC_ENV") == "owned-fixture"
+            assert "HOME" not in os.environ
             deadline = time.monotonic() + 5
             while not cancelled and time.monotonic() < deadline:
                 time.sleep(0.01)
@@ -148,6 +149,7 @@ enum NativeLifecycleChecks {
             operation: "launch", product: "FIXTURE00001", gameDirectory: game,
             runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("cancel"),
             launchEnvironment: ["S5_SYNTHETIC_ENV": "owned-fixture"],
+            unsetLaunchEnvironment: ["HOME"],
             onProgress: { _ in runner.cancel() })
         check(cancelled.errorCode == "CANCELLED" && !runner.isRunning,
               "Native lifecycle: cancellation signals the exact live child and joins its terminal receipt")
@@ -280,6 +282,91 @@ enum NativeLifecycleChecks {
             check(false, "A changed local legacy DLL requires selecting the updated pair")
         } catch { check(true, "A changed local legacy DLL requires selecting the updated pair") }
         try await installationStatusChecks(root: root, check: check)
+        try await titleRecipeChecks(root: root, check: check)
+    }
+
+    private static func titleRecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let profiles = try NativeTitleLaunchProfile.bundledProfiles()
+        for id in ["9NH0MSG29X6L", "9PJPCB188SVG", "9NXWSWBM4H6T", "9NQVHHW88XW9"] {
+            let profile = profiles.first { $0.productID == id }
+            check(profile?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
+                  && profile?.unsetEnvironment == ["XODUS_PRIVATE_CALLER_OWNS_COM"]
+                  && profile?.engine == nil,
+                  "Queued \(id) tile obtains its COM-STA mode from product-bound data without inventing a qualified engine")
+        }
+        let abiotic = profiles.first { $0.productID == "9P4NV23Q6QC2" }
+        check(abiotic?.engine == "apple-gptk-4.0b3"
+              && abiotic?.arguments == ["--exe", "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
+                                       "--timeout-seconds", "600", "--no-auto-dismiss"]
+              && abiotic?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1",
+              "Abiotic tile binds the queued direct-Shipping COM recipe, not a gameplay success claim")
+        guard let nms = profiles.first(where: { $0.productID == "BQVQTL3PCH05" }) else {
+            check(false, "NMS frozen recipe is bundled")
+            return
+        }
+        check(nms.engine == "crossover-26.3"
+              && nms.environment["WINEDLLOVERRIDES"] == "xgameruntime=n,b;XCurl=n,b;windows.web=n,b"
+              && nms.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
+              && nms.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+              && nms.requiredFiles?.first?.sha256 == "c2b53b24c9f4a29df60bffc73e3da6ec1b4d0d88ebcf40e81acc32ad6ff9b8cc"
+              && nms.prefixRegistryImports?.first?.sha256 == "4b91e27c5ae34a0237e2e60678d74117c8f110e261105128ea269058c1962eac",
+              "NMS tile data preserves S3's exact engine, frozen runtime pair, c2b driver and native-JSON import")
+        let suite = "io.github.xodus.recipe-check.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(root.path, forKey: "Xodus.lifecycle.profileDirectory")
+        let obsolete = NativeTitleLaunchProfile(version: 1, productID: nms.productID, engine: "obsolete-engine",
+                                               shimDirectory: nil, environment: ["CX_ENV": "obsolete"])
+        try JSONEncoder().encode(obsolete).write(to: root.appendingPathComponent(nms.productID + ".json"))
+        check(try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults)?.engine == "crossover-26.3",
+              "Frozen bundled NMS binding replaces obsolete local tile recipe data")
+        let serializer = Process()
+        serializer.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        serializer.arguments = ["-c", "import json,shlex,sys; print(json.dumps(dict(v.split('=',1) for v in shlex.split(sys.argv[1]))))",
+                                nms.launchEnvironment["CX_ENV"] ?? ""]
+        let output = Pipe()
+        serializer.standardOutput = output
+        serializer.standardError = FileHandle.nullDevice
+        try serializer.run()
+        let bytes = output.fileHandleForReading.readDataToEndOfFile()
+        serializer.waitUntilExit()
+        let mirrored = try JSONDecoder().decode([String: String].self, from: bytes)
+        check(serializer.terminationStatus == 0 && mirrored == nms.crossOverEnvironment?.mapValues(NativeTitleLaunchProfile.expand)
+              && mirrored.allSatisfy({ nms.launchEnvironment[$0.key] == $0.value }),
+              "CrossOver --env serialization round-trips paths with spaces and mirrors exact ambient graphics values")
+        let registry = root.appendingPathComponent("recipe-base.json")
+        let original: [String: Any] = ["version": 1, "engines": [
+            ["name": "exact-engine", "wine": "/unchanged/wine", "kind": "CrossOver",
+             "smoke_test": ["status": "pass"], "environment": ["KEEP": "unchanged"]]
+        ]]
+        let originalBytes = try JSONSerialization.data(withJSONObject: original, options: [.sortedKeys])
+        try originalBytes.write(to: registry)
+        let importURL = root.appendingPathComponent("synthetic-native-json.reg")
+        let importBytes = Data("Synthetic import, never executed".utf8)
+        try importBytes.write(to: importURL)
+        let importHash = SHA256.hash(data: importBytes).map { String(format: "%02x", $0) }.joined()
+        var fixture = NativeTitleLaunchProfile(version: 1, productID: "FIXTURE00001", engine: "exact-engine",
+                                              shimDirectory: nil, environment: [:])
+        fixture.prefixRegistryImports = [.init(path: importURL.path, sha256: importHash)]
+        let selected = try await fixture.registryForLaunch(base: registry, engine: "exact-engine",
+                                                           outputDirectory: root.appendingPathComponent("recipe-output"))
+        let document = try JSONSerialization.jsonObject(with: Data(contentsOf: selected)) as? [String: Any]
+        let entry = (document?["engines"] as? [[String: Any]])?.first
+        let retainedBase = try Data(contentsOf: registry)
+        check(entry?["name"] as? String == "exact-engine" && entry?["wine"] as? String == "/unchanged/wine"
+              && (entry?["environment"] as? [String: String]) == ["KEEP": "unchanged"]
+              && (entry?["prefix_registry_imports"] as? [[String: String]]) == [["source": importURL.path, "sha256": importHash]]
+              && retainedBase == originalBytes,
+              "Per-title registry scopes checksum-bound setup while preserving exact engine identity and shared base bytes")
+        try Data("Changed import".utf8).write(to: importURL)
+        do {
+            _ = try await fixture.registryForLaunch(base: registry, engine: "exact-engine",
+                                                    outputDirectory: root.appendingPathComponent("must-not-exist"))
+            check(false, "Changed recipe import must not produce a launch registry")
+        } catch NativeLaunchError.invalidProfile {
+            check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("must-not-exist").path),
+                  "Changed recipe-bound files fail before prefix preparation or launch")
+        }
     }
 
     private static func installationStatusChecks(root: URL, check: (Bool, String) -> Void) async throws {
