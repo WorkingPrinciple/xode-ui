@@ -230,15 +230,15 @@
     {
       "storeId": "9P9VNSQK1W3K",
       "title": "Brotato",
-      "verdict": "WORKING_CANDIDATE",
-      "reportedAt": "2026-10-22T04:59:55.152+00:00",
+      "verdict": "WORKING",
+      "reportedAt": "2026-10-22T21:02:03.279+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "430e9c33",
-      "gates": {},
-      "nextGate": "CLI promotion",
-      "ownerStream": "S2/user",
-      "blocker": "Known hold: waiting on morning CLI promotion decision. All title gates proven; excluded from strict WORKING until admitted.",
-      "scope": "Coordinator clarified existing promotion hold; no new title run."
+      "runId": "01cda87b",
+      "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "relaunch": "passed", "save": "passed"},
+      "nextGate": "complete",
+      "ownerStream": "S3",
+      "blocker": null,
+      "scope": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted."
     },
     {
       "storeId": "9P4NV23Q6QC2",

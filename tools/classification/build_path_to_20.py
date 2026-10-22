@@ -234,7 +234,7 @@ def refresh(audit_evidence=False):
 def render(packet):
     lines = ["# Path to 20", "",
              f"Updated {packet['updatedAt']}; **{packet['strictWorkingCount']}/20 strict WORKING**. "
-             "Brotato candidate excluded. `?` means unverified, not failed.", "",
+             "Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.", "",
              "| Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |",
              "|---|---|---|---|---|---|---|---|---|---|"]
     for row in packet["items"]:
@@ -284,8 +284,8 @@ def render(packet):
         "none observed yet; pre-tracker gate ages unknown")
     text += (marker + f"\nLiving tracker {packet['updatedAt']}: "
              f"**{packet['strictWorkingCount']}/20** strict: {working}. "
-             "Brotato WORKING_CANDIDATE remains excluded; see current row for "
-             "gate evidence and CLI promotion hold. "
+             "Installed-route-equivalent title qualification is not GUI Play-click proof "
+             "or production UI acceptance; see per-title scope. "
              f"Same-gate >2h: {stuck}. Refresh every30min and owner verdict.\n"
              "<!-- living-tracker:end -->\n")
     SUMMARY.write_text(text)

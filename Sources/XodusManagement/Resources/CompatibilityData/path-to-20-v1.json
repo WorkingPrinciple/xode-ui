@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-22T20:53:19.058603+00:00",
+  "updatedAt": "2026-10-22T21:02:52.061519+00:00",
   "matrixUpdatedAt": "2026-10-22T20:11:33.857802+00:00",
   "collectionInputs": {
-    "collectedAt": "2026-10-22T20:53:19.058603+00:00",
+    "collectedAt": "2026-10-22T21:02:52.061519+00:00",
     "matrix": {
       "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
       "sha256": "cf1004218ea5cf6aeda1022522ed9dea42bd7e2b774f9a4ba9f8458eaa22dee1",
@@ -844,7 +844,7 @@
     },
     "ownerVerdicts": {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-      "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+      "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
       "snapshot": {
         "schemaVersion": 1,
         "queueAdditions": {
@@ -1172,15 +1172,21 @@
           {
             "storeId": "9P9VNSQK1W3K",
             "title": "Brotato",
-            "verdict": "WORKING_CANDIDATE",
-            "reportedAt": "2026-10-22T04:59:55.152+00:00",
+            "verdict": "WORKING",
+            "reportedAt": "2026-10-22T21:02:03.279+00:00",
             "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-            "runId": "430e9c33",
-            "gates": {},
-            "nextGate": "CLI promotion",
-            "ownerStream": "S2/user",
-            "blocker": "Known hold: waiting on morning CLI promotion decision. All title gates proven; excluded from strict WORKING until admitted.",
-            "scope": "Coordinator clarified existing promotion hold; no new title run."
+            "runId": "01cda87b",
+            "gates": {
+              "menu": "passed",
+              "gameplay": "passed",
+              "quit": "passed",
+              "relaunch": "passed",
+              "save": "passed"
+            },
+            "nextGate": "complete",
+            "ownerStream": "S3",
+            "blocker": null,
+            "scope": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted."
           },
           {
             "storeId": "9P4NV23Q6QC2",
@@ -3369,14 +3375,14 @@
     },
     "attemptEvidence": {
       "schemaVersion": 1,
-      "auditedAt": "2026-10-22T20:52:59.397866+00:00",
+      "auditedAt": "2026-10-22T21:02:54.340702+00:00",
       "scope": "Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.",
       "retentionPolicy": "Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.",
       "roots": [
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs",
         "/Users/dragoshont/Library/Application Support/XodusCLI/runs"
       ],
-      "jsonDocumentsInspected": 2397,
+      "jsonDocumentsInspected": 2441,
       "gaps": [
         "Unparsed JSON /Users/dragoshont/Library/Application Support/XodusCLI/proofs/valor-mortis-install-v1/package-check.stdout.json: JSONDecodeError"
       ],
@@ -10638,6 +10644,314 @@
           "status": "PRESENT",
           "bytes": 32,
           "sha256": "1a37120ae9fdd2389627ac8690a77f7e4e353e5dbda5efa119fe745ebffcf818"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/cleanup.json": {
+          "status": "PRESENT",
+          "bytes": 19,
+          "sha256": "5ac6b02a7ad6c5a44fb337d145924abc043ae84c01882be9eec040628411cbe7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/dry-admission-reload.json": {
+          "status": "PRESENT",
+          "bytes": 3207,
+          "sha256": "479c80629e6f872072c17bc18f8d6dbad9d8ba01f77270d1f93193d5fc37e873"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/dry-admission-world.json": {
+          "status": "PRESENT",
+          "bytes": 3194,
+          "sha256": "a60586b63904809e9546e591d985252055c3587e4f8990938c3c19858f25e5a0"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 8982,
+          "sha256": "5266450382c7bd5bf7ab5895112c99e38679b1154b471abce15978e581b23b23"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/packet.json": {
+          "status": "PRESENT",
+          "bytes": 7087,
+          "sha256": "a8d9e220e712919921c46a25c1fc1e56ddf2d6ac50ce0f7f746fee35603b30c7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-character-1000.png": {
+          "status": "PRESENT",
+          "bytes": 462955,
+          "sha256": "cbca0db50060a98e2ca84e8a1f9042280db714e756857fc0893ddbff97165a6c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-danger-1000.png": {
+          "status": "PRESENT",
+          "bytes": 393997,
+          "sha256": "dfbe82af575e53b3bee92b88bad69f5e2defd6448c62b354632f2e5880332130"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-endrun-1000.png": {
+          "status": "PRESENT",
+          "bytes": 385255,
+          "sha256": "6a2ba91842a943039441080c27ab4a3d179670e3010eb1506358e4f96f2e9f78"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-gameplay-1000.png": {
+          "status": "PRESENT",
+          "bytes": 154759,
+          "sha256": "9ffbd3537a543f1b3f32474c2239bfc43ef1d6a588cdf67d967d3ac74af7fc65"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-main-1000.png": {
+          "status": "PRESENT",
+          "bytes": 633600,
+          "sha256": "435bd690a19c799ebf57be83f9afb344d0a71c682894f056c54b9534365ae9c4"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-quit-selected-1000.png": {
+          "status": "PRESENT",
+          "bytes": 628234,
+          "sha256": "35fb4ddb3c0f513e4e250d2b83395189909d714f246042190b4819855e6a6492"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-back-1000.png": {
+          "status": "PRESENT",
+          "bytes": 630127,
+          "sha256": "4931d17d8f3a25fe1e2d3e643590716d3f2a6c808cfaaf85c88c201744660d6a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-character-1000.png": {
+          "status": "PRESENT",
+          "bytes": 463082,
+          "sha256": "ac73bb7122f852dcc6cacd8ec0aa65c81416954ec153dcd3711ca49c33b577b3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-chunky-1000.png": {
+          "status": "PRESENT",
+          "bytes": 498719,
+          "sha256": "d062caf77d50d0da7ebc3e39007abe8cb7f8ffd54232a6f92a30938e3b4e4a43"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-quit-selected-1000.png": {
+          "status": "PRESENT",
+          "bytes": 627694,
+          "sha256": "16b5e84cf01b763ef4614f3e5d630062e9b49dd0b0a0653ab2fc2a3f678f6ffa"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-title-1000.png": {
+          "status": "PRESENT",
+          "bytes": 620043,
+          "sha256": "748615362f7e154eeb32c8e403aa772e4234d2881d762adc647358325da006de"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-usable-1000.png": {
+          "status": "PRESENT",
+          "bytes": 435835,
+          "sha256": "23c3a8f25488c160327debe9ca9b43c9b54a731d34cd4ce23b47f7eb62e7304a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-results-1000.png": {
+          "status": "PRESENT",
+          "bytes": 243514,
+          "sha256": "6be803545251cc471a346003951ded5ce57d5499148ef13a433fc586b2995ac9"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-title-1000.png": {
+          "status": "PRESENT",
+          "bytes": 626100,
+          "sha256": "d783b288b2020a400e691eb2659cc76f3c0222c1c07d8af4e1db4aa57ee5d712"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-weapon-1000.png": {
+          "status": "PRESENT",
+          "bytes": 399878,
+          "sha256": "cb7b38ee62fe2a2c8549325ca452b78f52be2b3ca1e757a3f952d1f2caf66214"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-wellrounded-1000.png": {
+          "status": "PRESENT",
+          "bytes": 463701,
+          "sha256": "2a0bebc3285f7fe462f0a72535e2ca20e741f54c99625398354693959ae051d4"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail-1300.png": {
+          "status": "PRESENT",
+          "bytes": 985219,
+          "sha256": "7c5e0ee63c16e488e5f9d5f553af96a72727308965468c8e92eeb55fd3443a9a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail.png": {
+          "status": "PRESENT",
+          "bytes": 13518853,
+          "sha256": "28904314d6aed476344ec488177e9e6a14d5c78d4ac106a83fd4f4a65e1eb3ef"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail-1400.png": {
+          "status": "PRESENT",
+          "bytes": 1475247,
+          "sha256": "857af02c5950f3cc52890bc7fea43f6826404cffb78daa59dc3ad1657b531154"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail.png": {
+          "status": "PRESENT",
+          "bytes": 18950998,
+          "sha256": "017e48fdd7c89e8cdd5cf95fc7684902274e4e283234fca1795c7156061641fd"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-tile-1400.png": {
+          "status": "PRESENT",
+          "bytes": 1363572,
+          "sha256": "bfcc19d33547dde8d703016eb602522ec3a77abad32a02c5adf2665ad8e9d9e8"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-input-events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 57382,
+          "sha256": "38eff2b9f9f18f81ef2b3e5b7bd84e98fca4150f61cc4a27e308dbda50d71ea0"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json": {
+          "status": "PRESENT",
+          "bytes": 9989,
+          "sha256": "f3819226b4f5069afe89480327188a139a5eb923ed1c033a1dc1b3756af80e0d"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/after-process-exit.json": {
+          "status": "PRESENT",
+          "bytes": 2540,
+          "sha256": "371818c898362b8cb0e163f92d7d854952a2ea6ce8f8187ff623476772e5dedd"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/before-launch.json": {
+          "status": "PRESENT",
+          "bytes": 2540,
+          "sha256": "cfcb8341129415d46e950a601bbd9cc0a618582ffa3c4d01a1ef1fe1f05caefe"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.exit-code.txt": {
+          "status": "PRESENT",
+          "bytes": 2,
+          "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stderr.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1311,
+          "sha256": "2883159566689431cbd3801dc8336a6e920c85c1f476576b49f7fa55e15df9f6"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json": {
+          "status": "PRESENT",
+          "bytes": 1362,
+          "sha256": "1cdffb6dfa14f3e6ae254446b4eb53f43a7057ba889f13d5972ed531b692e3e6"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/engine-dyld.json": {
+          "status": "PRESENT",
+          "bytes": 373,
+          "sha256": "864409719149a1eb994d20f88b1e3cf108c9f00692c28d950cd2306049603d03"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 776,
+          "sha256": "66f7a4490c9dbb1dafc4b688685ffa404d1adeea57e5e4f5b47eca07152ae621"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/launch-stage.json": {
+          "status": "PRESENT",
+          "bytes": 182,
+          "sha256": "e9dda835817de4892846aa99f262411d1b7139afd41fd3feb04b0c89218dcbfb"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/popups.jsonl": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/progress.jsonl": {
+          "status": "MISSING",
+          "sha256": null
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/result.json": {
+          "status": "PRESENT",
+          "bytes": 1404,
+          "sha256": "0319b70eab771a026abdd6c2f2d5b16953209ef8cb75340632676a94fd56b41b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/service.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stderr.log": {
+          "status": "PRESENT",
+          "bytes": 75937,
+          "sha256": "044027fca295d7630cab386aced881841dbe7b06c517d4e2e99e15495f06ce64"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1950,
+          "sha256": "20e35f4c208a8f6c9b3c9fc1e846ba5b100c4b0697a821555352c0382fe68d42"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/windows.jsonl": {
+          "status": "PRESENT",
+          "bytes": 507,
+          "sha256": "3f857d2d42b1ab24cce7285ff5623b9ef4af3be1306db78840116ed40990ce1c"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/wine-exit.json": {
+          "status": "PRESENT",
+          "bytes": 32,
+          "sha256": "f68823ca3c25cf7291066c4574e1594e9b8e491f48a1cc60117764aeda12f389"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/after-process-exit.json": {
+          "status": "PRESENT",
+          "bytes": 2539,
+          "sha256": "d8577b4b5b91b32d76d15927bdaad565cb8882c196240134bb6dc312b66409c2"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/before-launch.json": {
+          "status": "PRESENT",
+          "bytes": 101,
+          "sha256": "5e7acb770c1c97bddb524c882e3027f3dfe0eba4823e42f33af271078e6db183"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.exit-code.txt": {
+          "status": "PRESENT",
+          "bytes": 2,
+          "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stderr.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1307,
+          "sha256": "e18318402f5c731dba5ca2ddf927dd7cf4a0111c9a84f06a6b105b54c03db7cf"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json": {
+          "status": "PRESENT",
+          "bytes": 1361,
+          "sha256": "eeb3ab522b78a2988e5c5a5b0e4eb9dff4a4db0b1cf12c64ec79eefd6775bbd0"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/engine-dyld.json": {
+          "status": "PRESENT",
+          "bytes": 373,
+          "sha256": "864409719149a1eb994d20f88b1e3cf108c9f00692c28d950cd2306049603d03"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 776,
+          "sha256": "58da1b5bbc9a2b99bfdd8482d43492cb1533669d58a55164918915ad6d5731c1"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/launch-stage.json": {
+          "status": "PRESENT",
+          "bytes": 182,
+          "sha256": "8fe0b77d652c979401fb5861212bb9cf964ffcd97cff722b93779f708685489d"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/popups.jsonl": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/progress.jsonl": {
+          "status": "MISSING",
+          "sha256": null
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/result.json": {
+          "status": "PRESENT",
+          "bytes": 1400,
+          "sha256": "27116539b555133733bf5d3f65ff2b3adf697ea9816479c0338630faa7df119a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/service.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stderr.log": {
+          "status": "PRESENT",
+          "bytes": 99566,
+          "sha256": "18a74c656c2076474c770a94e49596e7603a89047e30388467dbfbf83a38ed2b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stdout.log": {
+          "status": "PRESENT",
+          "bytes": 3739,
+          "sha256": "6d08851f93489801a999d549e68e33f89b9ca9ab9d92c193159827ee1c1b3b7a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/windows.jsonl": {
+          "status": "PRESENT",
+          "bytes": 507,
+          "sha256": "9569ea5bb030b820b0813fbeddca0fe93faa095f328bbd66fc5ed26adc57db0e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/wine-exit.json": {
+          "status": "PRESENT",
+          "bytes": 32,
+          "sha256": "e3ecf065ed10407a972bd30187b77e893341e45b283dcc8c954640b5891ff50b"
         },
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-world-01/after-process-exit.json": {
           "status": "PRESENT",
@@ -31259,6 +31573,232 @@
           "title": "Brotato",
           "attempts": [
             {
+              "runId": "01cda87b-82b9-4769-bb26-db472b279516",
+              "recordedProduct": "9P9VNSQK1W3K",
+              "startedAt": "2026-10-22T20:55:40.239312Z",
+              "finishedAt": "2026-10-22T20:59:04.228387Z",
+              "observedProcessResult": {
+                "exit_code": 0,
+                "wine_exit_code": 0,
+                "wine_termination_signal": null,
+                "error_code": null,
+                "success": true
+              },
+              "resultPolicy": "Raw process success/exit is not title, gameplay, quit or retention PASS.",
+              "identities": {
+                "cli": [
+                  {
+                    "path": "/Users/dragoshont/Applications/Ode to X Local Candidate.app/Contents/Resources/XodusEngine/xodus-cli",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json",
+                    "historicalHash": null,
+                    "hashBasis": "Candidate path label, not independent execution-time hash"
+                  }
+                ],
+                "runtime": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json"
+                  }
+                ],
+                "engine": [
+                  {
+                    "value": "apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json"
+                  },
+                  {
+                    "value": "apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/result.json"
+                  }
+                ],
+                "prefix": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Xodus/Prefixes/98BE67C1-2D77-403E-BFB9-3DDB1E0A3FE1/apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json"
+                  },
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Xodus/Prefixes/98BE67C1-2D77-403E-BFB9-3DDB1E0A3FE1/apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/result.json"
+                  }
+                ],
+                "registry": [
+                  {
+                    "value": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/registry.json",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json"
+                  }
+                ],
+                "gameExecutable": [
+                  {
+                    "value": "Brotato.exe",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json"
+                  }
+                ],
+                "recordedHashes": [
+                  {
+                    "field": "cliSha256",
+                    "sha256": "3ea56ed1ea1d5a9b6d15748ecd223dbc5be09d099765cf661b6cd7915db14928",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json"
+                  }
+                ]
+              },
+              "artifacts": {
+                "runArtifacts": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.exit-code.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/wine-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/progress.jsonl",
+                  "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/registry.json"
+                ],
+                "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/cleanup.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/dry-admission-reload.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/dry-admission-world.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/packet.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-danger-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-endrun-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-gameplay-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-chunky-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-usable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-results-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-weapon-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-wellrounded-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail-1300.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail-1400.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-tile-1400.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-input-events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.exit-code.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/wine-exit.json"
+                ]
+              },
+              "categories": {
+                "packet": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/packet.json"
+                ],
+                "receipt": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/result.json"
+                ],
+                "log": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/progress.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-input-events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/windows.jsonl"
+                ],
+                "screenshot": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-danger-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-endrun-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-gameplay-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-chunky-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-usable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-results-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-weapon-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-wellrounded-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail-1300.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail-1400.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-tile-1400.png"
+                ],
+                "saveDelta": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/before-launch.json"
+                ]
+              },
+              "observationRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/integrity.json",
+                  "field": "retention-result.json",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "field": "status",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "field": "gameplayObserved",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "field": "uiObservation",
+                  "scope": "Recorded observation; raw stays local"
+                }
+              ],
+              "hypothesisAndNextTestRefs": [],
+              "gaps": [
+                "Historical app identity not bound to this run",
+                "Path-labeled identities are not independent execution-time binary hashes",
+                "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
+                "Shared proof-root files are context only; per-run attribution incomplete"
+              ]
+            },
+            {
               "runId": "12ebe02b-3376-4f80-81b5-12ad85f080d1",
               "recordedProduct": "9P9VNSQK1W3K",
               "startedAt": "2026-10-22T02:39:43.722227Z",
@@ -31369,6 +31909,232 @@
                 "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
                 "No retained packet artifact found in bounded search",
                 "No retained screenshot artifact found in bounded search"
+              ]
+            },
+            {
+              "runId": "21bd7fd5-9b77-4d3b-97a2-49858bd79d67",
+              "recordedProduct": "9P9VNSQK1W3K",
+              "startedAt": "2026-10-22T20:49:34.788825Z",
+              "finishedAt": "2026-10-22T20:55:21.199973Z",
+              "observedProcessResult": {
+                "exit_code": 0,
+                "wine_exit_code": 0,
+                "wine_termination_signal": null,
+                "error_code": null,
+                "success": true
+              },
+              "resultPolicy": "Raw process success/exit is not title, gameplay, quit or retention PASS.",
+              "identities": {
+                "cli": [
+                  {
+                    "path": "/Users/dragoshont/Applications/Ode to X Local Candidate.app/Contents/Resources/XodusEngine/xodus-cli",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json",
+                    "historicalHash": null,
+                    "hashBasis": "Candidate path label, not independent execution-time hash"
+                  }
+                ],
+                "runtime": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json"
+                  }
+                ],
+                "engine": [
+                  {
+                    "value": "apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json"
+                  },
+                  {
+                    "value": "apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/result.json"
+                  }
+                ],
+                "prefix": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Xodus/Prefixes/98BE67C1-2D77-403E-BFB9-3DDB1E0A3FE1/apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json"
+                  },
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Xodus/Prefixes/98BE67C1-2D77-403E-BFB9-3DDB1E0A3FE1/apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/result.json"
+                  }
+                ],
+                "registry": [
+                  {
+                    "value": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/registry.json",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json"
+                  }
+                ],
+                "gameExecutable": [
+                  {
+                    "value": "Brotato.exe",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json"
+                  }
+                ],
+                "recordedHashes": [
+                  {
+                    "field": "cliSha256",
+                    "sha256": "3ea56ed1ea1d5a9b6d15748ecd223dbc5be09d099765cf661b6cd7915db14928",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json"
+                  }
+                ]
+              },
+              "artifacts": {
+                "runArtifacts": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.exit-code.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/wine-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/progress.jsonl",
+                  "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/registry.json"
+                ],
+                "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/cleanup.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/dry-admission-reload.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/dry-admission-world.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/packet.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-danger-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-endrun-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-gameplay-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-chunky-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-usable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-results-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-weapon-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-wellrounded-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail-1300.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail-1400.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-tile-1400.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-input-events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.exit-code.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/wine-exit.json"
+                ]
+              },
+              "categories": {
+                "packet": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/packet.json"
+                ],
+                "receipt": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/result.json"
+                ],
+                "log": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/launch/runs/21bd7fd5-9b77-4d3b-97a2-49858bd79d67/progress.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-input-events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/launch/runs/01cda87b-82b9-4769-bb26-db472b279516/windows.jsonl"
+                ],
+                "screenshot": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-danger-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-endrun-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-gameplay-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-main-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-back-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-character-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-chunky-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-quit-selected-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-reload-usable-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-results-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-title-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-weapon-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-122532b-wellrounded-1000.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail-1300.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-actual-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail-1400.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-detail.png",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retained-artifacts/s3-brotato-installed-tile-1400.png"
+                ],
+                "saveDelta": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-world/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/run-reload/before-launch.json"
+                ]
+              },
+              "observationRefs": [
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/integrity.json",
+                  "field": "retention-result.json",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "field": "status",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "field": "gameplayObserved",
+                  "scope": "Recorded observation; raw stays local"
+                },
+                {
+                  "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-brotato-installed-122532b-v1/retention-result.json",
+                  "field": "uiObservation",
+                  "scope": "Recorded observation; raw stays local"
+                }
+              ],
+              "hypothesisAndNextTestRefs": [],
+              "gaps": [
+                "Historical app identity not bound to this run",
+                "Path-labeled identities are not independent execution-time binary hashes",
+                "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
+                "Shared proof-root files are context only; per-run attribution incomplete"
               ]
             },
             {
@@ -31961,13 +32727,13 @@
           ],
           "hypothesesStatus": "See existing title scope/blocker and raw diagnostic links; no per-attempt hypothesis verdict invented.",
           "nextDiscriminatingTest": "Not explicitly frozen by this audit; owner must recover the existing test card/diagnosis before any separately authorized retry.",
-          "recordedTitleScope": "Coordinator clarified existing promotion hold; no new title run.",
-          "recordedBlocker": "Known hold: waiting on morning CLI promotion decision. All title gates proven; excluded from strict WORKING until admitted.",
+          "recordedTitleScope": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted.",
+          "recordedBlocker": null,
           "gaps": [
             "Historical attempts mentioned only in free-form prose/short IDs may remain unenumerated",
             "Per-attempt failed hypotheses and next discriminating test require source-owner annotation"
           ],
-          "nextGate": "CLI promotion"
+          "nextGate": "complete"
         },
         "9PBWWQGXVMKC": {
           "title": "Monster Sanctuary",
@@ -40253,13 +41019,13 @@
       },
       "coverage": {
         "titleCount": 27,
-        "launchResultAttempts": 141,
+        "launchResultAttempts": 143,
         "unresolvedReferenceCount": 5,
-        "artifactCount": 2912,
-        "presentArtifacts": 2759,
-        "missingArtifacts": 153,
+        "artifactCount": 2974,
+        "presentArtifacts": 2819,
+        "missingArtifacts": 155,
         "recordedHashDiscrepancies": 0,
-        "attemptsWithIdentityGaps": 146,
+        "attemptsWithIdentityGaps": 148,
         "unresolvedReferencesPolicy": "May include non-launch/support references or short-ID duplicates; not additional proven game attempts."
       },
       "specialistIndexes": [
@@ -40289,8 +41055,8 @@
     }
   },
   "target": 20,
-  "strictWorkingCount": 10,
-  "remainingTo20": 10,
+  "strictWorkingCount": 11,
+  "remainingTo20": 9,
   "gameLaunches": 0,
   "policy": "Unknown gates never inferred passed from install status, source row, screenshots or cache files. Strict matrix WORKING or newer explicit coordinator admission admits title-specific gate semantics. WORKING_CANDIDATE excluded. Stall clock is observed same next gate, not source mtime/global matrix updatedAt; historical age unavailable until measured. >2h alerts include held/queued lanes but do not override holds or authorize runs.",
   "refreshPolicy": "Every 30 minutes via attached session automation and when a session reports a verdict. Same-session refresh only; no background games.",
@@ -40343,7 +41109,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:41:54.984442+00:00",
-      "sameGateObservedHours": 16.190020600277776,
+      "sameGateObservedHours": 16.349188076944444,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after fresh18dcee0d loaded S3Retention world (typedS3-Retention, game filteredhyphen), same drgload/LabAssistant/$5/ducttape first pocketcell, then ordinary LeaveGame\u2192YesQuit\u2192mainmenuQuit\u2192Quit CLI0/Wine0 in294.9s under300. Earlier900s worlde5ec1841 reached real cafeteria movement/interactions40-55FPS after first-user setup but TIMEOUTCLI1/Wine0, not ordinary quit. Changed placed/droppedobject NOT observed. Explicit coordinator admission uses retained world/scientist/inventory marker and final normalexit. Actual Container grew3\u21926payloads; fullT2/T3 continuity, opaque7384\u21927421B payload after finalquit. Apple4/adf8/7106/Shipping/STA1 only unchanged.",
@@ -40366,6 +41132,88 @@
         "e5ec1841-5d41-404d-8fea-7096d0cd1fcc"
       ],
       "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9P4NV23Q6QC2"
+    },
+    {
+      "storeId": "9P9VNSQK1W3K",
+      "title": "Brotato",
+      "verdict": "WORKING",
+      "strictWorking": true,
+      "gates": {
+        "menu": {
+          "status": "passed",
+          "basis": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted."
+        },
+        "gameplay": {
+          "status": "passed",
+          "basis": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted."
+        },
+        "quit": {
+          "status": "passed",
+          "basis": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted."
+        },
+        "relaunch": {
+          "status": "passed",
+          "basis": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted."
+        },
+        "save": {
+          "status": "passed",
+          "basis": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted."
+        }
+      },
+      "nextGate": "complete",
+      "ownerStream": "S3",
+      "blocker": null,
+      "evidence": [
+        {
+          "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
+          "sha256": "cf1004218ea5cf6aeda1022522ed9dea42bd7e2b774f9a4ba9f8458eaa22dee1",
+          "productId": "9P9VNSQK1W3K"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
+          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
+        },
+        {
+          "kind": "coordinator-verdict",
+          "observedAt": "2026-10-22T21:02:52.061519+00:00",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
+          "runId": "01cda87b",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
+        }
+      ],
+      "packetReferences": [
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
+          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7",
+          "storeId": "9P9VNSQK1W3K",
+          "collection": "blockedItems",
+          "kind": "packet"
+        },
+        {
+          "storeId": "9P9VNSQK1W3K",
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
+          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
+        }
+      ],
+      "s1RowPresent": false,
+      "gateFirstObservedAt": "2026-10-22T21:02:52.061519+00:00",
+      "sameGateObservedHours": 0,
+      "stuckOver2Hours": false,
+      "historicalGateAge": "unknown before tracker first observation",
+      "scope": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted.",
+      "attemptHistory": [
+        "01cda87b-82b9-4769-bb26-db472b279516",
+        "12ebe02b-3376-4f80-81b5-12ad85f080d1",
+        "21bd7fd5-9b77-4d3b-97a2-49858bd79d67",
+        "430e9c33-7b7e-47d8-838f-d154a8fb1f48",
+        "86f694f5-3c2b-4c0b-961f-2f46655fc387",
+        "c2e01ff4-e716-402e-b144-7a7aafdc1ca2"
+      ],
+      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9P9VNSQK1W3K"
     },
     {
       "storeId": "9PCR3Z2MSM4T",
@@ -40415,7 +41263,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:17:29.883816+00:00",
-      "sameGateObservedHours": 16.59699299638889,
+      "sameGateObservedHours": 16.756160473055555,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after sole final300s fresh80cbf59d loads Crossroads/Nights2 (previously1)/Grasp10, save updated22Oct06:47AM, no movement/interaction, ordinary PauseQuit\u2192OK\u2192mainQuit CLI0/Wine0 within209s. Preceding900s d9e1ff58 reached natural death and Crossroads but TIMEOUTCLI1/Wine1; remains INCONCLUSIVE in its own right. Final verification explicitly admitted despite that timeout. ActualCONTAINER45056\u219256141B, complete T2/T3 hashes identical. Earlier replayed shade dialogue is not global retention failure. Known window-monitor10s warning separately accepted and does not replace actualWine0. No further Hades launches.",
@@ -40502,7 +41350,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted natural-death combat rather than a two-minute rerun. Apple4 defaultCOM/noargs/adf8/7106: selected Swordsman, moved through camp, entered Haunted Caverns and reached real skeleton combat at60FPS. First natural death16s unlocked First Try/Quest Stone and banked17gold. Ordinary menu Quit/Yes quit now CLI0/Wine0. Fresh process retained17gold and visible QuestStone. Second attack/movement attempt dealt400damage and2kills before natural death15s, bank53gold. Returned camp and ordinary Quit/Yes quit now again CLI0/Wine0. Stopped actual local-save payload changed size5520 to9876 and fullSHA f4e03df7... to9d22356b...; metadata-only/settings are not used as retention proof. No two-minute survival, mid-run resume, cloud-save or app-tile E2E claim.",
@@ -40588,7 +41436,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 18.024549521666664,
+      "sameGateObservedHours": 18.183716998333335,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen Apple4/adf8/7106 with STA1 only: created drgload xodus, healed with displayed G, completed relative Look Around, walked from cave through exterior cliff path following Professor Fig at39-47FPS D3D12/Metal4. Coordinator independently confirmed movement. Initial1800s891d061f and300s86e8da68 hit wall caps; these were not normal quits. Fresh86e8da68 retained named level1 character and loaded cave healing checkpoint, bypassing character creation/carriage intro; coordinator reviewed screenshots and accepted this checkpoint retention, waiving later cave-exit requirement. Final new600s f2471368 again loaded that character/world and completed ordinary Escape SAVE/LOAD AND EXIT\u2192EXIT TO MAIN MENU\u2192Space Yes\u2192main-menu EXIT GAME\u2192Space Yes/Quit to OS. Actual CLI0/Wine0, no WM_CLOSE/forcedkill, PID73417 gone. Coordinator's WORKING condition now satisfied; app-tile E2E remains separate/unobserved.",
@@ -40654,7 +41502,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Corrected actual S5 app-tile run6eb24065 with native JSON registrations, native-web-only shims and7106 pair passes user initialization, King's Pass rendering, movement, jump, attacks and focus healing. Coordinator explicitly replaced the bench gate with normal Quit to Menu save. Both container .xgs hashes+mtimes changed; post-quit slot1 card King's Pass/17M/0geo/5masks. Normal close Wine0/CLI0. Actual unchanged S5 tile relaunch902a364c displayed exactly the same card, Continue loaded real King's Pass, movement worked and5masks/broken soul vessel retained the death state. Zero-geo HUD counter is hidden; card0 is observed, not an invented HUD numeral. Second normal save/quit/WM_CLOSE Wine0/CLI0; both owned process pairs gone, exactprefix-k1/-w0. Coordinator reviewed screenshots and explicitly admitted HK as third WORKING title. No bench/cloud claim.",
@@ -40723,7 +41571,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "User explicitly admitted WORKING and directed move-on. Official signed native launcher3.41.29-2.6.12, Java latest26.3 ARM64: actual single-player world/HUD, W+jump movement, clean saved-world shutdown, launcher relaunch to new Java PID76415 and retained New World reloaded. S2/S5 native Ode provider integration remains pending; not a Wine or Bedrock claim.",
@@ -40802,7 +41650,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:00:36.510816+00:00",
-      "sameGateObservedHours": 14.87848549638889,
+      "sameGateObservedHours": 15.037652973055556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING8 after extended d919efb9 completed SKATE TO ROCKFORD'S, unlocked ROCKFORD'S HOUSE and immediately ordinaryExit/SpaceDesktopCLI0/Wine0 in954.85s. Sole fresh ab231868 main menu hasContinue/Chapters; ChapterSelect retains selectable SKATE TO ROCKFORD'S and ROCKFORD'S HOUSE. Esc/mainExitCLI0/Wine0 in193.4s; exactprefix-w0. Both quit before75% caps. Payload3544\u21925503B and fullT2/T3/T4 continuity verified. Same Apple4/adf8/7106/STA/two-native private registry. No further exploration/chapter replay.",
@@ -40883,7 +41731,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T19:58:34.919517+00:00",
-      "sameGateObservedHours": 0.9122608572222223,
+      "sameGateObservedHours": 1.0714283338888888,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinatorindependentlyadmittedninthtitle: worldcca9c74f andfreshretry0667822b retainedS3/Wolf/114G/BlobEggx1+movement; actualSaveQuit/titleExit0/0 bothruns; world\u2192retry27968B SHA4ba6af91 unchanged; afterretry27984B SHA6b271c30. PriorreloadINFRA0x80072746excluded.",
@@ -40958,7 +41806,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "CrossOver actual EmphiV24 world, movement, autosave, ordinary WM_CLOSE and fresh-process retained-world relaunch verified. Historical ffc4 CrossOver Wine exit0 is independent of its POPUP_MONITOR_FAILED helper error. S1 additionally qualified free nms-free-gptk3-d3dshared: real EmphiV24 walking/strafe/scanner/tutorial progress, changed Slot1Auto data/meta, ordinary quit CLI0, same-prefix relaunch with updated0:06 playtime/03:23save and retained Gather Ferrite Dust objective in-world around60FPS, second normal quit CLI0. PIDs52582/65739 gone, ownprefix-k1/-w0, finished00:26:30 within original1200s grant. S3 inspected relaunch-world.png and relaunch-trial-result.json. Earlier free-load failures are historical, not the current outcome. App-driven NMS E2E remains unobserved.",
@@ -41030,7 +41878,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "a27be511",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -41057,7 +41905,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:48:55.482548+00:00",
-      "sameGateObservedHours": 0.07321557083333333,
+      "sameGateObservedHours": 0.2323830475,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator independently admits WORKING10: worlda9ee48eb/reloada27be511 ordinary0/0, retained WoodenStick/equipmentJ and fresh movement. World-to-reload9331B SHA3a7fb537, after1b116832. Reload quit148.718s<180, exit212.898s/PIDgone beforecleanup. No shrine reached or required. Preserve earlierd928b209/931f693e inconclusives and world quit8.735s late operator deviation. S3 reports historical3a/9b rawbytes only hashes before legitimate writes, not recoverable retroactively.",
@@ -41107,7 +41955,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -41140,7 +41988,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.24898478555555556,
+      "sameGateObservedHours": 0.40815226222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied.",
@@ -41187,7 +42035,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "3e488e23",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -41210,7 +42058,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T05:35:29.577516+00:00",
-      "sameGateObservedHours": 15.297078079722223,
+      "sameGateObservedHours": 15.456245556388888,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator-reported retry 3e488e23 INCONCLUSIVE. Earlier 01a6bdcf gameplay timeout is historical. Forced -k cleanup does not pass ordinary quit.",
@@ -41267,7 +42115,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.258274392500002,
+      "sameGateObservedHours": 18.417441869166666,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -41333,7 +42181,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed exact Windows package. Actual corrected Apple4/adf8/7106 trace421f naturally exits0 in8.68s with no observed owned window/screenshot/input. Both real WINEDEBUG/XODUS_WINE_DEBUG active; no explicit causal exception or game-level reason. CLI0 is not rendering/gameplay PASS. Exactprefix-k1/-w0. Separate coordinator-authorized API trace6a266eb2 naturally exits0 in9.94s, also no window/input/capture; S1 interpreting actual trace.",
@@ -41404,7 +42252,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -41451,7 +42299,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -41493,7 +42341,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "a46723e9-6255-4f03-9c78-4fc3c0ecd3f6",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -41520,7 +42368,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.24898478555555556,
+      "sameGateObservedHours": 0.40815226222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 passive creation-dx11-d3dmetal/CLI68f349d4; receipt confirms redistributable dialog, gameplay_qualified=false, forced-k0/-w0. Process0 is not title or normal-quit proof. License separately GRANTED.",
@@ -41528,80 +42376,6 @@
         "a46723e9-6255-4f03-9c78-4fc3c0ecd3f6"
       ],
       "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9NQVHHW88XW9"
-    },
-    {
-      "storeId": "9P9VNSQK1W3K",
-      "title": "Brotato",
-      "verdict": "WORKING_CANDIDATE",
-      "strictWorking": false,
-      "gates": {
-        "menu": {
-          "status": "passed",
-          "basis": "Admitted matrix WORKING_CANDIDATE"
-        },
-        "gameplay": {
-          "status": "passed",
-          "basis": "Admitted matrix gameplay"
-        },
-        "quit": {
-          "status": "passed",
-          "basis": "Explicit matrix normalMenuQuitObserved"
-        },
-        "relaunch": {
-          "status": "passed",
-          "basis": "Explicit matrix retentionVerified; see retained checkpoint/marker limitations"
-        },
-        "save": {
-          "status": "passed",
-          "basis": "Explicit matrix retentionVerified; see retained checkpoint/marker limitations"
-        }
-      },
-      "nextGate": "CLI promotion",
-      "ownerStream": "S2/user",
-      "blocker": "Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count.",
-      "evidence": [
-        {
-          "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "cf1004218ea5cf6aeda1022522ed9dea42bd7e2b774f9a4ba9f8458eaa22dee1",
-          "productId": "9P9VNSQK1W3K"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
-          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
-        },
-        {
-          "kind": "coordinator-verdict",
-          "observedAt": "2026-10-22T20:53:19.058603+00:00",
-          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
-        }
-      ],
-      "packetReferences": [
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
-          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7",
-          "storeId": "9P9VNSQK1W3K",
-          "collection": "blockedItems",
-          "kind": "packet"
-        },
-        {
-          "storeId": "9P9VNSQK1W3K",
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
-          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
-        }
-      ],
-      "s1RowPresent": false,
-      "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 18.024549521666664,
-      "stuckOver2Hours": true,
-      "historicalGateAge": "unknown before tracker first observation",
-      "scope": "Historicalebd56e CLI/Apple4/defaultCOM/noargs/7106 proof remains: actual Wave1/control, naturaldeath47materials, unlockedChunky; ordinaryQuit0/0 then fresh430e9c33 retainedusableChunky and ordinaryQuit0/0. Shippeda1aade supersedesebd56e and includesparserfix, but actualinstalledautomaticroute resolveswine-stable/newapp prefix/profile=nil. Sole86f694f5 regression22Oct17:36Z renderslogos thenpersistentblackBrotato; no menu/gameplay/save. Exactprefix forced-k0/-w0 at123s; eventualCLI0/Wine0 NOT ordinaryquit. No reload consumed; historicalcandidate cannot bind toinstalleddifferentengine/prefix. Strict8 unchanged.",
-      "attemptHistory": [
-        "12ebe02b-3376-4f80-81b5-12ad85f080d1",
-        "430e9c33-7b7e-47d8-838f-d154a8fb1f48",
-        "86f694f5-3c2b-4c0b-961f-2f46655fc387",
-        "c2e01ff4-e716-402e-b144-7a7aafdc1ca2"
-      ],
-      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9P9VNSQK1W3K"
     },
     {
       "storeId": "9P5Z4530318L",
@@ -41661,7 +42435,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -41733,7 +42507,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -41780,7 +42554,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "a452bd89",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -41807,7 +42581,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T04:28:41.158529+00:00",
-      "sameGateObservedHours": 16.410527798333334,
+      "sameGateObservedHours": 16.569695275,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator report only, not an independently inspected receipt. Matrix verdict supersedes once recorded.",
@@ -41860,7 +42634,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -41929,7 +42703,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -41976,7 +42750,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42023,7 +42797,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.258274392500002,
+      "sameGateObservedHours": 18.417441869166666,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42066,7 +42840,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "7a1fdf52",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -42093,7 +42867,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report and matrix: delete-missing experiment advances failure to CreateUpdate0x80070057 but produces no save payload. Prior0/0 diagnostic does not qualify latest exit5.",
@@ -42167,7 +42941,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42214,7 +42988,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.258274392500002,
+      "sameGateObservedHours": 18.417441869166666,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42261,7 +43035,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42308,7 +43082,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42355,7 +43129,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "3b833cc7",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -42382,7 +43156,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 18.024549521666664,
+      "sameGateObservedHours": 18.183716998333335,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged.",
@@ -42451,7 +43225,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42532,7 +43306,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -42579,7 +43353,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.258274392500002,
+      "sameGateObservedHours": 18.417441869166666,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42660,7 +43434,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:39:46.049930+00:00",
-      "sameGateObservedHours": 3.2258357425,
+      "sameGateObservedHours": 3.385003219166667,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen004/518e7fb9/null-display1/sameprefix worldd756b27d: real awakening/right-arrow movement/forest/log descent, repeated first-spike-gap deaths. LoadChapter appears but only initialforestthumbnail observed; no post-gap checkpoint/new thumbnail. Ordinary QuitLimboCLI0/Wine0 in812.16s, processgone before-k1/-w0. Quit started late,75%policy NOT satisfied. Provider158->206B delta is opaque; no reload consumed or retention claim.",
@@ -42715,7 +43489,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42762,7 +43536,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -42837,7 +43611,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -42883,7 +43657,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -42915,7 +43689,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.24898478555555556,
+      "sameGateObservedHours": 0.40815226222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report: gameplay render only, not strict WORKING. Run identity not supplied.",
@@ -42991,7 +43765,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; no launch/rendering qualification."
@@ -43038,7 +43812,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.258274392500002,
+      "sameGateObservedHours": 18.417441869166666,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -43085,7 +43859,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.290775584166667,
+      "sameGateObservedHours": 18.449943060833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -43166,7 +43940,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:52:53.364646+00:00",
-      "sameGateObservedHours": 3.0071372102777776,
+      "sameGateObservedHours": 3.1663046869444447,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Historical manifestlauncherfa08c5f8 PLAY spawnedchild then vanished,launcher0/0 notgameplay. Soleauthorized directexe28648e14 retainedsameprefix/defaultCOM/creationDX11/adf8/7106 changesonlyexe.22Oct17:39:25-17:39:42Z17.58s actualSkyrimSE.exe/macPID36400/window26655 titleSkyrim Special Edition MS, spontaneouslyexited5/5 beforecapture/input. No world/menu/gameplay/save/reload. All3saveinventoriesremainempty. Gamegone beforeexactprefix-k1/-w0. No additionalretry.",
@@ -43220,7 +43994,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.258274392500002,
+      "sameGateObservedHours": 18.417441869166666,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -43267,7 +44041,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "111dd574",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -43307,7 +44081,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:36:22.530702+00:00",
-      "sameGateObservedHours": 0.2823688613888889,
+      "sameGateObservedHours": 0.4415363380555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report:111dd574 retention confirmed but ordinary quit attribution under review/helper exit1. Earlier22d78ea2 retained Day2/s3/proof Farm/15seeds. Neither expected255 nor retained payload alone proves normal quit; keep strict count9.",
@@ -43365,7 +44139,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "76c3b3bf-e383-4dfc-893d-3ad3ce0b930c",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -43399,7 +44173,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.24898478555555556,
+      "sameGateObservedHours": 0.40815226222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 passive apple-gptk-4.0b3/CLI68f349d4; receipt confirms redistributable dialog, gameplay_qualified=false, forced-k0/-w0. Process0 is not title or normal-quit proof. License separately GRANTED.",
@@ -43442,7 +44216,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "792b6f4e",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -43458,7 +44232,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T19:53:50.445990+00:00",
-      "sameGateObservedHours": 0.9912812813888888,
+      "sameGateObservedHours": 1.1504487580555556,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator 22:51 report: missing VC++ redist is prefix setup, not evidence of unsupported game rendering. Supersedes historical download-only hold; no fresh install-status receipt supplied to S4.",
@@ -43506,7 +44280,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -43533,7 +44307,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.24898478555555556,
+      "sameGateObservedHours": 0.40815226222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report, no gameplay or retention admission. DQ overlay sequence not a proven causal attribution.",
@@ -43576,7 +44350,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -43604,7 +44378,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.24898478555555556,
+      "sameGateObservedHours": 0.40815226222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report: startup config failure, no proven staged-file parity or fix, no launch authorization.",
@@ -43651,7 +44425,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "1f12123e3d2d2bae5a6621cd5ae90e72ce50095fa7cd4eeca650931e33ba7391",
+          "sha256": "7affaba7f730e17a4edfe8f582d634f27901741a8acd61583fca35c9edc7b25b",
           "runId": "9c31530d",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -43680,7 +44454,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:01:01.161758+00:00",
-      "sameGateObservedHours": 14.8716380125,
+      "sameGateObservedHours": 15.030805489166667,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator reports run 9c31530d reached gameplay but timed out. Supersedes old actual-title retest pending claim; gameplay reach alone is not strict WORKING.",

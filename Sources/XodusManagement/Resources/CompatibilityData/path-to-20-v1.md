@@ -1,10 +1,11 @@
 # Path to 20
 
-Updated 2026-10-22T20:53:19.058603+00:00; **10/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T21:02:52.061519+00:00; **11/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
 | Abiotic Factor | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
+| Brotato | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Hades II | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Halls of Torment | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Hogwarts Legacy | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
@@ -21,7 +22,6 @@ Updated 2026-10-22T20:53:19.058603+00:00; **10/20 strict WORKING**. Brotato cand
 | Beast of Reincarnation | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Bluey's Happy Snaps | BLOCKED_PREREQ | not passed | ? | not passed | ? | ? | prefix prerequisite setup / S2 | VC++2015-2022 redist-required dialog, no title screen. Native-first VC prerequisite candidate approved by coordinator; rerun waits for S3 screen release, not automatic. | - |
-| Brotato | WORKING_CANDIDATE | passed | passed | passed | passed | passed | CLI promotion / S2/user | Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count. | >2h |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | DOOM 64 | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Earlier renderer-selection hold superseded by exact S1 Kex candidate; no title-screen/gameplay/save receipt or execution grant. | >2h |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
@@ -61,9 +61,9 @@ Full blockers, source hashes and packet references are in `path-to-20-v1.json`. 
 
 ## Retained attempt evidence
 
-Audit 2026-10-22T20:52:59.397866+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
+Audit 2026-10-22T21:02:54.340702+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
 
-Coverage: 27 titles, 141 launch-result attempts, 5 unresolved references; 2759 present / 153 missing artifact links. This is bounded discovery, not a complete historical archive.
+Coverage: 27 titles, 143 launch-result attempts, 5 unresolved references; 2819 present / 155 missing artifact links. This is bounded discovery, not a complete historical archive.
 
 Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.
 
@@ -87,7 +87,7 @@ Exact run identities, artifact paths/hashes, failed-hypothesis context and expli
 | Abiotic Factor / `9P4NV23Q6QC2` | 16 | 16 attempts incomplete; title hypothesis/test annotations incomplete |
 | Valor Mortis / `9P861V1542BL` | 3 | 3 attempts incomplete; title hypothesis/test annotations incomplete |
 | Inscryption / `9P8NSTDMZ11P` | 3 | 3 attempts incomplete; title hypothesis/test annotations incomplete |
-| Brotato / `9P9VNSQK1W3K` | 4 | 4 attempts incomplete; title hypothesis/test annotations incomplete |
+| Brotato / `9P9VNSQK1W3K` | 6 | 6 attempts incomplete; title hypothesis/test annotations incomplete |
 | Monster Sanctuary / `9PBWWQGXVMKC` | 4 | 4 attempts incomplete; title hypothesis/test annotations incomplete |
 | Hades II / `9PCR3Z2MSM4T` | 11 | 11 attempts incomplete; title hypothesis/test annotations incomplete |
 | Vampire Survivors / `9PD5BM2Z8C4L` | 2 | 2 attempts incomplete; title hypothesis/test annotations incomplete |

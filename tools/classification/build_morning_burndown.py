@@ -208,18 +208,21 @@ def refresh(tracker):
               "endpointPolicy": "End = final qualifying process exit for an admitted WORKING "
               "matrix row, not time of coordinator message or file mtime. Minecraft lacks "
               "a passive cycle; HK/NMS lack a paired comparable passive start here. "
-              "Brotato is not strict; Inscryption is an observed failure, not a completed cycle.",
+              "Brotato's older candidate cycle is not a new comparable sample; "
+              "Inscryption is an observed failure, not a completed cycle.",
               "blockerClasses": {
                   "catalogue": {"count": 8, "gate": "entitlement + disk + batch approval; "
                                 "membership alone insufficient; closed, not baseline capacity"},
-                  "CLI promotion": {"count": 1, "title": "Brotato", "gate": "user promotion/admission; "
-                                    "new matrix proves all title gates, no fresh full cycle assumed"},
+                  "CLI promotion": {"count": 0, "title": "Brotato", "gate": "Title admitted WORKING "
+                                    "on installed-route-equivalent packet; production UI issue43 "
+                                    "still fails, no GUI Play-click or promotion claim"},
                   "engine/recipe": {"count": 2, "titles": ["Inscryption", "Well Dweller"],
                                     "gate": "Inscryption end-queue retry hold; Well gameplay "
                                     "TIMEOUT/no save marker parked. Mixtape now WORKING. "
                                     "Not confirmed common engine root cause or retry grants."}}}
     inputs["candidateComparisonExcludedFromStrictSamples"] = {
-        "title": "Brotato", "status": "WORKING_CANDIDATE; CLI promotion only",
+        "title": "Brotato", "status": "Historical candidate cycle; later title WORKING admission "
+        "does not make this a paired installed-route timing sample",
         "start": read_result("passive-small-eight-v1/9P9VNSQK1W3K",
                              "c2e01ff4-e716-402e-b144-7a7aafdc1ca2"),
         "finish": read_result("s3-brotato-retention-02",
@@ -279,7 +282,7 @@ def render_summary(packet):
              f"Need **{20 - packet['inputs']['strictWorkingCount']}** additions; slow scenario "
              f"leaves **{slow['gapTo20']}**. Required mean: "
              f"**{packet['requiredAverageMinutesPerAddition']:.1f}min/addition**. "
-             "Brotato CLI promotion can add one without another full cycle. "
+             "Brotato is already counted; no extra promotion-only title is added. "
              "Qualification/recipe holds (Inscryption/Well) and eight catalogue titles "
              "(entitlement/disk/approval) are excluded alternatives, not extra time. "
              "Historical packet count is not proof of executable capacity; parked/failed "

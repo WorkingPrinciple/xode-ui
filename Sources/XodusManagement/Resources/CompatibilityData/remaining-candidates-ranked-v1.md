@@ -10,7 +10,6 @@ Readiness and avoided download first, then compact payload/route evidence; not n
 
 | Rank | Title / ID | State | Catalog GiB | Route proposal | Claim / download | Blocker |
 |---|---|---|---|---|---|---|
-| 1 | Brotato / `9P9VNSQK1W3K` | manifest present; prior installed inventory, not fresh install-status | 0.418 | CrossOver candidate | False / False | Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count. |
 | 2 | Stardew Valley / `9MWR1NC6VQ6L` | manifest present; prior installed inventory, not fresh install-status | 0.678 | CrossOver candidate | False / False | Retention confirmed;111dd574 ordinary quit attribution under review, helper exit1. No WORKING admission. |
 | 4 | Vampire Survivors / `9PD5BM2Z8C4L` | manifest present; prior installed inventory, not fresh install-status | 1.158 | Free Wine proposed by S1; prior Apple4 candidate, new route/card unqualified | False / False | Parked: exit3/no window after DQ overlay; no automatic retry. |
 | 6 | FINAL FANTASY IV / `9N8C07SS8C9D` | manifest present; prior installed inventory, not fresh install-status | 0.484 | CrossOver candidate | False / False | PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding. |

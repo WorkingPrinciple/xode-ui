@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T20:53:19.162413+00:00",
+  "checkedAt": "2026-10-22T21:02:54.451925+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
-  "strictWorking": 10,
-  "needed": 10,
+  "strictWorking": 11,
+  "needed": 9,
   "disk": {
     "coordinatorReportedFreeGiB": 127,
     "prelaunchGiB": 110,
@@ -33,7 +33,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "7c41ce5800a534aafe5af27049590005f759dbb2febc46403742968775e8f225"
+      "sha256": "82c444ac3ee0da6505cfa5dfa3af741e820d092278d846c0bf3a8a311283fc80"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -57,36 +57,6 @@
     }
   ],
   "items": [
-    {
-      "rank": 1,
-      "storeId": "9P9VNSQK1W3K",
-      "title": "Brotato",
-      "verdict": "WORKING_CANDIDATE",
-      "installState": "manifest present; prior installed inventory, not fresh install-status",
-      "downloadSizeBytes": 449249280,
-      "planningBudgetBytes": 449249280,
-      "incrementalDownloadBudgetBytes": 0,
-      "fitsGrossMargin": true,
-      "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
-      "expectedRoute": "CrossOver candidate",
-      "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count.",
-      "needsUserClaim": false,
-      "needsLicenseCheck": false,
-      "needsDownload": false,
-      "pipelineExtensionCandidate": false,
-      "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
-      "rankingBasis": "All title gates already observed; promotion/admission only, not another game run.",
-      "inventoryEvidence": {
-        "root": "/Users/dragoshont/Games/Xodus/Brotato-Xbox",
-        "manifest": "/Users/dragoshont/Games/Xodus/Brotato-Xbox/MicrosoftGame.config",
-        "manifestSha256": "4a8bacb245f281be7d9361e7f98490d1f175f2c457c7efb44e46c214bad21ca5",
-        "storeIds": [
-          "9P9VNSQK1W3K"
-        ]
-      },
-      "installVerification": null
-    },
     {
       "rank": 2,
       "storeId": "9MWR1NC6VQ6L",
