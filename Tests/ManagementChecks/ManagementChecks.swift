@@ -443,6 +443,23 @@ actor Checks {
         try JSONValue.object(queryPage).decode(CatalogQuery.self).validatePublicScope(
             query: "original fixture query", market: "US", language: "en-US", limit: 8)
         check(true, "Typed network query preserves source, PC scope and mixed failures")
+        var combinedQuery = queryPage
+        combinedQuery["source"] = .string("XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults")
+        var neutralProduct = queryProduct
+        neutralProduct["market"] = .string("RO")
+        neutralProduct["language"] = .string("ro-RO")
+        neutralProduct["resolvedLanguage"] = .string("neutral")
+        combinedQuery["products"] = .array([.object(neutralProduct)])
+        try JSONValue.object(combinedQuery).decode(CatalogQuery.self).validatePublicScope(
+            query: "original fixture query", market: "RO", language: "ro-RO", limit: 8)
+        check(true, "#40: Combined Xbox/Store query admits explicit neutral metadata while retaining exact Romanian request scope")
+        combinedQuery["source"] = .string("UnverifiedSearch")
+        do {
+            try JSONValue.object(combinedQuery).decode(CatalogQuery.self).validatePublicScope(
+                query: "original fixture query", market: "RO", language: "ro-RO", limit: 8)
+            check(false, "#40: Unknown network query source remains rejected")
+        } catch { check(error as? ManagementError == .invalidPayload,
+                        "#40: Unknown network query source remains rejected") }
         queryProduct["pcCatalogCandidate"] = .bool(false)
         queryPage["products"] = .array([.object(queryProduct)])
         do {
@@ -474,6 +491,9 @@ actor Checks {
         check(queryResults.count >= 2, "Pinned query corpus contains real-shape success and empty results")
         for data in queryResults {
             try validator.validate(data, definition: "queryData")
+            guard var combined = data.object else { throw ManagementError.invalidPayload }
+            combined["source"] = .string("XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults")
+            try validator.validate(.object(combined), definition: "queryData")
             let page = try data.decode(CatalogQuery.self)
             check(page.corpus == "publicMicrosoftStoreSearch" && page.completeness == "partial",
                   "Typed canonical query remains public and partial, not entitlement")
@@ -482,6 +502,10 @@ actor Checks {
             $0["error"]?["details"]?["corpus"]?.string == "publicMicrosoftStoreSearch"
         })?["error"]?["details"] else { throw ManagementError.invalidPayload }
         try validator.validate(failedQuery, definition: "failedQueryData")
+        guard var combinedFailure = failedQuery.object else { throw ManagementError.invalidPayload }
+        combinedFailure["source"] = .string("XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults")
+        try validator.validate(.object(combinedFailure), definition: "failedQueryData")
+        check(true, "#40: Combined search source validates both successful and all-failure frames without weakening failure shape")
         check(try failedQuery.decode(CatalogQuery.self).products.isEmpty,
               "Canonical all-failure query details are strict and independently typed")
         do {

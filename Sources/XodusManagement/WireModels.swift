@@ -202,7 +202,8 @@ public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
         }
         if let resolvedLanguage {
             let actual = resolvedLanguage.lowercased(), requested = language.lowercased()
-            guard actual == requested || (!actual.contains("-") && requested.hasPrefix(actual + "-")) else {
+            guard actual == "neutral" || actual == requested
+                    || (!actual.contains("-") && requested.hasPrefix(actual + "-")) else {
                 throw ManagementError.invalidPayload
             }
         }
@@ -314,7 +315,8 @@ public struct CatalogQuery: Codable, Equatable, Sendable {
     public func validatePublicScope(query: String, market: String, language: String, limit: Int) throws {
         let ids = products.map(\.id) + failures.map(\.id)
         guard corpus == "publicMicrosoftStoreSearch", completeness == "partial",
-              source == "MicrosoftStoreEdge:v9.0/searchResults", freshness == "live",
+              ["MicrosoftStoreEdge:v9.0/searchResults",
+               "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"].contains(source), freshness == "live",
               self.query == query, ids.count <= limit, Set(ids).count == ids.count,
               !ids.isEmpty || nextCursor == nil else {
             throw ManagementError.invalidPayload

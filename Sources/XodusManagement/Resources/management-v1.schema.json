@@ -2933,7 +2933,10 @@
           "const": "partial"
         },
         "source": {
-          "const": "MicrosoftStoreEdge:v9.0/searchResults"
+          "enum": [
+            "MicrosoftStoreEdge:v9.0/searchResults",
+            "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"
+          ]
         },
         "checkedAt": {
           "type": "string",
@@ -3029,7 +3032,10 @@
           "const": "partial"
         },
         "source": {
-          "const": "MicrosoftStoreEdge:v9.0/searchResults"
+          "enum": [
+            "MicrosoftStoreEdge:v9.0/searchResults",
+            "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"
+          ]
         },
         "checkedAt": {
           "type": "string",
