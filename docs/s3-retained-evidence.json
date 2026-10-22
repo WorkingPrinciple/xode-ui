@@ -49,12 +49,12 @@
   "offscreenPreparedNext": [
     {
       "title": "Quake",
-      "status": "PREPARED_NEW_100MS_INPUT_HYPOTHESIS; no launch",
+      "status": "CONSUMED_WORLD_INCONCLUSIVE_POST_SAVE_INPUT; no retry or reload",
       "packet": "s3-quake-short-input-01/packet.json",
       "sha256": "706008870981f36b5728161929f74ce492a451a368ef454bc5bb80b85f83883c",
       "dryAdmissionSha256": "8606e9ff95fa01c7d56b53cf3ceaa716c4ab2cab9e1a0ecd3eef4fdc8c56c88a",
       "executionAuthorized": false,
-      "boundary": "Explicit coordinator-assigned new input-duration hypothesis. Only argv fresh-state changes; CLI68f/runtime7106/engine/prefix/env/caps unchanged. One100ms owned key then inspect capture after EVERY transition. Stop on one failed step, new unexpected state or unreachable bounded quit. No console/F5/auth retry. World dry0 PASS; reload dry1 correctly lacks qualifying world, not reload PASS. Requires exact admission and S2 screen return."
+      "boundary": "Granted new input-duration hypothesis reached actual Save Game/New Save/GAME SAVED. NEXT Escape100ms produced no pause transition; no-input settled recapture unchanged. Stopped at first failed step, no retry/reload. No nonempty gameplay payload in approved roots. Explicit forced-stop sidecars override historical runner forcedCleanup null."
     },
     {
       "title": "FINAL FANTASY IV",
@@ -97,8 +97,9 @@
   ],
   "retentionRunner": {
     "source": "tools/s3/retention-run.py",
-    "sourceSha256": "b1873d3ec0659a0156b586dbc43281400be99e33e505a924211b6972fb1e9a48",
-    "guardTestCount": 14,
+    "sourceSha256": "5812c872399a908efddb0ec0f8d2b42b5f6daea0e34a801d761340ca7655b4fd",
+    "guardTestCount": 17,
+    "externalStopAttribution": "Both legacy external-consent-stop.json forcedCleanup=true and external-stop-reason.json forcedStop=true require descriptive reasons. Reconcile on normal CLI completion, not just exceptions. Reload rejects external stops even when a historical original receipt has forcedCleanup null; original historical bytes stay untouched. Frozen packets referencing an earlier runner require explicit rebind.",
     "externalSaveMappings": "Optional frozen packet mappings bind exact title-owned prefixPath to its canonical resolvedPath outside the prefix. Both must still resolve identically and the canonical target must be a listed saveRoot; generic Documents parents and redirected mappings are rejected. No broad host-folder snapshots.",
     "guardTests": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/s3 -p 'test_*.py'",
     "dryInvocation": "python3 tools/s3/retention-run.py dry PACKET_PATH PACKET_SHA256 world",
@@ -114,6 +115,21 @@
     }
   },
   "verifiedArchives": [
+    {
+      "title": "Quake",
+      "path": "s3-quake-short-input-01/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "8f338b9df533d6ff737fa58080ed4a01dc003b6870bebb1c7c27f9dcfd724114",
+      "resultSha256": "0f40d22f72b88ede69f1fecc2c5fbae35dbc02b12fb0821632de37d816110c59",
+      "run": "1bd95d4a-beda-46c6-8b53-f6972f7d12e9",
+      "admission": "INCONCLUSIVE_POST_SAVE_INPUT_STEP",
+      "observed": "Actual campaign100HP25shells, W100/A100 position changes and actual pause. Individually captured100ms steps selected Save Game/New Save; GAME SAVED displayed. Next Escape100 produced no pause, including separate settled no-input recapture.",
+      "stop": "Mandated first-failed-step stop; no repeated key or alternative input. External exact-k0/-w0 forced shutdown at256.387s. CLI0/Wine0 and runner forcedCleanup null are historical attribution gap, NOT ordinary quit. Explicit stop reason/receipt preserved.",
+      "saveGap": "Eight raw copies verified, only cfg/history/stderr/stdout in approved roots; only stdout changed. No gameplay payload despite GAME SAVED. No reload or further attempt under this hypothesis.",
+      "runFilesVerified": 30,
+      "rawArchiveFilesVerified": 8,
+      "runManifestSha256": "dbfd90ea101533e720771a209c5d5d9c9388a30ebf36c05ae565d1dac2525190"
+    },
     {
       "title": "DOOM 64",
       "path": "s1-doom64-pair54c5-preparation-v1/run-world/final-evidence",

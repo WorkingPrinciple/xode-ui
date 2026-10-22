@@ -106,13 +106,20 @@ def phase_environment(selected):
 
 
 def external_stop_reason(evidence):
-    path = evidence / "external-consent-stop.json"
-    if not path.is_file():
-        return None
-    receipt = json.loads(path.read_text())
-    if receipt.get("forcedCleanup") is not True or not receipt.get("reason"):
-        raise RuntimeError("External stop receipt is missing forced-cleanup attribution.")
-    return receipt["reason"]
+    reasons = []
+    for name, flag in (
+        ("external-consent-stop.json", "forcedCleanup"),
+        ("external-stop-reason.json", "forcedStop"),
+    ):
+        path = evidence / name
+        if not path.is_file():
+            continue
+        receipt = json.loads(path.read_text())
+        reason = receipt.get("reason")
+        if receipt.get(flag) is not True or not isinstance(reason, str) or not reason.strip():
+            raise RuntimeError("External stop receipt is missing forced-cleanup attribution.")
+        reasons.append(reason)
+    return "; ".join(reasons) if reasons else None
 
 
 def cleanup(server, env, evidence):
@@ -134,8 +141,11 @@ def authorize_reload(base, expected_packet):
     world = base / "run-world"
     summary = json.loads((world / "run-receipt.json").read_text())
     observed = json.loads((world / "manual-observation.json").read_text())
-    if summary["packetSha256"] != expected_packet or summary["forcedCleanup"] or (
-        not summary.get("prefixStopped")
+    if (
+        summary["packetSha256"] != expected_packet
+        or summary["forcedCleanup"]
+        or external_stop_reason(world)
+        or not summary.get("prefixStopped")
     ):
         raise RuntimeError("World identity/ordinary-stop gate failed.")
     canonical = summary.get("canonicalResult", {})
@@ -273,6 +283,7 @@ def main():
             raise
     if cleanup_result is None:
         cleanup_result = cleanup(server, env, evidence)
+    forced = forced or external_stop_reason(evidence)
     stopped = cleanup_result[-1].get("returncode") == 0
     result_paths = list(state.glob("runs/*/result.json"))
     canonical = json.loads(result_paths[0].read_text()) if len(result_paths) == 1 else None

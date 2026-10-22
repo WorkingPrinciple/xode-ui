@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import MagicMock, patch
 
 
 SPEC = importlib.util.spec_from_file_location(
@@ -98,6 +99,18 @@ class RetentionTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "ordinary quit"):
                 retention.authorize_reload(base, "frozen")
 
+    def test_historical_null_forced_cleanup_cannot_override_external_stop(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            world, _ = self.fixture(base)
+            original = (world / "run-receipt.json").read_bytes()
+            (world / "external-stop-reason.json").write_text(json.dumps({
+                "forcedStop": True, "reason": "first failed input step",
+            }))
+            with self.assertRaisesRegex(RuntimeError, "ordinary-stop"):
+                retention.authorize_reload(base, "frozen")
+            self.assertEqual((world / "run-receipt.json").read_bytes(), original)
+
     def test_unchanged_payload_blocks_reload(self):
         with TemporaryDirectory() as temporary:
             base = Path(temporary)
@@ -169,6 +182,68 @@ class RetentionTests(unittest.TestCase):
             self.assertEqual(
                 retention.external_stop_reason(base), "HUMAN_CONSENT_HOLD"
             )
+
+    def test_normal_cli_completion_reconciles_external_stop(self):
+        for name, flag in (
+            ("external-consent-stop.json", "forcedCleanup"),
+            ("external-stop-reason.json", "forcedStop"),
+            (None, None),
+        ):
+            with self.subTest(receipt=name), TemporaryDirectory() as temporary:
+                base = Path(temporary)
+                evidence = base / "run-world"
+                selected = {
+                    "stateDir": str(evidence / "launch"),
+                    "prefix": str(base / "prefix"),
+                    "argv": ["never-executed"],
+                    "environment": {"WINESERVER": "never-executed"},
+                    "titleEnvironment": {}, "unsetEnvironment": [],
+                    "quitBySeconds": 540, "timeoutSeconds": 900,
+                }
+                packet = {
+                    "hold": "unit test; no launch",
+                    "diskFloorBeforeLaunchGiB": 0,
+                }
+                process = MagicMock(returncode=0, pid=123)
+                process.poll.return_value = 0
+                original_write = retention.write
+
+                def write_with_external_stop(path, value):
+                    original_write(path, value)
+                    if path.name == "invocation.json" and name:
+                        original_write(evidence / name, {
+                            flag: True, "reason": "explicit external input-failure stop",
+                        })
+
+                with patch("sys.argv", [
+                    "retention-run.py", "run", str(base / "packet.json"),
+                    "frozen", "world", "--screen-release", "unit test",
+                ]), patch.object(retention, "load_packet", return_value=(packet, selected, [])), \
+                    patch.object(retention, "snapshot", return_value=[]), \
+                    patch.object(retention, "cleanup", return_value=[{"returncode": 0}]), \
+                    patch.object(retention, "write", side_effect=write_with_external_stop), \
+                    patch.object(retention.subprocess, "Popen", return_value=process):
+                    retention.main()
+                receipt = json.loads((evidence / "run-receipt.json").read_text())
+                self.assertEqual(receipt["cliExitCode"], 0)
+                self.assertEqual(
+                    receipt["forcedCleanup"],
+                    "explicit external input-failure stop" if name else None,
+                )
+                self.assertTrue(receipt["prefixStopped"])
+
+    def test_external_stop_rejects_missing_attribution(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            path = base / "external-stop-reason.json"
+            for value in (
+                {"reason": "unattributed"},
+                {"forcedStop": True, "reason": ""},
+                {"forcedStop": True, "reason": 123},
+            ):
+                path.write_text(json.dumps(value))
+                with self.assertRaisesRegex(RuntimeError, "attribution"):
+                    retention.external_stop_reason(base)
 
     def external_mapping_fixture(self, base):
         packet, _ = self.packet_fixture(base)
