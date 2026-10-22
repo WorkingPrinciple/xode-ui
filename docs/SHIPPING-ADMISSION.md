@@ -21,6 +21,10 @@ and require a successful Xbox page with a matching canonical slug, ID and locale
 No slug is synthesized from a title, and a store-root URL is never returned.
 The read-only `--xbox-product-link-check <id> <market> <locale>` development
 command verifies this live without opening a browser or accessing credentials.
+Live startup takes the device's market and a preferred language matching that
+market when available (for example RO with preferred en-US/ro-RO selects ro-RO),
+rather than silently using US prices and links. Explicit test connections keep
+their explicit test scope.
 
 Acquisition (#41) is a confirmed external-page fallback, not an in-app licence
 grant. Microsoft's documented [grant-free-products API](https://learn.microsoft.com/en-us/windows/uwp/monetize/grant-free-products)
@@ -38,6 +42,20 @@ have no acquisition action. Public Game Pass membership is not an account grant.
 `--catalog-offer-check <saved-json> <market> <locale>` validates saved public
 offers without credentials, browser actions or acquisition. Price failures stay
 explicitly unavailable and cannot hide game identity or grant install access.
+
+### Brotato candidate route (#43)
+
+`WORKING_CANDIDATE` displays **Candidate · CLI only** and never supplies a
+Verified working badge or automatic evidence-based engine selection.
+The generic wine-stable route showed splash logos followed by a black window
+in run `86f694f5`; that is not gameplay success. Brotato now has an explicit
+Apple GPTK 4.0b3/default-COM profile, runtime 7106's pinned primary/legacy pair,
+the standard pinned native-web shims and `Brotato.exe`. Explicit title-profile
+engines take priority over generic provider defaults; existing provider-specific
+NMS profiles still select their own distinct recipes.
+The new route keeps the app's installation-specific prefix, not the old
+`430e9c33` proof prefix. Historical ebd56e gameplay/save evidence does not prove
+this a1aade app route; a separate approved live regression is still required.
 
 ### Morning CLI-only WORKING additions
 

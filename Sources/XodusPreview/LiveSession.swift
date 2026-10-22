@@ -172,6 +172,9 @@ final class LiveSession: ObservableObject {
         self.configuration = nil
         backendPath = Bundle.main.bundleURL
             .appendingPathComponent("Contents/Resources/XodusEngine/xodus-cli").path
+        let scope = CatalogLocale.preferred(region: Locale.current.region?.identifier, languages: Locale.preferredLanguages)
+        market = scope.market
+        language = scope.language
         if ShippingPairPins.approved == nil {
             errorMessage = ManagementError.pairedEngineUnavailable.localizedDescription
         }
@@ -196,6 +199,9 @@ final class LiveSession: ObservableObject {
         } else {
             backendPath = bundledPath ?? UserDefaults.standard.string(forKey: "Xodus.developerBackendPath") ?? ""
         }
+        let scope = CatalogLocale.preferred(region: Locale.current.region?.identifier, languages: Locale.preferredLanguages)
+        market = scope.market
+        language = scope.language
 #endif
     }
 

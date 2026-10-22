@@ -889,6 +889,11 @@ enum PCGamesChecks {
         check(passOnly.storeProducts.map(\.id) == [mortis.id],
               "#40: Loaded Game Pass matches survive a missing Store page without broadening unrelated results")
         let canonicalMortis = "https://www.xbox.com/ro-RO/games/store/valor-mortis/9p861v1542bl"
+        let romanianScope = CatalogLocale.preferred(region: "RO", languages: ["en-US", "ro-RO"])
+        let americanScope = CatalogLocale.preferred(region: "US", languages: ["en-US", "ro-RO"])
+        check(romanianScope.market == "RO" && romanianScope.language == "ro-RO"
+              && americanScope.market == "US" && americanScope.language == "en-US",
+              "#40/#42: Live catalogue uses the device market and a matching preferred language, not hardcoded US prices or links")
         let offerNow = GameCompatibilityResult.parseDate("2026-10-22T12:00:00Z")!
         func commerceProduct(amount: String, sku: String = "full", action: String = "Purchase",
                              market: String = "RO", platform: String = "Windows.Desktop",
