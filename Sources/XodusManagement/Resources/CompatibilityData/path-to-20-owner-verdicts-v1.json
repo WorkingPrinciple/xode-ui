@@ -56,15 +56,18 @@
     {
       "storeId": "9NH0MSG29X6L",
       "title": "Mixtape",
-      "verdict": "INCONCLUSIVE",
-      "reportedAt": "2026-10-22T04:59:55.152+00:00",
+      "verdict": "WORKING",
+      "reportedAt": "2026-10-22T06:00:06.423+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "77083b32",
-      "gates": {"menu": "passed", "quit": "passed"},
-      "nextGate": "gameplay",
+      "runId": "ab231868-9878-4c39-8de7-a6dc344d5b2a",
+      "firstWorldRunId": "d919efb9",
+      "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-mixtape-extended-reload-01/runs/ab231868-9878-4c39-8de7-a6dc344d5b2a/result.json",
+      "engine": "apple-gptk-4.0b3",
+      "gates": {"menu": "passed", "gameplay": "passed", "quit": "passed", "save": "passed", "relaunch": "passed"},
+      "nextGate": "complete",
       "ownerStream": "S3",
-      "blocker": "No chapter completed, so no save yet. Clean CLI 0 / Wine 0 does not qualify retention. No unchanged automatic retry.",
-      "scope": "Coordinator-reported run 77083b32 INCONCLUSIVE; clean exit, no completed chapter or saved checkpoint. Gameplay/retention not qualified."
+      "blocker": null,
+      "scope": "Coordinator verified WORKING: world d919efb9 completed chapter 1 and exited CLI 0 / Wine 0; fresh reload ab231868 retained chapter and exited CLI 0 / Wine 0. Coordinator inspected result.json, wine-exit.json and screenshot. Apple GPTK 4.0b3. Result receipt independently confirms reload exits. Earlier 77083b32 no-chapter verdict remains historical. App E2E unobserved."
     },
     {
       "storeId": "9P8NSTDMZ11P",

@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T05:35:29.577516+00:00; **7/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T06:01:01.161758+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -10,8 +10,8 @@ Updated 2026-10-22T05:35:29.577516+00:00; **7/20 strict WORKING**. Brotato candi
 | Hogwarts Legacy | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Hollow Knight: Voidheart Edition | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | Minecraft: Java Edition with Minecraft Launcher | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
+| Mixtape | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | No Man's Sky | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
-| Mixtape | GAMEPLAY_PASS | passed | passed | passed | ? | ? | save / S3 | Controllable gameplay, completed chapter/checkpoint and fresh-process retained progression remain unverified inside the admitted600s bound. No unchanged automatic retry. | - |
 | A Game About Digging A Hole | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Reached gameplay but ended TIMEOUT, CLI 1 / Wine 0, with no save marker. No clean quit or retention qualification; no retry authorization inferred. | - |
 | Age of Empires IV: Anniversary Edition | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | >2h |
@@ -21,7 +21,7 @@ Updated 2026-10-22T05:35:29.577516+00:00; **7/20 strict WORKING**. Brotato candi
 | Brotato | WORKING_CANDIDATE | passed | passed | passed | passed | passed | CLI promotion / S2/user | Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count. | >2h |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | DOOM 64 | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Earlier renderer-selection hold superseded by exact S1 Kex candidate; no title-screen/gameplay/save receipt or execution grant. | >2h |
-| DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S2 | Real Wine child255 on actual ordinary mainmenuQuit; cause unresolved, not a CLI status-normalization bug. Exactprefix-k1/-w0. Parked, no retry. | - |
+| DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | - |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored® Definitive Edition (PC) | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Dome Keeper | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |

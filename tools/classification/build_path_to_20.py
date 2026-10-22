@@ -107,7 +107,10 @@ def build(inputs, previous):
             matrix_time = inputs["matrix"]["snapshot"].get("updatedAt")
             newer = report and matrix_time and dt.datetime.fromisoformat(
                 report["reportedAt"]) > dt.datetime.fromisoformat(matrix_time)
-            if report and (not observed or verdict in {"UNTESTED", "NOT_TESTED"} or newer):
+            if report and (not observed or verdict in {"UNTESTED", "NOT_TESTED"} or newer
+                           or (verdict == report["verdict"] == "INCONCLUSIVE"
+                               and any(str(observed.get(key, "")).startswith(report["runId"] or "unmatched")
+                                       for key in ("runId", "retentionRunId")))):
                 verdict = report["verdict"]
                 scope = report["scope"]
                 next_gate, owner, blocker = (

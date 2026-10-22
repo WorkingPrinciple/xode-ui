@@ -115,7 +115,8 @@ def refresh(tracker):
         for row in json.loads(raw)["items"]:
             sid = row["storeId"]
             item = {"storeId": sid, "title": row["title"], "batch": batch}
-            if sid in exclusions:
+            if sid in exclusions and not any(
+                    item["storeId"] == sid and item["strictWorking"] for item in tracker["items"]):
                 withheld[sid] = {**item, "blocker": exclusions[sid]}
             else:
                 queued[sid] = item
@@ -160,9 +161,9 @@ def refresh(tracker):
                                 "membership alone insufficient; closed, not baseline capacity"},
                   "CLI promotion": {"count": 1, "title": "Brotato", "gate": "user promotion/admission; "
                                     "new matrix proves all title gates, no fresh full cycle assumed"},
-                  "engine/recipe": {"count": 3, "titles": ["Inscryption", "Well Dweller", "Mixtape"],
+                  "engine/recipe": {"count": 2, "titles": ["Inscryption", "Well Dweller"],
                                     "gate": "Inscryption end-queue retry hold; Well gameplay "
-                                    "TIMEOUT/no save marker parked; Mixtape no completed chapter. "
+                                    "TIMEOUT/no save marker parked. Mixtape now WORKING. "
                                     "Not confirmed common engine root cause or retry grants."}}}
     inputs["candidateComparisonExcludedFromStrictSamples"] = {
         "title": "Brotato", "status": "WORKING_CANDIDATE; CLI promotion only",
@@ -223,7 +224,7 @@ def render_summary(packet):
              f"leaves **{slow['gapTo20']}**. Required mean: "
              f"**{packet['requiredAverageMinutesPerAddition']:.1f}min/addition**. "
              "Brotato CLI promotion can add one without another full cycle. "
-             "Qualification/recipe holds (Inscryption/Well/Mixtape) and eight catalogue titles "
+             "Qualification/recipe holds (Inscryption/Well) and eight catalogue titles "
              "(entitlement/disk/approval) are excluded alternatives, not extra time. "
              f"Queue already covers {20-packet['inputs']['strictWorkingCount']}; catalogue alone cannot cure slow throughput. "
              "Inputs/hashes: `morning-burndown-v1.json`; "

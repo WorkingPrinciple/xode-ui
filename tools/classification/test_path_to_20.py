@@ -145,15 +145,16 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["nextGate"], "ordinary quit")
         self.assertFalse(row["strictWorking"])
 
-    def test_mixtape_clean_exit_does_not_prove_saved_chapter(self):
+    def test_mixtape_admitted_chapter_retention_is_working(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])
         inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T04:00:00+00:00"
         row = next(row for row in build(inputs, {})["items"]
                    if row["storeId"] == "9NH0MSG29X6L")
-        self.assertEqual(row["verdict"], "INCONCLUSIVE")
+        self.assertEqual(row["verdict"], "WORKING")
         self.assertEqual(row["gates"]["quit"]["status"], "passed")
-        self.assertNotEqual(row["gates"]["save"]["status"], "passed")
-        self.assertFalse(row["strictWorking"])
+        self.assertEqual(row["gates"]["save"]["status"], "passed")
+        self.assertTrue(row["strictWorking"])
+        self.assertIn("chapter 1", row["scope"])
 
     def test_well_gameplay_timeout_does_not_qualify_quit_or_save(self):
         row = next(row for row in self.packet["items"] if row["storeId"] == "9PLH7R84GJWP")

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T05:35:29.577516+00:00",
+    "asOf": "2026-10-22T06:01:01.161758+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
-    "strictWorkingCount": 7,
-    "trackerMatrixSha256": "c60287641ae3ef13c9353662643e392fdbf5505fbc831e3b02a9263e34f0cd55",
+    "strictWorkingCount": 8,
+    "trackerMatrixSha256": "43c39bb8d738cb36868dccbd651392cca4d951e8dc08042054ae0ced9aed8a6e",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -170,12 +170,6 @@
         "title": "Well Dweller",
         "batch": "passive-small-eight-v1",
         "blocker": "actual gameplay reached; TIMEOUT, no save marker; parked"
-      },
-      {
-        "storeId": "9NH0MSG29X6L",
-        "title": "Mixtape",
-        "batch": "passive-batch3-eight-v1",
-        "blocker": "S3-only CRT/STA diagnostic route; excluded passive"
       }
     ],
     "samples": [
@@ -228,13 +222,12 @@
         "gate": "user promotion/admission; new matrix proves all title gates, no fresh full cycle assumed"
       },
       "engine/recipe": {
-        "count": 3,
+        "count": 2,
         "titles": [
           "Inscryption",
-          "Well Dweller",
-          "Mixtape"
+          "Well Dweller"
         ],
-        "gate": "Inscryption end-queue retry hold; Well gameplay TIMEOUT/no save marker parked; Mixtape no completed chapter. Not confirmed common engine root cause or retry grants."
+        "gate": "Inscryption end-queue retry hold; Well gameplay TIMEOUT/no save marker parked. Mixtape now WORKING. Not confirmed common engine root cause or retry grants."
       }
     },
     "candidateComparisonExcludedFromStrictSamples": {
@@ -299,7 +292,7 @@
       {
         "storeId": "9NGLST31DG26",
         "title": "A Game About Digging A Hole",
-        "verdict": "FAIL"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9PLH7R84GJWP",
@@ -359,14 +352,14 @@
         "verdict": "WORKING"
       },
       {
-        "storeId": "BQVQTL3PCH05",
-        "title": "No Man's Sky",
+        "storeId": "9NH0MSG29X6L",
+        "title": "Mixtape",
         "verdict": "WORKING"
       },
       {
-        "storeId": "9NH0MSG29X6L",
-        "title": "Mixtape",
-        "verdict": "GAMEPLAY_PASS"
+        "storeId": "BQVQTL3PCH05",
+        "title": "No Man's Sky",
+        "verdict": "WORKING"
       },
       {
         "storeId": "9NGLST31DG26",
@@ -525,49 +518,49 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1010.5070414,
+  "remainingWallMinutes": 984.9806373666667,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
       "serialCycleSlots": 11,
       "queueCappedAdditions": 11,
-      "conditionalTotalWorking": 18,
-      "gapTo20": 2,
-      "minimumPassRateRawSlots": 1.1818181818181819,
-      "minimumPassRateCurrentQueue": 1.1818181818181819,
+      "conditionalTotalWorking": 19,
+      "gapTo20": 1,
+      "minimumPassRateRawSlots": 1.0909090909090908,
+      "minimumPassRateCurrentQueue": 1.0909090909090908,
       "targetPossibleCurrentQueue": false
     },
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 15,
-      "queueCappedAdditions": 15,
+      "serialCycleSlots": 14,
+      "queueCappedAdditions": 14,
       "conditionalTotalWorking": 22,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.8666666666666667,
-      "minimumPassRateCurrentQueue": 0.8666666666666667,
+      "minimumPassRateRawSlots": 0.8571428571428571,
+      "minimumPassRateCurrentQueue": 0.8571428571428571,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 23,
+      "serialCycleSlots": 22,
       "queueCappedAdditions": 21,
-      "conditionalTotalWorking": 28,
+      "conditionalTotalWorking": 29,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5652173913043478,
-      "minimumPassRateCurrentQueue": 0.6190476190476191,
+      "minimumPassRateRawSlots": 0.5454545454545454,
+      "minimumPassRateCurrentQueue": 0.5714285714285714,
       "targetPossibleCurrentQueue": true
     }
   ],
   "observedAdmissionRatio": {
-    "working": 7,
+    "working": 8,
     "matrixWorking": 7,
     "attemptedMatrix": 14,
     "ratio": 0.5,
     "receiptAugmentedAttempted": 16,
-    "receiptAugmentedRatio": 0.4375,
+    "receiptAugmentedRatio": 0.5,
     "titleScreenOrBeyond": 10,
     "postTitleScreenAdmissionRatio": 0.7,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -594,7 +587,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 77.73131087692308,
+  "requiredAverageMinutesPerAddition": 82.08171978055556,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
@@ -607,13 +600,12 @@
       "gate": "user promotion/admission; new matrix proves all title gates, no fresh full cycle assumed"
     },
     "engine/recipe": {
-      "count": 3,
+      "count": 2,
       "titles": [
         "Inscryption",
-        "Well Dweller",
-        "Mixtape"
+        "Well Dweller"
       ],
-      "gate": "Inscryption end-queue retry hold; Well gameplay TIMEOUT/no save marker parked; Mixtape no completed chapter. Not confirmed common engine root cause or retry grants."
+      "gate": "Inscryption end-queue retry hold; Well gameplay TIMEOUT/no save marker parked. Mixtape now WORKING. Not confirmed common engine root cause or retry grants."
     }
   }
 }
