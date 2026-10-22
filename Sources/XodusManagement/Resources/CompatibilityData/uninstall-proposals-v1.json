@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-22T00:56:14.200578+00:00",
+  "source": {
+    "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
+    "sha256": "5b731e02a188820cd7604bdacf35f1da0c8532242b92e85c0b0628253400c7f0",
+    "updatedAt": "2026-10-22T00:46:51Z",
+    "stablePublishedCopy": "/Users/dragoshont/Library/Application Support/Ode to X/Evidence/tried-games.json"
+  },
+  "workingAdmission": {
+    "required": [
+      "movement",
+      "quit_relaunch_save_retained"
+    ],
+    "qualifiedProductIds": [
+      "9PJ8266BHFWN",
+      "BQVQTL3PCH05"
+    ],
+    "note": "Coordinator explicitly admits Minecraft native and NMS CrossOver CLI-driven as WORKING. S1 additionally qualified NMS free-Wine gameplay, normal quit and retained-world relaunch; S3 inspected the retained-world screenshot and relaunch receipt. This is another engine for the same title, not a third WORKING title. Per-title app_e2e is a separate production release gate. No Xbox cloud-save claim."
+  },
+  "currentFreeBytes": 188539645952,
+  "deletionsAuthorized": false,
+  "deletionsPerformed": 0,
+  "permanentUninstallRecommendations": [],
+  "proposedOrder": "If owners abandon retests, review Well, Digging and Balatro first; Abiotic only after S2's targeted test. Hogwarts remains held as required, not recommended. All require new owner approval.",
+  "measurementScope": "du -sk on exact five game payload roots only; allocated accounting is not guaranteed reclaimable APFS space. No prefix/save/log removal or process termination.",
+  "protected": [
+    "All prefixes, private saves, WGS/file containers and logs",
+    "HK live app prefix and game payload; not a renderer failure",
+    "NMS payload, immutable snapshot, accepted recipes",
+    "Minecraft native/launcher data and saves",
+    "Fallout launcher-only/no-input and Skyrim/other UNTESTED titles",
+    "Hades II gameplay pass awaiting save; not a failed payload"
+  ],
+  "candidates": [
+    {
+      "storeId": "9PLH7R84GJWP",
+      "title": "Well Dweller",
+      "gameRoot": "/Users/dragoshont/Games/Xodus/WellDweller-Xbox",
+      "allocatedKiB": 871796,
+      "disposition": "conditional-after-changed-profile-retest",
+      "hold": "New profiles passed probes; keep payload until actual retest.",
+      "eligibleForDeletionNow": false,
+      "s3Evidence": {
+        "verdict": "FAIL",
+        "scope": "Installed. CrossOver MSAA warnings continue after Return but no game window; independent DXMT attempt exits 3 before rendering.",
+        "blocker": "CrossOver8x/16x MSAA HRESULT80070057 reproduced by S1. Old vanilla-Wine DXMT host lacks Metal-view symbols. New welldweller-d3dmetal and distributor-patched welldweller-winecx-dxmt pass MSAA and real swapchain Present/readback probes; actual-game retest pending.",
+        "runId": "1a038dcf-5c42-4567-80f7-7842a2e95ed1",
+        "owner": "S1"
+      }
+    },
+    {
+      "storeId": "9NGLST31DG26",
+      "title": "A Game About Digging A Hole",
+      "gameRoot": "/Users/dragoshont/Games/Xodus/AGameAboutDiggingAHole-Xbox",
+      "allocatedKiB": 370376,
+      "disposition": "conditional-after-runtime-retest",
+      "hold": "Valid COM failure, still retriable; very small space benefit.",
+      "eligibleForDeletionNow": false,
+      "s3Evidence": {
+        "verdict": "FAIL",
+        "scope": "Valid419c+7106 CrossOver retest2ea171c0 stages verified legacycfe7 and still exits1 after23sec before observed window. Earlier d8f1bc40 is invalid corrected-auth evidence: old shim-directory runtime overwrote explicit7106. S1 isolated instrumented traces ongoing; no causal graphics claim.",
+        "blocker": "RegionPolicyEvaluator factory error and COM marshal IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca HRESULT80004002; factory-error causality unproven. Exact-prefix cleanup complete.",
+        "runId": "2ea171c0-7d3c-4a84-9b98-38d052af3f27",
+        "owner": "S1/S2"
+      }
+    },
+    {
+      "storeId": "9PK087LNGJC5",
+      "title": "Balatro",
+      "gameRoot": "/Users/dragoshont/Games/Xodus/Balatro-Xbox",
+      "allocatedKiB": 111024,
+      "disposition": "conditional-after-diagnosis",
+      "hold": "Exit0/no window undiagnosed; tiny space benefit, not permanent incompatibility.",
+      "eligibleForDeletionNow": false,
+      "s3Evidence": {
+        "verdict": "FAIL",
+        "scope": "Installed exact Windows package. Free creation-dx11-d3dmetal419c+7106 launch exited0 in8sec without observed game/menu window; CLI success is not gameplay PASS. Exact-prefix-k1 already stopped, then-w0.",
+        "blocker": "No observed rendering on initial free-engine launch. CrossOver fallback queued after mandatory retained-save qualifications; no deeper diagnosis.",
+        "runId": "60887e96-1229-40ee-89d8-7ccfb1581ff0",
+        "owner": "S3"
+      }
+    },
+    {
+      "storeId": "9P4NV23Q6QC2",
+      "title": "Abiotic Factor",
+      "gameRoot": "/Users/dragoshont/Games/Xodus/AbioticFactor-Xbox",
+      "allocatedKiB": 5214220,
+      "disposition": "conditional-after-targeted-STA-retest",
+      "hold": "S2 has specifically changed STA1 retest queued; no removal now.",
+      "eligibleForDeletionNow": false,
+      "s3Evidence": {
+        "verdict": "BLOCKED",
+        "scope": "Real auth assigns account to seat0. S2 latest signed-adf8 direct Shipping noargs458ad2d6 and-dx111b29e2b2 each exit Wine1/CLI1 after about15s at UE PreInit CommandLineCommands despite D3D12/D3D11 init. Exact prefixes cleaned. No gameplay proof. S2 headless COM-apartment probe now supplies a changed per-title STA1 hypothesis, not yet game-qualified.",
+        "blocker": "S2 owns next specifically changed Shipping test with XODUS_PRIVATE_RUNTIME_COM_STA=1 after a granted lane. Headless COM probe is not gameplay qualification; no engine-wide default change.",
+        "runId": null,
+        "owner": "S2"
+      }
+    },
+    {
+      "storeId": "9MT5NJ5W7B8Z",
+      "title": "Hogwarts Legacy",
+      "gameRoot": "/Users/dragoshont/Games/Xodus/HogwartsLegacy-Xbox",
+      "allocatedKiB": 93240284,
+      "disposition": "hold-required-title",
+      "hold": "Largest payload, but explicitly required and COM candidate work remains. Retain.",
+      "eligibleForDeletionNow": false,
+      "s3Evidence": {
+        "verdict": "FAIL",
+        "scope": "Real89GB install complete. Free Apple4 run9b93fbfb exits1 after29sec; CrossOver reference f9a0b804 exits1 after40sec. Both use419c+verified7106 and native-web shim-only directory, no observed game window. CrossOver explicitly logs SignedIn. Same final COM marshal IID80004002 on both; no proven graphics or PropertySet causality.",
+        "blocker": "Shared pre-window COM marshal IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca HRESULT80004002. Free receipt9b93fbfb-0c05-4a9e-a350-a081c3f9faf5. Both exact-prefix servers stopped-k/w0.",
+        "runId": "f9a0b804-019c-4d36-992a-87b41b36c331",
+        "owner": "S1/S2"
+      }
+    }
+  ]
+}
