@@ -37,9 +37,11 @@ Coordinator reports pipeline cap 23 from S1 `5b944e3` KCD1/Subnautica 2 routes;
 S2 packets are being prepared. Both product IDs already exist in old packets:
 S1 census confirms no additional unique installed titles: historical packet
 baseline remains 21, not 23 unique titles or an executable queue.
-**LIMBO:** candidate-only TITLE_SCREEN_PASS (`15dc80fd`), opt-in null-display
-runtime; no input/gameplay/save/reload. CLI0/Wine0 followed forced -k0/-w0,
-not normal quit. Promoted to S3 full test; prefix held, frozen release unqualified.
+**LIMBO:** full test `d756b27d` now INCONCLUSIVE: real awakening/movement,
+forest/log descent and repeated first-spike-gap deaths; no confirmed new
+checkpoint or retention. Ordinary QuitLimbo CLI0/Wine0 at 812.16s, but quit
+started after the 75% policy limit. No reload consumed or automatic retry.
+Earlier `15dc80fd` candidate TITLE_SCREEN_PASS is historical; frozen release unqualified.
 **Skyrim:** INCONCLUSIVE (`fa08c5f8`); launcher reached, game child
 exited without a window or gameplay. S1 diagnosing; launcher is not a title-screen pass.
 **DREDGE:** reload `a452bd89` retained its save, but quit exited 255:
