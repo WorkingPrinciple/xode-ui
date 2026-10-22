@@ -13,6 +13,7 @@ struct NativeEngineRegistry: Decodable {
         let smoke_test: SmokeTest
         let presentation_validation: SmokeTest?
         let engine_label: String?
+        let environment: [String: String]?
         var id: String { name }
         var isAvailable: Bool {
             smoke_test.status == "pass" && presentation_validation?.status != "failed"
@@ -147,9 +148,9 @@ struct NativeTitleLaunchProfile: Codable {
 
     let version: Int
     let productID: String
-    let engine: String?
+    var engine: String?
     let shimDirectory: String?
-    let environment: [String: String]
+    var environment: [String: String]
     var unsetEnvironment: [String]? = nil
     var crossOverEnvironment: [String: String]? = nil
     var executable: String? = nil
@@ -165,6 +166,36 @@ struct NativeTitleLaunchProfile: Codable {
         let version: Int
         let profiles: [NativeTitleLaunchProfile]
         let providerOverrides: [NativeTitleLaunchProfile]?
+        let engineFallbacks: [EngineFallback]?
+    }
+
+    struct EngineFallback: Decodable {
+        let baseEngine: String
+        let engine: String
+        let library: PinnedFile
+    }
+
+    static func bundledEngineFallbacks() throws -> [EngineFallback] {
+        let bytes = try Data(contentsOf: LaunchRecipeResources.profilesURL())
+        guard bytes.count <= 1_048_576 else { throw NativeLaunchError.invalidProfile }
+        let catalogue = try JSONDecoder().decode(Catalogue.self, from: bytes)
+        let rules = catalogue.engineFallbacks ?? []
+        guard catalogue.version == 1, rules.count <= 3,
+              Set(rules.map(\.baseEngine)).count == rules.count,
+              Set(rules.map(\.engine)).count == rules.count else { throw NativeLaunchError.invalidProfile }
+        return rules
+    }
+
+    func applyingFallback(_ selected: String, baseEngine: String) throws -> Self {
+        guard let rule = try Self.bundledEngineFallbacks().first(where: {
+            $0.baseEngine == baseEngine && $0.engine == selected
+        }) else { throw NativeLaunchError.invalidProfile }
+        var result = self
+        result.engine = selected
+        result.environment["CX_APPLEGPTK_LIBD3DSHARED_PATH"] = rule.library.path
+        result.requiredFiles = (requiredFiles ?? []) + [rule.library]
+        try result.validate(productID: productID)
+        return result
     }
 
     static func expand(_ value: String) -> String {
@@ -302,15 +333,30 @@ struct NativeLaunchConfiguration {
                         provenEngine: String? = nil) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
-        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults, provider: provider)
+        var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults, provider: provider)
         guard let runtime = profile?.runtime?.reference ?? runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
         guard let registryPath = defaults.string(forKey: "Xodus.lifecycle.registry"),
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
-        let entry = try selectEngine(registry: registry,
+        var entry = try selectEngine(registry: registry,
                                      provider: profile?.provider != nil ? nil : provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
+        if let selected = defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)") {
+            let titleProfile = profile ?? NativeTitleLaunchProfile(version: 1, productID: game.storeId,
+                engine: entry.name, shimDirectory: nil, environment: [:])
+            let fallback = try titleProfile.applyingFallback(selected, baseEngine: entry.name)
+            guard let library = fallback.launchEnvironment["CX_APPLEGPTK_LIBD3DSHARED_PATH"],
+                  let sibling = registry.engines.first(where: { $0.name == selected }),
+                  sibling.isAvailable, sibling.wine == entry.wine,
+                  sibling.environment == (entry.environment ?? [:]).merging(
+                    ["CX_APPLEGPTK_LIBD3DSHARED_PATH": library],
+                    uniquingKeysWith: { _, selected in selected }) else {
+                throw NativeLaunchError.invalidProfile
+            }
+            entry = sibling
+            profile = fallback
+        }
         let engineName = entry.name
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable

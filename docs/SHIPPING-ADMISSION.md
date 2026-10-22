@@ -2,6 +2,34 @@
 
 ## Purpose and authorization
 
+The exact c22029c installation, first-launch and c1190cc rollback commands
+are in [the held switch-over runbook](RC-SWITCHOVER.md). It includes a safe
+copy-only signature/ticket/Gatekeeper check; no second app copy may launch
+while live HK acceptance still owns the app.
+
+### Explicit d3dshared first fallbacks (source after c22029c only)
+
+Frozen S1 `f9dfc3483578101f9f4a0c8a017ae5867815f977` supplies exactly
+`apple-gptk-4.0b3` → `apple4-d3dshared`,
+`creation-dx11-d3dmetal` → `creation-dx11-d3dshared`, and
+`queue-winecx-nativejson` → `queue-winecx-d3dshared`.
+These are **not defaults, automatic retries or gameplay qualifications**.
+Only after observed base startup-crash/fiber/FLS/raw-GS symptoms and normal
+slot/input approval may an operator explicitly set
+`Xodus.lifecycle.fallback.<PRODUCT_ID>` to the matching sibling name in the
+app's preferences, while the app is normally quit. Remove that exact key to
+restore the base. No key is set by source loading or this runbook.
+
+The selection is product-bound; it cannot affect another tile. The app
+requires an available complete sibling registry entry with the same Wine and
+base environment plus only the frozen support-library delta, pins the dylib
+hash and preserves the current title's runtime pair, shims, executable,
+environment, imports and overlays. It never borrows one of S1's six other
+titles' runtime recipes for a newly staged game. Unknown or mismatched
+selections fail explicitly. The qualified free NMS default and its exact
+CrossOver fallback are unchanged. This source is not inside the already
+notarized c22029c artifact.
+
 ### One-command pinned release candidate
 
 From the clean checkout at `FULL_APP_COMMIT`, run:

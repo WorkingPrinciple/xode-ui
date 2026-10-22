@@ -1,5 +1,37 @@
 {
   "version": 1,
+  "engineFallbacks": [
+    {
+      "baseEngine": "apple-gptk-4.0b3",
+      "engine": "apple4-d3dshared",
+      "sourceRecipe": "xode-wine f9dfc3483578101f9f4a0c8a017ae5867815f977 engines/registry.json",
+      "qualification": "explicit per-title first fallback after startup-crash/fiber/FLS/raw-GS symptoms; slot approval required; not gameplay-qualified",
+      "library": {
+        "path": "${HOME}/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external/libd3dshared.dylib",
+        "sha256": "e985a9e0b9807856018ee63ac40de3b3baaca7c33568f672d80d89934fbc41f1"
+      }
+    },
+    {
+      "baseEngine": "creation-dx11-d3dmetal",
+      "engine": "creation-dx11-d3dshared",
+      "sourceRecipe": "xode-wine f9dfc3483578101f9f4a0c8a017ae5867815f977 engines/registry.json",
+      "qualification": "explicit per-title first fallback after startup-crash/fiber/FLS/raw-GS symptoms; slot approval required; not gameplay-qualified",
+      "library": {
+        "path": "${HOME}/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external/libd3dshared.dylib",
+        "sha256": "e985a9e0b9807856018ee63ac40de3b3baaca7c33568f672d80d89934fbc41f1"
+      }
+    },
+    {
+      "baseEngine": "queue-winecx-nativejson",
+      "engine": "queue-winecx-d3dshared",
+      "sourceRecipe": "xode-wine f9dfc3483578101f9f4a0c8a017ae5867815f977 engines/registry.json",
+      "qualification": "explicit per-title first fallback after startup-crash/fiber/FLS/raw-GS symptoms; slot approval required; not gameplay-qualified",
+      "library": {
+        "path": "${HOME}/Library/Application Support/Ode to X/Engines/apple-gptk-3.0/runtime/wswine.bundle/lib/external/libd3dshared.dylib",
+        "sha256": "5131e631eee8b542eadf48f4df9fd662d9aeeb59139137e0e6e14047dc434995"
+      }
+    }
+  ],
   "profiles": [
     {
       "version": 1,

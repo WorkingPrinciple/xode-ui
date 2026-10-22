@@ -243,6 +243,77 @@ enum NativeLifecycleChecks {
             shims: shims, provenEngine: "obsolete-evidence-engine")
         check(bound.engine == "synthetic",
               "A title's current exact recipe binding takes precedence over its historical gameplay engine")
+        let originalRegistry = try Data(contentsOf: registry)
+        let fallbackKey = "Xodus.lifecycle.fallback.\(nativeGame.storeId)"
+        let fallbacks = try NativeTitleLaunchProfile.bundledEngineFallbacks()
+        check(fallbacks.map(\.engine) == ["apple4-d3dshared", "creation-dx11-d3dshared", "queue-winecx-d3dshared"]
+              && fallbacks.map(\.library.sha256) == [
+                "e985a9e0b9807856018ee63ac40de3b3baaca7c33568f672d80d89934fbc41f1",
+                "e985a9e0b9807856018ee63ac40de3b3baaca7c33568f672d80d89934fbc41f1",
+                "5131e631eee8b542eadf48f4df9fd662d9aeeb59139137e0e6e14047dc434995"],
+              "Only S1's frozen three sibling fallbacks and own support-library hashes are admitted")
+        for rule in fallbacks {
+            var title = profile
+            title.engine = rule.baseEngine
+            title.runtime = NativeLocalRuntime(reference)
+            title.executable = "Title/Exact.exe"
+            title.environment = ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"]
+            title.requiredFiles = [.init(path: primary.path, sha256: reference.primary.sha256)]
+            title.prefixRegistryImports = [.init(path: primary.path, sha256: reference.primary.sha256)]
+            title.prefixOverlays = [.init(path: legacy.path, sha256: reference.legacy.sha256,
+                                          destination: "drive_c/windows/system32/title.dll")]
+            try JSONEncoder().encode(title).write(to: profileURL)
+            let fixtureBytes = try JSONSerialization.data(withJSONObject: ["engines": [
+                ["name": rule.baseEngine, "kind": "free", "wine": executable.path,
+                 "smoke_test": ["status": "pass"], "environment": ["KEEP": "unchanged"]],
+                ["name": rule.engine, "kind": "free", "wine": executable.path,
+                 "smoke_test": ["status": "pass"], "environment": [
+                    "KEEP": "unchanged", "CX_APPLEGPTK_LIBD3DSHARED_PATH": rule.library.url.path]]
+            ]])
+            try fixtureBytes.write(to: registry)
+            defaults.set(rule.engine, forKey: "Xodus.lifecycle.fallback.UNRELATED001")
+            check(try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
+                shims: shims).engine == rule.baseEngine,
+                "\(rule.engine) is never a default or an unrelated title's selection")
+            defaults.set(rule.engine, forKey: fallbackKey)
+            let explicit = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil,
+                defaults: defaults, shims: shims)
+            let registryAfter = try Data(contentsOf: registry)
+            check(explicit.engine == rule.engine && explicit.profile?.runtime?.primarySHA256 == reference.primary.sha256
+                  && explicit.profile?.runtime?.legacySHA256 == reference.legacy.sha256
+                  && explicit.profile?.shimDirectory == title.shimDirectory
+                  && explicit.profile?.arguments == ["--exe", "Title/Exact.exe"]
+                  && explicit.profile?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
+                  && explicit.profile?.requiredFiles?.first?.sha256 == reference.primary.sha256
+                  && explicit.profile?.requiredFiles?.last?.sha256 == rule.library.sha256
+                  && explicit.profile?.prefixRegistryImports?.first?.path == primary.path
+                  && explicit.profile?.prefixOverlays?.first?.destination == "drive_c/windows/system32/title.dll"
+                  && explicit.prefix.lastPathComponent == rule.engine
+                  && explicit.registry == registry && registryAfter == fixtureBytes,
+                  "\(rule.engine) preserves exact title runtime/shims/executable/COM and uses full sibling registry without mutation")
+            guard var mismatched = try JSONSerialization.jsonObject(with: fixtureBytes) as? [String: [[String: Any]]] else {
+                throw NativeLaunchError.invalidProfile
+            }
+            mismatched["engines"]?[1]["environment"] = ["KEEP": "changed"]
+            try JSONSerialization.data(withJSONObject: mismatched).write(to: registry)
+            do {
+                _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults, shims: shims)
+                check(false, "A sibling with changed base environment must not be substituted")
+            } catch NativeLaunchError.invalidProfile {
+                check(true, "A sibling with changed base environment is rejected before any launch")
+            }
+            try fixtureBytes.write(to: registry)
+            defaults.set("unapproved-sibling", forKey: fallbackKey)
+            do {
+                _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults, shims: shims)
+                check(false, "An arbitrary fallback must not be substituted")
+            } catch NativeLaunchError.invalidProfile {
+                check(true, "An arbitrary fallback fails explicitly without changing the base")
+            }
+            defaults.removeObject(forKey: fallbackKey)
+        }
+        try originalRegistry.write(to: registry)
+        try JSONEncoder().encode(profile).write(to: profileURL)
         try Data("changed shim".utf8).write(to: shimDirectory.appendingPathComponent("windows.web.dll"))
         do {
             _ = try await profiled.arguments()
