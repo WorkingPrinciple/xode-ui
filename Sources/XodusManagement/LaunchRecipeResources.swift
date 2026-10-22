@@ -2,6 +2,15 @@
 import Foundation
 
 public enum LaunchRecipeResources {
+    public static func candidateProfilesURL(_ name: String) throws -> URL {
+        guard ["small-game-candidates", "preflight-game-candidates"].contains(name),
+              let url = Bundle.module.url(forResource: name, withExtension: "json",
+                                          subdirectory: "LaunchRecipes") else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return url
+    }
+
     public static func saveLocationsURL() throws -> URL {
         guard let url = Bundle.module.url(forResource: "save-locations-v1", withExtension: "json",
                                           subdirectory: "LaunchRecipes") else {

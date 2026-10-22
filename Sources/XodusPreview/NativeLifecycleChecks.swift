@@ -405,6 +405,140 @@ enum NativeLifecycleChecks {
         } catch { check(true, "A changed local legacy DLL requires selecting the updated pair") }
         try await installationStatusChecks(root: root, check: check)
         try await titleRecipeChecks(root: root, check: check)
+        try await candidateRecipeChecks(root: root, check: check)
+    }
+
+    private static func candidateRecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let rows = try NativeCandidateLaunchCatalogue.rows()
+        let expected = [
+            "9P8NSTDMZ11P": ("creation-dx11-d3dmetal", "Inscryption.exe"),
+            "9MSVVM5NS9L6": ("creation-dx11-d3dmetal", "DREDGE.exe"),
+            "9PBWWQGXVMKC": ("creation-dx11-d3dmetal", "Monster Sanctuary.exe"),
+            "9NLRT31Z4RWM": ("creation-dx11-d3dmetal", "Secret Legend.exe"),
+            "9PD5BM2Z8C4L": ("creation-dx11-d3dmetal", "VampireSurvivors.exe"),
+            "9P03JGQ4S1GC": ("creation-dx11-d3dmetal", "SkyrimSELauncher.exe"),
+            "9P1N07XDL1D4": ("queue-winecx-nativejson", "Binaries/Win64/Dishonored.exe"),
+            "9MWR1NC6VQ6L": ("queue-winecx-nativejson", "Stardew Valley.exe"),
+            "9PNG83MDD6SH": ("queue-winecx-nativejson", "Limbo.exe"),
+            "9P3T7HVKM6D0": ("creation-dx11-d3dmetal", "KingdomCome.exe"),
+            "9N8C07SS8C9D": ("queue-winecx-nativejson", "FINAL FANTASY IV.exe")
+        ]
+        let suite = "io.github.xodus.candidate-check.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        check(Set(rows.filter(\.admitted).map(\.store_id)) == Set(expected.keys)
+              && NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59") != nil
+              && NativeCandidateLaunchCatalogue.issue(productID: "UNKNOWN00001") == nil,
+              "Exactly eleven published S1 candidates are admitted for attempts; Halls stays blocked, unknown titles gain no recipe")
+        for row in rows where row.admitted {
+            let profile = try NativeTitleLaunchProfile.read(productID: row.store_id, defaults: defaults,
+                                                           provider: .standaloneWine)
+            check(profile?.engine == expected[row.store_id]?.0
+                  && profile?.arguments == ["--exe", expected[row.store_id]?.1 ?? ""]
+                  && profile?.environment.isEmpty == true && profile?.dllOverrides == nil
+                  && profile?.unsetEnvironment?.contains("XODUS_PRIVATE_RUNTIME_COM_STA") == true
+                  && row.game_arguments.isEmpty,
+                  "Candidate \(row.store_id) binds exact S1 engine/exe/empty args without STA or DLL overrides")
+        }
+        do {
+            _ = try NativeTitleLaunchProfile.read(productID: "9NMNMS626R59", defaults: defaults)
+            check(false, "Halls must not resolve a launch profile")
+        } catch NativeLaunchError.candidateBlocked {
+            check(true, "Halls blocks direct profile resolution, not only its visible Play action")
+        }
+        let raw = try JSONSerialization.jsonObject(with: Data(contentsOf:
+            LaunchRecipeResources.candidateProfilesURL("small-game-candidates"))) as? [String: Any] ?? [:]
+        let sample = (raw["profiles"] as? [[String: Any]])?.first ?? [:]
+        for change: [String: Any] in [
+            ["status": "unknown-future-status"], ["ready_for_launch": false],
+            ["title_environment": ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"]],
+            ["title_environment": ["WINEDLLOVERRIDES": "unapproved=n"]],
+            ["game_arguments": ["--unapproved"]], ["profile": "unknown-engine"]
+        ] {
+            let changed = sample.merging(change) { _, new in new }
+            let row = try JSONDecoder().decode(NativeCandidateLaunchCatalogue.Row.self,
+                                               from: JSONSerialization.data(withJSONObject: changed))
+            check(!row.admitted, "Unknown/unqualified candidate changes cannot auto-apply STA, overrides, args or another engine")
+        }
+        let first = rows.first { $0.admitted }!
+        let fakeWine = root.appendingPathComponent("synthetic-install-status").path
+        for environment in [[:], ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"],
+                            ["XODUS_PRIVATE_CALLER_OWNS_COM": "1"],
+                            ["CX_APPLEGPTK_LIBD3DSHARED_PATH": "/unapproved/library"]] {
+            let registry = try JSONDecoder().decode(NativeEngineRegistry.self,
+                from: JSONSerialization.data(withJSONObject: ["engines": [
+                    ["name": first.profile, "kind": "free", "wine": fakeWine,
+                     "smoke_test": ["status": "pass"], "environment": environment]
+                ]]))
+            do {
+                try first.validateEngine(registry.engines[0], fallback: nil)
+                check(environment.isEmpty, "Candidate rejects engine-level unqualified STA/caller-owns/support-library contamination")
+            } catch NativeLaunchError.invalidProfile {
+                check(!environment.isEmpty, "Candidate rejects engine-level unqualified STA/caller-owns/support-library contamination")
+            }
+        }
+        do {
+            try first.validateManifest(folder: root)
+            check(false, "Candidate manifest must match its frozen S1 edition/executable evidence")
+        } catch { check(true, "Missing or changed manifest fails before any prefix/launch mutation") }
+
+        guard let mixtape = try NativeTitleLaunchProfile.read(productID: "9NH0MSG29X6L", defaults: defaults) else {
+            throw NativeLaunchError.invalidProfile
+        }
+        check(mixtape.dllOverrides == "msvcp140_2,vcruntime140_1=n,b"
+              && mixtape.dllOverrideEvidence?.runID == "005115dd-7928-4fbc-9ffa-28379040292d"
+              && mixtape.engine == "apple-gptk-4.0b3" && mixtape.arguments == ["--exe", "Mixtape.exe"]
+              && mixtape.environment.isEmpty
+              && mixtape.unsetEnvironment?.contains("XODUS_PRIVATE_RUNTIME_COM_STA") == true,
+              "Mixtape-only native VC suffix is evidence-bound; pending STA stays inactive and no WORKING promotion occurs")
+        let registry = root.appendingPathComponent("mixtape-original-registry.json")
+        let base = "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b"
+        let original: [String: Any] = ["engines": [
+            ["name": "apple-gptk-4.0b3", "environment": ["WINEDLLOVERRIDES": base, "KEEP": "unchanged"]],
+            ["name": "other-engine", "environment": ["WINEDLLOVERRIDES": "other=b"]]
+        ]]
+        let bytes = try JSONSerialization.data(withJSONObject: original, options: [.sortedKeys])
+        try bytes.write(to: registry)
+        let selected = try await mixtape.registryForLaunch(base: registry, engine: "apple-gptk-4.0b3",
+            outputDirectory: root.appendingPathComponent("mixtape-owned-run-registry"))
+        let result = try JSONSerialization.jsonObject(with: Data(contentsOf: selected)) as? [String: Any]
+        let entries = result?["engines"] as? [[String: Any]]
+        let retained = try Data(contentsOf: registry)
+        check((entries?.first?["environment"] as? [String: String])
+                  == ["WINEDLLOVERRIDES": base + ";msvcp140_2,vcruntime140_1=n,b", "KEEP": "unchanged"]
+              && (entries?.last?["environment"] as? [String: String]) == ["WINEDLLOVERRIDES": "other=b"]
+              && retained == bytes && selected != registry,
+              "Frozen CLI-honored per-run registry appends exact VC suffix, preserves existing clauses/other engines and shared source bytes")
+        let conflictRegistry = root.appendingPathComponent("mixtape-conflicting-registry.json")
+        try JSONSerialization.data(withJSONObject: ["engines": [
+            ["name": "apple-gptk-4.0b3", "environment": ["WINEDLLOVERRIDES": base + ";MSVCP140_2=b"]]
+        ]]).write(to: conflictRegistry)
+        do {
+            _ = try await mixtape.registryForLaunch(base: conflictRegistry, engine: "apple-gptk-4.0b3",
+                outputDirectory: root.appendingPathComponent("mixtape-conflict-rejected"))
+            check(false, "Conflicting VC clause must not be overwritten or doubled")
+        } catch NativeLaunchError.invalidProfile {
+            check(true, "Conflicting VC DLL clauses are rejected case-insensitively before writing")
+        }
+        for mode in ["other-title", "missing-evidence", "unapproved-dll", "pending-sta"] {
+            var invalid = mixtape
+            if mode == "missing-evidence" { invalid.dllOverrideEvidence = nil }
+            if mode == "unapproved-dll" { invalid.dllOverrides = "another=n" }
+            if mode == "pending-sta" { invalid.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] = "1" }
+            if mode == "other-title" {
+                var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(mixtape)) as? [String: Any] ?? [:]
+                object["productID"] = "FIXTURE00001"
+                invalid = try JSONDecoder().decode(NativeTitleLaunchProfile.self,
+                    from: JSONSerialization.data(withJSONObject: object))
+            }
+            do {
+                _ = try await invalid.registryForLaunch(base: registry, engine: "apple-gptk-4.0b3",
+                    outputDirectory: root.appendingPathComponent("mixtape-rejected-\(mode)"))
+                check(false, "DLL recipe rejects \(mode)")
+            } catch NativeLaunchError.invalidProfile {
+                check(true, "DLL recipe rejects \(mode) before a per-run registry is written")
+            }
+        }
     }
 
     private static func titleRecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {

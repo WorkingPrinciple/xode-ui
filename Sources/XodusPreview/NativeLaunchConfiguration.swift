@@ -208,6 +208,15 @@ struct NativeTitleLaunchProfile: Codable {
     var prefixRegistryImports: [PinnedFile]? = nil
     var prefixOverlays: [PinnedFile]? = nil
     var provider: RuntimeProviderKind? = nil
+    var dllOverrides: String? = nil
+    var dllOverrideEvidence: DLLOverrideEvidence? = nil
+
+    struct DLLOverrideEvidence: Codable {
+        let runID: String
+        let receiptSHA256: String
+        let registrySHA256: String
+        let scope: String
+    }
 
     private struct Catalogue: Decodable {
         let version: Int
@@ -255,6 +264,11 @@ struct NativeTitleLaunchProfile: Codable {
         let catalogue = try JSONDecoder().decode(Catalogue.self, from: bytes)
         let runtimeCatalogue = try RuntimeCatalogue.bundled()
         var active = catalogue.profiles
+        let candidates = try NativeCandidateLaunchCatalogue.rows().filter(\.admitted).map(\.launchProfile)
+        guard Set(active.map(\.productID)).isDisjoint(with: candidates.map(\.productID)) else {
+            throw NativeLaunchError.invalidProfile
+        }
+        active += candidates
         for item in runtimeCatalogue.items {
             if !item.observed {
                 guard !active.contains(where: {
@@ -287,6 +301,9 @@ struct NativeTitleLaunchProfile: Codable {
     }
 
     static func read(productID: String, defaults: UserDefaults, provider: RuntimeProviderKind? = nil) throws -> Self? {
+        if let issue = NativeCandidateLaunchCatalogue.issue(productID: productID) {
+            throw NativeLaunchError.candidateBlocked(issue)
+        }
         let bundled = try bundledProfiles().filter { $0.productID == productID }
         if let provider, let override = bundled.first(where: { $0.provider == provider }) { return override }
         if let primary = bundled.first(where: { $0.provider == nil }) { return primary }
@@ -332,6 +349,16 @@ struct NativeTitleLaunchProfile: Codable {
                   file.destination.map(relative) ?? true else { throw NativeLaunchError.invalidProfile }
         }
         guard (prefixOverlays ?? []).allSatisfy({ $0.destination != nil }) else { throw NativeLaunchError.invalidProfile }
+        if let dllOverrides {
+            guard productID == "9NH0MSG29X6L", engine == "apple-gptk-4.0b3",
+                  executable == "Mixtape.exe", dllOverrides == "msvcp140_2,vcruntime140_1=n,b",
+                  environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == nil,
+                  environment["WINEDLLOVERRIDES"] == nil,
+                  dllOverrideEvidence?.runID == "005115dd-7928-4fbc-9ffa-28379040292d",
+                  dllOverrideEvidence?.receiptSHA256 == "f0041fb14f5dc9bec12fa1368697aab72b26ae36822e0d80d59ccb1d361686bb",
+                  dllOverrideEvidence?.registrySHA256 == "9fe5bebba1b390f8605364085c3e917d32b2090f18bc0a59a454b6d0573204f1",
+                  dllOverrideEvidence?.scope.isEmpty == false else { throw NativeLaunchError.invalidProfile }
+        } else if dllOverrideEvidence != nil { throw NativeLaunchError.invalidProfile }
         if let directory = shimDirectory {
             guard directory.hasPrefix("/") else { throw NativeLaunchError.invalidProfile }
             try GameScriptFiles.checkPath(URL(fileURLWithPath: directory))
@@ -358,10 +385,11 @@ struct NativeTitleLaunchProfile: Codable {
     }
 
     func registryForLaunch(base: URL, engine: String, outputDirectory: URL? = nil) async throws -> URL {
+        try validate(productID: productID)
         for file in (requiredFiles ?? []) + (prefixRegistryImports ?? []) + (prefixOverlays ?? []) {
             try await file.validate()
         }
-        guard prefixRegistryImports != nil || prefixOverlays != nil else { return base }
+        guard prefixRegistryImports != nil || prefixOverlays != nil || dllOverrides != nil else { return base }
         let bytes = try InstalledGameFiles.readRegular(base, maximumBytes: 2_097_152)
         guard var document = try JSONSerialization.jsonObject(with: bytes) as? [String: Any],
               var engines = document["engines"] as? [[String: Any]],
@@ -373,6 +401,20 @@ struct NativeTitleLaunchProfile: Codable {
         }
         if let overlays = prefixOverlays {
             engines[index]["prefix_overlays"] = overlays.map { ["source": $0.url.path, "destination": $0.destination ?? ""] }
+        }
+        if let dllOverrides {
+            guard engine == self.engine,
+                  var environment = engines[index]["environment"] as? [String: String],
+                  let original = environment["WINEDLLOVERRIDES"], !original.isEmpty,
+                  !original.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains),
+                  !original.split(separator: ";").contains(where: { clause in
+                      let names = clause.prefix(while: { $0 != "=" }).split(separator: ",").map {
+                          $0.trimmingCharacters(in: .whitespaces).lowercased()
+                      }
+                      return names.contains("msvcp140_2") || names.contains("vcruntime140_1")
+                  }) else { throw NativeLaunchError.invalidProfile }
+            environment["WINEDLLOVERRIDES"] = original + ";" + dllOverrides
+            engines[index]["environment"] = environment
         }
         document["engines"] = engines
         let directory = outputDirectory ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
@@ -407,14 +449,29 @@ struct NativeLaunchConfiguration {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults, provider: provider)
+        let candidate = try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
+        if let candidate {
+            try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))
+            guard profile?.engine == candidate.profile, profile?.executable == candidate.manifest_executable else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
         guard let runtime = profile?.runtime?.reference ?? runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
         guard let registryPath = defaults.string(forKey: "Xodus.lifecycle.registry"),
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
         var entry = try selectEngine(registry: registry,
-                                     provider: profile?.provider != nil ? nil : provider, defaults: defaults,
+                                     provider: profile?.provider != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
+        try candidate?.validateEngine(entry, fallback: defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)"))
+        if profile?.dllOverrides != nil {
+            guard entry.name == profile?.engine,
+                  defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)") == nil,
+                  (profile?.unsetEnvironment ?? []).allSatisfy({ entry.environment?[$0] == nil }) else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
         if let profile, profile.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1" {
             guard profile.engine == entry.name,
                   (profile.unsetEnvironment ?? []).allSatisfy({ entry.environment?[$0] == nil }),
@@ -478,10 +535,12 @@ struct NativeLaunchConfiguration {
 }
 
 enum NativeLaunchError: Error, LocalizedError {
+    case candidateBlocked(String)
     case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable,
          installationNotReady
     var errorDescription: String? {
         switch self {
+        case .candidateBlocked(let reason): reason
         case .runtimeNotQualified:
             "Choose the local primary and legacy runtime pair in Runtime settings before playing. Experimental local runtimes do not require release qualification."
         case .registryMissing:

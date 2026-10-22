@@ -258,6 +258,41 @@ claim app-driven E2E or cloud saves beyond that scope. Missing evidence,
 installation completeness alone cannot produce the badge. The evidence
 ledger remains read-only to this consumer; no title is promoted by UI code.
 
+### Published candidate launch rows
+
+The source-only candidate batch consumes byte-identical S1
+`small-game-candidates.json` at xode-wine `27d9af8ae66b8de9883daca25c62312562c3dfbc`
+(including the four candidates first published at `1282f7a92221a3cd70498f322b1d8b5efdeed1f0`,
+plus Vampire and the explicit Halls block), and `preflight-game-candidates.json`
+at `c32d8eb0f6b68236a87836c30ce70a3858f20c0b`. Both bundled files are SHA-256
+bound in `NativeCandidateLaunchCatalogue`; they do not import S1's mutable
+checkout, change global engine settings or grant game qualification.
+
+Installed, authoritatively complete Inscryption, DREDGE, Monster Sanctuary,
+TUNIC, Vampire Survivors, Skyrim Special Edition, Dishonored, Stardew Valley,
+LIMBO, Kingdom Come: Deliverance and FINAL FANTASY IV use their exact published
+engine, manifest executable and empty game arguments. Skyrim uses
+`SkyrimSELauncher.exe`, not an inferred direct executable or Anniversary
+Edition. The installed manifest must match S1's frozen hash. Unknown status,
+nonempty title environment/arguments, unknown engines, conflicting engine STA
+or support-library settings and per-title fallback selection fail closed.
+Halls remains **Launch unavailable**, with no Play or direct-launch bypass.
+Installation completeness is still independently required; a candidate does
+not become WORKING, and absent test evidence stays **Not tested on Mac yet**.
+Pending STA settings remain inactive.
+
+Mixtape's `dllOverrides` field is restricted to that product, Apple4 and
+`Mixtape.exe`, appending only `msvcp140_2,vcruntime140_1=n,b` to the selected
+engine's existing `environment.WINEDLLOVERRIDES` in a private per-run registry.
+The shared registry, its other engines and existing clauses remain unchanged;
+caller environment is not used because frozen adf8 overwrites it. Conflicting
+VC clauses, other titles/values and missing evidence identity are rejected.
+Evidence run `005115dd-7928-4fbc-9ffa-28379040292d` proves native VC loads and
+Shipping bootstrap progress in a separate STA diagnostic, not visual gameplay
+or saving. Its receipt/private-registry hashes are pinned in the recipe.
+The normal tile's **DLL-only recipe - unqualified** explicitly excludes pending
+STA; no inference about STA necessity or automatic WORKING promotion is made.
+
 Details also has a read-only **Save location** section. Its bundled citation
 projection in `LaunchRecipes/save-locations-v1.json` preserves S4's exact
 v4/v5 Windows paths, source URLs, scope and frozen packet commit/hash identities;

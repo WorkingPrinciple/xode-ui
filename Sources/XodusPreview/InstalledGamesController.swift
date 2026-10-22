@@ -319,6 +319,11 @@ final class InstalledGamesController: ObservableObject {
             playErrors[game.id] = "Not supported yet. " + issues.map(\.detail).joined(separator: " ")
             return
         }
+        if let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId) {
+            playErrors[game.id] = issue
+            Self.launchLog.error("Candidate launch unavailable: \(game.storeId, privacy: .public): \(issue, privacy: .public)")
+            return
+        }
         if usesUnifiedAccount {
             await playNative(game)
             return
@@ -487,7 +492,7 @@ final class InstalledGamesController: ObservableObject {
             installationStatuses[game.id] = result
             installationErrors[game.id] = result.success ? nil : result.explanation
             nativeInspectionDates[game.id] = ContinuousClock.now
-            if result.status == .complete {
+            if result.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId) == nil {
                 launchableIDs.insert(game.id)
                 packageErrors[game.id] = nil
             } else { launchableIDs.remove(game.id) }
@@ -891,7 +896,10 @@ final class InstalledGamesController: ObservableObject {
         }.value
         guard inspectionGeneration == generation, !applicationTerminating else { return }
         let nativeComplete = Set(installationStatuses.filter { $0.value.status == .complete }.map(\.key))
-        launchableIDs = result.0.union(nativeComplete).intersection(games.map(\.id))
+        let candidateBlocked = Set(games.filter {
+            NativeCandidateLaunchCatalogue.issue(productID: $0.storeId) != nil
+        }.map(\.id))
+        launchableIDs = result.0.union(nativeComplete).intersection(games.map(\.id)).subtracting(candidateBlocked)
         packageErrors = result.3
         placeholderIDs = result.4.intersection(games.map(\.id))
         var latestSaved: [InstalledGame]?

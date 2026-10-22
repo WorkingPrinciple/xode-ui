@@ -35,6 +35,24 @@
   "profiles": [
     {
       "version": 1,
+      "productID": "9NH0MSG29X6L",
+      "title": "Mixtape",
+      "qualification": "DLL-only tile recipe unqualified; native VC loads/Shipping bootstrap observed in S2 STA diagnostic only, no visual/gameplay/save proof; pending STA remains inactive",
+      "engine": "apple-gptk-4.0b3",
+      "executable": "Mixtape.exe",
+      "environment": {},
+      "unsetEnvironment": ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"],
+      "dllOverrides": "msvcp140_2,vcruntime140_1=n,b",
+      "dllOverrideEvidence": {
+        "runID": "005115dd-7928-4fbc-9ffa-28379040292d",
+        "receiptSHA256": "f0041fb14f5dc9bec12fa1368697aab72b26ae36822e0d80d59ccb1d361686bb",
+        "registrySHA256": "9fe5bebba1b390f8605364085c3e917d32b2090f18bc0a59a454b6d0573204f1",
+        "scope": "Native msvcp140_2 and vcruntime140_1 loaded; Shipping bootstrap proceeded. Diagnostic also used STA1; DLL-only normal tile combination unqualified, not WORKING.",
+        "receipt": "${HOME}/Library/Application Support/XodusCLI/proofs/passive-sta-9NH0MSG29X6L-vc14-two-native/receipt.json"
+      }
+    },
+    {
+      "version": 1,
       "productID": "9P4NV23Q6QC2",
       "title": "Abiotic Factor",
       "qualification": "S2 observed title screen ac5e2934 only; no gameplay/save qualification",
