@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+"""Refresh source-bound candidate gates; never execute games or inspect save contents."""
+
+import argparse
+import datetime as dt
+import hashlib
+import json
+from pathlib import Path
+import re
+
+from inspect_queue import DATA, load_json
+
+HOME = Path.home()
+MATRIX = HOME / ".copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json"
+OUTPUT = DATA / "path-to-20-v1.json"
+SUMMARY = DATA / "morning-summary-draft-v2.md"
+GATES = ("menu", "gameplay", "quit", "relaunch", "save")
+S1 = HOME / "src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines"
+
+
+def now():
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def source(path):
+    raw = path.read_bytes()
+    return {"path": str(path), "sha256": hashlib.sha256(raw).hexdigest(),
+            "snapshot": json.loads(raw)}
+
+
+def build(inputs, previous):
+    timestamp = inputs["collectedAt"]
+    old = {row["storeId"]: row for row in previous.get("items", [])}
+    matrix = {row["productId"]: row for row in inputs["matrix"]["snapshot"]["games"]}
+    candidates = {row["storeId"]: row for row in inputs["candidates"]}
+    for sid, row in matrix.items():
+        candidates.setdefault(sid, {"storeId": sid, "title": row["title"]})
+    rows = []
+    for sid, candidate in candidates.items():
+        observed = matrix.get(sid, {})
+        verdict = observed.get("verdict", candidate.get("state", "UNTESTED"))
+        gates = {name: {"status": "unknown", "basis": "Not explicitly admitted"} for name in GATES}
+        next_gate = "menu"
+        owner = "S2/S3"
+        blocker = observed.get("blocker") or candidate.get("blocker") or "Execution admission pending"
+        evidence = [{"path": inputs["matrix"]["path"], "sha256": inputs["matrix"]["sha256"],
+                     "productId": sid}] if observed else []
+        packets = [row for row in inputs["packetRows"] if row["storeId"] == sid]
+        evidence.extend({"path": row["path"], "sha256": row["sha256"]} for row in packets)
+        if verdict == "WORKING":
+            for gate in gates.values():
+                gate.update(status="passed", basis="Admitted strict WORKING matrix verdict; "
+                            "native/roguelite-specific acceptance retained in matrix scope")
+            next_gate, owner, blocker = "complete", observed.get("owner", "S3"), None
+        elif verdict in {"TITLE_SCREEN_ONLY", "GAMEPLAY_PASS"}:
+            gates["menu"].update(status="passed", basis="Admitted matrix " + verdict)
+            next_gate, owner = "gameplay", "S3"
+            if verdict == "GAMEPLAY_PASS":
+                gates["gameplay"].update(status="passed", basis="Admitted matrix gameplay")
+                next_gate = "save"
+        save = observed.get("saveObservation") or {}
+        if save.get("retentionVerified") is True:
+            for name in ("save", "relaunch"):
+                gates[name].update(status="passed", basis="Explicit matrix retentionVerified; "
+                                   "see retained checkpoint/marker limitations")
+            next_gate = "quit" if verdict != "WORKING" else "complete"
+        if save.get("normalMenuQuitObserved") is True:
+            gates["quit"].update(status="passed", basis="Explicit matrix normalMenuQuitObserved")
+        if sid == "9P9VNSQK1W3K" and verdict != "WORKING":
+            verdict, next_gate, owner = "WORKING_CANDIDATE", "gameplay / CLI promotion hold", "S3/S2/user"
+            blocker = "Coordinator reports WORKING_CANDIDATE; CLI ebd56e promotion "
+            blocker += "pending. Does not count strict WORKING. Individual gates require owner receipt."
+            evidence.append({"kind": "coordinator-verdict", "observedAt": timestamp,
+                             "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"})
+            receipt = inputs.get("brotatoReceipt")
+            if receipt:
+                gates["menu"].update(status="passed", basis="S2 explicit TITLE_SCREEN_PASS; "
+                                    "direct ebd56e only, no input")
+                gates["quit"].update(status="not-passed", basis="S2 reports forced exact-prefix "
+                                    "wineserver termination; CLI0/Wine0 not ordinary quit")
+                evidence.append({"path": receipt["path"], "sha256": receipt["sha256"]})
+                blocker += " S2 confirms only menu; gameplay/relaunch/save untested, "
+                blocker += "ordinary quit not passed. Candidate label is not full qualification."
+        if candidate.get("catalogueOnly"):
+            next_gate, owner = "catalogue hold / entitlement / disk", "user/coordinator"
+            blocker = "Catalogue closed tonight; membership is not entitlement; no install grant"
+        elif candidate.get("blockerClass") == "disk/ownership" and not observed:
+            next_gate, owner = "install hold / entitlement / disk", "user/coordinator"
+        if sid == "9PLH7R84GJWP" and verdict == "FAIL":
+            next_gate, owner = "actual-title candidate retest", "S3"
+        if sid == "C3KLDKZBHNCZ" and verdict != "WORKING":
+            next_gate, owner = "save-provider diagnosis", "S2/S3"
+        if sid in {"9NGLST31DG26", "9PK087LNGJC5"} and verdict == "FAIL":
+            next_gate, owner = "startup diagnosis", "S1/S2"
+        s1rows = [row for source_row in inputs["s1"] for row in source_row["snapshot"].get(
+            "profiles", source_row["snapshot"].get("items", [])) if row.get("store_id") == sid]
+        first = old.get(sid, {}).get("gateFirstObservedAt", timestamp) \
+            if old.get(sid, {}).get("nextGate") == next_gate else timestamp
+        age = max(0, (dt.datetime.fromisoformat(timestamp) -
+                      dt.datetime.fromisoformat(first)).total_seconds() / 3600)
+        rows.append({"storeId": sid, "title": observed.get("title", candidate["title"]),
+                     "verdict": verdict, "strictWorking": verdict == "WORKING",
+                     "gates": gates, "nextGate": next_gate, "ownerStream": owner,
+                     "blocker": blocker, "evidence": evidence,
+                     "packetReferences": candidate.get("evidence", []) + packets,
+                     "s1RowPresent": bool(s1rows),
+                     "gateFirstObservedAt": first, "sameGateObservedHours": age,
+                     "stuckOver2Hours": age > 2 and next_gate != "complete",
+                     "historicalGateAge": "unknown before tracker first observation",
+                     "scope": observed.get("scope")})
+    rows.sort(key=lambda row: (not row["strictWorking"],
+                              {"quit": 0, "gameplay / CLI promotion hold": 1, "save": 2,
+                               "gameplay": 3}.get(row["nextGate"], 4), row["title"]))
+    working = sum(row["strictWorking"] for row in rows)
+    return {"schemaVersion": 1, "updatedAt": timestamp, "matrixUpdatedAt":
+            inputs["matrix"]["snapshot"]["updatedAt"], "collectionInputs": inputs,
+            "target": 20, "strictWorkingCount": working, "remainingTo20": max(0, 20 - working),
+            "gameLaunches": 0, "policy": "Unknown gates never inferred passed from "
+            "install status, source row, screenshots or cache files. Strict matrix "
+            "WORKING admits title-specific gate semantics. WORKING_CANDIDATE excluded. "
+            "Stall clock is observed same next gate, not source mtime/global matrix "
+            "updatedAt; historical age unavailable until measured. >2h alerts include "
+            "held/queued lanes but do not override holds or authorize runs.",
+            "refreshPolicy": "Every 30 minutes via attached session automation and "
+            "when a session reports a verdict. Same-session refresh only; no background games.",
+            "items": rows}
+
+
+def refresh():
+    base = source(DATA / "morning-status-v1.json")
+    catalogue = load_json(DATA / "s3-preflight-catalogue-v1.json")
+    closed = {row["storeId"] for row in catalogue["blockedItems"]}
+    packets = []
+    for name in ("s3-preflight-small-v1.json", "s3-preflight-next-v1.json"):
+        packet = source(DATA / name)
+        for row in packet["snapshot"].get("items", []) + packet["snapshot"].get("blockedItems", []):
+            packets.append({"storeId": row["storeId"], "path": packet["path"], "sha256": packet["sha256"]})
+    inputs = {"collectedAt": now(), "matrix": source(MATRIX),
+              "candidates": [{"storeId": row["storeId"], "title": row["title"],
+                              "catalogueOnly": row["storeId"] in closed,
+                              "blocker": row.get("blocker"), "state": row["state"],
+                              "blockerClass": row.get("blockerClass"),
+                              "evidence": row.get("evidence", [])}
+                             for row in base["snapshot"]["items"]],
+              "packetRows": packets, "s1": [source(path) for path in sorted(S1.glob("*candidates.json"))],
+              "candidateSource": {"path": base["path"], "sha256": base["sha256"]}}
+    previous = load_json(OUTPUT) if OUTPUT.exists() else {}
+    brotato = HOME / "Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/9P9VNSQK1W3K/receipt.json"
+    if brotato.exists():
+        raw = brotato.read_bytes()
+        inputs["brotatoReceipt"] = {"path": str(brotato),
+                                    "sha256": hashlib.sha256(raw).hexdigest(),
+                                    "ownerReport": "S2 direct report 2026-10-22: TITLE_SCREEN_PASS "
+                                    "only, forced exact-prefix shutdown; no gameplay/save/relaunch"}
+    return build(inputs, previous)
+
+
+def render(packet):
+    lines = ["# Path to 20", "",
+             f"Updated {packet['updatedAt']}; **{packet['strictWorkingCount']}/20 strict WORKING**. "
+             "Brotato candidate excluded. `?` means unverified, not failed.", "",
+             "| Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |",
+             "|---|---|---|---|---|---|---|---|---|---|"]
+    for row in packet["items"]:
+        marks = [{"passed": "passed", "not-passed": "not passed"}.get(
+            row["gates"][gate]["status"], "?") for gate in GATES]
+        lines.append("| " + " | ".join([row["title"], row["verdict"], *marks,
+                     row["nextGate"] + " / " + row["ownerStream"],
+                     (str(row["blocker"]) if row["blocker"] else "Admitted matrix").replace(
+                         "|", "/").replace("\n", " "),
+                     ">2h" if row["stuckOver2Hours"] else "-"]) + " |")
+    lines.extend(["", packet["policy"], "", "Full blockers, source hashes and packet "
+                  "references are in `path-to-20-v1.json`. Stall time starts at the "
+                  "first tracker observation; earlier unknown age is not reported as zero."])
+    (DATA / "path-to-20-v1.md").write_text("\n".join(lines) + "\n")
+    text = SUMMARY.read_text()
+    text = re.sub(r"\*\*Goal: 20 genuinely WORKING titles; current count: \d+\.\*\*",
+                  f"**Goal: 20 genuinely WORKING titles; current count: {packet['strictWorkingCount']}.**", text)
+    text = re.sub(r"Frozen snapshot: \d+ WORKING, \d+ TITLE_SCREEN,\n\d+ BLOCKED, \d+ UNTESTED\.",
+                  "Current living counts and per-title gates: `path-to-20-v1.json`.", text)
+    text = text.replace("**Halls / Abiotic:** title screens only; gameplay/retention remain.",
+                        "**Halls:** now WORKING. **Abiotic:** title screen only; gameplay/retention remain.")
+    marker = "\n<!-- living-tracker:start -->"
+    text = text.split(marker)[0].rstrip()
+    working = ", ".join(row["title"] for row in packet["items"] if row["strictWorking"])
+    stuck = ", ".join(row["title"] for row in packet["items"] if row["stuckOver2Hours"]) or (
+        "none observed yet; pre-tracker gate ages unknown")
+    text += (marker + f"\nLiving tracker {packet['updatedAt']}: "
+             f"**{packet['strictWorkingCount']}/20** strict: {working}. "
+             "Brotato WORKING_CANDIDATE awaits CLI promotion and full gates: "
+             "S2 proves menu only, forced quit; gameplay/save/relaunch untested. "
+             f"Same-gate >2h: {stuck}. Refresh every30min and owner verdict.\n"
+             "<!-- living-tracker:end -->\n")
+    SUMMARY.write_text(text)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--refresh", action="store_true")
+    args = parser.parse_args()
+    if args.refresh:
+        packet = refresh()
+        OUTPUT.write_text(json.dumps(packet, indent=2, ensure_ascii=True) + "\n")
+        render(packet)
+    else:
+        packet = load_json(OUTPUT)
+        previous = {"items": packet["items"]}
+        if packet != build(packet["collectionInputs"], previous):
+            raise ValueError("Living tracker does not reproduce")
+    print("Strict", packet["strictWorkingCount"], "Stuck",
+          [row["title"] for row in packet["items"] if row["stuckOver2Hours"]])
+
+
+if __name__ == "__main__":
+    main()
