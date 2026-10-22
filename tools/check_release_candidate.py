@@ -16,6 +16,11 @@ import shipping_pair as pins
 
 
 class ReleaseCandidateChecks(unittest.TestCase):
+    def pin_fixture_manifest(self, path):
+        patcher = patch.object(release, "PRODUCER_MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def fixture(self, root):
         helper = b"Neutral Windows helper. Never executed."
         cli = b"Neutral CLI containing " + helper
@@ -35,6 +40,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                             (notarization / "receipt.json", receipt),
                             (notarization / "payload-submission.json", {"id": "neutral-submission", "status": "Accepted"})):
             path.write_text(json.dumps(value))
+        self.pin_fixture_manifest(root / "build-manifest.json")
         return cli_hash, helper_hash
 
     def unnotarized_fixture(self, root):
@@ -56,13 +62,16 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "HELPER_SHA256", helper_hash), \
                     patch.object(release, "UNNOTARIZED_PAIR", (cli_hash, helper_hash)), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
-                _, _, receipt = release.frozen_payloads(root)
+                for approval in (None, "0" * 64):
+                    with self.assertRaisesRegex(ValueError, "owner approval"):
+                        release.frozen_payloads(root, approval)
+                _, _, receipt = release.frozen_payloads(root, cli_hash)
                 self.assertFalse(receipt["standaloneNotarized"])
                 self.assertIsNone(receipt["combinedAppleSubmission"])
                 self.assertTrue(receipt["outerAppNotarizationRequired"])
                 (root / "xodus-cli").write_bytes(b"Unknown or altered binary")
                 with self.assertRaises(ValueError):
-                    release.frozen_payloads(root)
+                    release.frozen_payloads(root, cli_hash)
 
     def test_changing_general_pins_cannot_extend_unnotarized_exception(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -72,7 +81,44 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "HELPER_SHA256", helper_hash), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
                 with self.assertRaisesRegex(ValueError, "exception is limited"):
-                    release.frozen_payloads(root)
+                    release.frozen_payloads(root, cli_hash)
+
+    def test_missing_approval_stops_before_build_or_signing(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
+            source = {"commit": "a" * 40, "tree": "b" * 40}
+            args = argparse.Namespace(app_commit=source["commit"], output_root=root,
+                                      candidate=root, approve_unnotarized_cli=None)
+            with patch.object(release, "CLI_SHA256", cli_hash), \
+                    patch.object(release, "HELPER_SHA256", helper_hash), \
+                    patch.object(release, "UNNOTARIZED_PAIR", (cli_hash, helper_hash)), \
+                    patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash), \
+                    patch.object(release, "source_identity", return_value=source), \
+                    patch.object(release, "refresh") as refresh, \
+                    patch.object(release, "notarize") as notarize:
+                with self.assertRaisesRegex(ValueError, "owner approval"):
+                    release.build(args)
+                refresh.assert_not_called()
+                notarize.assert_not_called()
+
+    def test_real_acceptance_sidecar_needs_no_exception_and_cannot_fall_back(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            cli_hash, helper_hash = self.fixture(root)
+            path = root / "build-manifest.json"
+            manifest = json.loads(path.read_text())
+            manifest["notarization"] = {"status": "NOT_SUBMITTED"}
+            path.write_text(json.dumps(manifest))
+            self.pin_fixture_manifest(path)
+            with patch.object(release, "CLI_SHA256", cli_hash), patch.object(release, "HELPER_SHA256", helper_hash):
+                _, _, producer = release.frozen_payloads(root)
+                self.assertTrue(producer["standaloneNotarized"])
+                self.assertEqual(producer["combinedAppleSubmission"], "neutral-submission")
+                apple = root / "notarization/payload-submission.json"
+                apple.write_text(json.dumps({"id": "neutral-submission", "status": "Invalid"}))
+                with self.assertRaises(ValueError):
+                    release.frozen_payloads(root, cli_hash)
 
     def test_altered_producer_receipt_or_helper_is_rejected(self):
         for target in ("build-manifest.json", "xodus-window-monitor.exe"):
@@ -86,7 +132,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     with (root / target).open("ab") as output:
                         output.write(b" ")
                     with self.assertRaises(ValueError):
-                        release.frozen_payloads(root)
+                        release.frozen_payloads(root, cli_hash)
 
     def test_wrong_producer_commit_or_tree_is_rejected(self):
         for field in ("source_commit", "source_tree"):
@@ -97,6 +143,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 manifest = json.loads(path.read_text())
                 manifest[field] = "0" * 40
                 path.write_text(json.dumps(manifest))
+                self.pin_fixture_manifest(path)
                 with patch.object(release, "CLI_SHA256", cli_hash), patch.object(release, "HELPER_SHA256", helper_hash):
                     with self.assertRaisesRegex(ValueError, "producer source"):
                         release.frozen_payloads(root)
@@ -189,7 +236,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
             source = {"commit": "a" * 40, "tree": "b" * 40}
             args = argparse.Namespace(app_commit=source["commit"], output_root=root,
                 candidate=root, installed_app=root / "ReadOnly.app", identity="c" * 40,
-                producer_source=root, notary_profile="notary", dry_run=True)
+                producer_source=root, notary_profile="notary", dry_run=True, approve_unnotarized_cli=None)
 
             def refresh(installed, output, *unused):
                 app = output / "candidate/Neutral.app"

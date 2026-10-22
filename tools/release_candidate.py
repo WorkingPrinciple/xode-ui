@@ -20,7 +20,7 @@ from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
 from signing_identity import verify_designated_requirement
 
 UNNOTARIZED_PAIR = (
-    "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3",
+    "a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664",
     "0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7",
 )
 
@@ -30,7 +30,8 @@ def read_json(path):
     return json.loads(data, object_pairs_hook=unique_object)
 
 
-def frozen_payloads(candidate):
+def frozen_payloads(candidate, approved_unnotarized_cli=None):
+    manifest_identity, _ = owned_bytes(candidate / "build-manifest.json", PRODUCER_MANIFEST_SHA256)
     manifest = read_json(candidate / "build-manifest.json")
     require(manifest["source_commit"] == PRODUCER_COMMIT and manifest["source_tree"] == PRODUCER_TREE,
             "Unexpected frozen producer source")
@@ -42,18 +43,23 @@ def frozen_payloads(candidate):
     cli_identity, cli_bytes = owned_bytes(cli, CLI_SHA256, bounded=512 * 1024 * 1024)
     helper_identity, helper_bytes = owned_bytes(helper, HELPER_SHA256, bounded=16 * 1024 * 1024)
     require(helper_bytes in cli_bytes, "Adjacent Windows helper differs from actual embedded CLI bytes")
-    if manifest.get("notarization", {}).get("status") == "NOT_SUBMITTED":
+    if not (candidate / "notarization/receipt.json").exists():
+        require(manifest.get("notarization", {}).get("status") == "NOT_SUBMITTED",
+                "Missing accepted standalone notarization receipt")
         require((cli_identity["sha256"], helper_identity["sha256"]) == UNNOTARIZED_PAIR,
-                "Standalone notarization exception is limited to the exact approved ebd56e pair")
-        manifest_identity, _ = owned_bytes(candidate / "build-manifest.json", PRODUCER_MANIFEST_SHA256)
-        require(manifest["notarization"]["submission_id"] is None
-                and manifest["notarization"]["accepted_receipt"] is None,
+                "Standalone notarization exception is limited to the exact prepared pair")
+        require(approved_unnotarized_cli == CLI_SHA256,
+                "Standalone notarization is pending: owner approval of this exact CLI/helper/manifest tuple "
+                "requires --approve-unnotarized-cli " + CLI_SHA256)
+        require(manifest["notarization"].get("submission_id") is None
+                and manifest["notarization"].get("accepted_receipt") is None,
                 "Unnotarized producer must not claim an Apple acceptance")
         return cli, helper, {
             "cli": cli_identity, "windowsHelper": helper_identity,
             "producerCommit": PRODUCER_COMMIT, "producerTree": PRODUCER_TREE,
             "buildManifest": manifest_identity, "standaloneNotarized": False,
             "combinedAppleSubmission": None, "outerAppNotarizationRequired": True,
+            "explicitUnnotarizedCLIApproval": approved_unnotarized_cli,
         }
     notarization = read_json(candidate / "notarization/receipt.json")
     require(notarization["source_commit"] == PRODUCER_COMMIT
@@ -71,6 +77,7 @@ def frozen_payloads(candidate):
             "Apple combined-payload submission does not match the producer receipt")
     return cli, helper, {"cli": cli_identity, "windowsHelper": helper_identity,
                          "producerCommit": PRODUCER_COMMIT, "producerTree": PRODUCER_TREE,
+                         "buildManifest": manifest_identity,
                          "standaloneNotarized": True, "outerAppNotarizationRequired": True,
                          "notarizationReceipt": owned_bytes(candidate / "notarization/receipt.json")[0],
                          "combinedAppleSubmission": apple["id"]}
@@ -166,7 +173,7 @@ def distribute(app, stage, receipt, receipt_path, identity, profile):
     write_receipt(receipt_path, receipt)
 
 
-def resume(receipt_path, profile):
+def resume(receipt_path, profile, approved_unnotarized_cli=None):
     receipt = read_json(receipt_path)
     stage = receipt_path.parent
     require(receipt["version"] == 1 and receipt["state"] == "signed_dry_run_complete"
@@ -192,7 +199,7 @@ def resume(receipt_path, profile):
             "Sealed app receipt does not bind this exact source and frozen payload pair")
     inputs = receipt["buildInvocation"]["inputs"]
     candidate = Path(inputs["cli"]).parent
-    _, _, producer = frozen_payloads(candidate)
+    _, _, producer = frozen_payloads(candidate, approved_unnotarized_cli)
     require(producer == receipt["producer"], "Frozen producer receipt changed since dry-run")
     verify_designated_requirement(app, "app", receipt["certificateSHA1"])
     receipt["initialDryRunReceipt"] = owned_bytes(receipt_path)[0]
@@ -202,7 +209,7 @@ def resume(receipt_path, profile):
         execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
                 stage, receipt, receipt_path, "resume-app-signature")
         distribute(app, stage, receipt, receipt_path, receipt["certificateSHA1"], profile)
-        frozen_payloads(candidate)
+        frozen_payloads(candidate, approved_unnotarized_cli)
         write_receipt(receipt_path, receipt)
         print(receipt_path, flush=True)
         return receipt_path
@@ -220,7 +227,7 @@ def build(args):
     info = root.stat()
     require(root == args.output_root and info.st_uid == os.getuid() and info.st_mode & 0o022 == 0,
             "Use a canonical, owned, non-writable-by-others output root")
-    cli, helper, producer = frozen_payloads(args.candidate.resolve(strict=True))
+    cli, helper, producer = frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
     stage = Path(tempfile.mkdtemp(prefix="Ode-release-", dir=root))
     stage.chmod(0o700)
     receipt_path = stage / "release-receipt.json"
@@ -257,7 +264,7 @@ def build(args):
         else:
             distribute(app, stage, receipt, receipt_path, args.identity, args.notary_profile)
         require(source_identity(project) == source, "Source changed during release build")
-        frozen_payloads(args.candidate.resolve(strict=True))
+        frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
         receipt["artifacts"]["bundledCLI"] = owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli")[0]
         receipt["artifacts"]["bundledWindowsHelper"] = owned_bytes(
             app / "Contents/Resources/XodusEngine/xodus-window-monitor.exe")[0]
@@ -285,13 +292,15 @@ def main():
     parser.add_argument("--producer-source", type=Path)
     parser.add_argument("--resume-receipt", type=Path, help="Submit the exact already-signed successful dry-run app")
     parser.add_argument("--notary-profile", default="notary")
+    parser.add_argument("--approve-unnotarized-cli",
+                        help="Only after owner approval: exact prepared CLI SHA; otherwise standalone Accepted is required")
     parser.add_argument("--dry-run", action="store_true", help="Build/sign only; no Apple submission, install or activation")
     args = parser.parse_args()
     if args.resume_receipt:
         require(not args.dry_run and not any((args.app_commit, args.installed_app, args.output_root,
                                              args.identity, args.candidate, args.producer_source)),
                 "Resume takes only its exact dry-run receipt and notary profile")
-        resume(args.resume_receipt, args.notary_profile)
+        resume(args.resume_receipt, args.notary_profile, args.approve_unnotarized_cli)
     else:
         require(all((args.app_commit, args.installed_app, args.output_root,
                      args.identity, args.candidate, args.producer_source)), "Supply all pinned build inputs")

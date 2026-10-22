@@ -32,7 +32,7 @@ notarized c22029c artifact.
 
 ### One-command pinned release candidate
 
-The `ebd56e` adoption is preparation only until owner approval: no release,
+The `a1aade` adoption is preparation only until owner approval: no release,
 notarization, install or activation is authorized by this source change.
 After approval, merge the preparation commit and use the existing command
 below at the resulting clean full commit. The installed `42f793d` RC remains
@@ -46,7 +46,7 @@ python3 tools/release_candidate.py \
   --installed-app "$HOME/Applications/Ode to X Local Candidate.app" \
   --output-root "$PWD/.build/local-candidates" \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
-  --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3" \
+  --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664" \
   --producer-source /absolute/frozen-xodus-macos-checkout \
   --notary-profile notary \
   --dry-run
@@ -56,21 +56,38 @@ python3 tools/release_candidate.py \
 owned output directory; it does not submit to Apple, install or activate.
 The installed app supplies only its verified icon and prior receipt.
 The command verifies S2's exact immutable CLI/helper bytes, actual embedding,
-producer commit `e98dc882bfc1bce9f86be8805038632a16c820e7`, tree
-`a4d292816de8276c964ce0706d5e05f14c524f01`, and producer manifest SHA256
-`2e6354f50f133a09228247a44f609ad3d0ef217f03c2a9f7900ab5a706255980`.
+producer commit `f54654db11a67497323f5e49625a48c847e1f41b`, tree
+`12f94181f8448782e7eee685d66353859d78587a`, and producer manifest SHA256
+`9b692e615a16376f65fd83c3c5dd42f9ea7ddda7900242941f034f79b1c31380`.
+This includes TUNIC's per-call inventory index (`0b12147`), popup timeout
+continuation (`fdb7931`) and bounded CrossOver probe budget (`f54654d`).
 The actual embedded Windows helper SHA256 is
 `0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7`
-(20,480 bytes at offset 13,584,269), **not** the older adf8 helper's `d5968170`.
+(20,480 bytes, identical copies at offsets 13,584,269, 13,647,408 and
+13,710,147), **not** the older adf8 helper's `d5968170`.
 Although only PE timestamp/checksum bytes differ, they are not raw-byte equal.
 The helper is preserved beside the CLI; the separately built Mach-O
 authentication helper is signed independently. The producer manifest records
 the historical build/test provenance, not a new build or independently
 reproduced binary.
 
-This exact CLI/helper pair alone may enter the pipeline without standalone
-notarization. Its manifest truthfully says `NOT_SUBMITTED`, with null
-submission/acceptance pointers; the release receipt records
+There are two morning choices; preparation grants neither:
+
+1. Explicitly approve this exact CLI/helper/producer/manifest tuple without
+   standalone acceptance. Only then add
+   `--approve-unnotarized-cli a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664`
+   to the build or resume command.
+2. Require real standalone acceptance. Omit that flag and wait for S2's
+   `notarization/receipt.json` plus its adjacent Accepted Apple submission,
+   bound to the same source and exact CLI/helper hashes. The original
+   build manifest may remain a historical `NOT_SUBMITTED` record; the
+   later accepted sidecar is verified independently and is never inferred.
+
+Without the exact approval flag or a matching accepted sidecar, admission
+fails **before building or signing**. An invalid sidecar cannot fall back to
+the exception. The earlier ebd approval does not authorize this new pair.
+For the explicit exception the manifest truthfully says `NOT_SUBMITTED`,
+with no submission/acceptance pointers; the release receipt records
 `standaloneNotarized:false` and `outerAppNotarizationRequired:true`.
 An unknown/altered binary, helper, manifest, source or tree is rejected.
 Changing the general packaging pins cannot extend this fixed exception.
@@ -102,7 +119,8 @@ python3 tools/release_candidate.py \
 Resume requires a successful untouched dry-run, the exact signed
 launcher/helper/resource seal, the embedded source receipt and frozen
 CLI/helper bytes. A failed/partially submitted run is not automatically
-replayed: reconcile its recorded Apple submission before retrying.
+replayed: reconcile its recorded Apple submission before retrying. Resuming
+an exception-based dry-run requires the same exact approval flag again.
 
 ### Supported local-candidate build
 
@@ -135,7 +153,7 @@ python3 tools/refresh_local_candidate.py \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
   --cli /absolute/immutable-candidate/xodus-cli \
   --producer-source /absolute/producer-repository \
-  --producer-commit e98dc882bfc1bce9f86be8805038632a16c820e7 \
+  --producer-commit f54654db11a67497323f5e49625a48c847e1f41b \
   --windows-helper /absolute/immutable-candidate/xodus-window-monitor.exe
 ```
 
@@ -148,10 +166,10 @@ An explicit frozen S2 CLI keeps its producer signing identifier and is checked
 against the selected certificate leaf and frozen digest, rather than requiring
 the app packager's different CLI identifier. Its original bytes are preserved.
 
-The runtime catalogue's `cliSha256` binds the selected `ebd56e` packaging
+The runtime catalogue's `cliSha256` binds the selected `a1aade` packaging
 target. Its separately pinned `evidenceCliSha256` remains `adf8`: existing
 Abiotic/Hogwarts recipe observations are historical adf8 observations, not
-retroactive ebd or app-E2E qualifications. Their run/receipt/recipe fields
+retroactive a1aade or app-E2E qualifications. Their run/receipt/recipe fields
 remain unchanged. This preparation does not promote Brotato or change any
 WORKING verdict.
 
@@ -186,7 +204,7 @@ evidence, not gameplay or save qualification.
 
 Hogwarts was pending in that snapshot; the accepted `42f793d` RC subsequently
 admitted its exact WORKING/retention/ordinary-quit recipe. This preparation
-preserves that recipe without claiming it was observed on ebd.
+preserves that recipe without claiming it was observed on a1aade.
 All still-pending entries remain data-only diagnostic inventory and never
 auto-apply. The earlier four queued COM bindings are withdrawn from
 normal launch until observed. A stale local pending STA profile is rejected
@@ -211,7 +229,7 @@ Structured CrossOver environment values are shell-quoted for the adapter's
 are removed from the inherited environment. The app creates an owned
 per-launch registry document with the same engine name/executable and
 checksum-checked setup, leaving the shared registry and tested prefix alone.
-Fresh app prefixes remain separate from the tested CLI prefix; the ebd
+Fresh app prefixes remain separate from the tested CLI prefix; the a1aade
 CLI and actual tile/save/relaunch path still need their own app acceptance.
 
 `hollow-knight-local-saves-candidate-v1.json` is deliberately absent from the
@@ -235,7 +253,7 @@ An optional exact `engine` in a title profile binds its current qualified recipe
 ahead of historical gameplay evidence, while explicit provider selections still
 win. The previous local lifecycle candidate was pinned to CLI `adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604`,
 producer `a86d2f654b29dd33203022013fd63b34826d47cd`, tree
-`6044d5fff819393de39fae577ba9dd9bddbe795d`. The ebd preparation supersedes only
+`6044d5fff819393de39fae577ba9dd9bddbe795d`. The a1aade preparation supersedes only
 these packaging pins with the exact producer/pair above. Both apply the
 selected registry engine's checksum-checked `prefix_registry_imports` after
 overlays and before launch, so a fresh Hollow Knight native-JSON prefix does
