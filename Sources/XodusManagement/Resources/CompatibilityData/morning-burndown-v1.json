@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T22:40:10.155084+00:00",
+    "asOf": "2026-10-22T22:54:17.012048+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 12,
-    "trackerMatrixSha256": "5d312058f09b051eca623fd722816ce314eb5aacd6ac09d1c6945537aecd3682",
+    "trackerMatrixSha256": "4d5054571ae4879aae8e660c427320bd4dff3a6ab4f54481b9ae62199c607dfd",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -673,18 +673,18 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 705.8307486,
+  "remainingWallMinutes": 691.7164658666667,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
-      "serialCycleSlots": 8,
-      "queueCappedAdditions": 8,
-      "conditionalTotalWorking": 20,
-      "gapTo20": 0,
-      "minimumPassRateRawSlots": 1.0,
-      "minimumPassRateCurrentQueue": 1.0,
-      "targetPossibleCurrentQueue": true
+      "serialCycleSlots": 7,
+      "queueCappedAdditions": 7,
+      "conditionalTotalWorking": 19,
+      "gapTo20": 1,
+      "minimumPassRateRawSlots": 1.1428571428571428,
+      "minimumPassRateCurrentQueue": 1.1428571428571428,
+      "targetPossibleCurrentQueue": false
     },
     {
       "label": "sample midpoint",
@@ -700,12 +700,12 @@
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 16,
-      "queueCappedAdditions": 16,
-      "conditionalTotalWorking": 28,
+      "serialCycleSlots": 15,
+      "queueCappedAdditions": 15,
+      "conditionalTotalWorking": 27,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5,
-      "minimumPassRateCurrentQueue": 0.5,
+      "minimumPassRateRawSlots": 0.5333333333333333,
+      "minimumPassRateCurrentQueue": 0.5333333333333333,
       "targetPossibleCurrentQueue": true
     }
   ],
@@ -742,7 +742,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 88.228843575,
+  "requiredAverageMinutesPerAddition": 86.46455823333334,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
