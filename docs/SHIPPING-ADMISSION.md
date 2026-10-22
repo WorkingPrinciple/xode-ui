@@ -2,6 +2,41 @@
 
 ## Purpose and authorization
 
+### One-command pinned release candidate
+
+From the clean checkout at `FULL_APP_COMMIT`, run:
+
+```sh
+python3 tools/release_candidate.py \
+  --app-commit FULL_APP_COMMIT \
+  --installed-app "$HOME/Applications/Ode to X Local Candidate.app" \
+  --output-root "$PWD/.build/local-candidates" \
+  --identity 410914520BCC840C0125D3826CCF0F247F603321 \
+  --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604" \
+  --producer-source /absolute/frozen-xodus-macos-checkout \
+  --notary-profile notary \
+  --dry-run
+```
+
+`--dry-run` performs the real pinned build and Developer-ID signing in a new
+owned output directory; it does not submit to Apple, install or activate.
+The installed app supplies only its verified icon and prior receipt.
+The command verifies S2's exact immutable CLI/helper bytes, the helper's actual
+embedding, and their accepted Apple combined-submission receipt. It preserves
+the Windows helper unchanged beside the CLI; the separately built Mach-O
+authentication helper is signed independently.
+
+After the HK saved-quit/tile-relaunch handoff and the frozen free NMS binding
+are admitted, omit `--dry-run` to build, sign, submit the app, require Accepted,
+staple and verify it, then create a DMG containing that stapled `.app`, sign,
+submit, staple and Gatekeeper-assess the DMG. No mode installs or opens an app.
+The printed external `release-receipt.json` records exact source/producer
+identities, build logs, commands and exit codes, Apple submission IDs,
+artifact hashes, unexecuted gates and failures. The sealed app's original
+candidate receipt is never edited to claim notarization. Gameplay/app_e2e
+remains unobserved until separately exercised; a notarized candidate is not
+automatically a production-qualified release.
+
 ### Supported local-candidate build
 
 For a UI-only refresh with the currently installed, verified Developer ID CLI,
@@ -64,7 +99,11 @@ Bluey's Happy Snaps bindings carry the queued COM mode in data, not Swift
 title branches. Abiotic binds the queued GPTK direct-Shipping recipe and
 600-second diagnostic limit. These queued bindings do not establish gameplay.
 
-The NMS binding preserves S3's `f8bb9124` CrossOver 26.3 recipe, its exact
+NMS defaults to S1's frozen `6290d24` free `nms-free-gptk3-d3dshared` recipe
+after its retained-save/relaunch qualification. It pins GPTK3's support
+library and the original NMS legacy DLL (`de6f1c...`), not the other titles'
+7106 legacy. An explicit CrossOver provider selects a separate fallback
+binding preserving S3's `f8bb9124` CrossOver 26.3 recipe, its exact
 7106 runtime pair, c2b MoltenVK hash, native-web shims and native-JSON import.
 Structured CrossOver environment values are shell-quoted for the adapter's
 `--env` argument and mirrored in its ambient environment. Required exclusions

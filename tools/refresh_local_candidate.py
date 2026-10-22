@@ -21,7 +21,8 @@ from shipping_pair import PRODUCER, PRODUCER_TREE, owned_bytes, require, swift_p
 from signing_identity import command, preflight, sign, verify_designated_requirement
 
 
-def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None):
+def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
+            selected_helper=None):
     validate_host()
     preflight(identity)
     project = Path(__file__).resolve().parent.parent
@@ -36,6 +37,8 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     supplied = (selected_cli is not None, producer_source is not None, producer_commit is not None)
     require(all(supplied) or not any(supplied),
             "An explicit CLI needs both its producer source repository and frozen commit")
+    require(selected_helper is None or selected_cli is not None, "A frozen Windows helper requires its paired CLI")
+    windows_helper_record = owned_bytes(selected_helper)[0] if selected_helper is not None else None
     producer, producer_tree = PRODUCER, PRODUCER_TREE
     if selected_cli is not None:
         producer = subprocess.check_output(
@@ -86,6 +89,11 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     shutil.copyfile(old_cli, cli)
     cli.chmod(0o755)
     owned_bytes(cli, cli_record["sha256"], cli_record["bytes"])
+    if selected_helper is not None:
+        destination = cli.parent / "xodus-window-monitor.exe"
+        shutil.copyfile(selected_helper, destination)
+        destination.chmod(0o644)
+        owned_bytes(destination, windows_helper_record["sha256"], windows_helper_record["bytes"])
     helper = macos / "XodusAuthHost"
     shutil.copyfile(binary_dir / "XodusAuthHost", helper)
     helper.chmod(0o755)
@@ -122,6 +130,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         "preservedProducerDeclaration": {"commit": producer, "tree": producer_tree},
         "explicitFrozenCLISelected": selected_cli is not None,
         "signedHelper": helper_record,
+        "preservedWindowsHelper": windows_helper_record,
     }
     previous_receipt = installed / "Contents/Resources/local-candidate-receipt.json"
     if previous_receipt.exists():
@@ -139,6 +148,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     require(source_identity(project) == source_identity_before, "App source changed during refresh")
     print(app)
     print(stage / "candidate-receipt.json")
+    return app, stage / "candidate-receipt.json"
 
 
 if __name__ == "__main__":
@@ -149,6 +159,7 @@ if __name__ == "__main__":
     parser.add_argument("--cli", type=Path)
     parser.add_argument("--producer-source", type=Path)
     parser.add_argument("--producer-commit")
+    parser.add_argument("--windows-helper", type=Path)
     args = parser.parse_args()
     refresh(args.installed_app, args.output_root, args.identity, args.cli,
-            args.producer_source, args.producer_commit)
+            args.producer_source, args.producer_commit, args.windows_helper)

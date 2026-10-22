@@ -159,10 +159,12 @@ struct NativeTitleLaunchProfile: Codable {
     var requiredFiles: [PinnedFile]? = nil
     var prefixRegistryImports: [PinnedFile]? = nil
     var prefixOverlays: [PinnedFile]? = nil
+    var provider: RuntimeProviderKind? = nil
 
     private struct Catalogue: Decodable {
         let version: Int
         let profiles: [NativeTitleLaunchProfile]
+        let providerOverrides: [NativeTitleLaunchProfile]?
     }
 
     static func expand(_ value: String) -> String {
@@ -173,16 +175,21 @@ struct NativeTitleLaunchProfile: Codable {
         let bytes = try Data(contentsOf: LaunchRecipeResources.profilesURL())
         guard bytes.count <= 1_048_576 else { throw NativeLaunchError.invalidProfile }
         let catalogue = try JSONDecoder().decode(Catalogue.self, from: bytes)
-        guard catalogue.version == 1, catalogue.profiles.count <= 512,
-              Set(catalogue.profiles.map(\.productID)).count == catalogue.profiles.count else {
+        let profiles = catalogue.profiles + (catalogue.providerOverrides ?? [])
+        guard catalogue.version == 1, profiles.count <= 512,
+              catalogue.profiles.allSatisfy({ $0.provider == nil }),
+              (catalogue.providerOverrides ?? []).allSatisfy({ $0.provider != nil }),
+              Set(profiles.map({ $0.productID + ":" + ($0.provider?.rawValue ?? "default") })).count == profiles.count else {
             throw NativeLaunchError.invalidProfile
         }
-        for profile in catalogue.profiles { try profile.validate(productID: profile.productID) }
-        return catalogue.profiles
+        for profile in profiles { try profile.validate(productID: profile.productID) }
+        return profiles
     }
 
-    static func read(productID: String, defaults: UserDefaults) throws -> Self? {
-        if let bundled = try bundledProfiles().first(where: { $0.productID == productID }) { return bundled }
+    static func read(productID: String, defaults: UserDefaults, provider: RuntimeProviderKind? = nil) throws -> Self? {
+        let bundled = try bundledProfiles().filter { $0.productID == productID }
+        if let provider, let override = bundled.first(where: { $0.provider == provider }) { return override }
+        if let primary = bundled.first(where: { $0.provider == nil }) { return primary }
         guard let directory = defaults.string(forKey: "Xodus.lifecycle.profileDirectory"), !directory.isEmpty else { return nil }
         let url = URL(fileURLWithPath: directory).appendingPathComponent(productID + ".json")
         try GameScriptFiles.checkPath(url, allowMissing: true)
@@ -295,13 +302,14 @@ struct NativeLaunchConfiguration {
                         provenEngine: String? = nil) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
-        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults)
+        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults, provider: provider)
         guard let runtime = profile?.runtime?.reference ?? runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
         guard let registryPath = defaults.string(forKey: "Xodus.lifecycle.registry"),
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
-        let entry = try selectEngine(registry: registry, provider: provider, defaults: defaults,
+        let entry = try selectEngine(registry: registry,
+                                     provider: profile?.provider != nil ? nil : provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
         let engineName = entry.name
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {

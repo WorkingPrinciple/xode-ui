@@ -59,6 +59,53 @@
       "version": 1,
       "productID": "BQVQTL3PCH05",
       "title": "No Man's Sky",
+      "qualification": "preferred free recipe, S1 retained-save/relaunch; app_e2e unobserved",
+      "sourceRecipe": "xode-wine 6290d24 engines/game-profiles.json",
+      "qualificationSHA256": "231ea92714b54500bfd666f8fb58882ab990b91e3f572fa68dcc91e811397997",
+      "engine": "nms-free-gptk3-d3dshared",
+      "environment": {
+        "DYLD_FALLBACK_LIBRARY_PATH": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/lib:${HOME}/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+        "WINEMSYNC": "1",
+        "CX_ROOT": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle",
+        "WINELOADER": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wine.real",
+        "WINESERVER": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wineserver",
+        "CX_LIBVULKAN": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/nms-winecx-msync-v1/lib/libMoltenVK.dylib",
+        "MVK_CONFIG_USE_METAL_PRIVATE_API": "1",
+        "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS": "2",
+        "MVK_CONFIG_LOG_LEVEL": "1",
+        "CX_GRAPHICS_BACKEND": "wined3d",
+        "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "WINEDLLOVERRIDES": "windows.web=n;XCurl=n;xgameruntime=n,b",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH": "${HOME}/Library/Application Support/Ode to X/Engines/apple-gptk-3.0/runtime/wswine.bundle/lib/external/libd3dshared.dylib"
+      },
+      "runtime": {
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/nms-winecx-msync-v1/shims/xgameruntime.dll",
+        "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+        "legacySHA256": "de6f1c47f3cfb087655a4852c185cf89c3d64ca5e2327146d424426d3b7944a5"
+      },
+      "requiredFiles": [
+        {
+          "path": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/nms-winecx-msync-v1/lib/libMoltenVK.dylib",
+          "sha256": "c2b53b24c9f4a29df60bffc73e3da6ec1b4d0d88ebcf40e81acc32ad6ff9b8cc"
+        },
+        {
+          "path": "${HOME}/Library/Application Support/Ode to X/Engines/apple-gptk-3.0/runtime/wswine.bundle/lib/external/libd3dshared.dylib",
+          "sha256": "5131e631eee8b542eadf48f4df9fd662d9aeeb59139137e0e6e14047dc434995"
+        },
+        {
+          "path": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wine.real",
+          "sha256": "43e721885828686fedf5b1298c009e20d1ff258738bb2c04281ea33a175de2fa"
+        }
+      ]
+    }
+  ],
+  "providerOverrides": [
+    {
+      "version": 1,
+      "productID": "BQVQTL3PCH05",
+      "provider": "crossover",
+      "title": "No Man's Sky",
       "qualification": "working direct CLI f8bb9124; app_e2e unobserved; fresh app prefix unqualified",
       "sourceRecipe": "s3-nms-crossover-working-recipe-v1.json",
       "engine": "crossover-26.3",

@@ -308,7 +308,8 @@ enum NativeLifecycleChecks {
                                        "--timeout-seconds", "600", "--no-auto-dismiss"]
               && abiotic?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1",
               "Abiotic tile binds the queued direct-Shipping COM recipe, not a gameplay success claim")
-        guard let nms = profiles.first(where: { $0.productID == "BQVQTL3PCH05" }) else {
+        guard let nms = profiles.first(where: { $0.productID == "BQVQTL3PCH05" && $0.provider == .crossover }),
+              let freeNMS = profiles.first(where: { $0.productID == "BQVQTL3PCH05" && $0.provider == nil }) else {
             check(false, "NMS frozen recipe is bundled")
             return
         }
@@ -319,6 +320,11 @@ enum NativeLifecycleChecks {
               && nms.requiredFiles?.first?.sha256 == "c2b53b24c9f4a29df60bffc73e3da6ec1b4d0d88ebcf40e81acc32ad6ff9b8cc"
               && nms.prefixRegistryImports?.first?.sha256 == "4b91e27c5ae34a0237e2e60678d74117c8f110e261105128ea269058c1962eac",
               "NMS tile data preserves S3's exact engine, frozen runtime pair, c2b driver and native-JSON import")
+        check(freeNMS.engine == "nms-free-gptk3-d3dshared"
+              && freeNMS.runtime?.legacySHA256 == "de6f1c47f3cfb087655a4852c185cf89c3d64ca5e2327146d424426d3b7944a5"
+              && freeNMS.environment["CX_APPLEGPTK_LIBD3DSHARED_PATH"]?.hasSuffix("/libd3dshared.dylib") == true
+              && freeNMS.requiredFiles?.contains(where: { $0.sha256 == "5131e631eee8b542eadf48f4df9fd662d9aeeb59139137e0e6e14047dc434995" }) == true,
+              "Preferred free NMS keeps its original NMS legacy DLL and pinned GPTK3 support library, separate from CrossOver fallback")
         let suite = "io.github.xodus.recipe-check.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -326,8 +332,10 @@ enum NativeLifecycleChecks {
         let obsolete = NativeTitleLaunchProfile(version: 1, productID: nms.productID, engine: "obsolete-engine",
                                                shimDirectory: nil, environment: ["CX_ENV": "obsolete"])
         try JSONEncoder().encode(obsolete).write(to: root.appendingPathComponent(nms.productID + ".json"))
-        check(try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults)?.engine == "crossover-26.3",
-              "Frozen bundled NMS binding replaces obsolete local tile recipe data")
+        let defaultNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults)
+        let fallbackNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults, provider: .crossover)
+        check(defaultNMS?.engine == "nms-free-gptk3-d3dshared" && fallbackNMS?.engine == "crossover-26.3",
+              "Automatic NMS uses the qualified free binding; explicit CrossOver selects its exact separate fallback recipe")
         let serializer = Process()
         serializer.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
         serializer.arguments = ["-c", "import json,shlex,sys; print(json.dumps(dict(v.split('=',1) for v in shlex.split(sys.argv[1]))))",
