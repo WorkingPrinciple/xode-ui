@@ -1,0 +1,3647 @@
+{
+  "schemaVersion": 1,
+  "collectionInputs": {
+    "collectedAt": "2026-10-22T04:12:29.367246+00:00",
+    "sources": [
+      {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/free-public-catalogue-v1.json",
+        "sha256": "37e5db1ec3b9f98dc8141b6e88e96696c7797e640814e125b44d5c17953b8abb"
+      },
+      {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/free-public-catalogue-v2.json",
+        "sha256": "938ec4123f911092f8678487cb53da5b2e6562af7c8c9d6856d38d8bccf593c9"
+      },
+      {
+        "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/free-public-catalogue-v3.json",
+        "sha256": "518310929161d1246aba151887712113d7a4839506b8073a54fce0dd24230053"
+      }
+    ],
+    "matrix": {
+      "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
+      "sha256": "a729ab6331955fdee4e47e3eea7d54fa90030ebc8877b9974ddf4a8b2d6bb3c7",
+      "productIds": [
+        "9P9VNSQK1W3K",
+        "9NMNMS626R59",
+        "9MW9469V91LM",
+        "BQVQTL3PCH05",
+        "9P4NV23Q6QC2",
+        "9PCR3Z2MSM4T",
+        "C3KLDKZBHNCZ",
+        "9P03JGQ4S1GC",
+        "9NGLST31DG26",
+        "9PLH7R84GJWP",
+        "9MT5NJ5W7B8Z",
+        "9PJ8266BHFWN",
+        "9NV3L234VGXD",
+        "9P2J5D12GJL5",
+        "9P3T7HVKM6D0",
+        "9NH0MSG29X6L",
+        "9PJPCB188SVG",
+        "9MWR1NC6VQ6L",
+        "9PK087LNGJC5",
+        "9PNG83MDD6SH"
+      ]
+    },
+    "products": [
+      {
+        "storeId": "9MW0Z4MPCS8C",
+        "title": "Warzone 2100 for Windows",
+        "packages": [
+          {
+            "PackageFormat": "MsixBundle",
+            "MaxDownloadSizeInBytes": 1381492873,
+            "Architectures": [
+              "x64",
+              "arm64"
+            ],
+            "PackageFullName": "48148WZ2100Project.Warzone2100forWindows_4.7.0.0_neutral_~_qsk72963svc8a"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B2WD07ZV2MLN",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "1753-01-01T00:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MW0Z4MPCS8C&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9MWBFDRGH1SW",
+        "title": "World of Tanks Blitz",
+        "packages": [
+          {
+            "PackageFormat": "MSIXVC",
+            "MaxDownloadSizeInBytes": 22272614400,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B0KV42TT65GL",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "1753-01-01T00:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MWBFDRGH1SW&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9MXMZ39GVHPG",
+        "title": "Brawlhalla",
+        "packages": [
+          {
+            "PackageFormat": "MSIXVC",
+            "MaxDownloadSizeInBytes": 10612736,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9V0WXXK15T7B",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-07-21T19:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B4ZHLBJ8T3Q4",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-07-21T19:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "9VZT1QZHPZB7",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-07-21T19:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MXMZ39GVHPG&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9NBL0XKVCN5L",
+        "title": "Tell Me Why",
+        "packages": [
+          {
+            "PackageFormat": "XVC",
+            "MaxDownloadSizeInBytes": 9127452672,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          },
+          {
+            "PackageFormat": "MSIXVC",
+            "MaxDownloadSizeInBytes": 8264609792,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9QHKLXTWKF0K",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2799-09-19T23:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2024-08-12T14:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B2W7GXCVPR0P",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2799-09-19T23:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2024-08-12T14:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "9SX6NMNWHP32",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2799-09-19T23:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2024-08-12T14:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B21W50LW14RM",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2799-09-19T23:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2024-08-12T14:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NBL0XKVCN5L&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9NBLGGH1Z149",
+        "title": "Killer Instinct",
+        "packages": [
+          {
+            "PackageFormat": "MSIXVC",
+            "MaxDownloadSizeInBytes": 50747965440,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9QB9HNS0M3RJ",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2025-10-01T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B2FSBHNNNVJL",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2025-10-01T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B07MNR2DS2K5",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2025-10-01T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NBLGGH1Z149&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9NCJG5RVRR1C",
+        "title": "OpenTTD (official)",
+        "packages": [
+          {
+            "PackageFormat": "AppxBundle",
+            "MaxDownloadSizeInBytes": 47956464,
+            "Architectures": [
+              "x86",
+              "x64",
+              "arm64"
+            ],
+            "PackageFullName": "57420OpenTTDDevelopers.OpenTTDofficial_15.0.2026.0_neutral_~_pgyyntfdm0d3a"
+          },
+          {
+            "PackageFormat": "MsixBundle",
+            "MaxDownloadSizeInBytes": 47950965,
+            "Architectures": [
+              "x86",
+              "x64",
+              "arm64"
+            ],
+            "PackageFullName": "57420OpenTTDDevelopers.OpenTTDofficial_15.3.2026.0_neutral_~_pgyyntfdm0d3a"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B4X16CF7TR3S",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "1753-01-01T00:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NCJG5RVRR1C&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9NZQPT0MWTD0",
+        "title": "Asphalt Legends",
+        "packages": [
+          {
+            "PackageFormat": "XVC",
+            "MaxDownloadSizeInBytes": 10640482304,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          },
+          {
+            "PackageFormat": "XVC",
+            "MaxDownloadSizeInBytes": 10501885952,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          },
+          {
+            "PackageFormat": "MSIXVC",
+            "MaxDownloadSizeInBytes": 10246606848,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B1FK8V5X4G6Q",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2027-04-01T09:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-04-01T10:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "9RGWXV48R3MS",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2027-04-01T09:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-04-01T10:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "9V3RF3QTPM2Q",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2027-04-01T09:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-04-01T10:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "9QF7S5RWFNH1",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "2027-04-01T09:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-04-01T10:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NZQPT0MWTD0&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9P4VFFC16C43",
+        "title": "One Leaves",
+        "packages": [
+          {
+            "PackageFormat": "Appx",
+            "MaxDownloadSizeInBytes": 1418509473,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": "OathInc.OneLeaves_5.0.0.0_x64__vjhp8m8j3g21e"
+          },
+          {
+            "PackageFormat": "EAppx",
+            "MaxDownloadSizeInBytes": 2706206285,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": "OathInc.OneLeaves_5.0.0.70_x64__vjhp8m8j3g21e"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0100",
+            "availabilityId": "9VVB3017M0J0",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2019-02-28T05:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P4VFFC16C43&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9PCDNBHR11MR",
+        "title": "Phantom Dust",
+        "packages": [
+          {
+            "PackageFormat": "EAppx",
+            "MaxDownloadSizeInBytes": 10206288525,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": "Microsoft.MSEsper_1.3.25854.70_x64__8wekyb3d8bbwe"
+          },
+          {
+            "PackageFormat": "EAppx",
+            "MaxDownloadSizeInBytes": 10206280062,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": "Microsoft.MSEsper_1.3.25854.2_x64__8wekyb3d8bbwe"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B41L83PX3CP9",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2017-05-16T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PCDNBHR11MR&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9PMF91N3LZ3M",
+        "title": "Roblox - Windows",
+        "packages": [
+          {
+            "PackageFormat": "MSIXVC",
+            "MaxDownloadSizeInBytes": 397086720,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B1P7JXWC4FBH",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2025-09-11T17:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PMF91N3LZ3M&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9PMR3T9NSF8W",
+        "title": "Disney Speedstorm",
+        "packages": [
+          {
+            "PackageFormat": "MSIXVC",
+            "MaxDownloadSizeInBytes": 27755220992,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          },
+          {
+            "PackageFormat": "XVC",
+            "MaxDownloadSizeInBytes": 28173139968,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          },
+          {
+            "PackageFormat": "XVC",
+            "MaxDownloadSizeInBytes": 28387258368,
+            "Architectures": [
+              "x64"
+            ],
+            "PackageFullName": ""
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9VT2HQX6VS24",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Xbox"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2023-09-28T08:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PMR3T9NSF8W&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9WZDNCRDCWK8",
+        "title": "Hill Climb Racing",
+        "packages": [
+          {
+            "PackageFormat": "AppxBundle",
+            "MaxDownloadSizeInBytes": 84812684,
+            "Architectures": [
+              "x86"
+            ],
+            "PackageFullName": "FINGERSOFT.HILLCLIMBRACING_1.41.1.0_neutral_~_r6rtpscs7gwyg"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B4HPMWCCFL22",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "1753-01-01T00:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRDCWK8&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9WZDNCRDV0L0",
+        "title": "Beach Buggy Racing",
+        "packages": [
+          {
+            "PackageFormat": "AppxBundle",
+            "MaxDownloadSizeInBytes": 200412388,
+            "Architectures": [
+              "x64",
+              "arm64"
+            ],
+            "PackageFullName": "VectorUnit.BeachBuggyRacing_2024.10.13.0_neutral_~_hvbhrzr8672s2"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "B3PJCM6JZBJT",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Mobile"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Team"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Holographic"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Core"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "1753-01-01T00:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRDV0L0&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9WZDNCRFHWCN",
+        "title": "Microsoft Minesweeper",
+        "packages": [
+          {
+            "PackageFormat": "MsixBundle",
+            "MaxDownloadSizeInBytes": 267232098,
+            "Architectures": [
+              "x86",
+              "x64"
+            ],
+            "PackageFullName": "Microsoft.MicrosoftMinesweeper_2026.204.2255.0_neutral_~_8wekyb3d8bbwe"
+          },
+          {
+            "PackageFormat": "MsixBundle",
+            "MaxDownloadSizeInBytes": 265274119,
+            "Architectures": [
+              "x86",
+              "x64"
+            ],
+            "PackageFullName": "Microsoft.MicrosoftMinesweeper_2026.902.1824.0_neutral_~_8wekyb3d8bbwe"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9PS1RV7WD5W3",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Team"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Core"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "1753-01-01T00:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFHWCN&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9WZDNCRFHWCP",
+        "title": "Microsoft Mahjong",
+        "packages": [
+          {
+            "PackageFormat": "MsixBundle",
+            "MaxDownloadSizeInBytes": 313045477,
+            "Architectures": [
+              "x64",
+              "x86",
+              "arm64"
+            ],
+            "PackageFullName": "Microsoft.MicrosoftMahjong_4.9.9090.0_neutral_~_8wekyb3d8bbwe"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9XTX7RNXRPRV",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-02-24T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B4LHL2S28W98",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-02-24T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B26JK3NZD65V",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2026-02-24T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFHWCP&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9WZDNCRFHWD2",
+        "title": "Microsoft Solitaire Collection",
+        "packages": [
+          {
+            "PackageFormat": "MsixBundle",
+            "MaxDownloadSizeInBytes": 153423196,
+            "Architectures": [
+              "arm64",
+              "x86",
+              "x64",
+              "arm64",
+              "x64",
+              "x86"
+            ],
+            "PackageFullName": "Microsoft.MicrosoftSolitaireCollection_4.27.9181.0_neutral_~_8wekyb3d8bbwe"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9Z8DZTXTVLCQ",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "2799-08-16T23:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2025-10-01T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "B1ZJ0H4Z55S7",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "2799-08-16T23:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2025-10-01T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          },
+          {
+            "skuId": "0010",
+            "availabilityId": "9P2MQ87SMR5K",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": "USD",
+              "WholesalePrice": 0.0
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "2799-08-16T23:59:59.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "2025-10-01T16:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Purchase",
+              "Curate"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFHWD2&market=US&languages=en-US"
+      },
+      {
+        "storeId": "9WZDNCRFJ9X2",
+        "title": "Microsoft Jigsaw",
+        "packages": [
+          {
+            "PackageFormat": "MsixBundle",
+            "MaxDownloadSizeInBytes": 179432088,
+            "Architectures": [
+              "x86"
+            ],
+            "PackageFullName": "Microsoft.MicrosoftJigsaw_2026.601.2322.0_neutral_~_8wekyb3d8bbwe"
+          }
+        ],
+        "zeroPricePurchaseOffers": [
+          {
+            "skuId": "0010",
+            "availabilityId": "9SXSP87WT13W",
+            "price": {
+              "CurrencyCode": "USD",
+              "IsPIRequired": false,
+              "ListPrice": 0.0,
+              "MSRP": 0.0,
+              "TaxType": "TaxesNotIncluded",
+              "WholesaleCurrencyCode": ""
+            },
+            "conditions": {
+              "ClientConditions": {
+                "AllowedPlatforms": [
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.Desktop"
+                  },
+                  {
+                    "MaxVersion": 2147483647,
+                    "MinVersion": 0,
+                    "PlatformName": "Windows.8828080"
+                  }
+                ]
+              },
+              "EndDate": "9998-12-30T00:00:00.0000000Z",
+              "ResourceSetIds": [
+                "1"
+              ],
+              "StartDate": "1753-01-01T00:00:00.0000000Z"
+            },
+            "actions": [
+              "Details",
+              "Fulfill",
+              "Purchase",
+              "Browse",
+              "Curate",
+              "Redeem"
+            ]
+          }
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFJ9X2&market=US&languages=en-US"
+      }
+    ],
+    "freeBytes": 166592401408,
+    "parkedSpace": [
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-balatro-apple4-exit-v1",
+        "kind": "whole parked prefix",
+        "reason": "Balatro parked",
+        "exists": true,
+        "allocatedBytes": 495976448,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-balatro-apple4-exit-v1/drive_c/users/crossover/AppData/Local/Temp",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-balatro-apple4-exit-v1",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-balatro-apple4-exit-v1/drive_c/users/crossover/AppData/Local/Microsoft/Windows/INetCache",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-balatro-apple4-exit-v1",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-balatro-free-v1",
+        "kind": "whole parked prefix",
+        "reason": "Balatro parked alternative",
+        "exists": true,
+        "allocatedBytes": 495976448,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-balatro-free-v1/drive_c/users/crossover/AppData/Local/Temp",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-balatro-free-v1",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-balatro-free-v1/drive_c/users/crossover/AppData/Local/Microsoft/Windows/INetCache",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-balatro-free-v1",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3",
+        "kind": "whole parked prefix",
+        "reason": "Superseded CrossOver lane; working STA Apple4 held",
+        "exists": true,
+        "allocatedBytes": 352522240,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/Temp",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3/drive_c/users/crossover/AppData/Local/Microsoft/Windows/INetCache",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-hogwarts-cross-26-3",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-digging-cross-26-3",
+        "kind": "whole parked prefix",
+        "reason": "Parked CrossOver lane; proposed STA comparison must be checked",
+        "exists": true,
+        "allocatedBytes": 349253632,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-digging-cross-26-3/drive_c/users/crossover/AppData/Local/Temp",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-digging-cross-26-3",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-digging-cross-26-3/drive_c/users/crossover/AppData/Local/Microsoft/Windows/INetCache",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-digging-cross-26-3",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3",
+        "kind": "whole parked prefix",
+        "reason": "Old CrossOver lane; diagnostic/provider evidence hold",
+        "exists": true,
+        "allocatedBytes": 349233152,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3/drive_c/users/crossover/AppData/Local/Temp",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3/drive_c/users/crossover/AppData/Local/Microsoft/Windows/INetCache",
+        "kind": "nested cache",
+        "parent": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-cross-26-3",
+        "exists": true,
+        "allocatedBytes": 0,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-well-dxmt",
+        "kind": "whole parked prefix",
+        "reason": "Old DXMT lane; confirm not needed for candidate retest",
+        "exists": true,
+        "allocatedBytes": 383983616,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9P8NSTDMZ11P-creation-dx11-d3dmetal-passive-v1",
+        "kind": "whole parked prefix",
+        "reason": "S2 failed Inscryption; cleanup receipt says already removed",
+        "exists": false,
+        "allocatedBytes": null,
+        "deleteAuthorized": false
+      },
+      {
+        "path": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-inscryption-timing300-creation-dx11-fresh-v1",
+        "kind": "whole parked prefix",
+        "reason": "S2 timing retry result binds this exact prefix",
+        "exists": false,
+        "allocatedBytes": null,
+        "deleteAuthorized": false
+      }
+    ],
+    "ownedLibrary": {
+      "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/free-owned-library-read-v1.json",
+      "sha256": "f3b011444d6cff202944f5d9dd79a2aa15977f84912289f71ae88fc28c075aad",
+      "complete": true,
+      "accountBound": true,
+      "productCount": 0,
+      "finishedAt": "2026-10-22T03:59:05.521479+00:00",
+      "additionalOwnedTitlesProved": [],
+      "caveat": "Complete empty Collections v7 listing, not proof of no Game Pass rights or no purchases; no login/acquisition attempted."
+    },
+    "technicalRequirements": {
+      "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/free-tech-requirements-v1.json",
+      "sha256": "83e55503c2a92b77ab1e25137004aebfd2d2b4977fe827346b7097246db8b66f"
+    },
+    "inscryptionPriorCleanup": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/9P8NSTDMZ11P/failed-prefix-cleanup.json",
+      "sha256": "bc4c5777ac5953ddea57d2dc7783005af6365d83363bcd526c76537880b88fa2",
+      "exactPrefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-small-9P8NSTDMZ11P-creation-dx11-d3dmetal-passive-v1",
+      "completed": true,
+      "prefixAbsent": true,
+      "historicalReclaimedBytes": 513282048,
+      "newReclaimBytes": 0,
+      "additionalKnownApple4Paths": [],
+      "sourceNote": "S2 direct report 2026-10-22: no additional known Apple4 path. Retain both S3 CrossOver lanes and proofs."
+    }
+  },
+  "collectedAt": "2026-10-22T04:12:29.367246+00:00",
+  "decision": "MORNING USER DECISION ONLY. Free licenses are acquisitions; no acquisition or install tonight. Ranked by technical/test fit, not predicted success or popularity score. No title has an approved exact recipe or anti-cheat clearance.",
+  "diskRule": "155 GiB retained floor plus 2 GiB safety margin = 157 GiB retained. Planning budget=max(current PC MSIXVC MaxDownloadSizeInBytes, publisher cross-build storage requirement); NOT measured installed size/peak. Additional staging, prefix, shader and network downloads unknown; required free/reclaim values are lower bounds.",
+  "candidates": [
+    {
+      "storeId": "9NBL0XKVCN5L",
+      "title": "Tell Me Why",
+      "packages": [
+        {
+          "PackageFormat": "XVC",
+          "MaxDownloadSizeInBytes": 9127452672,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        },
+        {
+          "PackageFormat": "MSIXVC",
+          "MaxDownloadSizeInBytes": 8264609792,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9QHKLXTWKF0K",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2799-09-19T23:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2024-08-12T14:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B2W7GXCVPR0P",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2799-09-19T23:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2024-08-12T14:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "9SX6NMNWHP32",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2799-09-19T23:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2024-08-12T14:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B21W50LW14RM",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2799-09-19T23:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2024-08-12T14:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NBL0XKVCN5L&market=US&languages=en-US",
+      "rank": 1,
+      "engine": "Unreal Engine 4",
+      "graphicsApi": "DX11 minimum; DX12 recommended",
+      "engineEvidence": {
+        "source": "https://www.pcgamingwiki.com/wiki/Tell_Me_Why",
+        "checkedAt": "2026-10-22",
+        "basis": "Public PCGamingWiki engine identification, not exact installed-build inspection"
+      },
+      "apiEvidence": {
+        "source": "https://store.steampowered.com/api/appdetails?appids=1180660&l=english&cc=us",
+        "checkedAt": "2026-10-22",
+        "basis": "Publisher-submitted PC requirements, cross-store reference, not active renderer"
+      },
+      "catalogPayloadBytes": 8264609792,
+      "publisherStorageBytesCrossBuild": 25000000000,
+      "planningBudgetBytes": 25000000000,
+      "actualInstalledBytes": null,
+      "minimumFreeBeforeBudgetBytes": 193577466368,
+      "reclaimNeededBytes": 26985064960,
+      "fitsCurrent155Plus2Floor": false,
+      "routeHypothesis": "Apple4 d3dmetal/default COM first hypothesis; CrossOver nativejson alternative, STA only after exact title-specific evidence",
+      "caution": "Best narrative/singleplayer shape. Free base/chapter-one scope only; do not claim chapters2/3 owned or licensed. Needs user acceptance of chapter scope, free acquisition, anti-cheat evidence and new S1 exact recipe.",
+      "antiCheat": "unknown",
+      "supported01": null,
+      "acquisitionAuthorized": false,
+      "installAuthorized": false,
+      "qualified": false
+    },
+    {
+      "storeId": "9NBLGGH1Z149",
+      "title": "Killer Instinct",
+      "packages": [
+        {
+          "PackageFormat": "MSIXVC",
+          "MaxDownloadSizeInBytes": 50747965440,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9QB9HNS0M3RJ",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2025-10-01T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B2FSBHNNNVJL",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2025-10-01T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B07MNR2DS2K5",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2025-10-01T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NBLGGH1Z149&market=US&languages=en-US",
+      "rank": 2,
+      "engine": "Slayer",
+      "graphicsApi": "DX11",
+      "engineEvidence": {
+        "source": "https://www.pcgamingwiki.com/wiki/Killer_Instinct",
+        "checkedAt": "2026-10-22",
+        "basis": "Public PCGamingWiki engine identification, not exact installed-build inspection"
+      },
+      "apiEvidence": {
+        "source": "https://store.steampowered.com/api/appdetails?appids=577940&l=english&cc=us",
+        "checkedAt": "2026-10-22",
+        "basis": "Publisher-submitted PC requirements, cross-store reference, not active renderer"
+      },
+      "catalogPayloadBytes": 50747965440,
+      "publisherStorageBytesCrossBuild": 48000000000,
+      "planningBudgetBytes": 50747965440,
+      "actualInstalledBytes": null,
+      "minimumFreeBeforeBudgetBytes": 219325431808,
+      "reclaimNeededBytes": 52733030400,
+      "fitsCurrent155Plus2Floor": false,
+      "routeHypothesis": "Apple4 d3dmetal/default COM or CrossOver nativejson; no evidence for STA",
+      "caution": "Free base; exact free roster/mode restrictions need confirmation. Good API match, very poor disk fit; login/mode/retention/anti-cheat unverified.",
+      "antiCheat": "unknown",
+      "supported01": null,
+      "acquisitionAuthorized": false,
+      "installAuthorized": false,
+      "qualified": false
+    },
+    {
+      "storeId": "9NZQPT0MWTD0",
+      "title": "Asphalt Legends",
+      "packages": [
+        {
+          "PackageFormat": "XVC",
+          "MaxDownloadSizeInBytes": 10640482304,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        },
+        {
+          "PackageFormat": "XVC",
+          "MaxDownloadSizeInBytes": 10501885952,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        },
+        {
+          "PackageFormat": "MSIXVC",
+          "MaxDownloadSizeInBytes": 10246606848,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B1FK8V5X4G6Q",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2027-04-01T09:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-04-01T10:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "9RGWXV48R3MS",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2027-04-01T09:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-04-01T10:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "9V3RF3QTPM2Q",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2027-04-01T09:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-04-01T10:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "9QF7S5RWFNH1",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "2027-04-01T09:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-04-01T10:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NZQPT0MWTD0&market=US&languages=en-US",
+      "rank": 3,
+      "engine": "Jet Engine",
+      "graphicsApi": "DX12",
+      "engineEvidence": {
+        "source": "https://www.pcgamingwiki.com/wiki/Asphalt_Legends",
+        "checkedAt": "2026-10-22",
+        "basis": "Public PCGamingWiki engine identification, not exact installed-build inspection"
+      },
+      "apiEvidence": {
+        "source": "https://store.steampowered.com/api/appdetails?appids=1815780&l=english&cc=us",
+        "checkedAt": "2026-10-22",
+        "basis": "Publisher-submitted PC requirements, cross-store reference, not active renderer"
+      },
+      "catalogPayloadBytes": 10246606848,
+      "publisherStorageBytesCrossBuild": 10000000000,
+      "planningBudgetBytes": 10246606848,
+      "actualInstalledBytes": null,
+      "minimumFreeBeforeBudgetBytes": 178824073216,
+      "reclaimNeededBytes": 12231671808,
+      "fitsCurrent155Plus2Floor": false,
+      "routeHypothesis": "Apple4 d3dmetal/default COM hypothesis; no title-specific STA evidence",
+      "caution": "Smallest catalog MSIXVC payload among these racers. Online/account and anti-cheat unknowns make it worse than a simple offline title.",
+      "antiCheat": "unknown",
+      "supported01": null,
+      "acquisitionAuthorized": false,
+      "installAuthorized": false,
+      "qualified": false
+    },
+    {
+      "storeId": "9MWBFDRGH1SW",
+      "title": "World of Tanks Blitz",
+      "packages": [
+        {
+          "PackageFormat": "MSIXVC",
+          "MaxDownloadSizeInBytes": 22272614400,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B0KV42TT65GL",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "1753-01-01T00:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MWBFDRGH1SW&market=US&languages=en-US",
+      "rank": 4,
+      "engine": "Bigworld / DAVA Engine (PCGamingWiki)",
+      "graphicsApi": "DX11",
+      "engineEvidence": {
+        "source": "https://www.pcgamingwiki.com/wiki/World_of_Tanks_Blitz",
+        "checkedAt": "2026-10-22",
+        "basis": "Public PCGamingWiki engine identification, not exact installed-build inspection"
+      },
+      "apiEvidence": {
+        "source": "https://store.steampowered.com/api/appdetails?appids=444200&l=english&cc=us",
+        "checkedAt": "2026-10-22",
+        "basis": "Publisher-submitted PC requirements, cross-store reference, not active renderer"
+      },
+      "catalogPayloadBytes": 22272614400,
+      "publisherStorageBytesCrossBuild": 8000000000,
+      "planningBudgetBytes": 22272614400,
+      "actualInstalledBytes": null,
+      "minimumFreeBeforeBudgetBytes": 190850080768,
+      "reclaimNeededBytes": 24257679360,
+      "fitsCurrent155Plus2Floor": false,
+      "routeHypothesis": "Apple4 d3dmetal or CrossOver nativejson hypothesis; no STA evidence",
+      "caution": "Online multiplayer/server progression; not a quick local-save retention analogue. Anti-cheat unknown; exact installed renderer not observed.",
+      "antiCheat": "unknown",
+      "supported01": null,
+      "acquisitionAuthorized": false,
+      "installAuthorized": false,
+      "qualified": false
+    },
+    {
+      "storeId": "9PMR3T9NSF8W",
+      "title": "Disney Speedstorm",
+      "packages": [
+        {
+          "PackageFormat": "MSIXVC",
+          "MaxDownloadSizeInBytes": 27755220992,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        },
+        {
+          "PackageFormat": "XVC",
+          "MaxDownloadSizeInBytes": 28173139968,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        },
+        {
+          "PackageFormat": "XVC",
+          "MaxDownloadSizeInBytes": 28387258368,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9VT2HQX6VS24",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2023-09-28T08:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PMR3T9NSF8W&market=US&languages=en-US",
+      "rank": 5,
+      "engine": "Jet Engine",
+      "graphicsApi": "DX12",
+      "engineEvidence": {
+        "source": "https://www.pcgamingwiki.com/wiki/Disney_Speedstorm",
+        "checkedAt": "2026-10-22",
+        "basis": "Public PCGamingWiki engine identification, not exact installed-build inspection"
+      },
+      "apiEvidence": {
+        "source": "https://store.steampowered.com/api/appdetails?appids=1537830&l=english&cc=us",
+        "checkedAt": "2026-10-22",
+        "basis": "Publisher-submitted PC requirements, cross-store reference, not active renderer"
+      },
+      "catalogPayloadBytes": 27755220992,
+      "publisherStorageBytesCrossBuild": 40000000000,
+      "planningBudgetBytes": 40000000000,
+      "actualInstalledBytes": null,
+      "minimumFreeBeforeBudgetBytes": 208577466368,
+      "reclaimNeededBytes": 41985064960,
+      "fitsCurrent155Plus2Floor": false,
+      "routeHypothesis": "Apple4 d3dmetal/default COM hypothesis; no STA evidence",
+      "caution": "Online/server-side progress; Local Freeplay exception does not establish a local save provider. Higher disk budget; anti-cheat unknown.",
+      "antiCheat": "unknown",
+      "supported01": null,
+      "acquisitionAuthorized": false,
+      "installAuthorized": false,
+      "qualified": false
+    }
+  ],
+  "excluded": [
+    {
+      "storeId": "9PCDNBHR11MR",
+      "title": "Phantom Dust",
+      "packages": [
+        {
+          "PackageFormat": "EAppx",
+          "MaxDownloadSizeInBytes": 10206288525,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": "Microsoft.MSEsper_1.3.25854.70_x64__8wekyb3d8bbwe"
+        },
+        {
+          "PackageFormat": "EAppx",
+          "MaxDownloadSizeInBytes": 10206280062,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": "Microsoft.MSEsper_1.3.25854.2_x64__8wekyb3d8bbwe"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B41L83PX3CP9",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2017-05-16T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PCDNBHR11MR&market=US&languages=en-US",
+      "exclusion": "EAppx, not MSIXVC; no current 0.1 route"
+    },
+    {
+      "storeId": "9P4VFFC16C43",
+      "title": "One Leaves",
+      "packages": [
+        {
+          "PackageFormat": "Appx",
+          "MaxDownloadSizeInBytes": 1418509473,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": "OathInc.OneLeaves_5.0.0.0_x64__vjhp8m8j3g21e"
+        },
+        {
+          "PackageFormat": "EAppx",
+          "MaxDownloadSizeInBytes": 2706206285,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": "OathInc.OneLeaves_5.0.0.70_x64__vjhp8m8j3g21e"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0100",
+          "availabilityId": "9VVB3017M0J0",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Xbox"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2019-02-28T05:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P4VFFC16C43&market=US&languages=en-US",
+      "exclusion": "Appx/EAppx, not MSIXVC; no current 0.1 route"
+    },
+    {
+      "storeId": "9NCJG5RVRR1C",
+      "title": "OpenTTD (official)",
+      "packages": [
+        {
+          "PackageFormat": "AppxBundle",
+          "MaxDownloadSizeInBytes": 47956464,
+          "Architectures": [
+            "x86",
+            "x64",
+            "arm64"
+          ],
+          "PackageFullName": "57420OpenTTDDevelopers.OpenTTDofficial_15.0.2026.0_neutral_~_pgyyntfdm0d3a"
+        },
+        {
+          "PackageFormat": "MsixBundle",
+          "MaxDownloadSizeInBytes": 47950965,
+          "Architectures": [
+            "x86",
+            "x64",
+            "arm64"
+          ],
+          "PackageFullName": "57420OpenTTDDevelopers.OpenTTDofficial_15.3.2026.0_neutral_~_pgyyntfdm0d3a"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B4X16CF7TR3S",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "1753-01-01T00:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NCJG5RVRR1C&market=US&languages=en-US",
+      "exclusion": "AppxBundle/MsixBundle, not MSIXVC. Win32 desktop app may be repackaged; native macOS is separate scope."
+    },
+    {
+      "storeId": "9WZDNCRDV0L0",
+      "title": "Beach Buggy Racing",
+      "packages": [
+        {
+          "PackageFormat": "AppxBundle",
+          "MaxDownloadSizeInBytes": 200412388,
+          "Architectures": [
+            "x64",
+            "arm64"
+          ],
+          "PackageFullName": "VectorUnit.BeachBuggyRacing_2024.10.13.0_neutral_~_hvbhrzr8672s2"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B3PJCM6JZBJT",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Mobile"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Team"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Holographic"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Core"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "1753-01-01T00:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRDV0L0&market=US&languages=en-US",
+      "exclusion": "AppxBundle, not MSIXVC"
+    },
+    {
+      "storeId": "9WZDNCRDCWK8",
+      "title": "Hill Climb Racing",
+      "packages": [
+        {
+          "PackageFormat": "AppxBundle",
+          "MaxDownloadSizeInBytes": 84812684,
+          "Architectures": [
+            "x86"
+          ],
+          "PackageFullName": "FINGERSOFT.HILLCLIMBRACING_1.41.1.0_neutral_~_r6rtpscs7gwyg"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B4HPMWCCFL22",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "1753-01-01T00:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRDCWK8&market=US&languages=en-US",
+      "exclusion": "x86 AppxBundle, not MSIXVC"
+    },
+    {
+      "storeId": "9WZDNCRFHWD2",
+      "title": "Microsoft Solitaire Collection",
+      "packages": [
+        {
+          "PackageFormat": "MsixBundle",
+          "MaxDownloadSizeInBytes": 153423196,
+          "Architectures": [
+            "arm64",
+            "x86",
+            "x64",
+            "arm64",
+            "x64",
+            "x86"
+          ],
+          "PackageFullName": "Microsoft.MicrosoftSolitaireCollection_4.27.9181.0_neutral_~_8wekyb3d8bbwe"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9Z8DZTXTVLCQ",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "2799-08-16T23:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2025-10-01T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B1ZJ0H4Z55S7",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "2799-08-16T23:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2025-10-01T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "9P2MQ87SMR5K",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "2799-08-16T23:59:59.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2025-10-01T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFHWD2&market=US&languages=en-US",
+      "exclusion": "MsixBundle, not MSIXVC"
+    },
+    {
+      "storeId": "9WZDNCRFHWCN",
+      "title": "Microsoft Minesweeper",
+      "packages": [
+        {
+          "PackageFormat": "MsixBundle",
+          "MaxDownloadSizeInBytes": 267232098,
+          "Architectures": [
+            "x86",
+            "x64"
+          ],
+          "PackageFullName": "Microsoft.MicrosoftMinesweeper_2026.204.2255.0_neutral_~_8wekyb3d8bbwe"
+        },
+        {
+          "PackageFormat": "MsixBundle",
+          "MaxDownloadSizeInBytes": 265274119,
+          "Architectures": [
+            "x86",
+            "x64"
+          ],
+          "PackageFullName": "Microsoft.MicrosoftMinesweeper_2026.902.1824.0_neutral_~_8wekyb3d8bbwe"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9PS1RV7WD5W3",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Team"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Core"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "1753-01-01T00:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFHWCN&market=US&languages=en-US",
+      "exclusion": "MsixBundle, not MSIXVC"
+    },
+    {
+      "storeId": "9WZDNCRFHWCP",
+      "title": "Microsoft Mahjong",
+      "packages": [
+        {
+          "PackageFormat": "MsixBundle",
+          "MaxDownloadSizeInBytes": 313045477,
+          "Architectures": [
+            "x64",
+            "x86",
+            "arm64"
+          ],
+          "PackageFullName": "Microsoft.MicrosoftMahjong_4.9.9090.0_neutral_~_8wekyb3d8bbwe"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9XTX7RNXRPRV",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-02-24T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B4LHL2S28W98",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-02-24T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B26JK3NZD65V",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-02-24T16:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFHWCP&market=US&languages=en-US",
+      "exclusion": "MsixBundle, not MSIXVC"
+    },
+    {
+      "storeId": "9WZDNCRFJ9X2",
+      "title": "Microsoft Jigsaw",
+      "packages": [
+        {
+          "PackageFormat": "MsixBundle",
+          "MaxDownloadSizeInBytes": 179432088,
+          "Architectures": [
+            "x86"
+          ],
+          "PackageFullName": "Microsoft.MicrosoftJigsaw_2026.601.2322.0_neutral_~_8wekyb3d8bbwe"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9SXSP87WT13W",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "1753-01-01T00:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9WZDNCRFJ9X2&market=US&languages=en-US",
+      "exclusion": "x86 MsixBundle, not MSIXVC"
+    },
+    {
+      "storeId": "9MW0Z4MPCS8C",
+      "title": "Warzone 2100 for Windows",
+      "packages": [
+        {
+          "PackageFormat": "MsixBundle",
+          "MaxDownloadSizeInBytes": 1381492873,
+          "Architectures": [
+            "x64",
+            "arm64"
+          ],
+          "PackageFullName": "48148WZ2100Project.Warzone2100forWindows_4.7.0.0_neutral_~_qsk72963svc8a"
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B2WD07ZV2MLN",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": ""
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                },
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.8828080"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "1753-01-01T00:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MW0Z4MPCS8C&market=US&languages=en-US",
+      "exclusion": "MsixBundle, not MSIXVC; native version separate scope"
+    },
+    {
+      "storeId": "9PMF91N3LZ3M",
+      "title": "Roblox - Windows",
+      "packages": [
+        {
+          "PackageFormat": "MSIXVC",
+          "MaxDownloadSizeInBytes": 397086720,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "B1P7JXWC4FBH",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2025-09-11T17:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PMF91N3LZ3M&market=US&languages=en-US",
+      "exclusion": "Hyperion/Byfron Wine blocker reported; reject as anti-cheat candidate, no bypass or alternative-client plan"
+    },
+    {
+      "storeId": "9MXMZ39GVHPG",
+      "title": "Brawlhalla",
+      "packages": [
+        {
+          "PackageFormat": "MSIXVC",
+          "MaxDownloadSizeInBytes": 10612736,
+          "Architectures": [
+            "x64"
+          ],
+          "PackageFullName": ""
+        }
+      ],
+      "zeroPricePurchaseOffers": [
+        {
+          "skuId": "0010",
+          "availabilityId": "9V0WXXK15T7B",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-07-21T19:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Fulfill",
+            "Purchase",
+            "Browse",
+            "Curate",
+            "Redeem"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "B4ZHLBJ8T3Q4",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-07-21T19:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        },
+        {
+          "skuId": "0010",
+          "availabilityId": "9VZT1QZHPZB7",
+          "price": {
+            "CurrencyCode": "USD",
+            "IsPIRequired": false,
+            "ListPrice": 0.0,
+            "MSRP": 0.0,
+            "TaxType": "TaxesNotIncluded",
+            "WholesaleCurrencyCode": "USD",
+            "WholesalePrice": 0.0
+          },
+          "conditions": {
+            "ClientConditions": {
+              "AllowedPlatforms": [
+                {
+                  "MaxVersion": 2147483647,
+                  "MinVersion": 0,
+                  "PlatformName": "Windows.Desktop"
+                }
+              ]
+            },
+            "EndDate": "9998-12-30T00:00:00.0000000Z",
+            "ResourceSetIds": [
+              "1"
+            ],
+            "StartDate": "2026-07-21T19:00:00.0000000Z"
+          },
+          "actions": [
+            "Details",
+            "Purchase",
+            "Curate"
+          ]
+        }
+      ],
+      "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MXMZ39GVHPG&market=US&languages=en-US",
+      "exclusion": "10 MiB catalog stub is NOT full game size; anti-cheat/online risk, no full payload budget or cleared recipe"
+    }
+  ],
+  "parkedPrefixAllocatedTotalBytes": 2426945536,
+  "freeAfterAllConditionalPrefixReclaimBytes": 169019346944,
+  "reclaimPolicy": "Proposal only. Whole-prefix rows and nested caches overlap; sum only whole prefixes once. du allocated bytes do not guarantee APFS physical reclaim (clones/snapshots/shared extents). Saves, registries, receipts and prefix history may be valuable; inspect/preserve under owner+user decision before deletion. Documents links target host Documents; never follow/delete host targets. Quiescence/references not exhaustively checked; no deletion authorized. Working/pending retained prefixes, payloads and proof directories excluded.",
+  "accountLibrary": {
+    "path": "/Users/dragoshont/.copilot/session-state/1ead0b79-e01f-4145-93fa-61ca9b0c63da/files/free-owned-library-read-v1.json",
+    "sha256": "f3b011444d6cff202944f5d9dd79a2aa15977f84912289f71ae88fc28c075aad",
+    "complete": true,
+    "accountBound": true,
+    "productCount": 0,
+    "finishedAt": "2026-10-22T03:59:05.521479+00:00",
+    "additionalOwnedTitlesProved": [],
+    "caveat": "Complete empty Collections v7 listing, not proof of no Game Pass rights or no purchases; no login/acquisition attempted."
+  },
+  "acquisitions": 0,
+  "installs": 0,
+  "gameLaunches": 0,
+  "deletions": 0
+}

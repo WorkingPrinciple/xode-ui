@@ -39,6 +39,9 @@ ownership unknown, installs closed. Digging/Balatro payload-only proposal frees
 Keep Digging if STA comparison scheduled. Retain other near-term payloads.
 **Delete nothing; saves/prefixes/evidence held.**
 
+Free-title/acquisition and parked-prefix options: `free-morning-candidates-v1.md`.
+**Morning user decision only**, not an install queue; fresh Owned read proved no additions.
+
 **Disk:** 156.86 GiB at 05:31 EEST, not a fresh measurement. Install margin
 157 GiB; passive prestart 153/abort 152 GiB. No steady depletion forecast.
 Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.

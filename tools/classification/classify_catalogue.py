@@ -59,9 +59,8 @@ def request_json(url: str) -> dict[str, Any] | list[Any]:
     with urllib.request.urlopen(request, timeout=45) as response:
         if response.status != 200:
             raise RuntimeError(f"Unexpected HTTP status {response.status} for {url}")
-        if response.headers.get("Content-Length", "0").isdigit() and int(
-            response.headers["Content-Length"]
-        ) > 16 * 1024 * 1024:
+        content_length = response.headers.get("Content-Length", "0")
+        if content_length.isdigit() and int(content_length) > 16 * 1024 * 1024:
             raise RuntimeError(f"Response exceeded the 16 MiB evidence bound: {url}")
         body = response.read(16 * 1024 * 1024 + 1)
     if len(body) > 16 * 1024 * 1024:
