@@ -97,6 +97,11 @@ class BurnDownTests(unittest.TestCase):
         self.assertEqual(DEADLINE, "2026-10-23T13:26:00+03:00")
         self.assertEqual(load_json(OUTPUT)["inputs"]["deadline"], DEADLINE)
 
+    def test_user_launch_floor_is_110_gib(self):
+        policy = load_json(OUTPUT)["inputs"]["launchDiskPolicy"]
+        self.assertEqual(policy["minimumFreeGiB"], 110)
+        self.assertEqual(policy["minimumFreeBytes"], 110 * 2**30)
+
     def test_reported_queue_additions_are_not_claimed_completed_packets(self):
         inputs = load_json(OUTPUT)["inputs"]
         evidence = inputs["pendingPacketQueueEvidence"]

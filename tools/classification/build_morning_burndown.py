@@ -13,6 +13,7 @@ from inspect_queue import DATA, load_json
 PROOFS = Path.home() / "Library/Application Support/XodusCLI/proofs"
 OUTPUT = DATA / "morning-burndown-v1.json"
 DEADLINE = "2026-10-23T13:26:00+03:00"
+LAUNCH_MINIMUM_FREE_GIB = 110
 CURRENT_RC = PROOFS / "ode-installed-c7487d8-reverify/current-installed-identity-receipt.json"
 CURRENT_RC_SHA = "30f995ad334786bc51114a13402c4356b96e0246f0aa1d6fbf4b46f1e39e3591"
 
@@ -169,6 +170,14 @@ def refresh(tracker):
             queued.setdefault(row["storeId"], row)
     queued = {sid: row for sid, row in queued.items() if sid not in working}
     inputs = {"asOf": tracker["updatedAt"], "deadline": DEADLINE,
+              "launchDiskPolicy": {
+                  "minimumFreeGiB": LAUNCH_MINIMUM_FREE_GIB,
+                  "minimumFreeBytes": LAUNCH_MINIMUM_FREE_GIB * 2**30,
+                  "source": "Coordinator relayed user decision 2026-10-22: "
+                  "110 GiB launch floor replaces 153 GiB during Valor Mortis download.",
+                  "scope": "Launch admission only; no new install, retry or runtime grant. "
+                  "Historical install/staging thresholds are not launch guards.",
+              },
               "timezoneInterpretation": "User extended deadline by 12 hours to "
               "23 October 13:26 EEST (UTC+03), not UTC; coordinator reported "
               "2026-10-22T06:02:34.865Z.",
@@ -262,6 +271,9 @@ def render_summary(packet):
              f"conditional totals **{slow['conditionalTotalWorking']}/"
              f"{mid['conditionalTotalWorking']}/{fast['conditionalTotalWorking']}**. "
              "These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.\n\n"
+             f"Launch admission floor: **{packet['inputs']['launchDiskPolicy']['minimumFreeGiB']} GiB** "
+             "(user-directed, replaces 153 GiB during Valor Mortis download). "
+             "No fresh disk reading or extra executable capacity inferred.\n\n"
              f"Need **{20 - packet['inputs']['strictWorkingCount']}** additions; slow scenario "
              f"leaves **{slow['gapTo20']}**. Required mean: "
              f"**{packet['requiredAverageMinutesPerAddition']:.1f}min/addition**. "

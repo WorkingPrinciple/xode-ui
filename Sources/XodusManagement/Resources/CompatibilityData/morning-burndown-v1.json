@@ -1,11 +1,17 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T17:23:32.289807+00:00",
+    "asOf": "2026-10-22T17:39:46.049930+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
+    "launchDiskPolicy": {
+      "minimumFreeGiB": 110,
+      "minimumFreeBytes": 118111600640,
+      "source": "Coordinator relayed user decision 2026-10-22: 110 GiB launch floor replaces 153 GiB during Valor Mortis download.",
+      "scope": "Launch admission only; no new install, retry or runtime grant. Historical install/staging thresholds are not launch guards."
+    },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
-    "trackerMatrixSha256": "a3441d18db289f1f74206af91012e476f359e2c57e84dfb27254569cd16ce5c6",
+    "trackerMatrixSha256": "ed42e65730c5c22f63f82a8dae30ab0d9cd38e8fb08f538192ef0380b1609e4a",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -323,6 +329,11 @@
         "storeId": "9PK087LNGJC5",
         "title": "Balatro",
         "verdict": "FAIL"
+      },
+      {
+        "storeId": "9PNG83MDD6SH",
+        "title": "LIMBO",
+        "verdict": "INCONCLUSIVE"
       }
     ],
     "attemptedTrackerRows": [
@@ -367,11 +378,6 @@
         "verdict": "WORKING"
       },
       {
-        "storeId": "9PNG83MDD6SH",
-        "title": "LIMBO",
-        "verdict": "TITLE_SCREEN_PASS"
-      },
-      {
         "storeId": "9NGLST31DG26",
         "title": "A Game About Digging A Hole",
         "verdict": "INCONCLUSIVE"
@@ -400,6 +406,11 @@
         "storeId": "9P8NSTDMZ11P",
         "title": "Inscryption",
         "verdict": "NO_TITLE_SCREEN"
+      },
+      {
+        "storeId": "9PNG83MDD6SH",
+        "title": "LIMBO",
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -546,7 +557,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1022.4618365499999,
+  "remainingWallMinutes": 1006.2325011666667,
   "scenarios": [
     {
       "label": "slow observed",
@@ -573,11 +584,11 @@
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 23,
+      "serialCycleSlots": 22,
       "queueCappedAdditions": 21,
       "conditionalTotalWorking": 29,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5217391304347826,
+      "minimumPassRateRawSlots": 0.5454545454545454,
       "minimumPassRateCurrentQueue": 0.5714285714285714,
       "targetPossibleCurrentQueue": true
     }
@@ -585,8 +596,8 @@
   "observedAdmissionRatio": {
     "working": 8,
     "matrixWorking": 8,
-    "attemptedMatrix": 15,
-    "ratio": 0.5333333333333333,
+    "attemptedMatrix": 16,
+    "ratio": 0.5,
     "receiptAugmentedAttempted": 17,
     "receiptAugmentedRatio": 0.47058823529411764,
     "titleScreenOrBeyond": 10,
@@ -615,7 +626,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 85.20515304583333,
+  "requiredAverageMinutesPerAddition": 83.85270843055555,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
