@@ -172,7 +172,11 @@ Ordinary main Quit0/0/no force began593.70081s,53.70081s late against540s;
 final result/manifest hashes verified.540.3055s reminder and781.9776s total
 are NOT quit start.
 GamingPlatformFailedToRetrieveUserId did not prevent offline SP after Back.
-No retry/reload or WORKING admission. Vampire Survivors exit3/no window after
+Later100ms hypothesis70600887/run1bd95d4a reached actual SaveGame/NewSave/
+GAME SAVED, but next single Escape failed pause and conservative stop triggered
+external exact-k0/-w0. CLI0/Wine0/runner forcedCleanupnull is an attribution gap,
+NOT ordinary quit. S3 raw save archive pending; no reload/admission/retry.
+No WORKING admission. Vampire Survivors exit3/no window after
 DQ overlay and Wasteland load_game_config0x8007000d before ticket socket are
 parked. Wasteland installed config lacks MSAAppId; staged parity remains
 unknown. TUNIC's later WORKING10 admission is above.
@@ -211,17 +215,22 @@ Sources: current matrix, `morning-pending-v1.json`, `s3-preflight-next-v1.json`.
 Latest coordinator deployment report: S5 installed02ce3b9, live Inconclusive/
 no verified badge observed; CLI3cdb unchanged, rollback43ed preserved.
 Filter/Appx/tier remain unproven; no extra GUI Play/cloud/production acceptance.
+Subsequent coordinator report: installed30638b7 resolved real DREDGE metadata
+in AX/screens, safeindexd4aad60; still no GUI game/filter/Appx/tier acceptance.
+Dishonored passive0c4d402e reached actual owned PRESS ANY KEY (coordinator
+viewed), not gameplay; forced stop. REPLACED nonacquiring GRANTED receipt32119200
+is point-in-time package access only; still no launch or qualification.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T22:24:14.350577+00:00: **12/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, Stardew Valley, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Well Dweller. Refresh every30min and owner verdict.
+Living tracker 2026-10-22T22:40:10.155084+00:00: **12/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, Stardew Valley, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dishonored® Definitive Edition (PC), Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Vampire Survivors, Wasteland Remastered, Well Dweller. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 13:26 EEST** (user +12h extension); 12.03h from 2026-10-22T22:24:14.350577+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **8/10/16** slow/mid/fast cycles, capped by **16 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **20/22/28**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 13:26 EEST** (user +12h extension); 11.76h from 2026-10-22T22:40:10.155084+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **8/10/16** slow/mid/fast cycles, capped by **16 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **20/22/28**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
 Launch admission floor: **110 GiB** (user-directed, replaces 153 GiB during Valor Mortis download). No fresh disk reading or extra executable capacity inferred.
 
-Need **8** additions; slow scenario leaves **0**. Required mean: **90.2min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
+Need **8** additions; slow scenario leaves **0**. Required mean: **88.2min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 
 Observed admission ratio: **12/23 matrix attempts (52.2%)**; including receipt/owner-reported attempts: **12/29 (41.4%)**. Matrix post-title-screen subset: **12/12**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **100.0%/80.0%/50.0%** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold 50.0% is no longer limited by the historical queue cap.
 

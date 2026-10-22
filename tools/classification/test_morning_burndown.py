@@ -112,7 +112,8 @@ class BurnDownTests(unittest.TestCase):
             queued = next(item for item in inputs["queued"] + inputs["withheld"]
                           if item["storeId"] == row["storeId"])
             self.assertIn(queued["batch"], ("packet preparation pending",
-                                          "passive-batch2-eight-v1", "passive-batch3-eight-v1"))
+                                          "passive-batch2-eight-v1", "passive-batch3-eight-v1",
+                                          "passive-small-eight-v1"))
         self.assertEqual(inputs["queueReconciliation"]["uniqueCount"], len(inputs["queued"]))
 
     def test_human_consent_titles_are_not_ready_capacity(self):

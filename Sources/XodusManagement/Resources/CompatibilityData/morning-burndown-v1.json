@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T22:24:14.350577+00:00",
+    "asOf": "2026-10-22T22:40:10.155084+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 12,
-    "trackerMatrixSha256": "d22e63ee51abf2e11b281daf3e17dc2b3585a10ef77ff08bc081b1cfcf1d5ea6",
+    "trackerMatrixSha256": "5d312058f09b051eca623fd722816ce314eb5aacd6ac09d1c6945537aecd3682",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -118,6 +118,44 @@
       "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue.",
       "reconciledUniqueCount": 21,
       "items": [
+        {
+          "storeId": "9P1N07XDL1D4",
+          "title": "Dishonored Definitive Edition (PC)",
+          "verdict": "TITLE_SCREEN_PASS",
+          "reportedAt": "2026-10-23T01:39:07.314+03:00",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+          "runId": "0c4d402e",
+          "gates": {
+            "menu": "passed",
+            "gameplay": "unknown",
+            "save": "unknown",
+            "relaunch": "unknown",
+            "quit": "not-passed"
+          },
+          "nextGate": "controllable gameplay",
+          "ownerStream": "S3/coordinator",
+          "blocker": "First passive reached owned PRESS ANY KEY capture, then forced stop. No controllable gameplay, save, reload or ordinary quit evidence.",
+          "scope": "Coordinator independently viewed actual owned PRESS ANY KEY capture from passive0c4d402e; not gameplay or WORKING. Existing proof root: proofs/dishonored-de-winecx-first-passive-cli3727-v1. No additional execution grant inferred."
+        },
+        {
+          "storeId": "9NV3L234VGXD",
+          "title": "REPLACED",
+          "verdict": "NOT_TESTED",
+          "reportedAt": "2026-10-23T01:39:07.314+03:00",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+          "runId": null,
+          "gates": {
+            "menu": "unknown",
+            "gameplay": "unknown",
+            "save": "unknown",
+            "relaunch": "unknown",
+            "quit": "unknown"
+          },
+          "nextGate": "menu",
+          "ownerStream": "S2/S3",
+          "blocker": "Nonacquiring package entitlement GRANTED receipt32119200, but no launch or game qualification.",
+          "scope": "Coordinator reports nonacquiring GRANTED receipt32119200; existing proof root proofs/s2-entitlement-package-check-replaced-v1. Point-in-time package access only, not permanent ownership, gameplay or launch permission."
+        },
         {
           "storeId": "9P3T7HVKM6D0",
           "title": "Kingdom Come: Deliverance",
@@ -468,7 +506,7 @@
       {
         "storeId": "9P1Z43KRNQD4",
         "title": "Quake",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "INCONCLUSIVE_SAVE/INPUT"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -635,7 +673,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 721.7608237166667,
+  "remainingWallMinutes": 705.8307486,
   "scenarios": [
     {
       "label": "slow observed",
@@ -704,7 +742,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 90.22010296458333,
+  "requiredAverageMinutesPerAddition": 88.228843575,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

@@ -136,6 +136,8 @@ class PathTo20Tests(unittest.TestCase):
             for gate in ("save", "relaunch", "quit"):
                 self.assertEqual(row["gates"][gate]["status"], "not-passed")
         self.assertIn("neither reminder nor total is actual quit-start time", quake["scope"])
+        self.assertIn("external exact-k0/-w0 stop", quake["scope"])
+        self.assertIn("No ordinary quit despiteCLI0/Wine0", quake["scope"])
 
     def test_unchanged_gate_preserves_clock_despite_blocker_edit(self):
         inputs = copy.deepcopy(self.packet["collectionInputs"])

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T22:19:17.520170+00:00",
+  "checkedAt": "2026-10-22T22:40:13.225467+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 12,
@@ -32,7 +32,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "14890159a99dc861a8130ad8e6369e101481bdece65c3a994dd587eb66e7511d"
+      "sha256": "824383260b4cb7a144d3a84fa91b57dd3c663249c0e49e040097fee03bb037db"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -150,7 +150,7 @@
       "rank": 8,
       "storeId": "9P1Z43KRNQD4",
       "title": "Quake",
-      "verdict": "INCONCLUSIVE",
+      "verdict": "INCONCLUSIVE_SAVE/INPUT",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 1761398784,
       "planningBudgetBytes": 1761398784,
@@ -159,7 +159,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Save/menu-input qualification gap, not compatibility FAIL. Actual Main Quit selected with100ms steps then Enter100ms directly CLI0/Wine0, no forced stop. Quit593.701s exceeded540 by53.7s. No reload/retry. Future separately granted menu steps100ms with recapture each transition.",
+      "blocker": "New100ms hypothesis70600887/run1bd95d4a reached SaveGame/NewSave/GAME SAVED; next single Escape failed pause and stop rule triggered external exact-k0/-w0. CLI0/Wine0 and runner forcedCleanupnull do NOT prove ordinary quit. Raw save archive pending S3; no reload/admission/retry.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -189,7 +189,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "stderr.log:1489 POST api.bethesda.net via XUserGetTokenAndSignatureUtf16Async;1492 token error0x80070057;1500 FirstPartyFailedToRetrieveUserId. Read-only auth diagnosis; no retry or login.",
+      "blocker": "New stderr.log:1496 GetTokenAndSignature;1499-1500 HRESULT context;1507-1510 repeated FirstPartyFailedToRetrieveUserId. 28runfiles/8raw/14screens verified. S1/S2 own diagnosis; no automatic retry, auth-policy change or login.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
