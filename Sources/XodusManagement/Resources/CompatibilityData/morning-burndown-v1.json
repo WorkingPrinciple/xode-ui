@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T23:25:13.459150+00:00",
+    "asOf": "2026-10-22T23:46:51.357038+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -13,7 +13,7 @@
     },
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 12,
-    "trackerMatrixSha256": "1e63b1abe8e0b845b78f63e3f19f00a9956a28035072a9ecc3bab6f17d179311",
+    "trackerMatrixSha256": "ca37490a5de9688239bdee3a0ac17aad8dd2d0cf74b55901a2bc43baff135f22",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -77,11 +77,6 @@
       {
         "storeId": "9MXND4PQLK3W",
         "title": "DOOM 64",
-        "batch": "passive-batch2-eight-v1"
-      },
-      {
-        "storeId": "9P1Z43KRNQD4",
-        "title": "Quake",
         "batch": "passive-batch2-eight-v1"
       },
       {
@@ -170,7 +165,7 @@
     },
     "queueReconciliation": {
       "reportedCap": 23,
-      "uniqueCount": 16,
+      "uniqueCount": 15,
       "basis": "Initial reported 23 was not a unique-title increase: KCD1/Subnautica 2 already counted. Coordinator reports S1 census found no additional unique installed titles on 2026-10-22T05:19:12.362Z. Historical deduplicated packet baseline is 21, not an executable queue."
     },
     "withheld": [
@@ -190,6 +185,12 @@
         "storeId": "9NQVHHW88XW9",
         "title": "Bluey's Happy Snaps",
         "batch": "passive-batch3-eight-v1",
+        "blocker": "Human legal consent required; not ready capacity without user decision"
+      },
+      {
+        "storeId": "9P1Z43KRNQD4",
+        "title": "Quake",
+        "batch": "passive-batch2-eight-v1",
         "blocker": "Human legal consent required; not ready capacity without user decision"
       },
       {
@@ -279,7 +280,7 @@
       {
         "storeId": "9P1N07XDL1D4",
         "title": "Dishonored Definitive Edition",
-        "verdict": "INCONCLUSIVE_RELOAD_CAP_NO_LOADED_WORLD"
+        "verdict": "RETAINED_WORLD_ORDINARY_QUIT_MOVEMENT_UNATTRIBUTED"
       },
       {
         "storeId": "9N8C07SS8C9D",
@@ -289,7 +290,7 @@
       {
         "storeId": "9P1Z43KRNQD4",
         "title": "Quake",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "HUMAN_CONSENT_HOLD"
       },
       {
         "storeId": "9MXND4PQLK3W",
@@ -486,7 +487,7 @@
       {
         "storeId": "9P1N07XDL1D4",
         "title": "Dishonored Definitive Edition",
-        "verdict": "INCONCLUSIVE_RELOAD_CAP_NO_LOADED_WORLD"
+        "verdict": "RETAINED_WORLD_ORDINARY_QUIT_MOVEMENT_UNATTRIBUTED"
       },
       {
         "storeId": "9N8C07SS8C9D",
@@ -516,7 +517,7 @@
       {
         "storeId": "9P1Z43KRNQD4",
         "title": "Quake",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "HUMAN_CONSENT_HOLD"
       },
       {
         "storeId": "9P03JGQ4S1GC",
@@ -683,7 +684,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 660.7756808333332,
+  "remainingWallMinutes": 639.1440493666666,
   "scenarios": [
     {
       "label": "slow observed",
@@ -699,23 +700,23 @@
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 10,
-      "queueCappedAdditions": 10,
-      "conditionalTotalWorking": 22,
+      "serialCycleSlots": 9,
+      "queueCappedAdditions": 9,
+      "conditionalTotalWorking": 21,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.8,
-      "minimumPassRateCurrentQueue": 0.8,
+      "minimumPassRateRawSlots": 0.8888888888888888,
+      "minimumPassRateCurrentQueue": 0.8888888888888888,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 15,
-      "queueCappedAdditions": 15,
-      "conditionalTotalWorking": 27,
+      "serialCycleSlots": 14,
+      "queueCappedAdditions": 14,
+      "conditionalTotalWorking": 26,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5333333333333333,
-      "minimumPassRateCurrentQueue": 0.5333333333333333,
+      "minimumPassRateRawSlots": 0.5714285714285714,
+      "minimumPassRateCurrentQueue": 0.5714285714285714,
       "targetPossibleCurrentQueue": true
     }
   ],
@@ -752,7 +753,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 82.59696010416666,
+  "requiredAverageMinutesPerAddition": 79.89300617083333,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

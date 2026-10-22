@@ -210,12 +210,21 @@
     },
     {
       "storeId": "9PD5BM2Z8C4L", "title": "Vampire Survivors",
-      "verdict": "INCONCLUSIVE", "reportedAt": "2026-10-22T20:37:38+00:00",
+      "verdict": "INCONCLUSIVE", "reportedAt": "2026-10-23T02:46:10.378+03:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
       "gates": {"menu": "not-passed", "quit": "not-passed"},
       "nextGate": "qualification hold", "ownerStream": "S2/coordinator",
       "blocker": "Parked: exit3/no window after DQ overlay; no automatic retry.",
-      "scope": "Coordinator latest report, no gameplay or retention admission. DQ overlay sequence not a proven causal attribution."
+      "scope": "Coordinator relays S1 source630f703e clarification of existing attempt, NOT a new attempt. DQ overlay DLL91591d5 loaded/activated; GetForCurrentThread S_OK/NULL is intentional companion contract matching no-game fixture, not failed load, proven thread affinity or fatal cause. C++e06d7363/check_noexcept TID388 versus adjacent NULL worker1096 is ordering, not causality. Title throw-site/HRESULT unavailable. No renderer/STA/unchanged retry, gameplay or retention admission.",
+      "diagnosticEvidence": {
+        "sourceCommit": "630f703e",
+        "sourceSession": "b35cfa60-11d9-43c6-ab94-ceaff6229e7a",
+        "provenance": "Exact hashes relayed by coordinator from S1; not independently rehashed by S4. No source reread or research.",
+        "packetSha256": "3c5961b56bc998d9fcc329f3ac73588e605dfaefb422c46f85431fa633cc7cd1",
+        "resultSha256": "46f6fa541e3f0f1b922331a920f611457fa4250ba1ba2ed07b8c6ddb5c125a40",
+        "stderrSha256": "40f63dcd48526b41d033d3c4c6297a423766b5e4be947578a96e9e835223754e",
+        "remainingGap": "Title throw-site and HRESULT unavailable; adjacent cross-thread events do not identify fatal cause."
+      }
     },
     {
       "storeId": "9NGH1FK0RJGL", "title": "Wasteland Remastered",
