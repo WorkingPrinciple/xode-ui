@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-22T06:00:06.423Z",
+  "games": [
+    {
+      "productId": "9PCR3Z2MSM4T",
+      "title": "Hades II",
+      "verdict": "WORKING",
+      "engine": "crossover-26.3",
+      "app_e2e": "unobserved",
+      "scope": "CLI only, CrossOver 26.3. Coordinator verified fresh-process Crossroads/Nights 2/Grasp 10 retention and ordinary CLI 0 / Wine 0 in s3-hades-checkpoint-reload-02. Earlier world attempt timed out; qualification is the explicitly accepted reload. App end-to-end and cloud saves are not observed.",
+      "runId": "80cbf59d-5b51-4241-a492-f73b79fe7e5a",
+      "retentionRunId": "80cbf59d-5b51-4241-a492-f73b79fe7e5a",
+      "launchAttempted": true,
+      "saveObservation": {"retentionVerified": true, "normalMenuQuitObserved": true},
+      "screenshots": [
+        {
+          "path": "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-hades-final-slot-1000.png",
+          "caption": "Fresh-process Crossroads/Nights 2/Grasp 10; CLI proof s3-hades-checkpoint-reload-02, not app E2E"
+        }
+      ],
+      "owner": "S3/coordinator",
+      "blocker": null
+    },
+    {
+      "productId": "9P4NV23Q6QC2",
+      "title": "Abiotic Factor",
+      "verdict": "WORKING",
+      "engine": "apple-gptk-4.0b3",
+      "app_e2e": "unobserved",
+      "scope": "CLI only, apple-gptk-4.0b3 with STA and the Shipping executable. Coordinator verified retained S3Retention world, drgload/Lab Assistant/$5/duct tape and ordinary CLI 0 / Wine 0 in s3-abiotic-qualification-reload-01. Earlier world attempt timed out; no placed-object change was observed. App end-to-end and cloud saves are not observed.",
+      "runId": "18dcee0d-1705-469e-8f67-48924b239258",
+      "retentionRunId": "18dcee0d-1705-469e-8f67-48924b239258",
+      "launchAttempted": true,
+      "saveObservation": {"retentionVerified": true, "normalMenuQuitObserved": true},
+      "screenshots": [
+        {
+          "path": "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-abiotic-reload-inventory-1000.png",
+          "caption": "Fresh-process retained scientist, money and duct tape; CLI proof s3-abiotic-qualification-reload-01, not app E2E"
+        }
+      ],
+      "owner": "S3/coordinator",
+      "blocker": null
+    },
+    {
+      "productId": "9NH0MSG29X6L",
+      "title": "Mixtape",
+      "verdict": "WORKING",
+      "engine": "apple-gptk-4.0b3",
+      "app_e2e": "unobserved",
+      "scope": "CLI only, apple-gptk-4.0b3. Coordinator personally verified chapter 1 completion in d919efb9 and fresh-process retained chapter in ab231868, both CLI 0 / Wine 0. Reload proof: s3-mixtape-extended-reload-01. Supersedes the earlier no-chapter GAMEPLAY_PASS result. App end-to-end and cloud saves are not observed.",
+      "runId": "ab231868-9878-4c39-8de7-a6dc344d5b2a",
+      "retentionRunId": "ab231868-9878-4c39-8de7-a6dc344d5b2a",
+      "launchAttempted": true,
+      "saveObservation": {"retentionVerified": true, "normalMenuQuitObserved": true},
+      "screenshots": [
+        {
+          "path": "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-retained-skate-completed-1000.png",
+          "caption": "Fresh-process retained completed chapter; CLI proof s3-mixtape-extended-reload-01, not app E2E"
+        }
+      ],
+      "owner": "S3/coordinator",
+      "blocker": null
+    }
+  ]
+}

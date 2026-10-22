@@ -2,6 +2,13 @@
 import Foundation
 
 public enum CompatibilityResources {
+    public static func macGameEvidenceURL() throws -> URL {
+        guard let url = Bundle.module.url(forResource: "mac-game-evidence-v1", withExtension: "json") else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return url
+    }
+
     public static func catalogueURL() throws -> URL {
         guard let url = Bundle.module.url(forResource: "game-compatibility-v1", withExtension: "json",
                                           subdirectory: "CompatibilityData") else {

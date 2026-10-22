@@ -31,6 +31,7 @@ let package = Package(
         .target(name: "XodusManagement", dependencies: ["XodusCore"],
                 resources: [.copy("Resources/management-v1.schema.json"),
                             .copy("Resources/runtime-providers-v1.schema.json"),
+                            .copy("Resources/mac-game-evidence-v1.json"),
                             .copy("Resources/LaunchRecipes"),
                             .copy("Resources/CompatibilityData")]),
         .target(name: "XodusCredentials"),

@@ -2,6 +2,25 @@
 
 ## Purpose and authorization
 
+### Morning CLI-only WORKING additions
+
+The app bundles source-bound Hades II (CrossOver 26.3), Abiotic Factor
+(Apple GPTK 4.0b3, STA, Shipping executable) and Mixtape (Apple GPTK 4.0b3)
+observations in `mac-game-evidence-v1.json`. Their tiles and details explicitly
+say **CLI only · App testing not observed**. The named reload proofs are
+`s3-hades-checkpoint-reload-02`, `s3-abiotic-qualification-reload-01` and
+`s3-mixtape-extended-reload-01`; compilation is not app E2E acceptance.
+
+The default local ledger is merged with these three rows. For a conflicting
+product, the newer catalogue timestamp wins (local wins ties); other local
+rows, including the existing five WORKING titles, are preserved. A newer local
+negative verdict can revoke a bundled badge. An explicitly selected evidence
+ledger remains authoritative without merging. Invalid evidence still reports
+an error rather than silently falling back. No local ledger is rewritten,
+and package/anti-cheat admission, CLI pins and launch recipes are unchanged.
+Screenshot paths refer to retained local evidence; missing screenshots report
+the existing explicit error instead of claiming fresh app evidence.
+
 The exact c22029c installation, first-launch and c1190cc rollback commands
 are in [the held switch-over runbook](RC-SWITCHOVER.md). It includes a safe
 copy-only signature/ticket/Gatekeeper check; no second app copy may launch

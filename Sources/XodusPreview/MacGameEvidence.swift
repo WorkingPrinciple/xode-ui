@@ -53,6 +53,11 @@ struct MacGameEvidence: Decodable, Sendable {
         let blocker: String?
         let launchAttempted: Bool?
         let saveObservation: SaveObservation?
+        let app_e2e: String?
+
+        var verificationScopeLabel: String? {
+            app_e2e == "unobserved" ? "CLI only · App testing not observed" : nil
+        }
 
         var verifiedWorkingEvidence: Screenshot? {
             verdict == .working && launchAttempted != false
@@ -89,6 +94,23 @@ struct MacGameEvidence: Decodable, Sendable {
     let schemaVersion: Int
     let updatedAt: String
     let games: [Game]
+
+    static let bundled: Result<Self, Error> = Result {
+        try decode(Data(contentsOf: CompatibilityResources.macGameEvidenceURL()))
+    }
+
+    func merging(_ local: Self) throws -> [String: Game] {
+        guard let localDate = GameCompatibilityResult.parseDate(local.updatedAt),
+              let bundledDate = GameCompatibilityResult.parseDate(updatedAt) else {
+            throw PCGamesError.invalidResponse
+        }
+        let localIsNewer = localDate >= bundledDate
+        var result = Dictionary(uniqueKeysWithValues: games.map { ($0.productId, $0) })
+        for game in local.games where localIsNewer || result[game.productId] == nil {
+            result[game.productId] = game
+        }
+        return result
+    }
 
     static func decode(_ bytes: Data) throws -> Self {
         guard bytes.count <= 1_048_576 else { throw PCGamesError.responseTooLarge }
@@ -130,13 +152,14 @@ final class MacGameEvidenceStore: ObservableObject {
             .appendingPathComponent("Library/Application Support/Ode to X/Evidence/tried-games.json")
         let selected = defaults.string(forKey: "Xodus.evidence.triedGames").flatMap { $0.isEmpty ? nil : $0 }
         let path = selected ?? defaultURL.path
-        guard selected != nil || FileManager.default.fileExists(atPath: path) else {
-            games = [:]
-            errorMessage = nil
-            lastBytes = nil
-            return
-        }
         do {
+            let bundled = try MacGameEvidence.bundled.get()
+            if selected == nil && !FileManager.default.fileExists(atPath: path) {
+                games = Dictionary(uniqueKeysWithValues: bundled.games.map { ($0.productId, $0) })
+                errorMessage = nil
+                lastBytes = nil
+                return
+            }
             let bytes = try await Task.detached {
                 let url = URL(fileURLWithPath: path)
                 try GameScriptFiles.checkPath(url)
@@ -144,7 +167,8 @@ final class MacGameEvidenceStore: ObservableObject {
             }.value
             guard bytes != lastBytes || errorMessage != nil else { return }
             let catalogue = try MacGameEvidence.decode(bytes)
-            games = Dictionary(uniqueKeysWithValues: catalogue.games.map { ($0.productId, $0) })
+            games = selected == nil ? try bundled.merging(catalogue)
+                : Dictionary(uniqueKeysWithValues: catalogue.games.map { ($0.productId, $0) })
             lastBytes = bytes
             errorMessage = nil
         } catch {
@@ -184,6 +208,9 @@ struct MacGameEvidenceView: View {
                     }
                 } else {
                     Label(status(record), systemImage: "questionmark.circle")
+                }
+                if let scope = record.verificationScopeLabel {
+                    Text(scope).font(.caption).fixedSize(horizontal: false, vertical: true)
                 }
                 if detailed {
                     Text(record.scope).fixedSize(horizontal: false, vertical: true)

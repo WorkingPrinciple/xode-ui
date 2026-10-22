@@ -192,6 +192,53 @@ enum LibraryAccessChecks {
                   == ["9MW9469V91LM", "BQVQTL3PCH05", "9PJ8266BHFWN"]
               && mixedGames.last?.verdict == .unknown && mixedGames.last?.provenEngine == nil,
               "An unknown verdict beside all three valid WORKING entries preserves their evidence badges")
+        let bundledEvidence = try MacGameEvidence.bundled.get()
+        let newWorkingIDs = Set(["9PCR3Z2MSM4T", "9P4NV23Q6QC2", "9NH0MSG29X6L"])
+        check(Set(bundledEvidence.games.map(\.productId)) == newWorkingIDs
+              && bundledEvidence.games.allSatisfy {
+                  $0.verifiedWorkingEvidence != nil
+                      && $0.verificationScopeLabel == "CLI only · App testing not observed"
+                      && $0.saveObservation?.retentionVerified == true
+                      && $0.saveObservation?.normalMenuQuitObserved == true
+              },
+              "Hades II, Abiotic Factor and Mixtape bundle exact WORKING rows with visible CLI-only scope, not app E2E")
+        let expectedProofs = [
+            "9PCR3Z2MSM4T": ("crossover-26.3", "s3-hades-checkpoint-reload-02"),
+            "9P4NV23Q6QC2": ("apple-gptk-4.0b3", "s3-abiotic-qualification-reload-01"),
+            "9NH0MSG29X6L": ("apple-gptk-4.0b3", "s3-mixtape-extended-reload-01")
+        ]
+        check(bundledEvidence.games.allSatisfy {
+            $0.engine == expectedProofs[$0.productId]?.0
+                && $0.scope.contains(expectedProofs[$0.productId]?.1 ?? "missing")
+                && $0.runId == $0.retentionRunId
+        }, "New WORKING rows retain their exact CLI runtime, reload proof and run identity")
+        check(bundledEvidence.games.first { $0.productId == "9P4NV23Q6QC2" }?.scope.contains("STA") == true
+              && bundledEvidence.games.first { $0.productId == "9P4NV23Q6QC2" }?.scope.contains("Shipping") == true,
+              "Abiotic qualification discloses STA and Shipping executable without changing a launch recipe")
+        check(mixedWorking.games[0].verificationScopeLabel == nil,
+              "Legacy evidence without an app-testing field is not retroactively labelled CLI-only")
+        var staleRows: [[String: Any]] = []
+        for id in ["9PJ8266BHFWN", "BQVQTL3PCH05", "9MW9469V91LM", "9NMNMS626R59", "9MT5NJ5W7B8Z"] {
+            var row = baseGame
+            row["productId"] = id
+            staleRows.append(row)
+        }
+        var staleMixtape = baseGame
+        staleMixtape["productId"] = "9NH0MSG29X6L"
+        staleMixtape["verdict"] = "GAMEPLAY_PASS"
+        staleRows.append(staleMixtape)
+        mixed["games"] = staleRows
+        mixed["updatedAt"] = "2026-10-22T05:33:53Z"
+        let staleLedger = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed))
+        let mergedEvidence = try bundledEvidence.merging(staleLedger)
+        check(mergedEvidence.count == 8
+              && mergedEvidence.values.allSatisfy { $0.verifiedWorkingEvidence != nil }
+              && mergedEvidence["9NH0MSG29X6L"]?.verificationScopeLabel != nil,
+              "The five existing WORKING tiles plus the three newer CLI rows produce eight, superseding stale Mixtape")
+        mixed["updatedAt"] = "2026-10-23T00:00:00Z"
+        let newerLedger = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed))
+        check(try bundledEvidence.merging(newerLedger)["9NH0MSG29X6L"]?.verdict == .gameplay,
+              "A newer local verdict can revoke bundled WORKING; source evidence never permanently forces a badge")
         var recordedRow = baseGame
         recordedRow["saveObservation"] = ["saveDirectory": "/synthetic/recorded-save-folder",
                                          "loadedWorld": "Ignored by location display"]
