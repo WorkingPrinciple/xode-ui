@@ -144,7 +144,7 @@ struct CatalogDetailFacts: Sendable {
             let requested = language.lowercased()
             let actualBase = actual.split(separator: "-", maxSplits: 1).first
             let requestedBase = requested.split(separator: "-", maxSplits: 1).first
-            guard actual == requested || actualBase == requestedBase else {
+            guard actual == "neutral" || actual == requested || actualBase == requestedBase else {
                 throw PCGamesError.invalidResponse
             }
         }

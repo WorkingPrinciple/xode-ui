@@ -74,6 +74,13 @@ For an English-only Mac in Romania, Microsoft's resolver chooses the actual
 market-correct ro-RO product route; that returned canonical locale is accepted
 without inventing a slug or requiring an unavailable preferred language.
 
+Optional DisplayCatalog details accept the explicit `neutral` language tag as
+unlocalized product metadata, alongside exact/same-language responses.
+Unrelated language tags are still rejected; requested-market ratings and release
+dates, exact requested product identities, and game-access gates remain unchanged.
+The saved-response `--catalog-detail-check` runs offline and does not establish
+that the installed app has displayed the updated details.
+
 Acquisition (#41) is a confirmed external-page fallback, not an in-app licence
 grant. Microsoft's documented [grant-free-products API](https://learn.microsoft.com/en-us/windows/uwp/monetize/grant-free-products)
 requires a publisher service identity and a Store ID key; this app's consumer

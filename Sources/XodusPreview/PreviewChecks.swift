@@ -315,6 +315,14 @@ enum PreviewChecks {
                   "Invalid optional trailer URLs are omitted without rejecting valid game details")
             check(product.LocalizedProperties?.first?.Language == "en-gl",
                   "DisplayCatalog's same-language global fallback remains available to an en-US request")
+            let neutralData = Data(String(decoding: data, as: UTF8.self)
+                .replacingOccurrences(of: #""Language":"en-gl""#, with: #""Language":"neutral""#).utf8)
+            let neutralProduct = try JSONDecoder().decode(CatalogDetailPayload.self, from: neutralData).Products[0]
+            let neutralFacts = try CatalogDetailFacts(product: neutralProduct, images: [], market: "RO", language: "ro-RO")
+            check(neutralProduct.ProductId == product.ProductId
+                  && neutralFacts.description == facts.description && neutralFacts.developer == facts.developer
+                  && neutralFacts.releaseDate == nil && neutralFacts.storeRating == nil,
+                  "DisplayCatalog's explicit neutral-language metadata is accepted without borrowing foreign-market facts")
             check(facts.description != "Console upgrade copy must not become About.",
                   "D3 About prefers the general product description and never substitutes SKU copy")
             check(facts.publisher == "Original Publisher" && facts.releaseDate != nil,
