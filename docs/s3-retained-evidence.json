@@ -118,6 +118,25 @@
   },
   "verifiedArchives": [
     {
+      "title": "Dishonored Definitive Edition",
+      "path": "s3-dishonored-bound-reload600-01/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "45bc8c103d1de8fcc5a65329573fa65e223d79b84d50a141e3af5f7769f460a2",
+      "resultSha256": "3c85e237ea4dda62e9263992d30fbce5fae841a0f50b0a57c9a040e46ac30fa8",
+      "packetSha256": "c276dec033f0d74d6a63e914c20fe15a14829394cf01b939210ea6c34b2064f7",
+      "run": "3d8a8132-908c-4094-99f6-e0d6bc82c4c7",
+      "originalWorldRun": "c489e1a6-f8b8-49b3-9511-0393554a69be",
+      "admission": "RETAINED_WORLD_ORDINARY_QUIT_MOVEMENT_UNATTRIBUTED",
+      "observed": "Fresh Load selected exact manual Returning Home01:52:03, confirmed Yes, rendered Dunwall Tower/Returning Home then the retained dock/boat world. Original manual7941eda2/162686B unchanged before and after.",
+      "movementBoundary": "W100/A100 helper deliveries accepted, but boat/bob framing differences are insufficient to attribute player displacement. No full WORKING assertion; not renderer/save failure, no retry or extra world.",
+      "quit": "Actual pause/Back to Windows/Yes, ordinary CLI0/Wine0; quit began322.724s<420 and exit566.942s<600. No force, exact-k1/-w0, prefix stopped.",
+      "runFilesVerified": 88,
+      "rawArchiveFilesVerified": 67,
+      "screenshots": 21,
+      "runManifestSha256": "6f1dc56fb970f015125650751df93ecd185fae72bc7a4efb5de43f597aa0e6f3",
+      "boundary": "Optional original-world binding verified qualified original sources/evidence/current bytes. Historical300s capped reload remains unchanged. Screen released S2 for separately authorized passive."
+    },
+    {
       "title": "DOOM 64",
       "path": "s1-doom64-paircd43-preparation-v1/run-world/final-evidence",
       "manifest": "integrity.json",
