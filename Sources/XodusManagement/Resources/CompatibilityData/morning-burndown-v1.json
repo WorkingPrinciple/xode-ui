@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T06:02:59.905065+00:00",
+    "asOf": "2026-10-22T06:04:47.136587+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
@@ -397,6 +397,11 @@
         "verdict": "FAIL"
       },
       {
+        "storeId": "9P03JGQ4S1GC",
+        "title": "Skyrim Special Edition",
+        "verdict": "INCONCLUSIVE"
+      },
+      {
         "storeId": "9PLH7R84GJWP",
         "title": "Well Dweller",
         "verdict": "INCONCLUSIVE"
@@ -518,7 +523,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1703.00158225,
+  "remainingWallMinutes": 1701.2143902166667,
   "scenarios": [
     {
       "label": "slow observed",
@@ -559,8 +564,8 @@
     "matrixWorking": 7,
     "attemptedMatrix": 14,
     "ratio": 0.5,
-    "receiptAugmentedAttempted": 16,
-    "receiptAugmentedRatio": 0.5,
+    "receiptAugmentedAttempted": 17,
+    "receiptAugmentedRatio": 0.47058823529411764,
     "titleScreenOrBeyond": 10,
     "postTitleScreenAdmissionRatio": 0.7,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -587,7 +592,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 141.91679852083334,
+  "requiredAverageMinutesPerAddition": 141.7678658513889,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

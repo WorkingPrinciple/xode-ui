@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T06:02:59.905065+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T06:04:47.136587+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -45,7 +45,7 @@ Updated 2026-10-22T06:02:59.905065+00:00; **8/20 strict WORKING**. Brotato candi
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Skyrim Special Edition | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued after Fallout with adf8 and S1 per-title engine binding; no missing-file or reinstall blocker remains. | >2h |
+| Skyrim Special Edition | INCONCLUSIVE | not passed | ? | ? | ? | ? | startup diagnosis / S1 | Launcher reached, but game child exited with no window; no gameplay. S1 diagnosing; launcher is not game title-screen evidence. | - |
 | South of Midnight | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Stardew Valley | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |
 | Subnautica 2 | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Queued for actual game test. | >2h |

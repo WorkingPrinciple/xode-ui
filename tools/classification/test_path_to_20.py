@@ -183,6 +183,16 @@ class PathTo20Tests(unittest.TestCase):
         self.assertNotEqual(row["gates"]["save"]["status"], "passed")
         self.assertFalse(row["strictWorking"])
 
+    def test_skyrim_launcher_does_not_pass_game_menu(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T06:00:00+00:00"
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9P03JGQ4S1GC")
+        self.assertEqual(row["verdict"], "INCONCLUSIVE")
+        self.assertEqual(row["gates"]["menu"]["status"], "not-passed")
+        self.assertNotEqual(row["gates"]["gameplay"]["status"], "passed")
+        self.assertFalse(row["strictWorking"])
+
 
 if __name__ == "__main__":
     unittest.main()

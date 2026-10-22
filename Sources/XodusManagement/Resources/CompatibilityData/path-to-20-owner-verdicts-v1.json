@@ -14,6 +14,19 @@
   },
   "items": [
     {
+      "storeId": "9P03JGQ4S1GC",
+      "title": "Skyrim Special Edition",
+      "verdict": "INCONCLUSIVE",
+      "reportedAt": "2026-10-22T06:04:27.183+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "fa08c5f8",
+      "gates": {"menu": "not-passed"},
+      "nextGate": "startup diagnosis",
+      "ownerStream": "S1",
+      "blocker": "Launcher reached, but game child exited with no window; no gameplay. S1 diagnosing; launcher is not game title-screen evidence.",
+      "scope": "Coordinator-reported INCONCLUSIVE run fa08c5f8. No game window or gameplay qualification; no retry authorization inferred."
+    },
+    {
       "storeId": "9NGLST31DG26",
       "title": "A Game About Digging A Hole",
       "verdict": "INCONCLUSIVE",
