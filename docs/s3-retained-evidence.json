@@ -118,6 +118,24 @@
   },
   "verifiedArchives": [
     {
+      "title": "Quake",
+      "path": "s1-quake-pairc5ce-preparation-v1/run-world/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "7ce612d7e0f290b6aed9996d3cdf0b95d6f6f71ff6348761398503d1d8029171",
+      "resultSha256": "c0cb34f45408c34d177b24611ee877278f7b31f461610bc700623231e7da60ce",
+      "packetSha256": "ea6a4079b3550233be844b2ac79c3a2a236bd7337864b08371badb84bf4a9056",
+      "run": "1073eee0-2ac3-4642-b3e2-1c63f7413239",
+      "admission": "HUMAN_CONSENT_HOLD",
+      "observed": "Initial attract excluded. One Escape100 exposed loading; separate no-input settled capture showed UPDATED AGREEMENT with updated Bethesda.net/Zenimax Terms of Service and By choosing CONTINUE I agree. No further input, Continue, Cancel or account action.",
+      "stop": "Exact-prefix forced-k0/-w0 at160.058s. CLI0/Wine0 are NOT ordinary quit; frozen5812 correctly reconciled descriptive external consent stop.",
+      "runFilesVerified": 30,
+      "rawArchiveFilesVerified": 8,
+      "nonemptyXgsAfter": 0,
+      "screenshots": 3,
+      "runManifestSha256": "92b903b47e981e753eb863f4007973491763713fba318493dd767273a6e19510",
+      "boundary": "No campaign/save/reload, runtime save fix untested rather than FAIL. User alone decides agreement; no automatic replay. Conditional reload would also require explicit resolution of frozen runner packet-parent/world-output mismatch, without receipt copying."
+    },
+    {
       "title": "Dishonored Definitive Edition",
       "path": "s3-dishonored-bound-reload600-01/final-evidence",
       "manifest": "integrity.json",
