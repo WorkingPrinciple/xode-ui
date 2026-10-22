@@ -116,6 +116,49 @@ class RetentionTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "screenshot"):
                 retention.authorize_reload(base, "frozen")
 
+    def packet_fixture(self, base):
+        prefix = base / "prefix"
+        prefix.mkdir()
+        source = base / "source"
+        source.write_bytes(b"frozen executable identity stand-in")
+        packet = base / "packet.json"
+        packet.write_text(json.dumps({
+            "sourceHashes": {str(source): retention.sha(source)},
+            "saveRoots": [str(prefix / "title-save")],
+            "phases": [{
+                "phase": "world", "prefix": str(prefix),
+                "stateDir": str(base / "run-world" / "launch"),
+            }],
+        }))
+        return packet, source
+
+    def test_source_drift_blocks_before_state_creation(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            packet, source = self.packet_fixture(base)
+            source.write_bytes(b"changed")
+            with self.assertRaisesRegex(RuntimeError, "identity changed"):
+                retention.load_packet(packet, retention.sha(packet), "world")
+            self.assertFalse((base / "run-world").exists())
+
+    def test_consumed_state_parent_blocks_replay(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            packet, _ = self.packet_fixture(base)
+            (base / "run-world").mkdir()
+            with self.assertRaisesRegex(RuntimeError, "consumed"):
+                retention.load_packet(packet, retention.sha(packet), "world")
+
+    def test_save_root_escape_blocks_preflight(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            packet, _ = self.packet_fixture(base)
+            value = json.loads(packet.read_text())
+            value["saveRoots"] = [str(base / "unowned")]
+            packet.write_text(json.dumps(value))
+            with self.assertRaisesRegex(RuntimeError, "outside"):
+                retention.load_packet(packet, retention.sha(packet), "world")
+
 
 if __name__ == "__main__":
     unittest.main()
