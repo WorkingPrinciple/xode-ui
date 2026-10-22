@@ -33,6 +33,17 @@ class BurnDownTests(unittest.TestCase):
         self.assertTrue(all(row["queueCappedAdditions"] == 0
                             for row in calculate(inputs)["scenarios"]))
 
+    def test_reported_queue_additions_are_not_claimed_completed_packets(self):
+        inputs = load_json(OUTPUT)["inputs"]
+        evidence = inputs["pendingPacketQueueEvidence"]
+        self.assertEqual(evidence["reportedQueueCap"], 23)
+        for row in evidence["items"]:
+            queued = next(item for item in inputs["queued"]
+                          if item["storeId"] == row["storeId"])
+            self.assertIn(queued["batch"], ("packet preparation pending",
+                                          "passive-batch2-eight-v1", "passive-batch3-eight-v1"))
+        self.assertEqual(inputs["queueReconciliation"]["uniqueCount"], len(inputs["queued"]))
+
 
 if __name__ == "__main__":
     unittest.main()

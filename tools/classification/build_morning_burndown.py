@@ -120,6 +120,11 @@ def refresh(tracker):
             else:
                 queued[sid] = item
     working = {row["storeId"] for row in tracker["items"] if row["strictWorking"]}
+    additions = tracker["collectionInputs"].get("ownerVerdicts", {}).get(
+        "snapshot", {}).get("queueAdditions")
+    if additions:
+        for row in additions["items"]:
+            queued.setdefault(row["storeId"], row)
     queued = {sid: row for sid, row in queued.items() if sid not in working}
     inputs = {"asOf": tracker["updatedAt"], "deadline": DEADLINE,
               "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), "
@@ -127,6 +132,13 @@ def refresh(tracker):
               "strictWorkingCount": tracker["strictWorkingCount"],
               "trackerMatrixSha256": tracker["collectionInputs"]["matrix"]["sha256"],
               "packetSources": sources, "queued": list(queued.values()),
+              "pendingPacketQueueEvidence": additions,
+              "queueReconciliation": {
+                  "reportedCap": additions["reportedQueueCap"] if additions else None,
+                  "uniqueCount": len(queued),
+                  "basis": "Deduplicate product IDs across packets and owner additions. "
+                  "KCD1/Subnautica 2 already appear in existing packets; do not count "
+                  "new routes as additional titles. Reported 23 requires reconciliation."},
               "withheld": list(withheld.values()),
               "samples": [
                   {"title": "Halls of Torment", "startKind": "actual no-input passive",
@@ -202,7 +214,8 @@ def render_summary(packet):
              f"**{samples[1]['minutes']:.1f}min** (no bound passive start). "
              f"One serial, continuously available lane yields **{slow['serialCycleSlots']}"
              f"/{mid['serialCycleSlots']}/{fast['serialCycleSlots']}** slow/mid/fast cycles, "
-             f"capped by **{len(packet['inputs']['queued'])} queued dry packets**: "
+             f"capped by **{len(packet['inputs']['queued'])} pipeline titles** "
+             "(deduplicated; reported cap 23 pending reconciliation): "
              f"conditional totals **{slow['conditionalTotalWorking']}/"
              f"{mid['conditionalTotalWorking']}/{fast['conditionalTotalWorking']}**. "
              "These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.\n\n"

@@ -1,6 +1,56 @@
 {
   "schemaVersion": 1,
+  "queueAdditions": {
+    "reportedAt": "2026-10-22T04:59:55.152+00:00",
+    "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+    "routeCommit": "5b944e3",
+    "reportedQueueCap": 23,
+    "basis": "Coordinator reports S1 routes added; S2 packets being prepared. Pipeline capacity only, not completed packets or launch authorization.",
+    "items": [
+      {"storeId": "9P3T7HVKM6D0", "title": "Kingdom Come: Deliverance", "batch": "packet preparation pending"},
+      {"storeId": "9PJPCB188SVG", "title": "Subnautica 2", "batch": "packet preparation pending"}
+    ]
+  },
   "items": [
+    {
+      "storeId": "9NH0MSG29X6L",
+      "title": "Mixtape",
+      "verdict": "INCONCLUSIVE",
+      "reportedAt": "2026-10-22T04:59:55.152+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "77083b32",
+      "gates": {"menu": "passed", "quit": "passed"},
+      "nextGate": "gameplay",
+      "ownerStream": "S3",
+      "blocker": "No chapter completed, so no save yet. Clean CLI 0 / Wine 0 does not qualify retention. No unchanged automatic retry.",
+      "scope": "Coordinator-reported run 77083b32 INCONCLUSIVE; clean exit, no completed chapter or saved checkpoint. Gameplay/retention not qualified."
+    },
+    {
+      "storeId": "9P8NSTDMZ11P",
+      "title": "Inscryption",
+      "verdict": "NO_TITLE_SCREEN",
+      "reportedAt": "2026-10-22T04:59:55.152+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "3b833cc7",
+      "gates": {"menu": "not-passed"},
+      "nextGate": "startup diagnosis",
+      "ownerStream": "S1/S2",
+      "blocker": "Known hold: parked until its admitted retry at end of queue; no unchanged automatic retry or new launch authorization.",
+      "scope": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged."
+    },
+    {
+      "storeId": "9P9VNSQK1W3K",
+      "title": "Brotato",
+      "verdict": "WORKING_CANDIDATE",
+      "reportedAt": "2026-10-22T04:59:55.152+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "430e9c33",
+      "gates": {},
+      "nextGate": "CLI promotion",
+      "ownerStream": "S2/user",
+      "blocker": "Known hold: waiting on morning CLI promotion decision. All title gates proven; excluded from strict WORKING until admitted.",
+      "scope": "Coordinator clarified existing promotion hold; no new title run."
+    },
     {
       "storeId": "9P4NV23Q6QC2",
       "title": "Abiotic Factor",

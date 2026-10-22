@@ -145,6 +145,13 @@ class PathTo20Tests(unittest.TestCase):
         self.assertEqual(row["nextGate"], "ordinary quit")
         self.assertFalse(row["strictWorking"])
 
+    def test_mixtape_clean_exit_does_not_prove_saved_chapter(self):
+        row = next(row for row in self.packet["items"] if row["storeId"] == "9NH0MSG29X6L")
+        self.assertEqual(row["verdict"], "INCONCLUSIVE")
+        self.assertEqual(row["gates"]["quit"]["status"], "passed")
+        self.assertNotEqual(row["gates"]["save"]["status"], "passed")
+        self.assertFalse(row["strictWorking"])
+
 
 if __name__ == "__main__":
     unittest.main()

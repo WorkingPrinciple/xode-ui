@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-22T04:59:15.994354+00:00",
-  "matrixUpdatedAt": "2026-10-22T04:40:14.374815Z",
+  "updatedAt": "2026-10-22T05:01:24.072297+00:00",
+  "matrixUpdatedAt": "2026-10-22T04:57:46.825874Z",
   "collectionInputs": {
-    "collectedAt": "2026-10-22T04:59:15.994354+00:00",
+    "collectedAt": "2026-10-22T05:01:24.072297+00:00",
     "matrix": {
       "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-      "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+      "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
       "snapshot": {
         "schemaVersion": 1,
-        "updatedAt": "2026-10-22T04:40:14.374815Z",
+        "updatedAt": "2026-10-22T04:57:46.825874Z",
         "workingAdmission": {
           "required": [
             "movement",
@@ -581,14 +581,19 @@
             "productId": "9NH0MSG29X6L",
             "title": "Mixtape",
             "app_e2e": "unobserved",
-            "verdict": "TITLE_SCREEN_PASS",
-            "scope": "Exact Apple4/adf8/7106/STA two-native-CRT private registry produced owned Shipping window. Initial Login Failure dialog acknowledged with Space, then shader compilation completed and rendered main menu Play/Settings/Exit. Play entered opening skate/credits through bridge/town at about25-42FPS. Bounded WASD/Space input sent but not independently distinguishable from scripted movement: no claimed controllable gameplay pass. Pause menu actionable. Pause Exit\u2192Space Exit to Desktop ordinary CLI0/Wine0. Confirmation explicitly warned any progress in this chapter would be lost. No chapter checkpoint or new-process retention verified; two new container blobs remain unclassified rather than assumed gameplay.",
+            "verdict": "GAMEPLAY_PASS",
+            "scope": "Latest900s77083b32 on exact Apple4/adf8/7106/STA/two-native private registry reached actual ShiftPush/SpaceOllie tutorial, town and explicit WASDQE SecretHandshake; entered those inputs and advanced the interaction. Distinct from earlier scripted-skating-only visual observation. OrdinaryPauseExit\u2192SpaceDesktop CLI0/Wine0 in843.6s. No completed chapter/ChapterSelect checkpoint observed; actual Exit warning says any current-chapter progress will be lost. Retention INCONCLUSIVE/notWORKING. No unjustified fresh-load test or unchanged retry; opaque provider blobs not classified as story progress.",
             "engine": "apple-gptk-4.0b3",
-            "runId": "8bdbe1e7-117f-429e-8895-c5a4ac3cd3d1",
+            "runId": "77083b32-62f2-469d-a8b4-a3f03c35b2ac",
             "activePrefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s3-9NH0MSG29X6L-apple-gptk-4.0b3-adf8",
-            "evidenceRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-mixtape-visual-01",
+            "evidenceRoot": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-mixtape-checkpoint-world-01",
+            "evidenceReceipt": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-mixtape-checkpoint-world-01/retention-result.json",
             "prefixState": "Ordinary Pause Exit to Desktop CLI0/Wine0; no forced kill",
             "screenshots": [
+              {
+                "path": "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-route-final-1000.png",
+                "caption": "Explicit WASDQE SecretHandshake interaction before input-driven transition"
+              },
               {
                 "path": "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-after-shaders-1000.png",
                 "caption": "Owned rendered main menu after initial login dialog dismissal and shader compilation"
@@ -672,10 +677,73 @@
     },
     "ownerVerdicts": {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-      "sha256": "7ed2aecd68f8cd37607d4c927dbf073c859363af64b54f05ed1dbbf57bc3d3b5",
+      "sha256": "a311931011724eaab6e203beda2da4638460a47c723614b1538ccc9fcaa7fd85",
       "snapshot": {
         "schemaVersion": 1,
+        "queueAdditions": {
+          "reportedAt": "2026-10-22T04:59:55.152+00:00",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+          "routeCommit": "5b944e3",
+          "reportedQueueCap": 23,
+          "basis": "Coordinator reports S1 routes added; S2 packets being prepared. Pipeline capacity only, not completed packets or launch authorization.",
+          "items": [
+            {
+              "storeId": "9P3T7HVKM6D0",
+              "title": "Kingdom Come: Deliverance",
+              "batch": "packet preparation pending"
+            },
+            {
+              "storeId": "9PJPCB188SVG",
+              "title": "Subnautica 2",
+              "batch": "packet preparation pending"
+            }
+          ]
+        },
         "items": [
+          {
+            "storeId": "9NH0MSG29X6L",
+            "title": "Mixtape",
+            "verdict": "INCONCLUSIVE",
+            "reportedAt": "2026-10-22T04:59:55.152+00:00",
+            "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+            "runId": "77083b32",
+            "gates": {
+              "menu": "passed",
+              "quit": "passed"
+            },
+            "nextGate": "gameplay",
+            "ownerStream": "S3",
+            "blocker": "No chapter completed, so no save yet. Clean CLI 0 / Wine 0 does not qualify retention. No unchanged automatic retry.",
+            "scope": "Coordinator-reported run 77083b32 INCONCLUSIVE; clean exit, no completed chapter or saved checkpoint. Gameplay/retention not qualified."
+          },
+          {
+            "storeId": "9P8NSTDMZ11P",
+            "title": "Inscryption",
+            "verdict": "NO_TITLE_SCREEN",
+            "reportedAt": "2026-10-22T04:59:55.152+00:00",
+            "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+            "runId": "3b833cc7",
+            "gates": {
+              "menu": "not-passed"
+            },
+            "nextGate": "startup diagnosis",
+            "ownerStream": "S1/S2",
+            "blocker": "Known hold: parked until its admitted retry at end of queue; no unchanged automatic retry or new launch authorization.",
+            "scope": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged."
+          },
+          {
+            "storeId": "9P9VNSQK1W3K",
+            "title": "Brotato",
+            "verdict": "WORKING_CANDIDATE",
+            "reportedAt": "2026-10-22T04:59:55.152+00:00",
+            "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+            "runId": "430e9c33",
+            "gates": {},
+            "nextGate": "CLI promotion",
+            "ownerStream": "S2/user",
+            "blocker": "Known hold: waiting on morning CLI promotion decision. All title gates proven; excluded from strict WORKING until admitted.",
+            "scope": "Coordinator clarified existing promotion hold; no new title run."
+          },
           {
             "storeId": "9P4NV23Q6QC2",
             "title": "Abiotic Factor",
@@ -2866,23 +2934,23 @@
       "gates": {
         "menu": {
           "status": "passed",
-          "basis": "Coordinator personally verified WORKING: first world e5ec1841, fresh reload 18dcee0d retained same world, character and inventory ($5 and duct tape). Apple GPTK 4.0b3 with adf8; result independently confirms CLI 0 and Wine 0. Save marker is coordinator-observed. App E2E remains unobserved."
+          "basis": "Admitted strict WORKING matrix verdict; native/roguelite-specific acceptance retained in matrix scope"
         },
         "gameplay": {
           "status": "passed",
-          "basis": "Coordinator personally verified WORKING: first world e5ec1841, fresh reload 18dcee0d retained same world, character and inventory ($5 and duct tape). Apple GPTK 4.0b3 with adf8; result independently confirms CLI 0 and Wine 0. Save marker is coordinator-observed. App E2E remains unobserved."
+          "basis": "Admitted strict WORKING matrix verdict; native/roguelite-specific acceptance retained in matrix scope"
         },
         "quit": {
           "status": "passed",
-          "basis": "Coordinator personally verified WORKING: first world e5ec1841, fresh reload 18dcee0d retained same world, character and inventory ($5 and duct tape). Apple GPTK 4.0b3 with adf8; result independently confirms CLI 0 and Wine 0. Save marker is coordinator-observed. App E2E remains unobserved."
+          "basis": "Admitted strict WORKING matrix verdict; native/roguelite-specific acceptance retained in matrix scope"
         },
         "relaunch": {
           "status": "passed",
-          "basis": "Coordinator personally verified WORKING: first world e5ec1841, fresh reload 18dcee0d retained same world, character and inventory ($5 and duct tape). Apple GPTK 4.0b3 with adf8; result independently confirms CLI 0 and Wine 0. Save marker is coordinator-observed. App E2E remains unobserved."
+          "basis": "Admitted strict WORKING matrix verdict; native/roguelite-specific acceptance retained in matrix scope"
         },
         "save": {
           "status": "passed",
-          "basis": "Coordinator personally verified WORKING: first world e5ec1841, fresh reload 18dcee0d retained same world, character and inventory ($5 and duct tape). Apple GPTK 4.0b3 with adf8; result independently confirms CLI 0 and Wine 0. Save marker is coordinator-observed. App E2E remains unobserved."
+          "basis": "Admitted strict WORKING matrix verdict; native/roguelite-specific acceptance retained in matrix scope"
         }
       },
       "nextGate": "complete",
@@ -2891,43 +2959,8 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9P4NV23Q6QC2"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "7ed2aecd68f8cd37607d4c927dbf073c859363af64b54f05ed1dbbf57bc3d3b5",
-          "runId": "18dcee0d-1705-469e-8f67-48924b239258",
-          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
-        },
-        {
-          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-abiotic-qualification-reload-01/runs/18dcee0d-1705-469e-8f67-48924b239258/result.json",
-          "sha256": "d0272206ba8b014076ffa399548815c919d21eb7751e5d59544acb5fa16e9eb7",
-          "snapshot": {
-            "engine": "apple-gptk-4.0b3",
-            "error": null,
-            "error_code": null,
-            "exit_code": 0,
-            "finished_at": "2026-10-22T04:40:14.374815Z",
-            "game_dir": "/Users/dragoshont/Games/Xodus/AbioticFactor-Xbox",
-            "launch_receipt_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-abiotic-qualification-reload-01/runs/18dcee0d-1705-469e-8f67-48924b239258/launch-stage.json",
-            "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-abiotic-qualification-reload-01/runs/18dcee0d-1705-469e-8f67-48924b239258",
-            "operation": "launch",
-            "popup_monitor_error": null,
-            "popups": [],
-            "prefix": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/abiotic-apple-gptk-4-b3",
-            "product": "9P4NV23Q6QC2",
-            "progress_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-abiotic-qualification-reload-01/runs/18dcee0d-1705-469e-8f67-48924b239258/progress.jsonl",
-            "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-abiotic-qualification-reload-01/runs/18dcee0d-1705-469e-8f67-48924b239258/result.json",
-            "run_id": "18dcee0d-1705-469e-8f67-48924b239258",
-            "started_at": "2026-10-22T04:35:19.478872Z",
-            "success": true,
-            "version": 1,
-            "warnings": [],
-            "wine": null,
-            "wine_exit_code": 0,
-            "wine_termination_signal": null
-          }
         }
       ],
       "packetReferences": [
@@ -2941,10 +2974,10 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:41:54.984442+00:00",
-      "sameGateObservedHours": 0.28916942,
+      "sameGateObservedHours": 0.3247466263888889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
-      "scope": "Coordinator personally verified WORKING: first world e5ec1841, fresh reload 18dcee0d retained same world, character and inventory ($5 and duct tape). Apple GPTK 4.0b3 with adf8; result independently confirms CLI 0 and Wine 0. Save marker is coordinator-observed. App E2E remains unobserved."
+      "scope": "Coordinator accepted WORKING after fresh18dcee0d loaded S3Retention world (typedS3-Retention, game filteredhyphen), same drgload/LabAssistant/$5/ducttape first pocketcell, then ordinary LeaveGame\u2192YesQuit\u2192mainmenuQuit\u2192Quit CLI0/Wine0 in294.9s under300. Earlier900s worlde5ec1841 reached real cafeteria movement/interactions40-55FPS after first-user setup but TIMEOUTCLI1/Wine0, not ordinary quit. Changed placed/droppedobject NOT observed. Explicit coordinator admission uses retained world/scientist/inventory marker and final normalexit. Actual Container grew3\u21926payloads; fullT2/T3 continuity, opaque7384\u21927421B payload after finalquit. Apple4/adf8/7106/Shipping/STA1 only unchanged."
     },
     {
       "storeId": "9PCR3Z2MSM4T",
@@ -2979,7 +3012,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9PCR3Z2MSM4T"
         }
       ],
@@ -2994,7 +3027,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:17:29.883816+00:00",
-      "sameGateObservedHours": 0.696141816111111,
+      "sameGateObservedHours": 0.7317190225000001,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after sole final300s fresh80cbf59d loads Crossroads/Nights2 (previously1)/Grasp10, save updated22Oct06:47AM, no movement/interaction, ordinary PauseQuit\u2192OK\u2192mainQuit CLI0/Wine0 within209s. Preceding900s d9e1ff58 reached natural death and Crossroads but TIMEOUTCLI1/Wine1; remains INCONCLUSIVE in its own right. Final verification explicitly admitted despite that timeout. ActualCONTAINER45056\u219256141B, complete T2/T3 hashes identical. Earlier replayed shade dialogue is not global retention failure. Known window-monitor10s warning separately accepted and does not replace actualWine0. No further Hades launches."
@@ -3032,7 +3065,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9NMNMS626R59"
         },
         {
@@ -3067,7 +3100,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted natural-death combat rather than a two-minute rerun. Apple4 defaultCOM/noargs/adf8/7106: selected Swordsman, moved through camp, entered Haunted Caverns and reached real skeleton combat at60FPS. First natural death16s unlocked First Try/Quest Stone and banked17gold. Ordinary menu Quit/Yes quit now CLI0/Wine0. Fresh process retained17gold and visible QuestStone. Second attack/movement attempt dealt400damage and2kills before natural death15s, bank53gold. Returned camp and ordinary Quit/Yes quit now again CLI0/Wine0. Stopped actual local-save payload changed size5520 to9876 and fullSHA f4e03df7... to9d22356b...; metadata-only/settings are not used as retention proof. No two-minute survival, mid-run resume, cloud-save or app-tile E2E claim."
@@ -3105,7 +3138,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9MT5NJ5W7B8Z"
         }
       ],
@@ -3147,7 +3180,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 2.123698341388889,
+      "sameGateObservedHours": 2.159275547777778,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen Apple4/adf8/7106 with STA1 only: created drgload xodus, healed with displayed G, completed relative Look Around, walked from cave through exterior cliff path following Professor Fig at39-47FPS D3D12/Metal4. Coordinator independently confirmed movement. Initial1800s891d061f and300s86e8da68 hit wall caps; these were not normal quits. Fresh86e8da68 retained named level1 character and loaded cave healing checkpoint, bypassing character creation/carriage intro; coordinator reviewed screenshots and accepted this checkpoint retention, waiving later cave-exit requirement. Final new600s f2471368 again loaded that character/world and completed ordinary Escape SAVE/LOAD AND EXIT\u2192EXIT TO MAIN MENU\u2192Space Yes\u2192main-menu EXIT GAME\u2192Space Yes/Quit to OS. Actual CLI0/Wine0, no WM_CLOSE/forcedkill, PID73417 gone. Coordinator's WORKING condition now satisfied; app-tile E2E remains separate/unobserved."
@@ -3185,7 +3218,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9MW9469V91LM"
         }
       ],
@@ -3204,7 +3237,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Corrected actual S5 app-tile run6eb24065 with native JSON registrations, native-web-only shims and7106 pair passes user initialization, King's Pass rendering, movement, jump, attacks and focus healing. Coordinator explicitly replaced the bench gate with normal Quit to Menu save. Both container .xgs hashes+mtimes changed; post-quit slot1 card King's Pass/17M/0geo/5masks. Normal close Wine0/CLI0. Actual unchanged S5 tile relaunch902a364c displayed exactly the same card, Continue loaded real King's Pass, movement worked and5masks/broken soul vessel retained the death state. Zero-geo HUD counter is hidden; card0 is observed, not an invented HUD numeral. Second normal save/quit/WM_CLOSE Wine0/CLI0; both owned process pairs gone, exactprefix-k1/-w0. Coordinator reviewed screenshots and explicitly admitted HK as third WORKING title. No bench/cloud claim."
@@ -3242,7 +3275,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9PJ8266BHFWN"
         }
       ],
@@ -3264,7 +3297,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "User explicitly admitted WORKING and directed move-on. Official signed native launcher3.41.29-2.6.12, Java latest26.3 ARM64: actual single-player world/HUD, W+jump movement, clean saved-world shutdown, launcher relaunch to new Java PID76415 and retained New World reloaded. S2/S5 native Ode provider integration remains pending; not a Wine or Bedrock claim."
@@ -3302,7 +3335,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "BQVQTL3PCH05"
         }
       ],
@@ -3332,7 +3365,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "CrossOver actual EmphiV24 world, movement, autosave, ordinary WM_CLOSE and fresh-process retained-world relaunch verified. Historical ffc4 CrossOver Wine exit0 is independent of its POPUP_MONITOR_FAILED helper error. S1 additionally qualified free nms-free-gptk3-d3dshared: real EmphiV24 walking/strafe/scanner/tutorial progress, changed Slot1Auto data/meta, ordinary quit CLI0, same-prefix relaunch with updated0:06 playtime/03:23save and retained Gather Ferrite Dust objective in-world around60FPS, second normal quit CLI0. PIDs52582/65739 gone, ownprefix-k1/-w0, finished00:26:30 within original1200s grant. S3 inspected relaunch-world.png and relaunch-trial-result.json. Earlier free-load failures are historical, not the current outcome. App-driven NMS E2E remains unobserved."
@@ -3340,20 +3373,20 @@
     {
       "storeId": "9NH0MSG29X6L",
       "title": "Mixtape",
-      "verdict": "TITLE_SCREEN_PASS",
+      "verdict": "INCONCLUSIVE",
       "strictWorking": false,
       "gates": {
         "menu": {
           "status": "passed",
-          "basis": "Admitted matrix TITLE_SCREEN_PASS"
+          "basis": "Coordinator-reported run 77083b32 INCONCLUSIVE; clean exit, no completed chapter or saved checkpoint. Gameplay/retention not qualified."
         },
         "gameplay": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
+          "status": "passed",
+          "basis": "Admitted matrix gameplay"
         },
         "quit": {
           "status": "passed",
-          "basis": "Explicit matrix normalMenuQuitObserved"
+          "basis": "Coordinator-reported run 77083b32 INCONCLUSIVE; clean exit, no completed chapter or saved checkpoint. Gameplay/retention not qualified."
         },
         "relaunch": {
           "status": "unknown",
@@ -3366,16 +3399,22 @@
       },
       "nextGate": "gameplay",
       "ownerStream": "S3",
-      "blocker": "Controllable gameplay, completed chapter/checkpoint and fresh-process retained progression remain unverified inside the admitted600s bound. No unchanged automatic retry.",
+      "blocker": "No chapter completed, so no save yet. Clean CLI 0 / Wine 0 does not qualify retention. No unchanged automatic retry.",
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9NH0MSG29X6L"
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
           "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+          "sha256": "a311931011724eaab6e203beda2da4638460a47c723614b1538ccc9fcaa7fd85",
+          "runId": "77083b32",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
       ],
       "packetReferences": [
@@ -3407,10 +3446,10 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T03:26:54.237136+00:00",
-      "sameGateObservedHours": 1.539377005,
+      "sameGateObservedHours": 1.5749542113888888,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
-      "scope": "Exact Apple4/adf8/7106/STA two-native-CRT private registry produced owned Shipping window. Initial Login Failure dialog acknowledged with Space, then shader compilation completed and rendered main menu Play/Settings/Exit. Play entered opening skate/credits through bridge/town at about25-42FPS. Bounded WASD/Space input sent but not independently distinguishable from scripted movement: no claimed controllable gameplay pass. Pause menu actionable. Pause Exit\u2192Space Exit to Desktop ordinary CLI0/Wine0. Confirmation explicitly warned any progress in this chapter would be lost. No chapter checkpoint or new-process retention verified; two new container blobs remain unclassified rather than assumed gameplay."
+      "scope": "Coordinator-reported run 77083b32 INCONCLUSIVE; clean exit, no completed chapter or saved checkpoint. Gameplay/retention not qualified."
     },
     {
       "storeId": "9NGLST31DG26",
@@ -3445,7 +3484,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9NGLST31DG26"
         }
       ],
@@ -3467,7 +3506,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Valid419c+7106 CrossOver retest2ea171c0 stages verified legacycfe7 and still exits1 after23sec before observed window. Earlier d8f1bc40 is invalid corrected-auth evidence: old shim-directory runtime overwrote explicit7106. S1 isolated instrumented traces ongoing; no causal graphics claim."
@@ -3514,7 +3553,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3552,7 +3591,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9PK087LNGJC5"
         }
       ],
@@ -3580,7 +3619,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed exact Windows package. Actual corrected Apple4/adf8/7106 trace421f naturally exits0 in8.68s with no observed owned window/screenshot/input. Both real WINEDEBUG/XODUS_WINE_DEBUG active; no explicit causal exception or game-level reason. CLI0 is not rendering/gameplay PASS. Exactprefix-k1/-w0. Separate coordinator-authorized API trace6a266eb2 naturally exits0 in9.94s, also no window/input/capture; S1 interpreting actual trace."
@@ -3643,7 +3682,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3690,7 +3729,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3753,7 +3792,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3787,11 +3826,11 @@
       },
       "nextGate": "CLI promotion",
       "ownerStream": "S2/user",
-      "blocker": "Unreleased ebd56e CLI requires morning promotion decision. Installed adf8 Brotato parser remains blocked; exclude this candidate from strict WORKING count.",
+      "blocker": "Known hold: waiting on morning CLI promotion decision. All title gates proven; excluded from strict WORKING until admitted.",
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9P9VNSQK1W3K"
         },
         {
@@ -3800,7 +3839,13 @@
         },
         {
           "kind": "coordinator-verdict",
-          "observedAt": "2026-10-22T04:59:15.994354+00:00",
+          "observedAt": "2026-10-22T05:01:24.072297+00:00",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+          "sha256": "a311931011724eaab6e203beda2da4638460a47c723614b1538ccc9fcaa7fd85",
+          "runId": "430e9c33",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
       ],
@@ -3820,10 +3865,10 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 2.123698341388889,
+      "sameGateObservedHours": 2.159275547777778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
-      "scope": "Unreleased ebd56e CLI with Apple4/defaultCOM/noargs/7106: selected Well-Rounded/Knife/Danger0, actual Wave1 gameplay and bounded WASD movement at60FPS. Natural death at Wave1/4seconds remaining with47materials/level1; post-run Progress explicitly unlocked Chunky. Returned main menu and ordinaryQuitCLI0/Wine0. Fresh430e9c33 character selection shows newly unlocked Chunky (previously lock), selecting it opens usable Chunky weapon-selection panel. Backed to main menu and ordinaryQuitCLI0/Wine0 again. Actual CONTAINER payload hash changed across gameplay and survives restart. Coordinator-directed WORKING_CANDIDATE only: requires ebd56e CLI promotion, does not count toward strict20 and does not bypass installedadf8's parser failure."
+      "scope": "Coordinator clarified existing promotion hold; no new title run."
     },
     {
       "storeId": "9P5Z4530318L",
@@ -3883,7 +3928,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3955,7 +4000,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -3993,7 +4038,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9MSVVM5NS9L6"
         },
         {
@@ -4023,7 +4068,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T04:28:41.158529+00:00",
-      "sameGateObservedHours": 0.5096766180555556,
+      "sameGateObservedHours": 0.5452538244444444,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Actual60FPS controllable sailing, caught Blue Mackerel, placed cargo, docked Greater Marrow MondayDay1 09:41. Explicit Save and Quit completed. Firstworld631cfd86 hit900s TIMEOUT/CLI1/Wine0; final supposedQuit click likely Credits before menu finished animating. Sole fresha452bd89 loaded same Day1/dock/time/BlueMackerel cargo; explicit Save and Quit, fully rendered mainmenuQuit returned actualCLI255/Wine255 in185s. Save retention observed, normal-exit criterion NOT met. Coordinator directed INCONCLUSIVE/no retry. No autosave-icon capture claimed."
@@ -4070,7 +4115,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4139,7 +4184,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4186,7 +4231,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4255,7 +4300,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4302,7 +4347,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4340,7 +4385,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "C3KLDKZBHNCZ"
         }
       ],
@@ -4366,7 +4411,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Fresh adf8 complete117. Actual direct Fallout4.exe run16403e9f on creation-dx11-d3dmetal/adf8/7106 with explicit local-saves1/online1 renders signed-in menu60FPS, new-game video, interactive character creation and first-person bathroom world. Forward input accepted and F5 visibly showed Quicksaving. Retention NOT qualified: no .fos/.xgs found in exact prefix or actual host Fallout4 MS/Saves/Fallout4/Saves; discovery only adds Plugins.txt/UserDownloadedContent.txt, not saves. At300s ordinary exact-title/staged-image WM_CLOSE matched1, then actual Wine5/CLI5; exactprefix-k1/-w0, staged game gone. Old undriven-launcher timeout3c418e3d remains historical, not a graphics failure."
@@ -4429,7 +4474,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4476,7 +4521,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4523,7 +4568,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4570,7 +4615,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4583,7 +4628,7 @@
       "gates": {
         "menu": {
           "status": "not-passed",
-          "basis": "Owned passive NO_TITLE_SCREEN"
+          "basis": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged."
         },
         "gameplay": {
           "status": "unknown",
@@ -4604,7 +4649,7 @@
       },
       "nextGate": "startup diagnosis",
       "ownerStream": "S1/S2",
-      "blocker": "No title screen in admitted passive; CLI0 does not establish rendering.",
+      "blocker": "Known hold: parked until its admitted retry at end of queue; no unchanged automatic retry or new launch authorization.",
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
@@ -4614,6 +4659,12 @@
           "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/9P8NSTDMZ11P/receipt.json",
           "sha256": "323050c7b10c6173c1dc8eafdec034be0608b6f48ef6a17c9fe33c3330b65cfe",
           "runId": "3b833cc7-8f52-4f09-8b8c-8245dcce28eb"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+          "sha256": "a311931011724eaab6e203beda2da4638460a47c723614b1538ccc9fcaa7fd85",
+          "runId": "3b833cc7",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
       ],
       "packetReferences": [
@@ -4638,10 +4689,10 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 2.123698341388889,
+      "sameGateObservedHours": 2.159275547777778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
-      "scope": null
+      "scope": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged."
     },
     {
       "storeId": "9NCJWHHMVHR0",
@@ -4701,7 +4752,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4739,7 +4790,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9P3T7HVKM6D0"
         },
         {
@@ -4782,7 +4833,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -4829,7 +4880,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -4867,7 +4918,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9PNG83MDD6SH"
         },
         {
@@ -4910,7 +4961,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed,34-file exact Windows package identity matched. Anti-cheat signature scan clean; absence remains unproven."
@@ -4957,7 +5008,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5020,7 +5071,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5067,7 +5118,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5105,7 +5156,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9P2J5D12GJL5"
         },
         {
@@ -5142,7 +5193,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -5214,7 +5265,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5252,7 +5303,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9NV3L234VGXD"
         }
       ],
@@ -5286,7 +5337,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; no launch/rendering qualification."
@@ -5333,7 +5384,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5380,7 +5431,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5418,7 +5469,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9P03JGQ4S1GC"
         },
         {
@@ -5461,7 +5512,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Signed adf8 read-only install-status independently verifies complete77 actual package files. Old layout-only SkyrimSELauncher.exe.manifest failure is resolved; no reinstall needed. Actual input-qualified game launch remains pending."
@@ -5508,7 +5559,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5546,7 +5597,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9MWR1NC6VQ6L"
         },
         {
@@ -5589,7 +5640,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed,3828-file exact Windows package identity matched. Anti-cheat signature scan clean; absence remains unproven."
@@ -5627,7 +5678,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9PJPCB188SVG"
         },
         {
@@ -5664,7 +5715,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -5727,7 +5778,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5774,7 +5825,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5837,7 +5888,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5896,7 +5947,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 2.389924403888889,
+      "sameGateObservedHours": 2.425501610277778,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -5934,7 +5985,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
-          "sha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+          "sha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
           "productId": "9PLH7R84GJWP"
         }
       ],
@@ -5962,7 +6013,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 2.3574232122222223,
+      "sameGateObservedHours": 2.3930004186111113,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed. CrossOver MSAA warnings continue after Return but no game window; independent DXMT attempt exits 3 before rendering."

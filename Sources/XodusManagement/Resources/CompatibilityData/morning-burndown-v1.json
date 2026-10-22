@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T04:59:15.994354+00:00",
+    "asOf": "2026-10-22T05:01:24.072297+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
     "strictWorkingCount": 7,
-    "trackerMatrixSha256": "6a140f8d3989d7e55b7068efc8307ba9f6fc1c68ae0a3c025fdf97fb5bc09cd6",
+    "trackerMatrixSha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -127,6 +127,30 @@
         "batch": "passive-batch3-eight-v1"
       }
     ],
+    "pendingPacketQueueEvidence": {
+      "reportedAt": "2026-10-22T04:59:55.152+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "routeCommit": "5b944e3",
+      "reportedQueueCap": 23,
+      "basis": "Coordinator reports S1 routes added; S2 packets being prepared. Pipeline capacity only, not completed packets or launch authorization.",
+      "items": [
+        {
+          "storeId": "9P3T7HVKM6D0",
+          "title": "Kingdom Come: Deliverance",
+          "batch": "packet preparation pending"
+        },
+        {
+          "storeId": "9PJPCB188SVG",
+          "title": "Subnautica 2",
+          "batch": "packet preparation pending"
+        }
+      ]
+    },
+    "queueReconciliation": {
+      "reportedCap": 23,
+      "uniqueCount": 21,
+      "basis": "Deduplicate product IDs across packets and owner additions. KCD1/Subnautica 2 already appear in existing packets; do not count new routes as additional titles. Reported 23 requires reconciliation."
+    },
     "withheld": [
       {
         "storeId": "9P9VNSQK1W3K",
@@ -294,7 +318,7 @@
       {
         "storeId": "9NH0MSG29X6L",
         "title": "Mixtape",
-        "verdict": "TITLE_SCREEN_PASS"
+        "verdict": "GAMEPLAY_PASS"
       },
       {
         "storeId": "9PK087LNGJC5",
@@ -341,7 +365,7 @@
       {
         "storeId": "9NH0MSG29X6L",
         "title": "Mixtape",
-        "verdict": "TITLE_SCREEN_PASS"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9NGLST31DG26",
@@ -495,7 +519,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1046.7334274333332,
+  "remainingWallMinutes": 1044.59879505,
   "scenarios": [
     {
       "label": "slow observed",
@@ -564,7 +588,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 80.51795595641025,
+  "requiredAverageMinutesPerAddition": 80.35375346538461,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
