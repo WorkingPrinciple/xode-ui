@@ -170,6 +170,53 @@ class RetentionTests(unittest.TestCase):
                 retention.external_stop_reason(base), "HUMAN_CONSENT_HOLD"
             )
 
+    def external_mapping_fixture(self, base):
+        packet, _ = self.packet_fixture(base)
+        target = base / "host-documents" / "My Games" / "title"
+        target.mkdir(parents=True)
+        documents = base / "prefix/drive_c/users/crossover/Documents"
+        documents.parent.mkdir(parents=True)
+        documents.symlink_to(base / "host-documents", target_is_directory=True)
+        value = json.loads(packet.read_text())
+        value["saveRoots"] = [str(target)]
+        value["externalSaveMappings"] = [{
+            "prefixPath": str(documents / "My Games/title"),
+            "resolvedPath": str(target),
+        }]
+        packet.write_text(json.dumps(value))
+        return packet, documents
+
+    def test_explicit_title_owned_host_save_mapping_is_archived(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary).resolve()
+            packet, _ = self.external_mapping_fixture(base)
+            _, _, roots = retention.load_packet(packet, retention.sha(packet), "world")
+            (roots[0] / "slot").write_bytes(b"host title progress")
+            snapshot = retention.snapshot(roots, base / "archive")
+            self.assertEqual(snapshot[0]["files"][0]["bytes"], 19)
+
+    def test_host_save_mapping_redirect_is_rejected(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary).resolve()
+            packet, documents = self.external_mapping_fixture(base)
+            documents.unlink()
+            documents.symlink_to(base / "other", target_is_directory=True)
+            with self.assertRaisesRegex(RuntimeError, "identity changed"):
+                retention.load_packet(packet, retention.sha(packet), "world")
+
+    def test_host_documents_parent_is_not_a_title_mapping(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary).resolve()
+            packet, documents = self.external_mapping_fixture(base)
+            value = json.loads(packet.read_text())
+            value["saveRoots"] = [str(documents.resolve())]
+            value["externalSaveMappings"] = [{
+                "prefixPath": str(documents), "resolvedPath": str(documents.resolve()),
+            }]
+            packet.write_text(json.dumps(value))
+            with self.assertRaisesRegex(RuntimeError, "title-owned"):
+                retention.load_packet(packet, retention.sha(packet), "world")
+
 
 if __name__ == "__main__":
     unittest.main()

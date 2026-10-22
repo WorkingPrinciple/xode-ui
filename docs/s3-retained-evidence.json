@@ -41,12 +41,30 @@
     }
   },
   "coordinatorAdmission": {
-    "workingCount": 11,
+    "workingCount": 12,
     "date": "2026-10-22",
-    "latest": ["TUNIC", "Brotato"],
+    "latest": ["TUNIC", "Brotato", "Stardew Valley"],
     "boundary": "Title qualification does not establish installed GUI Play or app evidence ingestion."
   },
   "offscreenPreparedNext": [
+    {
+      "title": "FINAL FANTASY IV",
+      "packet": "s3-final-fantasy-iv-full-02/packet.json",
+      "sha256": "39d8a3d1053f6e679b3c9ec1f378a9644ede9d6fb0154538ba739c4d4de82874",
+      "dryAdmissionSha256": "3f6849e8691e703cdc889329464853ca654720cb632e20430fd6beacb52c2fe7",
+      "source": "final-fantasy-iv-free-runner006-v1-cli68f-card-b599",
+      "executionAuthorized": false,
+      "boundary": "Retained title Press Any Button only. Exact Save and ordinary process-exit labels UNKNOWN; observe before reliance. Same retained prefix/route, fresh state and 900/300 caps only; documentation-only card rebind to frozen8647. Explicitly bind title-owned host Documents/My Games/FINAL FANTASY IV PR, never Documents parent. full-01 remains unlaunched and superseded for archive-mapping gap. No legal acceptance, download or launch until packet admitted and screen granted."
+    },
+    {
+      "title": "Quake",
+      "packet": "s3-quake-full-02/packet.json",
+      "sha256": "47c4d40b28195bd4dc42417fbf9db66d231f7f675279e39c38df65bd27026468",
+      "dryAdmissionSha256": "2b70fbe07e0082388c142d7d5b27a56e0d34811faa23e9025c3a9d84daced253",
+      "source": "quake-free-runner006-v1-cli68f-card-b599",
+      "executionAuthorized": false,
+      "boundary": "Retained passive no-input attract/demo scene is not controllable gameplay. Same retained Apple4 route and +r_rhirenderfamily d3d11 +d3d11_compileShaders 1, fresh state/caps only; documentation-only frozen8647 rebind. Actual campaign, manual save and ordinary process-exit labels must be observed. No launch until packet admitted and screen granted."
+    },
     {
       "title": "DOOM 64",
       "packet": "s3-doom64-full-01/packet.json",
@@ -68,7 +86,9 @@
   ],
   "retentionRunner": {
     "source": "tools/s3/retention-run.py",
-    "sourceSha256": "d313ed5a0c9bea94f4ae0d4a3df1303524926b0a2238396a1a123c39a8488f38",
+    "sourceSha256": "b1873d3ec0659a0156b586dbc43281400be99e33e505a924211b6972fb1e9a48",
+    "guardTestCount": 14,
+    "externalSaveMappings": "Optional frozen packet mappings bind exact title-owned prefixPath to its canonical resolvedPath outside the prefix. Both must still resolve identically and the canonical target must be a listed saveRoot; generic Documents parents and redirected mappings are rejected. No broad host-folder snapshots.",
     "guardTests": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/s3 -p 'test_*.py'",
     "dryInvocation": "python3 tools/s3/retention-run.py dry PACKET_PATH PACKET_SHA256 world",
     "runInvocation": "python3 tools/s3/retention-run.py run PACKET_PATH PACKET_SHA256 world --screen-release EXPLICIT_HANDOFF_REFERENCE",
@@ -180,7 +200,27 @@
       "admission": "INCONCLUSIVE_QUIT_INPUT_ATTRIBUTION",
       "observed": "Retained s3/proof Farm, Day 2 and 15 Parsnip Seeds; movement; actual Exit Game page with Exit To Desktop. One click attempt was followed by game exit255/Wine255.",
       "gap": "Historical helper returned1 with empty output after 1.03s despite a configured focus plus hold of at least1.65s. Down-triggered exit is possible, not proven. Do not infer ordinary quit from exit255 alone.",
-      "nextTest": "First validate flushed exact-PID input against one owned no-game receiver. Another game launch needs a separate grant."
+      "nextTest": "Historical attempt remains inconclusive. The later separately granted d9399bec attempt below has validated attribution; no automatic retry."
+    },
+    {
+      "title": "Stardew Valley",
+      "path": "s3-stardew-attributed-reload-01/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "c793d7a57b069c31a3a620236dd0728b5f7d78c5c29cd7d9933f06ed9f288ad6",
+      "resultSha256": "7a0f9dc43a1c8e838b24d0bfd6eab1e9bd7c22a6de7b7987745c4f081839cfd0",
+      "run": "d9399bec-129a-4c6a-b46b-0e0a0bd3f921",
+      "packetSha256": "3b4e9aa027a539718e4bf668de3f9789eb0df08ae8d0f030baa3493ed1eab8b0",
+      "admission": "WORKING title 12, independently admitted by coordinator under explicit expected255 rule.",
+      "admissionSupplement": "s3-stardew-attributed-reload-01/admission.json",
+      "admissionSupplementSha256": "f9fe07dfdd6121b967ee5078a1757aea5e09ffe2521633abb816e3d13461b6ad",
+      "observed": "Fresh s3/proof Farm Day2/500g/15seed retention. Actual Exit Game tab and Exit To Desktop captured before one validated exactPID244 click; flushed down/up1/1 at107ms, helper0. Actual target gone before exact cleanup, no forced stop, CLI255/Wine255.",
+      "quitBeganSeconds": 149.44833517074585,
+      "quitBySeconds": 180,
+      "rawArchiveFilesVerified": 14,
+      "runFilesVerified": 46,
+      "runManifestSha256": "f9db53eead18a63e8dc63cc9ad157d0bbb3e02af1079c8e0c440d70f7d0d096a",
+      "continuity": "Four title save/backup files plus private gameplay container unchanged before/after; only startup_preferences changed. No save edits or transfers.",
+      "boundary": "Latest movement input alone is not gameplay proof; prior465d526c actual gameplay supplies that criterion. Historical111dd574 stays inconclusive. Candidate result preserved unchanged with later admission supplement. Not installed GUIPlay or app E2E."
     }
   ],
   "historicalCoverage": {
@@ -216,7 +256,7 @@
       "boundary": "Verified protected byte copies of historical session artifacts and explicit evidence references, deduplicated by SHA256. Originals preserved. No live save prefixes read or written and no missing historical baseline reconstructed."
     },
     "earlierAdmittedTitles": ["Minecraft Java", "No Man's Sky", "Hollow Knight: Voidheart Edition", "Halls of Torment", "Hogwarts Legacy", "Hades II", "Abiotic Factor", "Mixtape", "Monster Sanctuary"],
-    "unresolvedTitles": ["DREDGE", "Fallout 4", "Skyrim Special Edition", "A Game About Digging A Hole", "Well Dweller", "Stardew Valley", "Balatro", "LIMBO"],
+    "unresolvedTitles": ["DREDGE", "Fallout 4", "Skyrim Special Edition", "A Game About Digging A Hole", "Well Dweller", "Balatro", "LIMBO"],
     "boundary": "Passive results from other owners are tracked separately; pending or not-tested titles are not promoted to gameplay or retention passes."
   }
 }

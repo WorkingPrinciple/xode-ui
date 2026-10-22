@@ -79,8 +79,18 @@ def load_packet(path, expected, phase):
         if sha(Path(filename)) != expected_sha:
             raise RuntimeError(f"Bound source identity changed: {filename}")
     roots = [Path(root) for root in packet["saveRoots"]]
+    external = set()
+    for mapping in packet.get("externalSaveMappings", []):
+        alias, target = Path(mapping["prefixPath"]), Path(mapping["resolvedPath"])
+        if not alias.is_relative_to(prefix) or len(alias.relative_to(prefix).parts) < 6:
+            raise RuntimeError("External save mapping must name a title-owned prefix path.")
+        if not target.is_absolute() or target != target.resolve() or alias.resolve() != target:
+            raise RuntimeError("External save mapping identity changed.")
+        if target not in roots:
+            raise RuntimeError("External save mapping does not name an archived root.")
+        external.add(target)
     for root in roots:
-        if not root.resolve().is_relative_to(prefix.resolve()):
+        if not root.resolve().is_relative_to(prefix.resolve()) and root not in external:
             raise RuntimeError("Save root outside the admitted prefix.")
     return packet, selected, roots
 
