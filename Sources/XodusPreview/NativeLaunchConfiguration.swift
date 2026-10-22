@@ -156,6 +156,7 @@ struct NativeTitleLaunchProfile: Codable {
         }
         let schemaVersion: Int
         let cliSha256: String
+        let evidenceCliSha256: String
         let primaryRuntimeSha256: String
         let legacyRuntimeSha256: String
         let items: [Item]
@@ -163,11 +164,12 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "43db70dfa2dcf371e6d0899d8f34604787603ad3aeb32a48d7fb545761ada25c" else {
+                    == "262bc3ef705eb59983d3f379c7b8887e9ccafd472a98baff5fe2ab2fcf3ddc16" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
             guard catalogue.schemaVersion == 1, catalogue.cliSha256 == NativeLifecyclePins.cliSHA256,
+                  catalogue.evidenceCliSha256 == "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
                   Set(catalogue.items.map(\.storeId)).count == catalogue.items.count else {
                 throw NativeLaunchError.invalidProfile
             }

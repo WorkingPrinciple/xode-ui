@@ -17,8 +17,17 @@ import tarfile
 import tempfile
 
 from build_local_candidate import run, source_identity, validate_host
-from shipping_pair import PRODUCER, PRODUCER_TREE, owned_bytes, require, swift_pins
+from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
+                           owned_bytes, require, swift_pins)
 from signing_identity import command, preflight, sign, verify_designated_requirement
+
+
+def validate_payload_pair(cli, helper, producer, tree):
+    require(producer == PRODUCER and tree == PRODUCER_TREE, "Selected producer differs from the approved pin")
+    cli_record, cli_bytes = owned_bytes(cli, CLI_SHA256, bounded=512 * 1024 * 1024)
+    helper_record, helper_bytes = owned_bytes(helper, WINDOWS_HELPER_SHA256, bounded=16 * 1024 * 1024)
+    require(helper_bytes in cli_bytes, "Selected Windows helper differs from actual embedded CLI bytes")
+    return cli_record, helper_record
 
 
 def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
@@ -37,29 +46,30 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     supplied = (selected_cli is not None, producer_source is not None, producer_commit is not None)
     require(all(supplied) or not any(supplied),
             "An explicit CLI needs both its producer source repository and frozen commit")
-    require(selected_helper is None or selected_cli is not None, "A frozen Windows helper requires its paired CLI")
-    windows_helper_record = owned_bytes(selected_helper)[0] if selected_helper is not None else None
+    require((selected_helper is not None) == (selected_cli is not None),
+            "An explicit frozen CLI requires its exact paired Windows helper")
     producer, producer_tree = PRODUCER, PRODUCER_TREE
     if selected_cli is not None:
         producer = subprocess.check_output(
             ["git", "rev-parse", "--verify", producer_commit + "^{commit}"],
             cwd=producer_source, text=True).strip()
-        require(producer == producer_commit, "Select the full frozen producer commit")
+        require(producer == producer_commit == PRODUCER, "Select the full approved frozen producer commit")
         producer_tree = subprocess.check_output(
             ["git", "rev-parse", producer + "^{tree}"], cwd=producer_source, text=True).strip()
+        require(producer_tree == PRODUCER_TREE, "Selected producer tree differs from the approved pin")
         contract = subprocess.check_output(
             ["git", "show", producer + ":docs/contracts/management-v1.schema.json"], cwd=producer_source)
         require(contract == (project / "Sources/XodusManagement/Resources/management-v1.schema.json").read_bytes(),
                 "Selected CLI producer and app management contracts differ")
     old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/XodusEngine/xodus-cli"
+    old_helper = selected_helper.resolve(strict=True) if selected_helper else old_cli.parent / "xodus-window-monitor.exe"
+    cli_record, windows_helper_record = validate_payload_pair(old_cli, old_helper, producer, producer_tree)
+    producer_manifest = owned_bytes(old_cli.parent / "build-manifest.json", PRODUCER_MANIFEST_SHA256)[0] \
+        if selected_cli is not None else None
     def verify_cli(path):
-        if selected_cli is None:
-            verify_designated_requirement(path, "cli", identity)
-        else:
-            command(["/usr/bin/codesign", "--verify", "--strict", "-R",
-                     '=certificate leaf = H"' + identity.upper() + '"', str(path)])
+        command(["/usr/bin/codesign", "--verify", "--strict", "-R",
+                 '=certificate leaf = H"' + identity.upper() + '"', str(path)])
     verify_cli(old_cli)
-    cli_record, _ = owned_bytes(old_cli)
     if selected_cli is not None:
         lifecycle_source = (project / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text()
         require('static let cliSHA256 = "' + cli_record["sha256"] + '"' in lifecycle_source,
@@ -89,11 +99,10 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     shutil.copyfile(old_cli, cli)
     cli.chmod(0o755)
     owned_bytes(cli, cli_record["sha256"], cli_record["bytes"])
-    if selected_helper is not None:
-        destination = cli.parent / "xodus-window-monitor.exe"
-        shutil.copyfile(selected_helper, destination)
-        destination.chmod(0o644)
-        owned_bytes(destination, windows_helper_record["sha256"], windows_helper_record["bytes"])
+    destination = cli.parent / "xodus-window-monitor.exe"
+    shutil.copyfile(old_helper, destination)
+    destination.chmod(0o644)
+    owned_bytes(destination, windows_helper_record["sha256"], windows_helper_record["bytes"])
     helper = macos / "XodusAuthHost"
     shutil.copyfile(binary_dir / "XodusAuthHost", helper)
     helper.chmod(0o755)
@@ -128,6 +137,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         "producerBuildPerformed": False, "priorReceiptAvailable": False,
         "producerSourceIndependentlyVerified": False,
         "preservedProducerDeclaration": {"commit": producer, "tree": producer_tree},
+        "preservedProducerManifest": producer_manifest,
         "explicitFrozenCLISelected": selected_cli is not None,
         "signedHelper": helper_record,
         "preservedWindowsHelper": windows_helper_record,

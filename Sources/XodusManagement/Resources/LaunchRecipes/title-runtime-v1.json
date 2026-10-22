@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
   "scope": "Per-title launch recipe data; not engine defaults or automatic game qualification",
-  "cliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
+  "cliSha256": "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3",
+  "evidenceCliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
   "primaryRuntimeSha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
   "legacyRuntimeSha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
   "scanEvidence": {

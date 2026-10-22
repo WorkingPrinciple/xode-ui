@@ -11,6 +11,8 @@ import unittest
 from unittest.mock import patch
 
 import release_candidate as release
+import refresh_local_candidate as refresh_tool
+import shipping_pair as pins
 
 
 class ReleaseCandidateChecks(unittest.TestCase):
@@ -22,7 +24,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
         notarization = root / "notarization"
         notarization.mkdir()
         cli_hash, helper_hash = hashlib.sha256(cli).hexdigest(), hashlib.sha256(helper).hexdigest()
-        manifest = {"source_commit": release.PRODUCER_COMMIT, "source_tree": "b" * 40,
+        manifest = {"source_commit": release.PRODUCER_COMMIT, "source_tree": release.PRODUCER_TREE,
                     "binary_sha256": cli_hash, "helper_sha256": helper_hash,
                     "helper_embedded_bytes_verified": True}
         receipt = {"source_commit": release.PRODUCER_COMMIT, "cli_sha256": cli_hash,
@@ -34,6 +36,135 @@ class ReleaseCandidateChecks(unittest.TestCase):
                             (notarization / "payload-submission.json", {"id": "neutral-submission", "status": "Accepted"})):
             path.write_text(json.dumps(value))
         return cli_hash, helper_hash
+
+    def unnotarized_fixture(self, root):
+        cli_hash, helper_hash = self.fixture(root)
+        (root / "notarization/receipt.json").unlink()
+        (root / "notarization/payload-submission.json").unlink()
+        (root / "notarization").rmdir()
+        path = root / "build-manifest.json"
+        manifest = json.loads(path.read_text())
+        manifest["notarization"] = {"status": "NOT_SUBMITTED", "submission_id": None, "accepted_receipt": None}
+        path.write_text(json.dumps(manifest))
+        return cli_hash, helper_hash, hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def test_only_exact_unnotarized_pair_and_manifest_are_admitted(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
+            with patch.object(release, "CLI_SHA256", cli_hash), \
+                    patch.object(release, "HELPER_SHA256", helper_hash), \
+                    patch.object(release, "UNNOTARIZED_PAIR", (cli_hash, helper_hash)), \
+                    patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
+                _, _, receipt = release.frozen_payloads(root)
+                self.assertFalse(receipt["standaloneNotarized"])
+                self.assertIsNone(receipt["combinedAppleSubmission"])
+                self.assertTrue(receipt["outerAppNotarizationRequired"])
+                (root / "xodus-cli").write_bytes(b"Unknown or altered binary")
+                with self.assertRaises(ValueError):
+                    release.frozen_payloads(root)
+
+    def test_changing_general_pins_cannot_extend_unnotarized_exception(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
+            with patch.object(release, "CLI_SHA256", cli_hash), \
+                    patch.object(release, "HELPER_SHA256", helper_hash), \
+                    patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
+                with self.assertRaisesRegex(ValueError, "exception is limited"):
+                    release.frozen_payloads(root)
+
+    def test_altered_producer_receipt_or_helper_is_rejected(self):
+        for target in ("build-manifest.json", "xodus-window-monitor.exe"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
+                with patch.object(release, "CLI_SHA256", cli_hash), \
+                        patch.object(release, "HELPER_SHA256", helper_hash), \
+                        patch.object(release, "UNNOTARIZED_PAIR", (cli_hash, helper_hash)), \
+                        patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
+                    with (root / target).open("ab") as output:
+                        output.write(b" ")
+                    with self.assertRaises(ValueError):
+                        release.frozen_payloads(root)
+
+    def test_wrong_producer_commit_or_tree_is_rejected(self):
+        for field in ("source_commit", "source_tree"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                cli_hash, helper_hash = self.fixture(root)
+                path = root / "build-manifest.json"
+                manifest = json.loads(path.read_text())
+                manifest[field] = "0" * 40
+                path.write_text(json.dumps(manifest))
+                with patch.object(release, "CLI_SHA256", cli_hash), patch.object(release, "HELPER_SHA256", helper_hash):
+                    with self.assertRaisesRegex(ValueError, "producer source"):
+                        release.frozen_payloads(root)
+
+    def test_swift_resource_refresh_and_release_pins_agree(self):
+        project = Path(__file__).resolve().parent.parent
+        lifecycle = (project / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text()
+        producer = (project / "Sources/XodusPreview/ShippingProducerPins.swift").read_text()
+        configuration = (project / "Sources/XodusPreview/NativeLaunchConfiguration.swift").read_text()
+        recipe_bytes = (project / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json").read_bytes()
+        recipe = json.loads(recipe_bytes)
+        self.assertIn(f'static let cliSHA256 = "{pins.CLI_SHA256}"', lifecycle)
+        self.assertIn(f'static let commit = "{pins.PRODUCER}"', producer)
+        self.assertIn(f'static let tree = "{pins.PRODUCER_TREE}"', producer)
+        self.assertIn(hashlib.sha256(recipe_bytes).hexdigest(), configuration)
+        self.assertEqual(recipe["cliSha256"], pins.CLI_SHA256)
+        self.assertEqual(recipe["evidenceCliSha256"],
+                         "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604")
+        self.assertEqual(release.CLI_SHA256, refresh_tool.CLI_SHA256)
+        self.assertEqual(release.HELPER_SHA256, refresh_tool.WINDOWS_HELPER_SHA256)
+        self.assertEqual(release.PRODUCER_COMMIT, refresh_tool.PRODUCER)
+        self.assertEqual(release.PRODUCER_TREE, refresh_tool.PRODUCER_TREE)
+        self.assertEqual(release.PRODUCER_MANIFEST_SHA256, refresh_tool.PRODUCER_MANIFEST_SHA256)
+        self.assertEqual(release.UNNOTARIZED_PAIR, (pins.CLI_SHA256, pins.WINDOWS_HELPER_SHA256))
+
+    def test_refresh_rejects_mismatched_payload_or_producer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            cli_hash, helper_hash = self.fixture(root)
+            cli, helper = root / "xodus-cli", root / "xodus-window-monitor.exe"
+            with patch.object(refresh_tool, "CLI_SHA256", cli_hash), \
+                    patch.object(refresh_tool, "WINDOWS_HELPER_SHA256", helper_hash):
+                refresh_tool.validate_payload_pair(cli, helper, pins.PRODUCER, pins.PRODUCER_TREE)
+                for commit, tree in (("0" * 40, pins.PRODUCER_TREE), (pins.PRODUCER, "0" * 40)):
+                    with self.assertRaises(ValueError):
+                        refresh_tool.validate_payload_pair(cli, helper, commit, tree)
+                helper.write_bytes(b"Altered helper")
+                with self.assertRaises(ValueError):
+                    refresh_tool.validate_payload_pair(cli, helper, pins.PRODUCER, pins.PRODUCER_TREE)
+
+    def test_outer_notarization_signature_stapler_and_gatekeeper_remain_mandatory(self):
+        labels = ("app-stapler-staple", "app-stapler-validate", "stapled-app-signature",
+                  "app-gatekeeper", "distribution-app-signature", "dmg-sign",
+                  "dmg-stapler-staple", "dmg-stapler-validate", "dmg-signature", "dmg-gatekeeper")
+        for failure in (None, "app", "dmg", *labels):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                receipt = {"commands": [], "artifacts": {}, "notarized": False}
+                def execute(arguments, stage, receipt, path, label):
+                    if label == failure:
+                        raise ValueError("Required check failed")
+                    receipt["commands"].append({"command": arguments, "label": label})
+                def notarize(path, stage, receipt, receipt_path, label, profile):
+                    if label == failure:
+                        raise ValueError("Notary rejection")
+                    return {"id": "neutral-" + label, "status": "Accepted"}
+                with patch.object(release, "execute", side_effect=execute), \
+                        patch.object(release, "notarize", side_effect=notarize) as notary, \
+                        patch.object(release, "owned_bytes", return_value=({"sha256": "a" * 64}, b"")):
+                    if failure:
+                        with self.assertRaises(ValueError):
+                            release.distribute(root / "Neutral.app", root, receipt, root / "receipt.json", "c" * 40, "notary")
+                        self.assertFalse(receipt["notarized"])
+                    else:
+                        release.distribute(root / "Neutral.app", root, receipt, root / "receipt.json", "c" * 40, "notary")
+                        self.assertTrue(receipt["notarized"])
+                        self.assertEqual([call.args[4] for call in notary.call_args_list], ["app", "dmg"])
+                        self.assertTrue(set(labels).issubset({record["label"] for record in receipt["commands"]}))
 
     def test_exact_payloads_and_accepted_receipt_required(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -14,12 +14,15 @@ import tempfile
 
 from build_local_candidate import source_identity
 from refresh_local_candidate import refresh
-from shipping_pair import hex_value, owned_bytes, require, unique_object
+from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
+                           PRODUCER as PRODUCER_COMMIT, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
+                           hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
 
-CLI_SHA256 = "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
-HELPER_SHA256 = "d5968170c91535385935319a33cb5f680237778cfc85b5e74c5e1be66bdf5535"
-PRODUCER_COMMIT = "a86d2f654b29dd33203022013fd63b34826d47cd"
+UNNOTARIZED_PAIR = (
+    "ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3",
+    "0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7",
+)
 
 
 def read_json(path):
@@ -29,14 +32,35 @@ def read_json(path):
 
 def frozen_payloads(candidate):
     manifest = read_json(candidate / "build-manifest.json")
-    notarization = read_json(candidate / "notarization/receipt.json")
-    require(manifest["source_commit"] == notarization["source_commit"] == PRODUCER_COMMIT,
+    require(manifest["source_commit"] == PRODUCER_COMMIT and manifest["source_tree"] == PRODUCER_TREE,
             "Unexpected frozen producer source")
-    require(manifest["binary_sha256"] == notarization["cli_sha256"] == CLI_SHA256
-            and manifest["helper_sha256"] == notarization["helper_sha256"] == HELPER_SHA256
-            and manifest["helper_embedded_bytes_verified"] is True
-            and notarization["immutable_payloads_unchanged"] is True,
+    require(manifest["binary_sha256"] == CLI_SHA256
+            and manifest["helper_sha256"] == HELPER_SHA256
+            and manifest["helper_embedded_bytes_verified"] is True,
             "Frozen payload receipts do not agree")
+    cli, helper = candidate / "xodus-cli", candidate / "xodus-window-monitor.exe"
+    cli_identity, cli_bytes = owned_bytes(cli, CLI_SHA256, bounded=512 * 1024 * 1024)
+    helper_identity, helper_bytes = owned_bytes(helper, HELPER_SHA256, bounded=16 * 1024 * 1024)
+    require(helper_bytes in cli_bytes, "Adjacent Windows helper differs from actual embedded CLI bytes")
+    if manifest.get("notarization", {}).get("status") == "NOT_SUBMITTED":
+        require((cli_identity["sha256"], helper_identity["sha256"]) == UNNOTARIZED_PAIR,
+                "Standalone notarization exception is limited to the exact approved ebd56e pair")
+        manifest_identity, _ = owned_bytes(candidate / "build-manifest.json", PRODUCER_MANIFEST_SHA256)
+        require(manifest["notarization"]["submission_id"] is None
+                and manifest["notarization"]["accepted_receipt"] is None,
+                "Unnotarized producer must not claim an Apple acceptance")
+        return cli, helper, {
+            "cli": cli_identity, "windowsHelper": helper_identity,
+            "producerCommit": PRODUCER_COMMIT, "producerTree": PRODUCER_TREE,
+            "buildManifest": manifest_identity, "standaloneNotarized": False,
+            "combinedAppleSubmission": None, "outerAppNotarizationRequired": True,
+        }
+    notarization = read_json(candidate / "notarization/receipt.json")
+    require(notarization["source_commit"] == PRODUCER_COMMIT
+            and notarization["cli_sha256"] == CLI_SHA256
+            and notarization["helper_sha256"] == HELPER_SHA256
+            and notarization["immutable_payloads_unchanged"] is True,
+            "Frozen notarization receipt does not agree")
     submission = notarization["combined_payload_submission"]
     require(submission["status"] == "Accepted", "CLI/helper combined notarization was not accepted")
     require(isinstance(submission["receipt"], str)
@@ -45,12 +69,9 @@ def frozen_payloads(candidate):
     apple = read_json(candidate / "notarization" / submission["receipt"])
     require(apple["id"] == submission["id"] and apple["status"] == "Accepted",
             "Apple combined-payload submission does not match the producer receipt")
-    cli, helper = candidate / "xodus-cli", candidate / "xodus-window-monitor.exe"
-    cli_identity, cli_bytes = owned_bytes(cli, CLI_SHA256, bounded=512 * 1024 * 1024)
-    helper_identity, helper_bytes = owned_bytes(helper, HELPER_SHA256, bounded=16 * 1024 * 1024)
-    require(helper_bytes in cli_bytes, "Adjacent Windows helper differs from actual embedded CLI bytes")
     return cli, helper, {"cli": cli_identity, "windowsHelper": helper_identity,
-                         "producerCommit": PRODUCER_COMMIT, "producerTree": manifest["source_tree"],
+                         "producerCommit": PRODUCER_COMMIT, "producerTree": PRODUCER_TREE,
+                         "standaloneNotarized": True, "outerAppNotarizationRequired": True,
                          "notarizationReceipt": owned_bytes(candidate / "notarization/receipt.json")[0],
                          "combinedAppleSubmission": apple["id"]}
 
@@ -260,7 +281,7 @@ def main():
     parser.add_argument("--installed-app", type=Path, help="Read-only icon and prior receipt source")
     parser.add_argument("--output-root", type=Path)
     parser.add_argument("--identity")
-    parser.add_argument("--candidate", type=Path, help="Frozen adf8 directory with S2 notarization receipts")
+    parser.add_argument("--candidate", type=Path, help="Frozen payload directory with approved producer receipts")
     parser.add_argument("--producer-source", type=Path)
     parser.add_argument("--resume-receipt", type=Path, help="Submit the exact already-signed successful dry-run app")
     parser.add_argument("--notary-profile", default="notary")

@@ -32,6 +32,12 @@ notarized c22029c artifact.
 
 ### One-command pinned release candidate
 
+The `ebd56e` adoption is preparation only until owner approval: no release,
+notarization, install or activation is authorized by this source change.
+After approval, merge the preparation commit and use the existing command
+below at the resulting clean full commit. The installed `42f793d` RC remains
+unchanged in the meantime.
+
 From the clean checkout at `FULL_APP_COMMIT`, run:
 
 ```sh
@@ -40,7 +46,7 @@ python3 tools/release_candidate.py \
   --installed-app "$HOME/Applications/Ode to X Local Candidate.app" \
   --output-root "$PWD/.build/local-candidates" \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
-  --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604" \
+  --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/ebd56e56a23cdd73de884e80d4288eed6014a40435e7253c49a0cf42f8803fe3" \
   --producer-source /absolute/frozen-xodus-macos-checkout \
   --notary-profile notary \
   --dry-run
@@ -49,10 +55,30 @@ python3 tools/release_candidate.py \
 `--dry-run` performs the real pinned build and Developer-ID signing in a new
 owned output directory; it does not submit to Apple, install or activate.
 The installed app supplies only its verified icon and prior receipt.
-The command verifies S2's exact immutable CLI/helper bytes, the helper's actual
-embedding, and their accepted Apple combined-submission receipt. It preserves
-the Windows helper unchanged beside the CLI; the separately built Mach-O
-authentication helper is signed independently.
+The command verifies S2's exact immutable CLI/helper bytes, actual embedding,
+producer commit `e98dc882bfc1bce9f86be8805038632a16c820e7`, tree
+`a4d292816de8276c964ce0706d5e05f14c524f01`, and producer manifest SHA256
+`2e6354f50f133a09228247a44f609ad3d0ef217f03c2a9f7900ab5a706255980`.
+The actual embedded Windows helper SHA256 is
+`0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7`
+(20,480 bytes at offset 13,584,269), **not** the older adf8 helper's `d5968170`.
+Although only PE timestamp/checksum bytes differ, they are not raw-byte equal.
+The helper is preserved beside the CLI; the separately built Mach-O
+authentication helper is signed independently. The producer manifest records
+the historical build/test provenance, not a new build or independently
+reproduced binary.
+
+This exact CLI/helper pair alone may enter the pipeline without standalone
+notarization. Its manifest truthfully says `NOT_SUBMITTED`, with null
+submission/acceptance pointers; the release receipt records
+`standaloneNotarized:false` and `outerAppNotarizationRequired:true`.
+An unknown/altered binary, helper, manifest, source or tree is rejected.
+Changing the general packaging pins cannot extend this fixed exception.
+No Apple acceptance is fabricated. All other standalone inputs still require
+the existing accepted combined-submission receipt and exact approved hashes.
+The normal outer-app and DMG notarization, codesign, stapler and Gatekeeper
+checks remain mandatory before `notarized_candidate`; a dry-run is never that
+state.
 
 After the HK saved-quit/tile-relaunch handoff and the frozen free NMS binding
 are admitted, omit `--dry-run` to build, sign, submit the app, require Accepted,
@@ -80,8 +106,8 @@ replayed: reconcile its recorded Apple submission before retrying.
 
 ### Supported local-candidate build
 
-For a UI-only refresh with the currently installed, verified Developer ID CLI,
-use the explicit preservation path:
+For a UI-only refresh after the approved pinned CLI/helper is installed, use
+the explicit preservation path:
 
 ```sh
 python3 tools/refresh_local_candidate.py \
@@ -100,7 +126,7 @@ Every UI-affecting commit must be followed by build, install, relaunch and
 real-screen inspection; source checks alone do not update the user's app.
 
 To replace that CLI with an immutable, already signed S2 artifact, supply all
-three explicit producer inputs:
+four explicit producer inputs:
 
 ```sh
 python3 tools/refresh_local_candidate.py \
@@ -109,16 +135,25 @@ python3 tools/refresh_local_candidate.py \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
   --cli /absolute/immutable-candidate/xodus-cli \
   --producer-source /absolute/producer-repository \
-  --producer-commit FULL_FROZEN_COMMIT
+  --producer-commit e98dc882bfc1bce9f86be8805038632a16c820e7 \
+  --windows-helper /absolute/immutable-candidate/xodus-window-monitor.exe
 ```
 
-The tool verifies the signed CLI, resolves that exact commit/tree, compares its
-management schema, and regenerates the app/CLI/helper pairing. Its receipt
+The tool verifies the signed CLI and exact helper embedding, resolves the
+pinned commit/tree, compares its management schema, verifies the producer
+manifest hash, and regenerates the app/CLI/helper pairing. Its receipt
 records selection rather than claiming that the packager reproduced S2's
 binary. The native lifecycle digest must also match `NativeLifecyclePins`.
 An explicit frozen S2 CLI keeps its producer signing identifier and is checked
 against the selected certificate leaf and frozen digest, rather than requiring
 the app packager's different CLI identifier. Its original bytes are preserved.
+
+The runtime catalogue's `cliSha256` binds the selected `ebd56e` packaging
+target. Its separately pinned `evidenceCliSha256` remains `adf8`: existing
+Abiotic/Hogwarts recipe observations are historical adf8 observations, not
+retroactive ebd or app-E2E qualifications. Their run/receipt/recipe fields
+remain unchanged. This preparation does not promote Brotato or change any
+WORKING verdict.
 
 Runtime settings can select an **experimental local** `xgameruntime.dll` and
 its sibling `xgameruntime_legacy.dll`. Both hashes are captured at selection and
@@ -138,7 +173,7 @@ the selected local profile directory. Explicit provider selection remains an
 engine override, except that an observed engine-specific STA setting cannot
 silently follow a different engine selection.
 
-The next RC embeds S2's **unchanged** `b464aadf03af9b5fe78f9362c422e32260c66533`
+The earlier adf8 RC originally embedded S2's `b464aadf03af9b5fe78f9362c422e32260c66533`
 `docs/recipes/title-runtime-v1.json` (SHA256
 `9cddef7cf30a9553f2ab3e9b5cffa4d5812c4fd260e03f32bf1e507c2931dd76`).
 Only `pendingTest:false` + `status:title-screen-observed` with a real run,
@@ -149,8 +184,11 @@ d3dshared-library override are removed. Its base Apple4 direct-Shipping
 recipe and 600-second diagnostic limit remain; this is title-screen-only
 evidence, not gameplay or save qualification.
 
-Hogwarts and all other pending entries remain data-only diagnostic inventory
-and never auto-apply. The earlier four queued COM bindings are withdrawn from
+Hogwarts was pending in that snapshot; the accepted `42f793d` RC subsequently
+admitted its exact WORKING/retention/ordinary-quit recipe. This preparation
+preserves that recipe without claiming it was observed on ebd.
+All still-pending entries remain data-only diagnostic inventory and never
+auto-apply. The earlier four queued COM bindings are withdrawn from
 normal launch until observed. A stale local pending STA profile is rejected
 explicitly, not silently promoted. Unknown titles and working HK/NMS routes
 remain unchanged.
@@ -173,8 +211,8 @@ Structured CrossOver environment values are shell-quoted for the adapter's
 are removed from the inherited environment. The app creates an owned
 per-launch registry document with the same engine name/executable and
 checksum-checked setup, leaving the shared registry and tested prefix alone.
-Fresh app prefixes remain separate from the tested CLI prefix; the new adf8
-CLI and actual tile/save/relaunch path still need app acceptance.
+Fresh app prefixes remain separate from the tested CLI prefix; the ebd
+CLI and actual tile/save/relaunch path still need their own app acceptance.
 
 `hollow-knight-local-saves-candidate-v1.json` is deliberately absent from the
 active profile catalogue. It prepares a CrossOver mirror for private local
@@ -195,9 +233,10 @@ remain the CLI's responsibility.
 
 An optional exact `engine` in a title profile binds its current qualified recipe
 ahead of historical gameplay evidence, while explicit provider selections still
-win. The next local lifecycle candidate is pinned to CLI `adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604`,
+win. The previous local lifecycle candidate was pinned to CLI `adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604`,
 producer `a86d2f654b29dd33203022013fd63b34826d47cd`, tree
-`6044d5fff819393de39fae577ba9dd9bddbe795d`. This candidate applies the
+`6044d5fff819393de39fae577ba9dd9bddbe795d`. The ebd preparation supersedes only
+these packaging pins with the exact producer/pair above. Both apply the
 selected registry engine's checksum-checked `prefix_registry_imports` after
 overlays and before launch, so a fresh Hollow Knight native-JSON prefix does
 not rely on registrations left by a historical test.
