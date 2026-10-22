@@ -891,6 +891,13 @@ enum PCGamesChecks {
         check(passOnly.sourceLabel(for: mortis.id) == "PC Game Pass catalogue"
               && passOnly.sourceLabel(for: "FIXTURE00001") == "Xbox / Microsoft Store",
               "#44: Source labels distinguish PC Game Pass membership from public Store discovery without claiming account coverage")
+        check(DiscoverCopy.sourceDescription(query: "", corpus: "observedPublicProducts")
+                .contains("Previously loaded public product details")
+              && DiscoverCopy.sourceDescription(query: "", corpus: "pcGamePassDiscovery")
+                .contains("Source: Xbox PC Game Pass catalogue")
+              && DiscoverCopy.sourceDescription(query: "mortis", corpus: "observedPublicProducts")
+                .contains("Sources: Xbox and Microsoft Store search"),
+              "#44: Cached Explore never claims it came from a live search or the full Game Pass catalogue")
         let canonicalMortis = "https://www.xbox.com/ro-RO/games/store/valor-mortis/9p861v1542bl"
         let romanianScope = CatalogLocale.preferred(region: "RO", languages: ["en-US", "ro-RO"])
         let americanScope = CatalogLocale.preferred(region: "US", languages: ["en-US", "ro-RO"])

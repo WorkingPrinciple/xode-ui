@@ -38,6 +38,16 @@ enum DiscoverCopy {
         String(localized: "No other games match “\(query)”.")
     }
     static let emptyDescription = String(localized: "Try another title or clear your search.")
+
+    static func sourceDescription(query: String, corpus: String) -> String {
+        if !query.isEmpty {
+            return "Sources: Xbox and Microsoft Store search, plus loaded PC Game Pass matches. Your games appear separately."
+        }
+        if corpus == "pcGamePassDiscovery" {
+            return "Source: Xbox PC Game Pass catalogue. Catalogue membership is not account access."
+        }
+        return "Source: Previously loaded public product details. This selection is not the full Store or Game Pass catalogue."
+    }
 }
 
 #if !XODUS_SHIPPING
@@ -140,9 +150,7 @@ struct LiveCatalogView: View {
                                 .accessibilityIdentifier("xodus.catalog.stop")
                         }
                     }
-                    Text(query.isEmpty && session.catalogCorpus == "pcGamePassDiscovery"
-                         ? "Source: Xbox PC Game Pass catalogue. Catalogue membership is not account access."
-                         : "Sources: Xbox and Microsoft Store search, plus loaded PC Game Pass matches. Your games appear separately.")
+                    Text(DiscoverCopy.sourceDescription(query: query, corpus: session.catalogCorpus))
                         .font(.callout).foregroundStyle(.secondary)
                         .accessibilityIdentifier("xodus.catalog.sources")
                     if !query.isEmpty, library.snapshot == nil {
