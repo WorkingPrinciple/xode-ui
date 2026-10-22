@@ -140,6 +140,11 @@ struct LiveCatalogView: View {
                                 .accessibilityIdentifier("xodus.catalog.stop")
                         }
                     }
+                    Text(query.isEmpty && session.catalogCorpus == "pcGamePassDiscovery"
+                         ? "Source: Xbox PC Game Pass catalogue. Catalogue membership is not account access."
+                         : "Sources: Xbox and Microsoft Store search, plus loaded PC Game Pass matches. Your games appear separately.")
+                        .font(.callout).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("xodus.catalog.sources")
                     if !query.isEmpty, library.snapshot == nil {
                         Text("Load your PC library in Library to include your games in search.")
                             .font(.callout).foregroundStyle(.secondary)
@@ -350,6 +355,14 @@ struct LiveCatalogView: View {
             }
             LibraryGameInformation(access: LibraryAccess(game), gamePass: game.gamePass,
                                    facts: facts[game.id], compact: true, showsPrice: true)
+            Text("Source: \(results.sourceLabel(for: game.id))")
+                .font(.caption).foregroundStyle(.secondary)
+                .accessibilityIdentifier("xodus.catalog.source.\(game.id)")
+            if game.gamePass {
+                Text("PC Game Pass · your plan coverage not verified")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("xodus.catalog.plan.\(game.id)")
+            }
             if game.pc == nil, !game.owned {
                 Text(library.accessIsCurrent ? "Not in your PC library" : "Ownership not verified")
                     .font(.caption).foregroundStyle(.secondary)

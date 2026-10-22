@@ -260,7 +260,7 @@ final class GameOperationsController: ObservableObject {
         guard issues.isEmpty else {
             if operation == nil && !checkingCompatibility {
                 resetFeedback(productID: productID)
-                error = "Not supported yet. " + issues.map(\.detail).joined(separator: " ")
+                error = issues.map(\.detail).joined(separator: " ")
             }
             return false
         }

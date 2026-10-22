@@ -22,7 +22,7 @@ enum LibraryAccessChecks {
               "OX-9/UI-3: Real bundled admission exactly matches S4's evolving supported01 facts")
         check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "none").isEmpty,
               "0.1 admits MSIXVC with explicit no-anti-cheat classification")
-        for format in ["MSIX", "Appx", "EAppx", "UWP", "Win32", "Unspecified", ""] {
+        for format in ["MSIX", "Appx", "EAppx", "UWP"] {
             check(GameSupportPolicy.issues(packageFormat: format, antiCheat: "none")
                 .contains(where: { $0.kind == .packageType }),
                   "0.1 rejects non-MSIXVC package format: \(format)")
@@ -36,10 +36,18 @@ enum LibraryAccessChecks {
             check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: technology).isEmpty,
                   "User-directed policy allows trying MSIXVC without inventing an anti-cheat blocker: \(technology ?? "missing")")
         }
-        check(GameSupportPolicy.issues(packageFormat: nil, antiCheat: nil).count == 1
+        check(GameSupportPolicy.issues(packageFormat: nil, antiCheat: nil).isEmpty
+              && ["Win32", "Unspecified", "", "Unknown"].allSatisfy {
+                  GameSupportPolicy.issues(packageFormat: $0, antiCheat: "unknown").isEmpty
+              }
               && !GameSupportPolicy.issues(packageFormat: "MSIXVC / EAppx", antiCheat: "none").isEmpty
               && GameSupportPolicy.issues(packageFormat: "msixvc", antiCheat: " none ").isEmpty,
-              "Missing or ambiguous formats fail closed; only a classified MSIXVC package is cleared")
+              "#44: Unknown formats are not unsupported; known EAppx remains a specific blocker without granting install or verified status")
+        check(LibrarySupportVisibility.isVisible(productID: "FIXTURE00001", installed: false,
+                  packageFormat: nil, compatibility: nil, showsUnsupportedGames: false)
+              && LibrarySupportVisibility.issues(productID: "FIXTURE00001", installed: false,
+                  packageFormat: nil, compatibility: nil, catalogue: nil).isEmpty,
+              "#44: A title absent from the shipped database remains visible by default without a generic unknown blocker")
         for technology in [Optional("none"), "Easy Anti-Cheat", "unknown", nil] {
             var input = rawCatalogue ?? [:]
             var product = rawProducts["9P4NV23Q6QC2"] ?? [:]

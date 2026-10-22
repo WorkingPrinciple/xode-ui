@@ -245,7 +245,7 @@ struct LibrarySupportMenu: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("When off, shows only MSIXVC games classified without anti-cheat. Unclassified games are not treated as supported.")
+        .help("When off, hides games with known package or anti-cheat blockers. Unknown games remain visible; installation and gameplay are not verified.")
         .accessibilityIdentifier("xodus.library.showUnsupported")
     }
 }
@@ -264,13 +264,15 @@ enum LibrarySupportVisibility {
                 title: issue.kind == .antiCheat ? "Uses \(issue.title)" : issue.title,
                 detail: issue.detail, source: issue.source))
         }
-        if let compatibility, !compatibility.supported {
+        if let compatibility, !compatibility.supported,
+           [.antiCheatUnsupported, .packageTypeUnsupported].contains(compatibility.category),
+           let reason = compatibility.reason, !reason.isEmpty {
             let kind: LibraryCompatibilityIssueKind = compatibility.category == .antiCheatUnsupported
                 ? .antiCheat : compatibility.category == .packageTypeUnsupported ? .packageType : .runtime
             let issue = LibraryCompatibilityIssue(
                 kind: kind,
-                title: kind == .antiCheat ? "Anti-cheat" : kind == .packageType ? "Package type" : "Runtime",
-                detail: compatibility.reason ?? "This game isn't supported on Mac yet.",
+                title: reason,
+                detail: reason,
                 source: nil
             )
             if !issues.contains(where: { $0.kind == issue.kind }) { issues.append(issue) }
@@ -287,9 +289,8 @@ enum LibrarySupportVisibility {
 
     static func isVisible(productID: String, installed: Bool, packageFormat: String?,
                           compatibility: GameCompatibilityResult?, showsUnsupportedGames: Bool) -> Bool {
-        showsUnsupportedGames || (OfflineGameCompatibility.snapshot?.products[productID]?.supported01 == true
-            && issues(productID: productID, installed: installed, packageFormat: packageFormat,
-                      compatibility: compatibility).isEmpty)
+        showsUnsupportedGames || issues(productID: productID, installed: installed, packageFormat: packageFormat,
+                                        compatibility: compatibility).isEmpty
     }
 }
 
@@ -469,18 +470,21 @@ struct LibraryAccessBadge: View {
                 .padding(.horizontal, compact ? 8 : 10).padding(.vertical, 4)
                 .modifier(LibraryBadgeMaterial())
                 .accessibilityLabel(access.rawValue)
+                .help(access.help)
         } else if access == .gamePass {
-            Label("Game Pass", systemImage: "xbox.logo")
-                .font((compact ? Font.caption : .callout).weight(.semibold))
+            Image(systemName: "xbox.logo")
+                .font(.system(size: compact ? 10 : 12, weight: .semibold))
                 .foregroundStyle(.white)
-                .padding(.horizontal, compact ? 8 : 10).padding(.vertical, 4)
-                .background(Color(red: 16 / 255, green: 124 / 255, blue: 16 / 255), in: Capsule())
-                .accessibilityLabel(access.rawValue)
+                .frame(width: compact ? 16 : 18, height: compact ? 16 : 18)
+                .background(Color(red: 16 / 255, green: 124 / 255, blue: 16 / 255), in: Circle())
+                .accessibilityLabel("Included with Game Pass (PC catalogue; other tiers not verified)")
+                .help("Included with Game Pass (PC catalogue). Your subscription tier and other plans are not verified.")
         } else {
             Label(access.rawValue, systemImage: access.symbol)
                 .font(compact ? .caption : .callout)
                 .padding(.horizontal, compact ? 8 : 10).padding(.vertical, 4)
                 .modifier(LibraryBadgeMaterial())
+                .help(access.help)
         }
     }
 }
@@ -532,10 +536,10 @@ struct LibraryGameInformation: View {
         VStack(alignment: .leading, spacing: compact ? 5 : 8) {
             HStack(spacing: 8) {
                 if let access {
-                    LibraryAccessBadge(access: access, compact: compact).help(access.help)
+                    LibraryAccessBadge(access: access, compact: compact)
                 }
                 if gamePass, access == nil || access == .owned {
-                    LibraryAccessBadge(access: .gamePass, compact: compact).help(LibraryAccess.gamePass.help)
+                    LibraryAccessBadge(access: .gamePass, compact: compact)
                 }
                 if let facts, !facts.genres.isEmpty {
                     Label(compact ? facts.genres[0] : facts.genres.joined(separator: " / "), systemImage: "tag")
@@ -668,7 +672,6 @@ struct LibraryCompatibilityIndicators: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Not supported yet").font(.callout.weight(.semibold))
             ForEach(issues) { issue in
                 Label(issue.title, systemImage: issue.kind.symbol)
                     .font(.callout)

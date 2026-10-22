@@ -316,7 +316,7 @@ final class InstalledGamesController: ObservableObject {
         let issues = LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
             packageFormat: game.packageType?.label, compatibility: nil, catalogue: compatibilityCatalogue)
         guard issues.isEmpty else {
-            playErrors[game.id] = "Not supported yet. " + issues.map(\.detail).joined(separator: " ")
+            playErrors[game.id] = issues.map(\.detail).joined(separator: " ")
             return
         }
         if let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId,

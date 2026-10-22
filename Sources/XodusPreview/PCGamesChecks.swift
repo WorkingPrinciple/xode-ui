@@ -888,6 +888,9 @@ enum PCGamesChecks {
             storeProducts: [], gamePassProductIDs: [mortis.id], gamePassProducts: [mortis])
         check(passOnly.storeProducts.map(\.id) == [mortis.id],
               "#40: Loaded Game Pass matches survive a missing Store page without broadening unrelated results")
+        check(passOnly.sourceLabel(for: mortis.id) == "PC Game Pass catalogue"
+              && passOnly.sourceLabel(for: "FIXTURE00001") == "Xbox / Microsoft Store",
+              "#44: Source labels distinguish PC Game Pass membership from public Store discovery without claiming account coverage")
         let canonicalMortis = "https://www.xbox.com/ro-RO/games/store/valor-mortis/9p861v1542bl"
         let romanianScope = CatalogLocale.preferred(region: "RO", languages: ["en-US", "ro-RO"])
         let americanScope = CatalogLocale.preferred(region: "US", languages: ["en-US", "ro-RO"])

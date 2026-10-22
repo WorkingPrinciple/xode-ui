@@ -15,8 +15,9 @@ enum GameSupportPolicy {
             $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         } ?? []
         var issues: [LibraryCompatibilityIssue] = []
-        if formats != ["MSIXVC"] {
-            let format = packageFormat.flatMap { $0.isEmpty ? nil : $0 } ?? "Package format not identified"
+        let blockers = formats.filter { !["", "MSIXVC", "UNKNOWN", "UNSPECIFIED", "WIN32"].contains($0) }
+        if !blockers.isEmpty {
+            let format = blockers.joined(separator: " / ")
             issues.append(LibraryCompatibilityIssue(kind: .packageType, title: format,
                 detail: "\(format). Ode to X 0.1 supports MSIXVC packages only.", source: nil))
         }

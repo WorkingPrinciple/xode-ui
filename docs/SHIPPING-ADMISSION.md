@@ -30,6 +30,29 @@ Valor Mortis and Asphalt Legends successfully in RO/ro-RO with explicit
 that installed UI or Brotato runtime acceptance has already passed. The prior
 notarized-release exception is not extended to this unnotarized local candidate.
 
+Installed `122532b` with that signed pair passed the full local check and actual
+AX observation: the lens focused its 220-point editor, `mortis` returned Valor
+Mortis at `199,99 RON`, Asphalt Legends displayed Free, and its real external-page
+confirmation was cancelled by Escape without invoking Open. All eight distinct
+Verified working title badges remained. The receipt and full-screen captures are
+under `~/Library/Application Support/XodusCLI/proofs/ode-search-acquisition-122532b/`.
+Brotato runtime acceptance remains separate.
+
+### Discover metadata and support defaults (#44)
+
+Unknown package or anti-cheat facts are not known incompatibility. They no longer
+hide a title or produce a generic unsupported label. Named package and anti-cheat
+blockers remain visible as their specific reasons; install consent, account
+access, runtime inspection, and Verified working evidence remain independent.
+The shipped classification database and its evidence are not rewritten.
+
+Game Pass metadata uses a small Xbox sphere in a green circle, not a wrapping
+pill. Discover identifies PC-library, PC Game Pass and Xbox/Store sources. Its
+current contract establishes PC catalogue membership, not per-title membership
+in Ultimate, Standard or Core, nor the account's named plan. Until source-backed
+tier data is supplied, the UI labels PC Game Pass and explicitly says plan
+coverage is not verified; it must not invent membership or an access grant.
+
 Product links (#42) resolve Microsoft's public `/store/productId/<id>` route
 with explicit market and locale, follow only matching Microsoft/Xbox redirects,
 and require a successful Xbox page with a matching canonical slug, ID and locale.

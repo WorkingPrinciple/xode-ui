@@ -37,4 +37,9 @@ struct CatalogSearchResults {
         if ownedByID[productID] != nil { return .owned }
         return gamePassProductIDs.contains(productID) ? .gamePass : nil
     }
+
+    func sourceLabel(for productID: String) -> String {
+        if ownedByID[productID] != nil { return "Your PC library" }
+        return gamePassProductIDs.contains(productID) ? "PC Game Pass catalogue" : "Xbox / Microsoft Store"
+    }
 }
