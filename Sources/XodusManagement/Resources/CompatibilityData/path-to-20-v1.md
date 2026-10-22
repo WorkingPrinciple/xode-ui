@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T12:41:15.679541+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
+Updated 2026-10-22T13:12:16.430802+00:00; **8/20 strict WORKING**. Brotato candidate excluded. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
