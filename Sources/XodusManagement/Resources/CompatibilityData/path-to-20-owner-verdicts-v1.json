@@ -1,5 +1,34 @@
 {
   "schemaVersion": 1,
+  "protectedSessionArchive": {
+    "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
+    "reportedAt": "2026-10-22T21:20:05.486+00:00",
+    "index": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/index.json",
+      "sha256": "b42c7196659c83d0956a6f2b74d4036a81de8cdf3b6032c24042c52244d39103"
+    },
+    "integrity": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/integrity.json",
+      "sha256": "add919295fa9f985c51a6614c77076cc7b126fa9c16bffb94a0a4b9fedee6d0a"
+    },
+    "ownerReportedCoverage": {"references": 1176, "uniquePayloads": 1133, "copyFailures": 0},
+    "scope": "S4 verified two manifest hashes only; coverage/copy results S3-reported. Protected session artifacts, not a claim that historical pre-write save bytes are archived. Overlaps other inventories; not additive coverage. No raw copied into git or live-save read/write."
+  },
+  "clickAttributionValidation": {
+    "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
+    "reportedAt": "2026-10-22T21:20:05.486+00:00",
+    "integrity": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-click-validation-02/integrity.json",
+      "sha256": "08d220fc49ff92cd25c8917cce23b1bc2bcf50923522fea9e38feab7d13ce271"
+    },
+    "sourceArchiveIntegrity": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-click-validation-02/source-archive/integrity.json",
+      "sha256": "b0a6a62f192f8385cf0bdbf4a04be8701ce42e560b77e5c74a8213660bf700cc"
+    },
+    "ownerReportedResult": "No-game receiver PASS: exact PID236/HWND10052 down1/up1 hold102ms; missingPID2/wrongPID3; helper0/receiver0/cleanup-k0/-w0, process check clean.",
+    "scope": "S4 verified manifest hashes, not independently rerun receiver. No-game tool validation, NOT retroactive Stardew quit attribution or a new game qualification. No Stardew launch.",
+    "sourceCommit": "e193253"
+  },
   "protectedSaveArchiveGapAudit": {
     "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
     "reportedAt": "2026-10-22T21:13:57.929+00:00",
