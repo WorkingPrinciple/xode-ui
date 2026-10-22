@@ -71,6 +71,26 @@
   },
   "items": [
     {
+      "storeId": "9MXND4PQLK3W", "title": "DOOM 64",
+      "verdict": "TITLE_SCREEN_PASS", "reportedAt": "2026-10-22T21:16:36.509+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "f48890de-abb9-4655-857a-20ec21354939",
+      "gates": {"menu": "passed", "quit": "not-passed"},
+      "nextGate": "gameplay", "ownerStream": "S3",
+      "blocker": "Title logo rendered60FPS D3D11; passive forced end/CLI0, no ordinary quit, gameplay or retention qualification.",
+      "scope": "S2 index56e3acbd and existing safe verdict: doom64-passive-cli68f-v1-card-8647/verdict.json. Input-capable test needs separate admission."
+    },
+    {
+      "storeId": "9P2J5D12GJL5", "title": "Oblivion GOTY (2009)",
+      "verdict": "PRE_WINE_STAGE_ENOSPC", "reportedAt": "2026-10-22T21:16:36.509+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "f1339edf-f389-44a5-b2e6-2ca01357dc86",
+      "gates": {"menu": "not-passed"},
+      "nextGate": "RAM-stage accounting fix", "ownerStream": "S2",
+      "blocker": "Before Wine: ENOSPC copying runtime/shims into six executable directories on RAM stage, despite118GiB host free. Bounded source fix authorized, no retry yet.",
+      "scope": "S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json. Runtime pair/shim overlay bytes omitted from RAM-stage sizing. Not evidence of host110GiB floor failure or game-rendering incompatibility."
+    },
+    {
       "storeId": "9N8C07SS8C9D", "title": "FINAL FANTASY IV",
       "verdict": "TITLE_SCREEN_PASS", "reportedAt": "2026-10-22T20:37:38+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
@@ -116,32 +136,32 @@
       {
         "storeId": "9NQVHHW88XW9",
         "title": "Bluey's Happy Snaps",
-        "verdict": "BLOCKED_PREREQ",
-        "reportedAt": "2026-10-22T20:37:00+00:00",
+        "verdict": "ACKNOWLEDGEMENT_SCREEN_RENDERING",
+        "reportedAt": "2026-10-22T21:16:36.509+00:00",
         "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d",
-        "runId": "a46723e9-6255-4f03-9c78-4fc3c0ecd3f6",
+        "runId": "ebc1342a-216e-466a-a506-bc6517bba7a5",
         "evidenceReceipt": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/bluey-happy-snaps-passive-cli68f-v1/attempt/receipt.json",
         "evidenceSha256": "d251c9601529febdace2ffb161af44c091496e103229b978266a025d1db28a22",
         "gates": {"menu": "not-passed", "quit": "not-passed"},
-        "nextGate": "prefix prerequisite setup",
-        "ownerStream": "S2",
-        "blocker": "VC++2015-2022 redist-required dialog, no title screen. Native-first VC prerequisite candidate approved by coordinator; rerun waits for S3 screen release, not automatic.",
-        "scope": "S2 passive creation-dx11-d3dmetal/CLI68f349d4; receipt confirms redistributable dialog, gameplay_qualified=false, forced-k0/-w0. Process0 is not title or normal-quit proof. License separately GRANTED."
+        "nextGate": "acknowledgement Continue / gameplay",
+        "ownerStream": "S3",
+        "blocker": "VC prerequisite resolved; animated Gameloft acknowledgement/Continue60FPS, passive only/forced end0. No main menu, gameplay, retention or ordinary quit admission.",
+        "scope": "S2 index56e3acbd; bluey-happy-snaps-passive-vc14-v1/verdict.json. Official redist/native-first CRT clears prior prerequisite dialog. Earlier evidenceReceipt identifies historical blocked attempt, not this new run."
       },
       {
         "storeId": "9PJPCB188SVG",
         "title": "Subnautica 2",
-        "verdict": "BLOCKED_PREREQ",
-        "reportedAt": "2026-10-22T20:37:00+00:00",
+        "verdict": "HUMAN_CONSENT_HOLD",
+        "reportedAt": "2026-10-22T21:16:36.509+00:00",
         "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d",
-        "runId": "76c3b3bf-e383-4dfc-893d-3ad3ce0b930c",
+        "runId": "c5e0b3ba-95c8-4d10-bf34-495f1a6110fe",
         "evidenceReceipt": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/subnautica2-bootstrap-passive-cli68f-v1/attempt/receipt.json",
         "evidenceSha256": "6e971438d7049ee3a8d4a275d4cbb3f68cf1ce7a1cc4cb6473adda6719c8c1ff",
         "gates": {"menu": "not-passed", "quit": "not-passed"},
-        "nextGate": "prefix prerequisite setup",
-        "ownerStream": "S2",
-        "blocker": "VC++2015-2022 redist-required dialog, no title screen. Native-first VC prerequisite candidate approved by coordinator; rerun waits for S3 screen release, not automatic.",
-        "scope": "S2 passive apple-gptk-4.0b3/CLI68f349d4; receipt confirms redistributable dialog, gameplay_qualified=false, forced-k0/-w0. Process0 is not title or normal-quit proof. License separately GRANTED."
+        "nextGate": "human ToS consent",
+        "ownerStream": "user/coordinator",
+        "blocker": "VC prerequisite resolved; ToS/privacy screen31-38FPS, passive0. HUMAN CONSENT HOLD: no Agree input or legal acceptance authorized.",
+        "scope": "S2 index56e3acbd; subnautica2-bootstrap-passive-vc14-v1/verdict.json. Rendering not gameplay/retention/normal quit. Earlier evidenceReceipt identifies historical blocked attempt only. Existing package license GRANTED does not grant legal consent."
       },
     {
       "storeId": "9PBWWQGXVMKC",
@@ -178,15 +198,15 @@
     {
       "storeId": "9P861V1542BL",
       "title": "Valor Mortis",
-      "verdict": "INCONCLUSIVE",
-      "reportedAt": "2026-10-22T19:51:42.038+00:00",
+      "verdict": "EARLY_EXIT_1_NO_WINDOW",
+      "reportedAt": "2026-10-22T21:16:36.509+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "792b6f4e",
+      "runId": "30e44a64-ce07-4e43-bb79-77a175729226",
       "gates": {"menu": "not-passed"},
-      "nextGate": "prefix prerequisite setup",
+      "nextGate": "COM marshal diagnosis / parked",
       "ownerStream": "S2",
-      "blocker": "Passive792b6f4e blocked by missing VC++ redistributable prerequisite in prefix. S2 setup required; no title/gameplay/retention qualification or new launch grant.",
-      "scope": "Coordinator 22:51 report: missing VC++ redist is prefix setup, not evidence of unsupported game rendering. Supersedes historical download-only hold; no fresh install-status receipt supplied to S4."
+      "blocker": "VC prerequisite resolved, but exit1/no window. COM IID marshal0x80004002/mismatched Uninitialize observed; parked, no unchanged repeat.",
+      "scope": "S2 index56e3acbd; valor-mortis-apple4-passive-vcoverrides-v1/verdict.json. IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca off-screen lookup before any separately authorized retry; log fingerprint not proven causal diagnosis."
     },
     {
       "storeId": "9MWR1NC6VQ6L",

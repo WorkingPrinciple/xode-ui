@@ -71,6 +71,10 @@ class PathTo20Tests(unittest.TestCase):
         sid = "9P861V1542BL"
         inputs["matrix"]["snapshot"]["games"] = [
             row for row in inputs["matrix"]["snapshot"]["games"] if row["productId"] != sid]
+        report = next(row for row in inputs["ownerVerdicts"]["snapshot"]["items"]
+                      if row["storeId"] == sid)
+        report.update(nextGate="prefix prerequisite setup", ownerStream="S2",
+                      blocker="VC++ prerequisite setup", verdict="INCONCLUSIVE")
         row = next(row for row in build(inputs, {})["items"] if row["storeId"] == sid)
         self.assertEqual(row["nextGate"], "prefix prerequisite setup")
         self.assertEqual(row["ownerStream"], "S2")

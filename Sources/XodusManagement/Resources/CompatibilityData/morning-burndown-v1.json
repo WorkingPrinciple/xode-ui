@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T21:14:29.131425+00:00",
+    "asOf": "2026-10-22T21:17:24.982723+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -394,6 +394,11 @@
         "verdict": "WORKING"
       },
       {
+        "storeId": "9MXND4PQLK3W",
+        "title": "DOOM 64",
+        "verdict": "TITLE_SCREEN_PASS"
+      },
+      {
         "storeId": "9N8C07SS8C9D",
         "title": "FINAL FANTASY IV",
         "verdict": "TITLE_SCREEN_PASS"
@@ -411,7 +416,7 @@
       {
         "storeId": "9NQVHHW88XW9",
         "title": "Bluey's Happy Snaps",
-        "verdict": "BLOCKED_PREREQ"
+        "verdict": "ACKNOWLEDGEMENT_SCREEN_RENDERING"
       },
       {
         "storeId": "9MSVVM5NS9L6",
@@ -434,6 +439,11 @@
         "verdict": "INCONCLUSIVE"
       },
       {
+        "storeId": "9P2J5D12GJL5",
+        "title": "Oblivion GOTY (2009)",
+        "verdict": "PRE_WINE_STAGE_ENOSPC"
+      },
+      {
         "storeId": "9P1Z43KRNQD4",
         "title": "Quake",
         "verdict": "GAMEPLAY_PASS"
@@ -451,12 +461,12 @@
       {
         "storeId": "9PJPCB188SVG",
         "title": "Subnautica 2",
-        "verdict": "BLOCKED_PREREQ"
+        "verdict": "HUMAN_CONSENT_HOLD"
       },
       {
         "storeId": "9P861V1542BL",
         "title": "Valor Mortis",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "EARLY_EXIT_1_NO_WINDOW"
       },
       {
         "storeId": "9PD5BM2Z8C4L",
@@ -608,7 +618,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 791.51447625,
+  "remainingWallMinutes": 788.5836212833333,
   "scenarios": [
     {
       "label": "slow observed",
@@ -624,23 +634,23 @@
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 12,
-      "queueCappedAdditions": 12,
-      "conditionalTotalWorking": 23,
+      "serialCycleSlots": 11,
+      "queueCappedAdditions": 11,
+      "conditionalTotalWorking": 22,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.75,
-      "minimumPassRateCurrentQueue": 0.75,
+      "minimumPassRateRawSlots": 0.8181818181818182,
+      "minimumPassRateCurrentQueue": 0.8181818181818182,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 18,
-      "queueCappedAdditions": 18,
-      "conditionalTotalWorking": 29,
+      "serialCycleSlots": 17,
+      "queueCappedAdditions": 17,
+      "conditionalTotalWorking": 28,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5,
-      "minimumPassRateCurrentQueue": 0.5,
+      "minimumPassRateRawSlots": 0.5294117647058824,
+      "minimumPassRateCurrentQueue": 0.5294117647058824,
       "targetPossibleCurrentQueue": true
     }
   ],
@@ -649,8 +659,8 @@
     "matrixWorking": 11,
     "attemptedMatrix": 19,
     "ratio": 0.5789473684210527,
-    "receiptAugmentedAttempted": 27,
-    "receiptAugmentedRatio": 0.4074074074074074,
+    "receiptAugmentedAttempted": 29,
+    "receiptAugmentedRatio": 0.3793103448275862,
     "titleScreenOrBeyond": 11,
     "postTitleScreenAdmissionRatio": 1.0,
     "meaning": "Snapshot WORKING/attempted, not a probability or final failure rate. Incomplete and CLI-held attempts remain denominator; native Minecraft included as admitted matrix row."
@@ -677,7 +687,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 87.94605291666667,
+  "requiredAverageMinutesPerAddition": 87.62040236481481,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
