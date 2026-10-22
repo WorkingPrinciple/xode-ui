@@ -148,6 +148,8 @@ def build(args):
             archive = stage / "Ode-to-X-submission.zip"
             execute(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)],
                     stage, receipt, receipt_path, "app-archive")
+            receipt["artifacts"]["appSubmissionArchive"] = {"path": str(archive), **owned_bytes(archive)[0]}
+            write_receipt(receipt_path, receipt)
             receipt["appSubmission"] = notarize(archive, stage, receipt, receipt_path, "app", args.notary_profile)
             for verb in ("staple", "validate"):
                 execute(["/usr/bin/xcrun", "stapler", verb, str(app)],
@@ -167,6 +169,8 @@ def build(args):
                      "-format", "UDZO", str(dmg)], stage, receipt, receipt_path, "dmg-create")
             execute(["/usr/bin/codesign", "--sign", args.identity, "--timestamp", str(dmg)],
                     stage, receipt, receipt_path, "dmg-sign")
+            receipt["artifacts"]["dmgSubmittedBytes"] = {"path": str(dmg), **owned_bytes(dmg)[0]}
+            write_receipt(receipt_path, receipt)
             receipt["dmgSubmission"] = notarize(dmg, stage, receipt, receipt_path, "dmg", args.notary_profile)
             for verb in ("staple", "validate"):
                 execute(["/usr/bin/xcrun", "stapler", verb, str(dmg)],
@@ -183,6 +187,10 @@ def build(args):
         receipt["artifacts"]["bundledCLI"] = owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli")[0]
         receipt["artifacts"]["bundledWindowsHelper"] = owned_bytes(
             app / "Contents/Resources/XodusEngine/xodus-window-monitor.exe")[0]
+        for name, relative in (("launcher", "Contents/MacOS/Xodus"),
+                               ("authenticationHelper", "Contents/MacOS/XodusAuthHost"),
+                               ("resourceSeal", "Contents/_CodeSignature/CodeResources")):
+            receipt["artifacts"][name] = owned_bytes(app / relative)[0]
         receipt["sealedAppResourceReceipt"] = owned_bytes(app / "Contents/Resources/local-candidate-receipt.json")[0]
         write_receipt(receipt_path, receipt)
         return receipt_path
