@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "scope": "S3 protected evidence references, not the app compatibility ledger or launch authorization",
+  "rawEvidenceLocation": "$HOME/Library/Application Support/XodusCLI/proofs",
+  "rawEvidencePolicy": "Keep logs, screenshots, input events, packets, account data and save bytes local. Do not discard failed or inconclusive attempts.",
+  "coordinatorAdmission": {
+    "workingCount": 11,
+    "date": "2026-10-22",
+    "latest": ["TUNIC", "Brotato"],
+    "boundary": "Title qualification does not establish installed GUI Play or app evidence ingestion."
+  },
+  "verifiedArchives": [
+    {
+      "title": "TUNIC",
+      "phase": "world-cli68f-01",
+      "path": "s3-tunic-full-01/world-cli68f-01-evidence",
+      "manifest": "integrity.json",
+      "sha256": "daa1b422849a0b88923d7d79bcf41d72b42934cca183e2e505c2f85a4f8e11c9",
+      "verifiedFiles": 52,
+      "run": "a9ee48eb-4fca-4229-be8d-92702b8dd1f9",
+      "observed": "Wooden Stick acquired and equipped to J; observed Quit To Title Screen and title Quit; CLI0/Wine0.",
+      "deviations": ["No shrine checkpoint reached.", "Quit began at 548.735s, 8.735s beyond the 540s quit-by target."]
+    },
+    {
+      "title": "TUNIC",
+      "phase": "reload-cli68f-01",
+      "path": "s3-tunic-full-01/reload-cli68f-01-evidence",
+      "manifest": "integrity.json",
+      "sha256": "bb783401216e821f064d9c05833cb95b1c3c6be130395db083e410844cc59339",
+      "verifiedFiles": 21,
+      "run": "a27be511-f36b-40ac-93bd-0b19cf698e41",
+      "admission": "WORKING, title 10",
+      "observed": "Fresh process retained Wooden Stick equipped to J; movement observed; Quit To Title Screen then title Quit; CLI0/Wine0.",
+      "quitBeganSeconds": 148.718,
+      "quitBySeconds": 180,
+      "continuity": {
+        "worldAfterAndReloadBeforeSha256": "3a7fb5373b3b3a254207b2c3adf5aec7ec9a5c9070ccebcfeaf047be9ab68cf2",
+        "bytes": 9331,
+        "reloadAfterSha256": "1b116832757d70e02d7c7abba47102314afdfb95c8aa93a67303385333612b41",
+        "gap": "Historical pre-write payload bytes were hashed but not archived before later legitimate writes. The final reload payload bytes are archived."
+      }
+    },
+    {
+      "title": "Brotato",
+      "path": "s3-brotato-installed-122532b-v1",
+      "manifest": "integrity.json",
+      "sha256": "5266450382c7bd5bf7ab5895112c99e38679b1154b471abce15978e581b23b23",
+      "verifiedFiles": 66,
+      "resultSha256": "f3819226b4f5069afe89480327188a139a5eb923ed1c033a1dc1b3756af80e0d",
+      "packetSha256": "a8d9e220e712919921c46a25c1fc1e56ddf2d6ac50ce0f7f746fee35603b30c7",
+      "worldRun": "21bd7fd5-9b77-4d3b-97a2-49858bd79d67",
+      "reloadRun": "01cda87b-82b9-4769-bb26-db472b279516",
+      "admission": "WORKING, title 11",
+      "route": {
+        "sourceCommit": "122532b80177870320226d08f5e8725970b68c95",
+        "cliSha256": "3ea56ed1ea1d5a9b6d15748ecd223dbc5be09d099765cf661b6cd7915db14928",
+        "engine": "apple-gptk-4.0b3",
+        "guiPlayObserved": false,
+        "description": "Source-bound installed bundled route; no candidate route or manual save transfer."
+      },
+      "observed": "Wave 1 movement and automatic attacks; natural death unlocked Chunky. Fresh process retained selectable Chunky and reached its weapon selection. Both observed main-menu Quit, CLI0/Wine0.",
+      "quitBeganSeconds": [246.587, 138.930],
+      "quitBySeconds": [540, 180],
+      "continuity": {
+        "worldAfterAndReloadBeforeSha256": "b0e2b10ac56b3c1d11017edaf0c47bbb1fd76ffc01b3067913cb20a5ae748972",
+        "bytes": 1024089,
+        "reloadAfterSha256": "da5542fd4260f657d88033d700af393d881022fae64064e738a9a868807d0e64",
+        "rawBeforeAndAfterArchived": true
+      },
+      "separateDefect": "Installed UI displayed a global tried-games.json read error and Not tested tiles. Issue 43 is not passed; S5 owns ingestion diagnosis.",
+      "shutdownObservation": "World finalized after approximately 45s of wineserver -w service drain, without mutation. The wait is unbounded in the transport; this is a hardening candidate, not proof of a hang."
+    },
+    {
+      "title": "Stardew Valley",
+      "path": "s3-stardew-full-01/final-cli68f-01-evidence",
+      "manifest": "integrity.json",
+      "sha256": "87843ca156b066c716096d96513407f539e44c2d58ef29572e6481f43fb15471",
+      "verifiedFiles": 16,
+      "run": "111dd574-a6ce-4e82-984a-46175e9cb221",
+      "admission": "INCONCLUSIVE_QUIT_INPUT_ATTRIBUTION",
+      "observed": "Retained s3/proof Farm, Day 2 and 15 Parsnip Seeds; movement; actual Exit Game page with Exit To Desktop. One click attempt was followed by game exit255/Wine255.",
+      "gap": "Historical helper returned1 with empty output after 1.03s despite a configured focus plus hold of at least1.65s. Down-triggered exit is possible, not proven. Do not infer ordinary quit from exit255 alone.",
+      "nextTest": "First validate flushed exact-PID input against one owned no-game receiver. Another game launch needs a separate grant."
+    }
+  ],
+  "historicalCoverage": {
+    "matrix": "$HOME/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
+    "matrixNote": "Contains earlier attempts and title-level diagnosis. Legacy archives are not claimed freshly integrity-audited by this index.",
+    "earlierAdmittedTitles": ["Minecraft Java", "No Man's Sky", "Hollow Knight: Voidheart Edition", "Halls of Torment", "Hogwarts Legacy", "Hades II", "Abiotic Factor", "Mixtape", "Monster Sanctuary"],
+    "unresolvedTitles": ["DREDGE", "Fallout 4", "Skyrim Special Edition", "A Game About Digging A Hole", "Well Dweller", "Stardew Valley", "Balatro", "LIMBO"],
+    "boundary": "Passive results from other owners are tracked separately; pending or not-tested titles are not promoted to gameplay or retention passes."
+  }
+}
