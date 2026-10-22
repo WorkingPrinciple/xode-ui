@@ -49,6 +49,7 @@
   "offscreenPreparedNext": [
     {
       "title": "FINAL FANTASY IV",
+      "status": "CONSUMED_WORLD_INCONCLUSIVE; no reload or retry",
       "packet": "s3-final-fantasy-iv-full-02/packet.json",
       "sha256": "39d8a3d1053f6e679b3c9ec1f378a9644ede9d6fb0154538ba739c4d4de82874",
       "dryAdmissionSha256": "3f6849e8691e703cdc889329464853ca654720cb632e20430fd6beacb52c2fe7",
@@ -58,6 +59,7 @@
     },
     {
       "title": "Quake",
+      "status": "CONSUMED_WORLD_INCONCLUSIVE; no reload or retry",
       "packet": "s3-quake-full-02/packet.json",
       "sha256": "47c4d40b28195bd4dc42417fbf9db66d231f7f675279e39c38df65bd27026468",
       "dryAdmissionSha256": "2b70fbe07e0082388c142d7d5b27a56e0d34811faa23e9025c3a9d84daced253",
@@ -103,6 +105,39 @@
     }
   },
   "verifiedArchives": [
+    {
+      "title": "FINAL FANTASY IV",
+      "path": "s3-final-fantasy-iv-full-02/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "9a20cdd05de33e3ad10b8fda2938d7a90aee5fb24d9f03d3fa844b9393b57255",
+      "resultSha256": "0c39bd0a8ca43913c488bc2294b724227d41cd6001a7a04e66520d739af6bb14",
+      "run": "4c62acbd-ca99-4952-98aa-f400d028adf7",
+      "admission": "INCONCLUSIVE_SCRIPTED_OPENING_NO_SAVE_OR_ORDINARY_QUIT",
+      "observed": "Actual title, New Game, airship/Mysidia, two scripted automatic battles and Baron/Baigan throne dialogue rendered. No free-control gameplay or permanent save established. Scripted battles are not player combat.",
+      "quit": "Escape probe477.47s exposed no in-scene quit. No ordinary quit observed; 900s cap forced exact cleanup-k0/-w0, CLI1/actual Wine0. No reload/retry; not compatibility FAIL.",
+      "runFilesVerified": 22,
+      "rawArchiveFilesVerified": 1,
+      "runManifestSha256": "af2a0f6cf783519dd19428b991c14e49573847171c4d30eac16ddc4d97fb0b3e"
+    },
+    {
+      "title": "Quake",
+      "path": "s3-quake-full-02/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "5e0b8e495c0635791777749c68c971d80365fc0e15228527c235e1d851df5684",
+      "resultSha256": "3a0a61d5d2d71168aa14ffbea61f18980025fd32120aa6b134c7524b0f708986",
+      "run": "43827ec2-c040-4695-9aa0-39b623107877",
+      "admission": "INCONCLUSIVE_SAVE_AND_MENU_INPUT",
+      "observed": "Actual Single Player/New Game/Quake, Introduction100HP/25shells and W/A changed position beyond spawn; pause Save Game observed. Default-held Down navigation unexpectedly returned Main instead of save slot. Later demo83HP/111shells/goldkey is explicitly excluded from gameplay credit.",
+      "quit": "Observed main Quit selected by explicit100ms Down steps; Enter100ms directly exited CLI0/Wine0, no forced stop, exact-k1/-w0. Window disappeared before post-quit capture; no confirmation observed.",
+      "quitBeganSeconds": 593.7008099555969,
+      "quitBySeconds": 540,
+      "budgetBoundary": "Ordinary quit began53.7s late. Do not report budget compliance.",
+      "saveGap": "Only cfg/log/history changed; no permanent gameplay payload. No fresh reload or retry. Earlier optional Bethesda user-ID error could be backed out of to offline Single Player; not an auth-only or renderer failure classification.",
+      "runFilesVerified": 32,
+      "rawArchiveFilesVerified": 6,
+      "runManifestSha256": "152673959c5b170bcfbf85efab021359e905133cfae9f42b8dd163b71f70f3c7",
+      "nextInput": "Future granted menu navigation must use one observed100ms step and recapture each transition, not held300ms navigation or guessed wrapping."
+    },
     {
       "title": "DOOM 64",
       "path": "s3-doom64-full-01/final-evidence",
