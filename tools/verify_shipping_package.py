@@ -98,11 +98,9 @@ def main():
     require(all(not (layout / name).exists() and not (layout / name).is_symlink()
                 for layout in layouts if layout != selected for name in schemas),
             "Mixed or duplicate SwiftPM management resources")
-    for name, expected in [
-        ("management-v1.schema.json", "d2f4222e952f732396018a4c4576da24729bdbddde7dd1f95df3b84d7a6d324d"),
-        ("runtime-providers-v1.schema.json", "90c094e4585af059b5ebcfc3201260362e88aa642b50ec0388a03427260d55e9"),
-    ]:
-        owned_bytes(selected / name, expected)
+    for name in schemas:
+        expected, _ = owned_bytes(source_root / "Sources/XodusManagement/Resources" / name)
+        owned_bytes(selected / name, expected["sha256"], expected["bytes"])
     archived_inputs = {}
     with tarfile.open(stage / "source.tar") as archive:
         for member in archive.getmembers():
@@ -113,6 +111,8 @@ def main():
                     data = expected_pins
                 identity, _ = owned_bytes(source_root / member.name, hashlib.sha256(data).hexdigest(), len(data))
                 archived_inputs[member.name] = identity
+    require(all("Sources/XodusManagement/Resources/" + name in archived_inputs for name in schemas),
+            "Source archive must bind both packaged management schemas")
     # Limit inventory to the new owned package, never another app/game/root.
     package = {}
     for path in sorted(app.rglob("*")):

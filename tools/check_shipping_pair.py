@@ -119,9 +119,15 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     pin_source = source / "Sources/XodusPreview/ShippingPairPins.swift"
     pin_source.write_bytes(b"Archived nil approval; not generated yet.")
     (source / "Package.swift").write_bytes(b"Neutral archived source marker")
+    schema_source = source / "Sources/XodusManagement/Resources"
+    schema_source.mkdir(parents=True)
+    for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
+        shutil.copyfile(project / "Sources/XodusManagement/Resources" / name, schema_source / name)
     with tarfile.open(stage / "source.tar", "w") as archive:
         archive.add(source / "Package.swift", arcname="Package.swift")
         archive.add(pin_source, arcname="Sources/XodusPreview/ShippingPairPins.swift")
+        for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
+            archive.add(schema_source / name, arcname="Sources/XodusManagement/Resources/" + name)
     approval = stage / "neutral-approval.json"
     approval.write_text(json.dumps(record), encoding="utf-8")
     original_arguments, original_platform = sys.argv, sys.platform
@@ -165,6 +171,9 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         (macos / "Xodus", b"Wrong architecture"),
         (receipt, b'{"version":1}'),
         (app / "Contents/Info.plist", b"Changed deployment baseline"),
+        (management / "management-v1.schema.json", b"Wrong packaged management schema"),
+        (management / "runtime-providers-v1.schema.json", b"Wrong packaged runtime schema"),
+        (schema_source / "management-v1.schema.json", b"Changed schema source after archive"),
     ]:
         original = target.read_bytes()
         target.write_bytes(bad_data)
@@ -175,6 +184,17 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
             count += 1
         finally:
             target.write_bytes(original)
+    original_schema = (schema_source / "management-v1.schema.json").read_bytes()
+    for target in (schema_source / "management-v1.schema.json", management / "management-v1.schema.json"):
+        target.write_bytes(b"Matching but not archived schema bytes")
+    try:
+        package_check()
+        raise AssertionError("Matching source/package schema changed after archive accepted")
+    except ValueError:
+        count += 1
+    finally:
+        for target in (schema_source / "management-v1.schema.json", management / "management-v1.schema.json"):
+            target.write_bytes(original_schema)
     nested = management / "Contents/Resources"
     nested.mkdir(parents=True)
     for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):

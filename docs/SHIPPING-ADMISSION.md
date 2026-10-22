@@ -220,12 +220,14 @@ only supported way to build a local candidate:
 - `tools/shipping_pair.py` still pins producer
   `28f737df46b29cc195145425e3fd1397ebc09be3`, tree
   `1273ddaa50a6b3e77647aabb5bb170b1b525c922`.
-- `tools/verify_shipping_package.py` expects that producer's management schema
-  SHA256 `d2f4222e952f732396018a4c4576da24729bdbddde7dd1f95df3b84d7a6d324d`.
-  The newer account/runtime contract and checked-in resource instead match
+- `tools/verify_shipping_package.py` binds both packaged schemas to the exact
+  checked-in source bytes and verifies those source files against `source.tar`.
+  The management contract deliberately added one-account runtime authorization
+  in `13f3532`; its SHA256 is
   `03afeb28e4e5b652712c2b6f29fe648fa05c842ea86a4920bd4f960bdbcc0529`.
-  This mismatch currently rejects package verification. Resolve the complete
-  producer/consumer pairing and its tests, not just the one checksum.
+  Changed packaged schemas, changed source schemas, and matching source/package
+  changes after archiving are rejected. Producer/consumer schema agreement
+  remains a separate required check during local-candidate packaging.
 - `ShippingPairPins.approved` is nil in source. Packaging generates exact
   engine/helper pins in an isolated source stage. Changing this document does
   not generate those pins or make an existing package valid.
