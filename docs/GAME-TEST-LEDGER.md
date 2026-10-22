@@ -7,10 +7,10 @@ Do not edit this generated file; update `docs/game-test-ledger-state.json` and r
 ## Scope and current position
 
 - **Session 2**, state dated 2026-10-21; deadline **2026-10-22T05:28:46Z**.
-- Catalogue: **563 product IDs**; checked **2026-10-19T21:30:33Z**, market **RO**.
-- Exact source: `Sources/XodusManagement/Resources/CompatibilityData/game-compatibility-v1.json`; SHA-256 `e84d5d4612bbabb8ff11328de6b874732a39662fc491fd9c9685900c187b3a51`.
-- Package-format totals: Appx: 5, EAppx: 15, MSIX: 2, MSIXVC: 372, Unspecified: 169.
-- **MSI-family queue: 374 IDs** (MSIX: 2, MSIXVC: 372); **189 excluded**.
+- Catalogue: **565 product IDs**; checked **2026-10-22T00:00:00Z**, market **RO**.
+- Exact source: `Sources/XodusManagement/Resources/CompatibilityData/game-compatibility-v1.json`; SHA-256 `d3ff0ff0ee3399202a6fe2efc573cb55f91644d11895a360a491f249124577cc`.
+- Package-format totals: Appx: 7, EAppx: 15, MSIX: 2, MSIXVC: 374, unknown: 167.
+- **MSI-family queue: 376 IDs** (MSIX: 2, MSIXVC: 374); **189 excluded**.
 - Filter: `pcPackageIdentified == true` AND `packageFormat in {MSIXVC, MSIX}`.
 - These are product/edition IDs, not a deduplicated franchise count, owned library,
   supported-game list, or a promise that every title can be tested in 24 hours.
@@ -19,6 +19,7 @@ Do not edit this generated file; update `docs/game-test-ledger-state.json` and r
 
 See [the constitution, session register, audit and fix ledger](GAME-ENGINE-TESTS.md).
 
+- 2026-10-22 S5 artifact-loss incident: swift package clean mistakenly removed custom worktree .build evidence, release DMG, original release/switch-over/AX/parity receipts and42f793d rollback. Git/source, installedc7487d8 and external service/game proof directories remain. No APFS snapshots or coordinator copies. Historical hashes are not retained evidence. New installed identity verification is a current observation, not recovery of the original receipts. Do not clean Swift package output again; keep durable evidence outside .build. No new release/install authorized.
 - Latest exhaustive follow-up: independently compiled Developer ID engine passed account/runtime restart checks and Abiotic package qualification; relocated candidate and old-owner rollback passed.223Rust tests pass/2explicitignored; remaining app checks pass separately. Full check.sh fails stale management-schema admission hash; spctl rejects Unnotarized DeveloperID. No approval hashes altered, app replaced or game started. Additional conservative8m brings Abiotic35m46, atmost9m14remain; supersedes earlier totals. NMS staysclosed45min.
 - Evening Developer ID candidate signed/verified; actual noninteractive Abiotic package qualification PASSED authenticated content-key unpack, no key saved/printed/no game. Two fresh same-artifact management processes passed saved status and noninteractive runtime authorization. Earlier blanket permission hold resolved for these observed paths; independent rebuild/reboot/lockedKeychain/notarizedapp untested. Conservative4m live-check/evidence charge brings Abiotic27m46, at most17m14 remain. NMS closed45min, not retried. No installed replacement or admitted freshapp.
 - Session 1: five standalone Windows controls attempted; zero Xbox game launches during that batch.
@@ -271,174 +272,176 @@ above retain dated local observations and historical results separately.
 | 201 | 9NC9M1NCZ7SD | Microsoft Jewel | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 202 | 9WZDNCRFHWCP | Microsoft Mahjong | MSIX | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
 | 203 | 9WZDNCRFHWD2 | Microsoft Solitaire Collection | MSIX | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 204 | 9P5X4QVLC2XR | Minecraft Preview for Windows | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 205 | 9N5PKH0KW2L1 | Minishoot' Adventures | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 206 | 9NP86K57SQM3 | MIO: Memories in Orbit | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 207 | 9P8X6TVW9ZW8 | Mistfall Hunter | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 208 | 9NH0MSG29X6L | Mixtape | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 209 | 9PBWWQGXVMKC | Monster Sanctuary (Windows Version) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 210 | 9NJC29JG70LM | Monster Train 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 211 | 9PJBKF27C16M | Monsters are Coming! | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 212 | 9NDJX252Q5BW | Moonlighter 2: The Endless Vault | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 213 | 9N7271QN4SGB | Mortal Kombat™ 1 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 214 | 9P0073G9FW5Z | MOTORSLICE | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 215 | 9P88K6NQW12H | Moving Out 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 216 | 9NDJLXD2X2DM | My Friend Peppa Pig | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 217 | 9P8SQQJ5T94B | NARAKA: BLADEPOINT | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 218 | 9P5QV5XX8S9H | Neon Abyss 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 219 | 9P7SL78VHVMF | Ni no Kuni Wrath of the White Witch™ Remastered | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 220 | 9N732VFPMWKT | Ni no Kuni™ II: Revenant Kingdom - The Prince's Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 221 | 9PN0LC4CNLPT | Nickelodeon All-Star Brawl 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 222 | 9N3LGKGF3CC2 | Nine Sols | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 223 | 9N51FH42VQDS | NINJA GAIDEN 2 Black | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 224 | 9PGFSLP8GWQK | NINJA GAIDEN: Ragebound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 225 | BQVQTL3PCH05 | No Man's Sky | MSIXVC | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | 05:55:59Z: service entry not found before Wine. Source-only matching isolated broker/private consumer now built; no installed replacement or live qualification | Unknown | Parked at native password/live admission checkpoint;45min budget closed, no further title-specific work this window |
-| 226 | 9N0QWXC09MPT | Once Human | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 227 | 9N8CD0XZKLP4 | Ori and the Will of the Wisps | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 228 | 9PFWZMT737GG | Outbound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 229 | 9PGB72NFG5JN | Overcooked! 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 230 | 9MT5KSV3RCWD | Overthrown | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 231 | 9NKV34XDW014 | Palworld | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 232 | 9PHGK0538TXM | Pax Dei | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 233 | 9PJRQHMCFQGS | PBA Pro Bowling 2026 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 234 | 9NX6K9HN4F4K | Pentiment | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 235 | 9N40DK5N4LD4 | Persona 4 Revival | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 236 | 9NZDHXL9SJJ8 | Persona 5 Royal | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 237 | 9NRHQLZX3900 | Pigeon Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 238 | 9N8N7NZSVTG3 | Pillars of Eternity 2: Deadfire - Ultimate Edition (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 239 | 9PK5WS0HXQKQ | Planet Coaster 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 240 | 9PL89B9HCZ9W | Planet of Lana II | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 241 | 9P2HHT3VS7MP | PlateUp! | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 242 | 9P0NPLQ9P1DB | Police Simulator: Patrol Officers | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 243 | 9P45GGDTFNSM | PowerWash Simulator 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 244 | 9PBC1QFBW563 | Prey | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 245 | 9NCT87FKQ4GM | Psychonauts (Windows 10) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 246 | 9NBR2VXT87SJ | Psychonauts 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 247 | 9P1Z43KRNQD4 | Quake | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 248 | 9P2JXK37PFLZ | Quake 4 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 249 | 9P7L9H478GGV | Quake II | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 250 | 9NWNLS28ZG37 | Quake III Arena | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 251 | 9P9446P7D9TZ | Quarantine Zone: The Last Check | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 252 | 9P2J7WHV0K4N | RAGE 2 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 253 | 9P8JRMWRQP4H | Redfall | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 254 | 9P81K2C8RBF4 | Relic Hunters Legend | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 255 | 9PPP5344B3LS | Relooted | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 256 | 9N5K7HWXL4Q6 | REMATCH | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 257 | 9P9278ZMGQLJ | Remnant II® - Standard Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 258 | 9NV3L234VGXD | REPLACED | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 259 | BWMH951M3G3P | RESIDENT EVIL 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 260 | 9P7T44TTDL7M | RESIDENT EVIL 3 for Windows | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 261 | 9PPBNCXP0096 | Resonance: A Plague Tale Legacy | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 262 | 9MTVJ3HHTQGS | Retro Classics | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 263 | 9N1WT4X26SHW | Return to Castle Wolfenstein | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 264 | 9N4J937WLFPZ | RoadCraft | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 265 | 9PFNXM9G4N83 | Roadside Research (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 266 | 9PKF2LDFPXTN | RoboCop: Rogue City | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 267 | 9P47S7NJGWZL | Roboquest | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 268 | 9PCJT6TLCGGV | ROUTINE | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 269 | 9P402RWR63H4 | RuneScape: Dragonwilds | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 270 | 9MW79BJVF3QX | RV There Yet? | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 271 | 9PPH71DV44T7 | Sandustry (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 272 | 9P2N57MC619K | Sea of Thieves: 2026 Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 273 | 9NF0RBL8SZL6 | Shadowrun Returns PC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 274 | 9NMCRMS6WN78 | Shadowrun: Dragonfall - Director's Cut PC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 275 | 9NK2DT3K7DTF | Shadowrun: Hong Kong - Extended Edition PC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 276 | 9PK0DZ68LGC0 | Shape of Dreams | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 277 | 9N51NR4GX891 | Shelldiver | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 278 | 9N0WDPMXNHWN | Shift At Midnight | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 279 | 9N9C1TB18R3B | Sledding Game | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 280 | 9NV8W1KJSQLL | SMITE 2 (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 281 | 9NP6WL1XQDBW | SnowRunner - Windows | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 282 | 9N8BRH7PGJMJ | Solarpunk | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 283 | 9NJCVGS6T30K | South of Midnight | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 284 | 9PPKR9N31BW6 | SpeedRunners 2: King of Speed | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 285 | 9NMF3KXT4P4G | SpongeBob SquarePants™: The Patrick Star Game | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 286 | 9NLD3ZRWF8DT | Spyro™ Reignited Trilogy | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 287 | 9MT19Q3CRMQZ | Star Trucker | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 288 | 9MWR1NC6VQ6L | Stardew Valley | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 289 | 9NCJSXWZTP88 | Starfield | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 290 | 9P86LLDCL5CC | Starsand Island | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 291 | 9NTZH69PZSH0 | STARSEEKER: Astroneer Expeditions (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 292 | 9NT4X7P8B9NB | State of Decay 2: Juggernaut Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 293 | 9P8XK6X57GBF | STRANGER THAN HEAVEN | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 294 | 9PJPCB188SVG | Subnautica 2 (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 295 | 9NJ67TQQ51Z0 | Super Meat Boy 3D | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 296 | 9NRH78B682L8 | SUPERHOT: MIND CONTROL DELETE | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 297 | 9NR0GCBSLDW4 | Supermarket Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 298 | 9NBLHDB0WLHZ | Symphonia 𝄞 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 299 | 9P43RGDPJ62T | Tamashika | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 300 | 9P9GX5D8H9DW | TCG Card Shop Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 301 | 9PN8M16GG8M4 | Tears of Metal (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 302 | 9P6X0VL8BXZF | Tempopo | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 303 | 9NG66K0Z31LH | TerraTech Legion | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 304 | 9N0P25WJHM8C | The Alters | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 305 | 9PN3VDFTB5HZ | The Bard's Tale ARPG : Remastered and Resnarkled | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 306 | C2B4T86TXLRS | The Bard's Tale IV: Director's Cut | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 307 | 9MVN4ND41DD3 | The Bard's Tale Trilogy | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 308 | 9PFXKRLVWJ0B | The Elder Scrolls Adventures: Redguard | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 309 | 9PP7XSG5LDH1 | The Elder Scrolls III: Morrowind Game of the Year Edition (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 310 | 9P2J5D12GJL5 | The Elder Scrolls IV: Oblivion Game of the Year Edition (PC) – 2009 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 311 | 9NQR437K7PQH | The Elder Scrolls IV: Oblivion Remastered | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 312 | 9P03JGQ4S1GC | The Elder Scrolls V: Skyrim Special Edition (PC) | MSIXVC | 20 Oct: absent from inspected registry and standard root | Public package and local-presence triage only | Not launched | Unknown | P3: resolve legitimate account/package access before download |
-| 313 | 9MX8R81JW1B5 | The Evil Within (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 314 | 9NT0NT8JQMQN | The Evil Within® 2 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 315 | 9PGD71CMDS0Z | THE FINALS | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 316 | 9P8FBXKMCLWC | The First Descendant | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 317 | 9P008L2LS87F | The Gunk | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 318 | 9NFKN56ZBMR0 | The Long Dark | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 319 | 9P8RMKXRML7D | The Outer Worlds 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 320 | 9N072VV7MFK7 | The Planet Crafter | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 321 | 9N034X5G08B7 | The Royal Writ | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 322 | 9N7P8GVMF6SS | The Talos Principle 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 323 | 9MZZZCHZ26NK | The Thaumaturge | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 324 | 9NQV7C0G1040 | theHunter: Call of the Wild™ | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 325 | 9ND19JDMBS3R | Tiny Bookshop | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 326 | 9NM6NMBJ7ZK4 | to a T | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 327 | 9NC0071DJ6XC | Torment: Tides of Numenera | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 328 | 9PHTX5QZ035T | Total Chaos | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 329 | 9PC4RWP34M2D | Totally Accurate Battle Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 330 | 9NZG72SH3H4W | Totally Reliable Delivery Service | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 331 | 9P7TLX79S7N7 | Towerborne | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 332 | 9NSFGM8J6MBJ | Trailmakers | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 333 | 9NCDMPCPDTQF | Trepang2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 334 | 9NHMR19TS1M0 | TRIALS of MANA | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 335 | 9NVSNWWJCJZV | Tropico 7 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 336 | 9NLRT31Z4RWM | TUNIC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 337 | 9P1H8K2V0NNP | Ultimate Sheep Raccoon | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 338 | 9P861V1542BL | Valor Mortis | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 339 | 9NMPVJ7TCFD0 | Vampire Crawlers: The Turbo Wildcard from Vampire Survivors | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 340 | 9PD5BM2Z8C4L | Vampire Survivors | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 341 | 9N5VHX8KMVNV | Vapor World: Over The Mind (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 342 | 9NSM674QVLBS | Virtua Fighter 5 R.E.V.O. World Stage | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 343 | 9NJ5WV40PD08 | Visions of Mana | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 344 | 9N9K5QP9G3GL | VOID/BREAKER (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 345 | 9NQMVR9WL9FW | Voidtrain | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 346 | BX1DTCBD1HXJ | War Thunder | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 347 | 9NT3WC6RKBVQ | Warhammer 40,000: Darktide | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 348 | 9P30BFHZ1BKN | Warhammer 40,000: Rogue Trader | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 349 | 9N9PCZWHVP2L | Warhammer 40,000: Space Marine 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 350 | 9NWQ686JB33G | Wartales | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 351 | C521HDXRTS7F | Wasteland 2: Director's Cut | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 352 | 9NLT5XR52ZS7 | Wasteland 3 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 353 | 9NGH1FK0RJGL | Wasteland Remastered | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 354 | 9PLH7R84GJWP | Well Dweller | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 355 | 9NGCFDHR2MV3 | Wheel World | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 356 | 9N76QGDS5GJR | Where Winds Meet | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 357 | 9N6VS1BMZ3BW | Wildgate | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 358 | 9P1ZW5K4S44V | Winds of Arcana: Ruination | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 359 | 9ND3HTTQ0GKB | Winter Burrow | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 360 | 9NFW93G1GFXG | Wo Long 2: Wings of Ember | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 361 | 9N9X9PC8V9CP | Wo Long: Fallen Dynasty | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 362 | 9NS86BQ33SPX | Wobbly Life | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 363 | 9P7Z1D3N8KR7 | Wolfenstein 3D | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 364 | 9P75CBJ9WT9W | Wolfenstein: The New Order (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 365 | 9PBB4QHMSDKR | Wolfenstein: The Old Blood (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 366 | 9PHFTS44F99K | Wolfenstein: Youngblood (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 367 | 9N11JM7F5CXK | World of Tanks: HEAT | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 368 | C1ZT6N30L1WH | World of Warships: Legends | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 369 | 9NG06CSMM97P | Wreckfest | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 370 | 9N6WN0ZHZQ6W | WUCHANG: Fallen Feathers | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 371 | 9P41GS5W1C6L | Wuthering Waves | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 372 | 9N3KQH8183GD | Young Suns | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 373 | 9N4X0WFZ2STM | Zenless Zone Zero | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
-| 374 | 9PLSCHRN5715 | Zombie Army 4: Dead War | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 204 | 9PGW18NPBZV5 | Minecraft Launcher | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 205 | 9P5X4QVLC2XR | Minecraft Preview for Windows | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 206 | 9PJ8266BHFWN | Minecraft: Java Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 207 | 9N5PKH0KW2L1 | Minishoot' Adventures | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 208 | 9NP86K57SQM3 | MIO: Memories in Orbit | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 209 | 9P8X6TVW9ZW8 | Mistfall Hunter | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 210 | 9NH0MSG29X6L | Mixtape | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 211 | 9PBWWQGXVMKC | Monster Sanctuary (Windows Version) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 212 | 9NJC29JG70LM | Monster Train 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 213 | 9PJBKF27C16M | Monsters are Coming! | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 214 | 9NDJX252Q5BW | Moonlighter 2: The Endless Vault | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 215 | 9N7271QN4SGB | Mortal Kombat™ 1 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 216 | 9P0073G9FW5Z | MOTORSLICE | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 217 | 9P88K6NQW12H | Moving Out 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 218 | 9NDJLXD2X2DM | My Friend Peppa Pig | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 219 | 9P8SQQJ5T94B | NARAKA: BLADEPOINT | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 220 | 9P5QV5XX8S9H | Neon Abyss 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 221 | 9P7SL78VHVMF | Ni no Kuni Wrath of the White Witch™ Remastered | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 222 | 9N732VFPMWKT | Ni no Kuni™ II: Revenant Kingdom - The Prince's Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 223 | 9PN0LC4CNLPT | Nickelodeon All-Star Brawl 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 224 | 9N3LGKGF3CC2 | Nine Sols | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 225 | 9N51FH42VQDS | NINJA GAIDEN 2 Black | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 226 | 9PGFSLP8GWQK | NINJA GAIDEN: Ragebound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 227 | BQVQTL3PCH05 | No Man's Sky | MSIXVC | 20 Oct: NMS 7.6 resident; inventory/readiness passed | Preflight only; not launched | 05:55:59Z: service entry not found before Wine. Source-only matching isolated broker/private consumer now built; no installed replacement or live qualification | Unknown | Parked at native password/live admission checkpoint;45min budget closed, no further title-specific work this window |
+| 228 | 9N0QWXC09MPT | Once Human | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 229 | 9N8CD0XZKLP4 | Ori and the Will of the Wisps | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 230 | 9PFWZMT737GG | Outbound | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 231 | 9PGB72NFG5JN | Overcooked! 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 232 | 9MT5KSV3RCWD | Overthrown | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 233 | 9NKV34XDW014 | Palworld | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 234 | 9PHGK0538TXM | Pax Dei | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 235 | 9PJRQHMCFQGS | PBA Pro Bowling 2026 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 236 | 9NX6K9HN4F4K | Pentiment | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 237 | 9N40DK5N4LD4 | Persona 4 Revival | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 238 | 9NZDHXL9SJJ8 | Persona 5 Royal | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 239 | 9NRHQLZX3900 | Pigeon Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 240 | 9N8N7NZSVTG3 | Pillars of Eternity 2: Deadfire - Ultimate Edition (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 241 | 9PK5WS0HXQKQ | Planet Coaster 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 242 | 9PL89B9HCZ9W | Planet of Lana II | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 243 | 9P2HHT3VS7MP | PlateUp! | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 244 | 9P0NPLQ9P1DB | Police Simulator: Patrol Officers | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 245 | 9P45GGDTFNSM | PowerWash Simulator 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 246 | 9PBC1QFBW563 | Prey | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 247 | 9NCT87FKQ4GM | Psychonauts (Windows 10) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 248 | 9NBR2VXT87SJ | Psychonauts 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 249 | 9P1Z43KRNQD4 | Quake | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 250 | 9P2JXK37PFLZ | Quake 4 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 251 | 9P7L9H478GGV | Quake II | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 252 | 9NWNLS28ZG37 | Quake III Arena | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 253 | 9P9446P7D9TZ | Quarantine Zone: The Last Check | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 254 | 9P2J7WHV0K4N | RAGE 2 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 255 | 9P8JRMWRQP4H | Redfall | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 256 | 9P81K2C8RBF4 | Relic Hunters Legend | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 257 | 9PPP5344B3LS | Relooted | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 258 | 9N5K7HWXL4Q6 | REMATCH | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 259 | 9P9278ZMGQLJ | Remnant II® - Standard Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 260 | 9NV3L234VGXD | REPLACED | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 261 | BWMH951M3G3P | RESIDENT EVIL 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 262 | 9P7T44TTDL7M | RESIDENT EVIL 3 for Windows | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 263 | 9PPBNCXP0096 | Resonance: A Plague Tale Legacy | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 264 | 9MTVJ3HHTQGS | Retro Classics | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 265 | 9N1WT4X26SHW | Return to Castle Wolfenstein | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 266 | 9N4J937WLFPZ | RoadCraft | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 267 | 9PFNXM9G4N83 | Roadside Research (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 268 | 9PKF2LDFPXTN | RoboCop: Rogue City | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 269 | 9P47S7NJGWZL | Roboquest | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 270 | 9PCJT6TLCGGV | ROUTINE | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 271 | 9P402RWR63H4 | RuneScape: Dragonwilds | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 272 | 9MW79BJVF3QX | RV There Yet? | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 273 | 9PPH71DV44T7 | Sandustry (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 274 | 9P2N57MC619K | Sea of Thieves: 2026 Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 275 | 9NF0RBL8SZL6 | Shadowrun Returns PC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 276 | 9NMCRMS6WN78 | Shadowrun: Dragonfall - Director's Cut PC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 277 | 9NK2DT3K7DTF | Shadowrun: Hong Kong - Extended Edition PC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 278 | 9PK0DZ68LGC0 | Shape of Dreams | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 279 | 9N51NR4GX891 | Shelldiver | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 280 | 9N0WDPMXNHWN | Shift At Midnight | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 281 | 9N9C1TB18R3B | Sledding Game | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 282 | 9NV8W1KJSQLL | SMITE 2 (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 283 | 9NP6WL1XQDBW | SnowRunner - Windows | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 284 | 9N8BRH7PGJMJ | Solarpunk | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 285 | 9NJCVGS6T30K | South of Midnight | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 286 | 9PPKR9N31BW6 | SpeedRunners 2: King of Speed | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 287 | 9NMF3KXT4P4G | SpongeBob SquarePants™: The Patrick Star Game | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 288 | 9NLD3ZRWF8DT | Spyro™ Reignited Trilogy | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 289 | 9MT19Q3CRMQZ | Star Trucker | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 290 | 9MWR1NC6VQ6L | Stardew Valley | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 291 | 9NCJSXWZTP88 | Starfield | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 292 | 9P86LLDCL5CC | Starsand Island | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 293 | 9NTZH69PZSH0 | STARSEEKER: Astroneer Expeditions (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 294 | 9NT4X7P8B9NB | State of Decay 2: Juggernaut Edition | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 295 | 9P8XK6X57GBF | STRANGER THAN HEAVEN | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 296 | 9PJPCB188SVG | Subnautica 2 (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 297 | 9NJ67TQQ51Z0 | Super Meat Boy 3D | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 298 | 9NRH78B682L8 | SUPERHOT: MIND CONTROL DELETE | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 299 | 9NR0GCBSLDW4 | Supermarket Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 300 | 9NBLHDB0WLHZ | Symphonia 𝄞 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 301 | 9P43RGDPJ62T | Tamashika | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 302 | 9P9GX5D8H9DW | TCG Card Shop Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 303 | 9PN8M16GG8M4 | Tears of Metal (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 304 | 9P6X0VL8BXZF | Tempopo | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 305 | 9NG66K0Z31LH | TerraTech Legion | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 306 | 9N0P25WJHM8C | The Alters | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 307 | 9PN3VDFTB5HZ | The Bard's Tale ARPG : Remastered and Resnarkled | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 308 | C2B4T86TXLRS | The Bard's Tale IV: Director's Cut | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 309 | 9MVN4ND41DD3 | The Bard's Tale Trilogy | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 310 | 9PFXKRLVWJ0B | The Elder Scrolls Adventures: Redguard | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 311 | 9PP7XSG5LDH1 | The Elder Scrolls III: Morrowind Game of the Year Edition (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 312 | 9P2J5D12GJL5 | The Elder Scrolls IV: Oblivion Game of the Year Edition (PC) – 2009 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 313 | 9NQR437K7PQH | The Elder Scrolls IV: Oblivion Remastered | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 314 | 9P03JGQ4S1GC | The Elder Scrolls V: Skyrim Special Edition (PC) | MSIXVC | 20 Oct: absent from inspected registry and standard root | Public package and local-presence triage only | Not launched | Unknown | P3: resolve legitimate account/package access before download |
+| 315 | 9MX8R81JW1B5 | The Evil Within (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 316 | 9NT0NT8JQMQN | The Evil Within® 2 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 317 | 9PGD71CMDS0Z | THE FINALS | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 318 | 9P8FBXKMCLWC | The First Descendant | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 319 | 9P008L2LS87F | The Gunk | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 320 | 9NFKN56ZBMR0 | The Long Dark | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 321 | 9P8RMKXRML7D | The Outer Worlds 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 322 | 9N072VV7MFK7 | The Planet Crafter | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 323 | 9N034X5G08B7 | The Royal Writ | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 324 | 9N7P8GVMF6SS | The Talos Principle 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 325 | 9MZZZCHZ26NK | The Thaumaturge | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 326 | 9NQV7C0G1040 | theHunter: Call of the Wild™ | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 327 | 9ND19JDMBS3R | Tiny Bookshop | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 328 | 9NM6NMBJ7ZK4 | to a T | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 329 | 9NC0071DJ6XC | Torment: Tides of Numenera | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 330 | 9PHTX5QZ035T | Total Chaos | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 331 | 9PC4RWP34M2D | Totally Accurate Battle Simulator | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 332 | 9NZG72SH3H4W | Totally Reliable Delivery Service | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 333 | 9P7TLX79S7N7 | Towerborne | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 334 | 9NSFGM8J6MBJ | Trailmakers | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 335 | 9NCDMPCPDTQF | Trepang2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 336 | 9NHMR19TS1M0 | TRIALS of MANA | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 337 | 9NVSNWWJCJZV | Tropico 7 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 338 | 9NLRT31Z4RWM | TUNIC | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 339 | 9P1H8K2V0NNP | Ultimate Sheep Raccoon | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 340 | 9P861V1542BL | Valor Mortis | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 341 | 9NMPVJ7TCFD0 | Vampire Crawlers: The Turbo Wildcard from Vampire Survivors | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 342 | 9PD5BM2Z8C4L | Vampire Survivors | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 343 | 9N5VHX8KMVNV | Vapor World: Over The Mind (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 344 | 9NSM674QVLBS | Virtua Fighter 5 R.E.V.O. World Stage | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 345 | 9NJ5WV40PD08 | Visions of Mana | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 346 | 9N9K5QP9G3GL | VOID/BREAKER (Game Preview) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 347 | 9NQMVR9WL9FW | Voidtrain | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 348 | BX1DTCBD1HXJ | War Thunder | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 349 | 9NT3WC6RKBVQ | Warhammer 40,000: Darktide | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 350 | 9P30BFHZ1BKN | Warhammer 40,000: Rogue Trader | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 351 | 9N9PCZWHVP2L | Warhammer 40,000: Space Marine 2 | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 352 | 9NWQ686JB33G | Wartales | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 353 | C521HDXRTS7F | Wasteland 2: Director's Cut | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 354 | 9NLT5XR52ZS7 | Wasteland 3 (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 355 | 9NGH1FK0RJGL | Wasteland Remastered | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 356 | 9PLH7R84GJWP | Well Dweller | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 357 | 9NGCFDHR2MV3 | Wheel World | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 358 | 9N76QGDS5GJR | Where Winds Meet | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 359 | 9N6VS1BMZ3BW | Wildgate | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 360 | 9P1ZW5K4S44V | Winds of Arcana: Ruination | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 361 | 9ND3HTTQ0GKB | Winter Burrow | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 362 | 9NFW93G1GFXG | Wo Long 2: Wings of Ember | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 363 | 9N9X9PC8V9CP | Wo Long: Fallen Dynasty | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 364 | 9NS86BQ33SPX | Wobbly Life | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 365 | 9P7Z1D3N8KR7 | Wolfenstein 3D | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 366 | 9P75CBJ9WT9W | Wolfenstein: The New Order (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 367 | 9PBB4QHMSDKR | Wolfenstein: The Old Blood (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 368 | 9PHFTS44F99K | Wolfenstein: Youngblood (PC) | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 369 | 9N11JM7F5CXK | World of Tanks: HEAT | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 370 | C1ZT6N30L1WH | World of Warships: Legends | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 371 | 9NG06CSMM97P | Wreckfest | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 372 | 9N6WN0ZHZQ6W | WUCHANG: Fallen Feathers | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 373 | 9P41GS5W1C6L | Wuthering Waves | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 374 | 9N3KQH8183GD | Young Suns | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 375 | 9N4X0WFZ2STM | Zenless Zone Zero | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
+| 376 | 9PLSCHRN5715 | Zombie Army 4: Dead War | MSIXVC | Unknown | Not attempted | Not attempted | Unknown | Resolve legitimate access and package before launch |
