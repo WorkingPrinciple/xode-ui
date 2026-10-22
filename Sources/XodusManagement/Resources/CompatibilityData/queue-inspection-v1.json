@@ -1168,6 +1168,79 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NCJWHHMVHR0&market=GB&languages=en-GB",
         "status": "matched"
       },
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 83,
+          "fileListSha256": "d46a9944bac99907850db4754c6cba475a647431eaa91274bb950ad70fb266eb",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "5d9966976c19562e4d087c9b5ff269b47cb5e69eaa3177a10f13e741cad27397",
+            "imports": [],
+            "path": "PaganIdol.exe",
+            "sizeBytes": 557056,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "headerSha256": "0daa09b38a2f398c3e4f9a8b6a1aabf32006a0b4065d0be6590c9892e159d376",
+            "imports": [],
+            "path": "PaganIdol/Binaries/WinGDK/PaganIdol-WinGDK-Shipping.exe",
+            "sizeBytes": 153497600,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {
+          "Unreal": [
+            "Engine/Binaries/ThirdParty/NVIDIA/NVaftermath/Win64/GFSDK_Aftermath_Lib.x64.dll",
+            "Engine/Binaries/ThirdParty/Ogg/Win64/VS2015/libogg_64.dll",
+            "Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbis_64.dll",
+            "Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbisfile_64.dll",
+            "Engine/Binaries/ThirdParty/Windows/XAudio2_9/x64/xaudio2_9redist.dll",
+            "PaganIdol/Binaries/WinGDK/D3D12/D3D12Core.dll",
+            "PaganIdol/Binaries/WinGDK/D3D12/d3d12SDKLayers.dll",
+            "PaganIdol/Binaries/WinGDK/GameChat2.dll",
+            "PaganIdol/Binaries/WinGDK/PaganIdol-WinGDK-Shipping.exe",
+            "PaganIdol/Binaries/WinGDK/Party.dll",
+            "PaganIdol/Binaries/WinGDK/PartyXboxLive.dll",
+            "PaganIdol/Binaries/WinGDK/XCurl.dll"
+          ]
+        },
+        "executables": [
+          "PaganIdol.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Microsoft.PaganIdol",
+          "storeId": "9NCJWHHMVHR0",
+          "version": "1.122.6428.0"
+        },
+        "manifestSha256": "609097046de4724447fc65ef6e69c2ace1dae0c898f949972d627b0688484ca4",
+        "metadata": {
+          "MSAAppId": [
+            "bc7c1052-da9d-4ba7-a486-db8f22bf31d7"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "7e872db1"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "Engine/Content/Renderer/TessellationTable.bin",
+          "PaganIdol/Binaries/WinGDK/D3D12/D3D12Core.dll",
+          "PaganIdol/Binaries/WinGDK/D3D12/d3d12SDKLayers.dll"
+        ],
+        "root": "~/Games/Xodus/Keeper-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
       "steam": {
         "appID": 3043580,
         "categories": [
@@ -2401,6 +2474,79 @@
         ],
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NQVHHW88XW9&market=GB&languages=en-GB",
         "status": "matched"
+      },
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 77,
+          "fileListSha256": "9c884d2155764f3ca887904b0657dcde183ccafc8db73a19c833673d6bb687c4",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "d6ce7424b15674bec28465351895b880986077d018f394d3eecfa58941dd217f",
+            "imports": [],
+            "path": "BMC.exe",
+            "sizeBytes": 286720,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "headerSha256": "0284beb0fa7cda29449980340a2bc74eb252f30d5ecc04c1e57e183fc6e61980",
+            "imports": [],
+            "path": "BMC/Binaries/WinGDK/BMC-WinGDK-Shipping.exe",
+            "sizeBytes": 135884800,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {
+          "Unreal": [
+            "BMC/Binaries/WinGDK/BMC-WinGDK-Shipping.exe",
+            "BMC/Binaries/WinGDK/D3D12/x64/D3D12Core.dll",
+            "BMC/Binaries/WinGDK/D3D12/x64/d3d12SDKLayers.dll",
+            "BMC/Binaries/WinGDK/GameChat2.dll",
+            "BMC/Binaries/WinGDK/Party.dll",
+            "BMC/Binaries/WinGDK/PartyXboxLive.dll",
+            "BMC/Binaries/WinGDK/XCurl.dll",
+            "BMC/Binaries/WinGDK/libHttpClient.GDK.dll",
+            "BMC/Binaries/WinGDK/tbb12.dll",
+            "BMC/Binaries/WinGDK/tbbmalloc.dll",
+            "Engine/Binaries/ThirdParty/Ogg/Win64/VS2015/libogg_64.dll",
+            "Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbis_64.dll"
+          ]
+        },
+        "executables": [
+          "BMC.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "A278AB0D.TheBlueyCamera",
+          "storeId": "9NQVHHW88XW9",
+          "version": "1.0.58.0"
+        },
+        "manifestSha256": "f45dae5e6531fc4ab71cf21b2354f7e61f9589d12d26f59cb5d5b94300259fa2",
+        "metadata": {
+          "MSAAppId": [
+            "000000004D6FDD07"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "73D3A25A"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "BMC/Binaries/WinGDK/D3D12/x64/D3D12Core.dll",
+          "BMC/Binaries/WinGDK/D3D12/x64/d3d12SDKLayers.dll",
+          "Engine/Content/Renderer/TessellationTable.bin"
+        ],
+        "root": "~/Games/Xodus/BlueysHappySnaps-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
         "appID": 3064040,

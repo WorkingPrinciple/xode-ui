@@ -1,7 +1,7 @@
 {
   "products": {
     "9N8C07SS8C9D": {
-      "checkedAt": "2026-10-21T23:45:50+00:00",
+      "checkedAt": "2026-10-22T00:12:20+00:00",
       "completeness": {
         "content_id": "5ed01e66-9b79-4d5b-84f6-64d41aa6430a",
         "detail": null,
@@ -9,28 +9,115 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 1610,
-        "finished_at": "2026-10-21T23:45:50.561823Z",
+        "finished_at": "2026-10-22T00:12:19.994025Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/FinalFantasyIV-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/594ba71f-fea0-4a1c-ad8b-1ee2b4e8ade7",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/6a46d293-fd11-4d19-bb0a-4f1b03081b31",
         "operation": "install-status",
         "product": "9N8C07SS8C9D",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/594ba71f-fea0-4a1c-ad8b-1ee2b4e8ade7/result.json",
-        "run_id": "594ba71f-fea0-4a1c-ad8b-1ee2b4e8ade7",
-        "started_at": "2026-10-21T23:45:49.864357Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/6a46d293-fd11-4d19-bb0a-4f1b03081b31/result.json",
+        "run_id": "6a46d293-fd11-4d19-bb0a-4f1b03081b31",
+        "started_at": "2026-10-22T00:12:19.332357Z",
         "status": "complete",
         "success": true,
         "version": 1
       },
-      "engineProfile": null,
-      "engineProfileProposal": {
-        "basis": "Readable UnityPlayer imports OpenGL; active renderer unverified. Public queue API remains DX10.",
+      "engineProfile": {
+        "api": "OpenGL library candidate",
+        "api_alternatives": [
+          "OpenGL"
+        ],
+        "backend": "wined3d",
+        "basis": "Readable UnityPlayer.dll imports OpenGL; public DX10 and dynamic loading remain possible",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
+          "CX_GRAPHICS_BACKEND": "wined3d",
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "WINEDLLOVERRIDES": "d3d9=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [
+            {
+              "direct_d3d11_create_import": false,
+              "imports": [
+                "KERNEL32.dll",
+                "USER32.dll",
+                "VERSION.dll",
+                "ole32.dll",
+                "SHLWAPI.dll",
+                "SETUPAPI.dll",
+                "ADVAPI32.dll",
+                "GDI32.dll",
+                "SHELL32.dll",
+                "OPENGL32.dll",
+                "WINMM.dll",
+                "OLEAUT32.dll",
+                "IMM32.dll",
+                "WINHTTP.dll",
+                "bcrypt.dll",
+                "HID.DLL",
+                "CRYPT32.dll",
+                "WS2_32.dll",
+                "dwmapi.dll"
+              ],
+              "path": "UnityPlayer.dll",
+              "renderer_strings": [
+                "D3D11CreateDevice",
+                "D3D12CreateDevice",
+                "d3d11.dll",
+                "d3d12.dll",
+                "opengl32.dll"
+              ],
+              "sha256": "50d2eceeceb73177d99f6dd95213207f2b381bde46d7b28a67d5ab53af948df8"
+            }
+          ],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "FINAL FANTASY IV.exe",
+              "pe_readable": false,
+              "sha256": "63cb674c5507fcde027e1412f19fad88d483b7fe0679b1812b176ab6e65da264"
+            }
+          ],
+          "renderer_libraries": [],
+          "root": "/Users/dragoshont/Games/Xodus/FinalFantasyIV-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T231314192365Z/queue-winecx-nativejson/prefix",
         "profile": "queue-winecx-nativejson",
-        "scope": "Not an approved binding or a runtime/gameplay result.",
-        "status": "proposal-awaiting-S1-confirmation"
+        "public_api_basis": "public-Windows-requirement",
+        "public_api_evidence_source": "https://store.steampowered.com/app/1173800/",
+        "public_api_target": "DX10",
+        "rank": 16,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9N8C07SS8C9D",
+        "title": "FINAL FANTASY IV"
       },
+      "engineProfileProposal": null,
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-      "engineProfileStatus": "pending-S1-binding",
+      "engineProfileStatus": "candidate-not-game-qualified",
       "install": {
         "exit_code": 0,
         "finished_at": "2026-10-21T23:26:46.240550Z",
@@ -130,8 +217,183 @@
       "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
       "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
     },
+    "9NCJWHHMVHR0": {
+      "checkedAt": "2026-10-22T00:12:22+00:00",
+      "completeness": {
+        "content_id": "44458d9c-25d1-41c6-8590-3dca85f5d3b6",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 82,
+        "finished_at": "2026-10-22T00:12:21.990642Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/Keeper-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/361fb9ca-5129-42f1-aaa1-41c3ad79920d",
+        "operation": "install-status",
+        "product": "9NCJWHHMVHR0",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/361fb9ca-5129-42f1-aaa1-41c3ad79920d/result.json",
+        "run_id": "361fb9ca-5129-42f1-aaa1-41c3ad79920d",
+        "started_at": "2026-10-22T00:12:20.172838Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": {
+        "api": "DX12 public candidate",
+        "api_alternatives": [],
+        "backend": "d3dmetal",
+        "basis": "Public DX12 requirement and Unreal WinGDK layout; exact Xbox active renderer unobserved",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "ROSETTA_ADVERTISE_AVX": "1",
+          "WINEDLLOVERRIDES": "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "PaganIdol.exe",
+              "pe_readable": false,
+              "sha256": "717d2be32777afeead746554b581d5e05300d30957c66c8e7846ff8e7096c7cd"
+            }
+          ],
+          "renderer_libraries": [
+            {
+              "path": "PaganIdol/Binaries/WinGDK/D3D12/D3D12Core.dll",
+              "pe_readable": true,
+              "sha256": "5528998b9b894f518c734fe22eff9f173ddba5f3110709050f0026b205eda3d0"
+            }
+          ],
+          "root": "/Users/dragoshont/Games/Xodus/Keeper-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T224406944332Z/apple-gptk-4.0b3/prefix",
+        "profile": "apple-gptk-4.0b3",
+        "public_api_basis": "public-title-reference",
+        "public_api_evidence_source": "https://www.pcgamingwiki.com/wiki/Keeper",
+        "public_api_target": "DX12",
+        "rank": 22,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9NCJWHHMVHR0",
+        "title": "Keeper"
+      },
+      "engineProfileProposal": null,
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "candidate-not-game-qualified",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-22T00:10:07.710456Z",
+        "product": "9NCJWHHMVHR0",
+        "run_id": "3a4f828b-37c0-4b81-80a7-a508cff2fae2",
+        "started_at": "2026-10-21T23:57:26.608218Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/3a4f828b-37c0-4b81-80a7-a508cff2fae2/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 83,
+          "fileListSha256": "d46a9944bac99907850db4754c6cba475a647431eaa91274bb950ad70fb266eb",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "5d9966976c19562e4d087c9b5ff269b47cb5e69eaa3177a10f13e741cad27397",
+            "imports": [],
+            "path": "PaganIdol.exe",
+            "sizeBytes": 557056,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "headerSha256": "0daa09b38a2f398c3e4f9a8b6a1aabf32006a0b4065d0be6590c9892e159d376",
+            "imports": [],
+            "path": "PaganIdol/Binaries/WinGDK/PaganIdol-WinGDK-Shipping.exe",
+            "sizeBytes": 153497600,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {
+          "Unreal": [
+            "Engine/Binaries/ThirdParty/NVIDIA/NVaftermath/Win64/GFSDK_Aftermath_Lib.x64.dll",
+            "Engine/Binaries/ThirdParty/Ogg/Win64/VS2015/libogg_64.dll",
+            "Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbis_64.dll",
+            "Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbisfile_64.dll",
+            "Engine/Binaries/ThirdParty/Windows/XAudio2_9/x64/xaudio2_9redist.dll",
+            "PaganIdol/Binaries/WinGDK/D3D12/D3D12Core.dll",
+            "PaganIdol/Binaries/WinGDK/D3D12/d3d12SDKLayers.dll",
+            "PaganIdol/Binaries/WinGDK/GameChat2.dll",
+            "PaganIdol/Binaries/WinGDK/PaganIdol-WinGDK-Shipping.exe",
+            "PaganIdol/Binaries/WinGDK/Party.dll",
+            "PaganIdol/Binaries/WinGDK/PartyXboxLive.dll",
+            "PaganIdol/Binaries/WinGDK/XCurl.dll"
+          ]
+        },
+        "executables": [
+          "PaganIdol.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "Microsoft.PaganIdol",
+          "storeId": "9NCJWHHMVHR0",
+          "version": "1.122.6428.0"
+        },
+        "manifestSha256": "609097046de4724447fc65ef6e69c2ace1dae0c898f949972d627b0688484ca4",
+        "metadata": {
+          "MSAAppId": [
+            "bc7c1052-da9d-4ba7-a486-db8f22bf31d7"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "7e872db1"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "Engine/Content/Renderer/TessellationTable.bin",
+          "PaganIdol/Binaries/WinGDK/D3D12/D3D12Core.dll",
+          "PaganIdol/Binaries/WinGDK/D3D12/d3d12SDKLayers.dll"
+        ],
+        "root": "~/Games/Xodus/Keeper-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/Keeper-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    },
     "9NFB47H2SDRX": {
-      "checkedAt": "2026-10-21T23:45:57+00:00",
+      "checkedAt": "2026-10-22T00:12:23+00:00",
       "completeness": {
         "content_id": "2dff0f2a-fd10-473d-85db-868f7e6a7e35",
         "detail": null,
@@ -139,28 +401,128 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 421,
-        "finished_at": "2026-10-21T23:45:57.238808Z",
+        "finished_at": "2026-10-22T00:12:23.133766Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/ForeverAgo-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d2c7085f-7c51-496e-a0a9-6cb2f1ab5d51",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8c07a2bf-9ed1-4fc6-b2f2-449b274bdbd0",
         "operation": "install-status",
         "product": "9NFB47H2SDRX",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d2c7085f-7c51-496e-a0a9-6cb2f1ab5d51/result.json",
-        "run_id": "d2c7085f-7c51-496e-a0a9-6cb2f1ab5d51",
-        "started_at": "2026-10-21T23:45:56.499072Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/8c07a2bf-9ed1-4fc6-b2f2-449b274bdbd0/result.json",
+        "run_id": "8c07a2bf-9ed1-4fc6-b2f2-449b274bdbd0",
+        "started_at": "2026-10-22T00:12:22.089530Z",
         "status": "complete",
         "success": true,
         "version": 1
       },
-      "engineProfile": null,
-      "engineProfileProposal": {
-        "basis": "queue API DX12; public-Windows-requirement",
+      "engineProfile": {
+        "api": "DX12 public candidate",
+        "api_alternatives": [
+          "DX11",
+          "DX12",
+          "OpenGL"
+        ],
+        "backend": "d3dmetal",
+        "basis": "Public DX12 requirement; Unity library offers DX11/DX12/OpenGL, active renderer unobserved",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "ROSETTA_ADVERTISE_AVX": "1",
+          "WINEDLLOVERRIDES": "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [
+            {
+              "direct_d3d11_create_import": true,
+              "imports": [
+                "api-ms-win-core-synch-l1-2-0.dll",
+                "KERNEL32.dll",
+                "USER32.dll",
+                "VERSION.dll",
+                "ole32.dll",
+                "SHLWAPI.dll",
+                "SETUPAPI.dll",
+                "ADVAPI32.dll",
+                "GDI32.dll",
+                "SHELL32.dll",
+                "OPENGL32.dll",
+                "WINMM.dll",
+                "OLEAUT32.dll",
+                "IMM32.dll",
+                "IPHLPAPI.DLL",
+                "WINHTTP.dll",
+                "bcrypt.dll",
+                "HID.DLL",
+                "api-ms-win-core-winrt-l1-1-0.dll",
+                "api-ms-win-core-winrt-string-l1-1-0.dll",
+                "d3d11.dll",
+                "dxgi.dll",
+                "UIAutomationCore.DLL",
+                "CRYPT32.dll",
+                "WS2_32.dll",
+                "dwmapi.dll"
+              ],
+              "path": "UnityPlayer.dll",
+              "renderer_strings": [
+                "D3D11CreateDevice",
+                "d3d11.dll",
+                "d3d12.dll",
+                "opengl32.dll"
+              ],
+              "sha256": "3012ee458aad4412a1fe6149ce8edee8143debd39716596ad27570a739515328"
+            }
+          ],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "ForeverAgo.exe",
+              "pe_readable": false,
+              "sha256": "23b6386562c5dcfc0b652fed0e84fe0ba4e2374d2604602780ff2ef018ecd063"
+            }
+          ],
+          "renderer_libraries": [
+            {
+              "path": "D3D12/D3D12Core.dll",
+              "pe_readable": true,
+              "sha256": "625bd40005b1c3708695d5256ecf230d278e6b8edba5a88af70f3d91324f3052"
+            }
+          ],
+          "root": "/Users/dragoshont/Games/Xodus/ForeverAgo-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T224406944332Z/apple-gptk-4.0b3/prefix",
         "profile": "apple-gptk-4.0b3",
-        "scope": "Not an approved binding or a runtime/gameplay result.",
-        "status": "proposal-awaiting-S1-confirmation"
+        "public_api_basis": "public-Windows-requirement",
+        "public_api_evidence_source": "https://store.steampowered.com/app/1215940/",
+        "public_api_target": "DX12",
+        "rank": 19,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9NFB47H2SDRX",
+        "title": "Forever Ago"
       },
+      "engineProfileProposal": null,
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-      "engineProfileStatus": "pending-S1-binding",
+      "engineProfileStatus": "candidate-not-game-qualified",
       "install": {
         "exit_code": 0,
         "finished_at": "2026-10-21T23:33:53.357482Z",
@@ -277,7 +639,7 @@
       "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
     },
     "9NGH1FK0RJGL": {
-      "checkedAt": "2026-10-21T23:45:51+00:00",
+      "checkedAt": "2026-10-22T00:12:23+00:00",
       "completeness": {
         "content_id": "9200fed3-78d1-4568-b66b-00135207931c",
         "detail": null,
@@ -285,28 +647,116 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 219,
-        "finished_at": "2026-10-21T23:45:51.163204Z",
+        "finished_at": "2026-10-22T00:12:23.608569Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/WastelandRemastered-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/f996abbe-7a24-4fbe-8e4a-df0cfdb90437",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/3ae54562-07de-4417-afe5-820dab776a12",
         "operation": "install-status",
         "product": "9NGH1FK0RJGL",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/f996abbe-7a24-4fbe-8e4a-df0cfdb90437/result.json",
-        "run_id": "f996abbe-7a24-4fbe-8e4a-df0cfdb90437",
-        "started_at": "2026-10-21T23:45:50.753Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/3ae54562-07de-4417-afe5-820dab776a12/result.json",
+        "run_id": "3ae54562-07de-4417-afe5-820dab776a12",
+        "started_at": "2026-10-22T00:12:23.243844Z",
         "status": "complete",
         "success": true,
         "version": 1
       },
-      "engineProfile": null,
-      "engineProfileProposal": {
-        "basis": "queue API DX11; public-Windows-requirement",
+      "engineProfile": {
+        "api": "DX11 public candidate",
+        "api_alternatives": [
+          "OpenGL"
+        ],
+        "backend": "d3dmetal",
+        "basis": "Public DX11 requirement; readable UnityPlayer imports OpenGL, not proof of active DX11",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "ROSETTA_ADVERTISE_AVX": "1",
+          "WINEDLLOVERRIDES": "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [
+            {
+              "direct_d3d11_create_import": false,
+              "imports": [
+                "KERNEL32.dll",
+                "USER32.dll",
+                "VERSION.dll",
+                "ole32.dll",
+                "SHLWAPI.dll",
+                "SETUPAPI.dll",
+                "ADVAPI32.dll",
+                "GDI32.dll",
+                "SHELL32.dll",
+                "OPENGL32.dll",
+                "WINMM.dll",
+                "WS2_32.dll",
+                "OLEAUT32.dll",
+                "IMM32.dll",
+                "WINHTTP.dll",
+                "bcrypt.dll",
+                "HID.DLL",
+                "CRYPT32.dll",
+                "WindowsCodecs.dll",
+                "dwmapi.dll",
+                "WSOCK32.dll"
+              ],
+              "path": "UnityPlayer.dll",
+              "renderer_strings": [
+                "D3D11CreateDevice",
+                "D3D12CreateDevice",
+                "d3d11.dll",
+                "d3d12.dll",
+                "opengl32.dll"
+              ],
+              "sha256": "d47b18340529e10fd51357ff0e1a821d76ec26e719995a3d648f58fe3813d499"
+            }
+          ],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "Wasteland Remastered.exe",
+              "pe_readable": false,
+              "sha256": "ad6f237328bad9222057392609b5d0a1eac28b3d1dddff6a9bad7175f2b51bdb"
+            }
+          ],
+          "renderer_libraries": [],
+          "root": "/Users/dragoshont/Games/Xodus/WastelandRemastered-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T224727302433Z/creation-dx11-d3dmetal/prefix",
         "profile": "creation-dx11-d3dmetal",
-        "scope": "Not an approved binding or a runtime/gameplay result.",
-        "status": "proposal-awaiting-S1-confirmation"
+        "public_api_basis": "public-Windows-requirement",
+        "public_api_evidence_source": "https://store.steampowered.com/app/875800/",
+        "public_api_target": "DX11",
+        "rank": 17,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9NGH1FK0RJGL",
+        "title": "Wasteland Remastered"
       },
+      "engineProfileProposal": null,
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-      "engineProfileStatus": "pending-S1-binding",
+      "engineProfileStatus": "candidate-not-game-qualified",
       "install": {
         "exit_code": 0,
         "finished_at": "2026-10-21T23:28:32.757300Z",
@@ -405,8 +855,183 @@
       "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
       "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
     },
+    "9NQVHHW88XW9": {
+      "checkedAt": "2026-10-22T00:12:24+00:00",
+      "completeness": {
+        "content_id": "92858aa7-7f62-4877-ad35-d3e5eb35a38d",
+        "detail": null,
+        "error": null,
+        "error_code": null,
+        "exit_code": 0,
+        "files_total": 76,
+        "finished_at": "2026-10-22T00:12:24.103884Z",
+        "game_dir": "/Users/dragoshont/Games/Xodus/BlueysHappySnaps-Xbox",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/7d6087dd-d588-4ae6-b83b-28f8d5f5ac9f",
+        "operation": "install-status",
+        "product": "9NQVHHW88XW9",
+        "reason_code": null,
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/7d6087dd-d588-4ae6-b83b-28f8d5f5ac9f/result.json",
+        "run_id": "7d6087dd-d588-4ae6-b83b-28f8d5f5ac9f",
+        "started_at": "2026-10-22T00:12:23.705078Z",
+        "status": "complete",
+        "success": true,
+        "version": 1
+      },
+      "engineProfile": {
+        "api": "DX11 public candidate",
+        "api_alternatives": [],
+        "backend": "d3dmetal",
+        "basis": "Public title reference lists DX11; exact Xbox active renderer unobserved",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "ROSETTA_ADVERTISE_AVX": "1",
+          "WINEDLLOVERRIDES": "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "BMC.exe",
+              "pe_readable": false,
+              "sha256": "2f6b6b13b480f0c4d52fcd9c125b72cbd0418c16be5022a9409979d106940d7f"
+            }
+          ],
+          "renderer_libraries": [
+            {
+              "path": "BMC/Binaries/WinGDK/D3D12/x64/D3D12Core.dll",
+              "pe_readable": true,
+              "sha256": "9e47f236fd3244ad88443a61f7d549eced052b42cb9bd78bbeb35a5918c25bb9"
+            }
+          ],
+          "root": "/Users/dragoshont/Games/Xodus/BlueysHappySnaps-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T224727302433Z/creation-dx11-d3dmetal/prefix",
+        "profile": "creation-dx11-d3dmetal",
+        "public_api_basis": "public-title-reference",
+        "public_api_evidence_source": "https://www.pcgamingwiki.com/wiki/Bluey%27s_Happy_Snaps",
+        "public_api_target": "DX11",
+        "rank": 23,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9NQVHHW88XW9",
+        "title": "Bluey's Happy Snaps"
+      },
+      "engineProfileProposal": null,
+      "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
+      "engineProfileStatus": "candidate-not-game-qualified",
+      "install": {
+        "exit_code": 0,
+        "finished_at": "2026-10-22T00:00:28.545409Z",
+        "product": "9NQVHHW88XW9",
+        "run_id": "d3d723ec-5b62-4e19-806a-cfc33772641a",
+        "started_at": "2026-10-21T23:57:54.990444Z",
+        "success": true
+      },
+      "installReceiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d3d723ec-5b62-4e19-806a-cfc33772641a/result.json",
+      "package": {
+        "antiCheatScan": {
+          "complete": true,
+          "fileCount": 77,
+          "fileListSha256": "9c884d2155764f3ca887904b0657dcde183ccafc8db73a19c833673d6bb687c4",
+          "matches": {},
+          "symlinkCount": 0
+        },
+        "binaries": [
+          {
+            "headerSha256": "d6ce7424b15674bec28465351895b880986077d018f394d3eecfa58941dd217f",
+            "imports": [],
+            "path": "BMC.exe",
+            "sizeBytes": 286720,
+            "status": "opaque-or-not-PE"
+          },
+          {
+            "headerSha256": "0284beb0fa7cda29449980340a2bc74eb252f30d5ecc04c1e57e183fc6e61980",
+            "imports": [],
+            "path": "BMC/Binaries/WinGDK/BMC-WinGDK-Shipping.exe",
+            "sizeBytes": 135884800,
+            "status": "opaque-or-not-PE"
+          }
+        ],
+        "engineMarkers": {
+          "Unreal": [
+            "BMC/Binaries/WinGDK/BMC-WinGDK-Shipping.exe",
+            "BMC/Binaries/WinGDK/D3D12/x64/D3D12Core.dll",
+            "BMC/Binaries/WinGDK/D3D12/x64/d3d12SDKLayers.dll",
+            "BMC/Binaries/WinGDK/GameChat2.dll",
+            "BMC/Binaries/WinGDK/Party.dll",
+            "BMC/Binaries/WinGDK/PartyXboxLive.dll",
+            "BMC/Binaries/WinGDK/XCurl.dll",
+            "BMC/Binaries/WinGDK/libHttpClient.GDK.dll",
+            "BMC/Binaries/WinGDK/tbb12.dll",
+            "BMC/Binaries/WinGDK/tbbmalloc.dll",
+            "Engine/Binaries/ThirdParty/Ogg/Win64/VS2015/libogg_64.dll",
+            "Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbis_64.dll"
+          ]
+        },
+        "executables": [
+          "BMC.exe"
+        ],
+        "graphicsAPIs": [],
+        "hasUnityPlayer": false,
+        "hasXboxIdentity": true,
+        "identity": {
+          "manifest": "MicrosoftGame.config",
+          "name": "A278AB0D.TheBlueyCamera",
+          "storeId": "9NQVHHW88XW9",
+          "version": "1.0.58.0"
+        },
+        "manifestSha256": "f45dae5e6531fc4ab71cf21b2354f7e61f9589d12d26f59cb5d5b94300259fa2",
+        "metadata": {
+          "MSAAppId": [
+            "000000004D6FDD07"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "73D3A25A"
+          ]
+        },
+        "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
+        "rendererFiles": [
+          "BMC/Binaries/WinGDK/D3D12/x64/D3D12Core.dll",
+          "BMC/Binaries/WinGDK/D3D12/x64/d3d12SDKLayers.dll",
+          "Engine/Content/Renderer/TessellationTable.bin"
+        ],
+        "root": "~/Games/Xodus/BlueysHappySnaps-Xbox",
+        "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
+      },
+      "root": "~/Games/Xodus/BlueysHappySnaps-Xbox",
+      "signatureSet": "anti-cheat-signatures-v1.json",
+      "signatureSetSha256": "eed4c914266b7e636ed90cedded3221c8ebafbc163b2c73b68f5d54391a64f78",
+      "statusExecutable": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604/xodus-cli",
+      "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
+    },
     "9NXWSWBM4H6T": {
-      "checkedAt": "2026-10-21T23:57:12+00:00",
+      "checkedAt": "2026-10-22T00:12:26+00:00",
       "completeness": {
         "content_id": "b59198cb-4811-42c1-95d3-655f48da1b43",
         "detail": null,
@@ -414,28 +1039,84 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 106,
-        "finished_at": "2026-10-21T23:57:12.743977Z",
+        "finished_at": "2026-10-22T00:12:26.725720Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/BeastOfReincarnation-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/42fb7bb7-e06f-4bc1-bd4e-0b47bc63886d",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/598ae310-241f-4cc9-9a35-c22997b83e43",
         "operation": "install-status",
         "product": "9NXWSWBM4H6T",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/42fb7bb7-e06f-4bc1-bd4e-0b47bc63886d/result.json",
-        "run_id": "42fb7bb7-e06f-4bc1-bd4e-0b47bc63886d",
-        "started_at": "2026-10-21T23:57:10.473722Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/598ae310-241f-4cc9-9a35-c22997b83e43/result.json",
+        "run_id": "598ae310-241f-4cc9-9a35-c22997b83e43",
+        "started_at": "2026-10-22T00:12:24.202656Z",
         "status": "complete",
         "success": true,
         "version": 1
       },
-      "engineProfile": null,
-      "engineProfileProposal": {
-        "basis": "queue API DX12; public-Windows-requirement",
+      "engineProfile": {
+        "api": "DX12 public candidate",
+        "api_alternatives": [],
+        "backend": "d3dmetal",
+        "basis": "Public DX12 requirement; exact Xbox active renderer unobserved",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "ROSETTA_ADVERTISE_AVX": "1",
+          "WINEDLLOVERRIDES": "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "BeastOfReincarnation/Binaries/WinGDK/BeastOfReincarnation-WinGDK-Shipping.exe",
+              "pe_readable": false,
+              "sha256": "133b8e7cd442acc4048363abe8f09141c940416abfda700072a17e42b807e271"
+            }
+          ],
+          "renderer_libraries": [
+            {
+              "path": "BeastOfReincarnation/Binaries/WinGDK/D3D12/D3D12Core.dll",
+              "pe_readable": true,
+              "sha256": "31f364f2b3aa1753e7ba9ff912d0721c8f424be5fa14503efddafbb30c635d3b"
+            }
+          ],
+          "root": "/Users/dragoshont/Games/Xodus/BeastOfReincarnation-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T224406944332Z/apple-gptk-4.0b3/prefix",
         "profile": "apple-gptk-4.0b3",
-        "scope": "Not an approved binding or a runtime/gameplay result.",
-        "status": "proposal-awaiting-S1-confirmation"
+        "public_api_basis": "public-Windows-requirement",
+        "public_api_evidence_source": "https://store.steampowered.com/app/2001760/",
+        "public_api_target": "DX12",
+        "rank": 21,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9NXWSWBM4H6T",
+        "title": "Beast of Reincarnation"
       },
+      "engineProfileProposal": null,
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-      "engineProfileStatus": "pending-S1-binding",
+      "engineProfileStatus": "candidate-not-game-qualified",
       "install": {
         "exit_code": 0,
         "finished_at": "2026-10-21T23:56:55.147783Z",
@@ -518,7 +1199,7 @@
       "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
     },
     "9P1N07XDL1D4": {
-      "checkedAt": "2026-10-21T23:45:56+00:00",
+      "checkedAt": "2026-10-22T00:12:32+00:00",
       "completeness": {
         "content_id": "6f4b5989-6054-48c4-ba84-04a597d750e3",
         "detail": null,
@@ -526,28 +1207,79 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 11196,
-        "finished_at": "2026-10-21T23:45:55.861703Z",
+        "finished_at": "2026-10-22T00:12:32.483264Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/DishonoredDefinitive-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bf12783d-adf9-4c8d-85bc-ce338e742b64",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d3e6b1a3-5312-4383-8175-cefc84c4f8cc",
         "operation": "install-status",
         "product": "9P1N07XDL1D4",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/bf12783d-adf9-4c8d-85bc-ce338e742b64/result.json",
-        "run_id": "bf12783d-adf9-4c8d-85bc-ce338e742b64",
-        "started_at": "2026-10-21T23:45:51.264070Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/d3e6b1a3-5312-4383-8175-cefc84c4f8cc/result.json",
+        "run_id": "d3e6b1a3-5312-4383-8175-cefc84c4f8cc",
+        "started_at": "2026-10-22T00:12:26.834081Z",
         "status": "complete",
         "success": true,
         "version": 1
       },
-      "engineProfile": null,
-      "engineProfileProposal": {
-        "basis": "queue API DX9; public-Windows-requirement",
+      "engineProfile": {
+        "api": "DX9 public candidate",
+        "api_alternatives": [],
+        "backend": "wined3d",
+        "basis": "Public DX9 requirement; exact Xbox executable is opaque and renderer unobserved",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
+          "CX_GRAPHICS_BACKEND": "wined3d",
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "WINEDLLOVERRIDES": "d3d9=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "Binaries/Win64/Dishonored.exe",
+              "pe_readable": false,
+              "sha256": "f47a8feb5d4f777b4013a85eccbe2bc94d7974769ac768ec2447080ddb5784e0"
+            }
+          ],
+          "renderer_libraries": [],
+          "root": "/Users/dragoshont/Games/Xodus/DishonoredDefinitive-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T231314192365Z/queue-winecx-nativejson/prefix",
         "profile": "queue-winecx-nativejson",
-        "scope": "Not an approved binding or a runtime/gameplay result.",
-        "status": "proposal-awaiting-S1-confirmation"
+        "public_api_basis": "public-Windows-requirement",
+        "public_api_evidence_source": "https://store.steampowered.com/app/205100/",
+        "public_api_target": "DX9",
+        "rank": 18,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9P1N07XDL1D4",
+        "title": "Dishonored® Definitive Edition (PC)"
       },
+      "engineProfileProposal": null,
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-      "engineProfileStatus": "pending-S1-binding",
+      "engineProfileStatus": "candidate-not-game-qualified",
       "install": {
         "exit_code": 0,
         "finished_at": "2026-10-21T23:36:23.747988Z",
@@ -608,7 +1340,7 @@
       "statusExecutableSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
     },
     "9P5Z4530318L": {
-      "checkedAt": "2026-10-21T23:45:59+00:00",
+      "checkedAt": "2026-10-22T00:12:36+00:00",
       "completeness": {
         "content_id": "bfc20305-9099-46bc-8f65-ca6f5163831b",
         "detail": null,
@@ -616,28 +1348,78 @@
         "error_code": null,
         "exit_code": 0,
         "files_total": 740,
-        "finished_at": "2026-10-21T23:45:59.758618Z",
+        "finished_at": "2026-10-22T00:12:36.019453Z",
         "game_dir": "/Users/dragoshont/Games/Xodus/Deathloop-Xbox",
-        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/207db8fe-4392-42f9-8541-e42486abf516",
+        "log_dir": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/324725c9-52e1-405f-8b9d-31f6f729431f",
         "operation": "install-status",
         "product": "9P5Z4530318L",
         "reason_code": null,
-        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/207db8fe-4392-42f9-8541-e42486abf516/result.json",
-        "run_id": "207db8fe-4392-42f9-8541-e42486abf516",
-        "started_at": "2026-10-21T23:45:57.350311Z",
+        "result_path": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/324725c9-52e1-405f-8b9d-31f6f729431f/result.json",
+        "run_id": "324725c9-52e1-405f-8b9d-31f6f729431f",
+        "started_at": "2026-10-22T00:12:33.107283Z",
         "status": "complete",
         "success": true,
         "version": 1
       },
-      "engineProfile": null,
-      "engineProfileProposal": {
-        "basis": "queue API DX12; public-Windows-requirement",
+      "engineProfile": {
+        "api": "DX12 public candidate",
+        "api_alternatives": [],
+        "backend": "d3dmetal",
+        "basis": "Public DX12 requirement and configured d3d12 executable directory; executable is opaque",
+        "confidence": "medium (candidate)",
+        "environment": {
+          "CX_ROOT": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle",
+          "DYLD_FALLBACK_LIBRARY_PATH": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib:/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/lib/external:/Users/dragoshont/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
+          "ROSETTA_ADVERTISE_AVX": "1",
+          "WINEDLLOVERRIDES": "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b",
+          "WINELOADER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wine.real",
+          "WINEMSYNC": "1",
+          "WINESERVER": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/apple-gptk-4.0b3/runtime/wswine.bundle/bin/wineserver"
+        },
+        "evidence": {
+          "clear_modules": [],
+          "executables": [
+            {
+              "imports_status": "encrypted; no imports inferred",
+              "path": "bin/win64-vc141-shipping-d3d12-xboxlive-ltcg/Deathloop.exe",
+              "pe_readable": false,
+              "sha256": "2f86e09bc0f7bcb38b05d02c98dab5e0d35777f8b1bc0358a462284e03c853fa"
+            }
+          ],
+          "renderer_libraries": [],
+          "root": "/Users/dragoshont/Games/Xodus/Deathloop-Xbox",
+          "shaders": [],
+          "status": "module and package evidence only; encrypted executable imports unavailable"
+        },
+        "fallback_profile": "crossover-26.3",
+        "notes": "Copy stopped template to a new game-owned prefix; no shared template launches.",
+        "prepared_prefix": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/smoke/20261021T224406944332Z/apple-gptk-4.0b3/prefix",
         "profile": "apple-gptk-4.0b3",
-        "scope": "Not an approved binding or a runtime/gameplay result.",
-        "status": "proposal-awaiting-S1-confirmation"
+        "public_api_basis": "public-Windows-requirement",
+        "public_api_evidence_source": "https://store.steampowered.com/app/1252330/",
+        "public_api_target": "DX12",
+        "rank": 20,
+        "runtime": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "runtime_assets": [
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+            "sha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          },
+          {
+            "path": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime_legacy.dll",
+            "sha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+            "source_path": "S2 qualified immutable runtime candidate 7106"
+          }
+        ],
+        "shim_dir": "/Users/dragoshont/Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1",
+        "status": "candidate, not game-qualified",
+        "store_id": "9P5Z4530318L",
+        "title": "DEATHLOOP"
       },
+      "engineProfileProposal": null,
       "engineProfileSource": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/queue-profiles.json",
-      "engineProfileStatus": "pending-S1-binding",
+      "engineProfileStatus": "candidate-not-game-qualified",
       "install": {
         "exit_code": 0,
         "finished_at": "2026-10-21T23:44:24.917977Z",

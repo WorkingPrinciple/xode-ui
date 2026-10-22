@@ -1838,11 +1838,11 @@
       "title": "Beast of Reincarnation"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX12",
       "apiAlternatives": [],
       "apiBasis": "public-title-reference",
@@ -1863,11 +1863,14 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NCJWHHMVHR0&market=GB&languages=en-GB"
       },
       "downloadSizeKnown": true,
-      "engine": [],
+      "engine": [
+        "Unreal"
+      ],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NCJWHHMVHR0",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/Keeper-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1883,28 +1886,39 @@
         "date": "17 Oct, 2025"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "bc7c1052-da9d-4ba7-a486-db8f22bf31d7"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "7e872db1"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 27333864268,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9NCJWHHMVHR0",
       "storeId": "9NCJWHHMVHR0",
       "testEligibility": "test-unverified",
       "title": "Keeper"
     },
     {
-      "alreadyInstalled": false,
+      "alreadyInstalled": true,
       "antiCheat": "unknown",
       "antiCheatEvidenceCheckedAt": "2026-10-21",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
-      "antiCheatScanStatus": "not-installed",
+      "antiCheatScanStatus": "no-known-path-signature",
       "api": "DX11",
       "apiAlternatives": [],
       "apiBasis": "public-title-reference",
@@ -1925,11 +1939,14 @@
         "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NQVHHW88XW9&market=GB&languages=en-GB"
       },
       "downloadSizeKnown": true,
-      "engine": [],
+      "engine": [
+        "Unreal"
+      ],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NQVHHW88XW9",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
-      "installRoot": null,
+      "installNote": "Installer success and fresh signed CLI install-status=complete; not a gameplay pass.",
+      "installRoot": "~/Games/Xodus/BlueysHappySnaps-Xbox",
+      "installStatus": "complete",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1945,18 +1962,29 @@
         "date": "14 Oct, 2026"
       },
       "signInEvidence": {
-        "basis": "not-installed",
+        "basis": "manifest-insufficient",
         "checkedAt": "2026-10-21",
-        "hasXboxIdentity": null,
-        "manifestFields": null,
-        "packageInspected": false,
+        "hasXboxIdentity": true,
+        "manifestFields": {
+          "MSAAppId": [
+            "000000004D6FDD07"
+          ],
+          "RequiresXboxLive": [
+            "false"
+          ],
+          "TitleId": [
+            "73D3A25A"
+          ]
+        },
+        "packageInspected": true,
         "source": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive"
       },
       "signInNeeded": null,
       "signInStatus": "Mandatory Windows title sign-in is unverified; console-only RequiresXboxLive and Xbox identity fields do not establish it. Store entitlement is separate.",
-      "sizeBasis": "not measured locally",
-      "sizeBytes": 0,
-      "sizeKnown": false,
+      "sizeBasis": "sum of local file sizes in the installed root; not download size",
+      "sizeBytes": 3520030498,
+      "sizeKnown": true,
+      "stagingEvidence": "install-staging-v1.json#/products/9NQVHHW88XW9",
       "storeId": "9NQVHHW88XW9",
       "testEligibility": "test-unverified",
       "title": "Bluey's Happy Snaps"
@@ -2019,6 +2047,8 @@
       "sizeBasis": "not measured locally",
       "sizeBytes": 0,
       "sizeKnown": false,
+      "stagingDeferReason": "After Keeper completed, 163.07 GiB was free; the 39.72 GiB catalogue download cannot fit above the 150 GiB floor. Deferred, not dropped. All new staging is also paused because S3 has sixteen never-launched installed titles waiting.",
+      "stagingStatus": "deferred-disk",
       "storeId": "9P861V1542BL",
       "testEligibility": "test-unverified",
       "title": "Valor Mortis"
