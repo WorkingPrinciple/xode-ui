@@ -35,52 +35,18 @@
   "profiles": [
     {
       "version": 1,
-      "productID": "9NH0MSG29X6L",
-      "title": "Mixtape",
-      "qualification": "queued, not gameplay-qualified",
-      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
-      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
-    },
-    {
-      "version": 1,
-      "productID": "9PJPCB188SVG",
-      "title": "Subnautica 2 (Game Preview)",
-      "qualification": "queued, not gameplay-qualified",
-      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
-      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
-    },
-    {
-      "version": 1,
-      "productID": "9NXWSWBM4H6T",
-      "title": "Beast of Reincarnation",
-      "qualification": "queued, not gameplay-qualified",
-      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
-      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
-    },
-    {
-      "version": 1,
-      "productID": "9NQVHHW88XW9",
-      "title": "Bluey's Happy Snaps",
-      "qualification": "queued, not gameplay-qualified",
-      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
-      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"]
-    },
-    {
-      "version": 1,
       "productID": "9P4NV23Q6QC2",
       "title": "Abiotic Factor",
-      "qualification": "queued, not gameplay-qualified",
-      "sourceRecipe": "com-apartment-20261022/abiotic-sta-recipe.json",
+      "qualification": "S2 observed title screen ac5e2934 only; no gameplay/save qualification",
+      "sourceRecipe": "xodus-macos b464aad docs/recipes/title-runtime-v1.json",
       "engine": "apple-gptk-4.0b3",
       "executable": "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
       "timeoutSeconds": 600,
       "noAutoDismiss": true,
       "environment": {
-        "XODUS_PRIVATE_RUNTIME_COM_STA": "1",
         "WINEDEBUG": "-all,warn+gdkc,warn+xodus_user,err+all",
         "XODUS_WINE_DEBUG": "-all,warn+gdkc,warn+xodus_user,err+all"
       },
-      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM"],
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
         "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",

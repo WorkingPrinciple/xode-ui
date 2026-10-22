@@ -561,12 +561,21 @@ final class InstalledGamesController: ObservableObject {
                     nativeForegroundTask?.cancel()
                     nativeForegroundTask = nil
                     let duration = clock.duration(to: .now).components
+                    let playerMessage: String?
+                    do {
+                        playerMessage = try await result.playerMessage()
+                    } catch {
+                        playerMessage = "The launch evidence couldn't be read. Open its folder to review the result."
+                        Self.launchLog.error("Player evidence read failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                    guard runToken == token else { return }
                     recordSession(gameID: game.id, startedAt: startedAt,
                         seconds: Double(duration.seconds) + Double(duration.attoseconds) / 1e18)
                     finished(token: token, gameID: game.id, status: result.exitCode)
                     playLogs[game.id] = URL(fileURLWithPath: result.logDirectory)
+                    if let playerMessage { playErrors[game.id] = playerMessage }
                     if !result.success && result.errorCode != "CANCELLED" {
-                        playErrors[game.id] = result.failureMessage
+                        playErrors[game.id] = playerMessage ?? result.failureMessage
                     }
                     if session.accountHash != account { playErrors[game.id] = "Your Xbox account changed during play." }
                 } catch {

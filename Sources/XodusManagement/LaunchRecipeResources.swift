@@ -2,6 +2,14 @@
 import Foundation
 
 public enum LaunchRecipeResources {
+    public static func runtimeProfilesURL() throws -> URL {
+        guard let url = Bundle.module.url(forResource: "title-runtime-v1", withExtension: "json",
+                                          subdirectory: "LaunchRecipes") else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return url
+    }
+
     public static func profilesURL() throws -> URL {
         guard let url = Bundle.module.url(forResource: "title-profiles-v1", withExtension: "json",
                                           subdirectory: "LaunchRecipes") else {

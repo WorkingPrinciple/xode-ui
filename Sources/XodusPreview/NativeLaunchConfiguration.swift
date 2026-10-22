@@ -128,6 +128,53 @@ struct NativeShimReference: Sendable {
 }
 
 struct NativeTitleLaunchProfile: Codable {
+    struct RuntimeCatalogue: Decodable {
+        struct Item: Decodable {
+            struct Launch: Decodable {
+                let engine: String
+                let executable: String
+                let environment: [String: String]
+                let unsetEnvironment: [String]
+            }
+            struct Evidence: Decodable {
+                let runId: String?
+                let receiptPath: String?
+                let cliExitCode: Int?
+                let wineExitCode: Int?
+            }
+            let storeId: String
+            let status: String
+            let pendingTest: Bool
+            let launch: Launch
+            let evidence: Evidence
+            var observed: Bool {
+                !pendingTest && status == "title-screen-observed"
+                    && evidence.runId.flatMap(UUID.init(uuidString:)) != nil
+                    && evidence.receiptPath?.hasPrefix("/") == true
+                    && evidence.cliExitCode == 0 && evidence.wineExitCode == 0
+            }
+        }
+        let schemaVersion: Int
+        let cliSha256: String
+        let primaryRuntimeSha256: String
+        let legacyRuntimeSha256: String
+        let items: [Item]
+
+        static func bundled() throws -> Self {
+            let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
+            guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
+                    == "9cddef7cf30a9553f2ab3e9b5cffa4d5812c4fd260e03f32bf1e507c2931dd76" else {
+                throw NativeLaunchError.invalidProfile
+            }
+            let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
+            guard catalogue.schemaVersion == 1, catalogue.cliSha256 == NativeLifecyclePins.cliSHA256,
+                  Set(catalogue.items.map(\.storeId)).count == catalogue.items.count else {
+                throw NativeLaunchError.invalidProfile
+            }
+            return catalogue
+        }
+    }
+
     struct PinnedFile: Codable {
         let path: String
         let sha256: String
@@ -206,7 +253,29 @@ struct NativeTitleLaunchProfile: Codable {
         let bytes = try Data(contentsOf: LaunchRecipeResources.profilesURL())
         guard bytes.count <= 1_048_576 else { throw NativeLaunchError.invalidProfile }
         let catalogue = try JSONDecoder().decode(Catalogue.self, from: bytes)
-        let profiles = catalogue.profiles + (catalogue.providerOverrides ?? [])
+        let runtimeCatalogue = try RuntimeCatalogue.bundled()
+        var active = catalogue.profiles
+        for item in runtimeCatalogue.items {
+            if !item.observed {
+                guard !active.contains(where: {
+                    $0.productID == item.storeId && $0.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
+                }) else { throw NativeLaunchError.invalidProfile }
+                continue
+            }
+            guard let index = active.firstIndex(where: { $0.productID == item.storeId }),
+                  active[index].engine == item.launch.engine,
+                  active[index].executable == item.launch.executable,
+                  active[index].runtime?.primarySHA256 == runtimeCatalogue.primaryRuntimeSha256,
+                  active[index].runtime?.legacySHA256 == runtimeCatalogue.legacyRuntimeSha256,
+                  item.launch.environment["XODUS_PRIVATE_CALLER_OWNS_COM"] == nil,
+                  item.launch.unsetEnvironment.contains("XODUS_PRIVATE_CALLER_OWNS_COM") else {
+                throw NativeLaunchError.invalidProfile
+            }
+            active[index].environment.merge(item.launch.environment, uniquingKeysWith: { _, observed in observed })
+            active[index].unsetEnvironment = Array(Set((active[index].unsetEnvironment ?? [])
+                + item.launch.unsetEnvironment)).sorted()
+        }
+        let profiles = active + (catalogue.providerOverrides ?? [])
         guard catalogue.version == 1, profiles.count <= 512,
               catalogue.profiles.allSatisfy({ $0.provider == nil }),
               (catalogue.providerOverrides ?? []).allSatisfy({ $0.provider != nil }),
@@ -227,6 +296,10 @@ struct NativeTitleLaunchProfile: Codable {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         let profile = try JSONDecoder().decode(Self.self, from: InstalledGameFiles.readRegular(url, maximumBytes: 65_536))
         try profile.validate(productID: productID)
+        if profile.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1",
+           try RuntimeCatalogue.bundled().items.contains(where: { $0.storeId == productID && !$0.observed }) {
+            throw NativeLaunchError.invalidProfile
+        }
         return profile
     }
 
@@ -342,6 +415,13 @@ struct NativeLaunchConfiguration {
         var entry = try selectEngine(registry: registry,
                                      provider: profile?.provider != nil ? nil : provider, defaults: defaults,
                                      provenEngine: profile?.engine ?? provenEngine)
+        if let profile, profile.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1" {
+            guard profile.engine == entry.name,
+                  (profile.unsetEnvironment ?? []).allSatisfy({ entry.environment?[$0] == nil }),
+                  entry.environment?["XODUS_PRIVATE_RUNTIME_COM_STA"].map({ $0 == "1" }) ?? true else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
         if let selected = defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)") {
             let titleProfile = profile ?? NativeTitleLaunchProfile(version: 1, productID: game.storeId,
                 engine: entry.name, shimDirectory: nil, environment: [:])

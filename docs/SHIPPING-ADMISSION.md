@@ -135,10 +135,32 @@ Optional per-title launch profiles live in the selected profile directory as
 Bundled title bindings in `Sources/XodusManagement/Resources/LaunchRecipes/`
 take precedence over historical local profile files. Other titles still use
 the selected local profile directory. Explicit provider selection remains an
-engine override. The bundled Mixtape, Subnautica 2, Beast of Reincarnation and
-Bluey's Happy Snaps bindings carry the queued COM mode in data, not Swift
-title branches. Abiotic binds the queued GPTK direct-Shipping recipe and
-600-second diagnostic limit. These queued bindings do not establish gameplay.
+engine override, except that an observed engine-specific STA setting cannot
+silently follow a different engine selection.
+
+The next RC embeds S2's **unchanged** `b464aadf03af9b5fe78f9362c422e32260c66533`
+`docs/recipes/title-runtime-v1.json` (SHA256
+`9cddef7cf30a9553f2ab3e9b5cffa4d5812c4fd260e03f32bf1e507c2931dd76`).
+Only `pendingTest:false` + `status:title-screen-observed` with a real run,
+receipt path and CLI/Wine exit0 can merge into a matching title/engine,
+executable and runtime-pair binding. Abiotic therefore receives STA1 from
+S2's source, not a game-name branch. Its caller-owns COM and inherited
+d3dshared-library override are removed. Its base Apple4 direct-Shipping
+recipe and 600-second diagnostic limit remain; this is title-screen-only
+evidence, not gameplay or save qualification.
+
+Hogwarts and all other pending entries remain data-only diagnostic inventory
+and never auto-apply. The earlier four queued COM bindings are withdrawn from
+normal launch until observed. A stale local pending STA profile is rejected
+explicitly, not silently promoted. Unknown titles and working HK/NMS routes
+remain unchanged.
+
+Player launch errors use plain language for a confirmed timeout, an explicit
+loader report of a missing component, and an exit before any game window was
+recorded. Missing, malformed or failed monitor evidence is never treated as
+proof of no window. Account failures retain their existing account recovery.
+**Show launch evidence** reveals the exact run folder in Finder. Messages do
+not apply repairs, promise a fix or call a zero exit gameplay success.
 
 NMS defaults to S1's frozen `6290d24` free `nms-free-gptk3-d3dshared` recipe
 after its retained-save/relaunch qualification. It pins GPTK3's support

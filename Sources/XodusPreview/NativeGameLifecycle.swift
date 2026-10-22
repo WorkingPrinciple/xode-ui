@@ -8,6 +8,10 @@ enum NativeLifecyclePins {
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
+    struct Warning: Codable, Equatable, Sendable {
+        let code: String
+        let message: String
+    }
     let version: Int
     let runID: String
     let operation: String
@@ -19,9 +23,13 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     let logDirectory: String
     let resultPath: String
     let progressPath: String
+    var error: String? = nil
+    var popupMonitorError: String? = nil
+    var warnings: [Warning]? = nil
 
     private enum CodingKeys: String, CodingKey {
-        case version, operation, product, success
+        case version, operation, product, success, error, warnings
+        case popupMonitorError = "popup_monitor_error"
         case runID = "run_id", exitCode = "exit_code", errorCode = "error_code"
         case gameDirectory = "game_dir", logDirectory = "log_dir"
         case resultPath = "result_path", progressPath = "progress_path"
@@ -51,10 +59,57 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "ACCOUNT_UNAVAILABLE": "Your Xbox sign-in couldn't be read. Check Account and approve any macOS Keychain prompt."
         case "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED": "Your Xbox account changed. Refresh your library before trying again."
         case "CANCELLED": "The operation was cancelled. Partial files are kept; you can retry the installation."
-        case "TIMEOUT": "The game did not finish starting before the launch probe ended."
+        case "TIMEOUT": "The launcher took too long and was stopped. A playable game window wasn't confirmed. Open the launch evidence to see what happened."
         case "RESOURCE_BUSY": "This installation is in use. Wait for its current operation to finish and try again."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
+    }
+
+    func playerMessage() async throws -> String? {
+        let log = URL(fileURLWithPath: logDirectory)
+        let observations = try await Task.detached {
+            func readIfBounded(_ name: String) throws -> Data? {
+                let path = log.appendingPathComponent(name)
+                guard FileManager.default.fileExists(atPath: path.path) else { return nil }
+                try GameScriptFiles.checkPath(path)
+                let size = try path.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+                guard size <= 4_194_304 else { return nil }
+                if size == 0 { return Data() }
+                return try InstalledGameFiles.readRegular(path, maximumBytes: 4_194_304)
+            }
+            let diagnostic = try readIfBounded("stderr.log").map { String(decoding: $0, as: UTF8.self) } ?? ""
+            let windows = try readIfBounded("windows.jsonl")
+            let recorded: Bool?
+            if let windows {
+                struct Window: Decodable { let dialog: Bool; let title: String }
+                let events = try windows.split(separator: 10).map { try JSONDecoder().decode(Window.self, from: Data($0)) }
+                recorded = events.contains { !$0.dialog && !$0.title.isEmpty }
+            } else { recorded = nil }
+            return (diagnostic, recorded)
+        }.value
+        return NativePlayerFailure.message(errorCode: errorCode, error: error,
+            diagnostic: observations.0, windowRecorded: observations.1,
+            monitorReliable: popupMonitorError == nil && (warnings ?? []).isEmpty,
+            success: success)
+    }
+}
+
+enum NativePlayerFailure {
+    static func message(errorCode: String?, error: String?, diagnostic: String,
+                        windowRecorded: Bool?, monitorReliable: Bool, success: Bool) -> String? {
+        if errorCode == "TIMEOUT" {
+            return "The launcher took too long and was stopped. Open the launch evidence to see what happened."
+        }
+        guard errorCode == nil || errorCode == "OPERATION_FAILED" else { return nil }
+        let text = (error ?? "") + "\n" + diagnostic
+        if !success, (text.contains("err:module:import_dll Library") && text.contains("not found")
+            || text.contains("Library not loaded:") || text.contains("runtime DLL not found")) {
+            return "A required runtime component couldn't be loaded. Open the launch evidence for the missing component's name. No repair has been applied."
+        }
+        if monitorReliable, windowRecorded == false {
+            return "The game closed before a game window was recorded. Open the launch evidence to review the exit. A clean exit alone doesn't mean the game was playable."
+        }
+        return nil
     }
 }
 

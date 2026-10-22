@@ -6,6 +6,29 @@ import XodusManagement
 @MainActor
 enum NativeLifecycleChecks {
     static func run(check: (Bool, String) -> Void) async throws {
+        check(NativePlayerFailure.message(errorCode: "TIMEOUT", error: nil, diagnostic: "",
+            windowRecorded: nil, monitorReliable: false, success: false)?.contains("took too long") == true,
+            "A confirmed launcher timeout has plain-language copy and an evidence route without claiming a fix")
+        check(NativePlayerFailure.message(errorCode: "OPERATION_FAILED", error: nil,
+            diagnostic: "err:module:import_dll Library missing.dll not found",
+            windowRecorded: false, monitorReliable: true, success: false)?.contains("runtime component") == true,
+            "A loader's explicit missing-library report names a missing component, not an invented repair")
+        check(NativePlayerFailure.message(errorCode: nil, error: nil, diagnostic: "",
+            windowRecorded: false, monitorReliable: true, success: true)?.contains("before a game window was recorded") == true,
+            "A clean exit with reliable empty window evidence is not described as playable")
+        for reliable in [true, false] {
+            check(NativePlayerFailure.message(errorCode: "ACCOUNT_UNAVAILABLE", error: nil,
+                diagnostic: "err:module:import_dll Library missing.dll not found",
+                windowRecorded: false, monitorReliable: reliable, success: false) == nil,
+                "Account failures retain their specific recovery and cannot become no-window diagnoses")
+        }
+        check(NativePlayerFailure.message(errorCode: "OPERATION_FAILED", error: nil, diagnostic: "",
+            windowRecorded: false, monitorReliable: false, success: false) == nil
+              && NativePlayerFailure.message(errorCode: "OPERATION_FAILED", error: nil, diagnostic: "",
+                windowRecorded: nil, monitorReliable: true, success: false) == nil
+              && NativePlayerFailure.message(errorCode: nil, error: nil, diagnostic: "ordinary module noise",
+                windowRecorded: true, monitorReliable: true, success: true) == nil,
+              "Missing/broken monitor evidence and an observed window cannot fabricate a no-window failure")
         var progress = NativeGameProgress()
         for line in [
             #"{"event":"file_started","id":18446744073709551615,"name":"metadata","total_bytes":50}"#,
@@ -31,6 +54,34 @@ enum NativeLifecycleChecks {
         defer {
             do { try FileManager.default.removeItem(at: root) }
             catch { check(false, "Native lifecycle synthetic files cleaned after child exit") }
+        }
+        let failureLog = root.appendingPathComponent("player-evidence")
+        try FileManager.default.createDirectory(at: failureLog, withIntermediateDirectories: false)
+        let resultFixture = NativeGameResult(version: 1, runID: UUID().uuidString, operation: "launch",
+            product: "FIXTURE00001", success: true, exitCode: 0, errorCode: nil,
+            gameDirectory: root.path, logDirectory: failureLog.path,
+            resultPath: failureLog.appendingPathComponent("result.json").path,
+            progressPath: failureLog.appendingPathComponent("progress.jsonl").path)
+        try Data().write(to: failureLog.appendingPathComponent("windows.jsonl"))
+        check(try await resultFixture.playerMessage()?.contains("before a game window was recorded") == true,
+              "Player failure reader binds empty monitor evidence to the exact result run folder")
+        try Data(#"{"dialog":false,"title":"Observed game"}"#.utf8)
+            .write(to: failureLog.appendingPathComponent("windows.jsonl"))
+        check(try await resultFixture.playerMessage() == nil,
+              "Actual parsed game-window evidence suppresses no-window copy even after exit0")
+        var warnedResult = resultFixture
+        warnedResult.warnings = [.init(code: "POPUP_MONITOR_FAILED", message: "Synthetic monitor failure")]
+        let decodedWarning = try JSONDecoder().decode(NativeGameResult.self, from: JSONEncoder().encode(warnedResult))
+        try Data().write(to: failureLog.appendingPathComponent("windows.jsonl"))
+        check(try await decodedWarning.playerMessage() == nil,
+              "Structured S2 monitor warnings decode correctly and block no-window diagnoses")
+        try Data("malformed synthetic window record".utf8)
+            .write(to: failureLog.appendingPathComponent("windows.jsonl"))
+        do {
+            _ = try await resultFixture.playerMessage()
+            check(false, "Malformed window evidence must be surfaced, not treated as an empty success")
+        } catch {
+            check(true, "Malformed window evidence is surfaced without fabricating a no-window cause")
         }
         let executable = root.appendingPathComponent("synthetic-cli")
         let script = #"""
@@ -366,19 +417,21 @@ enum NativeLifecycleChecks {
               && hollowCandidate.launchEnvironment["CX_ENV"] == "XODUS_PRIVATE_LOCAL_SAVES='1'"
               && !profiles.contains(where: { $0.productID == hollowCandidate.productID }),
               "HK local-save mirror is an inactive data candidate, never applied before real saved-relaunch evidence")
-        for id in ["9NH0MSG29X6L", "9PJPCB188SVG", "9NXWSWBM4H6T", "9NQVHHW88XW9"] {
-            let profile = profiles.first { $0.productID == id }
-            check(profile?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
-                  && profile?.unsetEnvironment == ["XODUS_PRIVATE_CALLER_OWNS_COM"]
-                  && profile?.engine == nil,
-                  "Queued \(id) tile obtains its COM-STA mode from product-bound data without inventing a qualified engine")
+        let runtimeCatalogue = try NativeTitleLaunchProfile.RuntimeCatalogue.bundled()
+        check(runtimeCatalogue.items.filter(\.observed).map(\.storeId) == ["9P4NV23Q6QC2"],
+              "Only S2's actually observed Abiotic title-screen setting is active; title screen is not WORKING")
+        for item in runtimeCatalogue.items where !item.observed {
+            check(!profiles.contains(where: {
+                $0.productID == item.storeId && $0.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
+            }), "Pending \(item.storeId) including Hogwarts never auto-applies STA from diagnostic inventory")
         }
         let abiotic = profiles.first { $0.productID == "9P4NV23Q6QC2" }
         check(abiotic?.engine == "apple-gptk-4.0b3"
               && abiotic?.arguments == ["--exe", "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
                                        "--timeout-seconds", "600", "--no-auto-dismiss"]
-              && abiotic?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1",
-              "Abiotic tile binds the queued direct-Shipping COM recipe, not a gameplay success claim")
+              && abiotic?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
+              && abiotic?.unsetEnvironment == ["CX_APPLEGPTK_LIBD3DSHARED_PATH", "XODUS_PRIVATE_CALLER_OWNS_COM"],
+              "Abiotic tile binds S2's observed direct-Shipping STA1, stripping caller-owns and inherited sibling library without gameplay claims")
         guard let nms = profiles.first(where: { $0.productID == "BQVQTL3PCH05" && $0.provider == .crossover }),
               let freeNMS = profiles.first(where: { $0.productID == "BQVQTL3PCH05" && $0.provider == nil }) else {
             check(false, "NMS frozen recipe is bundled")
@@ -407,6 +460,24 @@ enum NativeLifecycleChecks {
         let fallbackNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults, provider: .crossover)
         check(defaultNMS?.engine == "nms-free-gptk3-d3dshared" && fallbackNMS?.engine == "crossover-26.3",
               "Automatic NMS uses the qualified free binding; explicit CrossOver selects its exact separate fallback recipe")
+        let observedAbiotic = try NativeTitleLaunchProfile.read(productID: "9P4NV23Q6QC2", defaults: defaults)
+        check(observedAbiotic?.launchEnvironment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
+              && observedAbiotic?.launchEnvironment["XODUS_PRIVATE_CALLER_OWNS_COM"] == nil
+              && observedAbiotic?.unsetEnvironment?.contains("CX_APPLEGPTK_LIBD3DSHARED_PATH") == true
+              && defaultNMS?.environment["XODUS_PRIVATE_RUNTIME_COM_STA"] == nil,
+              "Actual tile profile selection consumes only Abiotic's observed S2 settings and preserves working NMS")
+        let pendingID = "9MT5NJ5W7B8Z"
+        check(try NativeTitleLaunchProfile.read(productID: pendingID, defaults: defaults) == nil,
+              "Hogwarts pending S2 diagnostic candidate is not a normal tile launch profile")
+        let pendingProfile = NativeTitleLaunchProfile(version: 1, productID: pendingID,
+            engine: "apple-gptk-4.0b3", shimDirectory: nil, environment: ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"])
+        try JSONEncoder().encode(pendingProfile).write(to: root.appendingPathComponent(pendingID + ".json"))
+        do {
+            _ = try NativeTitleLaunchProfile.read(productID: pendingID, defaults: defaults)
+            check(false, "A stale local pending candidate must not bypass the observed-only gate")
+        } catch NativeLaunchError.invalidProfile {
+            check(true, "A stale local pending STA profile fails explicitly rather than auto-applying")
+        }
         let serializer = Process()
         serializer.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
         serializer.arguments = ["-c", "import json,shlex,sys; print(json.dumps(dict(v.split('=',1) for v in shlex.split(sys.argv[1]))))",
