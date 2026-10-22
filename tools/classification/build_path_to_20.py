@@ -68,6 +68,10 @@ def build(inputs, previous):
             next_gate = "quit" if verdict != "WORKING" else "complete"
         if save.get("normalMenuQuitObserved") is True:
             gates["quit"].update(status="passed", basis="Explicit matrix normalMenuQuitObserved")
+        if save.get("normalExitQualified") is False:
+            gates["quit"].update(status="not-passed", basis="Explicit matrix normalExitQualified=false; "
+                                 "menu Quit interaction alone is not a clean process exit")
+            next_gate, owner = "ordinary quit", observed.get("owner", "S3")
         if sid == "9P9VNSQK1W3K" and verdict != "WORKING":
             qualified = save.get("retentionVerified") and save.get("normalMenuQuitObserved")
             verdict, next_gate, owner = "WORKING_CANDIDATE", (

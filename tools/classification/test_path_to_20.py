@@ -109,6 +109,19 @@ class PathTo20Tests(unittest.TestCase):
         self.assertIsNone(row["blocker"])
         self.assertIn("Nights 2", row["scope"])
 
+    def test_observed_menu_quit_does_not_override_failed_exit(self):
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        source_row = next(row for row in inputs["matrix"]["snapshot"]["games"]
+                          if row["productId"] == "9MSVVM5NS9L6")
+        source_row["saveObservation"].update(normalMenuQuitObserved=True,
+                                             normalExitQualified=False)
+        inputs.pop("ownerVerdicts", None)
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == source_row["productId"])
+        self.assertEqual(row["gates"]["quit"]["status"], "not-passed")
+        self.assertEqual(row["nextGate"], "ordinary quit")
+        self.assertFalse(row["strictWorking"])
+
 
 if __name__ == "__main__":
     unittest.main()
