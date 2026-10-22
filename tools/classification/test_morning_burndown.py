@@ -1,11 +1,34 @@
 import copy
+import hashlib
+from pathlib import Path
+import tempfile
 import unittest
 
-from build_morning_burndown import DEADLINE, OUTPUT, calculate
+from build_morning_burndown import DEADLINE, OUTPUT, calculate, recheck_historical_receipt
 from inspect_queue import load_json
 
 
 class BurnDownTests(unittest.TestCase):
+    def test_missing_historical_release_receipt_is_explicit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            previous = {"path": str(Path(directory) / "receipt.json"),
+                        "sha256": hashlib.sha256(b"receipt").hexdigest(),
+                        "revision": "42f793d", "installed": True}
+            result = recheck_historical_receipt(previous)
+            self.assertIn("missing", result["sourceStatus"])
+            self.assertEqual(result["sha256"], previous["sha256"])
+            self.assertNotIn("sourceStatus", previous)
+
+    def test_historical_release_receipt_requires_same_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receipt.json"
+            path.write_bytes(b"receipt")
+            previous = {"path": str(path), "sha256": hashlib.sha256(b"receipt").hexdigest()}
+            self.assertIn("hash reverified", recheck_historical_receipt(previous)["sourceStatus"])
+            path.write_bytes(b"changed")
+            with self.assertRaisesRegex(ValueError, "hash changed"):
+                recheck_historical_receipt(previous)
+
     def test_reproduces_and_caps_by_queue(self):
         packet = load_json(OUTPUT)
         self.assertEqual(packet, calculate(packet["inputs"]))

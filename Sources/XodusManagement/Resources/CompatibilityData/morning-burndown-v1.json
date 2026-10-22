@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T16:48:18.784372+00:00",
+    "asOf": "2026-10-22T17:21:01.189734+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "timezoneInterpretation": "User extended deadline by 12 hours to 23 October 13:26 EEST (UTC+03), not UTC; coordinator reported 2026-10-22T06:02:34.865Z.",
     "strictWorkingCount": 8,
@@ -485,7 +485,8 @@
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-super-spork/.build/local-candidates/Ode-switchover-rewcsnje/switch-over-receipt.json",
       "sha256": "0e3f7f812d4330709b30b8671deb125b67dc98f1467e7d43ee9adda78dbdc7f3",
       "revision": "42f793d",
-      "installed": true
+      "installed": true,
+      "sourceStatus": "missing; historical installation evidence only, not reverified"
     }
   },
   "observedCycles": [
@@ -528,38 +529,38 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1057.6869271333333,
+  "remainingWallMinutes": 1024.9801711,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
-      "serialCycleSlots": 12,
-      "queueCappedAdditions": 12,
-      "conditionalTotalWorking": 20,
-      "gapTo20": 0,
-      "minimumPassRateRawSlots": 1.0,
-      "minimumPassRateCurrentQueue": 1.0,
-      "targetPossibleCurrentQueue": true
+      "serialCycleSlots": 11,
+      "queueCappedAdditions": 11,
+      "conditionalTotalWorking": 19,
+      "gapTo20": 1,
+      "minimumPassRateRawSlots": 1.0909090909090908,
+      "minimumPassRateCurrentQueue": 1.0909090909090908,
+      "targetPossibleCurrentQueue": false
     },
     {
       "label": "sample midpoint",
       "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 16,
-      "queueCappedAdditions": 16,
-      "conditionalTotalWorking": 24,
+      "serialCycleSlots": 15,
+      "queueCappedAdditions": 15,
+      "conditionalTotalWorking": 23,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.75,
-      "minimumPassRateCurrentQueue": 0.75,
+      "minimumPassRateRawSlots": 0.8,
+      "minimumPassRateCurrentQueue": 0.8,
       "targetPossibleCurrentQueue": true
     },
     {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 24,
+      "serialCycleSlots": 23,
       "queueCappedAdditions": 21,
       "conditionalTotalWorking": 29,
       "gapTo20": 0,
-      "minimumPassRateRawSlots": 0.5,
+      "minimumPassRateRawSlots": 0.5217391304347826,
       "minimumPassRateCurrentQueue": 0.5714285714285714,
       "targetPossibleCurrentQueue": true
     }
@@ -597,7 +598,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 88.1405772611111,
+  "requiredAverageMinutesPerAddition": 85.41501425833333,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

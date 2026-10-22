@@ -15,6 +15,20 @@ OUTPUT = DATA / "morning-burndown-v1.json"
 DEADLINE = "2026-10-23T13:26:00+03:00"
 
 
+def recheck_historical_receipt(previous):
+    receipt = dict(previous)
+    try:
+        raw = Path(receipt["path"]).read_bytes()
+    except FileNotFoundError:
+        receipt["sourceStatus"] = "missing; historical installation evidence only, not reverified"
+        print("WARNING: historical release receipt unavailable:", receipt["path"])
+    else:
+        if hashlib.sha256(raw).hexdigest() != receipt["sha256"]:
+            raise ValueError("Historical release receipt hash changed")
+        receipt["sourceStatus"] = "hash reverified; historical installation evidence only"
+    return receipt
+
+
 def read_result(directory, run):
     path = PROOFS / directory / "runs" / run / "result.json"
     raw = path.read_bytes()
@@ -196,9 +210,8 @@ def refresh(tracker):
             phase("s3-hogwarts-sta-world-02", "891d061f-4820-4cd3-9b61-efefa5700be9", "world/progress run"),
             phase("s3-hogwarts-sta-retention-03", "86e8da68-f4b0-48f8-bf7a-46e577ff3488", "retention/relaunch run"),
             {**inputs["samples"][1]["finish"], "phase": "quit-only run"}]}]
-    rc = Path("/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-super-spork/.build/local-candidates/Ode-switchover-rewcsnje/switch-over-receipt.json")
-    inputs["installedRcReceipt"] = {"path": str(rc), "sha256": hashlib.sha256(rc.read_bytes()).hexdigest(),
-                                    "revision": "42f793d", "installed": True}
+    inputs["installedRcReceipt"] = recheck_historical_receipt(
+        load_json(OUTPUT)["inputs"]["installedRcReceipt"])
     packet = calculate(inputs)
     OUTPUT.write_text(json.dumps(packet, indent=2) + "\n")
     return packet
