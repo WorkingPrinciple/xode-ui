@@ -146,10 +146,22 @@ class PathTo20Tests(unittest.TestCase):
         self.assertFalse(row["strictWorking"])
 
     def test_mixtape_clean_exit_does_not_prove_saved_chapter(self):
-        row = next(row for row in self.packet["items"] if row["storeId"] == "9NH0MSG29X6L")
+        inputs = copy.deepcopy(self.packet["collectionInputs"])
+        inputs["matrix"]["snapshot"]["updatedAt"] = "2026-10-22T04:00:00+00:00"
+        row = next(row for row in build(inputs, {})["items"]
+                   if row["storeId"] == "9NH0MSG29X6L")
         self.assertEqual(row["verdict"], "INCONCLUSIVE")
         self.assertEqual(row["gates"]["quit"]["status"], "passed")
         self.assertNotEqual(row["gates"]["save"]["status"], "passed")
+        self.assertFalse(row["strictWorking"])
+
+    def test_well_gameplay_timeout_does_not_qualify_quit_or_save(self):
+        row = next(row for row in self.packet["items"] if row["storeId"] == "9PLH7R84GJWP")
+        self.assertEqual(row["verdict"], "INCONCLUSIVE")
+        self.assertEqual(row["gates"]["gameplay"]["status"], "passed")
+        self.assertEqual(row["gates"]["quit"]["status"], "not-passed")
+        self.assertNotEqual(row["gates"]["save"]["status"], "passed")
+        self.assertEqual(row["nextGate"], "qualification hold")
         self.assertFalse(row["strictWorking"])
 
 

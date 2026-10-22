@@ -13,6 +13,19 @@
   },
   "items": [
     {
+      "storeId": "9PLH7R84GJWP",
+      "title": "Well Dweller",
+      "verdict": "INCONCLUSIVE",
+      "reportedAt": "2026-10-22T05:17:33.959+00:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+      "runId": "9c31530d",
+      "gates": {"menu": "passed", "gameplay": "passed", "quit": "not-passed"},
+      "nextGate": "qualification hold",
+      "ownerStream": "S3/coordinator",
+      "blocker": "Parked after actual gameplay reached; TIMEOUT, CLI 1 / Wine 0, no save marker. No clean quit or retention qualification; no retry authorized.",
+      "scope": "Coordinator reports run 9c31530d reached gameplay but timed out. Supersedes old actual-title retest pending claim; gameplay reach alone is not strict WORKING."
+    },
+    {
       "storeId": "9NH0MSG29X6L",
       "title": "Mixtape",
       "verdict": "INCONCLUSIVE",

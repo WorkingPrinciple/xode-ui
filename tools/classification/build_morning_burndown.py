@@ -105,7 +105,7 @@ def calculate(inputs):
 def refresh(tracker):
     exclusions = {"9P9VNSQK1W3K": "CLI promotion; candidate not strict",
                   "9P8NSTDMZ11P": "NO_TITLE_SCREEN; startup diagnosis",
-                  "9PLH7R84GJWP": "engine host probes only; actual-title retest",
+                  "9PLH7R84GJWP": "actual gameplay reached; TIMEOUT, no save marker; parked",
                   "9NH0MSG29X6L": "S3-only CRT/STA diagnostic route; excluded passive"}
     queued, withheld, sources = {}, {}, []
     for batch in ("passive-small-eight-v1", "passive-batch2-eight-v1", "passive-batch3-eight-v1"):
@@ -162,8 +162,9 @@ def refresh(tracker):
                   "CLI promotion": {"count": 1, "title": "Brotato", "gate": "user promotion/admission; "
                                     "new matrix proves all title gates, no fresh full cycle assumed"},
                   "engine/recipe": {"count": 3, "titles": ["Inscryption", "Well Dweller", "Mixtape"],
-                                    "gate": "diagnosis/retest or S3-only diagnostic recipe; "
-                                    "not confirmed common engine root cause"}}}
+                                    "gate": "Inscryption end-queue retry hold; Well gameplay "
+                                    "TIMEOUT/no save marker parked; Mixtape no completed chapter. "
+                                    "Not confirmed common engine root cause or retry grants."}}}
     inputs["candidateComparisonExcludedFromStrictSamples"] = {
         "title": "Brotato", "status": "WORKING_CANDIDATE; CLI promotion only",
         "start": read_result("passive-small-eight-v1/9P9VNSQK1W3K",
@@ -223,7 +224,7 @@ def render_summary(packet):
              f"leaves **{slow['gapTo20']}**. Required mean: "
              f"**{packet['requiredAverageMinutesPerAddition']:.1f}min/addition**. "
              "Brotato CLI promotion can add one without another full cycle. "
-             "Engine fixes (Inscryption/Well/Mixtape) and eight catalogue titles "
+             "Qualification/recipe holds (Inscryption/Well/Mixtape) and eight catalogue titles "
              "(entitlement/disk/approval) are excluded alternatives, not extra time. "
              f"Queue already covers {20-packet['inputs']['strictWorkingCount']}; catalogue alone cannot cure slow throughput. "
              "Inputs/hashes: `morning-burndown-v1.json`; "

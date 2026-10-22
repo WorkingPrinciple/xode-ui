@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T05:01:24.072297+00:00",
+    "asOf": "2026-10-22T05:18:30.974583+00:00",
     "deadline": "2026-10-23T01:26:00+03:00",
     "timezoneInterpretation": "01:26 tomorrow = 23 October EEST (UTC+03), not 01:26 UTC; measured from current 22 October morning snapshot",
     "strictWorkingCount": 7,
-    "trackerMatrixSha256": "4f919f95ca86a34acb3a82e03794c8eb13acc6a4abf2a10da56f6fa287a1f4d6",
+    "trackerMatrixSha256": "c60287641ae3ef13c9353662643e392fdbf5505fbc831e3b02a9263e34f0cd55",
     "packetSources": [
       {
         "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-small-eight-v1/packets.json",
@@ -168,7 +168,7 @@
         "storeId": "9PLH7R84GJWP",
         "title": "Well Dweller",
         "batch": "passive-small-eight-v1",
-        "blocker": "engine host probes only; actual-title retest"
+        "blocker": "actual gameplay reached; TIMEOUT, no save marker; parked"
       },
       {
         "storeId": "9NH0MSG29X6L",
@@ -233,7 +233,7 @@
           "Well Dweller",
           "Mixtape"
         ],
-        "gate": "diagnosis/retest or S3-only diagnostic recipe; not confirmed common engine root cause"
+        "gate": "Inscryption end-queue retry hold; Well gameplay TIMEOUT/no save marker parked; Mixtape no completed chapter. Not confirmed common engine root cause or retry grants."
       }
     },
     "candidateComparisonExcludedFromStrictSamples": {
@@ -303,7 +303,7 @@
       {
         "storeId": "9PLH7R84GJWP",
         "title": "Well Dweller",
-        "verdict": "FAIL"
+        "verdict": "INCONCLUSIVE"
       },
       {
         "storeId": "9MT5NJ5W7B8Z",
@@ -365,7 +365,7 @@
       {
         "storeId": "9NH0MSG29X6L",
         "title": "Mixtape",
-        "verdict": "INCONCLUSIVE"
+        "verdict": "GAMEPLAY_PASS"
       },
       {
         "storeId": "9NGLST31DG26",
@@ -400,7 +400,7 @@
       {
         "storeId": "9PLH7R84GJWP",
         "title": "Well Dweller",
-        "verdict": "FAIL"
+        "verdict": "INCONCLUSIVE"
       }
     ],
     "attemptDefinition": "Unique title with an actual matrix attempt, including startup FAIL, title-screen, gameplay, candidate and WORKING; exclude NOT_TESTED/UNTESTED and inventory BLOCKED without execution. Also show tracker augmentation for passive receipts or owner-reported verdicts not yet in matrix.",
@@ -519,7 +519,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 1044.59879505,
+  "remainingWallMinutes": 1027.48375695,
   "scenarios": [
     {
       "label": "slow observed",
@@ -588,7 +588,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 80.35375346538461,
+  "requiredAverageMinutesPerAddition": 79.03721207307693,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
@@ -607,7 +607,7 @@
         "Well Dweller",
         "Mixtape"
       ],
-      "gate": "diagnosis/retest or S3-only diagnostic recipe; not confirmed common engine root cause"
+      "gate": "Inscryption end-queue retry hold; Well gameplay TIMEOUT/no save marker parked; Mixtape no completed chapter. Not confirmed common engine root cause or retry grants."
     }
   }
 }
