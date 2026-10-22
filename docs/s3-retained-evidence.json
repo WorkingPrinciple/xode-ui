@@ -3,6 +3,18 @@
   "scope": "S3 protected evidence references, not the app compatibility ledger or launch authorization",
   "rawEvidenceLocation": "$HOME/Library/Application Support/XodusCLI/proofs",
   "rawEvidencePolicy": "Keep logs, screenshots, input events, packets, account data and save bytes local. Do not discard failed or inconclusive attempts.",
+  "inputAttributionHelper": {
+    "status": "COMPILED_NOT_RUNTIME_VALIDATED",
+    "source": "tools/s3/click-audited.c",
+    "receiverSource": "tools/s3/click-receiver.c",
+    "build": "x86_64-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra -Werror SOURCE -o LOCAL_EXE -luser32",
+    "arguments": "WINDOWS_PID EXACT_TITLE SCREEN_X SCREEN_Y",
+    "guards": "Unique visible exact-title window owned by the required Windows PID; point within bounds; foreground and cursor checks before sending.",
+    "records": "Unbuffered pre-down, post-down and post-up with SendInput counts and monotonic ticks; 100ms hold.",
+    "boundary": "SendInput acceptance is not proof the game handled a click. Foreground can change after a check; release is always attempted after an accepted down. Actual no-game receiver validation remains pending explicit screen handback. This helper has not replaced the historical game input binary.",
+    "receiver": "One owned window reports its Windows PID, HWND and client-center screen coordinates; requires exactly one received down/up with a 75-500ms interval and self-closes after 25 seconds.",
+    "historicalFailure": "s3-input-attribution-selftest-01/receipt.json records an uninitialized CrossOver bottle failure before any receiver or input. It remains preserved."
+  },
   "coordinatorAdmission": {
     "workingCount": 11,
     "date": "2026-10-22",
