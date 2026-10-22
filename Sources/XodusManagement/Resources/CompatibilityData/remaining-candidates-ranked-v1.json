@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T21:20:40.355594+00:00",
+  "checkedAt": "2026-10-22T21:30:56.893477+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 11,
@@ -32,7 +32,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "c07405531ed7b408b88a7473f33ae0484fc5c313b2fb56e5708869cfc63cb3d5"
+      "sha256": "35f57f1068600e0e052b82a6d585c6c2224312f73a5330ba26dde31e03be74e3"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -210,7 +210,7 @@
       "rank": 9,
       "storeId": "9MXND4PQLK3W",
       "title": "DOOM 64",
-      "verdict": "TITLE_SCREEN_PASS",
+      "verdict": "INFRA_USER_ID",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 107360256,
       "planningBudgetBytes": 107360256,
@@ -219,7 +219,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "Title logo rendered60FPS D3D11; passive forced end/CLI0, no ordinary quit, gameplay or retention qualification.",
+      "blocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,

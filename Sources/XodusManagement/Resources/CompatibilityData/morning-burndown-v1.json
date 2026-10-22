@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-22T21:23:19.614348+00:00",
+    "asOf": "2026-10-22T21:30:53.508207+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -394,11 +394,6 @@
         "verdict": "WORKING"
       },
       {
-        "storeId": "9MXND4PQLK3W",
-        "title": "DOOM 64",
-        "verdict": "TITLE_SCREEN_PASS"
-      },
-      {
         "storeId": "9N8C07SS8C9D",
         "title": "FINAL FANTASY IV",
         "verdict": "TITLE_SCREEN_PASS"
@@ -417,6 +412,11 @@
         "storeId": "9NQVHHW88XW9",
         "title": "Bluey's Happy Snaps",
         "verdict": "ACKNOWLEDGEMENT_SCREEN_RENDERING"
+      },
+      {
+        "storeId": "9MXND4PQLK3W",
+        "title": "DOOM 64",
+        "verdict": "INFRA_USER_ID"
       },
       {
         "storeId": "9MSVVM5NS9L6",
@@ -618,7 +618,7 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 782.6730941999999,
+  "remainingWallMinutes": 775.10819655,
   "scenarios": [
     {
       "label": "slow observed",
@@ -687,7 +687,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 86.96367713333332,
+  "requiredAverageMinutesPerAddition": 86.12313295,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {

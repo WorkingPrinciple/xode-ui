@@ -101,13 +101,13 @@
   "items": [
     {
       "storeId": "9MXND4PQLK3W", "title": "DOOM 64",
-      "verdict": "TITLE_SCREEN_PASS", "reportedAt": "2026-10-22T21:16:36.509+00:00",
+      "verdict": "INFRA_USER_ID", "reportedAt": "2026-10-22T21:30:29.231+00:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "f48890de-abb9-4655-857a-20ec21354939",
-      "gates": {"menu": "passed", "quit": "not-passed"},
-      "nextGate": "gameplay", "ownerStream": "S3",
-      "blocker": "Title logo rendered60FPS D3D11; passive forced end/CLI0, no ordinary quit, gameplay or retention qualification.",
-      "scope": "S2 index56e3acbd and existing safe verdict: doom64-passive-cli68f-v1-card-8647/verdict.json. Input-capable test needs separate admission."
+      "runId": "db247a1f",
+      "gates": {"menu": "passed", "quit": "passed", "gameplay": "unknown", "save": "unknown", "relaunch": "unknown"},
+      "nextGate": "infrastructure user-ID hold", "ownerStream": "S2/coordinator",
+      "blocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
+      "scope": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
     },
     {
       "storeId": "9P2J5D12GJL5", "title": "Oblivion GOTY (2009)",

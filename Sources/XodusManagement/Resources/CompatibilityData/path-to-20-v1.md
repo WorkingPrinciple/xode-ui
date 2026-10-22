@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T21:23:19.614348+00:00; **11/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-22T21:30:53.508207+00:00; **11/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -15,7 +15,6 @@ Updated 2026-10-22T21:23:19.614348+00:00; **11/20 strict WORKING**. Title qualif
 | Monster Sanctuary | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | No Man's Sky | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
 | TUNIC | WORKING | passed | passed | passed | passed | passed | complete / S3 | Admitted matrix | - |
-| DOOM 64 | TITLE_SCREEN_PASS | passed | ? | not passed | ? | ? | gameplay / S3 | Title logo rendered60FPS D3D11; passive forced end/CLI0, no ordinary quit, gameplay or retention qualification. | - |
 | FINAL FANTASY IV | TITLE_SCREEN_PASS | passed | ? | ? | ? | ? | gameplay / S3 | PRESS ANY BUTTON observed/passive exit0 only; full qualification outstanding. | - |
 | A Game About Digging A Hole | INCONCLUSIVE | passed | passed | not passed | ? | ? | qualification hold / S3/coordinator | Parked: sold 1 stone, $5 upgrade not bought, no save shown. Title menu has no Exit; ended with exact-prefix -k cleanup, not normal quit. No retained-save qualification. | >2h |
 | Age of Empires IV: Anniversary Edition | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
@@ -24,6 +23,7 @@ Updated 2026-10-22T21:23:19.614348+00:00; **11/20 strict WORKING**. Title qualif
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Bluey's Happy Snaps | ACKNOWLEDGEMENT_SCREEN_RENDERING | not passed | ? | not passed | ? | ? | acknowledgement Continue / gameplay / S3 | VC prerequisite resolved; animated Gameloft acknowledgement/Continue60FPS, passive only/forced end0. No main menu, gameplay, retention or ordinary quit admission. | - |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
+| DOOM 64 | INFRA_USER_ID | passed | ? | passed | ? | ? | infrastructure user-ID hold / S2/coordinator | Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized. | - |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored® Definitive Edition (PC) | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
@@ -61,9 +61,9 @@ Full blockers, source hashes and packet references are in `path-to-20-v1.json`. 
 
 ## Retained attempt evidence
 
-Audit 2026-10-22T21:17:27.756918+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
+Audit 2026-10-22T21:30:56.745990+00:00. Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.
 
-Coverage: 29 titles, 148 launch-result attempts, 6 unresolved references; 2988 present / 160 missing artifact links. This is bounded discovery, not a complete historical archive.
+Coverage: 29 titles, 149 launch-result attempts, 6 unresolved references; 3017 present / 161 missing artifact links. This is bounded discovery, not a complete historical archive.
 
 Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.
 
@@ -75,7 +75,7 @@ Exact run identities, artifact paths/hashes, failed-hypothesis context and expli
 | Hogwarts Legacy / `9MT5NJ5W7B8Z` | 6 | 6 attempts incomplete; title hypothesis/test annotations incomplete |
 | Hollow Knight: Voidheart Edition / `9MW9469V91LM` | 6 | 6 attempts incomplete; title hypothesis/test annotations incomplete |
 | Stardew Valley / `9MWR1NC6VQ6L` | 8 | 8 attempts incomplete; title hypothesis/test annotations incomplete |
-| DOOM 64 / `9MXND4PQLK3W` | 1 | 1 attempts incomplete; title hypothesis/test annotations incomplete |
+| DOOM 64 / `9MXND4PQLK3W` | 2 | 2 attempts incomplete; title hypothesis/test annotations incomplete |
 | FINAL FANTASY IV / `9N8C07SS8C9D` | 1 | 1 attempts incomplete; title hypothesis/test annotations incomplete |
 | Wasteland Remastered / `9NGH1FK0RJGL` | 1 | 1 attempts incomplete; title hypothesis/test annotations incomplete |
 | A Game About Digging A Hole / `9NGLST31DG26` | 7 | 7 attempts incomplete; title hypothesis/test annotations incomplete |

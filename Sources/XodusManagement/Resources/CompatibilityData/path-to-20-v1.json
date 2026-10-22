@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-22T21:23:19.614348+00:00",
+  "updatedAt": "2026-10-22T21:30:53.508207+00:00",
   "matrixUpdatedAt": "2026-10-22T21:02:00+00:00",
   "collectionInputs": {
-    "collectedAt": "2026-10-22T21:23:19.614348+00:00",
+    "collectedAt": "2026-10-22T21:30:53.508207+00:00",
     "matrix": {
       "path": "/Users/dragoshont/.copilot/session-state/24963110-1b48-4e35-bae1-a54927543f42/files/s3-tried-games.json",
       "sha256": "5cc7884074639a79e6132236d213cc8e340e8d6404f86249d8b7bd0b39e4d66b",
@@ -859,7 +859,7 @@
     },
     "ownerVerdicts": {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-      "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+      "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
       "snapshot": {
         "schemaVersion": 1,
         "protectedSessionArchive": {
@@ -979,18 +979,21 @@
           {
             "storeId": "9MXND4PQLK3W",
             "title": "DOOM 64",
-            "verdict": "TITLE_SCREEN_PASS",
-            "reportedAt": "2026-10-22T21:16:36.509+00:00",
+            "verdict": "INFRA_USER_ID",
+            "reportedAt": "2026-10-22T21:30:29.231+00:00",
             "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-            "runId": "f48890de-abb9-4655-857a-20ec21354939",
+            "runId": "db247a1f",
             "gates": {
               "menu": "passed",
-              "quit": "not-passed"
+              "quit": "passed",
+              "gameplay": "unknown",
+              "save": "unknown",
+              "relaunch": "unknown"
             },
-            "nextGate": "gameplay",
-            "ownerStream": "S3",
-            "blocker": "Title logo rendered60FPS D3D11; passive forced end/CLI0, no ordinary quit, gameplay or retention qualification.",
-            "scope": "S2 index56e3acbd and existing safe verdict: doom64-passive-cli68f-v1-card-8647/verdict.json. Input-capable test needs separate admission."
+            "nextGate": "infrastructure user-ID hold",
+            "ownerStream": "S2/coordinator",
+            "blocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
+            "scope": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
           },
           {
             "storeId": "9P2J5D12GJL5",
@@ -3525,14 +3528,14 @@
     },
     "attemptEvidence": {
       "schemaVersion": 1,
-      "auditedAt": "2026-10-22T21:17:27.756918+00:00",
+      "auditedAt": "2026-10-22T21:30:56.745990+00:00",
       "scope": "Existing per-title tracker evidence audit. Local XodusCLI proofs/runs JSON launch records plus referenced integrity paths. Not all past hosts, removed worktrees or app-only/native attempts are discoverable; no exhaustive-history claim.",
       "retentionPolicy": "Do not delete proofs, logs, screenshots or save payloads for reclaim. Protected raw evidence remains local. Only path/hash metadata and allowlisted process identity fields are indexed; no argv, environments, account tokens or save contents copied. For future separately authorized attempts, owners must archive authorized title save bytes locally before launch and after quit, before another write. Do not rerun to reconstruct history.",
       "roots": [
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs",
         "/Users/dragoshont/Library/Application Support/XodusCLI/runs"
       ],
-      "jsonDocumentsInspected": 2656,
+      "jsonDocumentsInspected": 2680,
       "gaps": [
         "Unparsed JSON /Users/dragoshont/Library/Application Support/XodusCLI/proofs/valor-mortis-install-v1/package-check.stdout.json: JSONDecodeError"
       ],
@@ -12014,6 +12017,155 @@
           "status": "PRESENT",
           "bytes": 32,
           "sha256": "c915afa682385c34e58d565f12024514ce04db9e021fca9349a8089485b16799"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/dry-admission.json": {
+          "status": "PRESENT",
+          "bytes": 393,
+          "sha256": "9de4bb6ad8c83ec5cb21c4e9e58fd7a0dbad1839a943b31e7adaee7f3f3bed90"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/packet.json": {
+          "status": "PRESENT",
+          "bytes": 12379,
+          "sha256": "170acbc1e5b52f5f5a29670ba54865cd9173fc631835f6cfac19197a6ca55584"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/after-process-exit.json": {
+          "status": "PRESENT",
+          "bytes": 1692,
+          "sha256": "5b46919ede75860acbb84ad141b05a319131632a8af78a70b3031ba584d50034"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/before-launch.json": {
+          "status": "PRESENT",
+          "bytes": 1489,
+          "sha256": "e17262551bfa89325787e0aa676404ae2d370439fafdd44c0f93717ff762eef7"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cancel-auth-click.json": {
+          "status": "PRESENT",
+          "bytes": 197,
+          "sha256": "40e5005e8b5c5ca1794081898111f4f94166ac9de9ec69276e561cc4946d109e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cleanup-k.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cleanup-w.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cli.stderr.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cli.stdout.log": {
+          "status": "PRESENT",
+          "bytes": 1227,
+          "sha256": "651412b7c7539b176e0bbb8d374864108c100d2deb3381553755dc7a416b8551"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/integrity.json": {
+          "status": "PRESENT",
+          "bytes": 4071,
+          "sha256": "fde2aa9b86a6dfe42f4c720bd1de6fdee063e7e798aa7de48edf870f71449b95"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json": {
+          "status": "PRESENT",
+          "bytes": 3001,
+          "sha256": "4e73439c43dc153717a04036bd1083c82bc5fcee7cda285d7aa8023ba0edd69b"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/engine-dyld.json": {
+          "status": "PRESENT",
+          "bytes": 373,
+          "sha256": "864409719149a1eb994d20f88b1e3cf108c9f00692c28d950cd2306049603d03"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/events.jsonl": {
+          "status": "PRESENT",
+          "bytes": 753,
+          "sha256": "d897ddd32b9edd0e5899e514ce3fc145b18e44a629afbeead09cb9fccefc7e3e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/launch-stage.json": {
+          "status": "PRESENT",
+          "bytes": 185,
+          "sha256": "65256f656ec98d3afaf9cf10b0e3426706a6becc3712c8a7061a1c545203f15e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/popups.jsonl": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/progress.jsonl": {
+          "status": "MISSING",
+          "sha256": null
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/result.json": {
+          "status": "PRESENT",
+          "bytes": 1320,
+          "sha256": "331e1ba41186e775dd04450778c9d719d972465dacd75357e57ed51220166ff5"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/service.log": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/stderr.log": {
+          "status": "PRESENT",
+          "bytes": 181827,
+          "sha256": "162555041ca6e1c3b5512864652116f1fd110d9ae23e8d8b7bfb8976631724a3"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/stdout.log": {
+          "status": "PRESENT",
+          "bytes": 638,
+          "sha256": "59c44db75e63e78d1f68ff8b8b705f035be30a66d9188c8967c9be8b7a87554f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/windows.jsonl": {
+          "status": "PRESENT",
+          "bytes": 296,
+          "sha256": "f7bcb445c85d8c2eb234c9d0b1ac6030f8e78d97ebf9a6d81514fa59110d0f6e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/wine-exit.json": {
+          "status": "PRESENT",
+          "bytes": 32,
+          "sha256": "403b1ba1a0d6f8b9a0f5718fdecbd7ea677d2dc60de59cd55783ebc500e5ba7f"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/quit-menu-click.json": {
+          "status": "PRESENT",
+          "bytes": 198,
+          "sha256": "c4cfd90e9596f07326dd7eb950e27f8a3f3c00a9b0133797807ec3286dfb7d11"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/quit-yes-click.json": {
+          "status": "PRESENT",
+          "bytes": 199,
+          "sha256": "e43802ee11f75de23bebbac0d9ef25841ca92c732b34834f27851ae1f9d26d5a"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/run-receipt.json": {
+          "status": "PRESENT",
+          "bytes": 2019,
+          "sha256": "17ca7ca4f18f400b7181dba46e12cb906d8de463596d2dcb8c184ac2d4c2f559"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-after/3/consoleHistory.txt": {
+          "status": "PRESENT",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-after/3/stderr.txt": {
+          "status": "PRESENT",
+          "bytes": 212,
+          "sha256": "81a760f3731965cd200359ae96f0a2715ea012f44a9b099277bc3cad55a0dd39"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-after/3/stdout.txt": {
+          "status": "PRESENT",
+          "bytes": 9909,
+          "sha256": "ac3a95542c6f98be59771bf86f7e8a4454d71cc4378776a7b6ab05edf8f9969e"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-before/3/stderr.txt": {
+          "status": "PRESENT",
+          "bytes": 212,
+          "sha256": "81a760f3731965cd200359ae96f0a2715ea012f44a9b099277bc3cad55a0dd39"
+        },
+        "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-before/3/stdout.txt": {
+          "status": "PRESENT",
+          "bytes": 4170,
+          "sha256": "c2b128b2d3c8f962ec3ea969b3f690aee8051a27ee318493fd8d860dd02bcbc7"
         },
         "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-dredge-reload-01/after-process-exit.json": {
           "status": "PRESENT",
@@ -23228,6 +23380,152 @@
           "title": "DOOM 64",
           "attempts": [
             {
+              "runId": "db247a1f-7e26-4482-82de-a209ef6c95f6",
+              "recordedProduct": "9MXND4PQLK3W",
+              "startedAt": "2026-10-22T21:25:34.606082Z",
+              "finishedAt": "2026-10-22T21:29:26.497004Z",
+              "observedProcessResult": {
+                "exit_code": 0,
+                "wine_exit_code": 0,
+                "wine_termination_signal": null,
+                "error_code": null,
+                "success": true
+              },
+              "resultPolicy": "Raw process success/exit is not title, gameplay, quit or retention PASS.",
+              "identities": {
+                "cli": [
+                  {
+                    "path": "/Users/dragoshont/Library/Application Support/Ode to X/Service/candidates/68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6/xodus-cli",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json",
+                    "historicalHash": "68f349d4681e738ab954409cf7a87783dd4a04f1ee8ec7df1d0dbc53f71c8fe6",
+                    "hashBasis": "Candidate path label, not independent execution-time hash"
+                  }
+                ],
+                "runtime": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json"
+                  }
+                ],
+                "engine": [
+                  {
+                    "value": "apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json"
+                  },
+                  {
+                    "value": "apple-gptk-4.0b3",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/result.json"
+                  }
+                ],
+                "prefix": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-doom64-passive-cli68f-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json"
+                  },
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/prefixes/s2-doom64-passive-cli68f-v1",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/result.json"
+                  }
+                ],
+                "registry": [
+                  {
+                    "value": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/registry.json",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json"
+                  }
+                ],
+                "gameExecutable": [
+                  {
+                    "value": "DOOM64_x64.exe",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json"
+                  }
+                ],
+                "recordedHashes": [
+                  {
+                    "field": "packetSha256",
+                    "sha256": "170acbc1e5b52f5f5a29670ba54865cd9173fc631835f6cfac19197a6ca55584",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/run-receipt.json"
+                  },
+                  {
+                    "field": "packetSha256",
+                    "sha256": "170acbc1e5b52f5f5a29670ba54865cd9173fc631835f6cfac19197a6ca55584",
+                    "basis": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json"
+                  }
+                ]
+              },
+              "artifacts": {
+                "runArtifacts": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/before-launch.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cancel-auth-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/integrity.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/invocation.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/engine-dyld.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/launch-stage.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/result.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/wine-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/quit-menu-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/quit-yes-click.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/run-receipt.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/progress.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/passive-batch2-eight-v1/registry.json"
+                ],
+                "sharedProofContext": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/dry-admission.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/packet.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-after/3/consoleHistory.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-after/3/stderr.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-after/3/stdout.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-before/3/stderr.txt",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/saves-before/3/stdout.txt"
+                ]
+              },
+              "categories": {
+                "packet": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/packet.json"
+                ],
+                "receipt": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/result.json"
+                ],
+                "log": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cleanup-k.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cleanup-w.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cli.stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/cli.stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/events.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/popups.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/service.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/stderr.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/stdout.log",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/windows.jsonl",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/launch/runs/db247a1f-7e26-4482-82de-a209ef6c95f6/progress.jsonl"
+                ],
+                "screenshot": [],
+                "saveDelta": [
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/after-process-exit.json",
+                  "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/run-world/before-launch.json"
+                ]
+              },
+              "observationRefs": [],
+              "hypothesisAndNextTestRefs": [],
+              "gaps": [
+                "Historical app identity not bound to this run",
+                "Path-labeled identities are not independent execution-time binary hashes",
+                "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
+                "No retained screenshot artifact found in bounded search",
+                "Shared proof-root files are context only; per-run attribution incomplete"
+              ]
+            },
+            {
               "runId": "f48890de-abb9-4655-857a-20ec21354939",
               "recordedProduct": "9MXND4PQLK3W",
               "startedAt": "2026-10-22T21:11:43.355505Z",
@@ -23416,13 +23714,13 @@
           ],
           "hypothesesStatus": "See existing title scope/blocker and raw diagnostic links; no per-attempt hypothesis verdict invented.",
           "nextDiscriminatingTest": "Not explicitly frozen by this audit; owner must recover the existing test card/diagnosis before any separately authorized retry.",
-          "recordedTitleScope": "S2 index56e3acbd and existing safe verdict: doom64-passive-cli68f-v1-card-8647/verdict.json. Input-capable test needs separate admission.",
-          "recordedBlocker": "Title logo rendered60FPS D3D11; passive forced end/CLI0, no ordinary quit, gameplay or retention qualification.",
+          "recordedTitleScope": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity.",
+          "recordedBlocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
           "gaps": [
             "Historical attempts mentioned only in free-form prose/short IDs may remain unenumerated",
             "Per-attempt failed hypotheses and next discriminating test require source-owner annotation"
           ],
-          "nextGate": "gameplay"
+          "nextGate": "infrastructure user-ID hold"
         },
         "9N8C07SS8C9D": {
           "title": "FINAL FANTASY IV",
@@ -32673,6 +32971,7 @@
               "categories": {},
               "gaps": [
                 "Referenced attempt only; full run ID/result not located",
+                "Previously indexed attempt absent from current bounded scan; retained, not erased",
                 "Previously indexed attempt absent from current bounded scan; retained, not erased"
               ]
             }
@@ -42995,13 +43294,13 @@
       },
       "coverage": {
         "titleCount": 29,
-        "launchResultAttempts": 148,
+        "launchResultAttempts": 149,
         "unresolvedReferenceCount": 6,
-        "artifactCount": 3148,
-        "presentArtifacts": 2988,
-        "missingArtifacts": 160,
+        "artifactCount": 3178,
+        "presentArtifacts": 3017,
+        "missingArtifacts": 161,
         "recordedHashDiscrepancies": 0,
-        "attemptsWithIdentityGaps": 154,
+        "attemptsWithIdentityGaps": 155,
         "unresolvedReferencesPolicy": "May include non-launch/support references or short-ID duplicates; not additional proven game attempts."
       },
       "specialistIndexes": [
@@ -43085,7 +43384,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:41:54.984442+00:00",
-      "sameGateObservedHours": 16.69017497388889,
+      "sameGateObservedHours": 16.81625660138889,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after fresh18dcee0d loaded S3Retention world (typedS3-Retention, game filteredhyphen), same drgload/LabAssistant/$5/ducttape first pocketcell, then ordinary LeaveGame\u2192YesQuit\u2192mainmenuQuit\u2192Quit CLI0/Wine0 in294.9s under300. Earlier900s worlde5ec1841 reached real cafeteria movement/interactions40-55FPS after first-user setup but TIMEOUTCLI1/Wine0, not ordinary quit. Changed placed/droppedobject NOT observed. Explicit coordinator admission uses retained world/scientist/inventory marker and final normalexit. Actual Container grew3\u21926payloads; fullT2/T3 continuity, opaque7384\u21927421B payload after finalquit. Apple4/adf8/7106/Shipping/STA1 only unchanged.",
@@ -43151,7 +43450,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "01cda87b",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -43172,7 +43471,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T21:02:52.061519+00:00",
-      "sameGateObservedHours": 0.34098689694444445,
+      "sameGateObservedHours": 0.46706852444444447,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator independently admits WORKING11 on installed-route-equivalent packet122532b/CLI3ea56ed1/Apple4: world21bd7fd5/reload01cda87b ordinary result0/errornull/Wine0, Chunky retained and usable. Exact1024089B/b0e2b10a world-to-reload continuity plus raw archives; after-save da5542fd. MainQuit Entercount2 both, PIDgone before cleanup-k1/-w0. NOT GUI Play-click evidence or CLI promotion admission. Separate UI FAILURE: installed app cannot read tried-games.json, cards NotTested, issue43 NOT passed; production UI not accepted.",
@@ -43234,7 +43533,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T04:17:29.883816+00:00",
-      "sameGateObservedHours": 17.097147370000002,
+      "sameGateObservedHours": 17.223228997499998,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING after sole final300s fresh80cbf59d loads Crossroads/Nights2 (previously1)/Grasp10, save updated22Oct06:47AM, no movement/interaction, ordinary PauseQuit\u2192OK\u2192mainQuit CLI0/Wine0 within209s. Preceding900s d9e1ff58 reached natural death and Crossroads but TIMEOUTCLI1/Wine1; remains INCONCLUSIVE in its own right. Final verification explicitly admitted despite that timeout. ActualCONTAINER45056\u219256141B, complete T2/T3 hashes identical. Earlier replayed shade dialogue is not global retention failure. Known window-monitor10s warning separately accepted and does not replace actualWine0. No further Hades launches.",
@@ -43321,7 +43620,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted natural-death combat rather than a two-minute rerun. Apple4 defaultCOM/noargs/adf8/7106: selected Swordsman, moved through camp, entered Haunted Caverns and reached real skeleton combat at60FPS. First natural death16s unlocked First Try/Quest Stone and banked17gold. Ordinary menu Quit/Yes quit now CLI0/Wine0. Fresh process retained17gold and visible QuestStone. Second attack/movement attempt dealt400damage and2kills before natural death15s, bank53gold. Returned camp and ordinary Quit/Yes quit now again CLI0/Wine0. Stopped actual local-save payload changed size5520 to9876 and fullSHA f4e03df7... to9d22356b...; metadata-only/settings are not used as retention proof. No two-minute survival, mid-run resume, cloud-save or app-tile E2E claim.",
@@ -43407,7 +43706,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 18.524703895277778,
+      "sameGateObservedHours": 18.650785522777777,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen Apple4/adf8/7106 with STA1 only: created drgload xodus, healed with displayed G, completed relative Look Around, walked from cave through exterior cliff path following Professor Fig at39-47FPS D3D12/Metal4. Coordinator independently confirmed movement. Initial1800s891d061f and300s86e8da68 hit wall caps; these were not normal quits. Fresh86e8da68 retained named level1 character and loaded cave healing checkpoint, bypassing character creation/carriage intro; coordinator reviewed screenshots and accepted this checkpoint retention, waiving later cave-exit requirement. Final new600s f2471368 again loaded that character/world and completed ordinary Escape SAVE/LOAD AND EXIT\u2192EXIT TO MAIN MENU\u2192Space Yes\u2192main-menu EXIT GAME\u2192Space Yes/Quit to OS. Actual CLI0/Wine0, no WM_CLOSE/forcedkill, PID73417 gone. Coordinator's WORKING condition now satisfied; app-tile E2E remains separate/unobserved.",
@@ -43473,7 +43772,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Corrected actual S5 app-tile run6eb24065 with native JSON registrations, native-web-only shims and7106 pair passes user initialization, King's Pass rendering, movement, jump, attacks and focus healing. Coordinator explicitly replaced the bench gate with normal Quit to Menu save. Both container .xgs hashes+mtimes changed; post-quit slot1 card King's Pass/17M/0geo/5masks. Normal close Wine0/CLI0. Actual unchanged S5 tile relaunch902a364c displayed exactly the same card, Continue loaded real King's Pass, movement worked and5masks/broken soul vessel retained the death state. Zero-geo HUD counter is hidden; card0 is observed, not an invented HUD numeral. Second normal save/quit/WM_CLOSE Wine0/CLI0; both owned process pairs gone, exactprefix-k1/-w0. Coordinator reviewed screenshots and explicitly admitted HK as third WORKING title. No bench/cloud claim.",
@@ -43542,7 +43841,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "User explicitly admitted WORKING and directed move-on. Official signed native launcher3.41.29-2.6.12, Java latest26.3 ARM64: actual single-player world/HUD, W+jump movement, clean saved-world shutdown, launcher relaunch to new Java PID76415 and retained New World reloaded. S2/S5 native Ode provider integration remains pending; not a Wine or Bedrock claim.",
@@ -43621,7 +43920,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:00:36.510816+00:00",
-      "sameGateObservedHours": 15.37863987,
+      "sameGateObservedHours": 15.504721497499999,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator accepted WORKING8 after extended d919efb9 completed SKATE TO ROCKFORD'S, unlocked ROCKFORD'S HOUSE and immediately ordinaryExit/SpaceDesktopCLI0/Wine0 in954.85s. Sole fresh ab231868 main menu hasContinue/Chapters; ChapterSelect retains selectable SKATE TO ROCKFORD'S and ROCKFORD'S HOUSE. Esc/mainExitCLI0/Wine0 in193.4s; exactprefix-w0. Both quit before75% caps. Payload3544\u21925503B and fullT2/T3/T4 continuity verified. Same Apple4/adf8/7106/STA/two-native private registry. No further exploration/chapter replay.",
@@ -43702,7 +44001,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T19:58:34.919517+00:00",
-      "sameGateObservedHours": 1.4124152308333333,
+      "sameGateObservedHours": 1.5384968583333332,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinatorindependentlyadmittedninthtitle: worldcca9c74f andfreshretry0667822b retainedS3/Wolf/114G/BlobEggx1+movement; actualSaveQuit/titleExit0/0 bothruns; world\u2192retry27968B SHA4ba6af91 unchanged; afterretry27984B SHA6b271c30. PriorreloadINFRA0x80072746excluded.",
@@ -43777,7 +44076,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "CrossOver actual EmphiV24 world, movement, autosave, ordinary WM_CLOSE and fresh-process retained-world relaunch verified. Historical ffc4 CrossOver Wine exit0 is independent of its POPUP_MONITOR_FAILED helper error. S1 additionally qualified free nms-free-gptk3-d3dshared: real EmphiV24 walking/strafe/scanner/tutorial progress, changed Slot1Auto data/meta, ordinary quit CLI0, same-prefix relaunch with updated0:06 playtime/03:23save and retained Gather Ferrite Dust objective in-world around60FPS, second normal quit CLI0. PIDs52582/65739 gone, ownprefix-k1/-w0, finished00:26:30 within original1200s grant. S3 inspected relaunch-world.png and relaunch-trial-result.json. Earlier free-load failures are historical, not the current outcome. App-driven NMS E2E remains unobserved.",
@@ -43870,7 +44169,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:48:55.482548+00:00",
-      "sameGateObservedHours": 0.5733699444444444,
+      "sameGateObservedHours": 0.6994515719444444,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator independently admitted title10. CLI68f world a9ee48eb obtained WoodenStick/equippedJ; fresh a27be511 retained both and actual movement. Both observed QuitToTitleScreen then titleQuit, CLI0/Wine0, PIDgone beforecleanup. T2T3 exact9331B SHA3a7fb537; T4 SHA1b116832. Shrine NOT reached. World quit548.735s missed540 by8.735s; reload quit148.718s within180. CLI only, not app E2E; prior timeouts retained as evidence, not provider-fault claims.",
@@ -43882,88 +44181,6 @@
         "d928b209-1819-4a97-b70f-b160c7e45e73"
       ],
       "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9NLRT31Z4RWM"
-    },
-    {
-      "storeId": "9MXND4PQLK3W",
-      "title": "DOOM 64",
-      "verdict": "TITLE_SCREEN_PASS",
-      "strictWorking": false,
-      "gates": {
-        "menu": {
-          "status": "passed",
-          "basis": "S2 index56e3acbd and existing safe verdict: doom64-passive-cli68f-v1-card-8647/verdict.json. Input-capable test needs separate admission."
-        },
-        "gameplay": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "quit": {
-          "status": "not-passed",
-          "basis": "S2 index56e3acbd and existing safe verdict: doom64-passive-cli68f-v1-card-8647/verdict.json. Input-capable test needs separate admission."
-        },
-        "relaunch": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        },
-        "save": {
-          "status": "unknown",
-          "basis": "Not explicitly admitted"
-        }
-      },
-      "nextGate": "gameplay",
-      "ownerStream": "S3",
-      "blocker": "Title logo rendered60FPS D3D11; passive forced end/CLI0, no ordinary quit, gameplay or retention qualification.",
-      "evidence": [
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
-          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
-          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
-          "runId": "f48890de-abb9-4655-857a-20ec21354939",
-          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
-        }
-      ],
-      "packetReferences": [
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
-          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7",
-          "storeId": "9MXND4PQLK3W",
-          "collection": "blockedItems",
-          "kind": "packet"
-        },
-        {
-          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/kex-game-candidates.json",
-          "sha256": "be6c00bdb004e662001eb2b868a79bbb7fd8fd3ca95b963a0f87c6aa48a8b8e8",
-          "store_id": "9MXND4PQLK3W",
-          "kind": "S1-candidate-only"
-        },
-        {
-          "storeId": "9MXND4PQLK3W",
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
-          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
-        },
-        {
-          "storeId": "9MXND4PQLK3W",
-          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
-          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
-        }
-      ],
-      "s1RowPresent": true,
-      "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.09850878472222221,
-      "stuckOver2Hours": false,
-      "historicalGateAge": "unknown before tracker first observation",
-      "scope": "S2 index56e3acbd and existing safe verdict: doom64-passive-cli68f-v1-card-8647/verdict.json. Input-capable test needs separate admission.",
-      "attemptHistory": [
-        "f48890de-abb9-4655-857a-20ec21354939"
-      ],
-      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9MXND4PQLK3W"
     },
     {
       "storeId": "9N8C07SS8C9D",
@@ -44002,7 +44219,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -44035,7 +44252,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.7491391591666666,
+      "sameGateObservedHours": 0.8752207866666667,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report; passive title screen, no gameplay, retention or ordinary-quit admission. Run identity not supplied.",
@@ -44082,7 +44299,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "3e488e23",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -44105,7 +44322,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T05:35:29.577516+00:00",
-      "sameGateObservedHours": 15.797232453333333,
+      "sameGateObservedHours": 15.923314080833334,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator-reported retry 3e488e23 INCONCLUSIVE. Earlier 01a6bdcf gameplay timeout is historical. Forced -k cleanup does not pass ordinary quit.",
@@ -44162,7 +44379,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.75842876611111,
+      "sameGateObservedHours": 18.88451039361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44228,7 +44445,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Installed exact Windows package. Actual corrected Apple4/adf8/7106 trace421f naturally exits0 in8.68s with no observed owned window/screenshot/input. Both real WINEDEBUG/XODUS_WINE_DEBUG active; no explicit causal exception or game-level reason. CLI0 is not rendering/gameplay PASS. Exactprefix-k1/-w0. Separate coordinator-authorized API trace6a266eb2 naturally exits0 in9.94s, also no window/input/capture; S1 interpreting actual trace.",
@@ -44299,7 +44516,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44346,7 +44563,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44388,7 +44605,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "ebc1342a-216e-466a-a506-bc6517bba7a5",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -44415,7 +44632,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.09850878472222221,
+      "sameGateObservedHours": 0.22459041222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; bluey-happy-snaps-passive-vc14-v1/verdict.json. Official redist/native-first CRT clears prior prerequisite dialog. Earlier evidenceReceipt identifies historical blocked attempt, not this new run.",
@@ -44483,10 +44700,93 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
+    },
+    {
+      "storeId": "9MXND4PQLK3W",
+      "title": "DOOM 64",
+      "verdict": "INFRA_USER_ID",
+      "strictWorking": false,
+      "gates": {
+        "menu": {
+          "status": "passed",
+          "basis": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
+        },
+        "gameplay": {
+          "status": "unknown",
+          "basis": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
+        },
+        "quit": {
+          "status": "passed",
+          "basis": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
+        },
+        "relaunch": {
+          "status": "unknown",
+          "basis": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
+        },
+        "save": {
+          "status": "unknown",
+          "basis": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity."
+        }
+      },
+      "nextGate": "infrastructure user-ID hold",
+      "ownerStream": "S2/coordinator",
+      "blocker": "Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Cancel to main then QuitDOOM/Yes ordinary0/0. No retry/reload authorized.",
+      "evidence": [
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
+          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
+          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
+          "runId": "db247a1f",
+          "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
+        }
+      ],
+      "packetReferences": [
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
+          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7",
+          "storeId": "9MXND4PQLK3W",
+          "collection": "blockedItems",
+          "kind": "packet"
+        },
+        {
+          "path": "/Users/dragoshont/src/copilot-worktrees/xode-wine/dragoshont-fantastic-broccoli/engines/kex-game-candidates.json",
+          "sha256": "be6c00bdb004e662001eb2b868a79bbb7fd8fd3ca95b963a0f87c6aa48a8b8e8",
+          "store_id": "9MXND4PQLK3W",
+          "kind": "S1-candidate-only"
+        },
+        {
+          "storeId": "9MXND4PQLK3W",
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-small-v1.json",
+          "sha256": "54a91a560d7d78427559e9e68f4b50aed4a8034cf64f44f534eeaddae1d656f7"
+        },
+        {
+          "storeId": "9MXND4PQLK3W",
+          "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-next-v1.json",
+          "sha256": "ecdc0896ec7ce637e43518e5595965511b5b460904ed66b5992557d1b757796b"
+        }
+      ],
+      "s1RowPresent": true,
+      "gateFirstObservedAt": "2026-10-22T21:30:53.508207+00:00",
+      "sameGateObservedHours": 0,
+      "stuckOver2Hours": false,
+      "historicalGateAge": "unknown before tracker first observation",
+      "scope": "Coordinator fullattempt db247a1f INFRA/userID, not game compatibility FAIL or WORKING. Earlier passive f48890de title60FPS/forced end remains historical. S3 exact proof references forthcoming; no invented receipt identity.",
+      "attemptHistory": [
+        "db247a1f-7e26-4482-82de-a209ef6c95f6",
+        "f48890de-abb9-4655-857a-20ec21354939"
+      ],
+      "evidenceAuditRef": "collectionInputs.attemptEvidence.titles.9MXND4PQLK3W"
     },
     {
       "storeId": "9MSVVM5NS9L6",
@@ -44530,7 +44830,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "a452bd89",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -44557,7 +44857,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T04:28:41.158529+00:00",
-      "sameGateObservedHours": 16.910682171944444,
+      "sameGateObservedHours": 17.036763799444444,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator report only, not an independently inspected receipt. Matrix verdict supersedes once recorded.",
@@ -44610,7 +44910,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44679,7 +44979,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44726,7 +45026,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44773,7 +45073,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.75842876611111,
+      "sameGateObservedHours": 18.88451039361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44837,7 +45137,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Fresh adf8 complete117. Actual direct Fallout4.exe run16403e9f on creation-dx11-d3dmetal/adf8/7106 with explicit local-saves1/online1 renders signed-in menu60FPS, new-game video, interactive character creation and first-person bathroom world. Forward input accepted and F5 visibly showed Quicksaving. Retention NOT qualified: no .fos/.xgs found in exact prefix or actual host Fallout4 MS/Saves/Fallout4/Saves; discovery only adds Plugins.txt/UserDownloadedContent.txt, not saves. At300s ordinary exact-title/staged-image WM_CLOSE matched1, then actual Wine5/CLI5; exactprefix-k1/-w0, staged game gone. Old undriven-launcher timeout3c418e3d remains historical, not a graphics failure.",
@@ -44911,7 +45211,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -44958,7 +45258,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.75842876611111,
+      "sameGateObservedHours": 18.88451039361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45005,7 +45305,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45052,7 +45352,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45099,7 +45399,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "3b833cc7",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45126,7 +45426,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:51:50.680325+00:00",
-      "sameGateObservedHours": 18.524703895277778,
+      "sameGateObservedHours": 18.650785522777777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator clarified existing hold; NO_TITLE_SCREEN unchanged.",
@@ -45195,7 +45495,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45276,7 +45576,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; package inventory anti-cheat signature scan clean, absence remains unproven."
@@ -45323,7 +45623,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.75842876611111,
+      "sameGateObservedHours": 18.88451039361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45404,7 +45704,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:39:46.049930+00:00",
-      "sameGateObservedHours": 3.7259901161111113,
+      "sameGateObservedHours": 3.852071743611111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Frozen004/518e7fb9/null-display1/sameprefix worldd756b27d: real awakening/right-arrow movement/forest/log descent, repeated first-spike-gap deaths. LoadChapter appears but only initialforestthumbnail observed; no post-gap checkpoint/new thumbnail. Ordinary QuitLimboCLI0/Wine0 in812.16s, processgone before-k1/-w0. Quit started late,75%policy NOT satisfied. Provider158->206B delta is opaque; no reload consumed or retention claim.",
@@ -45459,7 +45759,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45506,7 +45806,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45553,7 +45853,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "f1339edf-f389-44a5-b2e6-2ca01357dc86",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45587,7 +45887,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.09850878472222221,
+      "sameGateObservedHours": 0.22459041222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; oblivion-goty-crossover-passive-cli68f-v1-card-8647/verdict.json. Runtime pair/shim overlay bytes omitted from RAM-stage sizing. Not evidence of host110GiB floor failure or game-rendering incompatibility.",
@@ -45638,7 +45938,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -45670,7 +45970,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.7491391591666666,
+      "sameGateObservedHours": 0.8752207866666667,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report: gameplay render only, not strict WORKING. Run identity not supplied.",
@@ -45746,7 +46046,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Install completed; no launch/rendering qualification."
@@ -45793,7 +46093,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.75842876611111,
+      "sameGateObservedHours": 18.88451039361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45840,7 +46140,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:35:52.266500+00:00",
-      "sameGateObservedHours": 18.79092995777778,
+      "sameGateObservedHours": 18.917011585277777,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -45921,7 +46221,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T17:52:53.364646+00:00",
-      "sameGateObservedHours": 3.5072915838888887,
+      "sameGateObservedHours": 3.6333732113888892,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Historical manifestlauncherfa08c5f8 PLAY spawnedchild then vanished,launcher0/0 notgameplay. Soleauthorized directexe28648e14 retainedsameprefix/defaultCOM/creationDX11/adf8/7106 changesonlyexe.22Oct17:39:25-17:39:42Z17.58s actualSkyrimSE.exe/macPID36400/window26655 titleSkyrim Special Edition MS, spontaneouslyexited5/5 beforecapture/input. No world/menu/gameplay/save/reload. All3saveinventoriesremainempty. Gamegone beforeexactprefix-k1/-w0. No additionalretry.",
@@ -45975,7 +46275,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T02:37:49.270790+00:00",
-      "sameGateObservedHours": 18.75842876611111,
+      "sameGateObservedHours": 18.88451039361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": null
@@ -46056,7 +46356,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:04:14.805468+00:00",
-      "sameGateObservedHours": 0.3180024666666667,
+      "sameGateObservedHours": 0.44408409416666667,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "465d526c world and fresh22d78ea2 retained s3/proof Farm/Day2/15ParsnipSeeds. Final111dd574 again loaded retained marker; actual ExitPage captured, one ExitToDesktop click attempted at1239,786. CLI255/Wine255 and PIDgone, but helper1/empty output leaves input attribution INCONCLUSIVE. No retry granted.",
@@ -46114,7 +46414,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "c5e0b3ba-95c8-4d10-bf34-495f1a6110fe",
           "sourceSession": "5fe2f9fe-f6b7-4d63-aaea-bf5dc3a6878d"
         }
@@ -46148,7 +46448,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.09850878472222221,
+      "sameGateObservedHours": 0.22459041222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; subnautica2-bootstrap-passive-vc14-v1/verdict.json. Rendering not gameplay/retention/normal quit. Earlier evidenceReceipt identifies historical blocked attempt only. Existing package license GRANTED does not grant legal consent.",
@@ -46192,7 +46492,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "30e44a64-ce07-4e43-bb79-77a175729226",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46208,7 +46508,7 @@
       ],
       "s1RowPresent": false,
       "gateFirstObservedAt": "2026-10-22T21:17:24.982723+00:00",
-      "sameGateObservedHours": 0.09850878472222221,
+      "sameGateObservedHours": 0.22459041222222223,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "S2 index56e3acbd; valor-mortis-apple4-passive-vcoverrides-v1/verdict.json. IID1f02b6c5-7842-4ee6-8a0b-9a24183a95ca off-screen lookup before any separately authorized retry; log fingerprint not proven causal diagnosis.",
@@ -46257,7 +46557,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46284,7 +46584,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.7491391591666666,
+      "sameGateObservedHours": 0.8752207866666667,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report, no gameplay or retention admission. DQ overlay sequence not a proven causal attribution.",
@@ -46327,7 +46627,7 @@
       "evidence": [
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": null,
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46355,7 +46655,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T20:38:22.713375+00:00",
-      "sameGateObservedHours": 0.7491391591666666,
+      "sameGateObservedHours": 0.8752207866666667,
       "stuckOver2Hours": false,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator latest report: startup config failure, no proven staged-file parity or fix, no launch authorization.",
@@ -46402,7 +46702,7 @@
         },
         {
           "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-owner-verdicts-v1.json",
-          "sha256": "2965c34f72bd08981d099b51953dbd5ca44c86fe76938822b19f243d43f1cdd1",
+          "sha256": "6d20cda7fd2df13d6b153943d79089553224df985f7b2ddcb086441fba1b61f7",
           "runId": "9c31530d",
           "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42"
         }
@@ -46431,7 +46731,7 @@
       ],
       "s1RowPresent": true,
       "gateFirstObservedAt": "2026-10-22T06:01:01.161758+00:00",
-      "sameGateObservedHours": 15.371792386111112,
+      "sameGateObservedHours": 15.49787401361111,
       "stuckOver2Hours": true,
       "historicalGateAge": "unknown before tracker first observation",
       "scope": "Coordinator reports run 9c31530d reached gameplay but timed out. Supersedes old actual-title retest pending claim; gameplay reach alone is not strict WORKING.",
