@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-10-22T22:40:13.225467+00:00",
+  "checkedAt": "2026-10-22T23:23:59.076928+00:00",
   "scope": "All remaining titles in 50-title tracker plus five researched free offers; not an exhaustive global Store/owned catalog. No extra owned titles established.",
   "rankingPolicy": "Readiness and avoided download first, then compact payload/route evidence; not numerical success probability, permission or replacement for owner queues.",
   "strictWorking": 12,
@@ -23,8 +23,7 @@
       "9NFB47H2SDRX",
       "9NCJWHHMVHR0",
       "9P5Z4530318L",
-      "9NXWSWBM4H6T",
-      "9P1N07XDL1D4"
+      "9NXWSWBM4H6T"
     ],
     "scope": "Ranks after top ten, manifest present, no streaming marker, no new claim or download, untested only. Existing queue overlap is not additional unique capacity.",
     "diskBasis": "Zero incremental payload download fits reported 17 GiB gross headroom; not proof that unknown prefix/transient growth fits. Admission remains conditional."
@@ -32,7 +31,7 @@
   "sources": [
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/path-to-20-v1.json",
-      "sha256": "824383260b4cb7a144d3a84fa91b57dd3c663249c0e49e040097fee03bb037db"
+      "sha256": "0aecf0cde34d814add2672ba909fd8e9e65d52e82785595ffa80010e77cbf721"
     },
     {
       "path": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v4.json",
@@ -150,7 +149,7 @@
       "rank": 8,
       "storeId": "9P1Z43KRNQD4",
       "title": "Quake",
-      "verdict": "INCONCLUSIVE_SAVE/INPUT",
+      "verdict": "INCONCLUSIVE",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 1761398784,
       "planningBudgetBytes": 1761398784,
@@ -159,7 +158,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "New100ms hypothesis70600887/run1bd95d4a reached SaveGame/NewSave/GAME SAVED; next single Escape failed pause and stop rule triggered external exact-k0/-w0. CLI0/Wine0 and runner forcedCleanupnull do NOT prove ordinary quit. Raw save archive pending S3; no reload/admission/retry.",
+      "blocker": "Post-save input step failed. Forced external-k0/-w0 at256.387s; runner forcedCleanup null plus CLI0/Wine0 is attribution gap, NOT ordinary quit. Explicit external reason/receipt override preserved. 30runfiles/8raw/16screens verified. Approved roots contain cfg/history/stderr/stdout only, stdout alone changed; no gameplay save payload. No reload/further retry. Historical full02 ordinary quit593.701s was53.7s late and remains preserved.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -180,7 +179,7 @@
       "rank": 9,
       "storeId": "9MXND4PQLK3W",
       "title": "DOOM 64",
-      "verdict": "INFRA_BETHESDA_USER_ID",
+      "verdict": "INCONCLUSIVE_START_INPUT_NO_TRANSITION",
       "installState": "manifest present; prior installed inventory, not fresh install-status",
       "downloadSizeBytes": 107360256,
       "planningBudgetBytes": 107360256,
@@ -189,7 +188,7 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "Apple4 D3D11 Kex hypothesis; exact S1 renderer card required",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "New stderr.log:1496 GetTokenAndSignature;1499-1500 HRESULT context;1507-1510 repeated FirstPartyFailedToRetrieveUserId. 28runfiles/8raw/14screens verified. S1/S2 own diagnosis; no automatic retry, auth-policy change or login.",
+      "blocker": "4f061291 Escape100 exposed Start; Enter100 never transitioned, then DEMO. Forced stop295.517533875s/exact-k0/-w0 despiteCLI0/Wine0, NOT ordinary quit. No auth verdict, gameplay, save, reload or retry.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
@@ -853,8 +852,8 @@
     {
       "rank": 20,
       "storeId": "9P1N07XDL1D4",
-      "title": "Dishonored\u00ae Definitive Edition (PC)",
-      "verdict": "UNTESTED",
+      "title": "Dishonored Definitive Edition",
+      "verdict": "INCONCLUSIVE_RELOAD_CAP_NO_LOADED_WORLD",
       "installState": "complete; fresh read-only install-status 2026-10-22T19:58:57.754873+00:00",
       "downloadSizeBytes": 17511350272,
       "planningBudgetBytes": 17511350272,
@@ -863,11 +862,11 @@
       "diskAdmission": "NOT ADMITTED: prefix/transient reserve and current free space require S2 preflight; 17 GiB is gross, not available concurrent download budget.",
       "expectedRoute": "CrossOver candidate",
       "routeQualification": "Candidate/hypothesis, not observed title support.",
-      "blocker": "No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass.",
+      "blocker": "Reload timing/retention gap, not renderer/save FAIL. World77run/56raw,reload87run/66raw verified. No WORKING admission. New600/420reload-only preparation assigned separately; no launch yet.",
       "needsUserClaim": false,
       "needsLicenseCheck": false,
       "needsDownload": false,
-      "pipelineExtensionCandidate": true,
+      "pipelineExtensionCandidate": false,
       "purchasePolicy": "No purchase or claim proposed for manifest-present payload; fresh entitlement/install-status check still required, stop on any price or grant request.",
       "rankingBasis": "Installed candidates before new downloads; holds, large downloads and unclear routes ranked later.",
       "inventoryEvidence": {

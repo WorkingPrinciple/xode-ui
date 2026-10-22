@@ -27,7 +27,7 @@ class RemainingRankingTests(unittest.TestCase):
         extensions = [row for row in packet["items"] if row["pipelineExtensionCandidate"]]
         self.assertEqual(packet["pipelineExtension"]["storeIds"],
                          [row["storeId"] for row in extensions])
-        self.assertEqual(len(extensions), 6)
+        self.assertEqual(len(extensions), 5)
         for row in extensions:
             self.assertGreater(row["rank"], 10)
             self.assertIsNotNone(row["inventoryEvidence"])

@@ -136,17 +136,23 @@
   "items": [
     {
       "storeId": "9MXND4PQLK3W", "title": "DOOM 64",
-      "verdict": "INFRA_BETHESDA_USER_ID", "reportedAt": "2026-10-23T00:57:48.489+03:00",
+      "verdict": "INCONCLUSIVE_START_INPUT_NO_TRANSITION", "reportedAt": "2026-10-23T02:22:56.585+03:00",
       "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
-      "runId": "db247a1f",
+      "runId": "4f061291-3071-4687-9327-4b9fc124271b",
+      "latestFinalProofs": [
+        {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s1-doom64-paircd43-preparation-v1/run-world/final-evidence/result.json", "sha256": "e5eedf0c4fd5c749a419e4d0b66915db9130554fdbaac23f53d7ff2a0beb8945"},
+        {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s1-doom64-paircd43-preparation-v1/run-world/final-evidence/integrity.json", "sha256": "7b261e66107ab8b2aa6698deed81b9375b2d0435a8d0a24eb304f47581111247"},
+        {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s1-doom64-paircd43-preparation-v1/run-world/final-evidence/owned-input-events.json", "sha256": "7d29e704bfcdeb5e269fd7e172a36e6d7cfce96a059d04852d8c27417b5ccfb1"}
+      ],
       "finalProofs": [
         {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/final-evidence/retention-result.json", "sha256": "e423d72be5cb89f2773323d8f428e4088bb822c587fa473990a5e1c0333c1499"},
         {"path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-doom64-full-01/final-evidence/integrity.json", "sha256": "e84dc7865da4bb8a981135de04c597c5b1cb65ec90e932bc61c37fd8542a4d4e"}
       ],
-      "gates": {"menu": "passed", "quit": "passed", "gameplay": "unknown", "save": "unknown", "relaunch": "unknown"},
-      "nextGate": "infrastructure user-ID hold", "ownerStream": "S1/S3/coordinator",
-      "blocker": "Prior Start triggered Bethesda.net FirstPartyFailedToRetrieveUserId; no gameplay/save. Runtime-only world packet6170908e conditional on S2/S5 slot return; no new result or reload grant.",
-      "scope": "Coordinator/S3 fullattempt db247a1f INFRA_BETHESDA_USER_ID: token POST api.bethesda.net0x80070057 then FirstPartyFailedToRetrieveUserId. Observed QuitGame to QuitDOOM?Yes/Enter ordinary0/0; no gameplay/save/reload. Not game compatibility FAIL or WORKING. Prior passive f48890de remains historical. Coordinator now reports runtime fix candidate54c5f5d9/source7cb756a2 built/fixture-validated and worldpacket6170908e dry-verified30/30 pins; conditional S3 one world after S2/S5 slot return, no execution result. Short IDs are reported references, not independently verified full hashes or runtime success."
+      "gates": {"menu": "passed", "quit": "not-passed", "gameplay": "unknown", "save": "not-passed", "relaunch": "not-passed"},
+      "nextGate": "Start input attribution hold", "ownerStream": "S1/S2/coordinator",
+      "blocker": "4f061291 Escape100 exposed Start; Enter100 never transitioned, then DEMO. Forced stop295.517533875s/exact-k0/-w0 despiteCLI0/Wine0, NOT ordinary quit. No auth verdict, gameplay, save, reload or retry.",
+      "scope": "Latest settled4f061291 INCONCLUSIVE_START_INPUT_NO_TRANSITION, not auth success/failure. Actual Start transition never observed; demo excluded. Historical executed key helper identity unhashed/unretained; current S3 C/exes and current C foreground guard cannot retrospectively bind old binary. Coordinator reports30 run files/8 raw files/7 screens checked; S4 read final result and verified result/integrity/input hashes only. Historical finalProofs below are db247a1f, not latest run. No WORKING promotion.",
+      "historicalScope": "db247a1f reached FirstPartyFailedToRetrieveUserId after3Enters+mouseclick, token POST api.bethesda.net0x80070057; ordinary QuitGame/QuitDOOMYes0/0, no gameplay/save/reload. Prior f48890de passive and candidate54c5f5d9/source7cb756a2/worldpacket6170908e preparation remain history, not latest auth proof."
     },
     {
       "storeId": "9P2J5D12GJL5", "title": "Oblivion GOTY (2009)",
