@@ -108,6 +108,16 @@
       "changedDuringRead": 0,
       "boundary": "Existing S3 proof roots, retained title session artifacts and explicit matrix references only. No live saves read or written. No baseline reconstructed and no raw data copied into git."
     },
+    "saveArchiveGapAudit": {
+      "path": "s3-save-archive-gap-audit-01/index.json",
+      "sha256": "657834799cc63c03a7333e5ddd695dfd93435c1a00ac05f7e0bd0e5f571fb44c",
+      "manifestSha256": "847629cbeaed956f2f902e210d3c57b57ddb90599ac37616d3b58ed580574dc3",
+      "snapshotsWithSaveReferences": 48,
+      "uniqueReferencedSaveHashesWithArchivedMatch": 2,
+      "uniqueReferencedSaveHashesWithoutArchivedMatch": 55,
+      "parseErrors": 0,
+      "boundary": "Comparison of historical snapshot save-file references against bytes in the existing inventory, not a complete search of the Mac. Missing matches are coverage gaps, not proof that bytes are absent elsewhere. No live saves read or written. Brotato's separately verified runner archive is indexed above and uses a different snapshot shape."
+    },
     "earlierAdmittedTitles": ["Minecraft Java", "No Man's Sky", "Hollow Knight: Voidheart Edition", "Halls of Torment", "Hogwarts Legacy", "Hades II", "Abiotic Factor", "Mixtape", "Monster Sanctuary"],
     "unresolvedTitles": ["DREDGE", "Fallout 4", "Skyrim Special Edition", "A Game About Digging A Hole", "Well Dweller", "Stardew Valley", "Balatro", "LIMBO"],
     "boundary": "Passive results from other owners are tracked separately; pending or not-tested titles are not promoted to gameplay or retention passes."
