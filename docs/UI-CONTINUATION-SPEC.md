@@ -107,6 +107,20 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
   Still open: confirming the Recently played order and focus target, the lane
   arrow, the 897-height resize, and restoring All/Title. Private `req3-*`
   receipt, geometry log and captures.
+- F04 resumed after the owner go: rebound PID 44926/window 30334 at
+  (2560,491), 1512 x 949; closed the owner's search and returned to Library.
+  Sort submenu positively showed Recently played checked after the two See All
+  invocations (`req3-resumed-receipt.json`). The subsequent lane-arrow attempt
+  is **inconclusive**: between the before/after AX reads, search reopened with
+  query "." although the harness sent no search command or text. Stopped under
+  the single-input rule rather than attributing that change to the arrow.
+  Pointer restored after every short burst. Before/after AX and image evidence
+  is `req3-arrow-{before,after}*`; F04 is not closed and All/Title is not yet
+  restored. No second input path or computer-control MCP was used.
+- F05 runtime counts reconfirmed read-only on this same PID at 22:12:34:
+  13 games / 68 excluded / 10 unresolved, unchanged from 21:28 and 21:57
+  (`req5-account-resolution.log`). This is not final visual acceptance across
+  Library/Discover/genre; that input sequence remains pending.
 - Ordinary startup enumeration: 164 records, 93 active Game/Application rows,
   91 product IDs, 5 subscription-plan rows. Frontend: 91 candidates, zero
   affirmative purchased/subscription acquisitions, 91 unknown. These are not
