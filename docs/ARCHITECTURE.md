@@ -71,6 +71,9 @@ for the measured offset: offset plus current container height minus bottom inset
 This top-aligned minimum sits at the outer content seam, not under the results;
 it does not retain the previous full document height. Each action replaces the
 reservation, height resizing recalculates it, and width reflow ignores it.
+Width capture and invalidation use the native container's local width, not a
+global-frame subtraction. Comparisons allow four floating-point ULPs of
+representation noise; a real width change still retires the reservation.
 Hero/top actions, See All and a completed user scroll to native top release it.
 See All uses the same ID
 binding, not a competing scroll proxy. Only explicit actions publish a local
@@ -79,6 +82,9 @@ plain storage. Only explicit scope/navigation actions and completed user top
 navigation publish the extent. No size-change anchor reset, deferred scroll or
 blanket viewport-height results filler is applied. Native extent preservation
 requires macOS 15 scroll geometry; macOS 14 has no invented offset fallback.
+The retained root subscribes to distinct action-extent publications through its
+existing local command revision, including release after deliberate top navigation;
+the AppState does not forward nested LibrarySelection changes automatically.
 Native Minecraft's separate local-launcher card appears only under All/Installed,
 never as invented Owned or Game Pass evidence.
 Public DisplayCatalog ProductType/ProductKind classify base games independently

@@ -448,6 +448,9 @@ struct LiveRootView: View {
                                       underlapsToolbar: destination == .discover || libraryHasHero))
             .background(Color(nsColor: .windowBackgroundColor))
         }
+        .onReceive(state.librarySelection.$actionExtent.removeDuplicates()) { _ in
+            if destination == .library { libraryScrollCommand += 1 }
+        }
         .environment(\.catalogPresentationActive, active)
         .opacity(selected ? 1 : 0)
         .zIndex(selected ? 1 : 0)
@@ -465,6 +468,7 @@ struct LiveRootView: View {
                 content.onScrollGeometryChange(for: LibraryScrollMeasurement.self) { geometry in
                     LibraryScrollMeasurement(offsetY: geometry.contentOffset.y,
                         contentHeight: geometry.contentSize.height, containerHeight: geometry.containerSize.height,
+                        containerWidth: geometry.containerSize.width,
                         insetTop: geometry.contentInsets.top, insetBottom: geometry.contentInsets.bottom,
                         visibleY: geometry.visibleRect.minY, visibleMaxY: geometry.visibleRect.maxY,
                         visibleHeight: geometry.visibleRect.height)

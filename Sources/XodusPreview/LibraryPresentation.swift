@@ -24,6 +24,7 @@ struct LibraryScrollMeasurement: Equatable {
     let offsetY: CGFloat
     let contentHeight: CGFloat
     let containerHeight: CGFloat
+    let containerWidth: CGFloat
     let insetTop: CGFloat
     let insetBottom: CGFloat
     let visibleY: CGFloat
@@ -36,8 +37,12 @@ struct LibraryActionExtent: Equatable {
     let insetBottom: CGFloat
     let viewportWidth: CGFloat
 
+    static func sameWidth(_ lhs: CGFloat, _ rhs: CGFloat) -> Bool {
+        lhs.isFinite && rhs.isFinite && abs(lhs - rhs) <= max(lhs.ulp, rhs.ulp) * 4
+    }
+
     func minimumHeight(viewport: CGSize) -> CGFloat? {
-        guard viewport.width == viewportWidth else { return nil }
+        guard Self.sameWidth(viewport.width, viewportWidth) else { return nil }
         return max(0, offsetY + viewport.height - insetBottom)
     }
 }
@@ -77,7 +82,7 @@ final class LibrarySelection: ObservableObject {
             return
         }
         actionExtent = LibraryActionExtent(offsetY: measurement.offsetY,
-            insetBottom: measurement.insetBottom, viewportWidth: collectionScrollFrame.width)
+            insetBottom: measurement.insetBottom, viewportWidth: measurement.containerWidth)
         extentInvalidatedByReflow = false
     }
 
@@ -103,6 +108,9 @@ final class LibrarySelection: ObservableObject {
     }
 
     func measureScroll(_ value: LibraryScrollMeasurement) {
+        if let actionExtent, !LibraryActionExtent.sameWidth(actionExtent.viewportWidth, value.containerWidth) {
+            extentInvalidatedByReflow = true
+        }
         measurement = value
         measurementTime = Date()
         scrollRevision += 1
@@ -117,9 +125,6 @@ final class LibrarySelection: ObservableObject {
 
     func measureScrollFrame(_ frame: CGRect) {
         collectionScrollFrame = frame
-        if let actionExtent, actionExtent.viewportWidth != frame.width {
-            extentInvalidatedByReflow = true
-        }
         frameRevision += 1
         emitPostMeasurement(source: "frame")
     }

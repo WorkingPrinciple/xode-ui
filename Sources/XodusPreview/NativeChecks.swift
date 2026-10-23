@@ -96,7 +96,7 @@ enum NativeChecks {
             position.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
             position.collectionScrollFrame = CGRect(x: 0, y: 0, width: 1000, height: 700)
             position.measureScroll(LibraryScrollMeasurement(offsetY: 789.5, contentHeight: 3729.5,
-                containerHeight: 700, insetTop: 24, insetBottom: 12,
+                containerHeight: 700, containerWidth: 1000, insetTop: 24, insetBottom: 12,
                 visibleY: 789.5, visibleMaxY: 1489.5, visibleHeight: 700))
             position.prepareScopeExtent()
             check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 700)) == 1477.5,
@@ -105,8 +105,24 @@ enum NativeChecks {
                   "Height resize recalculates finite extent from current viewport, not old document height")
             check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 900, height: 700)) == nil,
                   "Width reflow drops obsolete action extent")
-            position.measureScrollFrame(CGRect(x: 0, y: 0, width: 900, height: 700))
-            position.measureScrollFrame(CGRect(x: 0, y: 0, width: 1000, height: 700))
+            func resizeMeasurement(width: CGFloat) -> LibraryScrollMeasurement {
+                LibraryScrollMeasurement(offsetY: 599.5, contentHeight: 1830.5,
+                    containerHeight: 1231, containerWidth: width, insetTop: 0, insetBottom: 0,
+                    visibleY: 599.5, visibleMaxY: 1830.5, visibleHeight: 1231)
+            }
+            position.measureScroll(resizeMeasurement(width: 1619.0000000000002))
+            position.prepareScopeExtent()
+            position.measureScrollFrame(CGRect(x: 0, y: 0, width: 1619, height: 1231))
+            position.measureScroll(resizeMeasurement(width: 1619))
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1619, height: 1231)) == 1830.5,
+                  "Observed 1619.0000000000002 to 1619 representation noise preserves exact required extent")
+            position.measureScroll(resizeMeasurement(width: 1619.0000000000002))
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1619.0000000000002, height: 897)) == 1496.5,
+                  "Width representation noise in reverse preserves current-height semantics")
+            position.measureScroll(resizeMeasurement(width: 1500))
+            position.measureScroll(resizeMeasurement(width: 1619))
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1619, height: 1231)) == nil,
+                  "Real native width reflow permanently invalidates extent despite returning to old width")
             check(position.scopeMinimumHeight(viewport: CGSize(width: 1000, height: 700)) == nil,
                   "Returning to an earlier width cannot resurrect its obsolete scope extent")
             position.collectionHeaderFrame.origin.y = 850
@@ -118,7 +134,7 @@ enum NativeChecks {
             check(position.actionExtent == nil, "See All explicitly releases the filter extent")
             position.prepareScopeExtent()
             position.measureScroll(LibraryScrollMeasurement(offsetY: -24, contentHeight: 1477.5,
-                containerHeight: 700, insetTop: 24, insetBottom: 12,
+                containerHeight: 700, containerWidth: 1000, insetTop: 24, insetBottom: 12,
                 visibleY: 0, visibleMaxY: 700, visibleHeight: 700))
             position.finishedUserScroll()
             check(position.actionExtent == nil, "Deliberate user scroll to native top releases filter extent")
