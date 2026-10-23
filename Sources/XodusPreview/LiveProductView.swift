@@ -19,6 +19,39 @@ enum GameDetailFacetCopy {
     }
 }
 
+struct GameHeroMetadata: View {
+    let details: CatalogDetailFacts
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 16) { facts }
+            VStack(alignment: .leading, spacing: 6) { facts }
+        }
+        .font(.callout)
+        .foregroundStyle(.secondary)
+        .accessibilityIdentifier("xodus.game.heroMetadata")
+    }
+
+    @ViewBuilder private var facts: some View {
+        if let rating = details.storeRating {
+            Label(Self.ratingLabel(rating), systemImage: "star")
+        }
+        if let release = details.releaseDate {
+            Label(release.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
+                .accessibilityLabel("Released \(release.formatted(date: .long, time: .omitted))")
+        }
+        if let rating = details.contentRating {
+            Text(rating.label)
+                .help((rating.descriptors + rating.interactiveElements).joined(separator: " · "))
+                .accessibilityLabel("Content rating \(rating.label)")
+        }
+    }
+
+    static func ratingLabel(_ rating: CatalogStoreRating) -> String {
+        "\(rating.average.formatted(.number.precision(.fractionLength(1)))) / 5 · \(rating.count.formatted()) ratings"
+    }
+}
+
 struct LiveProductView: View {
     let product: CatalogProduct
     @ObservedObject var library: PCGamesController
@@ -93,7 +126,6 @@ struct LiveProductView: View {
                                 }.disabled(!allowsArtworkLoading)
                             }
                         }
-                        availability
                         if let details {
                             media(details)
                             if let description = details.description ?? details.shortDescription {
@@ -173,7 +205,11 @@ struct LiveProductView: View {
                     LibraryLogoTitle(title: product.title, references: art?.logos ?? [],
                                      allowsLoading: allowsArtworkLoading)
                     LibraryGameInformation(access: access, gamePass: gamePass,
-                                           facts: art?.facts, xbox: stats.cache?.games[product.id], showsPrice: true)
+                                           facts: art?.facts, xbox: stats.cache?.games[product.id],
+                                           showsPrice: owned == nil && installed == nil)
+                    if let details {
+                        GameHeroMetadata(details: details)
+                    }
                     LibraryGameSizeView(installed: installed, downloadBytes: art?.facts.downloadBytes,
                                         productID: product.id, pcPackageListed: pcPackageListed,
                                         packageFormat: art?.facts.packageFormat,
@@ -235,10 +271,19 @@ struct LiveProductView: View {
                         }
                         CatalogAcquisitionAction(productID: product.id, title: product.title,
                             market: product.market, language: product.language,
-                            licensed: owned != nil, gamePass: gamePass, commerce: art?.facts.commerce,
+                            licensed: library.accessIsCurrent && owned != nil,
+                            gamePass: gamePass && !installedLibrary.hasCurrentAccess(to: product.id),
+                            commerce: art?.facts.commerce,
                             enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
                     }.controlSize(.large)
-                    if let installed { InstalledPlayError(library: installedLibrary, game: installed) }
+                    if let installed {
+                        InstalledPlayError(library: installedLibrary, game: installed)
+                        if !installedLibrary.hasCurrentAccess(to: product.id) {
+                            Button("Refresh PC library") { library.refresh() }
+                                .disabled(!allowsStartupTasks || library.busy || !session.hasConfirmedSignIn)
+                                .help("Check this account's current game access before playing.")
+                        }
+                    }
                 }
                 Spacer(minLength: 0)
             }
@@ -247,19 +292,6 @@ struct LiveProductView: View {
         .frame(height: 388).clipped()
         .padding(.bottom, -42)
         .accessibilityElement(children: .contain)
-    }
-
-    private var availability: some View {
-        Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
-            facet("Library", GameDetailFacetCopy.access(acquisition: owned?.acquisitionKind,
-                                                      current: library.accessIsCurrent))
-            if gamePass { facet("Game Pass catalog", "PC catalogue member - account access checked separately") }
-            if let listing = product.gamePass {
-                facet("Public subscription listings", CatalogGamePassListingCopy.description(for: listing))
-            }
-            facet("Installation", GameDetailFacetCopy.installation(installed: installed != nil))
-        }
-        .font(.callout).frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder private func media(_ details: CatalogDetailFacts) -> some View {
@@ -271,6 +303,7 @@ struct LiveProductView: View {
                                        allowsPlayback: allowsStartupTasks)
                         .frame(maxWidth: 640, alignment: .leading)
                 }
+
                 if !details.screenshots.isEmpty {
                     ScrollView(.horizontal) {
                         LazyHStack(spacing: 16) {

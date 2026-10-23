@@ -82,6 +82,7 @@ final class AppState: ObservableObject {
         self.installedGames = installedGames
         self.pcGames = pcGames
         self.gameScriptPaths = gameScriptPaths
+        installedGames.useAccountLibrary(pcGames)
     }
 
     func canSignOut(session: LiveSession) -> Bool {

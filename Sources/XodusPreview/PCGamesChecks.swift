@@ -537,10 +537,18 @@ enum PCGamesChecks {
             await controller.waitForOperation()
             check(controller.accessIsCurrent && controller.representedGames.map(\.id) == [first],
                   "SDD-LIB-06: complete account snapshot is the live qualified source before \(mode)")
+            let installedAccess = InstalledGamesController()
+            installedAccess.useAccountLibrary(controller)
+            installedAccess.setAccountAccessAllowed(true)
+            check(installedAccess.hasCurrentAccess(to: first)
+                  && !installedAccess.hasCurrentAccess(to: "NOTHELD00001"),
+                  "Play admission requires the exact current account-held product, not sign-in or installed files")
             controller.refresh()
-            check(!controller.accessIsCurrent,
-                  "SDD-LIB-06: refresh in flight cannot authorize new installs")
+            check(!controller.accessIsCurrent && !installedAccess.hasCurrentAccess(to: first),
+                  "SDD-LIB-06: refresh in flight cannot authorize new installs or Play")
             await controller.waitForOperation()
+            check(!installedAccess.hasCurrentAccess(to: first),
+                  "Changed, revoked, partial or removed account access cannot leave Play enabled")
             if mode == "partial" {
                 check(controller.snapshot?.games.map(\.id) == [first] && !controller.accessIsCurrent
                       && controller.error != nil && !controller.needsSignIn,

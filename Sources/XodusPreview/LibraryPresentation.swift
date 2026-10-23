@@ -148,7 +148,7 @@ struct LibraryGame: Identifiable {
     }
 
     static func displayCollection(installed: [InstalledGame], account: [Self]) -> [Self] {
-        account + localRecords(installed: installed, qualified: account, query: "", sort: .title)
+        account.filter { $0.accessIsCurrent && $0.pc != nil }
     }
 
     var eligibility: LibraryEligibility? {
@@ -538,9 +538,8 @@ struct LibraryGameInformation: View {
                         .lineLimit(compact ? 1 : 2)
                 }
             }
-            if showsPrice {
-                Label(facts?.commerce.flatMap { $0.isCurrent() ? $0.label : nil } ?? "Price unavailable",
-                      systemImage: "tag")
+            if showsPrice, let price = facts?.commerce.flatMap({ $0.isCurrent() ? $0.label : nil }) {
+                Label(price, systemImage: "tag")
             }
             if !compact {
                 if let facts, !facts.capabilities.isEmpty {

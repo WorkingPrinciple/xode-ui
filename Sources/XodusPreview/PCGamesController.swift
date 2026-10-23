@@ -43,6 +43,8 @@ final class PCGamesController: ObservableObject {
     var accessIsCurrent: Bool {
         snapshot != nil && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
             && !presenceUnavailable && error == nil && !needsKeychainApproval
+            && (!usesUnifiedAccount || (unifiedSession?.hasConfirmedSignIn == true
+                && accountHash == unifiedSession?.accountHash))
     }
 
     init(store: any PCGamesRefreshStore = PCGamesCredentialStore(), client: PCGamesClient = PCGamesClient(),

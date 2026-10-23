@@ -487,9 +487,10 @@ enum LibraryAccessChecks {
         check(locals.count == 1 && locals[0].installed == local && !locals[0].owned && !locals[0].gamePass,
               "SDD-LIB-04: live local-record seam preserves exact registry data without access badges")
         let displayed = LibraryGame.displayCollection(installed: [local], account: collection)
-        check(displayed.count == 2 && LibraryGame.visible(displayed, query: "", filter: .installed, sort: .title).count == 1
-              && displayed.first(where: { $0.installed?.id == local.id })?.owned == false,
-              "All counts known installed games without promoting them to owned or subscription access")
+        check(displayed.map(\.id) == collection.map(\.id)
+              && LibraryGame.visible(displayed, query: "", filter: .installed, sort: .title).isEmpty
+              && locals[0].installed?.folder == local.folder,
+              "Library contains only account-held games; installed-only records remain separate for management")
         check(collection.first?.eligibility == .owned && locals[0].eligibility == .installedUnknown,
               "M10: eligibility classifies held access as owned and installed-only as installedUnknown")
         check(LibraryGame.continuing(collection, launchableIDs: [local.id]).isEmpty,

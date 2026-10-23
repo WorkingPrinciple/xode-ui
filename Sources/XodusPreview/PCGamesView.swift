@@ -112,7 +112,7 @@ struct PCGamesView: View {
                     }
                     .font(.callout).foregroundStyle(.secondary) }
                     if !showsCollection, !library.accessIsCurrent {
-                        Text("Showing your saved library. Refresh to check for changes.")
+                        Text("Refresh your PC library to check current game access.")
                             .font(.callout).foregroundStyle(.secondary)
                     }
                 }

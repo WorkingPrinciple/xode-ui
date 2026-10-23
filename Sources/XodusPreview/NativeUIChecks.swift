@@ -8,6 +8,11 @@ enum NativeUIChecks {
     static func run(check: (Bool, String) -> Void) {
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
+        check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))
+                == "\(4.5.formatted(.number.precision(.fractionLength(1)))) / 5 · 123 ratings"
+              && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("Windows game package format")
+              && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("does not confirm account access or Mac compatibility"),
+              "Hero ratings retain their scale/count and package hover help never implies account or Mac clearance")
         check(GameDetailFacetCopy.installation(installed: false) == "Not installed"
               && GameDetailFacetCopy.installation(installed: true) == "Installed on this Mac"
               && GameDetailFacetCopy.precheckStatus(productID: "FIXTURE00001", installed: false,

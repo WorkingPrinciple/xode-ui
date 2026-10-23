@@ -88,15 +88,14 @@ grant. Only successful preflight and explicit confirmation can proceed.
 The first SDD candidate removed this working route; the frontend follow-up
 restores it without admitting unresolved titles to the personal Library.
 
-The Game Pass filter is a **PC Game Pass catalogue** scope, not an owned-only
-intersection. It follows the existing discovery continuation until the current
-feed is exhausted, interrupted or this build's bounded limit is reached.
-Catalogue cards join exact account-held and installed identities so both
-Owned and Game Pass badges can coexist; browsing does not establish package
-access or add unverified entries to the qualified All/Owned collection.
-Progress, partial failures and manual refresh/continue remain explicit. Cover
-grids top-align artwork regardless of metadata height; installed cards keep
-Play visible at rest, with Installed as secondary status.
+Library lists only games from the current account-bound PC collection. Its
+Game Pass filter selects account-accessible subscription/catalogue overlap,
+not the public catalogue. Discover remains the place to browse public games.
+Installed-only records remain reachable under **Manage installed games on this
+Mac**, without treating files or public catalogue membership as entitlement.
+Play requires current per-product account access in addition to installation
+and runtime readiness. Cover grids top-align artwork regardless of metadata
+height.
 
 **Proposed v1:** account connection, entitled PC library, scoped catalog discovery, edition selection, explicit eligibility and compatibility, installation planning, durable downloads/recovery, launch, safe updates/removal and redacted diagnostics.
 

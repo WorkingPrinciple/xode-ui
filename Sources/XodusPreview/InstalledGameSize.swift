@@ -109,26 +109,10 @@ struct LibraryGameSizeView: View {
     var allowsMeasurement = true
     @ObservedObject private var sizes = InstalledGameSizeStore.shared
 
-    private var packageListing: Bool? {
-        pcPackageListed
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
-                Label(packageListing == true ? "PC package found"
-                      : packageListing == false ? "No PC package found" : "PC package unverified",
-                      systemImage: packageListing == true ? "checkmark.circle"
-                      : packageListing == false ? "xmark.circle" : "questionmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .help("A public Microsoft catalog listing does not confirm this account can download the game or that it can be installed on this Mac.")
-                    .accessibilityLabel(packageListing == true ? "Windows PC package found"
-                        : packageListing == false ? "No Windows PC package found"
-                        : "Windows PC package not verified")
-                if let packageFormat {
-                    LibraryPackageFormatLabel(format: packageFormat)
-                }
+            if let format = installed?.packageType?.label ?? packageFormat {
+                LibraryPackageFormatLabel(format: format)
             }
             sizeLabel
         }
@@ -160,7 +144,11 @@ struct LibraryPackageFormatLabel: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(.quaternary, in: Capsule())
-            .help("PC package format from the public Microsoft catalog. MSIXVC is the GDK format Ode to X installs today; EAppx/Appx are Store app packages.")
+            .help(Self.help(format: format))
             .accessibilityLabel("Package format \(format)")
+    }
+
+    static func help(format: String) -> String {
+        "\(format) is a Windows game package format. MSIXVC is the GDK format supported by Ode to X 0.1; Appx and EAppx are Store app packages. The format alone does not confirm account access or Mac compatibility."
     }
 }
