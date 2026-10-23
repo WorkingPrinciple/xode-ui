@@ -15,7 +15,7 @@ struct LiveLibraryView: View {
     let browse: () -> Void
     let recentActivity: () -> Void
     var showCollection: () -> Void = {}
-    @StateObject private var selection = LibrarySelection()
+    @ObservedObject var selection = LibrarySelection()
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
     @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
@@ -32,39 +32,34 @@ struct LiveLibraryView: View {
         nonmutating set { selection.sort = newValue }
     }
 
-    private var collection: [LibraryGame] {
-        LibraryGame.collection(installed: installed.games, owned: library.representedGames,
-                               products: session.products, gamePass: session.gamePassProducts,
-                               active: operations.gamePassActive, accessIsCurrent: library.accessIsCurrent,
-                               permittedInstalledIDs: Set(installed.games.map(\.storeId).filter {
-                                   installed.productAccess.permits($0, account: session.accountHash)
-                               }))
-    }
-    private var visibleCandidates: [LibraryGame] {
-        LibraryGame.visible(libraryGames,
-                            query: query, filter: filter, sort: sort)
-    }
-    private var libraryGames: [LibraryGame] {
-        collection
-    }
-    private var visible: [LibraryGame] {
-        visibleCandidates.filter(isVisible)
-    }
+    private var projection: LibraryProjection { selection.projection.current }
+    private var collection: [LibraryGame] { projection.collection }
+    private var visibleCandidates: [LibraryGame] { projection.candidates }
+    private var visible: [LibraryGame] { projection.visible }
     private var hiddenUnsupportedCount: Int {
         visibleCandidates.count - visible.count
     }
-    private var continuing: [InstalledGame] {
-        LibraryGame.continuing(LibraryGame.visible(collection, query: query, filter: filter, sort: sort).filter(isVisible),
-                              launchableIDs: installed.launchableIDs)
-    }
-    private var localRecords: [LibraryGame] {
-        LibraryGame.localRecords(installed: installed.games, qualified: collection, query: query, sort: sort)
-    }
+    private var continuing: [InstalledGame] { projection.continuing }
+    private var localRecords: [LibraryGame] { projection.local }
     private var showsNativeMinecraft: Bool {
         query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query)
     }
 
     var body: some View {
+        let key = LibraryProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
+            products: session.products, gamePass: session.gamePassProducts, active: operations.gamePassActive,
+            installed: installed.games, permitted: Set(installed.games.map(\.storeId).filter {
+                installed.productAccess.permits($0, account: session.accountHash)
+            }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
+            metadataRevision: art.revision, compatibility: operations.compatibility,
+            filter: filter, sort: sort, showsUnsupported: showsUnsupportedGames)
+        selection.projection.prepare(key) {
+            LibraryProjection(key: key, isVisible: isVisible, recommendable: recommendable)
+        }
+        return content
+    }
+
+    private var content: some View {
         ZStack(alignment: .top) {
             ambientBackdrop
             VStack(alignment: .leading, spacing: 0) {
@@ -116,7 +111,7 @@ struct LiveLibraryView: View {
                         }
                     } else if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         ContentUnavailableView.search(text: query)
-                    } else if !libraryGames.isEmpty {
+                    } else if !collection.isEmpty {
                         ContentUnavailableView {
                             Label("No \(filter.rawValue.lowercased()) games to show", systemImage: "gamecontroller")
                         } description: { Text("Try another filter to see the games in your library.") }
@@ -131,8 +126,9 @@ struct LiveLibraryView: View {
                 } else {
                     LazyVGrid(columns: LibraryGridLayout.columns,
                               alignment: .leading, spacing: 30) {
-                        ForEach(visible) { game in card(game) }
+                        ForEach(visible) { game in card(game).id("library-card-\(game.id)") }
                     }
+                    .scrollTargetLayout()
                 }
                 if let error = art.error {
                     Label(error, systemImage: "photo.badge.exclamationmark").font(.callout).foregroundStyle(.secondary)
@@ -144,8 +140,9 @@ struct LiveLibraryView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Installed on this Mac").font(.title2.weight(.semibold))
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
-                            ForEach(localRecords.filter(isVisible)) { game in card(game) }
+                            ForEach(localRecords.filter(isVisible)) { game in card(game).id("library-local-\(game.id)") }
                         }
+                        .scrollTargetLayout()
                     }
                 }
                 if showsNativeMinecraft {
@@ -179,6 +176,11 @@ struct LiveLibraryView: View {
                 LocalInstalledGameView(game: entry.game, installed: installed, operations: operations)
             }
         }
+        .onDisappear {
+            selection.heroHovered = false
+            selection.heroPlaying = false
+            selection.localDetail = nil
+        }
         .task { if allowsStartupTasks { await library.loadOnAppear() } }
         .task {
             guard allowsStartupTasks else { return }
@@ -198,15 +200,13 @@ struct LiveLibraryView: View {
         }
     }
 
-    private var heroGames: [LibraryGame] {
-        func recommendable(_ game: LibraryGame) -> Bool {
-            let id = game.installed?.storeId ?? game.id
-            return LibrarySupportVisibility.issues(productID: id, installed: game.installed != nil,
-                packageFormat: game.installed?.packageType?.label ?? art.images[id]?.facts.packageFormat,
-                compatibility: operations.compatibility[id]).isEmpty
-        }
-        return LibraryGame.heroCandidates(qualified: collection.filter(recommendable),
-            catalogue: [], continuingIDs: continuing.map(\.id))
+    private var heroGames: [LibraryGame] { projection.hero }
+
+    private func recommendable(_ game: LibraryGame) -> Bool {
+        let id = game.installed?.storeId ?? game.id
+        return LibrarySupportVisibility.issues(productID: id, installed: game.installed != nil,
+            packageFormat: game.installed?.packageType?.label ?? art.images[id]?.facts.packageFormat,
+            compatibility: operations.compatibility[id]).isEmpty
     }
 
     private var heroCarousel: some View {
@@ -421,7 +421,7 @@ struct LiveLibraryView: View {
         let xbox = xboxStats.cache?.games[id]
         let facts = metadata?.genres.isEmpty == false ? metadata :
             xbox.map { LibraryCatalogFacts(genres: $0.genres, capabilities: metadata?.capabilities ?? []) } ?? metadata
-        let game = collection.first(where: { $0.id == id })
+        let game = projection.byID[id]
         return LibraryGameInformation(access: game.flatMap(LibraryAccess.init),
                                       gamePass: game?.gamePass == true,
                                       facts: facts, xbox: xbox, compact: compact)

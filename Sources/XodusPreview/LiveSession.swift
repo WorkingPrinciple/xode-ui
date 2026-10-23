@@ -1442,13 +1442,15 @@ final class LiveSession: ObservableObject {
         let corpus = command == .query ? "publicMicrosoftStoreSearch"
             : command == .discover ? "pcGamePassDiscovery" : "observedPublicProducts"
         if more && (searching || nextCursor == nil || catalogCorpus != corpus || currentQuery != query) { return }
+        let retainsProducts = currentQuery == query && catalogCorpus == corpus
+            && catalogRequestScope == "\(market):\(language)"
         queryGeneration += 1
         queuedCatalog = CatalogRequest(command: command, query: query, market: market, language: language,
             cursor: more ? nextCursor : nil, more: more, generation: generation, queryGeneration: queryGeneration)
         currentQuery = query
         catalogRequestScope = "\(market):\(language)"
         if !more {
-            products = []
+            if !retainsProducts { products = [] }
             nextCursor = nil
             cacheRevision = nil
             discoveryFailures = []
@@ -1638,12 +1640,19 @@ final class LiveSession: ObservableObject {
             products += page.products
             discoveryFailures += page.failures
         } else {
-            products = page.products
+            products = refreshedProducts(page.products, failures: page.failures.map(\.productID))
             discoveryFailures = page.failures
         }
         nextCursor = page.nextCursor
         discoveryCheckedAt = page.checkedAt
         catalogCorpus = page.corpus
+    }
+
+    private func refreshedProducts(_ incoming: [CatalogProduct], failures: [String]) -> [CatalogProduct] {
+        if incoming.isEmpty, !failures.isEmpty { return products }
+        let failed = Set(failures)
+        let successful = Set(incoming.map(\.id))
+        return incoming + products.filter { failed.contains($0.id) && !successful.contains($0.id) }
     }
 
     private func browseDiscovery(_ request: CatalogRequest) async {
@@ -1694,7 +1703,7 @@ final class LiveSession: ObservableObject {
             products += page.products
             discoveryFailures += page.failures
         } else {
-            products = page.products
+            products = refreshedProducts(page.products, failures: page.failures.map(\.productID))
             discoveryFailures = page.failures
         }
         nextCursor = page.nextCursor

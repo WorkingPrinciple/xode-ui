@@ -59,6 +59,23 @@ enum NativeChecks {
             check(navigation.query == "Library search", "Library query survives tab navigation")
             navigation.navigate(.discover)
             check(navigation.query == "Store search", "Discover query survives tab navigation")
+            navigation.librarySelection.filter = .installed
+            navigation.librarySelection.sort = .recentlyPlayed
+            navigation.librarySelection.heroID = "library-hero"
+            navigation.librarySelection.scrollID = "library-card-fixture"
+            navigation.discoverSelection.genre = "Adventure"
+            navigation.discoverSelection.featuredID = "discover-hero"
+            navigation.discoverSelection.scrollID = "discover-card-fixture"
+            navigation.navigate(.library)
+            navigation.navigate(.discover)
+            check(navigation.librarySelection.filter == .installed
+                  && navigation.librarySelection.sort == .recentlyPlayed
+                  && navigation.librarySelection.heroID == "library-hero"
+                  && navigation.librarySelection.scrollID == "library-card-fixture"
+                  && navigation.discoverSelection.genre == "Adventure"
+                  && navigation.discoverSelection.featuredID == "discover-hero"
+                  && navigation.discoverSelection.scrollID == "discover-card-fixture",
+                  "Tab owners retain independent filter/sort/hero/scroll values without retaining hidden views")
             let playbackArguments = (true, true, false, false, true, true, true)
             check(HeroMotionPolicy.permitsPlayback(allowed: playbackArguments.0, enabled: playbackArguments.1,
                     reduceMotion: playbackArguments.2, lowPower: playbackArguments.3,
@@ -72,6 +89,7 @@ enum NativeChecks {
                       "Hero playback respects lifecycle fence \(fence)")
             }
             try LibraryAccessChecks.run(check: check)
+            try PresentationPerformanceChecks.correctness(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
                 try await InstalledProductAccessChecks.run(check: check)
@@ -791,10 +809,12 @@ enum NativeChecks {
             await partialFeed.connect()
             await partialFeed.refreshCatalog("")
             let retainedFeedIDs = partialFeed.gamePassProductIDs
+            let retainedVisibleIDs = Set(partialFeed.products.map(\.id))
             check(!retainedFeedIDs.isEmpty && partialFeed.gamePassCatalogError == nil,
                   "SDD-LIB-06: partial PC discovery records remain metadata, not a personal access grant")
             await partialFeed.refreshCatalog("")
             check(partialFeed.gamePassProductIDs == retainedFeedIDs
+                  && Set(partialFeed.products.map(\.id)) == retainedVisibleIDs
                   && Set(partialFeed.gamePassProducts.map(\.id)) == retainedFeedIDs
                   && partialFeed.gamePassCatalogError != nil
                   && partialFeed.gamePassLibraryNotice.contains("retained")

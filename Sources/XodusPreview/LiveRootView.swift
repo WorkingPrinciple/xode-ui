@@ -92,6 +92,16 @@ struct LiveRootView: View {
         return "Refresh Library - updated \(age)"
     }
 
+    private var browseScrollID: Binding<String?> {
+        let destination = state.destination
+        return Binding(get: {
+            destination == .library ? state.librarySelection.scrollID : state.discoverSelection.scrollID
+        }, set: { value in
+            if destination == .library { state.librarySelection.scrollID = value }
+            else { state.discoverSelection.scrollID = value }
+        })
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
         Group {
@@ -112,6 +122,8 @@ struct LiveRootView: View {
                     }
                     .padding(immersiveDestination ? 0 : 30)
                 }
+                .scrollPosition(id: browseScrollID)
+                .id(state.destination)
                 .modifier(LibraryScrollEdge(enabled: immersiveDestination))
                 .modifier(LibraryImmersion(enabled: immersiveDestination, underlapsToolbar: toolbarOverArtwork))
                 .background(Color(nsColor: .windowBackgroundColor))
@@ -186,10 +198,11 @@ struct LiveRootView: View {
                     state.gameOperations.useUnifiedAccount(session)
                     state.installedGames.useUnifiedAccount(session)
                 }
-                await state.pcGames.loadOnAppear()
                 await state.installedGames.load()
+                async let collectionLoad: Void = state.pcGames.loadOnAppear()
                 await state.installedGames.discoverNativeInstallations()
                 await state.gameOperations.restore()
+                await collectionLoad
                 if unifiedAccountMode {
                     await state.pcGames.waitForLoad()
                     await companion.refresh(for: nil)
@@ -302,8 +315,10 @@ struct LiveRootView: View {
         }
         .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
             guard accountContentAllowed, state.destination == .discover else { return }
-            do { try await Task.sleep(for: .milliseconds(250)) }
-            catch { return }
+            if !state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                do { try await Task.sleep(for: .milliseconds(250)) }
+                catch { return }
+            }
             await session.loadCatalogOnEntry(state.query)
             if state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                session.supports(.discover), !session.catalogStopped {
@@ -314,6 +329,8 @@ struct LiveRootView: View {
             if confirmed, state.consumeUnifiedSignInRequest() {
                 if !unifiedAccountMode { Task { await state.refreshGameServiceStatusAfterSignIn() } }
             } else if !confirmed {
+                state.librarySelection.projection.clear(to: .empty)
+                state.discoverSelection.projection.clear(to: .empty)
                 if unifiedAccountMode {
                     companion.invalidateBinding()
                     state.installedGames.productAccess.retire()
@@ -397,7 +414,7 @@ struct LiveRootView: View {
                                 allowsHeroAnimation: heroAnimationAllowed,
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() },
-                                showCollection: showCollection)
+                                showCollection: showCollection, selection: state.librarySelection)
             }
         }
     }
@@ -452,7 +469,7 @@ struct LiveRootView: View {
                         operations: state.gameOperations, query: scopedQuery,
                         allowsArtworkLoading: libraryArtworkAllowed,
                         allowsStartupTasks: startupAllowed, allowsHeroAnimation: heroAnimationAllowed,
-                        clearSearch: { state.query = "" })
+                        clearSearch: { state.query = "" }, selection: state.discoverSelection)
     }
 }
 

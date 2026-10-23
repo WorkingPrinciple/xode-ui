@@ -81,7 +81,7 @@ final class CatalogArtworkStore {
     }
 
     nonisolated private static func defaultDiskCache() -> CatalogMediaDiskCache? {
-        let isolated = ["--library-preview", "--export-preview", "--export-live", "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check"]
+        let isolated = ["--library-preview", "--export-preview", "--export-live", "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--presentation-performance-check"]
         return CommandLine.arguments.contains(where: isolated.contains) ? nil : .production()
     }
 
@@ -200,11 +200,13 @@ private final class ArtworkPresentation: ObservableObject {
     @Published private(set) var loading = false
     @Published private(set) var failed = false
     private var loadID = UUID()
+    private var reference: CatalogArtworkReference?
 
     func load(_ reference: CatalogArtworkReference?) async {
         let token = UUID()
         loadID = token
-        image = nil
+        if self.reference != reference { image = nil }
+        self.reference = reference
         failed = false
         guard let reference else { loading = false; return }
         loading = true

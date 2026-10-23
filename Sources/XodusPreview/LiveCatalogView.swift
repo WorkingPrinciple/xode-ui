@@ -4,8 +4,10 @@ import XodusManagement
 
 @MainActor
 final class DiscoverSelection: ObservableObject {
+    let projection = PresentationCache<CatalogProjectionKey, CatalogProjection>(empty: .empty)
     @Published var genre: String?
     @Published var featuredID: String?
+    @Published var scrollID: String?
     @Published var featuredVisible = false
 }
 
@@ -74,7 +76,6 @@ struct LiveCatalogView: View {
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openSettings) private var openSettings
     @ObservedObject private var art = LibraryCatalogArtwork.shared
-    @StateObject private var selection = DiscoverSelection()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     let query: String
@@ -82,22 +83,15 @@ struct LiveCatalogView: View {
     var allowsStartupTasks = true
     var allowsHeroAnimation = true
     let clearSearch: () -> Void
+    @ObservedObject var selection = DiscoverSelection()
 
-    private var results: CatalogSearchResults {
-        CatalogSearchResults(query: query, ownedGames: library.representedGames,
-            storeProducts: session.catalogMatches(query: query) ? session.products : [],
-            gamePassProductIDs: session.gamePassProductIDs, gamePassProducts: session.gamePassProducts)
-    }
-    private var facts: [String: LibraryCatalogFacts] { art.images.mapValues(\.facts) }
-    private var genres: [String] { DiscoverBrowse.genres(products: results.storeProducts, facts: facts) }
-    private var visibleCandidates: [CatalogProduct] {
-        DiscoverBrowse.visible(products: results.storeProducts, facts: facts, genre: query.isEmpty ? selection.genre : nil)
-    }
-    private var visible: [CatalogProduct] { visibleCandidates.filter { !query.isEmpty || isVisible(game($0)) } }
-    private var ownedMatches: [PCGame] { results.ownedMatches.filter { !query.isEmpty || isVisible(game($0)) } }
-    private var hiddenUnsupportedCount: Int {
-        visibleCandidates.count - visible.count + results.ownedMatches.count - ownedMatches.count
-    }
+    private var projection: CatalogProjection { selection.projection.current }
+    private var results: CatalogSearchResults { projection.index.results }
+    private var facts: [String: LibraryCatalogFacts] { projection.facts }
+    private var genres: [String] { projection.genres }
+    private var visible: [CatalogProduct] { projection.visible }
+    private var ownedMatches: [PCGame] { projection.owned }
+    private var hiddenUnsupportedCount: Int { projection.hiddenCount }
     private var canRefresh: Bool {
         allowsStartupTasks && session.isReady && (session.supports(.search)
             || (query.isEmpty ? session.supports(.discover) : session.supports(.query)))
@@ -114,6 +108,19 @@ struct LiveCatalogView: View {
     private var columns: [GridItem] { LibraryGridLayout.columns }
 
     var body: some View {
+        let key = CatalogProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
+            products: session.catalogMatches(query: query) ? session.products : [],
+            gamePass: session.gamePassProducts, gamePassIDs: session.gamePassProductIDs,
+            installed: installed.games, accessIsCurrent: library.accessIsCurrent,
+            metadataRevision: art.revision, compatibility: operations.compatibility,
+            genre: selection.genre, showsUnsupported: showsUnsupportedGames)
+        selection.projection.prepare(key) {
+            CatalogProjection(key: key, facts: art.images.mapValues(\.facts), isVisible: isVisible)
+        }
+        return content
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 28) {
             if operations.hasDownloadStatus {
                 GameOperationProgressView(operations: operations)
@@ -133,8 +140,9 @@ struct LiveCatalogView: View {
                                 Text("Showing your last complete PC library.").font(.callout).foregroundStyle(.secondary)
                             }
                             LazyVGrid(columns: columns, spacing: 28) {
-                                ForEach(ownedMatches) { card(game($0)) }
+                                ForEach(ownedMatches) { card(game($0)).id("discover-owned-\($0.id)") }
                             }
+                            .scrollTargetLayout()
                         }
                     }
                 }
@@ -163,8 +171,9 @@ struct LiveCatalogView: View {
                     }
                     if !visible.isEmpty {
                         LazyVGrid(columns: columns, spacing: 28) {
-                            ForEach(visible) { card(game($0)) }
+                            ForEach(visible) { card(game($0)).id("discover-card-\($0.id)") }
                         }
+                        .scrollTargetLayout()
                     } else if ownedMatches.isEmpty {
                         unavailable
                     } else if !session.searching && session.catalogError == nil {
@@ -183,7 +192,8 @@ struct LiveCatalogView: View {
             .padding(.top, query.isEmpty && !visible.isEmpty ? 0 : 86)
         }
         .onChange(of: query) { _, _ in selection.genre = nil }
-        .task(id: "\(session.market):\(session.language):\(results.storeProducts.map(\.id).joined(separator: ",")):\(library.snapshot?.games.map(\.id).joined(separator: ",") ?? "")") {
+        .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
+                                       ids: projection.artworkIDs)) {
             guard allowsArtworkLoading else { return }
             await art.load(ids: results.storeProducts.map(\.id) + (library.snapshot?.games.map(\.id) ?? []),
                            market: session.market, language: session.language)
@@ -191,21 +201,18 @@ struct LiveCatalogView: View {
     }
 
     private func game(_ product: CatalogProduct) -> LibraryGame {
-        LibraryGame(id: product.id, title: product.title,
+        projection.index.games[product.id] ?? LibraryGame(id: product.id, title: product.title,
             installed: installed.games.first { $0.storeId == product.id },
             pc: results.ownedGame(for: product.id), product: product,
             owned: results.ownedGame(for: product.id).map { $0.acquisitionKind != .subscription } ?? false,
-            gamePass: session.gamePassProductIDs.contains(product.id),
-            accessIsCurrent: library.accessIsCurrent)
+            gamePass: session.gamePassProductIDs.contains(product.id), accessIsCurrent: library.accessIsCurrent)
     }
 
     private func game(_ owned: PCGame) -> LibraryGame {
-        LibraryGame(id: owned.id, title: owned.title,
+        projection.index.games[owned.id] ?? LibraryGame(id: owned.id, title: owned.title,
             installed: installed.games.first { $0.storeId == owned.id }, pc: owned,
-            product: session.products.first { $0.id == owned.id },
-            owned: owned.acquisitionKind != .subscription,
-            gamePass: session.gamePassProductIDs.contains(owned.id),
-            accessIsCurrent: library.accessIsCurrent)
+            product: session.products.first { $0.id == owned.id }, owned: owned.acquisitionKind != .subscription,
+            gamePass: session.gamePassProductIDs.contains(owned.id), accessIsCurrent: library.accessIsCurrent)
     }
 
     private func open(_ game: LibraryGame) {
@@ -325,7 +332,7 @@ struct LiveCatalogView: View {
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220, maximum: 340), spacing: 24)], spacing: 16) {
                 ForEach(Array(genres.prefix(4)), id: \.self) { genre in
-                    if let product = results.storeProducts.first(where: { facts[$0.id]?.genres.contains(genre) == true }) {
+                    if let product = projection.genreProducts[genre] {
                         Button { selection.genre = selection.genre == genre ? nil : genre } label: {
                             ZStack(alignment: .bottomLeading) {
                                 LibraryLandscapeView(references: landscape(game(product)), installed: nil,

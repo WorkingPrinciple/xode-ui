@@ -27,7 +27,7 @@ enum DevelopmentArguments {
         if GameLaunchArguments.parse(arguments) != nil { return true }
         guard let mode = arguments.first else { return true }
         switch mode {
-        case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check", "--gamepass-collections-check":
+        case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check", "--gamepass-collections-check", "--presentation-performance-check":
             return arguments.count == 1
         case "--export-preview", "--export-live", "--export-live-data":
             return arguments.count == 2
@@ -128,6 +128,7 @@ struct XodusPreviewApp: App {
                 exit(1)
             }
         }
+        if CommandLine.arguments.contains("--presentation-performance-check") { PresentationPerformanceChecks.launch() }
         if CommandLine.arguments.contains("--live-check") { NativeChecks.launch() }
         if CommandLine.arguments.contains("--library-access-check") { NativeChecks.launch(libraryAccessOnly: true) }
         if CommandLine.arguments.contains("--xbox-product-link-check") {

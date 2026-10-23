@@ -208,7 +208,7 @@ struct PCGamesTokens: Sendable {
     let refresh: String
 }
 
-struct PCGame: Identifiable, Sendable {
+struct PCGame: Identifiable, Equatable, Sendable {
     let id: String
     let title: String
     let artwork: CatalogArtworkReference?

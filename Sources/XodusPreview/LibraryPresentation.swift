@@ -21,11 +21,13 @@ enum LibraryGridLayout {
 
 @MainActor
 final class LibrarySelection: ObservableObject {
+    let projection = PresentationCache<LibraryProjectionKey, LibraryProjection>(empty: .empty)
     @Published var localDetail: InstalledGameDetailSelection?
     @Published var filter: LibraryFilter = .all
     @Published var sort: LibrarySort = .title
     @Published var recentGameID: UUID?
     @Published var heroID: String?
+    @Published var scrollID: String?
     @Published var heroHovered = false
     @Published var heroPlaying = false
     var requestedGamePassScope: String?
