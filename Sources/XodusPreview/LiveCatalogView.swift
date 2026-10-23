@@ -336,7 +336,9 @@ struct LiveCatalogView: View {
             }
             .buttonStyle(.plain).accessibilityLabel("View \(game.title)")
             .accessibilityValue(game.facts.badgeLabels().joined(separator: ", "))
+            .focusable()
             .focused($focusedResult, equals: game.id)
+            .onKeyPress(.return) { open(game); return .handled }
             Text(game.installed == nil ? "Not installed" : "Installed")
                 .font(.callout).foregroundStyle(.secondary)
             if !unsupportedIssues(game).isEmpty {
