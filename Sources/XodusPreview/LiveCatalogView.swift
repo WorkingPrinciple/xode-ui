@@ -282,10 +282,16 @@ struct LiveCatalogView: View {
                         Text(DiscoverCopy.noOtherGames(query)).foregroundStyle(.secondary)
                     }
                     if session.nextCursor != nil, session.catalogMatches(query: query) {
-                        Button("More games") { Task { await session.refreshCatalog(query, more: true) } }
-                            .disabled(!canRefresh || !session.canLoadMoreCatalog)
-                            .accessibilityLabel("Load more catalog results")
-                            .accessibilityIdentifier("xodus.catalog.loadMore")
+                        if session.catalogAtLimit {
+                            Text("The catalogue reached this build's limit. Some games remain unloaded.")
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("xodus.catalog.limit")
+                        } else {
+                            Button("More games") { Task { await session.refreshCatalog(query, more: true) } }
+                                .disabled(!canRefresh || !session.canLoadMoreCatalog)
+                                .accessibilityLabel("Load more catalog results")
+                                .accessibilityIdentifier("xodus.catalog.loadMore")
+                        }
                     }
                 }
                 catalogInfo

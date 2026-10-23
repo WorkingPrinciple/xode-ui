@@ -868,7 +868,13 @@ enum NativeChecks {
                   && boundedCatalogue.nextCursor != nil && !boundedCatalogue.gamePassCatalogHasMore
                   && boundedCatalogue.gamePassCatalogError?.contains("limit") == true,
                   "Catalogue limit preserves partial coverage and stops offering an impossible Load remaining action")
+            check(!boundedCatalogue.canLoadMoreCatalog,
+                  "Discover does not offer More games when the catalogue bound prevents another page")
             let readsAtLimit = try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count
+            await boundedCatalogue.refreshCatalog("", more: true)
+            check(try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count == readsAtLimit
+                  && boundedCatalogue.catalogError == nil,
+                  "Explicit continuation at capacity preserves content without a request or false service error")
             await boundedCatalogue.loadGamePassCatalog()
             check(try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count == readsAtLimit,
                   "Repeated requests at the catalogue bound make no additional producer calls")

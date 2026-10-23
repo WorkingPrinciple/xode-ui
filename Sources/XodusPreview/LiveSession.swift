@@ -556,7 +556,8 @@ final class LiveSession: ObservableObject {
         isReady && accountStatusCurrent && !accountBusy && !signInPending
             && (authentication?.state == .signedOut || (supports(.authLogout) && needsAccountDisconnect))
     }
-    var canLoadMoreCatalog: Bool { nextCursor != nil && !searching }
+    var catalogAtLimit: Bool { Set(products.map(\.id) + discoveryFailures.map(\.id)).count >= 512 }
+    var canLoadMoreCatalog: Bool { nextCursor != nil && !searching && !catalogAtLimit }
     var catalogEmptyTitle: String {
         if searching { return "Finding games" }
         if catalogStopped { return "Search stopped" }
@@ -1441,7 +1442,7 @@ final class LiveSession: ObservableObject {
         guard validScope else { catalogError = "Use a two-letter market and a language such as en-US."; return }
         let corpus = command == .query ? "publicMicrosoftStoreSearch"
             : command == .discover ? "pcGamePassDiscovery" : "observedPublicProducts"
-        if more && (searching || nextCursor == nil || catalogCorpus != corpus || currentQuery != query) { return }
+        if more && (!canLoadMoreCatalog || catalogCorpus != corpus || currentQuery != query) { return }
         let retainsProducts = currentQuery == query && catalogCorpus == corpus
             && catalogRequestScope == "\(market):\(language)"
         queryGeneration += 1
@@ -1575,7 +1576,7 @@ final class LiveSession: ObservableObject {
         for _ in 0..<32 {
             guard current(), catalogCorpus == "pcGamePassDiscovery", currentQuery.isEmpty,
                   catalogError == nil, !catalogStopped, let cursor = nextCursor else { return }
-            guard products.count + discoveryFailures.count < 512 else {
+            guard !catalogAtLimit else {
                 gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
                 gamePassCatalogHasMore = false
                 return
