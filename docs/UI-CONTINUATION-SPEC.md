@@ -51,6 +51,16 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
 
 ### Actual outcomes, including failures
 
+- Current continuation deployment: source `3fb66746dd242a5ad3846b039f034dad134f8b5b`,
+  signed executable `e9687815208c648325121d104c937db14a879b03a61b6f7b86bef8ae1afe261c`,
+  candidate stage `Ode-refresh-mldgmyeu`. Source `62ab032` first corrected startup
+  and reached an interactive, visibly populated Library; settled sampling showed
+  0.6% CPU, 494 MB physical footprint and no GraphHost/ContentUnavailableView
+  loop. Its 258 preview and 579 Library checks passed. The second candidate adds
+  native-container sizing and passes 258 preview/580 Library checks; ordinary
+  startup also settles (observed PID 44926, re-admit before future input).
+  Registry, both tracked preference files and all game-root identities were
+  unchanged at deployment. Exact edbe964 and 62ab032 rollbacks remain retained.
 - REQ-1 continuation: installed bb8ffd8 was independently observed hanging again
   (PID 72523, executable hash matching the precision candidate above). An isolated
   native hosting reproduction of the inline
@@ -72,6 +82,14 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
   now uses measured native container size; only size changes publish to the
   outer document, not live offsets. Do not repeat the GeometryReader-height
   reservation or treat this first failed pass as F03 acceptance.
+- Continuation handoff: corrected candidate reached the wheel-derived filter row
+  at screen Y160 in the actual 1619 x 1231 window. Subsequent exact-target guards
+  stopped twice when the GitHub app took foreground before filter input.
+  **Corrected F03 is unverified, not passed.** Resume only with exclusive
+  foreground and an unlocked/unoccluded screen; do not rebuild this unchanged
+  candidate, repeat the known GeometryReader failure or proceed to F04/F05 first.
+  Native geometry, captures, deployment receipts and source checks are private
+  `req2-*` artifacts in the continuation session above.
 - Ordinary startup enumeration: 164 records, 93 active Game/Application rows,
   91 product IDs, 5 subscription-plan rows. Frontend: 91 candidates, zero
   affirmative purchased/subscription acquisitions, 91 unknown. These are not
