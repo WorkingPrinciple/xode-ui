@@ -7,6 +7,11 @@ enum GameDetailFacetCopy {
         installed ? "Installed on this Mac" : "Not installed"
     }
 
+    static func precheckStatus(productID: String, installed: Bool, precheckingProductID: String?) -> String? {
+        guard !installed, precheckingProductID == productID else { return nil }
+        return "Checking installation requirements"
+    }
+
     static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String {
         guard let acquisition else { return "Access not verified" }
         let label = acquisition == .subscription ? "Subscription (plan unknown)" : "Owned"
@@ -69,6 +74,11 @@ struct LiveProductView: View {
                         header
                         VStack(alignment: .leading, spacing: 28) {
                         GameOperationProgressView(operations: operations, productID: product.id)
+                        if let status = GameDetailFacetCopy.precheckStatus(
+                            productID: product.id, installed: installed != nil,
+                            precheckingProductID: operations.precheckingProductID) {
+                            ProgressView(status).controlSize(.small)
+                        }
                         if let installed {
                             InstalledGameAttentionView(installed: installedLibrary, operations: operations,
                                 game: installed, repairGame: library.accessIsCurrent ? owned : nil,

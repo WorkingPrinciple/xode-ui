@@ -10,6 +10,12 @@ enum NativeUIChecks {
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameDetailFacetCopy.installation(installed: false) == "Not installed"
               && GameDetailFacetCopy.installation(installed: true) == "Installed on this Mac"
+              && GameDetailFacetCopy.precheckStatus(productID: "FIXTURE00001", installed: false,
+                  precheckingProductID: "FIXTURE00001") == "Checking installation requirements"
+              && GameDetailFacetCopy.precheckStatus(productID: "FIXTURE00001", installed: true,
+                  precheckingProductID: "FIXTURE00001") == nil
+              && GameDetailFacetCopy.precheckStatus(productID: "FIXTURE00001", installed: false,
+                  precheckingProductID: nil) == nil
               && GameCompatibilityFactsCopy.heading == "Compatibility"
               && GameCompatibilityFactsCopy.unsupported == "Not supported yet"
               && [
