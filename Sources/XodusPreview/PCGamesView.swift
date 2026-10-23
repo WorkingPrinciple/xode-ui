@@ -103,7 +103,7 @@ struct PCGamesView: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 180, maximum: 240), spacing: 24)], spacing: 28) {
                             ForEach(visibleGames) { game in
                                 PCGameTile(game: game, installed: installed, operations: operations,
-                                           allowsArtworkLoading: allowsStartupTasks, badge: query.isEmpty ? nil : .owned,
+                                           allowsArtworkLoading: allowsStartupTasks,
                                            accessIsCurrent: library.accessIsCurrent)
                             }
 
@@ -170,7 +170,7 @@ struct PCGameTile: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
     var allowsArtworkLoading = true
-    var badge: CatalogAccessBadge?
+    var gamePass = false
     var viewDetails: (() -> Void)?
     var accessIsCurrent = true
 
@@ -188,13 +188,7 @@ struct PCGameTile: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             Text(game.title).font(.headline)
                 .lineLimit(2).frame(minHeight: 40, alignment: .topLeading)
-            if let badge {
-                Text(accessIsCurrent
-                     ? (badge == .gamePass ? badge.rawValue
-                        : GameDetailFacetCopy.access(acquisition: game.acquisitionKind, current: true))
-                     : "Saved library - refresh required")
-                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            }
+            AccessBadges(facts: GameFacts(pc: game, gamePass: gamePass, accessIsCurrent: accessIsCurrent))
             if !unsupportedIssues.isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues)
             } else if let match = PCGamesController.installedMatch(game, in: installed.games) {

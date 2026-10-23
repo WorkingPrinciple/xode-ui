@@ -29,7 +29,7 @@ struct FixtureLibraryView: View {
                 } poster: {
                     GameArtwork(kind: Fixtures.games[0].art)
                 } information: {
-                    LibraryGameInformation(access: access(Fixtures.games[0]))
+                    LibraryGameInformation(gameFacts: access(Fixtures.games[0]))
                     Text("\(GameOperationProgressView.bytes(Fixtures.games[0].expandedBytes)) installed - fixture")
                         .font(.caption).foregroundStyle(.secondary)
                 } actions: {
@@ -73,7 +73,7 @@ struct FixtureLibraryView: View {
                                                 GameArtwork(kind: game.art).frame(width: 260, height: 120)
                                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                                 Text(game.title).font(.headline).foregroundStyle(.primary)
-                                                LibraryGameInformation(access: access(game), compact: true)
+                                                LibraryGameInformation(gameFacts: access(game), compact: true)
                                                 Text("\(GameOperationProgressView.bytes(state.installed.contains(game.id) ? game.expandedBytes : game.downloadBytes)) \(state.installed.contains(game.id) ? "installed" : "download") - fixture")
                                                     .font(.caption)
                                             }
@@ -101,7 +101,7 @@ struct FixtureLibraryView: View {
                                 LibraryCover(title: game.title, open: { state.selectedGame = game }) {
                                     GameArtwork(kind: game.art)
                                 } status: {
-                                    LibraryGameInformation(access: access(game), compact: true)
+                                    LibraryGameInformation(gameFacts: access(game), compact: true)
                                     if state.installed.contains(game.id) {
                                         Label("Installed fixture", systemImage: "internaldrive")
                                     }
@@ -124,11 +124,12 @@ struct FixtureLibraryView: View {
         }
     }
 
-    private func access(_ game: Game) -> LibraryAccess? {
+    private func access(_ game: Game) -> GameFacts {
         switch game.entitlement {
-        case .purchase: .owned
-        case .subscription: .gamePass
-        case .none, .unknown: nil
+        case .purchase: GameFacts(ownership: .purchased(nil), accessIsCurrent: true)
+        case .subscription: GameFacts(ownership: .inLibraryUnknownAcquisition,
+                                     memberships: [.init(plan: .pcGamePass)], accessIsCurrent: true)
+        case .none, .unknown: GameFacts()
         }
     }
 }

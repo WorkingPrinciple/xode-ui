@@ -535,7 +535,7 @@ enum PreviewChecks {
                 products: [], gamePass: [try product(installed.storeId)], active: true)
             check(joined.count == 1 && !joined[0].owned && joined[0].gamePass && joined[0].installed != nil,
                   "One exact title can retain independent installation, account entitlement and subscription facets")
-            check(LibraryAccess.badges(joined[0]) == [.library, .gamePass] &&
+            check(joined[0].facts.badgeLabels() == ["In your library", "Game Pass"] &&
                   LibraryGame.visible(joined, query: "", filter: .owned, sort: .title).isEmpty &&
                   LibraryGame.visible(joined, query: "", filter: .gamePass, sort: .title).count == 1,
                   "Held access and public Game Pass membership remain independent without invented ownership")
@@ -547,9 +547,9 @@ enum PreviewChecks {
             let squareGame = LibraryGame(id: owned.id, title: owned.title, installed: nil,
                 pc: PCGame(id: owned.id, title: owned.title, artwork: square), product: nil, owned: true, gamePass: false)
             check(square != nil && squareGame.cover == nil, "Portrait Library covers do not stretch square Store icons")
-            check(LibraryAccess(joined[0]) == .library && LibraryAccess(all[0]) == .library &&
+            check(joined[0].facts.ownership == .inLibraryUnknownAcquisition && all[0].facts.ownership == .inLibraryUnknownAcquisition &&
                   LibraryGame.localRecords(installed: [installed], qualified: all, query: "", sort: .title)
-                    .allSatisfy { LibraryAccess($0) == nil },
+                    .allSatisfy { $0.facts.badgeLabels().isEmpty },
                   "Local-only copy never turns installation into account entitlement")
             let metadata = try JSONDecoder().decode(PCGamesCatalog.Product.self, from: Data("""
                 {"ProductId":"FIXTURE00002","Properties":{

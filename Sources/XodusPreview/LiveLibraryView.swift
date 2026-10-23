@@ -487,6 +487,7 @@ struct LiveLibraryView: View {
                                         .padding(12)
                                 }
                             Text(game.title).font(.headline).lineLimit(1)
+                            if let facts = projection.byID[game.storeId]?.facts { AccessBadges(facts: facts) }
                             if let date = game.lastPlayedAt {
                                 Text("Last played \(Text(date, style: .relative)) ago")
                                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
@@ -539,8 +540,7 @@ struct LiveLibraryView: View {
         let facts = metadata?.genres.isEmpty == false ? metadata :
             xbox.map { LibraryCatalogFacts(genres: $0.genres, capabilities: metadata?.capabilities ?? []) } ?? metadata
         let game = projection.byID[id]
-        return LibraryGameInformation(access: game.flatMap(LibraryAccess.init),
-                                      gamePass: game?.gamePass == true,
+        return LibraryGameInformation(gameFacts: game?.facts ?? GameFacts(),
                                       facts: facts, xbox: xbox, compact: compact)
     }
 
@@ -553,6 +553,7 @@ struct LiveLibraryView: View {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
         } status: {
+            AccessBadges(facts: game.facts)
             if !unsupportedIssues(game).isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
             }

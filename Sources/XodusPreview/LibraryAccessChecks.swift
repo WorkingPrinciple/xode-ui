@@ -455,8 +455,8 @@ enum LibraryAccessChecks {
               "SDD-LIB-01: held does not imply paid acquisition")
         let granted = LibraryGame.collection(installed: [], owned: [PCGame(id: "FIXTURE00005", title: "Pass grant",
             artwork: nil, acquisitionKind: .subscription)], products: [], gamePass: [], active: false)
-        check(granted.first.flatMap(LibraryAccess.init) == .subscription
-              && granted.first.map(LibraryAccess.badges) == [.subscription]
+        check(granted.first?.facts.ownership == .inLibraryUnknownAcquisition
+              && granted.first?.facts.badgeLabels() == ["In your library"]
               && granted.first?.owned == false && granted.first?.eligibility == .gamePass
               && LibraryGame.visible(granted, query: "", filter: .owned, sort: .title).isEmpty
               && PCGameAcquisitionKind.merged(.subscription, .purchased) == .purchased
@@ -503,7 +503,7 @@ enum LibraryAccessChecks {
         let both = LibraryGame.collection(installed: [installedHeld], owned: [held],
             products: [], gamePass: [overlap], active: true)
         check(both.count == 1 && !both[0].owned && both[0].gamePass
-              && LibraryAccess.badges(both[0]) == [.library, .gamePass],
+              && both[0].facts.badgeLabels() == ["In your library", "Game Pass"],
               "SDD-LIB-02: held access and explicitly public Game Pass membership remain independent overlapping facts")
         check(both[0].eligibility == .library,
               "M10: current held access remains independent of public Game Pass membership")
@@ -513,7 +513,7 @@ enum LibraryAccessChecks {
         let catalogue = LibraryGame.gamePassCatalog(installed: [installedHeld], owned: [held],
             products: [overlap, overlap, publicPC, console])
         check(catalogue.count == 2 && catalogue.first?.owned == false
-              && LibraryAccess.badges(catalogue[0]) == [.library, .gamePass]
+              && catalogue[0].facts.badgeLabels() == ["In your library", "Game Pass"]
               && catalogue.last?.owned == false,
               "Game Pass catalogue includes unowned PC members and independently marks overlapping held access")
         check(catalogue.last?.eligibility == nil,
@@ -560,16 +560,24 @@ enum LibraryAccessChecks {
               "SDD-LIB-07: ambiguous acquisition failure is not ownership loss or a demand to sign in")
         check(GameScriptError.failed(12).localizedDescription != refusal,
               "SDD-LIB-07: package incompatibility retains a separate failure")
-        check(LibraryAccess.summary(owned: false, catalogMembership: true, current: true)
-                == "Access not verified · Game Pass catalog",
+        check(GameFacts(pc: nil, gamePass: true, accessIsCurrent: true).badgeLabels() == ["Game Pass"],
               "SDD-LIB-02/07: live detail facet never presents public membership as account access")
         check(DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
                   gamePass: true, subscriptionActive: true, pcCandidate: true)
               && collection.allSatisfy { $0.id != publicPC.id },
               "SDD-LIB-02: shared live action policy opens protected Game Pass review without admitting public-only personal access")
-        check(LibraryAccess.summary(owned: true, catalogMembership: true, current: false)
-                == "Saved Owned · refresh required · Game Pass catalog",
+        check(GameFacts(ownership: .purchased(nil), memberships: [.init(plan: .pcGamePass)],
+                        accessIsCurrent: false).accessIsCurrent == false,
               "SDD-LIB-06: live detail facet labels retained access stale independently of catalog membership")
+        let boughtAndIncluded = GameFacts(ownership: .purchased(nil), memberships: [.init(plan: .pcGamePass)],
+                                          accessIsCurrent: true)
+        check(boughtAndIncluded.badgeLabels() == ["Owned", "Game Pass"]
+              && boughtAndIncluded.badgeLabels(detail: true) == ["Owned", "Included with PC Game Pass"],
+              "REQ-63: purchased plus catalogue membership always renders both independent badges")
+        check(GameFacts(pc: granted[0].pc, gamePass: true, accessIsCurrent: true).badgeLabels()
+                == ["In your library", "Game Pass"]
+              && GameFacts(pc: nil, gamePass: false, installed: local, accessIsCurrent: true).badgeLabels().isEmpty,
+              "REQ-63: subscription grants never become Owned and installation never infers either badge")
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("LibraryPreservation-\(UUID())")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
         defer { try? FileManager.default.removeItem(at: root) }

@@ -8,6 +8,13 @@ treating historical implementation reports as completed acceptance.
 
 ## Authority and scope
 
+REQ-63 source continuation: `GameFacts` separates acquisition, public membership
+and installation; `AccessBadges` replaces the competing single-badge types.
+Owned plus verified PC membership renders both labels; subscription acquisition
+alone never infers a catalogue plan. Solid capsules require no cell-level glass.
+Focused model/layout checks pass; real owned-plus-Game-Pass account evidence is
+unavailable and remains unverified. No installed-screen acceptance is claimed.
+
 The latest user priority is to commit, privately push and build the coherent
 backend/UI checkpoints, then reconcile specifications and all open improvement
 threads before further execution. No new install, GUI pass, provider request,

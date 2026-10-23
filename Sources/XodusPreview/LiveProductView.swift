@@ -83,15 +83,8 @@ struct LiveProductView: View {
         LibraryPCPackageEvidence.listed(observed: art?.facts.pcPackageListed,
                                        candidate: product.pcCatalogCandidate)
     }
-    private var access: LibraryAccess? {
-        (library.accessIsCurrent ? owned : nil)
-            .map {
-                switch $0.acquisitionKind {
-                case .purchased: LibraryAccess.owned
-                case .subscription: LibraryAccess.subscription
-                case .unknown: LibraryAccess.library
-                }
-            } ?? (gamePass ? .gamePass : nil)
+    private var gameFacts: GameFacts {
+        GameFacts(pc: owned, gamePass: gamePass, installed: installed, accessIsCurrent: library.accessIsCurrent)
     }
     private var canReviewGamePass: Bool {
         DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent,
@@ -214,7 +207,7 @@ struct LiveProductView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     LibraryLogoTitle(title: product.title, references: art?.logos ?? [],
                                      allowsLoading: allowsArtworkLoading)
-                    LibraryGameInformation(access: access, gamePass: gamePass,
+                    LibraryGameInformation(gameFacts: gameFacts, detail: true,
                                            facts: art?.facts, xbox: stats.cache?.games[product.id],
                                            showsPrice: owned == nil && installed == nil)
                     if let details {

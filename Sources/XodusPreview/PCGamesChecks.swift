@@ -942,8 +942,9 @@ enum PCGamesChecks {
             storeProducts: [duplicate, storeOnly], gamePassProductIDs: [first, third])
         check(joined.ownedMatches.map(\.id) == [harbor.id] && joined.storeProducts.map(\.id) == [third],
               "B2: Case-insensitive owned title substring matches come first; exact Store duplicates are removed")
-        check(joined.badge(for: first) == .library && joined.badge(for: third) == .gamePass
-              && joined.badge(for: "FIXTURE00004") == nil,
+        check(joined.facts(for: first).badgeLabels() == ["In your library", "Game Pass"]
+              && joined.facts(for: third).badgeLabels() == ["Game Pass"]
+              && joined.facts(for: "FIXTURE00004").badgeLabels().isEmpty,
               "B2: held acquisition has a truthful library badge; Game Pass requires loaded feed membership")
         check(joined.ownedGame(for: first)?.id == harbor.id
               && PCGamesController.installedMatch(harbor, in: [imported])?.id == imported.id
@@ -951,7 +952,7 @@ enum PCGamesChecks {
               "B2: Search-owned controls use the same exact Installed match as PC tiles")
         let absentOwned = CatalogSearchResults(query: "harbor", ownedGames: [],
             storeProducts: [duplicate], gamePassProductIDs: [])
-        check(absentOwned.ownedMatches.isEmpty && absentOwned.badge(for: first) == nil,
+        check(absentOwned.ownedMatches.isEmpty && absentOwned.facts(for: first).badgeLabels().isEmpty,
               "B2: Unloaded or signed-out PC Library never invents Owned evidence")
         let emptySearch = CatalogSearchResults(query: "  ", ownedGames: [harbor],
             storeProducts: [duplicate], gamePassProductIDs: [])
@@ -966,31 +967,15 @@ enum PCGamesChecks {
             storeProducts: [mortis], gamePassProductIDs: [mortis.id],
             gamePassProducts: [mortis, storeOnly])
         check(global.storeProducts.map(\.id) == ["9P861V1542BL"]
-              && global.badge(for: mortis.id) == .gamePass && global.ownedMatches.isEmpty,
+              && global.facts(for: mortis.id).badgeLabels() == ["Game Pass"] && global.ownedMatches.isEmpty,
               "#40: mortis finds Valor Mortis once across Store and Game Pass without requiring library ownership")
         let passOnly = CatalogSearchResults(query: "MORTIS", ownedGames: [],
             storeProducts: [], gamePassProductIDs: [mortis.id], gamePassProducts: [mortis])
         check(passOnly.storeProducts.map(\.id) == [mortis.id],
               "#40: Loaded Game Pass matches survive a missing Store page without broadening unrelated results")
-        check(passOnly.sourceLabel(for: mortis.id) == "PC Game Pass catalogue"
-              && passOnly.sourceLabel(for: "FIXTURE00001") == "Xbox / Microsoft Store",
-              "#44: Source labels distinguish PC Game Pass membership from public Store discovery without claiming account coverage")
-        let romanianPassListing = CatalogGamePassListing(status: .known,
-            plans: [CatalogGamePassPlan(id: "CFQ7TTC0KGQ8", name: "Game Pass pentru PC")],
-            completeness: "partial", market: "RO", checkedAt: "2026-10-22T12:00:00Z",
-            source: "xbox.com-search")
-        check(CatalogGamePassListingCopy.description(for: romanianPassListing)
-                == "Listed subscriptions (partial; account coverage unknown): Game Pass pentru PC.",
-              "#44: The UI preserves the service's exact market-local subscription label and disclaims account coverage")
-        let emptyPassListing = CatalogGamePassListing(status: .known, plans: [],
-            completeness: "partial", market: "RO", checkedAt: "2026-10-22T12:00:00Z",
-            source: "xbox.com-search")
-        let unknownPassListing = CatalogGamePassListing(status: .unknown, plans: [],
-            completeness: "partial", market: "RO", checkedAt: "2026-10-22T12:00:00Z",
-            source: "xbox.com-search")
-        check(CatalogGamePassListingCopy.description(for: emptyPassListing).contains("absence is not exclusion")
-              && CatalogGamePassListingCopy.description(for: unknownPassListing).contains("not an exclusion"),
-              "#44: Known-empty and unknown subscription listings never imply excluded access")
+        check(passOnly.facts(for: mortis.id).memberships.map(\.plan) == [.pcGamePass]
+              && passOnly.facts(for: "FIXTURE00001").memberships.isEmpty,
+              "REQ-63: PC catalogue membership never invents another plan or a negative membership badge")
         check(DiscoverCopy.sourceDescription(query: "", corpus: "observedPublicProducts")
                 .contains("Previously loaded public product details")
               && DiscoverCopy.sourceDescription(query: "", corpus: "pcGamePassDiscovery")

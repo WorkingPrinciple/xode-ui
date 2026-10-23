@@ -250,13 +250,13 @@ struct LibraryGame: Identifiable {
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
             result.append(Self(id: id, title: game.title, installed: game, pc: entitlement,
                                product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind == .purchased,
-                               gamePass: entitlement.acquisitionKind == .subscription || pass[id] != nil,
+                               gamePass: pass[id] != nil,
                                accessIsCurrent: accessIsCurrent))
         }
         for game in owned where seen.insert(game.id).inserted {
             result.append(Self(id: game.id, title: game.title, installed: nil, pc: game,
                                product: catalog[game.id] ?? pass[game.id], owned: game.acquisitionKind == .purchased,
-                               gamePass: game.acquisitionKind == .subscription || pass[game.id] != nil,
+                               gamePass: pass[game.id] != nil,
                                accessIsCurrent: accessIsCurrent))
         }
         return result
@@ -587,77 +587,6 @@ struct LibraryHero<Artwork: View, Poster: View, Information: View, Actions: View
     }
 }
 
-enum LibraryAccess: String {
-    case owned = "Owned", library = "In your library", gamePass = "Game Pass catalog", subscription = "Subscription"
-    var symbol: String { self == .owned ? "checkmark.seal" : self == .library ? "books.vertical" : "ticket" }
-    var help: String {
-        switch self {
-        case .owned: "In your Microsoft PC game library."
-        case .library: "In your Microsoft PC game library. The acquisition source is not identified."
-        case .subscription: "Current subscription grant in your PC library. The provider and plan are not identified."
-        case .gamePass: "Included in the PC Game Pass catalogue. A subscription is required to install."
-        }
-    }
-    init?(_ game: LibraryGame) {
-        switch game.eligibility {
-        case .owned: self = .owned
-        case .library: self = .library
-        case .gamePass: self = .subscription
-        case .installedUnknown, nil:
-            guard game.gamePass else { return nil }
-            self = .gamePass
-        }
-    }
-    static func badges(_ game: LibraryGame) -> [Self] {
-        if game.eligibility == .gamePass { return [.subscription] }
-        return (game.eligibility == .owned ? [.owned] : game.eligibility == .library ? [.library] : [])
-            + (game.gamePass ? [.gamePass] : [])
-    }
-    static func summary(owned: Bool, catalogMembership: Bool, current: Bool) -> String {
-        let access = owned ? (current ? "Owned" : "Saved Owned · refresh required") : "Access not verified"
-        return catalogMembership ? access + " · Game Pass catalog" : access
-    }
-}
-
-struct LibraryAccessBadge: View {
-    let access: LibraryAccess
-    var compact = false
-    var body: some View {
-        if access == .subscription {
-            Label(access.rawValue, systemImage: "ticket")
-                .font((compact ? Font.caption : .callout).weight(.semibold))
-                .padding(.horizontal, compact ? 8 : 10).padding(.vertical, 4)
-                .modifier(LibraryBadgeMaterial())
-                .accessibilityLabel(access.rawValue)
-                .help(access.help)
-        } else if access == .gamePass {
-            Image(systemName: "xbox.logo")
-                .font(.system(size: compact ? 10 : 12, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: compact ? 16 : 18, height: compact ? 16 : 18)
-                .background(Color(red: 16 / 255, green: 124 / 255, blue: 16 / 255), in: Circle())
-                .accessibilityLabel("Included with Game Pass (PC catalogue; other tiers not verified)")
-                .help("Included with Game Pass (PC catalogue). Your subscription tier and other plans are not verified.")
-        } else {
-            Label(access.rawValue, systemImage: access.symbol)
-                .font(compact ? .caption : .callout)
-                .padding(.horizontal, compact ? 8 : 10).padding(.vertical, 4)
-                .modifier(LibraryBadgeMaterial())
-                .help(access.help)
-        }
-    }
-}
-
-private struct LibraryBadgeMaterial: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.xodusReviewReduceTransparency) private var reviewReduceTransparency
-    func body(content: Content) -> some View {
-        if reduceTransparency || reviewReduceTransparency { content.background(.background, in: Capsule()) }
-        else if #available(macOS 26, *) { content.glassEffect(.regular, in: .capsule) }
-        else { content.background(.thinMaterial, in: Capsule()) }
-    }
-}
-
 private struct LibraryOnHeroMediaKey: EnvironmentKey { static let defaultValue = false }
 
 extension EnvironmentValues {
@@ -682,8 +611,8 @@ private struct LibraryInformationStyle: ViewModifier {
 }
 
 struct LibraryGameInformation: View {
-    var access: LibraryAccess?
-    var gamePass = false
+    var gameFacts = GameFacts()
+    var detail = false
     var facts: LibraryCatalogFacts?
     var xbox: LibraryXboxStatsCache.Game?
     var localPlaySeconds: Double? = nil
@@ -694,12 +623,7 @@ struct LibraryGameInformation: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 5 : 8) {
             HStack(spacing: 8) {
-                if let access {
-                    LibraryAccessBadge(access: access, compact: compact)
-                }
-                if gamePass, access == nil || access == .owned || access == .library {
-                    LibraryAccessBadge(access: .gamePass, compact: compact)
-                }
+                AccessBadges(facts: gameFacts, detail: detail)
                 if let facts, !facts.genres.isEmpty {
                     Label(compact ? facts.genres[0] : facts.genres.joined(separator: " / "), systemImage: "tag")
                         .lineLimit(compact ? 1 : 2)

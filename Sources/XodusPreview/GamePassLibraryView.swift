@@ -39,7 +39,7 @@ struct GamePassLibraryView: View {
                                 let held = library.representedGames.first { $0.id == product.id }
                                 PCGameTile(game: held ?? PCGame(product: product), installed: installed, operations: operations,
                                            allowsArtworkLoading: allowsStartupTasks,
-                                           badge: held == nil ? .gamePass : .library,
+                                           gamePass: true,
                                            viewDetails: { session.selectedProduct = product })
                             }
                         }

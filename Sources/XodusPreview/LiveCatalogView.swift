@@ -307,7 +307,7 @@ struct LiveCatalogView: View {
             VStack(alignment: .leading, spacing: 14) {
                 LibraryLogoTitle(title: game.title, references: art.images[game.id]?.logos ?? [],
                                  allowsLoading: allowsArtworkLoading)
-                LibraryGameInformation(access: LibraryAccess(game), gamePass: game.gamePass,
+                LibraryGameInformation(gameFacts: game.facts,
                                        facts: facts[game.id])
                 if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
                 LibraryGameSizeView(installed: game.installed, downloadBytes: facts[game.id]?.downloadBytes,
@@ -378,22 +378,8 @@ struct LiveCatalogView: View {
             if !unsupportedIssues(game).isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
             }
-            LibraryGameInformation(access: LibraryAccess(game), gamePass: game.gamePass,
+            LibraryGameInformation(gameFacts: game.facts,
                                    facts: facts[game.id], compact: true, showsPrice: true)
-            Text("Source: \(results.sourceLabel(for: game.id))")
-                .font(.caption).foregroundStyle(.secondary)
-                .accessibilityIdentifier("xodus.catalog.source.\(game.id)")
-            if game.gamePass {
-                Text("PC Game Pass catalogue · account coverage not verified")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("xodus.catalog.plan.\(game.id)")
-            }
-            if let listing = game.product?.gamePass {
-                Text(CatalogGamePassListingCopy.description(for: listing))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.catalog.subscriptions.\(game.id)")
-            }
             if game.pc == nil, !game.owned {
                 Text(library.accessIsCurrent ? "Not in your PC library" : "Ownership not verified")
                     .font(.caption).foregroundStyle(.secondary)
