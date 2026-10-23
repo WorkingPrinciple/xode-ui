@@ -11,8 +11,8 @@ on run arguments
         if (count of ownedProcesses) is not 1 then error "Exact owned process unavailable."
         set ownedProcess to item 1 of ownedProcesses
         if bundle identifier of ownedProcess is not "io.github.dragoshont.xodus.development" then error "Unexpected bundle identity."
-        set ownedWindows to every window of ownedProcess whose name is "Xodus"
-        if (count of ownedWindows) is not 1 then error "Expected exactly one normal, non-fixture Xodus window."
+        set ownedWindows to every window of ownedProcess whose name is "Ode to X"
+        if (count of ownedWindows) is not 1 then error "Expected exactly one normal, non-fixture Ode to X window."
         set ownedWindow to item 1 of ownedWindows
         set elements to entire contents of ownedWindow
         if (count of elements) > 3000 then error "Accessibility bound exceeded."
@@ -99,7 +99,7 @@ on run arguments
                 if exists window "Inspect a game folder" of ownedProcess then error "Native folder picker did not close."
             else if requestedAction is "SearchHalo" then
                 if (count of sheets of ownedWindow) is not 0 then error "Refusing search while a modal sheet is open."
-                if value of attribute "AXDescription" of navigationTarget is not "Search Microsoft Store games" then error "Expected public Store search scope."
+                if value of attribute "AXDescription" of navigationTarget is not "Search all games" then error "Expected current all-games search scope."
                 if value of attribute "AXValue" of navigationTarget is not "" then error "Refusing to replace a preexisting search."
                 set frontmost of ownedProcess to true
                 if not frontmost of ownedProcess then error "Exact owned app is not foreground."

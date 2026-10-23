@@ -36,10 +36,10 @@ struct GamePassLibraryView: View {
                     } else {
                         LazyVGrid(columns: LibraryGridLayout.columns, spacing: 28) {
                             ForEach(visibleProducts) { product in
-                                PCGameTile(game: PCGame(product: product), installed: installed, operations: operations,
+                                let held = library.representedGames.first { $0.id == product.id }
+                                PCGameTile(game: held ?? PCGame(product: product), installed: installed, operations: operations,
                                            allowsArtworkLoading: allowsStartupTasks,
-                                           badge: library.snapshot?.games.contains(where: { $0.id == product.id }) == true
-                                                ? .owned : .gamePass,
+                                           badge: held == nil ? .gamePass : .library,
                                            viewDetails: { session.selectedProduct = product })
                             }
                         }

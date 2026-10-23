@@ -51,6 +51,11 @@ do not start loads merely to retain a host. Account/locale changes replace the
 hosts. Each tab keeps its filter/genre, sort, hero and stable grid scroll target.
 Scroll targets are non-published restoration values: row crossings update the
 ScrollView binding without invalidating the tab's observed selection and body.
+Automatic hero paging also requires visible media, no hero keyboard focus,
+VoiceOver off and normal power; existing active-tab/scene, modal, hover, playback
+and Reduce Motion gates remain independent. Without viewport visibility support,
+automatic paging stays off. Continue Playing's See All applies Installed/recent
+ordering and reveals the collection using its existing scroll route.
 Ambient artwork retains the outgoing image/palette during same-context hero
 replacement; a new context starts with a dark hero backing, never old-account
 artwork. Foreground landscape images remain keyed to their requested game.
@@ -66,6 +71,14 @@ selected details and serializes bulk waiters. Locale changes advance a generatio
 so A-to-B-to-A cannot admit an obsolete A completion. Selected-detail priority
 remains independent of blocked bulk work. These are public descriptors, never
 PC membership, ownership or permission.
+Acquisition presentation uses all three acquisition kinds: only purchased games
+enter Owned; subscriptions retain their distinct label, and unknown held games
+say "In your library". Unknown provenance does not remove current held access or
+independent install/play authority. Account tiers/counts, search, projections and
+detail use the same distinction; public catalog membership grants no authority.
+Ordinary detail content follows system appearance; dark treatment is local to
+the media header. See [native UI procedures](NATIVE_UI_PROCEDURES.md) for bounded
+real-product verification and evidence limits.
 Response decoding and detail/artwork/commerce normalization run in one
 cancellation-linked utility task, returning a Sendable batch. The MainActor
 rechecks cancellation and generation before one coherent publication; optional

@@ -205,14 +205,14 @@ struct LiveCatalogView: View {
         projection.index.games[product.id] ?? LibraryGame(id: product.id, title: product.title,
             installed: installed.games.first { $0.storeId == product.id },
             pc: results.ownedGame(for: product.id), product: product,
-            owned: results.ownedGame(for: product.id).map { $0.acquisitionKind != .subscription } ?? false,
+            owned: results.ownedGame(for: product.id).map { $0.acquisitionKind == .purchased } ?? false,
             gamePass: session.gamePassProductIDs.contains(product.id), accessIsCurrent: library.accessIsCurrent)
     }
 
     private func game(_ owned: PCGame) -> LibraryGame {
         projection.index.games[owned.id] ?? LibraryGame(id: owned.id, title: owned.title,
             installed: installed.games.first { $0.storeId == owned.id }, pc: owned,
-            product: session.products.first { $0.id == owned.id }, owned: owned.acquisitionKind != .subscription,
+            product: session.products.first { $0.id == owned.id }, owned: owned.acquisitionKind == .purchased,
             gamePass: session.gamePassProductIDs.contains(owned.id), accessIsCurrent: library.accessIsCurrent)
     }
 
@@ -463,7 +463,7 @@ struct LiveCatalogView: View {
     private var catalogInfo: some View {
         DisclosureGroup("About these games") {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Owned games come from your PC library. Game Pass games require an active subscription.")
+                Text("Your PC library can include purchases, subscriptions and games with an unidentified acquisition source. A Game Pass catalog listing alone does not verify your account's access.")
                 Text("Genres filter the games currently shown. Search coverage is partial; Mac compatibility varies by game.")
                 if !allowsStartupTasks { Text("Read-only preview. Search uses the loaded games; installation and gameplay are disabled.") }
                 if let error = session.catalogError { Text(error) }

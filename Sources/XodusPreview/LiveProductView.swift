@@ -14,7 +14,12 @@ enum GameDetailFacetCopy {
 
     static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String {
         guard let acquisition else { return "Access not verified" }
-        let label = acquisition == .subscription ? "Subscription (plan unknown)" : "Owned"
+        let label: String
+        switch acquisition {
+        case .purchased: label = "Owned"
+        case .subscription: label = "Subscription (plan unknown)"
+        case .unknown: label = "In your library"
+        }
         return current ? label : "Saved \(label) - refresh required"
     }
 }
@@ -80,7 +85,13 @@ struct LiveProductView: View {
     }
     private var access: LibraryAccess? {
         (library.accessIsCurrent ? owned : nil)
-            .map { $0.acquisitionKind == .subscription ? .subscription : .owned } ?? (gamePass ? .gamePass : nil)
+            .map {
+                switch $0.acquisitionKind {
+                case .purchased: LibraryAccess.owned
+                case .subscription: LibraryAccess.subscription
+                case .unknown: LibraryAccess.library
+                }
+            } ?? (gamePass ? .gamePass : nil)
     }
     private var canReviewGamePass: Bool {
         DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent,
@@ -164,7 +175,6 @@ struct LiveProductView: View {
         }
         .frame(minWidth: 820, idealWidth: 1040, maxWidth: 1200,
                minHeight: 600, idealHeight: 780, maxHeight: 850)
-        .environment(\.colorScheme, .dark)
         .task(id: "\(product.id):\(product.market):\(product.language)") {
             if allowsArtworkLoading {
                 await catalog.loadDetail(id: product.id, market: product.market, language: product.language)
@@ -286,6 +296,9 @@ struct LiveProductView: View {
             .padding(.horizontal, 40).padding(.bottom, 48)
         }
         .frame(height: 388).clipped()
+        .foregroundStyle(.white)
+        .environment(\.libraryOnHeroMedia, true)
+        .environment(\.colorScheme, .dark)
         .padding(.bottom, -42)
         .accessibilityElement(children: .contain)
     }

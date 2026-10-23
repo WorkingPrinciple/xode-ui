@@ -38,12 +38,12 @@ struct CatalogCardIndex {
             let pc = results.ownedGame(for: product.id)
             indexed[product.id] = LibraryGame(id: product.id, title: product.title,
                 installed: local[product.id], pc: pc, product: product,
-                owned: pc.map { $0.acquisitionKind != .subscription } ?? false,
+                owned: pc.map { $0.acquisitionKind == .purchased } ?? false,
                 gamePass: gamePassIDs.contains(product.id), accessIsCurrent: accessIsCurrent)
         }
         for pc in results.ownedMatches {
             indexed[pc.id] = LibraryGame(id: pc.id, title: pc.title, installed: local[pc.id],
-                pc: pc, product: catalog[pc.id], owned: pc.acquisitionKind != .subscription,
+                pc: pc, product: catalog[pc.id], owned: pc.acquisitionKind == .purchased,
                 gamePass: gamePassIDs.contains(pc.id), accessIsCurrent: accessIsCurrent)
         }
         games = indexed

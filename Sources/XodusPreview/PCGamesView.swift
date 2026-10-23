@@ -190,7 +190,8 @@ struct PCGameTile: View {
                 .lineLimit(2).frame(minHeight: 40, alignment: .topLeading)
             if let badge {
                 Text(accessIsCurrent
-                     ? (game.acquisitionKind == .subscription ? "Subscription (plan unknown)" : badge.rawValue)
+                     ? (badge == .gamePass ? badge.rawValue
+                        : GameDetailFacetCopy.access(acquisition: game.acquisitionKind, current: true))
                      : "Saved library - refresh required")
                     .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             }

@@ -3,7 +3,7 @@ import Foundation
 import XodusManagement
 
 enum CatalogAccessBadge: String {
-    case owned = "Owned", gamePass = "Game Pass"
+    case owned = "Owned", library = "In your library", subscription = "Subscription (plan unknown)", gamePass = "Game Pass"
 }
 
 enum CatalogGamePassListingCopy {
@@ -48,7 +48,13 @@ struct CatalogSearchResults {
     func ownedGame(for productID: String) -> PCGame? { ownedByID[productID] }
 
     func badge(for productID: String) -> CatalogAccessBadge? {
-        if ownedByID[productID] != nil { return .owned }
+        if let held = ownedByID[productID] {
+            switch held.acquisitionKind {
+            case .purchased: return .owned
+            case .subscription: return .subscription
+            case .unknown: return .library
+            }
+        }
         return gamePassProductIDs.contains(productID) ? .gamePass : nil
     }
 

@@ -3,6 +3,17 @@ import AppKit
 import SwiftUI
 import XodusManagement
 
+private struct LibraryHeroFocusKey: FocusedValueKey {
+    typealias Value = Bool
+}
+
+extension FocusedValues {
+    fileprivate var libraryHeroInteraction: Bool? {
+        get { self[LibraryHeroFocusKey.self] }
+        set { self[LibraryHeroFocusKey.self] = newValue }
+    }
+}
+
 struct LiveLibraryView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
@@ -21,6 +32,10 @@ struct LiveLibraryView: View {
     @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.catalogPresentationActive) private var presentationActive
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @FocusedValue(\.libraryHeroInteraction) private var heroInteraction
+    @State private var heroVisible = false
+    @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
@@ -243,15 +258,22 @@ struct LiveLibraryView: View {
                 }
         }
         .frame(height: 460).clipped()
+        .focusedValue(\.libraryHeroInteraction, true)
+        .modifier(HeroScrollVisibility { heroVisible = $0 })
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
         .onHover { selection.heroHovered = $0 }
         .onChange(of: heroGames.map(\.id), initial: true) { _, ids in
             if selection.heroID.map({ !ids.contains($0) }) ?? true { selection.heroID = ids.first }
         }
-        .task(id: "\(heroGames.map(\.id).joined(separator: ",")):\(heroMotionAllowed):\(reduceMotion)") {
-            guard allowsStartupTasks, heroMotionAllowed, !reduceMotion else { return }
+        .task(id: "\(heroGames.map(\.id).joined(separator: ",")):\(heroMotionAllowed):\(reduceMotion):\(heroVisible):\(heroInteraction == true):\(voiceOver):\(lowPower)") {
+            guard allowsStartupTasks, heroMotionAllowed, heroVisible, !reduceMotion,
+                  heroInteraction != true, !voiceOver, !lowPower else { return }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(9))
-                guard !Task.isCancelled, !selection.heroHovered, !selection.heroPlaying, heroGames.count > 1 else { continue }
+                guard !Task.isCancelled, !selection.heroHovered, !selection.heroPlaying,
+                      heroVisible, heroInteraction != true, heroGames.count > 1 else { continue }
                 let ids = heroGames.map(\.id)
                 let next = ids.firstIndex(of: selection.heroID ?? "").map { ids[($0 + 1) % ids.count] } ?? ids[0]
                 withAnimation(.smooth(duration: 0.6)) { selection.heroID = next }
@@ -356,7 +378,11 @@ struct LiveLibraryView: View {
             HStack {
                 Text("Continue Playing").font(.title2.weight(.semibold))
                 Spacer()
-                Button("See All") { filter = .installed; sort = .recentlyPlayed }
+                Button("See All") {
+                    filter = .installed
+                    sort = .recentlyPlayed
+                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) { showCollection() }
+                }
                     .accessibilityLabel("Show installed games by last played")
             }
 
@@ -374,11 +400,6 @@ struct LiveLibraryView: View {
                                         .padding(12)
                                 }
                             Text(game.title).font(.headline).lineLimit(1)
-                            HStack {
-                                InstalledPackageTypeLabel(game: game)
-                                Spacer()
-                                InstalledEngineOverride(library: installed, game: game)
-                            }
                             if let date = game.lastPlayedAt {
                                 Text("Last played \(Text(date, style: .relative)) ago")
                                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)

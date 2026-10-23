@@ -473,10 +473,12 @@ private struct XboxLibraryAccessSummary: View {
     var body: some View {
         let games = library.representedGames
         let fromGamePass = games.filter { $0.acquisitionKind == .subscription }.count
-        let owned = games.count - fromGamePass
+        let owned = games.filter { $0.acquisitionKind == .purchased }.count
+        let unknown = games.filter { $0.acquisitionKind == .unknown }.count
         VStack(spacing: 6) {
             if !games.isEmpty {
-                Text("\(owned.formatted()) owned · \(fromGamePass.formatted()) from Game Pass")
+                Text("\(owned.formatted()) owned · \(fromGamePass.formatted()) subscription"
+                     + (unknown > 0 ? " · \(unknown.formatted()) acquisition unknown" : ""))
                     .font(.callout.weight(.medium))
                     .accessibilityIdentifier("xodus.account.libraryCounts")
             }

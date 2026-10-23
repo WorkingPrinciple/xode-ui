@@ -94,13 +94,13 @@ struct LibraryGame: Identifiable {
             }
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
             result.append(Self(id: id, title: game.title, installed: game, pc: entitlement,
-                               product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind != .subscription,
+                               product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind == .purchased,
                                gamePass: entitlement.acquisitionKind == .subscription || pass[id] != nil,
                                accessIsCurrent: accessIsCurrent))
         }
         for game in owned where seen.insert(game.id).inserted {
             result.append(Self(id: game.id, title: game.title, installed: nil, pc: game,
-                               product: catalog[game.id] ?? pass[game.id], owned: game.acquisitionKind != .subscription,
+                               product: catalog[game.id] ?? pass[game.id], owned: game.acquisitionKind == .purchased,
                                gamePass: game.acquisitionKind == .subscription || pass[game.id] != nil,
                                accessIsCurrent: accessIsCurrent))
         }
@@ -125,7 +125,7 @@ struct LibraryGame: Identifiable {
         var seen = Set<String>()
         return products.filter { $0.pcCatalogCandidate && seen.insert($0.id).inserted }.map {
             Self(id: $0.id, title: $0.title, installed: local[$0.id], pc: held[$0.id],
-                 product: $0, owned: held[$0.id].map { $0.acquisitionKind != .subscription } ?? false,
+                 product: $0, owned: held[$0.id].map { $0.acquisitionKind == .purchased } ?? false,
                  gamePass: true)
         }
     }
@@ -162,7 +162,7 @@ struct LibraryGame: Identifiable {
 
     var eligibility: LibraryEligibility? {
         LibraryEligibility.evaluate(
-            entitlement: pc?.acquisitionKind ?? (owned ? .unknown : nil),
+            entitlement: pc?.acquisitionKind ?? (owned ? .purchased : nil),
             accessIsCurrent: accessIsCurrent && (pc != nil || owned),
             verifiedGamePassAccess: false, installed: installed != nil)
     }
@@ -433,11 +433,12 @@ struct LibraryHero<Artwork: View, Poster: View, Information: View, Actions: View
 }
 
 enum LibraryAccess: String {
-    case owned = "Owned", gamePass = "Game Pass catalog", subscription = "Subscription"
-    var symbol: String { self == .owned ? "checkmark.seal" : "ticket" }
+    case owned = "Owned", library = "In your library", gamePass = "Game Pass catalog", subscription = "Subscription"
+    var symbol: String { self == .owned ? "checkmark.seal" : self == .library ? "books.vertical" : "ticket" }
     var help: String {
         switch self {
         case .owned: "In your Microsoft PC game library."
+        case .library: "In your Microsoft PC game library. The acquisition source is not identified."
         case .subscription: "Current subscription grant in your PC library. The provider and plan are not identified."
         case .gamePass: "Included in the PC Game Pass catalogue. A subscription is required to install."
         }
@@ -445,6 +446,7 @@ enum LibraryAccess: String {
     init?(_ game: LibraryGame) {
         switch game.eligibility {
         case .owned: self = .owned
+        case .library: self = .library
         case .gamePass: self = .subscription
         case .installedUnknown, nil:
             guard game.gamePass else { return nil }
@@ -453,7 +455,8 @@ enum LibraryAccess: String {
     }
     static func badges(_ game: LibraryGame) -> [Self] {
         if game.eligibility == .gamePass { return [.subscription] }
-        return (game.eligibility == .owned ? [.owned] : []) + (game.gamePass ? [.gamePass] : [])
+        return (game.eligibility == .owned ? [.owned] : game.eligibility == .library ? [.library] : [])
+            + (game.gamePass ? [.gamePass] : [])
     }
     static func summary(owned: Bool, catalogMembership: Bool, current: Bool) -> String {
         let access = owned ? (current ? "Owned" : "Saved Owned · refresh required") : "Access not verified"
@@ -539,7 +542,7 @@ struct LibraryGameInformation: View {
                 if let access {
                     LibraryAccessBadge(access: access, compact: compact)
                 }
-                if gamePass, access == nil || access == .owned {
+                if gamePass, access == nil || access == .owned || access == .library {
                     LibraryAccessBadge(access: .gamePass, compact: compact)
                 }
                 if let facts, !facts.genres.isEmpty {
