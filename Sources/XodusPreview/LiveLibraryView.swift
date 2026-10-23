@@ -20,6 +20,7 @@ struct LiveLibraryView: View {
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
     @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.catalogPresentationActive) private var presentationActive
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
@@ -153,13 +154,14 @@ struct LiveLibraryView: View {
                 }
             }
             .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id))
-                .sorted().joined(separator: ",")) {
-                guard artworkAllowed else { return }
+                .sorted().joined(separator: ",") + ":\(presentationActive)") {
+                guard artworkAllowed, presentationActive else { return }
                 await art.load(ids: heroGames.map { $0.installed?.storeId ?? $0.id } + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
                     .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
                     + ["9PJ8266BHFWN"],
                     market: session.market, language: session.language)
                 for game in heroGames {
+                    guard !Task.isCancelled else { return }
                     await art.loadDetail(id: game.installed?.storeId ?? game.id, market: session.market, language: session.language)
                 }
             }
@@ -181,8 +183,8 @@ struct LiveLibraryView: View {
             selection.heroPlaying = false
             selection.localDetail = nil
         }
-        .task { if allowsStartupTasks { await library.loadOnAppear() } }
-        .task {
+        .task(id: allowsStartupTasks) { if allowsStartupTasks { await library.loadOnAppear() } }
+        .task(id: allowsStartupTasks) {
             guard allowsStartupTasks else { return }
             while !Task.isCancelled {
                 await macEvidence.refresh()
@@ -193,7 +195,7 @@ struct LiveLibraryView: View {
                 catch { return }
             }
         }
-        .task(id: precheckIDs.joined(separator: ",")) {
+        .task(id: precheckIDs.joined(separator: ",") + ":\(allowsStartupTasks)") {
             guard allowsStartupTasks, !precheckIDs.isEmpty else { return }
             guard !Task.isCancelled else { return }
             operations.precheck(precheckIDs)

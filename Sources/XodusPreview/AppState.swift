@@ -183,6 +183,10 @@ final class AppState: ObservableObject {
         Binding(get: { self.destination }, set: { self.navigate($0) })
     }
 
+    func query(for destination: Destination) -> String {
+        destination == self.destination ? query : destinationQueries[destination] ?? ""
+    }
+
     func navigate(_ value: Destination) {
         if !showsRecentActivity { destinationQueries[destination] = query }
         destination = value

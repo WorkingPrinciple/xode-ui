@@ -2,7 +2,7 @@
 import Foundation
 import XodusManagement
 
-struct CatalogCommerce {
+struct CatalogCommerce: Sendable {
     struct Payload: Decodable { let Products: [Product] }
     struct Product: Decodable {
         struct Availability: Decodable {

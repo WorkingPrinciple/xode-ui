@@ -406,6 +406,7 @@ struct CatalogArtworkView: View {
     var contentMode: ContentMode = .fill
     @StateObject private var presentation = ArtworkPresentation()
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.catalogPresentationActive) private var presentationActive
 
     private var fallbackMessage: String {
         if presentation.failed { return "Artwork couldn't be loaded" }
@@ -438,7 +439,10 @@ struct CatalogArtworkView: View {
                     .help(fallbackMessage)
                 }
             }
-            .task(id: request) { await presentation.load(request) }
+            .task(id: presentationActive ? request : nil) {
+                guard presentationActive else { return }
+                await presentation.load(request)
+            }
         }
         .accessibilityHidden(true)
     }

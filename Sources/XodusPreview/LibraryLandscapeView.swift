@@ -39,8 +39,11 @@ enum LibraryLogoPolicy {
 private final class LibraryLogoPresentation: ObservableObject {
     @Published var image: NSImage?
     @Published var unavailable = false
-    func load(_ references: [CatalogArtworkReference], allowed: Bool) async {
-        image = nil
+    private var key: String?
+    func image(for key: String) -> NSImage? { self.key == key ? image : nil }
+    func load(_ references: [CatalogArtworkReference], allowed: Bool, key: String) async {
+        if self.key != key { image = nil }
+        self.key = key
         unavailable = false
         guard allowed else { return }
         for reference in references {
@@ -63,10 +66,12 @@ struct LibraryLogoTitle: View {
     let references: [CatalogArtworkReference]
     var allowsLoading = true
     @StateObject private var presentation = LibraryLogoPresentation()
+    @Environment(\.catalogPresentationActive) private var presentationActive
+    private var key: String { references.map(\.url).joined(separator: "|") }
 
     var body: some View {
         Group {
-            if let image = presentation.image {
+            if let image = presentation.image(for: key) {
                 Image(nsImage: image).resizable().scaledToFit()
                     .frame(maxWidth: 420, maxHeight: 120, alignment: .leading)
                     .accessibilityLabel(title)
@@ -75,8 +80,9 @@ struct LibraryLogoTitle: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .task(id: references.map(\.url).joined(separator: "|")) {
-            await presentation.load(references, allowed: allowsLoading)
+        .task(id: key + ":\(presentationActive)") {
+            guard presentationActive else { return }
+            await presentation.load(references, allowed: allowsLoading, key: key)
         }
     }
 }
@@ -85,9 +91,13 @@ struct LibraryLogoTitle: View {
 private final class LibraryLandscapePresentation: ObservableObject {
     @Published var image: NSImage?
     @Published var unavailable = false
+    private var key: String?
 
-    func load(_ references: [CatalogArtworkReference], installed: InstalledGame?, allowed: Bool) async {
-        image = nil
+    func image(for key: String) -> NSImage? { self.key == key ? image : nil }
+
+    func load(_ references: [CatalogArtworkReference], installed: InstalledGame?, allowed: Bool, key: String) async {
+        if self.key != key { image = nil }
+        self.key = key
         unavailable = false
         guard allowed else { return }
         for reference in references {
@@ -113,21 +123,25 @@ struct LibraryLandscapeView: View {
     let installed: InstalledGame?
     var allowsLoading = true
     @StateObject private var presentation = LibraryLandscapePresentation()
+    @Environment(\.catalogPresentationActive) private var presentationActive
+
+    private var key: String { references.map(\.url).joined(separator: "|") + (installed?.id.uuidString ?? "") }
 
     var body: some View {
         GeometryReader { geometry in
             Group {
-                if let image = presentation.image {
+                if let image = presentation.image(for: key) {
                     Image(nsImage: image).resizable().scaledToFill()
                 } else {
-                    Color(nsColor: .controlBackgroundColor)
+                    Color.black
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height).clipped()
         }
         .accessibilityHidden(true)
-        .task(id: references.map(\.url).joined(separator: "|") + (installed?.id.uuidString ?? "")) {
-            await presentation.load(references, installed: installed, allowed: allowsLoading)
+        .task(id: key + ":\(presentationActive)") {
+            guard presentationActive else { return }
+            await presentation.load(references, installed: installed, allowed: allowsLoading, key: key)
         }
     }
 }

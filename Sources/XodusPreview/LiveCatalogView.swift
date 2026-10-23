@@ -82,6 +82,7 @@ struct LiveCatalogView: View {
     var allowsArtworkLoading = true
     var allowsStartupTasks = true
     var allowsHeroAnimation = true
+    @Environment(\.catalogPresentationActive) private var presentationActive
     let clearSearch: () -> Void
     @ObservedObject var selection = DiscoverSelection()
 
@@ -193,8 +194,8 @@ struct LiveCatalogView: View {
         }
         .onChange(of: query) { _, _ in selection.genre = nil }
         .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
-                                       ids: projection.artworkIDs)) {
-            guard allowsArtworkLoading else { return }
+                                       ids: presentationActive ? projection.artworkIDs : [])) {
+            guard allowsArtworkLoading, presentationActive else { return }
             await art.load(ids: results.storeProducts.map(\.id) + (library.snapshot?.games.map(\.id) ?? []),
                            market: session.market, language: session.language)
         }

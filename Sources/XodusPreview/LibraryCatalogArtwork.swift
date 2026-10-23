@@ -6,7 +6,7 @@ import XodusManagement
 @MainActor
 final class LibraryCatalogArtwork: ObservableObject {
     static let shared = LibraryCatalogArtwork()
-    struct Images {
+    struct Images: Sendable {
         let cover: CatalogArtworkReference?
         let hero: CatalogArtworkReference?
         let landscape: [CatalogArtworkReference]
@@ -99,83 +99,24 @@ final class LibraryCatalogArtwork: ObservableObject {
                     let data = try await descriptors.load(ids: batch, market: market, language: language)
                     let expirations = await descriptors.expirations(ids: batch, market: market, language: language)
                     guard !Task.isCancelled, generation == epoch else { return }
-                    let products = try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products
-                    guard products.count <= batch.count, Set(products.map(\.ProductId)).count == products.count,
-                          products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-                    var details: [String: CatalogDetailPayload.Product] = [:]
-                    do {
-                        let values = try JSONDecoder().decode(CatalogDetailPayload.self, from: data).Products
-                        guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
-                              values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-                        details = Dictionary(uniqueKeysWithValues: values.map { ($0.ProductId, $0) })
-                    } catch {
+                    let parsed = try await Self.parseResponse(data, batch: batch, market: market, language: language)
+                    guard !Task.isCancelled, generation == epoch else { return }
+                    if parsed.rejectedDetailPayload {
                         logger.warning("Optional public detail payload was rejected; library identity and artwork remain separate.")
                     }
-                    var prices: [String: CatalogCommerce] = [:]
-                    do {
-                        let values = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
-                        guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
-                              values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-                        for value in values {
-                            prices[value.ProductId] = CatalogCommerce.price(value, market: PCGamesClient.market(market))
-                        }
-                    } catch {
+                    if parsed.rejectedCommerce {
                         logger.warning("Public PC price offers were rejected; prices stay unavailable and no free acquisition is offered.")
                     }
-                    var batchImages: [String: Images] = [:]
-                    var batchErrors = detailErrors
-                    for product in products {
-                        let art = product.LocalizedProperties?.first?.Images ?? []
-                        func references(_ purposes: [String], portrait: Bool) -> [CatalogArtworkReference] {
-                            var values: [CatalogArtworkReference] = []
-                            for purpose in purposes {
-                                for image in art where image.ImagePurpose == purpose {
-                                    guard let width = image.Width, let height = image.Height,
-                                          portrait ? height > width : width > height else { continue }
-                                    if let value = PCGamesClient.artwork(uri: image.Uri, width: width, height: height,
-                                                                        role: portrait ? .boxArt : .hero) {
-                                        if !values.contains(value) { values.append(value) }
-                                    }
-                                }
-                            }
-                            return values
-                        }
-                        let cover = references(["BoxArt", "Poster"], portrait: true).first
-                        let heroes = references(["SuperHeroArt", "TitledHeroArt", "TitleHeroArt", "Hero"], portrait: false)
-                        let screenshots = references(["Screenshot"], portrait: false)
-                        let landscape = Array(heroes.prefix(2)) + Array(screenshots.prefix(1)) + (cover.map { [$0] } ?? [])
-                        var unique: [CatalogArtworkReference] = []
-                        for value in landscape where !unique.contains(value) { unique.append(value) }
-                        let title = product.LocalizedProperties?.first?.ProductTitle ?? product.ProductId
-                        let detail = try LibraryGame.details(id: product.ProductId, title: title,
-                            artwork: (heroes.first.map { [$0] } ?? []) + (cover.map { [$0] } ?? []),
-                            market: market, language: language, source: "MicrosoftDisplayCatalog:v7",
-                            pcCandidate: product.isPC)
-                        var detailFacts: CatalogDetailFacts?
-                        do {
-                            guard let value = details[product.ProductId] else { throw PCGamesError.invalidResponse }
-                            detailFacts = try CatalogDetailFacts(product: value, images: art,
-                                                               market: market, language: language)
-                            batchErrors[product.ProductId] = nil
-                        } catch {
-                            batchErrors[product.ProductId] =
-                                "Microsoft returned game details Ode to X couldn't read. Try again."
-                            logger.warning("Optional public game details were rejected; game access and actions are unchanged.")
-                        }
-                        batchImages[product.ProductId] = Images(cover: cover, hero: heroes.first,
-                            landscape: unique, logos: Self.logoReferences(in: art),
-                            facts: LibraryCatalogFacts(properties: product.Properties,
-                                                       downloadBytes: product.pcDownloadBytes,
-                                                       packageFormat: product.pcPackageFormat,
-                                                       pcPackageListed: product.pcPackageListing,
-                                                       commerce: prices[product.ProductId]),
-                            detail: detailFacts, product: detail)
+                    if !parsed.errors.isEmpty {
+                        logger.warning("Optional public game details were rejected; game access and actions are unchanged.")
                     }
-                    if !batchImages.isEmpty {
-                        images.merge(batchImages, uniquingKeysWith: { _, new in new })
+                    var batchErrors = detailErrors
+                    for id in parsed.images.keys { batchErrors[id] = parsed.errors[id] }
+                    if !parsed.images.isEmpty {
+                        images.merge(parsed.images, uniquingKeysWith: { _, new in new })
                     }
                     if batchErrors != detailErrors { detailErrors = batchErrors }
-                    for id in batchImages.keys { requested[id] = expirations[id] }
+                    for id in parsed.images.keys { requested[id] = expirations[id] }
                 }
                 if generation == epoch, error != nil { error = nil }
             } catch is CancellationError { }
@@ -190,6 +131,106 @@ final class LibraryCatalogArtwork: ObservableObject {
         await task.value
     }
 
+    struct ParsedResponse: Sendable {
+        let images: [String: Images]
+        let errors: [String: String]
+        let rejectedDetailPayload: Bool
+        let rejectedCommerce: Bool
+    }
+
+    nonisolated static func parseResponse(_ data: Data, batch: [String], market: String,
+                                         language: String) async throws -> ParsedResponse {
+        let worker = Task.detached(priority: .utility) {
+            try normalizeResponse(data, batch: batch, market: market, language: language)
+        }
+        return try await withTaskCancellationHandler {
+            let result = try await worker.value
+            try Task.checkCancellation()
+            return result
+        } onCancel: { worker.cancel() }
+    }
+
+    nonisolated static func normalizeResponse(_ data: Data, batch: [String], market: String,
+                                             language: String) throws -> ParsedResponse {
+        try Task.checkCancellation()
+        let products = try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products
+        guard products.count <= batch.count, Set(products.map(\.ProductId)).count == products.count,
+              products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+        var details: [String: CatalogDetailPayload.Product] = [:]
+        var rejectedDetailPayload = false
+        do {
+            let values = try JSONDecoder().decode(CatalogDetailPayload.self, from: data).Products
+            guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
+                  values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+            details = Dictionary(uniqueKeysWithValues: values.map { ($0.ProductId, $0) })
+        } catch {
+            rejectedDetailPayload = true
+        }
+        var prices: [String: CatalogCommerce] = [:]
+        var rejectedCommerce = false
+        do {
+            let values = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
+            guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
+                  values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+            for value in values {
+                prices[value.ProductId] = CatalogCommerce.price(value, market: PCGamesClient.market(market))
+            }
+        } catch {
+            rejectedCommerce = true
+        }
+        var batchImages: [String: Images] = [:]
+        var batchErrors: [String: String] = [:]
+        for product in products {
+            try Task.checkCancellation()
+            let art = product.LocalizedProperties?.first?.Images ?? []
+            func references(_ purposes: [String], portrait: Bool) -> [CatalogArtworkReference] {
+                var values: [CatalogArtworkReference] = []
+                for purpose in purposes {
+                    for image in art where image.ImagePurpose == purpose {
+                        guard let width = image.Width, let height = image.Height,
+                              portrait ? height > width : width > height else { continue }
+                        if let value = PCGamesClient.artwork(uri: image.Uri, width: width, height: height,
+                                                            role: portrait ? .boxArt : .hero) {
+                            if !values.contains(value) { values.append(value) }
+                        }
+                    }
+                }
+                return values
+            }
+            let cover = references(["BoxArt", "Poster"], portrait: true).first
+            let heroes = references(["SuperHeroArt", "TitledHeroArt", "TitleHeroArt", "Hero"], portrait: false)
+            let screenshots = references(["Screenshot"], portrait: false)
+            let landscape = Array(heroes.prefix(2)) + Array(screenshots.prefix(1)) + (cover.map { [$0] } ?? [])
+            var unique: [CatalogArtworkReference] = []
+            for value in landscape where !unique.contains(value) { unique.append(value) }
+            let title = product.LocalizedProperties?.first?.ProductTitle ?? product.ProductId
+            let detail = try LibraryGame.details(id: product.ProductId, title: title,
+                artwork: (heroes.first.map { [$0] } ?? []) + (cover.map { [$0] } ?? []),
+                market: market, language: language, source: "MicrosoftDisplayCatalog:v7",
+                pcCandidate: product.isPC)
+            var detailFacts: CatalogDetailFacts?
+            do {
+                guard let value = details[product.ProductId] else { throw PCGamesError.invalidResponse }
+                detailFacts = try CatalogDetailFacts(product: value, images: art,
+                                                   market: market, language: language)
+                batchErrors[product.ProductId] = nil
+            } catch {
+                batchErrors[product.ProductId] =
+                    "Microsoft returned game details Ode to X couldn't read. Try again."
+            }
+            batchImages[product.ProductId] = Images(cover: cover, hero: heroes.first,
+                landscape: unique, logos: Self.logoReferences(in: art),
+                facts: LibraryCatalogFacts(properties: product.Properties,
+                                           downloadBytes: product.pcDownloadBytes,
+                                           packageFormat: product.pcPackageFormat,
+                                           pcPackageListed: product.pcPackageListing,
+                                           commerce: prices[product.ProductId]),
+                detail: detailFacts, product: detail)
+        }
+        return ParsedResponse(images: batchImages, errors: batchErrors,
+            rejectedDetailPayload: rejectedDetailPayload, rejectedCommerce: rejectedCommerce)
+    }
+
     func retry(id: String, market: String, language: String) async {
         requested.removeValue(forKey: id)
         await load(ids: [id], market: market, language: language)
@@ -199,7 +240,7 @@ final class LibraryCatalogArtwork: ObservableObject {
         await CatalogArtworkStore.shared.preload(images.values.flatMap { $0.landscape + $0.logos })
     }
 
-    static func logoReferences(in images: [PCGamesCatalog.Product.Localized.Image]) -> [CatalogArtworkReference] {
+    nonisolated static func logoReferences(in images: [PCGamesCatalog.Product.Localized.Image]) -> [CatalogArtworkReference] {
         ["Logo", "TitledHeroArt", "TitleHeroArt"].compactMap { purpose in
             images.first(where: { $0.ImagePurpose == purpose }).flatMap {
                 PCGamesClient.artwork(uri: $0.Uri, width: $0.Width, height: $0.Height, role: .hero)
@@ -230,7 +271,7 @@ enum LibraryCapability: String, CaseIterable, Identifiable {
     func matches(_ name: String) -> Bool { catalogNames.contains(name) }
 }
 
-struct LibraryCatalogFacts {
+struct LibraryCatalogFacts: Sendable {
     let genres: [String]
     let capabilities: [LibraryCapability]
     let downloadBytes: Int64?

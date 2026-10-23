@@ -740,10 +740,14 @@ private struct LibraryAmbientPalette {
 private final class LibraryAmbientPresentation: ObservableObject {
     @Published var image: NSImage?
     @Published var palette: LibraryAmbientPalette?
+    private(set) var scope: String?
 
-    func load(_ references: [CatalogArtworkReference], installed: InstalledGame?, allowed: Bool) async {
-        image = nil
-        palette = nil
+    func load(_ references: [CatalogArtworkReference], installed: InstalledGame?, allowed: Bool, scope: String) async {
+        if self.scope != scope {
+            image = nil
+            palette = nil
+            self.scope = scope
+        }
         guard allowed else { return }
         for reference in references {
             if let loaded = try? await CatalogArtworkStore.shared.image(for: reference) {
@@ -756,8 +760,10 @@ private final class LibraryAmbientPresentation: ObservableObject {
         if let installed {
             let loaded = await InstalledArtworkStore.shared.image(game: installed, splash: true)
             guard !Task.isCancelled else { return }
-            image = loaded
-            palette = loaded.flatMap(LibraryAmbientPalette.extract)
+            if let loaded {
+                image = loaded
+                palette = LibraryAmbientPalette.extract(loaded)
+            }
         }
     }
 }
@@ -768,25 +774,30 @@ struct LibraryAmbientBackdrop: View {
     var allowsLoading = true
     @Environment(\.colorScheme) private var colorScheme
     @StateObject private var presentation = LibraryAmbientPresentation()
+    @Environment(\.catalogPresentationActive) private var presentationActive
+    @EnvironmentObject private var session: LiveSession
+
+    private var scope: String { "\(session.accountHash ?? ""):\(session.market):\(session.language)" }
 
     var body: some View {
         GeometryReader { geometry in
             let base = Color(nsColor: .windowBackgroundColor)
-            let primary = presentation.palette.map { Color(nsColor: $0.primary) } ?? base
-            let accent = presentation.palette.map { Color(nsColor: $0.accent) } ?? primary
+            let palette = presentation.scope == scope ? presentation.palette : nil
+            let primary = palette.map { Color(nsColor: $0.primary) } ?? .black
+            let accent = palette.map { Color(nsColor: $0.accent) } ?? primary
             ZStack {
                 base
                 LinearGradient(
                     colors: [
-                        primary.opacity(colorScheme == .dark ? 0.72 : 0.56),
-                        accent.opacity(colorScheme == .dark ? 0.50 : 0.36),
+                        primary.opacity(palette == nil ? 1 : colorScheme == .dark ? 0.72 : 0.56),
+                        accent.opacity(palette == nil ? 1 : colorScheme == .dark ? 0.50 : 0.36),
                         primary.opacity(colorScheme == .dark ? 0.34 : 0.22),
                         base.opacity(0.96)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
-                if let image = presentation.image {
+                if presentation.scope == scope, let image = presentation.image {
                     Image(nsImage: image)
                         .resizable()
                         .scaledToFill()
@@ -805,8 +816,9 @@ struct LibraryAmbientBackdrop: View {
         .clipped()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .task(id: references.map(\.url).joined(separator: "|") + (installed?.id.uuidString ?? "")) {
-            await presentation.load(references, installed: installed, allowed: allowsLoading)
+        .task(id: scope + references.map(\.url).joined(separator: "|") + (installed?.id.uuidString ?? "") + ":\(presentationActive)") {
+            guard presentationActive else { return }
+            await presentation.load(references, installed: installed, allowed: allowsLoading, scope: scope)
         }
     }
 }

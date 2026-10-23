@@ -2,6 +2,17 @@
 import SwiftUI
 import XodusManagement
 
+private struct CatalogPresentationActiveKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var catalogPresentationActive: Bool {
+        get { self[CatalogPresentationActiveKey.self] }
+        set { self[CatalogPresentationActiveKey.self] = newValue }
+    }
+}
+
 struct LiveRootView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var session: LiveSession
@@ -10,6 +21,8 @@ struct LiveRootView: View {
     @State private var searchFocused = false
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
+    @State private var libraryVisited = false
+    @State private var discoverVisited = false
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
@@ -92,16 +105,6 @@ struct LiveRootView: View {
         return "Refresh Library - updated \(age)"
     }
 
-    private var browseScrollID: Binding<String?> {
-        let destination = state.destination
-        return Binding(get: {
-            destination == .library ? state.librarySelection.scrollID : state.discoverSelection.scrollID
-        }, set: { value in
-            if destination == .library { state.librarySelection.scrollID = value }
-            else { state.discoverSelection.scrollID = value }
-        })
-    }
-
     var body: some View {
         ScrollViewReader { proxy in
         Group {
@@ -110,24 +113,26 @@ struct LiveRootView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(nsColor: .windowBackgroundColor))
                     .accessibilityIdentifier("xodus.welcome.background")
-            } else if state.destination == .downloads {
-                LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue) { state.navigate(.discover) }
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        if state.destination == .library {
-                            library { proxy.scrollTo("library-games", anchor: .top) }
-                        }
-                        else { catalog }
+                ZStack {
+                    if libraryVisited || state.destination == .library {
+                        retainedBrowse(.library)
                     }
-                    .padding(immersiveDestination ? 0 : 30)
+                    if discoverVisited || state.destination == .discover {
+                        retainedBrowse(.discover)
+                    }
+                    if state.destination == .downloads {
+                        LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue) {
+                            state.navigate(.discover)
+                        }
+                    }
                 }
-                .scrollPosition(id: browseScrollID)
-                .id(state.destination)
-                .modifier(LibraryScrollEdge(enabled: immersiveDestination))
-                .modifier(LibraryImmersion(enabled: immersiveDestination, underlapsToolbar: toolbarOverArtwork))
-                .background(Color(nsColor: .windowBackgroundColor))
+                .id("\(session.accountHash ?? ""):\(session.market):\(session.language)")
             }
+        }
+        .onChange(of: state.destination, initial: true) { _, destination in
+            if destination == .library { libraryVisited = true }
+            if destination == .discover { discoverVisited = true }
         }
         .toolbar {
             if !requiresAccountGate {
@@ -397,6 +402,39 @@ struct LiveRootView: View {
         (state.destination == .library && !state.showsRecentActivity) || state.destination == .discover
     }
 
+    private func retainedBrowse(_ destination: Destination) -> some View {
+        let selected = state.destination == destination
+        let active = selected && scenePhase == .active
+        let immersive = destination == .discover || !state.showsRecentActivity
+        let scrollID = Binding<String?>(get: {
+            destination == .library ? state.librarySelection.scrollID : state.discoverSelection.scrollID
+        }, set: { value in
+            if destination == .library { state.librarySelection.scrollID = value }
+            else { state.discoverSelection.scrollID = value }
+        })
+        return ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    if destination == .library {
+                        library { proxy.scrollTo("library-games", anchor: .top) }
+                    } else { catalog }
+                }
+                .padding(immersive ? 0 : 30)
+            }
+            .scrollPosition(id: scrollID)
+            .modifier(LibraryScrollEdge(enabled: immersive))
+            .modifier(LibraryImmersion(enabled: immersive,
+                                      underlapsToolbar: destination == .discover || libraryHasHero))
+            .background(Color(nsColor: .windowBackgroundColor))
+        }
+        .environment(\.catalogPresentationActive, active)
+        .opacity(selected ? 1 : 0)
+        .zIndex(selected ? 1 : 0)
+        .allowsHitTesting(selected)
+        .disabled(!selected)
+        .accessibilityHidden(!selected)
+    }
+
     private func library(showCollection: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             if state.showsRecentActivity {
@@ -408,10 +446,11 @@ struct LiveRootView: View {
                     .accessibilityIdentifier("xodus.library.recentActivity")
             } else {
                 LiveLibraryView(library: state.pcGames, installed: state.installedGames,
-                                operations: state.gameOperations, query: scopedQuery,
-                                allowsStartupTasks: startupAllowed,
+                                operations: state.gameOperations,
+                                query: state.query(for: .library).trimmingCharacters(in: .whitespacesAndNewlines),
+                                allowsStartupTasks: startupAllowed && state.destination == .library && scenePhase == .active,
                                 allowsArtworkLoading: libraryArtworkAllowed,
-                                allowsHeroAnimation: heroAnimationAllowed,
+                                allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() },
                                 showCollection: showCollection, selection: state.librarySelection)
@@ -466,9 +505,11 @@ struct LiveRootView: View {
     }
     private var catalog: some View {
         LiveCatalogView(library: state.pcGames, installed: state.installedGames,
-                        operations: state.gameOperations, query: scopedQuery,
+                        operations: state.gameOperations,
+                        query: state.query(for: .discover).trimmingCharacters(in: .whitespacesAndNewlines),
                         allowsArtworkLoading: libraryArtworkAllowed,
-                        allowsStartupTasks: startupAllowed, allowsHeroAnimation: heroAnimationAllowed,
+                        allowsStartupTasks: startupAllowed && state.destination == .discover && scenePhase == .active,
+                        allowsHeroAnimation: heroAnimationAllowed && state.destination == .discover && scenePhase == .active,
                         clearSearch: { state.query = "" }, selection: state.discoverSelection)
     }
 }

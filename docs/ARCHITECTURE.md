@@ -42,9 +42,17 @@ Account retirement clears private projections. Actual current-time permission,
 300-second TTL, licence expiry and the action/final-launch guards remain live,
 not memoized authority. Accepted licence expiry is parsed once per fact.
 
-Only tab values/projections survive navigation, not hidden SwiftUI trees, video,
-tasks or accessibility elements. Each tab keeps its filter/genre, sort, hero and
-stable grid scroll target. Local installed registry loading precedes the remote
+Visited Library and Discover hosts survive navigation within the same account
+and locale, including their image presentations and independent scroll views.
+Inactive hosts are disabled, excluded from hit testing and accessibility, and
+stop carousel/video, polling and scheduling optional artwork/metadata work.
+Already-shared bounded reads may finish for surviving consumers. Unvisited tabs
+do not start loads merely to retain a host. Account/locale changes replace the
+hosts. Each tab keeps its filter/genre, sort, hero and stable grid scroll target.
+Ambient artwork retains the outgoing image/palette during same-context hero
+replacement; a new context starts with a dark hero backing, never old-account
+artwork. Foreground landscape images remain keyed to their requested game.
+Local installed registry loading precedes the remote
 collection wait. Empty Discover entry starts immediately; typed queries retain
 the 250 ms debounce. Same-scope/query public refresh keeps useful products while
 loading; explicitly failed IDs may retain prior descriptors with failure state.
@@ -56,6 +64,10 @@ selected details and serializes bulk waiters. Locale changes advance a generatio
 so A-to-B-to-A cannot admit an obsolete A completion. Selected-detail priority
 remains independent of blocked bulk work. These are public descriptors, never
 PC membership, ownership or permission.
+Response decoding and detail/artwork/commerce normalization run in one
+cancellation-linked utility task, returning a Sendable batch. The MainActor
+rechecks cancellation and generation before one coherent publication; optional
+detail and commerce rejections remain explicit and do not withdraw game access.
 
 Reproduce the isolated CPU-preparation comparison with
 `swift build --product XodusPreview --jobs 1` followed by
