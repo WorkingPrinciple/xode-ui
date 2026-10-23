@@ -51,7 +51,20 @@ private local candidate admission, not gameplay requalification or public
 distribution. The recursive CompatibilityData bundle and redistribution-rights
 hold remain separate release blockers; no held PublicMetadata is admitted here.
 
-Installed `122532b` with that signed pair passed the full local check and actual
+The consumer-collection correction candidate explicitly pairs signed CLI
+`3121df540f1ef9bb6d161f02f3c6ac958d74aa1559502304147542ad735da5b6`
+with producer `8b091460e74879980081d899b1dab349141561e0`, tree
+`a4d92a96ebc9070c2d1e9b9bec031aba8437b3b8`, and manifest
+`d66c7a6cb55854b08e6ecda757ff1ecd10ad9bc7d5930df5424732740ca0fbfc`.
+The Windows helper and management schema hashes above are unchanged. Only the
+launch recipe's CLI identity binding changes; runtime rules and historical
+gameplay evidence are not requalified. This is reviewed source/build pairing
+for a bounded local candidate, not installation permission, live collection
+qualification, restored-purchase proof or a notarization exception. Explicit
+unknown acquisition remains unknown. The installed e641cfa/71a3 pair remains
+the rollback baseline until independent combined-candidate admission.
+
+Installed `122532b` with the earlier signed 71a3 pair passed the full local check and actual
 AX observation: the lens focused its 220-point editor, `mortis` returned Valor
 Mortis at `199,99 RON`, Asphalt Legends displayed Free, and its real external-page
 confirmation was cancelled by Escape without invoking Open. All eight distinct
