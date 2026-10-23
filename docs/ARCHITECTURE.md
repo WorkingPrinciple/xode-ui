@@ -113,6 +113,13 @@ retry, eviction with active waiters, authoritative removal, current acquisition
 kind and late completion after account retirement. These are synthetic transport
 operation counts, not real Wi-Fi latency or authenticated scrolling evidence.
 No 565-title wire-coverage claim is made.
+For a fresh checkout, build the isolated management helper first:
+`swift build --product XodusManagementChecks --jobs 1`, then
+`swift build --product XodusPreview --jobs 1` and
+`swift run --skip-build XodusPreview --library-access-check`.
+The shipping Library embeds the same partial-resolution notice outside the
+legacy pane's collection-grid flag; a failed partial refresh never claims to
+show a complete prior library.
 
 Target-sized bitmap variants, optional filesystem scheduling and IPC/producer
 work remain separate from these slices. Current image decode still requests a

@@ -179,13 +179,19 @@ enum PublicDescriptorChecks {
         check(try JSONDecoder().decode(PCGamesCatalog.self, from: activeData).Products.count == 1,
               "Reusable-entry eviction under pressure does not discard a still-active waiter")
 
+        let helper = URL(fileURLWithPath: CommandLine.arguments[0])
+            .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks")
+        guard FileManager.default.isExecutableFile(atPath: helper.path) else {
+            check(false, "Descriptor retirement requires `swift build --product XodusManagementChecks --jobs 1` before focused checks")
+            return
+        }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("DescriptorRetirement-\(UUID())")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
         defer {
             do { try FileManager.default.removeItem(at: root) }
             catch { check(false, "Descriptor retirement fixture is cleaned") }
         }
-        let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
-            .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),
+        let config = BackendConfiguration(executable: helper,
             stateDirectory: root.appendingPathComponent("odelibrarywarm"))
         let session = LiveSession(configuration: config)
         await session.connect()
@@ -211,6 +217,17 @@ enum PublicDescriptorChecks {
         await controller.loadOnAppear()
         check(controller.representedGames.count == 1 && controller.accessIsCurrent,
               "Same-account reentry admits the new collection generation, not the retired completion")
+        let failedTransport = DescriptorTransport()
+        await failedTransport.configure(failures: [0])
+        let failedController = PCGamesController(store: UnavailableDescriptorCredentials(),
+            client: PCGamesClient(transport: failedTransport))
+        failedController.useUnifiedAccount(session)
+        await failedController.loadOnAppear()
+        check(failedController.error != nil && failedController.snapshot?.isComplete == false
+              && failedController.retainedLibraryNotice == "Showing available details from an incomplete library."
+              && failedController.resolutionNotice?.contains("couldn't be checked") == true
+              && !failedController.accessIsCurrent,
+              "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim")
         check(await session.disconnect(), "Descriptor retirement check joins its isolated management child")
 
         let invalidTransport = DescriptorTransport()

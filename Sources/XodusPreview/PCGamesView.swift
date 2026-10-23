@@ -95,7 +95,8 @@ struct PCGamesView: View {
                 }
                 if let snapshot = library.snapshot {
                     if showsCollection, snapshot.games.isEmpty {
-                        Text("No PC games were found in this account.").foregroundStyle(.secondary)
+                        Text(snapshot.isComplete ? "No PC games were found in this account."
+                             : "PC game details aren't available yet.").foregroundStyle(.secondary)
                     } else if showsCollection, visibleGames.isEmpty {
                         ContentUnavailableView.search(text: query)
                     } else if showsCollection {
@@ -113,7 +114,7 @@ struct PCGamesView: View {
                             Text("\(snapshot.excludedCount) games not shown (not listed for PC)")
                         }
                         Text("Last updated \(Text(snapshot.updatedAt, style: .relative)) ago")
-                        if library.error != nil { Text("Showing the last complete library.") }
+                        if let notice = library.retainedLibraryNotice { Text(notice) }
                     }
                     .font(.callout).foregroundStyle(.secondary) }
                 }
