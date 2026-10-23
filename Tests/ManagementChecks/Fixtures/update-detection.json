@@ -1,0 +1,110 @@
+[
+  {
+    "name": "equal",
+    "installed": "1.0.0.0",
+    "available": "1.0.0.0",
+    "expected": "upToDate"
+  },
+  {
+    "name": "equalMultiPart",
+    "installed": "1.2.3.4",
+    "available": "1.2.3.4",
+    "expected": "upToDate"
+  },
+  {
+    "name": "newerRevision",
+    "installed": "1.0.0.0",
+    "available": "1.0.0.1",
+    "expected": "updateAvailable"
+  },
+  {
+    "name": "newerBuild",
+    "installed": "1.0.0.9",
+    "available": "1.0.1.0",
+    "expected": "updateAvailable"
+  },
+  {
+    "name": "newerMinor",
+    "installed": "1.0.9.9",
+    "available": "1.1.0.0",
+    "expected": "updateAvailable"
+  },
+  {
+    "name": "newerMajor",
+    "installed": "1.9.9.9",
+    "available": "2.0.0.0",
+    "expected": "updateAvailable"
+  },
+  {
+    "name": "newerLargeNumbers",
+    "installed": "1.2.3.4",
+    "available": "1.2.3.65535",
+    "expected": "updateAvailable"
+  },
+  {
+    "name": "olderRevision",
+    "installed": "1.0.0.5",
+    "available": "1.0.0.4",
+    "expected": "upToDate"
+  },
+  {
+    "name": "olderMajor",
+    "installed": "3.0.0.0",
+    "available": "2.9.9.9",
+    "expected": "upToDate"
+  },
+  {
+    "name": "availableMissing",
+    "installed": "1.0.0.0",
+    "available": null,
+    "expected": "unknown"
+  },
+  {
+    "name": "installedThreePart",
+    "installed": "1.0.0",
+    "available": "1.0.0.1",
+    "expected": "unknown"
+  },
+  {
+    "name": "availableFivePart",
+    "installed": "1.0.0.0",
+    "available": "1.0.0.0.0",
+    "expected": "unknown"
+  },
+  {
+    "name": "installedEmpty",
+    "installed": "",
+    "available": "1.0.0.0",
+    "expected": "unknown"
+  },
+  {
+    "name": "availableNonNumeric",
+    "installed": "1.0.0.0",
+    "available": "1.0.0.x",
+    "expected": "unknown"
+  },
+  {
+    "name": "installedOverflow",
+    "installed": "1.0.0.70000",
+    "available": "1.0.0.0",
+    "expected": "unknown"
+  },
+  {
+    "name": "availableNegative",
+    "installed": "1.0.0.0",
+    "available": "1.0.0.-1",
+    "expected": "unknown"
+  },
+  {
+    "name": "emptyComponent",
+    "installed": "1..0.0",
+    "available": "1.0.0.0",
+    "expected": "unknown"
+  },
+  {
+    "name": "leadingSpace",
+    "installed": "1.0.0.0",
+    "available": " 1.0.0.1",
+    "expected": "unknown"
+  }
+]

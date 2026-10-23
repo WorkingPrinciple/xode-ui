@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "scope": "Per-title launch recipe data; not engine defaults or automatic game qualification",
+  "cliSha256": "71a3eb861ff4ff9d79d100469b0feea039df327983b47f5dfa15ca82ab68c3e2",
+  "evidenceCliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
+  "primaryRuntimeSha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+  "legacyRuntimeSha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+  "scanEvidence": {
+    "checkedAt": "2026-10-22",
+    "mode": "Read-only installed filename/layout and finished-log inspection; no decryption, launches or prefix changes",
+    "queuePath": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-ready-packets-v3.json",
+    "queueSha256": "77cfaefd57e61cf557bf8daf98e3d91b5cf4ed01302305b92a9aabfb3aefb1d7",
+    "queueItems": 30,
+    "installedRoot": "/Users/dragoshont/Games/Xodus",
+    "installedDirectoriesScanned": 27,
+    "executableFilesScanned": 65,
+    "binaryStringScanLimitation": "Installed executable members are encrypted package data, not clear PE images. No positive raw-string matches were found, including in known Abiotic UE. This is not negative engine evidence. No packages were decrypted.",
+    "positiveUnrealLayouts": [
+      "AGameAboutDiggingAHole-Xbox", "AbioticFactor-Xbox",
+      "BeastOfReincarnation-Xbox", "BlueysHappySnaps-Xbox",
+      "DishonoredDefinitive-Xbox", "HogwartsLegacy-Xbox",
+      "Keeper-Xbox", "Mixtape-Xbox", "Subnautica2-Xbox"
+    ],
+    "remainingInstalledDirectoriesWithoutPositiveUnrealLayout": [
+      "Balatro-Xbox", "Deathloop-Xbox", "Fallout4-Xbox", "FinalFantasyIV-Xbox",
+      "ForeverAgo-Xbox", "HadesII-Xbox", "HollowKnightVoidheart-Xbox",
+      "KingdomComeDeliverance-Xbox", "LIMBO-Xbox", "MinecraftJavaEdition-Xbox",
+      "MinecraftLauncher-Xbox", "NoMansSky-Xbox", "OblivionGOTY2009-Xbox",
+      "REPLACED-Xbox", "SkyrimSE-Xbox", "StardewValley-Xbox",
+      "WastelandRemastered-Xbox", "WellDweller-Xbox"
+    ],
+    "queuedUninstalledEngineUnknown": [
+      {"storeId": "9NJCVGS6T30K", "title": "South of Midnight"},
+      {"storeId": "9N4W31HSMVVD", "title": "Kingdom Come: Deliverance II"},
+      {"storeId": "9PPBNCXP0096", "title": "Resonance: A Plague Tale Legacy"},
+      {"storeId": "9NF6XPSBTTGB", "title": "High On Life 2"},
+      {"storeId": "9P861V1542BL", "title": "Valor Mortis"},
+      {"storeId": "9PMN4DGRT1LN", "title": "Fable"},
+      {"storeId": "9N94NCGM1Q2N", "title": "Age of Empires IV: Anniversary Edition"}
+    ],
+    "queuedUnknownScope": "S4 confirms published v3/v4 contain no additional admitted engine/version receipts for uninstalled titles. API/franchise/Mac proxy ratings do not identify the engine.",
+    "comLogScope": "All existing finished XodusCLI standard/proof stderr logs inspected for CoInitialize/80010106 and CoMarshalInterface/80004002; generic QueryApi E_NOINTERFACE was not treated as a COM apartment failure. No game-log CoInitialize returning 80010106 was found.",
+    "excludedDefaultChanges": [
+      {"storeId": "9MW9469V91LM", "title": "Hollow Knight", "reason": "Old failed porting-kit run bdfe748f has generic 6d5140c1 marshal noise, superseded by actual unchanged app gameplay/retention acceptance. Preserve working default."},
+      {"storeId": "BQVQTL3PCH05", "title": "No Man's Sky", "reason": "Old generic 6d5140c1 marshal noise and non-COM QueryApi E_NOINTERFACE do not override accepted working route. Preserve default."},
+      {"storeId": "9PK087LNGJC5", "title": "Balatro", "reason": "Earlier zero-exit run d88df13b contains generic 6d5140c1 startup marshal noise, not a demonstrated game COM failure. Corrected trace is a separate authorized task; no STA change."}
+    ]
+  },
+  "application": {
+    "identityField": "storeId",
+    "environmentField": "launch.environment",
+    "unsetEnvironmentField": "launch.unsetEnvironment",
+    "mergeOrder": "Select the matching title and engine. Remove unsetEnvironment keys from the inherited process environment, then apply launch.environment to the CLI process. The selected engine environment must not reintroduce a conflicting value.",
+    "unknownTitlePolicy": "No title-specific override",
+    "candidatePolicy": "Explicit diagnostic opt-in only until the title's evidence is updated; never auto-apply pending entries or replace a working default",
+    "conflictPolicy": "Reject simultaneous enabled STA and caller-owns COM settings; do not silently pick one."
+  },
+  "items": [
+    {
+      "storeId": "9P4NV23Q6QC2",
+      "title": "Abiotic Factor",
+      "status": "title-screen-observed",
+      "pendingTest": false,
+      "launch": {
+        "engine": "apple-gptk-4.0b3",
+        "executable": "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": [
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
+          "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+        ]
+      },
+      "evidence": {
+        "runId": "ac5e2934-9cbc-4905-8afe-b345c4a788bf",
+        "startedAt": "2026-10-22T00:54:31.387016Z",
+        "finishedAt": "2026-10-22T00:55:57.868597Z",
+        "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/abiotic-shipping-sta/receipt.json",
+        "gameLogSha256": "05e01defebbf197f9242feb65bb4229f018af44655a6be3d55768968bc01b38e",
+        "screenshotSha256": "eb7218452c228fde5d9053bd02eb76b5e3e6b70a437b1940712d0738dc2ec0f7",
+        "observation": "Prior CommandLineCommands startup exit did not recur. UE loaded /Game/Maps/MainMenu; owned-window screenshot shows title artwork and PRESS ANYTHING TO BEGIN. No input was sent.",
+        "cliExitCode": 0,
+        "wineExitCode": 0,
+        "exactWindowCloseMatches": 1,
+        "wineserverKillExitCode": 1,
+        "wineserverWaitExitCode": 0
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9MT5NJ5W7B8Z",
+      "title": "Hogwarts Legacy",
+      "status": "title-screen-observed",
+      "pendingTest": false,
+      "launch": {
+        "engine": "apple-gptk-4.0b3",
+        "executable": "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": [
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
+          "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+        ]
+      },
+      "evidence": {
+        "runId": "f2471368-2523-4578-8eb8-75c8d4db7040",
+        "receiptPath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/runs/f2471368-2523-4578-8eb8-75c8d4db7040/result.json",
+        "cliExitCode": 0,
+        "wineExitCode": 0,
+        "priorRunId": "9b93fbfb-0c05-4a9e-a350-a081c3f9faf5",
+        "recipePath": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/hogwarts-apple4-sta-recipe-v1.json",
+        "observation": "S3 proved gameplay and fresh-process retained cave checkpoint; coordinator admitted retention. Final STA-only run f2471368 completed ordinary Exit to Main Menu and EXIT GAME with CLI0/Wine0. Working qualification is CLI-only, not app-tile E2E; earlier base-profile failures remain historical.",
+        "staRunId": "f2471368-2523-4578-8eb8-75c8d4db7040",
+        "titleScreenObserved": true
+      },
+      "gameplayQualified": true,
+      "saveRetentionPass": true
+    },
+    {
+      "storeId": "9NH0MSG29X6L",
+      "title": "Mixtape",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "apple-gptk-4.0b3",
+        "executable": "Mixtape.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "Unreal-layout-risk-not-observed-COM-failure",
+        "confidence": "layout-positive; STA benefit untested",
+        "source": "scanEvidence.queuePath#/items[storeId=9NH0MSG29X6L]/engineMarkers/Unreal",
+        "observedLayout": ["NewMoon/Binaries/WinGDK/Mixtape-WinGDK-Shipping.exe", "NewMoon/Content/Paks/NewMoon-WinGDK.utoc"],
+        "staRunId": null,
+        "observation": "Installed layout corroborates S4. Preserve its launcher/engine; no exact UE version or apartment causality inferred from filenames."
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9PJPCB188SVG",
+      "title": "Subnautica 2 (Game Preview)",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "apple-gptk-4.0b3",
+        "executable": "Subnautica2.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "Unreal-layout-risk-not-observed-COM-failure",
+        "confidence": "layout-positive; STA benefit untested",
+        "source": "scanEvidence.queuePath#/items[storeId=9PJPCB188SVG]/engineMarkers/Unreal",
+        "observedLayout": ["Subnautica2/Binaries/WinGDK/Subnautica2-WinGDK-Shipping.exe", "Engine/Binaries/Win64/CrashReportClient.exe", "Subnautica2/Content/Paks/Subnautica2-WinGDK.utoc"],
+        "staRunId": null
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9NXWSWBM4H6T",
+      "title": "Beast of Reincarnation",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "apple-gptk-4.0b3",
+        "executable": "BeastOfReincarnation/Binaries/WinGDK/BeastOfReincarnation-WinGDK-Shipping.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "Unreal-layout-risk-not-observed-COM-failure",
+        "confidence": "layout-positive; STA benefit untested",
+        "source": "scanEvidence.queuePath#/items[storeId=9NXWSWBM4H6T]/engineMarkers/Unreal",
+        "observedLayout": ["BeastOfReincarnation/Binaries/WinGDK/BeastOfReincarnation-WinGDK-Shipping.exe", "Engine/Binaries/Win64/CrashReportClient.exe", "BeastOfReincarnation/Content/Paks/pakchunk4-WinGDK.utoc"],
+        "staRunId": null
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9NQVHHW88XW9",
+      "title": "Bluey's Happy Snaps",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "creation-dx11-d3dmetal",
+        "executable": "BMC.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "Unreal-layout-risk-not-observed-COM-failure",
+        "confidence": "layout-positive; STA benefit untested",
+        "source": "scanEvidence.queuePath#/items[storeId=9NQVHHW88XW9]/engineMarkers/Unreal",
+        "observedLayout": ["BMC/Binaries/WinGDK/BMC-WinGDK-Shipping.exe", "BMC/Content/Paks/BMC-WinGDK.utoc"],
+        "staRunId": null
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9NCJWHHMVHR0",
+      "title": "Keeper",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "apple-gptk-4.0b3",
+        "executable": "PaganIdol.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "Unreal-layout-risk-not-observed-COM-failure",
+        "confidence": "layout-positive; STA benefit untested",
+        "source": "scanEvidence.queuePath#/items[storeId=9NCJWHHMVHR0]/engineMarkers/Unreal",
+        "observedLayout": ["PaganIdol/Binaries/WinGDK/PaganIdol-WinGDK-Shipping.exe", "PaganIdol/Content/Paks/PaganIdol-WinGDK.utoc"],
+        "staRunId": null
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9NGLST31DG26",
+      "title": "A Game About Digging A Hole",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "apple-gptk-4.0b3",
+        "executable": "DiggingGame/Binaries/WinGDK/DiggingGame-WinGDK-Shipping.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "Unreal-layout-and-prior-COM-marshal-error",
+        "confidence": "low for causal STA diagnosis",
+        "observedLayout": ["DiggingGame/Binaries/WinGDK/DiggingGame-WinGDK-Shipping.exe", "DiggingGame/Content/Paks/DiggingGame-WinGDK.utoc"],
+        "priorRunId": "6584688f-84b6-4ec4-8afd-323b4a946d4d",
+        "priorEngine": "apple-gptk-4.0b3",
+        "priorExitCode": 1,
+        "logPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/6584688f-84b6-4ec4-8afd-323b4a946d4d/stderr.log",
+        "logSha256": "821409e2ca555c8daf73ae6322a30a32b30c060af8d655195b1518ffb2579754",
+        "lines": [6, 329],
+        "observation": "Worker 03e0 CoMarshalInterface IID1f02b6c5 returns 80004002 at line329. Generic IID6d5140c1 startup error at line6 is weaker evidence. Neither establishes caller apartment, thread causality or remedy. Do not repeat unrelated policy shims or combine sibling changes.",
+        "staRunId": null
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9PLH7R84GJWP",
+      "title": "Well Dweller",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "wine-devel-dxmt",
+        "executable": "WellDweller.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "generic-prior-COM-marshal-noise",
+        "confidence": "low",
+        "priorRunId": "b3c82b06-8e37-42f0-b5a1-1a3b36dff37b",
+        "priorEngine": "wine-devel-dxmt",
+        "priorExitCode": 3,
+        "logPath": "/Users/dragoshont/Library/Application Support/XodusCLI/runs/b3c82b06-8e37-42f0-b5a1-1a3b36dff37b/stderr.log",
+        "logSha256": "590778365a7fbf0ec39c1b866bb21bae51931dd199b703381d1f7c65751d386e",
+        "lines": [335, 339],
+        "observation": "Generic IID6d5140c1 CoMarshalInterface 80004002 on threads0060/0058; no CoInitialize apartment evidence and no positive Unreal layout. Renderer correction takes priority per S1; this preserves prior engine only as a diagnostic comparison, not a recommended default or combined renderer/COM experiment.",
+        "staRunId": null
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    },
+    {
+      "storeId": "9P1N07XDL1D4",
+      "title": "Dishonored Definitive Edition",
+      "status": "candidate-pending-S3-test",
+      "pendingTest": true,
+      "launch": {
+        "engine": "queue-winecx-nativejson",
+        "executable": "Binaries/Win64/Dishonored.exe",
+        "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
+        "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+      },
+      "evidence": {
+        "kind": "legacy-Unreal-layout-only",
+        "confidence": "low; UE3 is not the modern WinGDK cohort",
+        "source": "scanEvidence.queuePath#/items[storeId=9P1N07XDL1D4]/abioticCOMRisk",
+        "observedLayout": ["Engine/Config/BaseEngine.ini", "DishonoredGame/Config/DefaultEngine.ini", "DishonoredGame/CookedPCConsole/L_Flooded_FStreets_Nav.upk"],
+        "observation": "S4 identifies legacy UE3 and unproven primary-runtime consumption. Included only as an explicit diagnostic candidate requested by coordinator; default discovery remains unchanged. Do not infer UE4/5 or a COM failure from layout.",
+        "staRunId": null
+      },
+      "gameplayQualified": false,
+      "saveRetentionPass": false
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+<?xml version="1.0" ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-labelledby="title description">
+  <title id="title">Xodus downloads fixture concept</title>
+  <desc id="description">Original editable concept. Invented games, account states and progress; no live integration.</desc>
+  <g font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif">
+    <rect x="0" y="0" width="1440" height="980" rx="18" fill="#f7f7f9"/>
+    <rect x="0" y="0" width="1440" height="72" rx="18" fill="#eeeff2"/>
+    <rect x="0" y="54" width="1440" height="18" rx="0" fill="#eeeff2"/>
+    <circle cx="28" cy="35" r="7" fill="#fa625a"/>
+    <circle cx="52" cy="35" r="7" fill="#f5bf50"/>
+    <circle cx="76" cy="35" r="7" fill="#53bd69"/>
+    <text x="108" y="41" font-size="18" font-weight="600" fill="#202126" text-anchor="start">Xodus</text>
+    <rect x="505" y="16" width="430" height="40" rx="9" fill="#e0e2e7"/>
+    <text x="579" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Library</text>
+    <text x="720" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Discover</text>
+    <rect x="792" y="20" width="139" height="32" rx="7" fill="#ffffff"/>
+    <text x="861" y="42" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Downloads</text>
+    <circle cx="1347" cy="35" r="16" fill="#d3d8e1"/>
+    <text x="1347" y="41" font-size="15" font-weight="600" fill="#202126" text-anchor="middle">F</text>
+    <text x="1375" y="41" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Fixture</text>
+    <text x="56" y="105" font-size="15" font-weight="600" fill="#202126" text-anchor="start">Fixture preview</text>
+    <text x="174" y="105" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Invented games, access and progress. No real sign-in, downloads or gameplay.</text>
+    <path d="M0 123H1440" stroke="#d8dbe0"/>
+    <text x="56" y="181" font-size="36" font-weight="700" fill="#202126" text-anchor="start">Downloads</text>
+    <text x="56" y="221" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Simulated queue. Advance steps manually; no bytes are transferred.</text>
+    <path d="M56 258H1384" stroke="#d8dbe0"/>
+    <defs>
+      <linearGradient id="sky-job-0" x2="0" y2="1">
+        <stop stop-color="#b9cbc8"/>
+        <stop offset="1" stop-color="#426578"/>
+      </linearGradient>
+      <linearGradient id="shade-job-0">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-job-0">
+        <rect x="56" y="289" width="116" height="90" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-job-0)" aria-label="Original ridge landscape">
+      <rect x="56" y="289" width="116" height="90" rx="0" fill="url(#sky-job-0)"/>
+      <circle cx="145.32" cy="311.5" r="10.799999999999999" fill="#eed8b1"/>
+      <path d="M56 341.2 C81.52 300.7 109.36 359.2 132.56 330.4 S160.4 314.2 172 338.5 V379 H56Z" fill="#426578" opacity="0.38"/>
+      <path d="M56 354.7 C81.52 314.2 109.36 372.7 132.56 343.9 S160.4 327.7 172 352.0 V379 H56Z" fill="#426578" opacity="0.62"/>
+      <path d="M56 368.2 C81.52 327.7 109.36 386.2 132.56 357.4 S160.4 341.2 172 365.5 V379 H56Z" fill="#426578" opacity="0.86"/>
+      <path d="M138.94 353.8 L140.44799999999998 321.4 L143.0 321.4 L145.08800000000002 353.8Z" fill="#eed8b1"/>
+      <rect x="139.51999999999998" y="319.6" width="4.64" height="4.05" rx="2" fill="#426578"/>
+      <path d="M140.68 320.05 L100.08 302.5 L140.68 323.2Z" fill="#eed8b1" opacity=".16"/>
+      <path d="M130.24 361.9h19.720000000000002" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <path d="M130.24 366.85h16.82" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <path d="M130.24 371.8h13.920000000000002" stroke="#eed8b1" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="289" width="116" height="90" rx="0" fill="url(#shade-job-0)"/>
+    </g>
+    <text x="194" y="315" font-size="24" font-weight="600" fill="#202126" text-anchor="start">Paper Ridge</text>
+    <text x="194" y="351" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Verifying - simulated</text>
+    <text x="1384" y="321" font-size="24" font-weight="600" fill="#202126" text-anchor="end">65%</text>
+    <rect x="194" y="379" width="1190" height="5" rx="2" fill="#d8dbe0"/>
+    <rect x="194" y="379" width="773.5" height="5" rx="2" fill="#225dc2"/>
+    <rect x="194" y="411" width="210" height="42" rx="8" fill="#225dc2"/>
+    <text x="299.0" y="438" font-size="16" font-weight="600" fill="#ffffff" text-anchor="middle">Simulate next step</text>
+    <rect x="424" y="411" width="186" height="42" rx="8" fill="#ffffff" stroke="#d8dbe0"/>
+    <text x="517.0" y="438" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Simulate cancel</text>
+    <path d="M56 510H1384" stroke="#d8dbe0"/>
+    <defs>
+      <linearGradient id="sky-job-1" x2="0" y2="1">
+        <stop stop-color="#667796"/>
+        <stop offset="1" stop-color="#222f4c"/>
+      </linearGradient>
+      <linearGradient id="shade-job-1">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-job-1">
+        <rect x="56" y="543" width="116" height="90" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-job-1)" aria-label="Original orbit landscape">
+      <rect x="56" y="543" width="116" height="90" rx="0" fill="url(#sky-job-1)"/>
+      <circle cx="145.32" cy="565.5" r="10.799999999999999" fill="#dbb5a0"/>
+      <circle cx="56.0" cy="543.0" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="98.92" cy="563.7" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="141.84" cy="584.4" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="72.24000000000001" cy="559.2" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="115.16" cy="579.9" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="158.07999999999998" cy="554.7" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="88.48" cy="575.4" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="131.4" cy="550.2" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="61.8" cy="570.9" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="104.72" cy="545.7" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="147.64" cy="566.4" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="78.03999999999999" cy="587.1" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="120.96000000000001" cy="561.9" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="163.88" cy="582.6" r="1.5" fill="#ffffff" opacity=".7"/>
+      <circle cx="94.28" cy="557.4" r="1.5" fill="#ffffff" opacity=".7"/>
+      <ellipse cx="137.2" cy="570.0" rx="30.16" ry="10.799999999999999" fill="none" stroke="#dbb5a0" opacity=".6" transform="rotate(-18 137.2 570.0)"/>
+      <path d="M56 595.2 C81.52 554.7 109.36 613.2 132.56 584.4000000000001 S160.4 568.2 172 592.5 V633 H56Z" fill="#222f4c" opacity="0.38"/>
+      <path d="M56 608.7 C81.52 568.2 109.36 626.7 132.56 597.9000000000001 S160.4 581.7 172 606.0 V633 H56Z" fill="#222f4c" opacity="0.62"/>
+      <path d="M56 622.2 C81.52 581.7 109.36 640.2 132.56 611.4000000000001 S160.4 595.2 172 619.5 V633 H56Z" fill="#222f4c" opacity="0.86"/>
+      <path d="M130.24 615.9h19.720000000000002" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M130.24 620.85h16.82" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <path d="M130.24 625.8h13.920000000000002" stroke="#dbb5a0" stroke-width="1.5" opacity=".3"/>
+      <rect x="56" y="543" width="116" height="90" rx="0" fill="url(#shade-job-1)"/>
+    </g>
+    <text x="194" y="569" font-size="24" font-weight="600" fill="#202126" text-anchor="start">Orbit Almanac</text>
+    <text x="194" y="605" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Queued - simulated</text>
+    <text x="1384" y="575" font-size="24" font-weight="600" fill="#202126" text-anchor="end">0%</text>
+    <rect x="194" y="633" width="1190" height="5" rx="2" fill="#d8dbe0"/>
+    <rect x="194" y="633" width="1" height="5" rx="2" fill="#225dc2"/>
+    <rect x="194" y="665" width="210" height="42" rx="8" fill="#225dc2"/>
+    <text x="299.0" y="692" font-size="16" font-weight="600" fill="#ffffff" text-anchor="middle">Simulate next step</text>
+    <rect x="424" y="665" width="186" height="42" rx="8" fill="#ffffff" stroke="#d8dbe0"/>
+    <text x="517.0" y="692" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Simulate cancel</text>
+    <path d="M56 764H1384" stroke="#d8dbe0"/>
+    <text x="56" y="851" font-size="24" font-weight="700" fill="#202126" text-anchor="start">Recoverable by design</text>
+    <text x="56" y="892" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Production jobs will reconnect from durable backend snapshots. This demo queue resets on relaunch.</text>
+    <text x="56" y="927" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Cancellation, recovery and installation completion here are simulations only.</text>
+  </g>
+</svg>

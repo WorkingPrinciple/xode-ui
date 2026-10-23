@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-labelledby="title description">
+  <title id="title">Xodus discover-search fixture concept</title>
+  <desc id="description">Original editable concept. Invented games, account states and progress; no live integration.</desc>
+  <g font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif">
+    <rect x="0" y="0" width="1440" height="980" rx="18" fill="#f7f7f9"/>
+    <rect x="0" y="0" width="1440" height="72" rx="18" fill="#eeeff2"/>
+    <rect x="0" y="54" width="1440" height="18" rx="0" fill="#eeeff2"/>
+    <circle cx="28" cy="35" r="7" fill="#fa625a"/>
+    <circle cx="52" cy="35" r="7" fill="#f5bf50"/>
+    <circle cx="76" cy="35" r="7" fill="#53bd69"/>
+    <text x="108" y="41" font-size="18" font-weight="600" fill="#202126" text-anchor="start">Xodus</text>
+    <rect x="505" y="16" width="430" height="40" rx="9" fill="#e0e2e7"/>
+    <text x="579" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Library</text>
+    <rect x="651" y="20" width="139" height="32" rx="7" fill="#ffffff"/>
+    <text x="720" y="42" font-size="16" font-weight="600" fill="#202126" text-anchor="middle">Discover</text>
+    <text x="861" y="42" font-size="16" font-weight="400" fill="#202126" text-anchor="middle">Downloads</text>
+    <circle cx="1347" cy="35" r="16" fill="#d3d8e1"/>
+    <text x="1347" y="41" font-size="15" font-weight="600" fill="#202126" text-anchor="middle">F</text>
+    <text x="1375" y="41" font-size="14" font-weight="400" fill="#5a5e68" text-anchor="start">Fixture</text>
+    <text x="56" y="105" font-size="15" font-weight="600" fill="#202126" text-anchor="start">Fixture preview</text>
+    <text x="174" y="105" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Invented games, access and progress. No real sign-in, downloads or gameplay.</text>
+    <path d="M0 123H1440" stroke="#d8dbe0"/>
+    <rect x="420" y="242" width="600" height="44" rx="9" fill="#ffffff" stroke="#d8dbe0"/>
+    <circle cx="444" cy="262" r="6" fill="none" stroke="#5a5e68" stroke-width="1.5"/>
+    <path d="M449 267l5 5" stroke="#5a5e68" stroke-width="1.5"/>
+    <text x="465" y="270" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">atlas</text>
+    <text x="56" y="181" font-size="36" font-weight="700" fill="#202126" text-anchor="start">Find your next world</text>
+    <text x="56" y="217" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Discover searches catalog fixtures, not your entitled library.</text>
+    <text x="56" y="351" font-size="24" font-weight="700" fill="#202126" text-anchor="start">Search results for "atlas"</text>
+    <text x="56" y="389" font-size="17" font-weight="400" fill="#5a5e68" text-anchor="start">1 catalog result. A listing does not prove you own it.</text>
+    <defs>
+      <linearGradient id="sky-shelf-0" x2="0" y2="1">
+        <stop stop-color="#95c6cb"/>
+        <stop offset="1" stop-color="#245e77"/>
+      </linearGradient>
+      <linearGradient id="shade-shelf-0">
+        <stop stop-color="#081d2b" stop-opacity=".62"/>
+        <stop offset="1" stop-color="#081d2b" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="clip-shelf-0">
+        <rect x="56.0" y="420" width="426.6666666666667" height="270" rx="14" fill="white"/>
+      </clipPath>
+    </defs>
+    <g clip-path="url(#clip-shelf-0)" aria-label="Original tide landscape">
+      <rect x="56.0" y="420" width="426.6666666666667" height="270" rx="0" fill="url(#sky-shelf-0)"/>
+      <circle cx="384.53333333333336" cy="487.5" r="32.4" fill="#f5d59b"/>
+      <path d="M56.0 576.6 C149.86666666666667 455.1 252.26666666666668 630.6 337.6 544.2 S440.0 495.6 482.6666666666667 568.5 V690 H56.0Z" fill="#245e77" opacity="0.38"/>
+      <path d="M56.0 617.1 C149.86666666666667 495.6 252.26666666666668 671.1 337.6 584.7 S440.0 536.1 482.6666666666667 609.0 V690 H56.0Z" fill="#245e77" opacity="0.62"/>
+      <path d="M56.0 657.5999999999999 C149.86666666666667 536.0999999999999 252.26666666666668 711.5999999999999 337.6 625.1999999999999 S440.0 576.5999999999999 482.6666666666667 649.4999999999999 V690 H56.0Z" fill="#245e77" opacity="0.86"/>
+      <path d="M361.06666666666666 614.4 L366.61333333333334 517.2 L376.0 517.2 L383.68 614.4Z" fill="#f5d59b"/>
+      <rect x="363.2" y="511.8" width="17.066666666666666" height="12.15" rx="2" fill="#245e77"/>
+      <path d="M367.4666666666667 513.15 L218.13333333333335 460.5 L367.4666666666667 522.6Z" fill="#f5d59b" opacity=".16"/>
+      <path d="M329.06666666666666 638.7h72.53333333333335" stroke="#f5d59b" stroke-width="1.5" opacity=".3"/>
+      <path d="M329.06666666666666 653.5500000000001h61.866666666666674" stroke="#f5d59b" stroke-width="1.5" opacity=".3"/>
+      <path d="M329.06666666666666 668.4h51.20000000000001" stroke="#f5d59b" stroke-width="1.5" opacity=".3"/>
+      <rect x="56.0" y="420" width="426.6666666666667" height="270" rx="0" fill="url(#shade-shelf-0)"/>
+    </g>
+    <text x="56.0" y="719" font-size="19" font-weight="600" fill="#202126" text-anchor="start">Tidal Atlas</text>
+    <text x="56.0" y="746" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">Access unverified</text>
+    <text x="56.0" y="772" font-size="15" font-weight="400" fill="#5a5e68" text-anchor="start">Experimental</text>
+    <rect x="56" y="804" width="225" height="42" rx="8" fill="#225dc2"/>
+    <text x="168.5" y="831" font-size="16" font-weight="600" fill="#ffffff" text-anchor="middle">View fixture details</text>
+    <text x="556" y="470" font-size="28" font-weight="600" fill="#202126" text-anchor="start">Search stays in Discover</text>
+    <text x="556" y="516" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Switch to Library to search only entitled fixture titles.</text>
+    <text x="556" y="558" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">No access or compatibility claim comes from a catalog listing.</text>
+    <text x="556" y="600" font-size="18" font-weight="400" fill="#5a5e68" text-anchor="start">Empty query browses categories; no fake search results.</text>
+    <path d="M56 885H1384" stroke="#d8dbe0"/>
+    <text x="56" y="925" font-size="16" font-weight="400" fill="#5a5e68" text-anchor="start">No checkout, cloud gaming or DLC management in v1.</text>
+  </g>
+</svg>

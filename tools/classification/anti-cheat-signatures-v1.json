@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "scope": "Installed/extracted package path names; case-insensitive regular expressions",
+  "signatures": [
+    {
+      "technology": "Easy Anti-Cheat",
+      "patterns": [
+        "(^|/)(easy.?anti.?cheat|easy.?anti.?cheat.?eos)(/|$|[._-])",
+        "(^|/)(eac|eac.?eos|eac.?launcher|eac.?setup)(/|$|[._-])"
+      ]
+    },
+    {
+      "technology": "BattlEye",
+      "patterns": [
+        "(^|/)(battle.?eye|beservice|beclient|beclient.?x64|beservice.?x64)(/|$|[._-])"
+      ]
+    },
+    {
+      "technology": "Riot Vanguard",
+      "patterns": [
+        "(^|/)(vgk|vgc|riot.?vanguard|vanguard)(/|$|[._-])"
+      ]
+    },
+    {
+      "technology": "nProtect GameGuard",
+      "patterns": [
+        "(^|/)(nprotect|gameguard|npggnt|npgg)(/|$|[._-])"
+      ]
+    },
+    {
+      "technology": "XIGNCODE",
+      "patterns": [
+        "(^|/)(xhunter[^/]*|xigncode[^/]*)(/|$|[._-])"
+      ]
+    },
+    {
+      "technology": "miHoYo Protect",
+      "patterns": ["(^|/)(mhyprot[^/]*|mihoyo.?protect)(/|$|[._-])"]
+    },
+    {
+      "technology": "EQU8",
+      "patterns": ["(^|/)(equ8[^/]*)(/|$|[._-])"]
+    },
+    {
+      "technology": "Anti-Cheat Expert",
+      "patterns": [
+        "(^|/)(anticheatexpert[^/]*|ace-(base|service|driver|setup)|ace\\.sys)(/|$|[._-])",
+        "(^|/)ace(/|$)"
+      ]
+    },
+    {
+      "technology": "PunkBuster",
+      "patterns": [
+        "(^|/)(punk.?buster[^/]*|pbsvc[^/]*|pnkbstr[a-z0-9._-]*)(/|$)"
+      ]
+    },
+    {
+      "technology": "FACEIT Anti-Cheat",
+      "patterns": ["(^|/)(faceit.?anti.?cheat|faceitac[^/]*)(/|$|[._-])"]
+    },
+    {
+      "technology": "Ricochet Anti-Cheat",
+      "patterns": ["(^|/)(ricochet|ricochet.?anti.?cheat)(/|$|[._-])"]
+    },
+    {
+      "technology": "Denuvo Anti-Cheat",
+      "patterns": ["(^|/)(denuvo.?anti.?cheat|denuvoac[^/]*)(/|$|[._-])"]
+    },
+    {
+      "technology": "Blizzard Warden",
+      "patterns": ["(^|/)(warden|battle\\.net/agent)(/|$|[._-])"]
+    },
+    {
+      "technology": "Arbiter",
+      "patterns": ["(^|/)(arbiter[^/]*)(/|$|[._-])"]
+    },
+    {
+      "technology": "NEAC Protect",
+      "patterns": ["(^|/)(neac[^/]*|neacprotect[^/]*)(/|$|[._-])"]
+    },
+    {
+      "technology": "Nexon Game Security",
+      "patterns": ["(^|/)(nexon.?game.?security|ngs[^/]*)(/|$|[._-])"]
+    },
+    {
+      "technology": "AnyBrain Anti-Cheat",
+      "patterns": ["(^|/)(anybrain[^/]*)(/|$|[._-])"]
+    },
+    {
+      "technology": "Generic anti-cheat component",
+      "patterns": ["(^|/)(anti.?cheat|anticheat)([^/]*)($|/)"]
+    }
+  ]
+}

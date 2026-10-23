@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "sourceArtifacts": [
+    {
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189",
+      "sha256": "789ee39d7a4c67d1ca7aaded4e8a861ab954ad23875efb2e7fa9401b724fb844"
+    },
+    {
+      "packet": "s3-ready-packets-v5.json",
+      "commit": "8bc408deeb29de0a3a4caa5403c92c55fc4ba96a",
+      "sha256": "8df4758bef94fb57658b17d701d2af2fa5662f0472cc762e23e171da960389d2"
+    }
+  ],
+  "items": [
+    {
+      "productID": "9P1N07XDL1D4",
+      "path": "%USERPROFILE%\\Documents\\My Games\\Dishonored\\DishonoredGame\\SaveData",
+      "source": "https://www.pcgamingwiki.com/wiki/Dishonored?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9PNG83MDD6SH",
+      "path": "%LOCALAPPDATA%\\Packages\\16902PlaydeadAPS.PlaydeadsLIMBO_2m6wzp0cmt084\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Limbo?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9NV3L234VGXD",
+      "path": "%LOCALAPPDATA%\\Packages\\Thunderful.REPLACED-Game_8j53pwgd019sy\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Replaced?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9NXWSWBM4H6T",
+      "path": "%LOCALAPPDATA%\\Packages\\Fictions.ProjectAibou_qj8vnfjar8dk2\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Beast_of_Reincarnation?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9NCJWHHMVHR0",
+      "path": "%LOCALAPPDATA%\\Packages\\Microsoft.PaganIdol_8wekyb3d8bbwe\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Keeper?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9NH0MSG29X6L",
+      "path": "%LOCALAPPDATA%\\Packages\\AnnapurnaInteractive.BlueMoonLagoon_c96c51jf6wkvm\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Mixtape?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9P5Z4530318L",
+      "path": "%USERPROFILE%\\AppData\\Local\\Packages\\BethesdaSoftworks.ProjectPrism_3275kfvn8vcwc\\SystemAppData\\wgs\\<user-id>\\<user-id>",
+      "source": "https://www.pcgamingwiki.com/wiki/Deathloop?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9NFB47H2SDRX",
+      "path": "%LOCALAPPDATA%\\Packages\\57209AnnapurnaInteractive.ForeverAgo_c96c51jf6wkvm\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Forever_Ago?action=raw",
+      "scope": "Cited public PC expectation; not an observed Xbox/Wine directory. Microsoft Store save-game data location row. Explicit Store save directory; Windows variables and account placeholders are unresolved, not a host/Wine path.",
+      "packet": "s3-ready-packets-v4.json",
+      "commit": "9ca6e7e2804e3798a37cb527444e7e8bd5f16189"
+    },
+    {
+      "productID": "9P8NSTDMZ11P",
+      "path": "%LOCALAPPDATA%\\Packages\\DevolverDigital.Inscryption_6kzv4j18v0c96\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Inscryption?action=raw",
+      "scope": "Explicit Microsoft Store row only; null if only general PC path is known. Never expand to a guessed host/Wine directory. Cloud support does not prove local runtime sync. General Windows/Steam paths are separate proxies, not Store paths.",
+      "packet": "s3-ready-packets-v5.json",
+      "commit": "8bc408deeb29de0a3a4caa5403c92c55fc4ba96a"
+    },
+    {
+      "productID": "9NLRT31Z4RWM",
+      "path": "%LOCALAPPDATA%\\Packages\\Finji.TUNIC_tys0ffscxatjj\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Tunic?action=raw",
+      "scope": "Explicit Microsoft Store row only; null if only general PC path is known. Never expand to a guessed host/Wine directory. Cloud support does not prove local runtime sync. General Windows/Steam paths are separate proxies, not Store paths.",
+      "packet": "s3-ready-packets-v5.json",
+      "commit": "8bc408deeb29de0a3a4caa5403c92c55fc4ba96a"
+    },
+    {
+      "productID": "9PD5BM2Z8C4L",
+      "path": "%LOCALAPPDATA%\\Packages\\poncle.VampireSurvivors_9pv5cyp4vwdsr\\SystemAppData\\wgs\\<user-id>",
+      "source": "https://www.pcgamingwiki.com/wiki/Vampire_Survivors?action=raw",
+      "scope": "Explicit Microsoft Store row only; null if only general PC path is known. Never expand to a guessed host/Wine directory. Cloud support does not prove local runtime sync. General Windows/Steam paths are separate proxies, not Store paths.",
+      "packet": "s3-ready-packets-v5.json",
+      "commit": "8bc408deeb29de0a3a4caa5403c92c55fc4ba96a"
+    },
+    {
+      "productID": "9MXND4PQLK3W",
+      "path": "%LOCALAPPDATA%\\Packages\\BethesdaSoftworks.Doom641997_3275kfvn8vcwc\\SystemAppData\\wgs",
+      "source": "https://www.pcgamingwiki.com/wiki/Doom_64?action=raw",
+      "scope": "Explicit Microsoft Store row only; null if only general PC path is known. Never expand to a guessed host/Wine directory. Cloud support does not prove local runtime sync. General Windows/Steam paths are separate proxies, not Store paths.",
+      "packet": "s3-ready-packets-v5.json",
+      "commit": "8bc408deeb29de0a3a4caa5403c92c55fc4ba96a"
+    }
+  ]
+}

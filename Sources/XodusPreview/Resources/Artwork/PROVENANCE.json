@@ -1,0 +1,17 @@
+{
+  "license": "GPL-3.0-only",
+  "primaryArt": {
+    "files": ["harbor.png", "orbit.png", "ridge.png"],
+    "source": "tools/RenderOriginalArt.swift",
+    "renderer": "CoreGraphics and ImageIO",
+    "dimensions": "2048x1152"
+  },
+  "secondaryArt": {
+    "files": ["moss.png", "signal.png", "tide.png"],
+    "source": "tools/generate_artwork.py",
+    "svgSources": "design/artwork",
+    "renderer": "native WebKit via tools/render_mockups.swift"
+  },
+  "content": "Original authored stylized environment illustrations, not real game screenshots or covers. No external images, trademarks, accounts, paid references or AI image service. Production requires properly sourced title-specific catalog art and rights/caching policy.",
+  "revision": "v0.2 immersive illustrations"
+}

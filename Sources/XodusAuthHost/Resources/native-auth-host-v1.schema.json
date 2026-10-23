@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:xodus:private-native-auth-host:1",
+  "title": "Private native Swift authentication host, version 1",
+  "description": "Anonymous inherited FD only. Four-byte big-endian byte count plus one UTF-8 JSON object, 1..262144 total JSON bytes. Not a management protocol frame.",
+  "oneOf": [
+    {"$ref": "#/$defs/commandFrame"},
+    {"$ref": "#/$defs/resultFrame"}
+  ],
+  "$defs": {
+    "binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "executable", "sha256"],
+      "properties": {
+        "version": {"const": 1},
+        "executable": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "flowID": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+    "sequence": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "disposition": {"enum": ["completed", "cancelled", "failed"]},
+    "initialHeaders": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cxh-capabilities", "cxh-correlationid", "cxh-msabinaryversion", "cxh-identityclientbinaryversion", "cxh-osversioninfo", "cxh-platform", "cxh-protocol", "cxh-source", "hostapp"],
+      "properties": {
+        "cxh-capabilities": {"const": "{\"PrivatePropertyBag\":1,\"PasswordlessConnect\":1,\"PreferAssociate\":1,\"ChromelessUI\":0}"},
+        "cxh-correlationid": {"$ref": "#/$defs/flowID"},
+        "cxh-msabinaryversion": {"const": "55"},
+        "cxh-identityclientbinaryversion": {"const": "3"},
+        "cxh-osversioninfo": {"const": "{\"platformId\":2,\"majorVersion\":10,\"minorVersion\":0,\"buildNumber\":26100}"},
+        "cxh-platform": {"const": "CloudExperienceHost.Platform.DESKTOP"},
+        "cxh-protocol": {"const": "TokenBroker"}, "cxh-source": {"const": "TokenBroker"}, "hostapp": {"const": "CloudExperienceHost"}
+      }
+    },
+    "commandFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "flowID", "sessionID", "sequence", "message"],
+      "properties": {
+        "version": {"const": 1},
+        "flowID": {"$ref": "#/$defs/flowID"},
+        "sessionID": {"const": 1},
+        "sequence": {"$ref": "#/$defs/sequence"},
+        "message": {"oneOf": [
+          {"type": "object", "additionalProperties": false,
+            "required": ["kind", "remainingMillis", "url", "headers", "userAgent"],
+            "properties": {"kind": {"const": "open"}, "remainingMillis": {"type": "integer", "minimum": 1, "maximum": 600000}, "url": {"const": "https://login.live.com/ppsecure/InlineLogin.srf?id=80604&scid=3&mkt=en-US&Platform=Windows10&clientid=000000004424da1f&hosted=1"}, "headers": {"$ref": "#/$defs/initialHeaders"}, "userAgent": {"const": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; MSAppHost/3.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.26100"}}},
+          {"type": "object", "additionalProperties": false, "required": ["kind", "url"],
+            "properties": {"kind": {"const": "navigate"}, "url": {"type": "string"}}},
+          {"type": "object", "additionalProperties": false, "required": ["kind", "disposition"],
+            "properties": {"kind": {"const": "close"}, "disposition": {"$ref": "#/$defs/disposition"}}}
+        ]}
+      }
+    },
+    "property": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sDAToken", "sDASessionKey", "sDAStartTime", "sDAExpires", "sSTSInlineFlowToken", "sSigninName", "K"],
+      "properties": {
+        "sDAToken": {"type": "string"}, "sDASessionKey": {"type": "string"},
+        "sDAStartTime": {"type": "string"}, "sDAExpires": {"type": "string"},
+        "sSTSInlineFlowToken": {"type": "string"}, "sSigninName": {"type": "string"}, "K": {"type": "string"}
+      }
+    },
+    "resultFrame": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "flowID", "sessionID", "sequence", "replyTo", "message"],
+      "properties": {
+        "version": {"const": 1}, "flowID": {"$ref": "#/$defs/flowID"}, "sessionID": {"const": 1},
+        "sequence": {"$ref": "#/$defs/sequence"}, "replyTo": {"$ref": "#/$defs/sequence"},
+        "message": {"oneOf": [
+          {"type": "object", "additionalProperties": false, "required": ["kind"], "properties": {"kind": {"const": "ready"}}},
+          {"type": "object", "additionalProperties": false, "required": ["kind", "property"], "properties": {"kind": {"const": "da"}, "property": {"$ref": "#/$defs/property"}}},
+          {"type": "object", "additionalProperties": false, "required": ["kind", "disposition"], "properties": {"kind": {"const": "closed"}, "disposition": {"$ref": "#/$defs/disposition"}}},
+          {"type": "object", "additionalProperties": false, "required": ["kind"], "properties": {"kind": {"const": "cancelled"}}},
+          {"type": "object", "additionalProperties": false, "required": ["kind", "reason"],
+            "properties": {"kind": {"const": "failed"}, "reason": {"enum": ["invalidFrame", "invalidNavigation", "navigationFailed", "popupUnsupported", "contentTerminated", "javaScriptFailed", "bridgeInvalid", "deadlineExpired", "parentUnavailable"]}}}
+        ]}
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "data": {
+    "checkedAt": "2026-10-05T14:30:28Z",
+    "completeness": "partial",
+    "corpus": "publicMicrosoftStoreSearch",
+    "failures": [
+      {"error": {"code": "PACKAGE_UNAVAILABLE", "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.", "retryable": false}, "productID": "9NWQMVSB63N4"},
+      {"error": {"code": "PACKAGE_UNAVAILABLE", "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.", "retryable": false}, "productID": "9NTM9HXNLSZX"},
+      {"error": {"code": "PACKAGE_UNAVAILABLE", "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.", "retryable": false}, "productID": "9P6VZCRGXFMX"},
+      {"error": {"code": "PACKAGE_UNAVAILABLE", "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.", "retryable": false}, "productID": "9PNGDJM7FKZH"}
+    ],
+    "freshness": "live",
+    "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2230623765616565626531396164303230343632666536303332313566613365306261626463303937623665616535343534646533663063306637373135303432222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f70616765732f736561726368526573756c74733f6d61726b65743d5553266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d48616c6f266d65646961547970653d67616d6573222c226f6666736574223a352c227265766973696f6e223a2264653334633737653465633630623438613063656631383461383739643766303365326436383831343338393064323566666366613831353164316239333731227d",
+    "products": [
+      {
+        "checkedAt": "2026-10-05T14:30:28Z",
+        "editions": [
+          {
+            "compatibility": {"checkedAt": null, "kind": "unknown", "source": "noCertifiedRuntime"},
+            "editionID": "0010",
+            "entitlement": {"checkedAt": null, "kind": "unknown", "source": "notQueried"},
+            "installability": {"kind": "unknown", "packageID": "ecee2e94-3ddf-4176-a77d-6eeda2087531", "reason": "Public package identity is not authorization or a verified immutable download version."},
+            "installation": {"kind": "notInstalled"},
+            "inventory": {"checkedAt": null, "completeness": "unknown", "lastCompleteAt": null, "reason": "Consumer PC entitlement enumeration is not established.", "source": "notQueried"},
+            "productID": "9PP5G1F0C2B6"
+          },
+          {
+            "compatibility": {"checkedAt": null, "kind": "unknown", "source": "noCertifiedRuntime"},
+            "editionID": "0011",
+            "entitlement": {"checkedAt": null, "kind": "unknown", "source": "notQueried"},
+            "installability": {"kind": "unknown", "packageID": "ecee2e94-3ddf-4176-a77d-6eeda2087531", "reason": "Public package identity is not authorization or a verified immutable download version."},
+            "installation": {"kind": "notInstalled"},
+            "inventory": {"checkedAt": null, "completeness": "unknown", "lastCompleteAt": null, "reason": "Consumer PC entitlement enumeration is not established.", "source": "notQueried"},
+            "productID": "9PP5G1F0C2B6"
+          },
+          {
+            "compatibility": {"checkedAt": null, "kind": "unknown", "source": "noCertifiedRuntime"},
+            "editionID": "0017",
+            "entitlement": {"checkedAt": null, "kind": "unknown", "source": "notQueried"},
+            "installability": {"kind": "unknown", "packageID": "ecee2e94-3ddf-4176-a77d-6eeda2087531", "reason": "Public package identity is not authorization or a verified immutable download version."},
+            "installation": {"kind": "notInstalled"},
+            "inventory": {"checkedAt": null, "completeness": "unknown", "lastCompleteAt": null, "reason": "Consumer PC entitlement enumeration is not established.", "source": "notQueried"},
+            "productID": "9PP5G1F0C2B6"
+          }
+        ],
+        "freshness": "live",
+        "language": "en-US",
+        "market": "US",
+        "pcCatalogCandidate": true,
+        "productID": "9PP5G1F0C2B6",
+        "resolvedLanguage": "en",
+        "source": "MicrosoftDisplayCatalog:v7.0",
+        "title": "Halo Infinite",
+        "artwork": [],
+        "artworkStatus": "notQueried"
+      }
+    ],
+    "query": "Halo",
+    "source": "MicrosoftStoreEdge:v9.0/searchResults"
+  },
+  "kind": "result",
+  "ok": true,
+  "protocol": {"major": 1, "minor": 0},
+  "requestID": "45e555b6-4a60-4e06-951d-dcf10a857cea"
+}

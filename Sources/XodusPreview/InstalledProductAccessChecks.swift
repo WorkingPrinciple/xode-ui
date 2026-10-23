@@ -1,0 +1,175 @@
+// SPDX-License-Identifier: GPL-3.0-only
+import Foundation
+import XodusManagement
+
+@MainActor
+enum InstalledProductAccessChecks {
+    static func run(check: (Bool, String) -> Void) async throws {
+        let account = String(repeating: "a", count: 64)
+        let other = String(repeating: "b", count: 64)
+        let product = "9NGLST31DG26"
+        let denied = "9TESTDENIED0"
+        let unknown = "9TESTUNKNOWN"
+        let now = ISO8601DateFormatter().date(from: "2030-01-01T00:00:00Z")!
+        func response(_ id: String, accountHash: String = account, access: String = "permitted",
+                      reason: String? = nil, expiry: String? = nil,
+                      checkedAt: String = "2030-01-01T00:00:00Z") throws -> OdeAccountRead {
+            let payload: [String: Any] = [
+                "section": "license", "accountHash": accountHash, "checkedAt": checkedAt,
+                "payload": ["productID": id, "access": access,
+                            "reason": reason as Any? ?? NSNull(), "expiresAt": expiry as Any? ?? NSNull()]
+            ]
+            return try JSONDecoder().decode(OdeAccountRead.self,
+                from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let controller = InstalledProductAccess()
+        defer { controller.retire() }
+        var requests: [String] = []
+        let reader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            requests.append(id)
+            if id == denied { return try response(id, access: "denied", reason: "providerDenied") }
+            if id == unknown { return try response(id, access: "unknown", reason: "productNotListed") }
+            return try response(id, expiry: "2030-01-01T00:02:00Z")
+        }
+        await controller.refresh(account: account,
+            installedIDs: [product, product, denied, unknown, "invalid"], now: now, read: reader)
+        check(requests == [product, denied, unknown].sorted(),
+              "Installed access checks only deduplicated valid installed StoreIDs, sequentially")
+        check(controller.facts.count == 3 && !controller.checking && controller.errors.isEmpty,
+              "Typed access facts retain permitted, denied and unknown independently")
+        check(controller.permits(product, account: account, now: now)
+              && !controller.permits(denied, account: account, now: now)
+              && !controller.permits(unknown, account: account, now: now),
+              "Only an exact permitted fact grants account-access filtering and Play")
+        check(!controller.permits(product, account: other, now: now)
+              && !controller.permits(product, account: nil, now: now),
+              "Different or absent account cannot borrow an installed access fact")
+        check(!controller.permits(product, account: account, now: now.addingTimeInterval(120)),
+              "Actual license expiry withdraws permission at the boundary")
+        await controller.refresh(account: account, installedIDs: [product, denied, unknown],
+            now: now.addingTimeInterval(30), read: reader)
+        check(requests.count == 3, "Warm account access is cached without repeated provider calls")
+        await controller.refresh(account: account, installedIDs: [product, denied, unknown],
+            now: now.addingTimeInterval(61), read: reader)
+        check(requests.count == 6, "Unknown and denied facts retry after cooldown; short grants renew before actual expiry")
+        await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(301)) { _ in
+            throw ManagementError.requestTimedOut
+        }
+        check(controller.errors[product] != nil && !controller.permits(product, account: account,
+            now: now.addingTimeInterval(301)), "Transport failure cannot extend a stale permission or become denial")
+        check(controller.facts[denied] == nil && controller.facts[unknown] == nil,
+              "Removed installed IDs leave the access cache")
+        await controller.refresh(account: other, installedIDs: [product], now: now) { id in
+            try response(id)
+        }
+        check(controller.facts.isEmpty && controller.errors[product] != nil,
+              "Account switch clears old facts and rejects a mismatched response envelope")
+        controller.retire()
+        let pending = Task {
+            await controller.refresh(account: account, installedIDs: [product], now: now) { id in
+                try? await Task.sleep(for: .milliseconds(100))
+                return try response(id)
+            }
+        }
+        await Task.yield()
+        controller.retire()
+        await pending.value
+        check(controller.accountHash == nil && controller.facts.isEmpty && !controller.checking,
+              "Retirement fences a late response even when its reader ignores cancellation")
+        await controller.refresh(account: account, installedIDs: [product], now: now) { id in
+            try response(id)
+        }
+        check(controller.permits(product, account: account, now: now.addingTimeInterval(299))
+              && !controller.permits(product, account: account, now: now.addingTimeInterval(300)),
+              "Perpetual grants still have a finite five-minute account cache")
+        var renewals = 0
+        var preservedDuringRenewal = false
+        await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(121)) { id in
+            renewals += 1
+            preservedDuringRenewal = controller.permits(product, account: account, now: now.addingTimeInterval(121))
+            return try response(id, checkedAt: "2030-01-01T00:02:01Z")
+        }
+        check(preservedDuringRenewal,
+              "Proactive refresh preserves a still-valid same-account fact while its request runs")
+        check(renewals == 1 && controller.permits(product, account: account, now: now.addingTimeInterval(301)),
+              "Background renewal starts before cache expiry instead of flickering Library and Play off at five minutes")
+        let short = InstalledProductAccess()
+        defer { short.retire() }
+        await short.refresh(account: account, installedIDs: [product], now: now) { id in
+            try response(id, expiry: "2030-01-01T00:02:00Z")
+        }
+        await short.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(61)) { _ in
+            throw ManagementError.requestTimedOut
+        }
+        check(short.errors[product] != nil
+              && short.permits(product, account: account, now: now.addingTimeInterval(100))
+              && !short.permits(product, account: account, now: now.addingTimeInterval(120)),
+              "Failed renewal preserves only still-valid evidence and never extends a short grant past actual expiry")
+        let batch = InstalledProductAccess()
+        defer { batch.retire() }
+        let ids = (0..<36).map { String(format: "9TEST%07d", $0) }
+        var clock = now
+        var batchReads = 0
+        let batchReader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            batchReads += 1
+            clock = clock.addingTimeInterval(2)
+            return try response(id, checkedAt: ISO8601DateFormatter().string(from: clock))
+        }
+        await batch.refresh(account: account, installedIDs: ids, now: now, read: batchReader)
+        clock = now.addingTimeInterval(132)
+        await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
+        clock = now.addingTimeInterval(204)
+        await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
+        check(batchReads == 72 && ids.allSatisfy {
+            batch.permits($0, account: account, now: now.addingTimeInterval(373))
+        }, "Two-minute renewal threshold covers a 72-second sequential batch plus 60-second ticks without crossing the original cache boundary")
+        let local = InstalledGamesController()
+        local.useUnifiedAccount(LiveSession())
+        local.setAccountAccessAllowed(true)
+        check(!local.canRequestPlay(product), "Installed presence and confirmed sign-in alone never enable Play")
+        let game = InstalledGame(id: UUID(), title: "Synthetic installed title", identityName: "Synthetic",
+            version: "1.0.0.0", storeId: product, folder: "/synthetic/never-read",
+            launcher: "/synthetic/never-executed", importedAt: now)
+        let unqualified = LibraryGame.collection(installed: [game], owned: [], products: [],
+            gamePass: [], active: true)
+        check(unqualified.isEmpty && LibraryGame.localRecords(installed: [game], qualified: unqualified,
+            query: "", sort: .title).count == 1,
+              "Pending installed records remain manageable, without entering account-qualified Your Games")
+        let qualified = LibraryGame.collection(installed: [game], owned: [], products: [],
+            gamePass: [], active: true, permittedInstalledIDs: [product])
+        check(qualified.map(\.id) == [product] && qualified.first?.installed == game,
+              "Exact permitted installed fact joins the real StoreID into Your Games")
+        check(LibraryGame.visible(qualified, query: "", filter: .owned, sort: .title).isEmpty
+              && LibraryGame.visible(qualified, query: "", filter: .gamePass, sort: .title).isEmpty,
+              "License permission alone never invents ownership or subscription acquisition")
+        check(LibraryGame.localRecords(installed: [game], qualified: qualified, query: "", sort: .title).isEmpty,
+              "Qualified installation is not duplicated in the separate installed inventory")
+        check(LibraryGame.collection(installed: [], owned: [], products: [], gamePass: [],
+            active: true, permittedInstalledIDs: [product]).isEmpty,
+              "Installed-product grant cannot fan out into uninstalled catalogue entitlement")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("InstalledAccessChecks-\(UUID().uuidString)")
+        let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
+            .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),
+            stateDirectory: root.appendingPathComponent("odeslow"))
+        let session = LiveSession(configuration: config)
+        await session.connect()
+        await session.refreshAccount()
+        let license = Task { try await session.readUnifiedAccount(.license, productID: product) }
+        try await Task.sleep(for: .milliseconds(40))
+        let profile = try await session.readUnifiedAccount(.profile)
+        let wire = try await license.value
+        try wire.payload.decode(OdeProductAccess.self).validate(productID: product, checkedAt: wire.checkedAt)
+        check(profile.section == .profile && wire.section == .license && !session.accountBusy,
+              "Real Swift wire validator accepts license facts; profile waits instead of failing behind a background read")
+        for (section, id) in [(OdeAccountSection.library, product), (.license, "invalid")] {
+            do {
+                _ = try await session.readUnifiedAccount(section, productID: id)
+                check(false, "Invalid or cross-section product identity is rejected before management dispatch")
+            } catch {
+                check(true, "Invalid or cross-section product identity is rejected before management dispatch")
+            }
+        }
+        check(await session.disconnect(), "Synthetic license wire child is joined")
+        try FileManager.default.removeItem(at: root)
+    }
+}

@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+"""Refresh local UI source while preserving an explicitly selected signed CLI.
+
+This is not producer-source or release qualification. A missing prior receipt is
+recorded, not reconstructed. The preserved CLI never gains lifecycle admission
+unless its digest independently matches the app's lifecycle pin.
+"""
+import argparse
+import json
+import os
+from pathlib import Path
+import plistlib
+import shutil
+import subprocess
+import tarfile
+import tempfile
+
+from build_local_candidate import run, source_identity, validate_host
+from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
+                           owned_bytes, require, swift_pins)
+from signing_identity import command, preflight, sign, verify_designated_requirement
+
+
+def validate_payload_pair(cli, helper, producer, tree):
+    require(producer == PRODUCER and tree == PRODUCER_TREE, "Selected producer differs from the approved pin")
+    cli_record, cli_bytes = owned_bytes(cli, CLI_SHA256, bounded=512 * 1024 * 1024)
+    helper_record, helper_bytes = owned_bytes(helper, WINDOWS_HELPER_SHA256, bounded=16 * 1024 * 1024)
+    require(helper_bytes in cli_bytes, "Selected Windows helper differs from actual embedded CLI bytes")
+    return cli_record, helper_record
+
+
+def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
+            selected_helper=None):
+    validate_host()
+    preflight(identity)
+    project = Path(__file__).resolve().parent.parent
+    source_identity_before = source_identity(project)
+    installed = installed.resolve(strict=True)
+    require(installed.suffix == ".app", "Select the existing local candidate app")
+    require(output_root.is_absolute() and output_root.resolve(strict=True) == output_root,
+            "Use a canonical existing output directory")
+    info = output_root.stat()
+    require(info.st_uid == os.getuid() and info.st_mode & 0o022 == 0, "Unsafe output directory")
+    verify_designated_requirement(installed, "app", identity)
+    supplied = (selected_cli is not None, producer_source is not None, producer_commit is not None)
+    require(all(supplied) or not any(supplied),
+            "An explicit CLI needs both its producer source repository and frozen commit")
+    require((selected_helper is not None) == (selected_cli is not None),
+            "An explicit frozen CLI requires its exact paired Windows helper")
+    producer, producer_tree = PRODUCER, PRODUCER_TREE
+    if selected_cli is not None:
+        producer = subprocess.check_output(
+            ["git", "rev-parse", "--verify", producer_commit + "^{commit}"],
+            cwd=producer_source, text=True).strip()
+        require(producer == producer_commit == PRODUCER, "Select the full approved frozen producer commit")
+        producer_tree = subprocess.check_output(
+            ["git", "rev-parse", producer + "^{tree}"], cwd=producer_source, text=True).strip()
+        require(producer_tree == PRODUCER_TREE, "Selected producer tree differs from the approved pin")
+        contract = subprocess.check_output(
+            ["git", "show", producer + ":docs/contracts/management-v1.schema.json"], cwd=producer_source)
+        require(contract == (project / "Sources/XodusManagement/Resources/management-v1.schema.json").read_bytes(),
+                "Selected CLI producer and app management contracts differ")
+    old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/XodusEngine/xodus-cli"
+    old_helper = selected_helper.resolve(strict=True) if selected_helper else old_cli.parent / "xodus-window-monitor.exe"
+    cli_record, windows_helper_record = validate_payload_pair(old_cli, old_helper, producer, producer_tree)
+    producer_manifest = owned_bytes(old_cli.parent / "build-manifest.json", PRODUCER_MANIFEST_SHA256)[0] \
+        if selected_cli is not None else None
+    def verify_cli(path):
+        command(["/usr/bin/codesign", "--verify", "--strict", "-R",
+                 '=certificate leaf = H"' + identity.upper() + '"', str(path)])
+    verify_cli(old_cli)
+    if selected_cli is not None:
+        lifecycle_source = (project / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text()
+        require('static let cliSHA256 = "' + cli_record["sha256"] + '"' in lifecycle_source,
+                "Selected lifecycle CLI differs from the source's explicit frozen digest")
+    stage = Path(tempfile.mkdtemp(prefix="Ode-refresh-", dir=output_root))
+    stage.chmod(0o700)
+    log = stage / "build.log"
+    archive = stage / "source.tar"
+    with archive.open("xb") as output:
+        subprocess.run(["git", "archive", "--format=tar", source_identity_before["commit"]],
+                       cwd=project, stdout=output, check=True)
+    source = stage / "source"
+    source.mkdir()
+    with tarfile.open(archive) as archived:
+        archived.extractall(source, filter="data")
+    environment = os.environ.copy()
+    environment["XODUS_SHIPPING"] = "1"
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"],
+        source, log, environment)
+    binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"],
+                         source, log, environment).decode().strip())
+    app = stage / "Ode to X Local Candidate.app"
+    macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
+    macos.mkdir(parents=True)
+    (resources / "XodusEngine").mkdir(parents=True)
+    cli = resources / "XodusEngine/xodus-cli"
+    shutil.copyfile(old_cli, cli)
+    cli.chmod(0o755)
+    owned_bytes(cli, cli_record["sha256"], cli_record["bytes"])
+    destination = cli.parent / "xodus-window-monitor.exe"
+    shutil.copyfile(old_helper, destination)
+    destination.chmod(0o644)
+    owned_bytes(destination, windows_helper_record["sha256"], windows_helper_record["bytes"])
+    helper = macos / "XodusAuthHost"
+    shutil.copyfile(binary_dir / "XodusAuthHost", helper)
+    helper.chmod(0o755)
+    sign(helper, "helper", identity, developer_id=True)
+    helper_record, _ = owned_bytes(helper)
+    (source / "Sources/XodusPreview/ShippingPairPins.swift").write_text(swift_pins(
+        source_identity_before["commit"], source_identity_before["tree"], cli_record, helper_record,
+        producer, producer_tree))
+    (source / "Sources/XodusPreview/ShippingProducerPins.swift").write_text(
+        '// Generated for this local candidate only.\nenum ShippingProducerPins {\n'
+        f'    static let commit = "{producer}"\n'
+        f'    static let tree = "{producer_tree}"\n}}\n')
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
+        source, log, environment)
+    shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
+    (macos / "Xodus").chmod(0o755)
+    bundle_info = plistlib.loads((source / "tools/Info.plist").read_bytes())
+    bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "Ode to X Local Candidate"
+    with (app / "Contents/Info.plist").open("wb") as output:
+        plistlib.dump(bundle_info, output)
+    shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    shutil.copyfile(installed / "Contents/Resources/Xodus.icns", resources / "Xodus.icns")
+    shutil.copytree(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
+                    resources / "XodusAppFoundation_XodusManagement.bundle")
+    (resources / "XodusAuthHost.json").write_text(json.dumps({
+        "version": 1, "sha256": helper_record["sha256"],
+        "sourceCommit": source_identity_before["commit"]}, sort_keys=True) + "\n")
+    receipt = {
+        "kind": "local-ui-refresh", "productionQualified": False, "notarized": False,
+        "appSource": source_identity_before, "certificateSHA1": identity.upper(),
+        "preservedCLI": cli_record, "preservedCLIPath": str(old_cli),
+        "producerBuildPerformed": False, "priorReceiptAvailable": False,
+        "producerSourceIndependentlyVerified": False,
+        "preservedProducerDeclaration": {"commit": producer, "tree": producer_tree},
+        "preservedProducerManifest": producer_manifest,
+        "explicitFrozenCLISelected": selected_cli is not None,
+        "signedHelper": helper_record,
+        "preservedWindowsHelper": windows_helper_record,
+    }
+    previous_receipt = installed / "Contents/Resources/local-candidate-receipt.json"
+    if previous_receipt.exists():
+        receipt["priorReceiptAvailable"] = True
+        receipt["priorReceipt"], _ = owned_bytes(previous_receipt)
+    encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+    (resources / "local-candidate-receipt.json").write_text(encoded)
+    (stage / "candidate-receipt.json").write_text(encoded)
+    sign(app, "app", identity, developer_id=True)
+    run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
+    verify_cli(cli)
+    for path, kind in ((helper, "helper"), (app, "app")):
+        verify_designated_requirement(path, kind, identity)
+    owned_bytes(old_cli, cli_record["sha256"], cli_record["bytes"])
+    require(source_identity(project) == source_identity_before, "App source changed during refresh")
+    print(app)
+    print(stage / "candidate-receipt.json")
+    return app, stage / "candidate-receipt.json"
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--installed-app", type=Path, required=True)
+    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--identity", required=True)
+    parser.add_argument("--cli", type=Path)
+    parser.add_argument("--producer-source", type=Path)
+    parser.add_argument("--producer-commit")
+    parser.add_argument("--windows-helper", type=Path)
+    args = parser.parse_args()
+    refresh(args.installed_app, args.output_root, args.identity, args.cli,
+            args.producer_source, args.producer_commit, args.windows_helper)

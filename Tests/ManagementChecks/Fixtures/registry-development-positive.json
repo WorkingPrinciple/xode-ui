@@ -1,0 +1,2104 @@
+[
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-1",
+    "command": "hello",
+    "params": {
+      "client": "fixture-client",
+      "clientVersion": "1.0"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-2",
+    "command": "auth.begin",
+    "params": {
+      "accountScope": "default"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-3",
+    "command": "auth.cancel",
+    "params": {
+      "flowID": "fixture-flow"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-4",
+    "command": "auth.status",
+    "params": {}
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-5",
+    "command": "auth.logout",
+    "params": {}
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-6",
+    "command": "auth.verify",
+    "params": {
+      "contentID": "00000000-0000-0000-0000-000000000001"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-7",
+    "command": "library.recent",
+    "params": {
+      "limit": 100
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-8",
+    "command": "inventory.snapshot",
+    "params": {
+      "accountScope": "default",
+      "market": "US",
+      "refresh": "cache"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-9",
+    "command": "catalog.search",
+    "params": {
+      "query": "",
+      "market": "US",
+      "language": "en-US",
+      "platform": "pc",
+      "limit": 100,
+      "cursor": null
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-10",
+    "command": "catalog.discover",
+    "params": {
+      "market": "US",
+      "language": "en-US",
+      "limit": 8,
+      "cursor": null
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-11",
+    "command": "catalog.query",
+    "params": {
+      "query": "Fixture Harbor",
+      "market": "US",
+      "language": "en-US",
+      "limit": 8,
+      "cursor": null
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-12",
+    "command": "product.detail",
+    "params": {
+      "productID": "FIXTURE00001",
+      "market": "US",
+      "language": "en-US",
+      "refresh": "network"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-13",
+    "command": "install.plan",
+    "params": {
+      "productID": "FIXTURE00001",
+      "editionID": "fixture-edition",
+      "architecture": "arm64",
+      "language": "en-US",
+      "market": "US",
+      "destination": "/fixture/managed",
+      "experimentalConsent": false
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-14",
+    "command": "jobs.enqueue",
+    "params": {
+      "kind": "catalogRefresh",
+      "idempotencyKey": "fixture-key",
+      "product": {
+        "productID": "FIXTURE00001",
+        "market": "US",
+        "language": "en-US",
+        "refresh": "network"
+      }
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-15",
+    "command": "jobs.pause",
+    "params": {
+      "jobID": "fixture-job",
+      "expectedRevision": 1
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-16",
+    "command": "jobs.resume",
+    "params": {
+      "jobID": "fixture-job",
+      "expectedRevision": 1
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-17",
+    "command": "jobs.cancel",
+    "params": {
+      "jobID": "fixture-job",
+      "expectedRevision": 1
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-18",
+    "command": "jobs.retry",
+    "params": {
+      "jobID": "fixture-job",
+      "expectedRevision": 1
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-19",
+    "command": "jobs.snapshot",
+    "params": {}
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-20",
+    "command": "events.replay",
+    "params": {
+      "sessionID": "fixture-session",
+      "afterSequence": 0,
+      "limit": 1000
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-21",
+    "command": "installed.snapshot",
+    "params": {}
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-22",
+    "command": "installed.inspect",
+    "params": {
+      "directory": "/fixture/selected"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-23",
+    "command": "game.launch",
+    "params": {
+      "installationID": "fixture-install",
+      "expectedRevision": 1
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-24",
+    "command": "game.rollback",
+    "params": {
+      "installationID": "fixture-install",
+      "expectedRevision": 1
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-25",
+    "command": "game.update",
+    "params": {
+      "installationID": "fixture-install",
+      "expectedRevision": 1,
+      "planID": "fixture-plan",
+      "planDigest": "fixture-digest"
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-26",
+    "command": "game.remove",
+    "params": {
+      "installationID": "fixture-install",
+      "expectedRevision": 1,
+      "preserveSaves": true,
+      "confirmed": true
+    }
+  },
+  {
+    "kind": "request",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-27",
+    "command": "diagnostics.export",
+    "params": {}
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-0",
+    "ok": true,
+    "data": {
+      "verified": true
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-1",
+    "ok": true,
+    "data": {
+      "scope": "recentlyPlayed",
+      "source": "XboxTitleHub:v2",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "freshness": "live",
+      "completeness": "partial",
+      "nextCursor": null,
+      "titles": [
+        {
+          "titleID": "1",
+          "name": "Fixture Harbor",
+          "lastPlayedAt": "2026-10-03T12:00:00Z",
+          "devices": [
+            "PC",
+            "Win32"
+          ],
+          "platform": "pc",
+          "productID": null,
+          "artwork": [
+            {
+              "role": "tile",
+              "url": "https://store-images.s-microsoft.com/image/fixture-tile",
+              "width": null,
+              "height": null,
+              "source": "XboxTitleHub:v2"
+            }
+          ],
+          "artworkStatus": "available"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-2",
+    "ok": true,
+    "data": {
+      "scope": "recentlyPlayed",
+      "source": "XboxTitleHub:v2",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "freshness": "live",
+      "completeness": "partial",
+      "nextCursor": null,
+      "titles": []
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-3",
+    "ok": true,
+    "data": {
+      "product": {
+        "productID": "FIXTURE00001",
+        "title": "Fixture Harbor",
+        "market": "US",
+        "language": "en-US",
+        "source": "fixture",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "editions": [
+          {
+            "productID": "FIXTURE00001",
+            "editionID": "fixture-edition",
+            "entitlement": {
+              "kind": "unknown",
+              "source": "notQueried",
+              "checkedAt": null
+            },
+            "installability": {
+              "kind": "unknown",
+              "reason": "Package authorization not established."
+            },
+            "compatibility": {
+              "kind": "unknown",
+              "source": "notCertified",
+              "checkedAt": null
+            },
+            "installation": {
+              "kind": "notInstalled"
+            },
+            "inventory": {
+              "completeness": "unknown",
+              "checkedAt": null,
+              "lastCompleteAt": null,
+              "source": "notQueried",
+              "reason": "No complete entitlement source."
+            }
+          }
+        ],
+        "pcCatalogCandidate": true,
+        "artwork": [
+          {
+            "role": "boxArt",
+            "url": "https://store-images.s-microsoft.com/image/fixture-boxArt",
+            "width": 1080,
+            "height": 1080,
+            "source": "MicrosoftDisplayCatalog:v7.0"
+          },
+          {
+            "role": "poster",
+            "url": "https://store-images.s-microsoft.com/image/fixture-poster",
+            "width": 1440,
+            "height": 2160,
+            "source": "MicrosoftDisplayCatalog:v7.0"
+          },
+          {
+            "role": "hero",
+            "url": "https://store-images.s-microsoft.com/image/fixture-hero",
+            "width": 3840,
+            "height": 2160,
+            "source": "MicrosoftDisplayCatalog:v7.0"
+          }
+        ],
+        "artworkStatus": "available"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-4",
+    "ok": true,
+    "data": {
+      "product": {
+        "productID": "FIXTURE00001",
+        "title": "Fixture Harbor",
+        "market": "US",
+        "language": "en-US",
+        "source": "fixture",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "editions": [
+          {
+            "productID": "FIXTURE00001",
+            "editionID": "fixture-edition",
+            "entitlement": {
+              "kind": "unknown",
+              "source": "notQueried",
+              "checkedAt": null
+            },
+            "installability": {
+              "kind": "unknown",
+              "reason": "Package authorization not established."
+            },
+            "compatibility": {
+              "kind": "unknown",
+              "source": "notCertified",
+              "checkedAt": null
+            },
+            "installation": {
+              "kind": "notInstalled"
+            },
+            "inventory": {
+              "completeness": "unknown",
+              "checkedAt": null,
+              "lastCompleteAt": null,
+              "source": "notQueried",
+              "reason": "No complete entitlement source."
+            }
+          }
+        ],
+        "pcCatalogCandidate": true,
+        "artwork": [],
+        "artworkStatus": "absent"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-5",
+    "ok": true,
+    "data": {
+      "product": {
+        "productID": "FIXTURE00001",
+        "title": "Fixture Harbor",
+        "market": "US",
+        "language": "en-US",
+        "source": "fixture",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "editions": [
+          {
+            "productID": "FIXTURE00001",
+            "editionID": "fixture-edition",
+            "entitlement": {
+              "kind": "unknown",
+              "source": "notQueried",
+              "checkedAt": null
+            },
+            "installability": {
+              "kind": "unknown",
+              "reason": "Package authorization not established."
+            },
+            "compatibility": {
+              "kind": "unknown",
+              "source": "notCertified",
+              "checkedAt": null
+            },
+            "installation": {
+              "kind": "notInstalled"
+            },
+            "inventory": {
+              "completeness": "unknown",
+              "checkedAt": null,
+              "lastCompleteAt": null,
+              "source": "notQueried",
+              "reason": "No complete entitlement source."
+            }
+          }
+        ],
+        "pcCatalogCandidate": true,
+        "artwork": [],
+        "artworkStatus": "rejected"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-6",
+    "ok": true,
+    "data": {
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "backendVersion": "fixture",
+      "runtimeFingerprint": null,
+      "capabilities": [
+        {
+          "command": "game.launch",
+          "supported": false,
+          "audience": "Xbox package authorization and signed paired runtime",
+          "reason": "No certified runtime."
+        }
+      ],
+      "sessionID": "fixture-session",
+      "schema": "urn:xodus:management:1.0",
+      "catalogCorpus": "observedPublicProducts"
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-7",
+    "ok": true,
+    "data": {
+      "state": "signedOut",
+      "credentialStore": "macOSKeychain",
+      "audience": null,
+      "expiresAt": null,
+      "entitlementAuthorized": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-8",
+    "ok": true,
+    "data": {
+      "product": {
+        "productID": "FIXTURE00001",
+        "title": "Fixture Harbor",
+        "market": "US",
+        "language": "en-US",
+        "source": "fixture",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "cached",
+        "editions": [
+          {
+            "productID": "FIXTURE00001",
+            "editionID": "fixture-edition",
+            "entitlement": {
+              "kind": "unknown",
+              "source": "notQueried",
+              "checkedAt": null
+            },
+            "installability": {
+              "kind": "unknown",
+              "reason": "Package authorization not established."
+            },
+            "compatibility": {
+              "kind": "unknown",
+              "source": "notCertified",
+              "checkedAt": null
+            },
+            "installation": {
+              "kind": "notInstalled"
+            },
+            "inventory": {
+              "completeness": "unknown",
+              "checkedAt": null,
+              "lastCompleteAt": null,
+              "source": "notQueried",
+              "reason": "No complete entitlement source."
+            }
+          }
+        ],
+        "pcCatalogCandidate": true,
+        "artwork": [],
+        "artworkStatus": "notQueried"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-9",
+    "ok": true,
+    "data": {
+      "products": [
+        {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [],
+          "artworkStatus": "notQueried"
+        }
+      ],
+      "corpus": "observedPublicProducts",
+      "completeness": "partial",
+      "nextCursor": null,
+      "cacheRevision": 1
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-10",
+    "ok": true,
+    "data": {
+      "corpus": "pcGamePassDiscovery",
+      "completeness": "partial",
+      "source": "MicrosoftGamePassSigls:v3",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "freshness": "live",
+      "corpusRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "products": [
+        {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [],
+          "artworkStatus": "notQueried",
+          "resolvedLanguage": "en"
+        }
+      ],
+      "failures": [
+        {
+          "productID": "FIXTURE00002",
+          "error": {
+            "code": "NETWORK_UNAVAILABLE",
+            "message": "Sanitized fixture lookup failure.",
+            "retryable": true
+          }
+        }
+      ],
+      "nextCursor": "d1-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-2"
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-11",
+    "ok": true,
+    "data": {
+      "corpus": "publicMicrosoftStoreSearch",
+      "completeness": "partial",
+      "source": "MicrosoftStoreEdge:v9.0/searchResults",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "freshness": "live",
+      "query": "Fixture Harbor",
+      "products": [
+        {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [],
+          "artworkStatus": "notQueried",
+          "resolvedLanguage": "en"
+        }
+      ],
+      "failures": [
+        {
+          "productID": "FIXTURE00002",
+          "error": {
+            "code": "NETWORK_UNAVAILABLE",
+            "message": "Sanitized fixture lookup failure.",
+            "retryable": true
+          }
+        }
+      ],
+      "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2266623666313762313664626463306135653861626361333438366234323261633963363461303332383634636530653762336561613465366635333963663334222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f70616765732f736561726368526573756c74733f6d61726b65743d5553266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466978747572652b486172626f72266d65646961547970653d67616d6573222c226f6666736574223a382c227265766973696f6e223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161227d"
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-12",
+    "ok": true,
+    "data": {
+      "corpus": "publicMicrosoftStoreSearch",
+      "completeness": "partial",
+      "source": "MicrosoftStoreEdge:v9.0/searchResults",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "freshness": "live",
+      "query": "Fixture Harbor",
+      "products": [],
+      "failures": [],
+      "nextCursor": null
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-13",
+    "ok": true,
+    "data": {
+      "scope": "userSelectedDirectory",
+      "completeness": "partial",
+      "freshness": "live",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "directory": "/fixture/selected",
+      "marker": {
+        "relativePath": ".xodus-streaming.msixvc",
+        "bytes": 4096,
+        "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
+        "format": "msft-xvd",
+        "formatVersion": 2,
+        "xvdType": 0,
+        "contentTypeRaw": 1,
+        "volumeFlagsRaw": 0,
+        "contentID": "00000000-0000-0000-0000-000000000001",
+        "headerProductGUID": "00000000-0000-0000-0000-000000000002",
+        "headerPDUID": "00000000-0000-0000-0000-000000000003",
+        "observedPackageVersion": "1.2.3.4"
+      },
+      "assessment": {
+        "kind": "externalMarkerDetected",
+        "registered": false,
+        "retailIdentity": "unknown",
+        "fileVerification": "notPerformed",
+        "entitlement": "unknown",
+        "compatibility": "unknown",
+        "launchable": false,
+        "reason": "Marker metadata is not verified files, retail identity, authorization or a certified runtime."
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-14",
+    "ok": true,
+    "data": {
+      "job": {
+        "jobID": "fixture-job",
+        "revision": 2,
+        "kind": "catalogRefresh",
+        "state": "cancelled",
+        "requestID": "fixture-enqueue",
+        "createdAt": "2026-10-03T12:00:00Z",
+        "updatedAt": "2026-10-03T12:00:00Z",
+        "product": {
+          "productID": "FIXTURE00001",
+          "market": "US",
+          "language": "en-US",
+          "refresh": "network"
+        },
+        "attempt": 1,
+        "error": {
+          "code": "CANCELLED",
+          "message": "Refresh cancelled.",
+          "retryable": false
+        }
+      },
+      "watermark": 2
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-15",
+    "ok": true,
+    "data": {
+      "sessionID": "fixture-session",
+      "watermark": 2,
+      "jobs": [
+        {
+          "jobID": "fixture-job",
+          "revision": 2,
+          "kind": "catalogRefresh",
+          "state": "cancelled",
+          "requestID": "fixture-enqueue",
+          "createdAt": "2026-10-03T12:00:00Z",
+          "updatedAt": "2026-10-03T12:00:00Z",
+          "product": {
+            "productID": "FIXTURE00001",
+            "market": "US",
+            "language": "en-US",
+            "refresh": "network"
+          },
+          "attempt": 1,
+          "error": {
+            "code": "CANCELLED",
+            "message": "Refresh cancelled.",
+            "retryable": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-16",
+    "ok": true,
+    "data": {
+      "sessionID": "fixture-session",
+      "watermark": 2,
+      "events": [
+        {
+          "kind": "event",
+          "protocol": {
+            "major": 1,
+            "minor": 0
+          },
+          "sessionID": "fixture-session",
+          "sequence": 2,
+          "requestID": "fixture-enqueue",
+          "jobID": "fixture-job",
+          "revision": 2,
+          "event": "job.changed",
+          "data": {
+            "jobID": "fixture-job",
+            "revision": 2,
+            "kind": "catalogRefresh",
+            "state": "cancelled",
+            "requestID": "fixture-enqueue",
+            "createdAt": "2026-10-03T12:00:00Z",
+            "updatedAt": "2026-10-03T12:00:00Z",
+            "product": {
+              "productID": "FIXTURE00001",
+              "market": "US",
+              "language": "en-US",
+              "refresh": "network"
+            },
+            "attempt": 1,
+            "error": {
+              "code": "CANCELLED",
+              "message": "Refresh cancelled.",
+              "retryable": false
+            }
+          }
+        }
+      ],
+      "hasMore": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-17",
+    "ok": true,
+    "data": {
+      "registryVersion": {
+        "major": 1,
+        "minor": 0
+      },
+      "scope": "managementRegistryOnly",
+      "completeness": "complete",
+      "installations": [],
+      "watermark": 2
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-18",
+    "ok": true,
+    "data": {
+      "reportVersion": 1,
+      "backendVersion": "fixture",
+      "protocol": {
+        "major": 1,
+        "minor": 0
+      },
+      "redacted": true,
+      "jobCount": 1,
+      "cachedProductCount": 1,
+      "runtimeCertified": false,
+      "inventoryAuthorized": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-19",
+    "ok": true,
+    "data": {
+      "registryVersion": {
+        "major": 1,
+        "minor": 0
+      },
+      "scope": "managementRegistryOnly",
+      "completeness": "complete",
+      "installations": [
+        {
+          "installationID": "fixture-installation",
+          "revision": 1,
+          "productID": "fixture-product",
+          "editionID": "fixture-edition",
+          "packageID": "fixture-package",
+          "packageVersion": "fixture-version",
+          "packageDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "runtimeFingerprint": "fixture-runtime",
+          "managedRoot": "/fixture/versions/fixture-version",
+          "savePolicy": "preserve",
+          "health": "verified"
+        }
+      ],
+      "watermark": 2
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-result-20",
+    "ok": true,
+    "data": {
+      "registryVersion": {
+        "major": 1,
+        "minor": 0
+      },
+      "scope": "managementRegistryOnly",
+      "completeness": "complete",
+      "installations": [
+        {
+          "installationID": "fixture-installation",
+          "revision": 1,
+          "productID": "fixture-product",
+          "editionID": "fixture-edition",
+          "packageID": "fixture-package",
+          "packageVersion": "fixture-version",
+          "packageDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "runtimeFingerprint": null,
+          "managedRoot": "/fixture/versions/fixture-version",
+          "savePolicy": "preserve",
+          "health": "notVerified"
+        }
+      ],
+      "watermark": 2
+    }
+  },
+  {
+    "kind": "event",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "sessionID": "fixture-session",
+    "sequence": 2,
+    "requestID": "fixture-enqueue",
+    "jobID": "fixture-job",
+    "revision": 2,
+    "event": "job.changed",
+    "data": {
+      "jobID": "fixture-job",
+      "revision": 2,
+      "kind": "catalogRefresh",
+      "state": "cancelled",
+      "requestID": "fixture-enqueue",
+      "createdAt": "2026-10-03T12:00:00Z",
+      "updatedAt": "2026-10-03T12:00:00Z",
+      "product": {
+        "productID": "FIXTURE00001",
+        "market": "US",
+        "language": "en-US",
+        "refresh": "network"
+      },
+      "attempt": 1,
+      "error": {
+        "code": "CANCELLED",
+        "message": "Refresh cancelled.",
+        "retryable": false
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-auth-pending",
+    "ok": true,
+    "data": {
+      "state": "signedOut",
+      "credentialStore": "macOSKeychain",
+      "audience": null,
+      "expiresAt": null,
+      "entitlementAuthorized": false,
+      "flow": {
+        "flowID": "fixture-flow",
+        "state": "pending",
+        "error": null
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-auth-completed",
+    "ok": true,
+    "data": {
+      "state": "credentialPresent",
+      "credentialStore": "macOSKeychain",
+      "audience": "http://xboxlive.com",
+      "expiresAt": "2099-01-01T00:00:00Z",
+      "entitlementAuthorized": false,
+      "flow": {
+        "flowID": "fixture-flow",
+        "state": "completed",
+        "error": null
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-auth-cancelled",
+    "ok": true,
+    "data": {
+      "state": "signedOut",
+      "credentialStore": "macOSKeychain",
+      "audience": null,
+      "expiresAt": null,
+      "entitlementAuthorized": false,
+      "flow": {
+        "flowID": "fixture-flow",
+        "state": "cancelled",
+        "error": {
+          "code": "AUTH_CANCELLED",
+          "message": "Sanitized fixture consent outcome.",
+          "retryable": false
+        }
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-auth-failed",
+    "ok": true,
+    "data": {
+      "state": "signedOut",
+      "credentialStore": "macOSKeychain",
+      "audience": null,
+      "expiresAt": null,
+      "entitlementAuthorized": false,
+      "flow": {
+        "flowID": "fixture-flow",
+        "state": "failed",
+        "error": {
+          "code": "AUTH_INVALID",
+          "message": "Sanitized fixture consent outcome.",
+          "retryable": false
+        }
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "PROTOCOL_MISMATCH",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "CAPABILITY_MISSING",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_CANCELLED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_EXPIRED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_INVALID",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "INVENTORY_PARTIAL",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "ACCESS_UNKNOWN",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "ACCESS_REVOKED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_AMBIGUOUS",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_UNAVAILABLE",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "PLAN_EXPIRED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "PLAN_CHANGED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "INSUFFICIENT_SPACE",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "NETWORK_UNAVAILABLE",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "INTEGRITY_FAILED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "RUNTIME_MISMATCH",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "UNSUPPORTED_CONFIGURATION",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "REVISION_CONFLICT",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "EVENTS_EXPIRED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "CANCELLED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "REGISTRY_RECOVERY_REQUIRED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "LAUNCH_FAILED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "INTERNAL_ERROR",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "INVALID_REQUEST",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "UNKNOWN_COMMAND",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "HELLO_REQUIRED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "DUPLICATE_REQUEST",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "INVALID_TRANSITION",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "IDEMPOTENCY_CONFLICT",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "STATE_LOCKED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-error",
+    "ok": false,
+    "error": {
+      "code": "LIMIT_EXCEEDED",
+      "message": "Sanitized fixture error.",
+      "retryable": false
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-discovery-all-failed",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_UNAVAILABLE",
+      "message": "No metadata resolved.",
+      "retryable": true,
+      "details": {
+        "corpus": "pcGamePassDiscovery",
+        "completeness": "partial",
+        "source": "MicrosoftGamePassSigls:v3",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "corpusRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "products": [],
+        "failures": [
+          {
+            "productID": "FIXTURE00002",
+            "error": {
+              "code": "NETWORK_UNAVAILABLE",
+              "message": "Sanitized fixture lookup failure.",
+              "retryable": true
+            }
+          }
+        ],
+        "nextCursor": "d1-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-2"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-query-all-failed",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_UNAVAILABLE",
+      "message": "No PC metadata resolved.",
+      "retryable": true,
+      "details": {
+        "corpus": "publicMicrosoftStoreSearch",
+        "completeness": "partial",
+        "source": "MicrosoftStoreEdge:v9.0/searchResults",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "query": "Fixture Harbor",
+        "products": [],
+        "failures": [
+          {
+            "productID": "FIXTURE00002",
+            "error": {
+              "code": "NETWORK_UNAVAILABLE",
+              "message": "Sanitized fixture lookup failure.",
+              "retryable": true
+            }
+          }
+        ],
+        "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2266623666313762313664626463306135653861626361333438366234323261633963363461303332383634636530653762336561613465366635333963663334222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f70616765732f736561726368526573756c74733f6d61726b65743d5553266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466978747572652b486172626f72266d65646961547970653d67616d6573222c226f6666736574223a382c227265766973696f6e223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161227d"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-query-network_unavailable",
+    "ok": false,
+    "error": {
+      "code": "NETWORK_UNAVAILABLE",
+      "message": "Public query exceeded its bounded deadline.",
+      "retryable": true
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-query-cancelled",
+    "ok": false,
+    "error": {
+      "code": "CANCELLED",
+      "message": "Transport closed before public query completed.",
+      "retryable": true
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-verify-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_INVALID",
+      "retryable": false,
+      "message": "Authenticated read failed: credentialUnavailable.",
+      "details": {
+        "category": "authenticatedReadFailure",
+        "stage": "credentialUnavailable"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-verify-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_INVALID",
+      "retryable": false,
+      "message": "Authenticated read failed: profileChanged.",
+      "details": {
+        "category": "authenticatedReadFailure",
+        "stage": "profileChanged"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-verify-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_INVALID",
+      "retryable": true,
+      "message": "Authenticated read failed: authExchangeFailed.",
+      "details": {
+        "category": "authenticatedReadFailure",
+        "stage": "authExchangeFailed"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-verify-error",
+    "ok": false,
+    "error": {
+      "code": "ACCESS_REVOKED",
+      "retryable": false,
+      "message": "Authenticated read failed: authRejected.",
+      "details": {
+        "category": "authenticatedReadFailure",
+        "stage": "authRejected"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-verify-error",
+    "ok": false,
+    "error": {
+      "code": "NETWORK_UNAVAILABLE",
+      "retryable": true,
+      "message": "Authenticated read failed: transportFailed.",
+      "details": {
+        "category": "authenticatedReadFailure",
+        "stage": "transportFailed"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-verify-error",
+    "ok": false,
+    "error": {
+      "code": "INTEGRITY_FAILED",
+      "retryable": false,
+      "message": "Authenticated read failed: responseInvalid.",
+      "details": {
+        "category": "authenticatedReadFailure",
+        "stage": "responseInvalid"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-verify-error",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_UNAVAILABLE",
+      "retryable": false,
+      "message": "Authenticated read failed: packageUnavailable.",
+      "details": {
+        "category": "authenticatedReadFailure",
+        "stage": "packageUnavailable"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-recent-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_INVALID",
+      "retryable": false,
+      "message": "Recent library read failed: credentialUnavailable.",
+      "details": {
+        "category": "recentLibraryFailure",
+        "stage": "credentialUnavailable"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-recent-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_INVALID",
+      "retryable": false,
+      "message": "Recent library read failed: profileChanged.",
+      "details": {
+        "category": "recentLibraryFailure",
+        "stage": "profileChanged"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-recent-error",
+    "ok": false,
+    "error": {
+      "code": "AUTH_INVALID",
+      "retryable": true,
+      "message": "Recent library read failed: authExchangeFailed.",
+      "details": {
+        "category": "recentLibraryFailure",
+        "stage": "authExchangeFailed"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-recent-error",
+    "ok": false,
+    "error": {
+      "code": "ACCESS_REVOKED",
+      "retryable": false,
+      "message": "Recent library read failed: authRejected.",
+      "details": {
+        "category": "recentLibraryFailure",
+        "stage": "authRejected"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-recent-error",
+    "ok": false,
+    "error": {
+      "code": "NETWORK_UNAVAILABLE",
+      "retryable": true,
+      "message": "Recent library read failed: transportFailed.",
+      "details": {
+        "category": "recentLibraryFailure",
+        "stage": "transportFailed"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-recent-error",
+    "ok": false,
+    "error": {
+      "code": "INTEGRITY_FAILED",
+      "retryable": false,
+      "message": "Recent library read failed: responseInvalid.",
+      "details": {
+        "category": "recentLibraryFailure",
+        "stage": "responseInvalid"
+      }
+    }
+  }
+]

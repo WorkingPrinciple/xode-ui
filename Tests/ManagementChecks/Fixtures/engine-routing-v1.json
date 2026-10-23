@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "name": "installed override wins",
+      "request": {"packageType": "win32", "override": "gptk4", "defaultEngine": "crossover", "availability": {"installed": ["crossover", "gptk4"]}},
+      "expected": {"outcome": "routed", "runner": "gptk4", "reason": "perGameOverride"}
+    },
+    {
+      "name": "uninstalled override refuses launch",
+      "request": {"packageType": "win32", "override": "standaloneWine", "defaultEngine": "crossover", "availability": {"installed": ["crossover"]}},
+      "expected": {"outcome": "unavailable", "unavailable": "overrideNotInstalled", "kind": "standaloneWine"}
+    },
+    {
+      "name": "installed configured default",
+      "request": {"packageType": "msixvc", "override": null, "defaultEngine": "crossover", "availability": {"installed": ["crossover"]}},
+      "expected": {"outcome": "routed", "runner": "crossover", "reason": "configuredDefault"}
+    },
+    {
+      "name": "uninstalled configured default refuses launch",
+      "request": {"packageType": "msixvc", "override": null, "defaultEngine": "gptk3", "availability": {"installed": ["crossover"]}},
+      "expected": {"outcome": "unavailable", "unavailable": "defaultNotInstalled", "kind": "gptk3"}
+    },
+    {
+      "name": "fallback prefers CrossOver",
+      "request": {"packageType": "uwp", "override": null, "defaultEngine": null, "availability": {"installed": ["crossover", "gptk4", "gptk3", "standaloneWine"]}},
+      "expected": {"outcome": "routed", "runner": "crossover", "reason": "installedFallback"}
+    },
+    {
+      "name": "fallback skips absent CrossOver to GPTK4",
+      "request": {"packageType": "appx", "override": null, "defaultEngine": null, "availability": {"installed": ["gptk3", "gptk4", "standaloneWine"]}},
+      "expected": {"outcome": "routed", "runner": "gptk4", "reason": "installedFallback"}
+    },
+    {
+      "name": "fallback to GPTK3 when only older toolkit and Wine present",
+      "request": {"packageType": "win32", "override": null, "defaultEngine": null, "availability": {"installed": ["gptk3", "standaloneWine"]}},
+      "expected": {"outcome": "routed", "runner": "gptk3", "reason": "installedFallback"}
+    },
+    {
+      "name": "fallback to standalone Wine as last resort",
+      "request": {"packageType": "win32", "override": null, "defaultEngine": null, "availability": {"installed": ["standaloneWine"]}},
+      "expected": {"outcome": "routed", "runner": "standaloneWine", "reason": "installedFallback"}
+    },
+    {
+      "name": "nothing installed refuses launch",
+      "request": {"packageType": "eappx", "override": null, "defaultEngine": null, "availability": {"installed": []}},
+      "expected": {"outcome": "unavailable", "unavailable": "noRunnerInstalled"}
+    },
+    {
+      "name": "override wins over a different installed default",
+      "request": {"packageType": "unknown", "override": "crossover", "defaultEngine": "gptk4", "availability": {"installed": ["crossover", "gptk4"]}},
+      "expected": {"outcome": "routed", "runner": "crossover", "reason": "perGameOverride"}
+    },
+    {
+      "name": "package type does not change default routing",
+      "request": {"packageType": "uwp", "override": null, "defaultEngine": "crossover", "availability": {"installed": ["crossover"]}},
+      "expected": {"outcome": "routed", "runner": "crossover", "reason": "configuredDefault"}
+    },
+    {
+      "name": "uninstalled override refuses even with full fallback set",
+      "request": {"packageType": "win32", "override": "gptk3", "defaultEngine": null, "availability": {"installed": ["crossover", "gptk4", "standaloneWine"]}},
+      "expected": {"outcome": "unavailable", "unavailable": "overrideNotInstalled", "kind": "gptk3"}
+    }
+  ]
+}
