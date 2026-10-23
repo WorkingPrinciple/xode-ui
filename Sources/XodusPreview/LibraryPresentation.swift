@@ -27,7 +27,8 @@ final class LibrarySelection: ObservableObject {
     @Published var sort: LibrarySort = .title
     @Published var recentGameID: UUID?
     @Published var heroID: String?
-    @Published var scrollID: String?
+    // ScrollView owns live scrolling; retaining its target must not invalidate the whole tab.
+    var scrollID: String?
     @Published var heroHovered = false
     @Published var heroPlaying = false
     var requestedGamePassScope: String?

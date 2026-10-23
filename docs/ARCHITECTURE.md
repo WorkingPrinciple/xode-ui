@@ -49,6 +49,8 @@ stop carousel/video, polling and scheduling optional artwork/metadata work.
 Already-shared bounded reads may finish for surviving consumers. Unvisited tabs
 do not start loads merely to retain a host. Account/locale changes replace the
 hosts. Each tab keeps its filter/genre, sort, hero and stable grid scroll target.
+Scroll targets are non-published restoration values: row crossings update the
+ScrollView binding without invalidating the tab's observed selection and body.
 Ambient artwork retains the outgoing image/palette during same-context hero
 replacement; a new context starts with a dark hero backing, never old-account
 artwork. Foreground landscape images remain keyed to their requested game.

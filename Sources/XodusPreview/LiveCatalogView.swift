@@ -7,7 +7,7 @@ final class DiscoverSelection: ObservableObject {
     let projection = PresentationCache<CatalogProjectionKey, CatalogProjection>(empty: .empty)
     @Published var genre: String?
     @Published var featuredID: String?
-    @Published var scrollID: String?
+    var scrollID: String?
     @Published var featuredVisible = false
 }
 
