@@ -52,8 +52,8 @@ final class PCGamesController: ObservableObject {
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var resolutionNotice: String? {
         guard let snapshot, snapshot.unresolvedCount > 0 else { return nil }
-        if busy { return "Checking PC availability for \(snapshot.unresolvedCount) games." }
-        return "PC availability couldn't be checked for \(snapshot.unresolvedCount) games. Your library may be incomplete."
+        if busy { return "Checking game classification and PC availability for \(snapshot.unresolvedCount) library items." }
+        return "Game classification or PC availability couldn't be checked for \(snapshot.unresolvedCount) library items. Your library may be incomplete."
     }
     var retainedLibraryNotice: String? {
         guard error != nil, let snapshot else { return nil }

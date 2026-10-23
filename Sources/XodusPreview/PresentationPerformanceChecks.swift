@@ -24,6 +24,9 @@ enum PresentationPerformanceChecks {
                 market: "US", language: "en-US", source: "SyntheticRenderOnly", pcCandidate: true)
         }
         let owned = products.prefix(12).map { PCGame(product: $0) }
+        let facts = Dictionary(uniqueKeysWithValues: products.map {
+            ($0.id, LibraryCatalogFacts(genres: [], isBaseGame: true))
+        })
         let installed = products.prefix(4).map {
             InstalledGame(id: UUID(), title: $0.title, identityName: "Fixture", version: "1",
                 storeId: $0.id, folder: "/synthetic/not-read", launcher: "/synthetic/not-executed",
@@ -36,7 +39,7 @@ enum PresentationPerformanceChecks {
         }
         for query in ["", "Fixture 1", "fixture", "missing"] {
             let input = key(query: query)
-            let projection = CatalogProjection(key: input, facts: [:], isVisible: { _ in true })
+            let projection = CatalogProjection(key: input, facts: facts, isVisible: { _ in true })
             let original = CatalogSearchResults(query: query, ownedGames: owned, storeProducts: products,
                 gamePassProductIDs: input.gamePassIDs)
             check(projection.visible.map(\.id) == original.storeProducts.map(\.id)
@@ -49,6 +52,15 @@ enum PresentationPerformanceChecks {
                       && game?.accessIsCurrent == false,
                       "Indexed card preserves installed/account evidence without promoting authority")
             }
+            let unclassified = CatalogProjection(key: key(), facts: [:], isVisible: { _ in true })
+            check(unclassified.visible.isEmpty && unclassified.unresolvedClassificationCount == products.count
+                  && unclassified.artworkIDs.count == products.count,
+                  "Unclassified Discover items remain explicit unresolved metadata work, not displayed games or discarded load IDs")
+            var mixedFacts = facts
+            mixedFacts[products[0].id] = LibraryCatalogFacts(genres: ["Productivity"], isBaseGame: false)
+            let mixed = CatalogProjection(key: key(), facts: mixedFacts, isVisible: { _ in true })
+            check(!mixed.visible.contains { $0.id == products[0].id } && !mixed.genres.contains("Productivity"),
+                  "Explicit public applications cannot leak through Discover cards or genre navigation")
         }
         let cache = PresentationCache<CatalogProjectionKey, CatalogProjection>(empty: .empty)
         for _ in 0..<100 {

@@ -31,6 +31,17 @@ struct LibraryScrollMeasurement: Equatable {
     let visibleHeight: CGFloat
 }
 
+struct LibraryActionExtent: Equatable {
+    let offsetY: CGFloat
+    let insetBottom: CGFloat
+    let viewportWidth: CGFloat
+
+    func minimumHeight(viewport: CGSize) -> CGFloat? {
+        guard viewport.width == viewportWidth else { return nil }
+        return max(0, offsetY + viewport.height - insetBottom)
+    }
+}
+
 @MainActor
 final class LibrarySelection: ObservableObject {
     let projection = PresentationCache<LibraryProjectionKey, LibraryProjection>(empty: .empty)
@@ -44,6 +55,8 @@ final class LibrarySelection: ObservableObject {
     var collectionHeaderFrame = CGRect.zero
     var collectionViewportFrame = CGRect.zero
     var collectionScrollFrame = CGRect.zero
+    @Published private(set) var actionExtent: LibraryActionExtent?
+    private var extentInvalidatedByReflow = false
     private var measurement: LibraryScrollMeasurement?
     private var scrollRevision = 0
     private var headerRevision = 0
@@ -55,6 +68,32 @@ final class LibrarySelection: ObservableObject {
     private var postSamples = 0
     private var actionFilter = LibraryFilter.all
     private let positionLogger = Logger(subsystem: "io.github.dragoshont.xodus", category: "library-position")
+
+    func prepareScopeExtent() {
+        guard collectionHeaderFrame.intersects(collectionViewportFrame),
+              !collectionHeaderFrame.isEmpty, !collectionViewportFrame.isEmpty,
+              let measurement, measurement.offsetY > -measurement.insetTop else {
+            actionExtent = nil
+            return
+        }
+        actionExtent = LibraryActionExtent(offsetY: measurement.offsetY,
+            insetBottom: measurement.insetBottom, viewportWidth: collectionScrollFrame.width)
+        extentInvalidatedByReflow = false
+    }
+
+    func scopeMinimumHeight(viewport: CGSize) -> CGFloat? {
+        guard !extentInvalidatedByReflow else { return nil }
+        return actionExtent?.minimumHeight(viewport: viewport)
+    }
+
+    func clearScopeExtent() {
+        actionExtent = nil
+    }
+
+    func finishedUserScroll() {
+        guard let measurement, measurement.offsetY <= -measurement.insetTop else { return }
+        clearScopeExtent()
+    }
 
     func beginScopeMeasurement(filter: LibraryFilter, target: String?) {
         actionOrdinal += 1
@@ -78,6 +117,9 @@ final class LibrarySelection: ObservableObject {
 
     func measureScrollFrame(_ frame: CGRect) {
         collectionScrollFrame = frame
+        if let actionExtent, actionExtent.viewportWidth != frame.width {
+            extentInvalidatedByReflow = true
+        }
         frameRevision += 1
         emitPostMeasurement(source: "frame")
     }
@@ -125,11 +167,7 @@ final class LibrarySelection: ObservableObject {
     }
 
     func collectionTarget(remaining: Set<String>) -> String? {
-        let measured = !collectionHeaderFrame.isEmpty && !collectionViewportFrame.isEmpty
-        let visible = measured && collectionHeaderFrame.intersects(collectionViewportFrame)
-        let above = measured && collectionHeaderFrame.maxY <= collectionViewportFrame.minY
         let removed = scrollID.map { $0 != "library-games" && !remaining.contains($0) } ?? false
-        if visible || (above && removed) { return "library-games" }
         return removed ? nil : scrollID
     }
     @Published var heroHovered = false

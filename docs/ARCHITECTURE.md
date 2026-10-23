@@ -61,14 +61,33 @@ or Continue Playing membership/order. Those use the qualified, recommendable
 library and live launchability, not filtered grid rows. A native next-game
 chevron advances the existing horizontal lane position. The collection header
 has a sibling scroll-target layout, separate from the grids so card targets
-remain registered. Filter and compatibility actions preserve surviving targets,
-retarget a visible header using native minimal movement, and clear a removed
-card target when the header remains below the viewport. See All uses the same ID
+remain registered. Continue Playing's horizontal ScrollView uses intrinsic vertical
+sizing from its cards, including natural text and error heights; its cross-axis
+extent must not absorb the grid's changing vertical proposal. Filter and
+compatibility actions preserve surviving targets and clear removed card targets
+without forcing a header or card position. When controls are visible away from
+the native top, an explicit action reserves only the document extent required
+for the measured offset: offset plus current container height minus bottom inset.
+This top-aligned minimum sits at the outer content seam, not under the results;
+it does not retain the previous full document height. Each action replaces the
+reservation, height resizing recalculates it, and width reflow ignores it.
+Hero/top actions, See All and a completed user scroll to native top release it.
+See All uses the same ID
 binding, not a competing scroll proxy. Only explicit actions publish a local
 position-command revision; live scroll IDs and header/viewport geometry remain
-plain storage. No size-change anchor reset or viewport-height filler is applied.
+plain storage. Only explicit scope/navigation actions and completed user top
+navigation publish the extent. No size-change anchor reset, deferred scroll or
+blanket viewport-height results filler is applied. Native extent preservation
+requires macOS 15 scroll geometry; macOS 14 has no invented offset fallback.
 Native Minecraft's separate local-launcher card appears only under All/Installed,
 never as invented Owned or Game Pass evidence.
+Public DisplayCatalog ProductType/ProductKind classify base games independently
+of collection row kind and Windows package availability. Explicit Game evidence
+plus PC package evidence admits a game; explicit applications/addons and other
+known non-base-game kinds are excluded. Missing, malformed, unknown or conflicting
+public kind/type stays unresolved, not an empty library or a definitive exclusion.
+Discover cards and genre navigation use the same public classification and keep
+unclassified descriptor IDs eligible for loading with an incomplete-results notice.
 Management stderr retains only the exact count-only `Ode collection read` line,
 framed across chunks with a 512-byte line bound and the existing total-byte cap.
 Unified logging supplies capture time; a local read ordinal identifies the sole

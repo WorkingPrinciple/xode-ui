@@ -96,6 +96,7 @@ struct LiveLibraryView: View {
         let target = selection.collectionTarget(remaining: targets)
         selection.beginScopeMeasurement(filter: nextFilter, target: target)
         withTransaction(Transaction(animation: nil)) {
+            selection.prepareScopeExtent()
             positionCollection(target)
             selection.filter = nextFilter
             showsUnsupportedGames = showsUnsupported
@@ -453,6 +454,7 @@ struct LiveLibraryView: View {
                 Button("See All") {
                     selection.beginScopeMeasurement(filter: .installed, target: "library-games")
                     withTransaction(Transaction(animation: nil)) {
+                        selection.clearScopeExtent()
                         positionCollection("library-games")
                         selection.filter = .installed
                         sort = .recentlyPlayed
@@ -495,6 +497,7 @@ struct LiveLibraryView: View {
                 }
                 .scrollTargetLayout()
             }
+            .fixedSize(horizontal: false, vertical: true)
             .scrollIndicators(.hidden).scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $selection.recentGameID, anchor: .leading)
             .onChange(of: continuing.map(\.id), initial: true) { _, ids in

@@ -74,6 +74,9 @@ struct CatalogProjection {
     let owned: [PCGame]
     let hiddenCount: Int
     let artworkIDs: [String]
+    var unresolvedClassificationCount: Int {
+        index.results.storeProducts.filter { facts[$0.id]?.isBaseGame == nil }.count
+    }
 
     static let empty = Self(index: CatalogCardIndex(query: "", owned: [], products: [], gamePass: [],
         gamePassIDs: [], installed: [], accessIsCurrent: false), facts: [:], genres: [],
@@ -86,14 +89,15 @@ struct CatalogProjection {
             accessIsCurrent: key.accessIsCurrent)
         self.index = index
         self.facts = facts
-        genres = DiscoverBrowse.genres(products: index.results.storeProducts, facts: facts)
+        let games = index.results.storeProducts.filter { facts[$0.id]?.isBaseGame == true }
+        genres = DiscoverBrowse.genres(products: games, facts: facts)
         var first: [String: CatalogProduct] = [:]
-        for product in index.results.storeProducts {
+        for product in games {
             for genre in facts[product.id]?.genres ?? [] where first[genre] == nil { first[genre] = product }
         }
 
         genreProducts = first
-        let candidates = DiscoverBrowse.visible(products: index.results.storeProducts, facts: facts,
+        let candidates = DiscoverBrowse.visible(products: games, facts: facts,
             genre: key.query.isEmpty ? key.genre : nil)
         visible = candidates.filter { product in
             !key.query.isEmpty || index.games[product.id].map(isVisible) == true

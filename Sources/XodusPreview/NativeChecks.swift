@@ -80,19 +80,50 @@ enum NativeChecks {
             position.scrollID = "library-card-fixture"
             position.collectionViewportFrame = CGRect(x: 0, y: 100, width: 1000, height: 700)
             position.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
-            check(position.collectionTarget(remaining: []) == "library-games",
-                  "Visible controls replace a removed card with the stable header target")
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Scope changes clear removed targets without commanding a header reveal")
             position.collectionHeaderFrame.origin.y = 850
             check(position.collectionTarget(remaining: []) == nil,
                   "Top viewport clears a removed card without revealing collection")
             check(position.collectionTarget(remaining: ["library-card-fixture"]) == "library-card-fixture",
                   "Surviving card target remains retained outside header viewport")
             position.collectionHeaderFrame.origin.y = 0
-            check(position.collectionTarget(remaining: []) == "library-games",
-                  "Removed offscreen card falls back to registered header, not hero")
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Removed offscreen cards never force another target position")
             position.collectionHeaderFrame = .zero
             check(position.collectionTarget(remaining: []) == nil,
                   "Unavailable geometry never invents header visibility")
+            position.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
+            position.collectionScrollFrame = CGRect(x: 0, y: 0, width: 1000, height: 700)
+            position.measureScroll(LibraryScrollMeasurement(offsetY: 789.5, contentHeight: 3729.5,
+                containerHeight: 700, insetTop: 24, insetBottom: 12,
+                visibleY: 789.5, visibleMaxY: 1489.5, visibleHeight: 700))
+            position.prepareScopeExtent()
+            check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 700)) == 1477.5,
+                  "Visible-controls extent retains only offset plus container minus native bottom inset")
+            check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 897)) == 1674.5,
+                  "Height resize recalculates finite extent from current viewport, not old document height")
+            check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 900, height: 700)) == nil,
+                  "Width reflow drops obsolete action extent")
+            position.measureScrollFrame(CGRect(x: 0, y: 0, width: 900, height: 700))
+            position.measureScrollFrame(CGRect(x: 0, y: 0, width: 1000, height: 700))
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1000, height: 700)) == nil,
+                  "Returning to an earlier width cannot resurrect its obsolete scope extent")
+            position.collectionHeaderFrame.origin.y = 850
+            position.prepareScopeExtent()
+            check(position.actionExtent == nil, "Hero/top scope action does not reserve stale grid extent")
+            position.collectionHeaderFrame.origin.y = 300
+            position.prepareScopeExtent()
+            position.clearScopeExtent()
+            check(position.actionExtent == nil, "See All explicitly releases the filter extent")
+            position.prepareScopeExtent()
+            position.measureScroll(LibraryScrollMeasurement(offsetY: -24, contentHeight: 1477.5,
+                containerHeight: 700, insetTop: 24, insetBottom: 12,
+                visibleY: 0, visibleMaxY: 700, visibleHeight: 700))
+            position.finishedUserScroll()
+            check(position.actionExtent == nil, "Deliberate user scroll to native top releases filter extent")
+            position.prepareScopeExtent()
+            check(position.actionExtent == nil, "Native top never reserves extra document extent")
             let playbackArguments = (true, true, false, false, true, true, true)
             check(HeroMotionPolicy.permitsPlayback(allowed: playbackArguments.0, enabled: playbackArguments.1,
                     reduceMotion: playbackArguments.2, lowPower: playbackArguments.3,

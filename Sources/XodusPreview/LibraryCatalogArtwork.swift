@@ -207,7 +207,7 @@ final class LibraryCatalogArtwork: ObservableObject {
             let detail = try LibraryGame.details(id: product.ProductId, title: title,
                 artwork: (heroes.first.map { [$0] } ?? []) + (cover.map { [$0] } ?? []),
                 market: market, language: language, source: "MicrosoftDisplayCatalog:v7",
-                pcCandidate: product.isPC)
+                pcCandidate: product.isBaseGame == true && product.isPC)
             var detailFacts: CatalogDetailFacts?
             do {
                 guard let value = details[product.ProductId] else { throw PCGamesError.invalidResponse }
@@ -224,6 +224,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                                            downloadBytes: product.pcDownloadBytes,
                                            packageFormat: product.pcPackageFormat,
                                            pcPackageListed: product.pcPackageListing,
+                                           isBaseGame: product.isBaseGame,
                                            commerce: prices[product.ProductId]),
                 detail: detailFacts, product: detail)
         }
@@ -277,23 +278,28 @@ struct LibraryCatalogFacts: Sendable {
     let downloadBytes: Int64?
     let packageFormat: String?
     let pcPackageListed: Bool?
+    let isBaseGame: Bool?
     let commerce: CatalogCommerce?
 
     init(genres: [String], capabilities: [LibraryCapability] = [], downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil, commerce: CatalogCommerce? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil,
+         commerce: CatalogCommerce? = nil) {
         self.genres = Array(genres.prefix(2))
         self.capabilities = capabilities
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
+        self.isBaseGame = isBaseGame
         self.commerce = commerce
     }
 
     init(properties: PCGamesCatalog.Product.PropertiesDTO?, downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil, commerce: CatalogCommerce? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil,
+         commerce: CatalogCommerce? = nil) {
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
+        self.isBaseGame = isBaseGame
         self.commerce = commerce
         var seen = Set<String>()
         genres = Array((properties?.Categories ?? properties?.Category.map { [$0] } ?? [])

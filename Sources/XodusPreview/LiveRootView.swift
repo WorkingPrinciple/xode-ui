@@ -414,7 +414,8 @@ struct LiveRootView: View {
             if destination == .library { state.librarySelection.scrollID = value }
             else { state.discoverSelection.scrollID = value }
         })
-        return ScrollView {
+        return GeometryReader { viewport in
+            ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     if destination == .library {
                         library(positionCollection: { target in
@@ -424,6 +425,9 @@ struct LiveRootView: View {
                     } else { catalog }
                 }
                 .padding(immersive ? 0 : 30)
+                .frame(minHeight: destination == .library
+                       ? state.librarySelection.scopeMinimumHeight(viewport: viewport.size) : nil,
+                       alignment: .top)
             }
             .scrollPosition(id: scrollID)
             .modifier(LibraryScrollMeasurementObserver(selection: destination == .library ? state.librarySelection : nil))
@@ -443,6 +447,7 @@ struct LiveRootView: View {
             .modifier(LibraryImmersion(enabled: immersive,
                                       underlapsToolbar: destination == .discover || libraryHasHero))
             .background(Color(nsColor: .windowBackgroundColor))
+        }
         .environment(\.catalogPresentationActive, active)
         .opacity(selected ? 1 : 0)
         .zIndex(selected ? 1 : 0)
@@ -465,6 +470,11 @@ struct LiveRootView: View {
                         visibleHeight: geometry.visibleRect.height)
                 } action: { _, value in
                     selection.measureScroll(value)
+                }
+                .onScrollPhaseChange { oldPhase, newPhase in
+                    if newPhase == .idle, oldPhase == .interacting || oldPhase == .decelerating {
+                        selection.finishedUserScroll()
+                    }
                 }
             } else {
                 content

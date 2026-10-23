@@ -333,7 +333,7 @@ enum PCGamesChecks {
             await session.connect()
             await session.refreshAccount()
             let catalog = PCGamesHTTPResponse(status: 200, data: Data("""
-                {"Products":[{"ProductId":"FIXTURE00001","LocalizedProperties":[{"ProductTitle":"Held fixture"}],
+                {"Products":[{"ProductId":"FIXTURE00001","ProductType":"Game","ProductKind":"Game","LocalizedProperties":[{"ProductTitle":"Held fixture"}],
                  "DisplaySkuAvailabilities":[{"Sku":{"Properties":{"Packages":[
                  {"PlatformDependencies":[{"PlatformName":"Windows.Desktop"}]}]}}}]}]}
                 """.utf8))
@@ -396,7 +396,7 @@ enum PCGamesChecks {
             return try response(value)
         }
         func catalogProduct(_ id: String, platform: String = "Windows.Desktop", title: String = "Neutral Game") -> [String: Any] {
-            ["ProductId": id,
+            ["ProductId": id, "ProductType": "Game", "ProductKind": "Game",
              "LocalizedProperties": [["ProductTitle": title, "Images": [
                 ["ImagePurpose": "Poster", "Uri": "//store-images.s-microsoft.com/image/poster", "Width": 100, "Height": 200],
                 ["ImagePurpose": "BoxArt", "Uri": "//store-images.s-microsoft.com/image/square", "Width": 100, "Height": 100]]]],
@@ -453,6 +453,32 @@ enum PCGamesChecks {
               "Only explicitly non-PC packages count excluded; missing descriptors remain unresolved")
         check(snapshot.games.first?.artwork?.url == "https://store-images.s-microsoft.com/image/square",
               "S4: Square BoxArt is preferred and protocol-relative approved art uses the existing validator")
+        let classificationFields: [[String: Any]] = [
+            ["ProductType": "Game", "ProductKind": "Game"],
+            ["ProductType": "Application", "ProductKind": "Application"],
+            [:],
+            ["ProductType": "Game", "ProductKind": "Application"],
+            ["ProductType": "Game", "ProductKind": "FutureKind"],
+            ["ProductType": "Game", "ProductKind": 17],
+            ["ProductType": "GameAddon", "ProductKind": "GameAddon"],
+            ["ProductType": "Game"],
+            ["ProductKind": "GameBundle"]
+        ]
+        let classifiedIDs = classificationFields.indices.map { String(format: "9CLASS%06d", $0) }
+        let classifiedProducts = classificationFields.enumerated().map { index, fields -> [String: Any] in
+            var product = catalogProduct(classifiedIDs[index])
+            product.removeValue(forKey: "ProductType")
+            product.removeValue(forKey: "ProductKind")
+            product.merge(fields, uniquingKeysWith: { _, new in new })
+            return product
+        }
+        let classificationTransport = PCGamesMockTransport([try response(["Products": classifiedProducts])])
+        let classified = try await PCGamesClient(transport: classificationTransport).resolveCollection(
+            ids: classifiedIDs, kinds: [:], candidateCount: classifiedIDs.count, market: "US", language: "en-US")
+        check(Set(classified.games.map(\.id)) == [classifiedIDs[0], classifiedIDs[7]]
+              && classified.excludedCount == 3
+              && classified.unresolvedIDs == Set(classifiedIDs[2...5]),
+              "Public base Game evidence admits PC games; applications/addons/bundles exclude; absent, conflicting, unknown or malformed kinds remain unresolved")
         let requests = await transport.requests
         check(requests.count == 6 && requests.allSatisfy { $0.timeoutInterval == 30 && !$0.httpShouldHandleCookies },
               "S4: Exact bounded request chain uses no cookies or invented endpoint")

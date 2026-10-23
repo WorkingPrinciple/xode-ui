@@ -40,7 +40,7 @@ private actor DescriptorTransport: PCGamesTransport {
         let items = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!.queryItems!
         let ids = items.first { $0.name == "bigIds" }!.value!.split(separator: ",").map(String.init)
         let products: [[String: Any]] = ids.filter { !omitted.contains($0) }.map {
-            ["ProductId": foreign ? "FIXTURE99999" : $0,
+            ["ProductId": foreign ? "FIXTURE99999" : $0, "ProductType": "Game", "ProductKind": "Game",
              "LocalizedProperties": [["ProductTitle": "Game \($0)", "Images": [],
                                       "ProductDescription": "Synthetic descriptor"]],
              "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": [

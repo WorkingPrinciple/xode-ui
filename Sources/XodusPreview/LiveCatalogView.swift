@@ -162,6 +162,10 @@ struct LiveCatalogView: View {
                     Text(DiscoverCopy.sourceDescription(query: query, corpus: session.catalogCorpus))
                         .font(.callout).foregroundStyle(.secondary)
                         .accessibilityIdentifier("xodus.catalog.sources")
+                    if projection.unresolvedClassificationCount > 0 {
+                        Text("Game classification hasn't been verified for \(projection.unresolvedClassificationCount) catalog items. Results may be incomplete.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
                     if !query.isEmpty, library.snapshot == nil {
                         Text("Load your PC library in Library to include your games in search.")
                             .font(.callout).foregroundStyle(.secondary)
@@ -176,7 +180,12 @@ struct LiveCatalogView: View {
                         }
                         .scrollTargetLayout()
                     } else if ownedMatches.isEmpty {
-                        unavailable
+                        if projection.unresolvedClassificationCount > 0 {
+                            ContentUnavailableView("Game classification unavailable", systemImage: "gamecontroller",
+                                description: Text("Catalog items are still unverified. This isn't a complete or empty game result."))
+                        } else {
+                            unavailable
+                        }
                     } else if !session.searching && session.catalogError == nil {
                         Text(DiscoverCopy.noOtherGames(query)).foregroundStyle(.secondary)
                     }

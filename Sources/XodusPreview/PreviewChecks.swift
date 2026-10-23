@@ -74,6 +74,7 @@ enum PreviewChecks {
                   Set(products.map(\.ProductId)) == Set(payload.map(\.ProductId)) else {
                 throw PCGamesError.invalidResponse
             }
+            print("Public classification: baseGames=\(products.filter { $0.isBaseGame == true }.count); nonGames=\(products.filter { $0.isBaseGame == false }.count); unresolved=\(products.filter { $0.isBaseGame == nil }.count); admittedPCGames=\(products.compactMap(\.game).count).")
             var videos = 0, screenshots = 0, ratings = 0, requirements = 0
             for product in payload {
                 guard PCGamesClient.validProductID(product.ProductId),

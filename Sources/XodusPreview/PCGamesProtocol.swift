@@ -365,9 +365,12 @@ struct PCGamesCatalog: Decodable {
         let LocalizedProperties: [Localized]?
         let DisplaySkuAvailabilities: [Availability]?
         let Properties: PropertiesDTO?
+        let ProductType: String?
+        let ProductKind: String?
+        private let classificationFieldsUsable: Bool
 
         private enum CodingKeys: String, CodingKey {
-            case ProductId, LocalizedProperties, DisplaySkuAvailabilities, Properties
+            case ProductId, LocalizedProperties, DisplaySkuAvailabilities, Properties, ProductType, ProductKind
         }
         init(from decoder: Decoder) throws {
             let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -375,6 +378,35 @@ struct PCGamesCatalog: Decodable {
             LocalizedProperties = try values.decodeIfPresent([Localized].self, forKey: .LocalizedProperties)
             DisplaySkuAvailabilities = try values.decodeIfPresent([Availability].self, forKey: .DisplaySkuAvailabilities)
             Properties = try? values.decode(PropertiesDTO.self, forKey: .Properties)
+            func bounded(_ key: CodingKeys) -> String? {
+                guard let value = try? values.decode(String.self, forKey: key),
+                      !value.isEmpty, value.utf8.count <= 128,
+                      !value.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains) else { return nil }
+                return value
+            }
+            ProductType = bounded(.ProductType)
+            ProductKind = bounded(.ProductKind)
+            classificationFieldsUsable = [CodingKeys.ProductType, .ProductKind].allSatisfy {
+                !values.contains($0) || (try? values.decodeNil(forKey: $0)) == true || bounded($0) != nil
+            }
+        }
+
+        var isBaseGame: Bool? {
+            guard classificationFieldsUsable else { return nil }
+            let fields = [ProductType, ProductKind].compactMap { $0 }
+            guard !fields.isEmpty else { return nil }
+            func classification(_ value: String) -> Bool? {
+                switch value {
+                case "Game": true
+                case "Application", "GameAddon", "GameConsumable", "GameSubscription",
+                     "GameBundle", "Consumable", "Durable", "Subscription", "AvatarItem",
+                     "Movie", "TVSeason", "TVEpisode": false
+                default: nil
+                }
+            }
+            let known = fields.compactMap(classification)
+            guard known.count == fields.count, Set(known).count == 1 else { return nil }
+            return known.first
         }
 
         var isPC: Bool {
@@ -425,7 +457,7 @@ struct PCGamesCatalog: Decodable {
         }
 
         var game: PCGame? {
-            guard isPC, let localized = LocalizedProperties?.first,
+            guard isBaseGame == true, isPC, let localized = LocalizedProperties?.first,
                   let title = localized.ProductTitle?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !title.isEmpty, title.utf8.count <= 4096 else { return nil }
             let images = localized.Images ?? []
@@ -708,7 +740,8 @@ struct PCGamesClient: Sendable {
                 }
                 for product in products {
                     if product.game != nil { unresolved.remove(product.ProductId) }
-                    else if product.pcPackageListing == false {
+                    else if product.isBaseGame == false
+                        || (product.isBaseGame == true && product.pcPackageListing == false) {
                         unresolved.remove(product.ProductId)
                         excluded += 1
                     }
