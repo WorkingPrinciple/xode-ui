@@ -1,5 +1,5 @@
 {
-  "authoringDatabaseSha256": "6d465a7ea4dd2db591bdfd503a19ea145bac2cce425eccf98bd330b975a26fc8",
+  "authoringDatabaseSha256": "ebf3d9c505ae9f0440dbbb4834bb0ebf54819a9a86db638804cbaf7154cd8a73",
   "files": {
     "AWACY-LICENSE.txt": {
       "bytes": 1070,
@@ -14,8 +14,8 @@
       "sha256": "d677774eb3d7b8de14135e6347fe1daf7d3fd8edd17f8528ae708690400cb877"
     },
     "game-metadata-v1.json": {
-      "bytes": 1580736,
-      "sha256": "0b4d8ed76ac4afaf1881b27698a86afaf1d2dae6948bdf146c29afbda5ae68b6"
+      "bytes": 1581073,
+      "sha256": "e4f01565d5e97690db4a8bd24f7f06d1bc6adc6605e49fbe9e2931fe6afd013a"
     },
     "game-metadata-v1.schema.json": {
       "bytes": 13558,
@@ -31,8 +31,8 @@
   "snapshotId": "40a564e915f19cbc86b992603ac1f37803c73c35786522007e7863c7c9ba87ad",
   "sourceCode": {
     "classify_catalogue.py": "7cdf793e6b75fd94d15f26f764950536269a25eba2a318b16a01544bc0cc0c43",
-    "game_metadata.py": "eef208e9e73e70394785567361641112d8b553560378644f0e4ecd8e5e20fe09"
+    "game_metadata.py": "602e3341e826ae1849156144827411042d6261154f8d56a3fe8544ed0412de12"
   },
-  "sourceCommit": "05f4a436e7c7ee5e6feb933508f84ba36d026f15",
+  "sourceCommit": "7b2523f34f245f450e07e5de41e9c0e209d05315",
   "updaterSupported": false
 }

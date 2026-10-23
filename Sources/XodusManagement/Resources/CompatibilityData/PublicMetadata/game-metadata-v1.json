@@ -10036,11 +10036,13 @@
     {
       "antiCheat": {
         "buildBinding": "unknown",
-        "checkedAt": "2026-10-21",
+        "checkedAt": "2026-10-24",
         "claim": "unknown",
         "scope": "Reference only; no current Xbox-PC build absence or compatibility claim.",
         "sources": [
-          "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json"
+          "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+          "https://www.ageofempires.com/news/age-of-empires-iv-patch-16-2-10475/",
+          "https://support.ageofempires.com/hc/en-us/articles/4408424670484-Age-of-Empires-IV-Known-Issues-Solutions"
         ],
         "technologies": []
       },
@@ -23485,7 +23487,8 @@
         "claim": "unknown",
         "scope": "Reference only; no current Xbox-PC build absence or compatibility claim.",
         "sources": [
-          "https://www.pcgamingwiki.com/wiki/REPLACED"
+          "https://www.pcgamingwiki.com/wiki/REPLACED",
+          "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json"
         ],
         "technologies": []
       },
