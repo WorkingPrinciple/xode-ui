@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-23T03:00:15.985298+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-23T03:31:16.883773+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
