@@ -137,6 +137,24 @@
     },
     {
       "title": "Dishonored Definitive Edition",
+      "path": "s3-dishonored-continuation-keyv1-01/final-evidence",
+      "manifest": "integrity.json",
+      "sha256": "eb5a8b3bfed30d734a9b5faa3a3f125901e66637090f9c75ca7ae8723602c2c3",
+      "resultSha256": "ac819a00320105b2a946ffe4c02114c9937949ad703a40b026621b4b924bc8a7",
+      "packetSha256": "a8cdb1db3b43d60e02e2f26d071d9bad8da4a49b9f1b5d7f651e8f35c2971141",
+      "run": "91a05708-db62-4621-af8c-dfa6e3dea23c",
+      "admission": "INCONCLUSIVE_SEATED_STATE_NO_FREE_CONTROL_MILESTONE_ORDINARY_QUIT",
+      "observed": "Exact existing manual Returning Home01:52:03 loaded the seated boat/dock. Finite passive observation produced no movement tutorial or clearly unseated/free-ground milestone. No W800, skip, guessed input or new save.",
+      "quit": "Known actual Back to Windows/Yes; quit began279.350s before300 milestone deadline, completed406.420s before900 cap. Actual CLI0/Wine0, no force, prefix stopped.",
+      "helper": "New reproducible keyv1 guarded17 menu-only100ms transitions with exact HWND/foregroundPID/class/title witnesses and individual down1/up1. This establishes menu handling, not gameplay control.",
+      "runManifestSha256": "9d6cfd86a682004a617689d4c8ae7c48b5175e3ad92e2919653dd2a580a6a6f8",
+      "runFilesVerified": 108,
+      "rawArchiveFilesVerified": 69,
+      "screenshots": 21,
+      "boundary": "Only title logs changed; original manual7941eda2/162686B preserved. New world gameplayObserved=false and actual authorize_reload refuses. No reload or automatic retry. Supersedes originalc489 gameplay attribution: boat bob/NPC motion never established player control. Historical receipts immutable; strict12 unchanged."
+    },
+    {
+      "title": "Dishonored Definitive Edition",
       "path": "s3-dishonored-bound-reload600-01/final-evidence",
       "manifest": "integrity.json",
       "sha256": "45bc8c103d1de8fcc5a65329573fa65e223d79b84d50a141e3af5f7769f460a2",
@@ -152,7 +170,7 @@
       "rawArchiveFilesVerified": 67,
       "screenshots": 21,
       "runManifestSha256": "6f1dc56fb970f015125650751df93ecd185fae72bc7a4efb5de43f597aa0e6f3",
-      "boundary": "Optional original-world binding verified qualified original sources/evidence/current bytes. Historical300s capped reload remains unchanged. Screen released S2 for separately authorized passive."
+      "boundary": "Original source/evidence/current-byte bindings were verified, but subsequent frame review supersedes originalc489 gameplay attribution as unproven boat-bound motion. Retained save load and ordinary quit remain established; not qualified gameplay. Historical300s capped reload and all receipts remain unchanged."
     },
     {
       "title": "DOOM 64",
@@ -178,7 +196,7 @@
       "resultSha256": "bd030161f97f356e3dbf6ed628628456565f468c08e3f4b8431598d8bb05b6cc",
       "admission": "INCONCLUSIVE_RELOAD_CAP_NO_LOADED_WORLD",
       "worldRun": "c489e1a6-f8b8-49b3-9511-0393554a69be",
-      "observed": "Returning Home/Dunwall Tower boat and dock rendered, W100 changed position. Actual Save Game/Create New Save produced Returning Home01:52:03. Durable manual sav162686B and provider payload archived; not stage-only.",
+      "observed": "Returning Home/Dunwall Tower boat and dock rendered. Original W100 position-change claim is superseded: boat/NPC/bob changes do not establish player control. Actual Save Game/Create New Save produced Returning Home01:52:03. Durable manual sav162686B and provider payload archived; not stage-only.",
       "manualSaveSha256": "7941eda2eeeca63b03d31fe1bd33c367259db2619a40ddfd0fe887a6462e2684",
       "worldQuit": "Actual Back to Windows/Yes ordinaryCLI0/Wine0; no forced stop, exact-k1/-w0. Quit path437.474s<540; total678.100s<900.",
       "reload": "Fresh process actual Load listed exact manual Returning Home01:52:03 plus separate autosave. Next confirmation observer found zero windows BEFORE input:300s cap had stopped game. Quit180 missed; no manual-slot load or retained-world proof.",
