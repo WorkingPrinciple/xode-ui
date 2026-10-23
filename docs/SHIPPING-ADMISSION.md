@@ -89,10 +89,17 @@ names as partial public listings and keeps account-plan coverage unverified.
 It does not infer tiers or platforms from IDs/names, nor grant install access
 from public listing data.
 
-Live startup takes the device's market and a preferred language matching that
-market when available (for example RO with preferred en-US/ro-RO selects ro-RO),
-rather than silently using US catalogue metadata. Explicit test connections keep
-their explicit test scope.
+Live startup takes the device's market independently from the first valid
+preferred UI language (for example RO with preferred en-US/ro-RO selects
+RO/en-US). An empty language preference falls back to en-US without changing
+the market. Explicit test connections keep their explicit test scope.
+
+The Library access check renders the shared card's Installed status and Discover's
+coverage control in nonvisible light/dark fixture windows. OCR locates each label;
+sRGB glyph-core/background samples must reach 4.5:1. These controls use primary
+semantic text after a lossless installed light-mode sample exposed insufficient
+secondary-text contrast. The fixture does not replace installed-build appearance
+and accessibility acceptance or change any global appearance preferences.
 
 Optional DisplayCatalog details accept the explicit `neutral` language tag as
 unlocalized product metadata, alongside exact/same-language responses.

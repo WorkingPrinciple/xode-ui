@@ -585,7 +585,7 @@ struct LiveCatalogView: View {
 
     private var catalogInfo: some View {
         Button("Game Pass catalogue coverage", systemImage: "info.circle") { showsCoverage = true }
-        .buttonStyle(.plain).font(.callout).foregroundStyle(.secondary)
+        .buttonStyle(.plain).font(.callout).foregroundStyle(.primary)
         .popover(isPresented: $showsCoverage) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Catalogue coverage").font(.headline)

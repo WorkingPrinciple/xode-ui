@@ -994,9 +994,14 @@ enum PCGamesChecks {
               "REQ-59: Game Pass scope uses actual membership and Installed uses actual local installation")
         let romanianScope = CatalogLocale.preferred(region: "RO", languages: ["en-US", "ro-RO"])
         let americanScope = CatalogLocale.preferred(region: "US", languages: ["en-US", "ro-RO"])
-        check(romanianScope.market == "RO" && romanianScope.language == "ro-RO"
+        check(romanianScope.market == "RO" && romanianScope.language == "en-US"
               && americanScope.market == "US" && americanScope.language == "en-US",
-              "#40/#42: Live catalogue uses the device market and a matching preferred language, not hardcoded US prices or links")
+              "REQ-22: Catalogue market does not override the first preferred UI language")
+        let romanianLanguage = CatalogLocale.preferred(region: "US", languages: ["ro-RO", "en-US"])
+        let fallbackLanguage = CatalogLocale.preferred(region: "RO", languages: [])
+        check(romanianLanguage.market == "US" && romanianLanguage.language == "ro-RO"
+              && fallbackLanguage.market == "RO" && fallbackLanguage.language == "en-US",
+              "REQ-22: UI language stays independent in either direction with an empty-preference fallback")
         let windows = NSApplication.shared.windows.count
         let neutralInstalled = InstalledGamesController()
         let neutralOperations = GameOperationsController(installed: neutralInstalled)

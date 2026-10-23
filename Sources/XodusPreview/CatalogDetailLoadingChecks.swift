@@ -98,7 +98,89 @@ enum CatalogDetailLoadingChecks {
               && malformed.images["FIXTURE00002"]?.detail?.description == "Synthetic description.",
               "REQ-61: Removed offer data is ignored while catalogue identity and game details remain readable")
         try await commerceAbsence(check: check)
+        try await statusContrast(check: check)
         try await concurrency(check: check)
+    }
+
+    private static func statusContrast(check: (Bool, String) -> Void) async throws {
+        let installed = InstalledGamesController()
+        let operations = GameOperationsController(installed: installed)
+        let card = GameCard(title: "Synthetic game", open: {}) {
+            Color.clear.frame(height: 80)
+        } status: {
+            Label("Installed", systemImage: "internaldrive").font(.caption)
+        } actions: { EmptyView() }
+        let catalogue = LiveCatalogView(library: PCGamesController(), installed: installed,
+            operations: operations, query: "", allowsArtworkLoading: false,
+            allowsStartupTasks: false, allowsHeroAnimation: false, clearSearch: {})
+            .environmentObject(LiveSession())
+        for (appearance, scheme) in [(NSAppearance.Name.aqua, ColorScheme.light),
+                                      (.darkAqua, .dark)] {
+            for (label, view, size) in [
+                ("Installed", AnyView(card), CGSize(width: 280, height: 400)),
+                ("Game Pass catalogue coverage", AnyView(catalogue), CGSize(width: 800, height: 1000))
+            ] {
+                let host = NSHostingView(rootView: view.padding(20)
+                    .frame(width: size.width, height: size.height, alignment: .topLeading)
+                    .background(Color(nsColor: .windowBackgroundColor))
+                    .environment(\.colorScheme, scheme))
+                host.sizingOptions = []
+                host.appearance = NSAppearance(named: appearance)
+                host.frame = CGRect(origin: .zero, size: size)
+                let window = NSWindow(contentRect: host.frame, styleMask: [.borderless],
+                                      backing: .buffered, defer: false)
+                window.appearance = host.appearance
+                window.contentView = host
+                defer { window.contentView = nil }
+                host.layoutSubtreeIfNeeded()
+                try await Task.sleep(for: .milliseconds(50))
+                guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                    throw PCGamesError.transport
+                }
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                guard let image = bitmap.cgImage else { throw PCGamesError.transport }
+                let request = VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                try VNImageRequestHandler(cgImage: image).perform([request])
+                guard let observation = request.results?.first(where: {
+                    $0.topCandidates(1).first?.string.localizedCaseInsensitiveContains(label) == true
+                }) else {
+                    let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                    check(false, "REQ-19: \(label) is actually rendered in \(appearance.rawValue); observed \(labels)")
+                    continue
+                }
+                let box = observation.boundingBox
+                let x0 = max(0, Int(box.minX * Double(bitmap.pixelsWide)))
+                let x1 = min(bitmap.pixelsWide, Int(ceil(box.maxX * Double(bitmap.pixelsWide))))
+                let y0 = max(0, Int((1 - box.maxY) * Double(bitmap.pixelsHigh)))
+                let y1 = min(bitmap.pixelsHigh, Int(ceil((1 - box.minY) * Double(bitmap.pixelsHigh))))
+                func luminance(x: Int, y: Int) throws -> Double {
+                    guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else {
+                        throw PCGamesError.transport
+                    }
+                    func linear(_ value: CGFloat) -> Double {
+                        let v = Double(value)
+                        return v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4)
+                    }
+                    return 0.2126 * linear(color.redComponent) + 0.7152 * linear(color.greenComponent)
+                        + 0.0722 * linear(color.blueComponent)
+                }
+                var glyph: [Double] = []
+                for y in y0..<y1 {
+                    for x in x0..<x1 { glyph.append(try luminance(x: x, y: y)) }
+                }
+                guard !glyph.isEmpty else { throw PCGamesError.transport }
+                glyph.sort()
+                let backing = try luminance(x: 2, y: 2)
+                let index = Int(Double(glyph.count - 1) * (scheme == .light ? 0.05 : 0.95))
+                let foreground = glyph[index]
+                let ratio = (max(backing, foreground) + 0.05) / (min(backing, foreground) + 0.05)
+                check(ratio >= 4.5,
+                      "REQ-19: Rendered \(label) reaches 4.5:1 in \(appearance.rawValue) (measured \(ratio):1)")
+                check(!window.isVisible && !window.isKeyWindow && !operations.isBusy,
+                      "REQ-19: Contrast fixture never presents a window or starts an operation")
+            }
+        }
     }
 
     private static func commerceAbsence(check: (Bool, String) -> Void) async throws {

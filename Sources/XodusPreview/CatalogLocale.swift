@@ -5,7 +5,6 @@ enum CatalogLocale {
     static func preferred(region: String?, languages: [String]) -> (market: String, language: String) {
         let market = PCGamesClient.market(region)
         let valid = languages.filter { PCGamesClient.language($0) == $0 }
-        let matching = valid.first { Locale(identifier: $0).region?.identifier == market }
-        return (market, matching ?? valid.first ?? "en-US")
+        return (market, valid.first ?? "en-US")
     }
 }

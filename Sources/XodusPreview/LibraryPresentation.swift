@@ -946,7 +946,7 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
             }
             .focused($focused)
             Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
-            status().font(.subheadline).foregroundStyle(.secondary)
+            status().font(.subheadline).foregroundStyle(.primary)
             actions().controlSize(.small).buttonBorderShape(.capsule)
                 .fixedSize(horizontal: false, vertical: true)
                 .opacity(showsActions ? 1 : 0)
