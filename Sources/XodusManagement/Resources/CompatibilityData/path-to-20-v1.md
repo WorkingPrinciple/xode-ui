@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-23T00:57:16.557427+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-23T01:28:17.571462+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -23,7 +23,7 @@ Updated 2026-10-23T00:57:16.557427+00:00; **12/20 strict WORKING**. Title qualif
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Bluey's Happy Snaps | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | Human legal/privacy consent required. No Accept, story, retry or further launch authorized. | >2h |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
-| DOOM 64 | INCONCLUSIVE_START_INPUT_NO_TRANSITION | passed | ? | not passed | not passed | not passed | Start input attribution hold / S1/S2/coordinator | 4f061291 Escape100 exposed Start; Enter100 never transitioned, then DEMO. Forced stop295.517533875s/exact-k0/-w0 despiteCLI0/Wine0, NOT ordinary quit. No auth verdict, gameplay, save, reload or retry. | - |
+| DOOM 64 | INCONCLUSIVE_START_INPUT_NO_TRANSITION | passed | ? | not passed | not passed | not passed | Start input attribution hold / S1/S2/coordinator | 4f061291 Escape100 exposed Start; Enter100 never transitioned, then DEMO. Forced stop295.517533875s/exact-k0/-w0 despiteCLI0/Wine0, NOT ordinary quit. No auth verdict, gameplay, save, reload or retry. | >2h |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored Definitive Edition | INCONCLUSIVE_GAMEPLAY_NOT_ESTABLISHED | passed | ? | passed | passed | passed | controllable gameplay / S3/coordinator | Original c489 W100 gameplay assertion superseded: world/reload frames show boat rails/helm seated state and NPC exiting right, no actual movement or unseated frame. Manual save/load and ordinary exits do not establish WORKING. | - |
@@ -43,7 +43,7 @@ Updated 2026-10-23T00:57:16.557427+00:00; **12/20 strict WORKING**. Title qualif
 | Minishoot' Adventures | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | owned matcher packet disk precheck / S2 | Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result. | >2h |
-| Quake | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | HUMAN_CONSENT_HOLD. Exact-prefix forced-k0/-w0 at160.058s;CLI0/Wine0 not ordinary quit,5812 reconciled descriptive consent attribution. 30runfiles/8raw/3screens verified;0nonemptyxgs. Runtime save-fix untested, not FAIL. User alone decides agreement, no retry/reload. Historical100ms campaign/GAME SAVED/post-save input failure and earlier late quit retained unchanged. | - |
+| Quake | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | HUMAN_CONSENT_HOLD. Exact-prefix forced-k0/-w0 at160.058s;CLI0/Wine0 not ordinary quit,5812 reconciled descriptive consent attribution. 30runfiles/8raw/3screens verified;0nonemptyxgs. Runtime save-fix untested, not FAIL. User alone decides agreement, no retry/reload. Historical100ms campaign/GAME SAVED/post-save input failure and earlier late quit retained unchanged. | >2h |
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Historical nonacquiring package entitlement GRANTED receipt32119200, not game qualification. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | SUPERHOT: MIND CONTROL DELETE | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
