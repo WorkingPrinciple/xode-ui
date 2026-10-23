@@ -379,6 +379,82 @@ class RetentionTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "attribution"):
                     retention.external_stop_reason(base)
 
+    def test_cleanup_preserves_legacy_logs_and_reuses_its_completed_receipt(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            for name in ("cleanup-k.log", "cleanup-w.log"):
+                (base / name).write_text("original external error\n")
+            env = {"WINEPREFIX": str(base / "owned-prefix")}
+            with patch.object(retention.subprocess, "run", return_value=MagicMock(returncode=0)) as run:
+                first = retention.cleanup("owned-server", env, base)
+                second = retention.cleanup("owned-server", env, base)
+            self.assertEqual(first, second)
+            self.assertEqual(run.call_count, 2)
+            self.assertEqual((base / "cleanup-k.log").read_text(), "original external error\n")
+            self.assertTrue((base / "cleanup-owner/result.json").is_file())
+            with self.assertRaisesRegex(RuntimeError, "different server/prefix"):
+                retention.cleanup("other-server", env, base)
+            (base / "cleanup-owner/cleanup-k.log").write_text("changed")
+            with self.assertRaisesRegex(RuntimeError, "log changed"):
+                retention.cleanup("owned-server", env, base)
+
+    def test_cleanup_never_replays_incomplete_owner_or_failed_effect(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            env = {"WINEPREFIX": str(base / "prefix")}
+            (base / "cleanup-owner").mkdir()
+            with patch.object(retention.subprocess, "run") as run:
+                with self.assertRaisesRegex(RuntimeError, "already owned"):
+                    retention.cleanup("owned-server", env, base)
+                run.assert_not_called()
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            env = {"WINEPREFIX": str(base / "prefix")}
+            with patch.object(retention.subprocess, "run", side_effect=retention.subprocess.TimeoutExpired("owned-server", 5)) as run:
+                first = retention.cleanup("owned-server", env, base)
+                second = retention.cleanup("owned-server", env, base)
+                self.assertEqual(run.call_count, 2)
+                self.assertEqual(first, second)
+                self.assertEqual(first[-1]["error"], "five-second timeout")
+
+    def test_running_external_stop_uses_single_cleanup_owner_and_writes_receipt(self):
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            evidence = base / "run-world"
+            selected = {
+                "stateDir": str(evidence / "launch"), "prefix": str(base / "prefix"),
+                "argv": ["never-executed"], "environment": {"WINESERVER": "never-executed"},
+                "titleEnvironment": {}, "unsetEnvironment": [],
+                "quitBySeconds": 540, "timeoutSeconds": 900,
+            }
+            packet = {"hold": "fixture", "diskFloorBeforeLaunchGiB": 0, "diskAbortGiB": 0}
+            process = MagicMock(returncode=0, pid=123)
+            process.poll.side_effect = [None]
+            original = retention.write
+
+            def write_stop(path, value):
+                original(path, value)
+                if path.name == "invocation.json":
+                    original(evidence / "external-stop-reason.json", {
+                        "forcedStop": True, "reason": "capture process timeout",
+                    })
+                    (evidence / "cleanup-k.log").write_text("old raw error")
+
+            with patch("sys.argv", [
+                "retention-run.py", "run", str(base / "packet.json"),
+                "frozen", "world", "--screen-release", "fixture",
+            ]), patch.object(retention, "load_packet", return_value=(packet, selected, [])), \
+                patch.object(retention, "snapshot", return_value=[]), \
+                patch.object(retention, "write", side_effect=write_stop), \
+                patch.object(retention.subprocess, "Popen", return_value=process), \
+                patch.object(retention.subprocess, "run", return_value=MagicMock(returncode=0)) as stop:
+                self.assertEqual(retention.main(), 1)
+            self.assertEqual(stop.call_count, 2)
+            receipt = json.loads((evidence / "run-receipt.json").read_text())
+            self.assertEqual(receipt["forcedCleanup"], "capture process timeout")
+            self.assertTrue(receipt["prefixStopped"])
+            self.assertEqual((evidence / "cleanup-k.log").read_text(), "old raw error")
+
     def external_mapping_fixture(self, base):
         packet, _ = self.packet_fixture(base)
         target = base / "host-documents" / "My Games" / "title"

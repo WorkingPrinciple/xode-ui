@@ -123,17 +123,38 @@ def external_stop_reason(evidence):
 
 
 def cleanup(server, env, evidence):
+    owner = evidence / "cleanup-owner"
+    receipt = owner / "result.json"
+    identity = {"server": server, "prefix": env["WINEPREFIX"]}
+    try:
+        owner.mkdir(mode=0o700)
+    except FileExistsError:
+        if owner.is_symlink() or not receipt.is_file() or receipt.is_symlink():
+            raise RuntimeError("Cleanup already owned or incomplete; no concurrent replay.")
+        previous = json.loads(receipt.read_text())
+        if previous["identity"] != identity:
+            raise RuntimeError("Cleanup receipt belongs to a different server/prefix.")
+        for outcome in previous["outcomes"]:
+            if sha(owner / outcome["log"]) != outcome["logSha256"]:
+                raise RuntimeError("Cleanup log changed; no replay.")
+        return previous["outcomes"]
     outcomes = []
     for flag in ("-k", "-w"):
+        log_path = owner / f"cleanup-{flag[1:]}.log"
         try:
-            with (evidence / f"cleanup-{flag[1:]}.log").open("x") as log:
+            with log_path.open("x") as log:
                 result = subprocess.run(
                     [server, flag], env=env, stdout=log,
                     stderr=subprocess.STDOUT, timeout=5, check=False,
                 )
-            outcomes.append({"flag": flag, "returncode": result.returncode})
+            outcome = {"flag": flag, "returncode": result.returncode}
         except subprocess.TimeoutExpired:
-            outcomes.append({"flag": flag, "error": "five-second timeout"})
+            outcome = {"flag": flag, "error": "five-second timeout"}
+        except OSError as error:
+            outcome = {"flag": flag, "error": str(error), "errorType": type(error).__name__}
+        outcome.update(log=log_path.name, logSha256=sha(log_path))
+        outcomes.append(outcome)
+    write(receipt, {"identity": identity, "outcomes": outcomes})
     return outcomes
 
 
@@ -318,12 +339,15 @@ def main():
         try:
             while process.poll() is None:
                 elapsed = time.monotonic() - started
+                forced = external_stop_reason(evidence)
                 if not quit_notice and elapsed >= selected["quitBySeconds"]:
                     notice = {"beginOrdinaryQuit": True, "elapsedSeconds": elapsed}
                     write(evidence / "quit-reminder.json", notice)
                     print(json.dumps(notice), flush=True)
                     quit_notice = True
-                if shutil.disk_usage(base).free < packet["diskAbortGiB"] * 2**30:
+                if forced:
+                    pass
+                elif shutil.disk_usage(base).free < packet["diskAbortGiB"] * 2**30:
                     forced = "105GiB running disk floor"
                 elif elapsed >= selected["timeoutSeconds"]:
                     forced = "Admitted gameplay cap"
