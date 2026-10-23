@@ -249,7 +249,7 @@ struct LiveCatalogView: View {
                         HStack {
                             Text(DiscoverCopy.partial)
                             Button("Retry") { retry() }.disabled(!canRefresh)
-                        }.foregroundStyle(.secondary)
+                        }
                     }
                     if !visible.isEmpty {
                         LazyVGrid(columns: columns, spacing: 28) {
