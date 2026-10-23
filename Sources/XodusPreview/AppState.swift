@@ -125,6 +125,7 @@ final class AppState: ObservableObject {
     func signOut(session: LiveSession) async -> Bool {
         guard canSignOut(session: session), gameOperations.beginAccountDisconnect() else { return false }
         installedGames.setAccountAccessAllowed(false)
+        installedGames.productAccess.retire()
         defer { gameOperations.finishAccountDisconnect() }
         guard pcGames.beginAccountDisconnect() else { return false }
         defer { pcGames.finishAccountDisconnect() }

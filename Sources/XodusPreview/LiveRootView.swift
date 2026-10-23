@@ -231,6 +231,22 @@ struct LiveRootView: View {
             state.installedGames.setAccountAccessAllowed(unifiedAccountVerified,
                 message: "Your Xbox Live account is being checked. Try again when it finishes.")
         }
+        .task(id: "\(session.accountHash ?? ""):\(unifiedAccountVerified):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
+            guard startupAllowed, unifiedAccountMode else { return }
+            while !Task.isCancelled {
+                await state.installedGames.productAccess.refresh(session: session,
+                    installedIDs: state.installedGames.games.map(\.storeId))
+                do { try await Task.sleep(for: .seconds(60)) }
+                catch { return }
+            }
+        }
+        .onReceive(state.installedGames.$games) { games in
+            guard startupAllowed, unifiedAccountMode else { return }
+            Task {
+                await state.installedGames.productAccess.refresh(session: session,
+                    installedIDs: games.map(\.storeId))
+            }
+        }
         .task(id: "\(session.accountHash ?? ""):\(state.pcGames.accountHash ?? ""):\(state.gameOperations.serviceStatus?.accountHash ?? "")") {
             guard accountBindingMismatch else { return }
             state.installedGames.setAccountAccessAllowed(false,
@@ -249,6 +265,8 @@ struct LiveRootView: View {
             if startupAllowed, scenePhase == .active {
                 await session.revalidateAccountOnForeground()
                 await state.pcGames.refreshInBackground()
+                await state.installedGames.productAccess.refresh(session: session,
+                    installedIDs: state.installedGames.games.map(\.storeId))
             }
         }
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {
@@ -298,6 +316,7 @@ struct LiveRootView: View {
             } else if !confirmed {
                 if unifiedAccountMode {
                     companion.invalidateBinding()
+                    state.installedGames.productAccess.retire()
                     Task { await state.pcGames.retireUnifiedAccount() }
                 }
                 state.installedGames.setAccountAccessAllowed(false)

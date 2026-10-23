@@ -3617,7 +3617,8 @@
           "enum": [
             "library",
             "profile",
-            "achievements"
+            "achievements",
+            "license"
           ]
         },
         "accountHash": {
@@ -3642,6 +3643,10 @@
               "type": "null"
             }
           ]
+        },
+        "productID": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]{12}$"
         }
       },
       "additionalProperties": false,
@@ -3669,6 +3674,27 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "section": {
+                "const": "license"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "productID"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "productID"
+              ]
+            }
+          }
         }
       ]
     },
@@ -3686,7 +3712,8 @@
             "library",
             "profile",
             "achievements",
-            "runtime"
+            "runtime",
+            "license"
           ]
         },
         "accountHash": {
@@ -3988,6 +4015,141 @@
                   }
                 },
                 "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "section": {
+                "const": "license"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "productID",
+                  "access",
+                  "expiresAt",
+                  "reason"
+                ],
+                "properties": {
+                  "productID": {
+                    "type": "string",
+                    "pattern": "^[A-Z0-9]{12}$"
+                  },
+                  "access": {
+                    "enum": [
+                      "permitted",
+                      "denied",
+                      "unknown"
+                    ]
+                  },
+                  "expiresAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "providerDenied",
+                          "productNotListed",
+                          "validityUnavailable",
+                          "grantExpired",
+                          "grantNotStarted"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "access": {
+                          "const": "permitted"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "expiresAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "reason": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "access": {
+                          "const": "denied"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "expiresAt": {
+                          "type": "null"
+                        },
+                        "reason": {
+                          "const": "providerDenied"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "access": {
+                          "const": "unknown"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "expiresAt": {
+                          "type": "null"
+                        },
+                        "reason": {
+                          "enum": [
+                            "productNotListed",
+                            "validityUnavailable",
+                            "grantExpired",
+                            "grantNotStarted"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             }
           }

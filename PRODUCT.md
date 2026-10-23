@@ -89,7 +89,15 @@ The first SDD candidate removed this working route; the frontend follow-up
 restores it without admitting unresolved titles to the personal Library.
 
 Library preserves the incumbent installed-game cards without labeling local files
-as ownership or subscription access. Account-held PC games load automatically in
+as ownership or subscription access. Current account-bound per-product permitted
+license facts can qualify already-installed StoreIDs for Your Games, but never
+the Owned or Game Pass filter without acquisition evidence. Pending, denied,
+unknown and failed checks leave installations reachable under Installed on this
+Mac; only current permitted facts enable new Play requests. Checks are sequential,
+limited to known installed IDs, memory-only and account-fenced, with a five-minute
+maximum permission cache, actual grant expiry and a one-minute retry cooldown.
+No uninstalled catalogue fanout or purchase/subscription inference occurs.
+Account-held PC games load automatically in
 the background; the last complete same-account snapshot stays visible during
 refresh and transient failure, and is cleared on account retirement. Discover
 remains public browsing. There are no additional refresh controls or management
@@ -97,7 +105,7 @@ disclosures. Native Play still requires the matched account/runtime and the
 service's actual per-game licensing; installation alone grants no access.
 The frozen Collections producer currently returns zero raw records and does not
 separately enumerate Game Pass access, so the requested fully account-qualified
-Library remains unresolved pending an authoritative per-product source. This is
+Library remains unresolved for uninstalled subscription games. This is
 not an empty-account conclusion. Cover grids top-align artwork regardless of
 metadata height.
 

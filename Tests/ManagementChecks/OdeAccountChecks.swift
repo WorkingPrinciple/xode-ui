@@ -57,5 +57,90 @@ extension Checks {
             try duplicate.decode(OdeAccountCollection.self).validate()
             check(false, "Unified collection rejects duplicate identities before dictionary construction")
         } catch { check(true, "Unified collection rejects duplicate identities before dictionary construction") }
+        let checkedAt = "2026-10-23T10:00:00Z"
+        let now = ISO8601DateFormatter().date(from: checkedAt)!
+        func access(_ state: String, reason: String? = nil, expiry: String? = nil,
+                    productID: String = "FIXTURE00001") throws -> OdeProductAccess {
+            try JSONValue.object([
+                "productID": .string(productID), "access": .string(state),
+                "reason": reason.map(JSONValue.string) ?? .null,
+                "expiresAt": expiry.map(JSONValue.string) ?? .null
+            ]).decode(OdeProductAccess.self)
+        }
+        for expiry in [nil, "2026-10-23T11:00:00Z"] {
+            let value = try access("permitted", expiry: expiry)
+            try value.validate(productID: "FIXTURE00001", checkedAt: checkedAt)
+            check(value.permitsAccess(at: now), "Exact valid product grant permits access without inferring purchase or subscription")
+        }
+        let expiring = try access("permitted", expiry: "2026-10-23T11:00:00Z")
+        check(!expiring.permitsAccess(at: now.addingTimeInterval(3600)),
+              "A previously permitted product grant stops authorizing at its actual expiry")
+        for reason in ["productNotListed", "validityUnavailable", "grantExpired", "grantNotStarted"] {
+            let value = try access("unknown", reason: reason)
+            try value.validate(productID: "FIXTURE00001", checkedAt: checkedAt)
+            check(!value.permitsAccess(at: now), "Unknown product access (\(reason)) never grants access or becomes denial")
+        }
+        let denied = try access("denied", reason: "providerDenied")
+        try denied.validate(productID: "FIXTURE00001", checkedAt: checkedAt)
+        check(!denied.permitsAccess(at: now), "Explicit provider denial never grants access")
+        for invalid in [
+            try access("permitted", reason: "providerDenied"),
+            try access("permitted", expiry: "2026-10-23T09:59:59Z"),
+            try access("permitted", expiry: "invalid"),
+            try access("permitted", productID: "FIXTURE00002"),
+            try access("denied"), try access("unknown"),
+            try access("unknown", reason: "providerDenied")
+        ] {
+            do {
+                try invalid.validate(productID: "FIXTURE00001", checkedAt: checkedAt)
+                check(false, "Invalid or mismatched product-access fact is rejected")
+            } catch { check(true, "Invalid or mismatched product-access fact is rejected") }
+        }
+        var licenseParams = params.object!
+        licenseParams["section"] = .string("license")
+        licenseParams["productID"] = .string("FIXTURE00001")
+        try validator.validate(.object(licenseParams), definition: "odeAccountParams")
+        check(true, "Bundled exact producer schema accepts the additive license request")
+        for (key, invalid) in [
+            ("productID", JSONValue.string("fixture00001")),
+            ("productID", .string("SHORT")), ("titleID", .string("42")),
+            ("token", .string("synthetic")), ("section", .string("library"))
+        ] {
+            var request = licenseParams
+            request[key] = invalid
+            do {
+                try validator.validate(.object(request), definition: "odeAccountParams")
+                check(false, "License schema rejects invalid \(key)")
+            } catch { check(true, "License schema rejects invalid \(key)") }
+        }
+        for (state, reason) in [
+            ("permitted", Optional<String>.none), ("denied", "providerDenied"),
+            ("unknown", "productNotListed"), ("unknown", "validityUnavailable"),
+            ("unknown", "grantExpired"), ("unknown", "grantNotStarted")
+        ] {
+            let payload: JSONValue = .object([
+                "productID": .string("FIXTURE00001"), "access": .string(state),
+                "expiresAt": .null, "reason": reason.map(JSONValue.string) ?? .null
+            ])
+            let envelope: JSONValue = .object([
+                "section": .string("license"), "accountHash": .string(account),
+                "checkedAt": .string(checkedAt), "payload": payload
+            ])
+            try validator.validate(envelope, definition: "odeAccountData")
+            check(true, "Swift contract validator admits typed license \(state)/\(reason ?? "null")")
+            for (key, invalid) in [
+                ("token", JSONValue.string("synthetic")), ("reason", .string("invented")),
+                ("expiresAt", .string("not-a-date"))
+            ] {
+                var bad = payload.object!
+                bad[key] = invalid
+                var result = envelope.object!
+                result["payload"] = .object(bad)
+                do {
+                    try validator.validate(.object(result), definition: "odeAccountData")
+                    check(false, "License payload schema rejects \(key) for \(state)")
+                } catch { check(true, "License payload schema rejects \(key) for \(state)") }
+            }
+        }
     }
 }

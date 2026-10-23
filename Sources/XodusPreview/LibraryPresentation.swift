@@ -72,7 +72,7 @@ struct LibraryGame: Identifiable {
 
     static func collection(installed: [InstalledGame], owned: [PCGame], products: [CatalogProduct],
                            gamePass: [CatalogProduct], active: Bool,
-                           accessIsCurrent: Bool = true) -> [Self] {
+                           accessIsCurrent: Bool = true, permittedInstalledIDs: Set<String> = []) -> [Self] {
         var result: [Self] = []
         var seen = Set<String>()
         let catalog = Dictionary(products.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -84,6 +84,11 @@ struct LibraryGame: Identifiable {
         let held = Dictionary(owned.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         for game in installed {
             let id = game.storeId.isEmpty ? game.id.uuidString : game.storeId
+            if held[id] == nil, permittedInstalledIDs.contains(id), seen.insert(id).inserted {
+                result.append(Self(id: id, title: game.title, installed: game, pc: nil,
+                    product: catalog[id] ?? pass[id], owned: false, gamePass: false))
+                continue
+            }
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
             result.append(Self(id: id, title: game.title, installed: game, pc: entitlement,
                                product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind != .subscription,

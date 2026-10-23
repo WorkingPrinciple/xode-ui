@@ -23,7 +23,7 @@ error codes are disclosed under **About these games**, not treated as an empty
 successful search.
 
 The signed CLI `3ea56ed1` / producer `974ac81` was the earlier search candidate.
-The current approved local candidate uses signed CLI
+The prior approved local candidate uses signed CLI
 `3cdbf1dde6e136af29af9c8f3f17042abbd9f05eeca05f4f5efd57f27db67bea` from producer
 `43429cc052c531029c4e1d86ead56102070b9917` (tree
 `3a5ac3f32e5cc33b7f8267205a91249051d31df9`). S2's frozen source passed 396
@@ -34,6 +34,22 @@ packaging, not installation or a claim that installed UI or Brotato runtime
 acceptance has passed. The prior notarized-release exception is not extended to
 this unnotarized local candidate. Historical service probes and app acceptance
 remain bound to the exact candidate noted in their receipts.
+
+The bounded installed-product access rebind selects signed CLI
+`71a3eb861ff4ff9d79d100469b0feea039df327983b47f5dfa15ca82ab68c3e2`,
+built from `a4550b86c8ad19589b631f4e303273c367d30aab`, with its paired helper
+`42560b3e33a258c8af43146034d6f5140d939f855d682739bc82ea1d8962ff65`.
+The additive contract source is `2729b33a1b44e3350363037cafaf017d60d65d06`,
+tree `6f29c11d41967a9f4e9870ac9700da3b349ee6f3`; no crate or dependency
+bytes changed from the binary's build commit. Exact schema SHA256 is
+`578d0c70217c0c3592ec5e17052c8ae62f922293354014196f7f06a3e186b31a`,
+and producer manifest SHA256 is
+`2cce4010dd93156982777e9d7842feafc96e5e276bab43732883a2a4a61f0056`.
+The launch-recipe CLI binding follows this explicit rebind; recipe contents,
+runtime pins and historical gameplay evidence pins are unchanged. This is
+private local candidate admission, not gameplay requalification or public
+distribution. The recursive CompatibilityData bundle and redistribution-rights
+hold remain separate release blockers; no held PublicMetadata is admitted here.
 
 Installed `122532b` with that signed pair passed the full local check and actual
 AX observation: the lens focused its 220-point editor, `mortis` returned Valor

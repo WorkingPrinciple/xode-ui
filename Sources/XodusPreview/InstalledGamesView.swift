@@ -340,13 +340,13 @@ struct InstalledPlayButton: View {
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.checkingInstallations.contains(game.id)
-                  || library.accountDisconnecting || !library.accountAccessAllowed)
+                  || library.accountDisconnecting || !library.canRequestPlay(game.storeId))
         .accessibilityLabel(opensAttention ? "\(title) for \(game.title)"
              : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
-            : !library.accountAccessAllowed ? "Play \(game.title), game access is being checked"
+            : !library.canRequestPlay(game.storeId) ? "Play \(game.title), game access hasn't been confirmed"
             : needsRepair ? "Repair \(game.title)" : "Play \(game.title)")
         .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
-              : !canStop && !library.accountAccessAllowed
+              : !canStop && !library.canRequestPlay(game.storeId)
                 ? "This account's access to the game hasn't been confirmed." : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
         .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"

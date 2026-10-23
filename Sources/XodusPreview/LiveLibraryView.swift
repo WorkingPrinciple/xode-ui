@@ -35,14 +35,17 @@ struct LiveLibraryView: View {
     private var collection: [LibraryGame] {
         LibraryGame.collection(installed: installed.games, owned: library.representedGames,
                                products: session.products, gamePass: session.gamePassProducts,
-                               active: operations.gamePassActive, accessIsCurrent: library.accessIsCurrent)
+                               active: operations.gamePassActive, accessIsCurrent: library.accessIsCurrent,
+                               permittedInstalledIDs: Set(installed.games.map(\.storeId).filter {
+                                   installed.productAccess.permits($0, account: session.accountHash)
+                               }))
     }
     private var visibleCandidates: [LibraryGame] {
         LibraryGame.visible(libraryGames,
                             query: query, filter: filter, sort: sort)
     }
     private var libraryGames: [LibraryGame] {
-        LibraryGame.displayCollection(installed: installed.games, account: collection)
+        collection
     }
     private var visible: [LibraryGame] {
         visibleCandidates.filter(isVisible)
@@ -101,6 +104,7 @@ struct LiveLibraryView: View {
                                 allowsSorting: true)
                     .id("library-games")
                 if installed.loading { ProgressView("Loading installed games") }
+                if installed.productAccess.checking { ProgressView("Loading your games").controlSize(.small) }
                 if visible.isEmpty {
                     if hiddenUnsupportedCount > 0, !showsUnsupportedGames {
                         ContentUnavailableView {
@@ -117,7 +121,8 @@ struct LiveLibraryView: View {
                             Label("No \(filter.rawValue.lowercased()) games to show", systemImage: "gamecontroller")
                         } description: { Text("Try another filter to see the games in your library.") }
                         actions: { Button("Show all games") { filter = .all } }
-                    } else if library.accessIsCurrent, library.representedGames.isEmpty {
+                    } else if library.accessIsCurrent, library.representedGames.isEmpty,
+                              localRecords.isEmpty, !installed.productAccess.checking {
                         ContentUnavailableView {
                             Label("No PC games found", systemImage: "gamecontroller")
                         } description: { Text("Browse Discover to find PC games.") }
@@ -134,6 +139,14 @@ struct LiveLibraryView: View {
                 }
                 if let error = xboxStats.error {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
+                }
+                if [.all, .installed].contains(filter), !localRecords.filter(isVisible).isEmpty {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Installed on this Mac").font(.title2.weight(.semibold))
+                        LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
+                            ForEach(localRecords.filter(isVisible)) { game in card(game) }
+                        }
+                    }
                 }
                 if showsNativeMinecraft {
                     NativeMinecraftCard {
@@ -193,7 +206,7 @@ struct LiveLibraryView: View {
                 compatibility: operations.compatibility[id]).isEmpty
         }
         return LibraryGame.heroCandidates(qualified: collection.filter(recommendable),
-            catalogue: localRecords.filter(recommendable), continuingIDs: continuing.map(\.id))
+            catalogue: [], continuingIDs: continuing.map(\.id))
     }
 
     private var heroCarousel: some View {

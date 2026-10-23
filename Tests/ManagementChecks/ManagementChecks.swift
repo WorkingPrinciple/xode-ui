@@ -1113,9 +1113,18 @@ enum MockBackend {
                             let items: [JSONValue] = warm
                                 && !(scenario == "odelibraryempty" && accountLibraryReads > 1)
                                 ? [.object(["productID": .string("FIXTURE00001"), "acquisitionKind": .string("purchased")])] : []
-                            let payload: JSONValue = section == "library" ? .object(["items": .array(items)])
-                                : .object(["gamertag": .string("Fixture"), "displayName": .null,
-                                    "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null])
+                            let payload: JSONValue
+                            if section == "license" {
+                                payload = .object([
+                                    "productID": request["params"]?["productID"] ?? .null,
+                                    "access": .string("permitted"), "expiresAt": .string("2030-01-01T00:00:00Z"),
+                                    "reason": .null
+                                ])
+                            } else {
+                                payload = section == "library" ? .object(["items": .array(items)])
+                                    : .object(["gamertag": .string("Fixture"), "displayName": .null,
+                                        "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null])
+                            }
                             let response = result(request, data: .object([
                                 "section": .string(section),
                                 "accountHash": .string(String(repeating: scenario == "odemismatch" ? "b" : "a", count: 64)),

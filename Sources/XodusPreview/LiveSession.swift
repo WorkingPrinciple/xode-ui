@@ -206,7 +206,13 @@ final class LiveSession: ObservableObject {
     }
 
     var isReady: Bool { phase == .ready }
-    var accountBusy: Bool { accountOperationBusy || recentLibraryBootstrapRunning || accountRuntimeStarting }
+    private var licenseReadGeneration: Int?
+    private var licenseReadInFlight: Bool { licenseReadGeneration == generation }
+    private var waitingInteractiveAccountReads = 0
+    var accountBusy: Bool {
+        accountOperationBusy || recentLibraryBootstrapRunning || accountRuntimeStarting
+            || waitingInteractiveAccountReads > 0
+    }
     var signInPending: Bool { authentication?.flow?.state == .pending }
     var canSignIn: Bool {
         isReady && supports(.authBegin) && supports(.authCancel) && supports(.authStatus)
@@ -774,7 +780,22 @@ final class LiveSession: ObservableObject {
     func supports(_ command: ManagementCommand) -> Bool { hello?.supports(command) == true }
 
     func readUnifiedAccount(_ section: OdeAccountSection, titleID: String? = nil,
-                            market: String? = nil, language: String? = nil) async throws -> OdeAccountRead {
+                            market: String? = nil, language: String? = nil,
+                            productID: String? = nil) async throws -> OdeAccountRead {
+        guard (section == .license && productID.map(PCGamesClient.validProductID) == true && titleID == nil)
+            || (section != .license && productID == nil) else { throw ManagementError.invalidPayload }
+        let admissionGeneration = generation
+        let admissionAuthentication = authenticationGeneration
+        if section != .license {
+            waitingInteractiveAccountReads += 1
+            defer { waitingInteractiveAccountReads -= 1 }
+            while licenseReadInFlight {
+                try await Task.sleep(for: .milliseconds(50))
+                guard generation == admissionGeneration, authenticationGeneration == admissionAuthentication else {
+                    throw ManagementError.disconnected
+                }
+            }
+        }
         guard hasConfirmedSignIn, !accountOperationBusy, !recentLibraryBootstrapRunning,
               section == .runtime || !accountRuntimeStarting, !applicationTerminating, let client,
               let account = accountHash else { throw ManagementError.disconnected }
@@ -785,12 +806,20 @@ final class LiveSession: ObservableObject {
         let token = generation
         let authToken = authenticationGeneration
         accountOperationBusy = true
-        defer { if token == generation { accountOperationBusy = false } }
-        let result = try await client.request(command, params: [
+        if section == .license { licenseReadGeneration = token }
+        defer {
+            if token == generation {
+                accountOperationBusy = false
+                if section == .license { licenseReadGeneration = nil }
+            }
+        }
+        var params: [String: JSONValue] = [
             "section": .string(section.rawValue), "accountHash": .string(account),
             "market": .string(market ?? self.market), "language": .string(language ?? self.language),
             "titleID": titleID.map(JSONValue.string) ?? .null
-        ]).decode(OdeAccountRead.self)
+        ]
+        if let productID { params["productID"] = .string(productID) }
+        let result = try await client.request(command, params: params).decode(OdeAccountRead.self)
         try Task.checkCancellation()
         guard token == generation, authToken == authenticationGeneration,
               accountHash == account, hasConfirmedSignIn else { throw ManagementError.disconnected }

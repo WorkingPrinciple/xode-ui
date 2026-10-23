@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import Combine
 import Foundation
 import OSLog
 import XodusCore
@@ -12,6 +13,8 @@ enum InstalledGamePlayState: Equatable {
 @MainActor
 final class InstalledGamesController: ObservableObject {
     private static let launchLog = Logger(subsystem: "io.github.dragoshont.xodus", category: "GameLaunch")
+    let productAccess = InstalledProductAccess()
+    private var productAccessObservation: AnyCancellable?
     @Published private(set) var games: [InstalledGame] = []
     @Published private(set) var loading = false
     @Published private(set) var editing = false
@@ -48,6 +51,7 @@ final class InstalledGamesController: ObservableObject {
     var applicationTerminating = false {
         didSet {
             if applicationTerminating {
+                productAccess.retire()
                 foregroundHandoff?.cancel()
                 for task in nativeInspectionTasks.values { task.cancel() }
             }
@@ -282,6 +286,11 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    func canRequestPlay(_ productID: String) -> Bool {
+        guard accountAccessAllowed else { return false }
+        return !usesUnifiedAccount || productAccess.permits(productID, account: unifiedSession?.accountHash)
+    }
+
     func suspendAccountView() {
         guard runningGameID == nil, stoppingGameID == nil, !mutationActive else { return }
         games = []
@@ -303,8 +312,9 @@ final class InstalledGamesController: ObservableObject {
         Self.launchLog.notice("Play requested: \(game.storeId, privacy: .public)")
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
-              accountAccessAllowed, games.contains(game) else {
+              canRequestPlay(game.storeId), games.contains(game) else {
             let message = !accountAccessAllowed ? accountAccessMessage
+                : !canRequestPlay(game.storeId) ? "Access to this game hasn't been confirmed for your Xbox account."
                 : runningGameID != nil ? "Quit the running game before starting another."
                 : "Your library is busy. Wait for the current operation to finish and try again."
             if runningGameID == game.id {
@@ -434,6 +444,9 @@ final class InstalledGamesController: ObservableObject {
 
     func useUnifiedAccount(_ session: LiveSession) {
         usesUnifiedAccount = true
+        productAccessObservation = productAccess.objectWillChange.sink { [weak self] in
+            self?.objectWillChange.send()
+        }
         unifiedSession = session
         launchableIDs = []
     }
@@ -532,7 +545,7 @@ final class InstalledGamesController: ObservableObject {
             let arguments = try await launch.arguments()
             let executables = try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder)).executables
             let existingWindows = NativeGameForeground.windowIDs()
-            guard accountAccessAllowed, session.accountHash == account,
+            guard canRequestPlay(game.storeId), session.accountHash == account,
                   session.nativeLifecycleConfiguration?.executable == configuration.executable,
                   runningGameID == game.id, runToken == token, !accountDisconnecting, !applicationTerminating,
                   games.contains(game) else { throw GameScriptError.busy }
