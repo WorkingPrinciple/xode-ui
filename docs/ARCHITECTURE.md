@@ -130,6 +130,12 @@ includes validated URL, bucket and processing version. Concurrent variants
 coalesce the encoded byte read by URL; decode is per variant, not per card.
 Only two fetch/decode pipelines run at once. The existing 64 MiB/40-bitmap
 NSCache is charged `CGImage.bytesPerRow * height`, not NSImage point dimensions.
+Admission queues at most 64 jobs; excess requests surface the ordinary artwork
+unavailable state. Each shared variant tracks its live consumers. Losing the
+last consumer cancels its queued admission immediately; withdrawing one of
+several consumers does not cancel their shared work. An already-running public
+byte read may finish within its existing HTTP timeout, but a retired variant
+does not continue into decode or publication.
 HTTP expiry/no-store, redirects, approved URLs, MIME, byte and pixel bounds
 remain enforced. Disk writes follow successful decode; corrupt disk data can
 retry the real public URL. Memory-clear generations fence stale writes.
@@ -150,6 +156,9 @@ The former 2400-ceiling path decoded that same real source at 1920x1080
 Reusing the fresh 640 variant returned the same bitmap. An older real network
 request finished after the current cached URL and did not replace it.
 At a 400x225-point destination, 1x selected 640 and 2x selected 1280.
+With two real URL reads active/queued, withdrawing two consumers left a live
+shared consumer intact and avoided the obsolete variant's decode: two byte
+reads, three decoded live variants and a peak of two active pipelines.
 These observations validate the production image path, not installed-app
 trackpad scrolling, hitches, tab latency, Wi-Fi startup, an actual provider
 outage or lifecycle acceptance. No real frame-speed improvement is claimed.

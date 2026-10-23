@@ -63,25 +63,45 @@ enum CatalogImagePolicy {
 }
 
 private actor ArtworkWorkAdmission {
+    private struct Waiter {
+        let id: UUID
+        let continuation: CheckedContinuation<Void, Error>
+    }
     private var active = 0
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var waiters: [Waiter] = []
     #if DEBUG
     private(set) var peak = 0
     #endif
 
-    func acquire() async {
-        if active == 2 { await withCheckedContinuation { waiters.append($0) } }
-        else {
+    func acquire() async throws {
+        try Task.checkCancellation()
+        if active < 2 {
             active += 1
             #if DEBUG
             peak = max(peak, active)
             #endif
+            return
         }
+        guard waiters.count < 64 else { throw ArtworkLoadError.unavailable }
+        let id = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                if Task.isCancelled { continuation.resume(throwing: CancellationError()) }
+                else { waiters.append(Waiter(id: id, continuation: continuation)) }
+            }
+        } onCancel: {
+            Task { await self.cancelQueued(id) }
+        }
+    }
+
+    private func cancelQueued(_ id: UUID) {
+        guard let index = waiters.firstIndex(where: { $0.id == id }) else { return }
+        waiters.remove(at: index).continuation.resume(throwing: CancellationError())
     }
 
     func release() {
         if waiters.isEmpty { active -= 1 }
-        else { waiters.removeFirst().resume() }
+        else { waiters.removeFirst().continuation.resume() }
     }
 }
 
@@ -110,6 +130,10 @@ final class CatalogArtworkStore {
         var cacheKey: NSString { "\(bytes.generation):\(version):\(bucket.rawValue):\(bytes.url.absoluteString)" as NSString }
     }
     private struct DiskUpdate: Sendable { let entry: CatalogMediaEntry?; let generation: Int }
+    private struct ImageRead {
+        let task: Task<NSImage, Error>
+        var consumers: Set<UUID>
+    }
     private struct ImageBytes: Sendable {
         let data: Data
         let expiry: Date?
@@ -117,7 +141,7 @@ final class CatalogArtworkStore {
         let update: DiskUpdate?
     }
     private let cache = NSCache<NSString, NSImage>()
-    private var pending: [ImageKey: Task<NSImage, Error>] = [:]
+    private var pending: [ImageKey: ImageRead] = [:]
     private var bytePending: [ByteKey: Task<ImageBytes, Error>] = [:]
     private let admission = ArtworkWorkAdmission()
     private let session: URLSession
@@ -167,15 +191,41 @@ final class CatalogArtworkStore {
         let url = try reference.validatedURL()
         let key = ImageKey(bytes: ByteKey(url: url, generation: generation), bucket: bucket)
         if let image = cache.object(forKey: key.cacheKey), expires[key].map({ $0 > Date() }) == true { return image }
-        if let task = pending[key] {
-            let image = try await task.value
-            try Task.checkCancellation()
-            return image
+        let consumer = UUID()
+        let task: Task<NSImage, Error>
+        if var read = pending[key] {
+            read.consumers.insert(consumer)
+            pending[key] = read
+            task = read.task
+        } else {
+            task = startImage(key, url: url, bucket: bucket)
+            pending[key] = ImageRead(task: task, consumers: [consumer])
         }
-        let task = Task {
-            await admission.acquire()
+        defer { releaseConsumer(consumer, key: key) }
+        let image = try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            Task { @MainActor in self.releaseConsumer(consumer, key: key) }
+        }
+        try Task.checkCancellation()
+        return image
+    }
+
+    private func releaseConsumer(_ consumer: UUID, key: ImageKey) {
+        guard var read = pending[key], read.consumers.remove(consumer) != nil else { return }
+        if read.consumers.isEmpty {
+            pending[key] = nil
+            read.task.cancel()
+        } else { pending[key] = read }
+    }
+
+    private func startImage(_ key: ImageKey, url: URL, bucket: CatalogImageBucket) -> Task<NSImage, Error> {
+        Task {
+            try await admission.acquire()
             do {
+                try Task.checkCancellation()
                 var bytes = try await imageBytes(key.bytes)
+                try Task.checkCancellation()
                 let decoded: CGImage
                 do { decoded = try await decode(bytes.data, bucket: bucket) }
                 catch {
@@ -184,12 +234,15 @@ final class CatalogArtworkStore {
                     do { try await disk.remove(url) }
                     catch { logger.warning("stage=imageCacheRemoveFailed; bypassing saved artwork") }
                     bytes = try await imageBytes(key.bytes, bypassingSaved: true)
+                    try Task.checkCancellation()
                     decoded = try await decode(bytes.data, bucket: bucket)
                 }
+                try Task.checkCancellation()
                 if let update = bytes.update, let disk {
                     do { try await disk.store(update.entry, for: url, generation: update.generation) }
                     catch { logger.warning("stage=imageCacheWriteFailed; public artwork is memory-only") }
                 }
+                try Task.checkCancellation()
                 #if DEBUG
                 decodedVariants += 1
                 #endif
@@ -209,11 +262,6 @@ final class CatalogArtworkStore {
                 throw error
             }
         }
-        pending[key] = task
-        defer { pending[key] = nil }
-        let image = try await task.value
-        try Task.checkCancellation()
-        return image
     }
 
     private func decode(_ data: Data, bucket: CatalogImageBucket) async throws -> CGImage {
