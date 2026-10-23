@@ -129,10 +129,13 @@ dispatch, acquisition kinds and unresolved/excluded PC descriptors.
 Ordinary detail content follows system appearance; dark treatment is local to
 the media header. See [native UI procedures](NATIVE_UI_PROCEDURES.md) for bounded
 real-product verification and evidence limits.
-Response decoding and detail/artwork/commerce normalization run in one
+Response decoding and detail/artwork normalization run in one
 cancellation-linked utility task, returning a Sendable batch. The MainActor
 rechecks cancellation and generation before one coherent publication; optional
-detail and commerce rejections remain explicit and do not withdraw game access.
+detail rejections remain explicit and do not withdraw game access.
+Ode has no commerce subsystem: no offer decoding, prices, purchase/claim actions
+or external acquisition handoffs. Install and Play remain independently gated by
+current game access.
 
 Reproduce the isolated CPU-preparation comparison with
 `swift build --product XodusPreview --jobs 1` followed by

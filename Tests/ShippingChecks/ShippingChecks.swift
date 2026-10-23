@@ -42,7 +42,7 @@ final class ShippingChecks: XCTestCase {
               "Shipping setup starts unchecked, without a script, repair or invented readiness")
         let results = CatalogSearchResults(query: "neutral", ownedGames: [], storeProducts: [], gamePassProductIDs: [])
         check(results.ownedMatches.isEmpty && results.storeProducts.isEmpty
-              && results.badge(for: "FIXTURE00001") == nil && session.gamePassProductIDs.isEmpty
+              && results.facts(for: "FIXTURE00001").badgeLabels().isEmpty && session.gamePassProductIDs.isEmpty
               && state.gameOperations.compatibility.isEmpty && !state.gameOperations.checkingCompatibility,
               "Shipping search and Mac-support badges start without invented ownership/feed/check evidence")
         await state.loadRecentActivityIfVisible(session: session)

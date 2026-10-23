@@ -89,19 +89,10 @@ names as partial public listings and keeps account-plan coverage unverified.
 It does not infer tiers or platforms from IDs/names, nor grant install access
 from public listing data.
 
-Product links (#42) resolve Microsoft's public `/store/productId/<id>` route
-with explicit market and locale, follow only matching Microsoft/Xbox redirects,
-and require a successful Xbox page with a matching canonical slug, ID and locale.
-No slug is synthesized from a title, and a store-root URL is never returned.
-The read-only `--xbox-product-link-check <id> <market> <locale>` development
-command verifies this live without opening a browser or accessing credentials.
 Live startup takes the device's market and a preferred language matching that
 market when available (for example RO with preferred en-US/ro-RO selects ro-RO),
-rather than silently using US prices and links. Explicit test connections keep
+rather than silently using US catalogue metadata. Explicit test connections keep
 their explicit test scope.
-For an English-only Mac in Romania, Microsoft's resolver chooses the actual
-market-correct ro-RO product route; that returned canonical locale is accepted
-without inventing a slug or requiring an unavailable preferred language.
 
 Optional DisplayCatalog details accept the explicit `neutral` language tag as
 unlocalized product metadata, alongside exact/same-language responses.
@@ -110,22 +101,11 @@ dates, exact requested product identities, and game-access gates remain unchange
 The saved-response `--catalog-detail-check` runs offline and does not establish
 that the installed app has displayed the updated details.
 
-Acquisition (#41) is a confirmed external-page fallback, not an in-app licence
-grant. Microsoft's documented [grant-free-products API](https://learn.microsoft.com/en-us/windows/uwp/monetize/grant-free-products)
-requires a publisher service identity and a Store ID key; this app's consumer
-sign-in does not establish that capability. No purchase or grant endpoint is
-called. Eligible unlicensed titles show **Get free on xbox.com** or
-**View Game Pass on xbox.com**, explicitly confirm browser opening, and resolve
-the verified product page before opening it. Returning never creates an Owned
-badge: the user must refresh the real PC library.
-
-Public prices use current full-PC purchase offers in the selected market.
-Trials, licensing-only rows, subscription upsells/remediations, console-only,
-expired or unknown offers are not free-game evidence. Paid non-Game-Pass titles
-have no acquisition action. Public Game Pass membership is not an account grant.
-`--catalog-offer-check <saved-json> <market> <locale>` validates saved public
-offers without credentials, browser actions or acquisition. Price failures stay
-explicitly unavailable and cannot hide game identity or grant install access.
+REQ-61 / COR-21: Ode never offers commerce on any distribution channel.
+Offer decoding, price formatting, purchase/claim actions, external acquisition
+links and their development commands are deleted, not feature-gated.
+Entitled games retain Install and Play. Public Game Pass membership remains
+independent of account access and never grants installation on its own.
 
 ### Brotato candidate route (#43)
 

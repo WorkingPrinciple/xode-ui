@@ -104,9 +104,6 @@ final class LibraryCatalogArtwork: ObservableObject {
                     if parsed.rejectedDetailPayload {
                         logger.warning("Optional public detail payload was rejected; library identity and artwork remain separate.")
                     }
-                    if parsed.rejectedCommerce {
-                        logger.warning("Public PC price offers were rejected; prices stay unavailable and no free acquisition is offered.")
-                    }
                     if !parsed.errors.isEmpty {
                         logger.warning("Optional public game details were rejected; game access and actions are unchanged.")
                     }
@@ -135,7 +132,6 @@ final class LibraryCatalogArtwork: ObservableObject {
         let images: [String: Images]
         let errors: [String: String]
         let rejectedDetailPayload: Bool
-        let rejectedCommerce: Bool
     }
 
     nonisolated static func parseResponse(_ data: Data, batch: [String], market: String,
@@ -165,18 +161,6 @@ final class LibraryCatalogArtwork: ObservableObject {
             details = Dictionary(uniqueKeysWithValues: values.map { ($0.ProductId, $0) })
         } catch {
             rejectedDetailPayload = true
-        }
-        var prices: [String: CatalogCommerce] = [:]
-        var rejectedCommerce = false
-        do {
-            let values = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
-            guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
-                  values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-            for value in values {
-                prices[value.ProductId] = CatalogCommerce.price(value, market: PCGamesClient.market(market))
-            }
-        } catch {
-            rejectedCommerce = true
         }
         var batchImages: [String: Images] = [:]
         var batchErrors: [String: String] = [:]
@@ -224,12 +208,11 @@ final class LibraryCatalogArtwork: ObservableObject {
                                            downloadBytes: product.pcDownloadBytes,
                                            packageFormat: product.pcPackageFormat,
                                            pcPackageListed: product.pcPackageListing,
-                                           isBaseGame: product.isBaseGame,
-                                           commerce: prices[product.ProductId]),
+                                           isBaseGame: product.isBaseGame),
                 detail: detailFacts, product: detail)
         }
         return ParsedResponse(images: batchImages, errors: batchErrors,
-            rejectedDetailPayload: rejectedDetailPayload, rejectedCommerce: rejectedCommerce)
+            rejectedDetailPayload: rejectedDetailPayload)
     }
 
     func retry(id: String, market: String, language: String) async {
@@ -279,28 +262,23 @@ struct LibraryCatalogFacts: Sendable {
     let packageFormat: String?
     let pcPackageListed: Bool?
     let isBaseGame: Bool?
-    let commerce: CatalogCommerce?
 
     init(genres: [String], capabilities: [LibraryCapability] = [], downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil,
-         commerce: CatalogCommerce? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil) {
         self.genres = Array(genres.prefix(2))
         self.capabilities = capabilities
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
         self.isBaseGame = isBaseGame
-        self.commerce = commerce
     }
 
     init(properties: PCGamesCatalog.Product.PropertiesDTO?, downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil,
-         commerce: CatalogCommerce? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil) {
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
         self.isBaseGame = isBaseGame
-        self.commerce = commerce
         var seen = Set<String>()
         genres = Array((properties?.Categories ?? properties?.Category.map { [$0] } ?? [])
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }

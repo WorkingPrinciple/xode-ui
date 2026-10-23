@@ -5,31 +5,6 @@ import XodusManagement
 
 @MainActor
 enum PreviewChecks {
-    static func checkOfferMetadata() -> Bool {
-        do {
-            let args = CommandLine.arguments
-            guard args.count == 5, PCGamesClient.market(args[3]) == args[3],
-                  PCGamesClient.language(args[4]) == args[4],
-                  let data = try GameScriptFiles.read(
-                    URL(fileURLWithPath: args[2]), maximumBytes: 4 * 1024 * 1024) else {
-                throw PCGamesError.invalidResponse
-            }
-            let products = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
-            guard !products.isEmpty, products.count <= 20,
-                  products.allSatisfy({ PCGamesClient.validProductID($0.ProductId) }) else {
-                throw PCGamesError.invalidResponse
-            }
-            for product in products {
-                let commerce = CatalogCommerce.price(product, market: args[3])
-                print("Public PC offer \(product.ProductId): \(commerce?.label ?? "Price unavailable"); free=\(commerce?.isFree() == true). No acquisition attempted.")
-            }
-            return true
-        } catch {
-            FileHandle.standardError.write(Data("Saved public PC offer metadata was rejected: \(error).\n".utf8))
-            return false
-        }
-    }
-
     static func checkXboxCompanion() -> Bool {
         do {
             let args = CommandLine.arguments

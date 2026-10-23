@@ -379,7 +379,7 @@ struct LiveCatalogView: View {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
             }
             LibraryGameInformation(gameFacts: game.facts,
-                                   facts: facts[game.id], compact: true, showsPrice: true)
+                                   facts: facts[game.id], compact: true)
             if game.pc == nil, !game.owned {
                 Text(library.accessIsCurrent ? "Not in your PC library" : "Ownership not verified")
                     .font(.caption).foregroundStyle(.secondary)
@@ -405,11 +405,6 @@ struct LiveCatalogView: View {
                         .buttonBorderShape(.circle)
                 }
             }
-            CatalogAcquisitionAction(productID: game.id, title: game.title,
-                market: session.market, language: session.language,
-                licensed: game.pc != nil || game.owned, gamePass: game.gamePass,
-                commerce: facts[game.id]?.commerce,
-                enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
             }
         }
     }

@@ -208,8 +208,7 @@ struct LiveProductView: View {
                     LibraryLogoTitle(title: product.title, references: art?.logos ?? [],
                                      allowsLoading: allowsArtworkLoading)
                     LibraryGameInformation(gameFacts: gameFacts, detail: true,
-                                           facts: art?.facts, xbox: stats.cache?.games[product.id],
-                                           showsPrice: owned == nil && installed == nil)
+                                           facts: art?.facts, xbox: stats.cache?.games[product.id])
                     if let details {
                         GameHeroMetadata(details: details)
                     }
@@ -271,13 +270,6 @@ struct LiveProductView: View {
                             .modifier(LibraryActionStyle())
                             .disabled(true)
                             .help("Current ownership or Game Pass access is required to install this game.")
-                        }
-                        if installed == nil {
-                            CatalogAcquisitionAction(productID: product.id, title: product.title,
-                                market: product.market, language: product.language,
-                                licensed: library.accessIsCurrent && owned != nil, gamePass: gamePass,
-                                commerce: art?.facts.commerce,
-                                enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
                         }
                     }.controlSize(.large)
                     if let installed {

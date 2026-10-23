@@ -31,7 +31,7 @@ enum DevelopmentArguments {
             return arguments.count == 1
         case "--export-preview", "--export-live", "--export-live-data":
             return arguments.count == 2
-        case "--catalog-detail-check", "--catalog-offer-check", "--xbox-product-link-check":
+        case "--catalog-detail-check":
             return arguments.count == 4
         case "--gamepass-compatibility-export":
             return arguments.count == 2
@@ -131,23 +131,6 @@ struct XodusPreviewApp: App {
         if CommandLine.arguments.contains("--presentation-performance-check") { PresentationPerformanceChecks.launch() }
         if CommandLine.arguments.contains("--live-check") { NativeChecks.launch() }
         if CommandLine.arguments.contains("--library-access-check") { NativeChecks.launch(libraryAccessOnly: true) }
-        if CommandLine.arguments.contains("--xbox-product-link-check") {
-            Task { @MainActor in
-                do {
-                    let args = CommandLine.arguments
-                    let url = try await XboxProductLink.resolve(
-                        productID: args[2], market: args[3], language: args[4])
-                    print("Resolved live canonical Xbox product page: \(url.absoluteString)")
-                    print("HTTP 200 and canonical identity/locale verified. No browser, account, licence or purchase action.")
-                    exit(0)
-                } catch {
-                    FileHandle.standardError.write(Data("Xbox product link verification failed: \(error.localizedDescription)\n".utf8))
-                    exit(1)
-                }
-            }
-            CFRunLoopRun()
-            fatalError("Product link check exited its run loop unexpectedly.")
-        }
         if CommandLine.arguments.contains("--gamepass-collections-check")
             || CommandLine.arguments.contains("--gamepass-compatibility-export") {
             Task { @MainActor in
@@ -179,9 +162,6 @@ struct XodusPreviewApp: App {
         if CommandLine.arguments.contains("--game-operation-check") { NativeChecks.launch(gameOperationsOnly: true) }
         if CommandLine.arguments.contains("--catalog-detail-check") {
             exit(PreviewChecks.checkDetailMetadata() ? 0 : 1)
-        }
-        if CommandLine.arguments.contains("--catalog-offer-check") {
-            exit(PreviewChecks.checkOfferMetadata() ? 0 : 1)
         }
         if CommandLine.arguments.contains("--xbox-companion-check") {
             exit(PreviewChecks.checkXboxCompanion() ? 0 : 1)

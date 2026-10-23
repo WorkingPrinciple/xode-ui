@@ -78,9 +78,8 @@ enum CatalogDetailLoadingChecks {
         let malformed = LibraryCatalogArtwork(transport: DetailPriorityTransport(malformedPrice: true))
         await malformed.loadDetail(id: "FIXTURE00002", market: "US", language: "en-US")
         check(malformed.images["FIXTURE00002"]?.product.title == "Synthetic game"
-              && malformed.images["FIXTURE00002"]?.facts.commerce == nil
               && malformed.images["FIXTURE00002"]?.detail?.description == "Synthetic description.",
-              "#40/#41: Invalid optional pricing cannot hide catalogue identity/details or manufacture a free offer")
+              "REQ-61: Removed offer data is ignored while catalogue identity and game details remain readable")
         try await concurrency(check: check)
     }
 
