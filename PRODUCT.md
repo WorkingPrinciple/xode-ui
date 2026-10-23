@@ -95,7 +95,8 @@ the Owned or Game Pass filter without acquisition evidence. Pending, denied,
 unknown and failed checks leave installations reachable under Installed on this
 Mac; only current permitted facts enable new Play requests. Checks are sequential,
 limited to known installed IDs, memory-only and account-fenced, with a five-minute
-maximum permission cache, actual grant expiry and a one-minute retry cooldown.
+maximum permission cache, proactive renewal after two minutes, actual grant
+expiry and a one-minute retry cooldown.
 No uninstalled catalogue fanout or purchase/subscription inference occurs.
 Account-held PC games load automatically in
 the background; the last complete same-account snapshot stays visible during

@@ -12,9 +12,10 @@ enum InstalledProductAccessChecks {
         let unknown = "9TESTUNKNOWN"
         let now = ISO8601DateFormatter().date(from: "2030-01-01T00:00:00Z")!
         func response(_ id: String, accountHash: String = account, access: String = "permitted",
-                      reason: String? = nil, expiry: String? = nil) throws -> OdeAccountRead {
+                      reason: String? = nil, expiry: String? = nil,
+                      checkedAt: String = "2030-01-01T00:00:00Z") throws -> OdeAccountRead {
             let payload: [String: Any] = [
-                "section": "license", "accountHash": accountHash, "checkedAt": "2030-01-01T00:00:00Z",
+                "section": "license", "accountHash": accountHash, "checkedAt": checkedAt,
                 "payload": ["productID": id, "access": access,
                             "reason": reason as Any? ?? NSNull(), "expiresAt": expiry as Any? ?? NSNull()]
             ]
@@ -50,7 +51,7 @@ enum InstalledProductAccessChecks {
         check(requests.count == 3, "Warm account access is cached without repeated provider calls")
         await controller.refresh(account: account, installedIDs: [product, denied, unknown],
             now: now.addingTimeInterval(61), read: reader)
-        check(requests.count == 5, "Unknown and denied facts retry after a bounded cooldown; valid grants stay cached")
+        check(requests.count == 6, "Unknown and denied facts retry after cooldown; short grants renew before actual expiry")
         await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(301)) { _ in
             throw ManagementError.requestTimedOut
         }
@@ -81,6 +82,47 @@ enum InstalledProductAccessChecks {
         check(controller.permits(product, account: account, now: now.addingTimeInterval(299))
               && !controller.permits(product, account: account, now: now.addingTimeInterval(300)),
               "Perpetual grants still have a finite five-minute account cache")
+        var renewals = 0
+        var preservedDuringRenewal = false
+        await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(121)) { id in
+            renewals += 1
+            preservedDuringRenewal = controller.permits(product, account: account, now: now.addingTimeInterval(121))
+            return try response(id, checkedAt: "2030-01-01T00:02:01Z")
+        }
+        check(preservedDuringRenewal,
+              "Proactive refresh preserves a still-valid same-account fact while its request runs")
+        check(renewals == 1 && controller.permits(product, account: account, now: now.addingTimeInterval(301)),
+              "Background renewal starts before cache expiry instead of flickering Library and Play off at five minutes")
+        let short = InstalledProductAccess()
+        defer { short.retire() }
+        await short.refresh(account: account, installedIDs: [product], now: now) { id in
+            try response(id, expiry: "2030-01-01T00:02:00Z")
+        }
+        await short.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(61)) { _ in
+            throw ManagementError.requestTimedOut
+        }
+        check(short.errors[product] != nil
+              && short.permits(product, account: account, now: now.addingTimeInterval(100))
+              && !short.permits(product, account: account, now: now.addingTimeInterval(120)),
+              "Failed renewal preserves only still-valid evidence and never extends a short grant past actual expiry")
+        let batch = InstalledProductAccess()
+        defer { batch.retire() }
+        let ids = (0..<36).map { String(format: "9TEST%07d", $0) }
+        var clock = now
+        var batchReads = 0
+        let batchReader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            batchReads += 1
+            clock = clock.addingTimeInterval(2)
+            return try response(id, checkedAt: ISO8601DateFormatter().string(from: clock))
+        }
+        await batch.refresh(account: account, installedIDs: ids, now: now, read: batchReader)
+        clock = now.addingTimeInterval(132)
+        await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
+        clock = now.addingTimeInterval(204)
+        await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
+        check(batchReads == 72 && ids.allSatisfy {
+            batch.permits($0, account: account, now: now.addingTimeInterval(373))
+        }, "Two-minute renewal threshold covers a 72-second sequential batch plus 60-second ticks without crossing the original cache boundary")
         let local = InstalledGamesController()
         local.useUnifiedAccount(LiveSession())
         local.setAccountAccessAllowed(true)

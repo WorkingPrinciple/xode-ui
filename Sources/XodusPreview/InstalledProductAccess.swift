@@ -77,7 +77,9 @@ final class InstalledProductAccess: ObservableObject {
         let ids = installed.sorted().filter { id in
             guard let last = attempts[id] else { return true }
             return now.timeIntervalSince(last) >= 60
-                && (errors[id] != nil || !permits(id, account: account, now: now))
+                && (errors[id] != nil || !permits(id, account: account, now: now)
+                    || facts[id].map { now.timeIntervalSince($0.checkedAt) >= 120
+                        || $0.value.expiryDate.map { $0.timeIntervalSince(now) <= 180 } == true } == true)
         }
         guard !ids.isEmpty else { return }
         let epoch = generation
