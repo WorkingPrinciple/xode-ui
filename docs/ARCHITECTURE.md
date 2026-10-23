@@ -31,6 +31,55 @@ account/catalog/install/queue management. No private Rust source is imported.
 
 ## Model and ownership
 
+### Retained native browse presentation
+
+Library and Discover retain bounded derived projections in their app-owned tab
+selection objects. A semantic input key includes account identity/currentness,
+installed records, actual permitted IDs (Library), catalogue data, compatibility,
+metadata revision, query and filters. Equal inputs reuse joins, localized sorts,
+hero selection and ID indexes; scroll and hero selection do not rebuild them.
+Account retirement clears private projections. Actual current-time permission,
+300-second TTL, licence expiry and the action/final-launch guards remain live,
+not memoized authority. Accepted licence expiry is parsed once per fact.
+
+Only tab values/projections survive navigation, not hidden SwiftUI trees, video,
+tasks or accessibility elements. Each tab keeps its filter/genre, sort, hero and
+stable grid scroll target. Local installed registry loading precedes the remote
+collection wait. Empty Discover entry starts immediately; typed queries retain
+the 250 ms debounce. Same-scope/query public refresh keeps useful products while
+loading; explicitly failed IDs may retain prior descriptors with failure state.
+Changing scope/query clears wrong-key content.
+
+Public metadata publishes one image/fact revision per response batch (at most
+20 products), retains useful earlier results on failure, coalesces same-key
+selected details and serializes bulk waiters. Locale changes advance a generation
+so A-to-B-to-A cannot admit an obsolete A completion. Selected-detail priority
+remains independent of blocked bulk work. These are public descriptors, never
+PC membership, ownership or permission.
+
+Reproduce the isolated CPU-preparation comparison with
+`swift build --product XodusPreview --jobs 1` followed by
+`swift run --skip-build XodusPreview --presentation-performance-check`.
+On Apple M5 Max, macOS 27.0.1, Swift 6.4, debug build, 20 samples per cell:
+
+| Synthetic titles | Original Discover p95 ms | Indexed cold p95 ms | Retained warm p95 ms |
+| --- | ---: | ---: | ---: |
+| 36 | 0.796 | 0.162 | 0.017 |
+| 300 | 45.598 | 0.992 | 0.137 |
+| 512 | 132.722 | 1.619 | 0.233 |
+| 565 | 160.897 | 2.035 | 0.269 |
+
+The original-path fixture reconstructs search results and scans installed
+records per card; the new path uses the production projection and indexes.
+All three paths produce the same checksum. A warm evaluation builds no
+projection; a 20-product metadata response produces one revision. These are
+synthetic data preparation measurements, **not** SwiftUI rendering, trackpad
+scrolling, tab-switch latency, hitch ratio, production cache traffic or deployed
+app acceptance. The 565 fixture does not extend the 512 wire/aggregate bound.
+Public collection partial-resolution, cross-consumer descriptor sharing,
+target-sized bitmap variants, filesystem scheduling and IPC/producer work are
+not implemented by this slice.
+
 Runtime declarations use a separate version-one configuration model and
 `runtime-plan` subprocess, not a C95 operation or an authentication route.
 Four native presets start unselected. Provider, engine and graphics metadata
