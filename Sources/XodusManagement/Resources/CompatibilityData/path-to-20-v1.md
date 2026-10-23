@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-23T00:04:40.234218+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-23T00:26:16.637694+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -21,14 +21,14 @@ Updated 2026-10-23T00:04:40.234218+00:00; **12/20 strict WORKING**. Title qualif
 | Balatro | FAIL | ? | ? | ? | ? | ? | startup diagnosis / S1/S2 | No observed rendering; causal exit unknown. S1 read-only API-trace diagnosis, not blind STA or graphics fallback. Both COM switches and d3dshared absent. No new execution without separate coordinator/slot/focus grant. | >2h |
 | Beast of Reincarnation | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | Blue Prince | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Bluey's Happy Snaps | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | Human legal/privacy consent required. No Accept, story, retry or further launch authorized. | - |
+| Bluey's Happy Snaps | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | Human legal/privacy consent required. No Accept, story, retry or further launch authorized. | >2h |
 | DEATHLOOP | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
 | DOOM 64 | INCONCLUSIVE_START_INPUT_NO_TRANSITION | passed | ? | not passed | not passed | not passed | Start input attribution hold / S1/S2/coordinator | 4f061291 Escape100 exposed Start; Enter100 never transitioned, then DEMO. Forced stop295.517533875s/exact-k0/-w0 despiteCLI0/Wine0, NOT ordinary quit. No auth verdict, gameplay, save, reload or retry. | - |
 | DREDGE | INCONCLUSIVE | ? | ? | not passed | passed | passed | ordinary quit / S3 | Coordinator reports reload retained its save, but quitting exited 255. INCONCLUSIVE; no strict WORKING admission. Menu/gameplay gates not separately specified by this report. | >2h |
 | Disco Elysium - The Final Cut | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Dishonored Definitive Edition | INCONCLUSIVE_GAMEPLAY_NOT_ESTABLISHED | passed | ? | passed | passed | passed | controllable gameplay / S3/coordinator | Original c489 W100 gameplay assertion superseded: world/reload frames show boat rails/helm seated state and NPC exiting right, no actual movement or unseated frame. Manual save/load and ordinary exits do not establish WORKING. | - |
 | Dome Keeper | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| FINAL FANTASY IV | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Opening-sequence bound: Escape477.47s exposed no quit. Actual900s cap/CLI1/Wine0, forced exact-k0/-w0. Before/after raw title roots including explicitly mapped host title folder archived. No reload/retry or compatibility FAIL. | - |
+| FINAL FANTASY IV | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Opening-sequence bound: Escape477.47s exposed no quit. Actual900s cap/CLI1/Wine0, forced exact-k0/-w0. Before/after raw title roots including explicitly mapped host title folder archived. No reload/retry or compatibility FAIL. | >2h |
 | Fable | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
 | Fallout 4 | INCONCLUSIVE | ? | ? | ? | ? | ? | save-provider diagnosis / S2/S3 | Delete-missing candidateadvancesfailuretoCreateUpdateinvalidarg butstillnopayload; mouse-lookweird reportedbyuser, exactsignatureunresolved; exit5afterTDesktop. NoWORKING/reload. | >2h |
 | Forever Ago | UNTESTED | ? | ? | ? | ? | ? | menu / S2/S3 | No observed title/gameplay/save-retention receipt admitted; packet is a candidate, not a pass. | >2h |
