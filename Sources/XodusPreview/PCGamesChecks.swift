@@ -449,8 +449,8 @@ enum PCGamesChecks {
                                    catalogProduct("FIXTURE00005", platform: "windows.desktop")]])])
         let snapshot = try await PCGamesClient(transport: transport).library(
             accessToken: "neutral-access", market: "GB", language: "en-GB")
-        check(snapshot.games.map(\.id) == [first] && snapshot.excludedCount == 3,
-              "S4: Hidden count includes only active non-trial Game candidates, never other products or trials")
+        check(snapshot.games.map(\.id) == [first] && snapshot.excludedCount == 2 && snapshot.unresolvedCount == 1,
+              "Only explicitly non-PC packages count excluded; missing descriptors remain unresolved")
         check(snapshot.games.first?.artwork?.url == "https://store-images.s-microsoft.com/image/square",
               "S4: Square BoxArt is preferred and protocol-relative approved art uses the existing validator")
         let requests = await transport.requests
@@ -550,7 +550,8 @@ enum PCGamesChecks {
         let unresolvedLibrary = try await PCGamesClient(transport: unresolved).library(
             accessToken: "neutral", market: "US", language: "en-US")
         let unresolvedRequests = await unresolved.requests
-        check(unresolvedLibrary.games.isEmpty && unresolvedLibrary.excludedCount == 1 && unresolvedRequests.count == 4,
+        check(unresolvedLibrary.games.isEmpty && unresolvedLibrary.excludedCount == 0
+              && unresolvedLibrary.unresolvedCount == 1 && unresolvedRequests.count == 4,
               "S4: Non-catalog Game IDs are counted unresolved; they never enter guessed catalog calls")
         let incompleteTransport = PCGamesMockTransport(try authResponses() + [
             incompleteItems, response(["Products": [catalogProduct(first)]])])

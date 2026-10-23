@@ -42,6 +42,11 @@ struct PCGamesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
+            if let notice = library.resolutionNotice {
+                Text(notice).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.pcGames.partialResolution")
+            }
             if library.presenceUnavailable {
                 ContentUnavailableView {
                     Label("Saved sign-in unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
@@ -105,7 +110,7 @@ struct PCGamesView: View {
                     }
                     if showsCollection { VStack(alignment: .leading, spacing: 6) {
                         if snapshot.excludedCount > 0 {
-                            Text("\(snapshot.excludedCount) games not shown (not for PC or unavailable)")
+                            Text("\(snapshot.excludedCount) games not shown (not listed for PC)")
                         }
                         Text("Last updated \(Text(snapshot.updatedAt, style: .relative)) ago")
                         if library.error != nil { Text("Showing the last complete library.") }

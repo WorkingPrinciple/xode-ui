@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import OSLog
 import Security
 import XodusManagement
 
@@ -230,14 +231,37 @@ struct PCGamesSnapshot: Sendable {
     // Memory-only identity: never persisted or logged. Bounds a retained complete snapshot.
     let accountID: String?
     let boundAccountHash: String?
+    let unresolvedIDs: Set<String>
+    let unresolvedCount: Int
+    let unresolvedKinds: [String: PCGameAcquisitionKind]
+    var isComplete: Bool { unresolvedCount == 0 }
 
     init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
-         boundAccountHash: String? = nil) {
+         boundAccountHash: String? = nil, unresolvedIDs: Set<String> = [], unresolvedCount: Int = 0,
+         unresolvedKinds: [String: PCGameAcquisitionKind] = [:]) {
         self.games = games
         self.excludedCount = excludedCount
         self.updatedAt = updatedAt
         self.accountID = accountID
         self.boundAccountHash = boundAccountHash
+        self.unresolvedIDs = unresolvedIDs
+        self.unresolvedCount = unresolvedCount
+        self.unresolvedKinds = unresolvedKinds
+    }
+
+    func retainingUnresolved(from previous: Self?) -> Self {
+        guard let previous, accountID == previous.accountID,
+              boundAccountHash == previous.boundAccountHash else { return self }
+        let resolved = Set(games.map(\.id))
+        let retained = previous.games.filter { unresolvedIDs.contains($0.id) && !resolved.contains($0.id) }.map {
+            PCGame(id: $0.id, title: $0.title, artwork: $0.artwork,
+                   acquisitionKind: unresolvedKinds[$0.id] ?? .unknown)
+        }
+        return Self(games: (games + retained).sorted {
+            $0.title.localizedStandardCompare($1.title) == .orderedAscending
+        }, excludedCount: excludedCount, updatedAt: updatedAt, accountID: accountID,
+            boundAccountHash: boundAccountHash, unresolvedIDs: unresolvedIDs, unresolvedCount: unresolvedCount,
+            unresolvedKinds: unresolvedKinds)
     }
 }
 
@@ -422,11 +446,13 @@ struct PCGamesClient: Sendable {
     static let scope = "XboxLive.signin offline_access"
     static let maximumPages = 20
     let transport: any PCGamesTransport
+    let descriptors: PublicCatalogDescriptors
     var sleep: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
 
-    init(transport: any PCGamesTransport = PCGamesHTTP(),
+    init(transport: (any PCGamesTransport)? = nil, descriptors: PublicCatalogDescriptors? = nil,
          sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
-        self.transport = transport
+        self.transport = transport ?? PCGamesHTTP()
+        self.descriptors = descriptors ?? transport.map { PublicCatalogDescriptors(transport: $0) } ?? .shared
         self.sleep = sleep
     }
 
@@ -588,7 +614,8 @@ struct PCGamesClient: Sendable {
     }
 
     func library(accessToken: String, market: String, language: String,
-                 expectedAccountID: String? = nil) async throws -> PCGamesSnapshot {
+                 expectedAccountID: String? = nil,
+                 progress: (@MainActor @Sendable (PCGamesSnapshot) -> Void)? = nil) async throws -> PCGamesSnapshot {
         let market = Self.market(market), language = Self.language(language)
         let user = try await xbox(post("https://user.auth.xboxlive.com/user/authenticate", json: [
             "RelyingParty": "http://auth.xboxlive.com", "TokenType": "JWT",
@@ -647,39 +674,54 @@ struct PCGamesClient: Sendable {
             }
         }
         return try await resolveCollection(ids: candidates.sorted(), kinds: kinds,
-            candidateCount: candidateIDs.count, market: market, language: language, accountID: xid)
+            candidateCount: candidateIDs.count, market: market, language: language, accountID: xid, progress: progress)
     }
 
     func resolveCollection(ids: [String], kinds: [String: PCGameAcquisitionKind], candidateCount: Int,
                            market: String, language: String, accountID: String? = nil,
-                           accountHash: String? = nil) async throws -> PCGamesSnapshot {
+                           accountHash: String? = nil,
+                           progress: (@MainActor @Sendable (PCGamesSnapshot) -> Void)? = nil) async throws -> PCGamesSnapshot {
         guard ids.count <= 10_000, Set(ids).count == ids.count, ids.allSatisfy(Self.validProductID),
               candidateCount >= ids.count else { throw PCGamesError.invalidResponse }
         var games: [PCGame] = []
+        var unresolved = Set(ids)
+        var excluded = 0
+        var completedBatches = 0
+        func snapshot() -> PCGamesSnapshot {
+            PCGamesSnapshot(games: games.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending },
+                excludedCount: excluded, updatedAt: Date(), accountID: accountID, boundAccountHash: accountHash,
+                unresolvedIDs: unresolved, unresolvedCount: candidateCount - ids.count + unresolved.count,
+                unresolvedKinds: kinds.filter { unresolved.contains($0.key) })
+        }
+        if !ids.isEmpty { await progress?(snapshot()) }
         for start in stride(from: 0, to: ids.count, by: 20) {
             let batch = Array(ids[start..<min(start + 20, ids.count)])
             do {
-                var url = URLComponents(string: "https://displaycatalog.mp.microsoft.com/v7.0/products")
-                url?.queryItems = [URLQueryItem(name: "bigIds", value: batch.joined(separator: ",")),
-                                  URLQueryItem(name: "market", value: market),
-                                  URLQueryItem(name: "languages", value: language)]
-                guard let endpoint = url?.url else { throw PCGamesError.invalidResponse }
-                var request = URLRequest(url: endpoint, timeoutInterval: 30)
-                request.httpShouldHandleCookies = false
-                let result = try await response(request)
-                guard result.status == 200 else { throw PCGamesError.http(result.status) }
-                let products = try decode(PCGamesCatalog.self, result.data).Products
+                let data = try await descriptors.load(ids: batch, market: market, language: language)
+                let products = try decode(PCGamesCatalog.self, data).Products
                 guard products.count <= batch.count,
                       Set(products.map(\.ProductId)).count == products.count,
                       products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
                 games += products.compactMap(\.game).map {
                     PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: kinds[$0.id] ?? .unknown)
                 }
+                for product in products {
+                    if product.game != nil { unresolved.remove(product.ProductId) }
+                    else if product.pcPackageListing == false {
+                        unresolved.remove(product.ProductId)
+                        excluded += 1
+                    }
+                }
+                completedBatches += 1
             } catch is CancellationError { throw CancellationError() }
-            catch { throw PCGamesError.incompleteCatalog(start) }
+            catch {
+                Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                    .warning("Public PC descriptor batch failed; \(batch.count) candidates remain unresolved")
+            }
+            try Task.checkCancellation()
+            await progress?(snapshot())
         }
-        return PCGamesSnapshot(games: games.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending },
-                               excludedCount: candidateCount - games.count, updatedAt: Date(),
-                               accountID: accountID, boundAccountHash: accountHash)
+        guard ids.isEmpty || completedBatches > 0 else { throw PCGamesError.incompleteCatalog(0) }
+        return snapshot()
     }
 }

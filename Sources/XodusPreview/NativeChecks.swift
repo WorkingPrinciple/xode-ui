@@ -90,6 +90,7 @@ enum NativeChecks {
             }
             try LibraryAccessChecks.run(check: check)
             try PresentationPerformanceChecks.correctness(check: check)
+            try await PublicDescriptorChecks.run(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
                 try await InstalledProductAccessChecks.run(check: check)

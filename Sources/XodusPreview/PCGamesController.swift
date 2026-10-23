@@ -50,8 +50,12 @@ final class PCGamesController: ObservableObject {
         return snapshot?.games ?? []
     }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
+    var resolutionNotice: String? {
+        guard let snapshot, snapshot.unresolvedCount > 0 else { return nil }
+        return "\(snapshot.unresolvedCount) game details haven't finished loading. PC availability is not established for unresolved games."
+    }
     var accessIsCurrent: Bool {
-        snapshot != nil && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
+        snapshot?.isComplete == true && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
             && !presenceUnavailable && error == nil && !needsKeychainApproval
             && (!usesUnifiedAccount || (unifiedSession?.hasConfirmedSignIn == true
                 && accountHash == unifiedSession?.accountHash))
@@ -166,9 +170,12 @@ final class PCGamesController: ObservableObject {
                 needsSignIn = false
                 sheetPresented = false
                 deviceCode = nil
-                let result = try await client.library(accessToken: tokens.access, market: market, language: language)
+                let result = try await client.library(accessToken: tokens.access, market: market, language: language) { [weak self] partial in
+                    guard let self, self.generation == token, !self.terminating, !self.accountDisconnecting else { return }
+                    self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                }
                 try current(token)
-                snapshot = result
+                snapshot = result.retainingUnresolved(from: snapshot)
             } catch is CancellationError { }
             catch {
                 guard generation == token, !terminating else { return }
@@ -198,9 +205,12 @@ final class PCGamesController: ObservableObject {
                 try await store.save(tokens.refresh)
                 try current(token)
                 let result = try await client.library(accessToken: tokens.access, market: market, language: language,
-                                                      expectedAccountID: snapshot?.accountID)
+                                                      expectedAccountID: snapshot?.accountID) { [weak self] partial in
+                    guard let self, self.generation == token, !self.terminating, !self.accountDisconnecting else { return }
+                    self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                }
                 try current(token)
-                snapshot = result
+                snapshot = result.retainingUnresolved(from: snapshot)
             } catch is CancellationError { }
             catch {
                 guard generation == token, !terminating else { return }
@@ -234,12 +244,17 @@ final class PCGamesController: ObservableObject {
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,
                     candidateCount: collection.items.count, market: market, language: language,
-                    accountHash: read.accountHash)
+                    accountHash: read.accountHash) { [weak self, weak session] partial in
+                        guard let self, let session, self.generation == token,
+                              !self.terminating, !self.accountDisconnecting,
+                              session.hasConfirmedSignIn, session.accountHash == read.accountHash else { return }
+                        self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                    }
                 try current(token)
                 guard session.hasConfirmedSignIn, session.accountHash == read.accountHash else {
                     throw PCGamesError.identityMismatch
                 }
-                snapshot = result
+                snapshot = result.retainingUnresolved(from: snapshot)
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded")
                 hasSavedSignIn = true
                 needsSignIn = false

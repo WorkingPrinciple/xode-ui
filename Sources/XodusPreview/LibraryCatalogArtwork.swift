@@ -21,17 +21,20 @@ final class LibraryCatalogArtwork: ObservableObject {
     private(set) var revision: UInt64 = 0
     @Published private(set) var error: String?
     @Published private(set) var detailErrors: [String: String] = [:]
-    private var requested = Set<String>()
+    private var requested: [String: Date] = [:]
     private var pending: Task<Void, Never>?
     private var scope: String?
     private var generation = UUID()
     private var pendingID = UUID()
     private var detailPending: [String: Task<Void, Never>] = [:]
-    private let transport: any PCGamesTransport
+    private let descriptors: PublicCatalogDescriptors
+    private let now: @Sendable () -> Date
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "catalog-detail")
 
-    init(transport: any PCGamesTransport = PCGamesHTTP()) {
-        self.transport = transport
+    init(transport: (any PCGamesTransport)? = nil, descriptors: PublicCatalogDescriptors? = nil,
+         now: @escaping @Sendable () -> Date = { Date() }) {
+        self.descriptors = descriptors ?? transport.map { PublicCatalogDescriptors(transport: $0) } ?? .shared
+        self.now = now
     }
 
     private func enterScope(_ next: String) -> UUID {
@@ -45,7 +48,7 @@ final class LibraryCatalogArtwork: ObservableObject {
             if !images.isEmpty { images = [:] }
             if !detailErrors.isEmpty { detailErrors = [:] }
             if error != nil { error = nil }
-            requested = []
+            requested = [:]
         }
         return generation
     }
@@ -54,15 +57,15 @@ final class LibraryCatalogArtwork: ObservableObject {
         let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language).lowercased())"
         guard PCGamesClient.validProductID(id) else { return }
         let epoch = enterScope(nextScope)
-        if images[id]?.detail != nil { return }
+        if images[id]?.detail != nil, let expiry = requested[id], expiry > now() { return }
         if let task = detailPending[id] { await task.value; return }
         let task = Task {
-            let detailLoader = LibraryCatalogArtwork(transport: transport)
+            let detailLoader = LibraryCatalogArtwork(descriptors: descriptors, now: now)
             await detailLoader.load(ids: [id], market: market, language: language)
             guard !Task.isCancelled, generation == epoch else { return }
             if let image = detailLoader.images[id] {
                 images[id] = image
-                requested.insert(id)
+                requested[id] = detailLoader.requested[id]
             }
             let message = detailLoader.detailErrors[id] ?? detailLoader.error
             if detailErrors[id] != message { detailErrors[id] = message }
@@ -80,7 +83,9 @@ final class LibraryCatalogArtwork: ObservableObject {
             guard !Task.isCancelled, generation == epoch else { return }
         }
         guard !Task.isCancelled, generation == epoch else { return }
-        let ids = Set(ids.filter(PCGamesClient.validProductID)).subtracting(requested).sorted()
+        let time = now()
+        let ids = Set(ids.filter(PCGamesClient.validProductID))
+            .filter { requested[$0].map { $0 <= time } ?? true }.sorted()
         guard !ids.isEmpty else { return }
         let token = UUID()
         let task = Task {
@@ -91,22 +96,15 @@ final class LibraryCatalogArtwork: ObservableObject {
                 for start in stride(from: 0, to: ids.count, by: 20) {
                     try Task.checkCancellation()
                     let batch = Array(ids[start..<min(start + 20, ids.count)])
-                    var url = URLComponents(string: "https://displaycatalog.mp.microsoft.com/v7.0/products")
-                    url?.queryItems = [URLQueryItem(name: "bigIds", value: batch.joined(separator: ",")),
-                                      URLQueryItem(name: "market", value: PCGamesClient.market(market)),
-                                      URLQueryItem(name: "languages", value: PCGamesClient.language(language))]
-                    guard let endpoint = url?.url else { throw PCGamesError.invalidResponse }
-                    var request = URLRequest(url: endpoint)
-                    request.httpShouldHandleCookies = false
-                    let response = try await transport.send(request)
+                    let data = try await descriptors.load(ids: batch, market: market, language: language)
+                    let expirations = await descriptors.expirations(ids: batch, market: market, language: language)
                     guard !Task.isCancelled, generation == epoch else { return }
-                    guard response.status == 200 else { throw PCGamesError.http(response.status) }
-                    let products = try JSONDecoder().decode(PCGamesCatalog.self, from: response.data).Products
+                    let products = try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products
                     guard products.count <= batch.count, Set(products.map(\.ProductId)).count == products.count,
                           products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
                     var details: [String: CatalogDetailPayload.Product] = [:]
                     do {
-                        let values = try JSONDecoder().decode(CatalogDetailPayload.self, from: response.data).Products
+                        let values = try JSONDecoder().decode(CatalogDetailPayload.self, from: data).Products
                         guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
                               values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
                         details = Dictionary(uniqueKeysWithValues: values.map { ($0.ProductId, $0) })
@@ -115,7 +113,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                     }
                     var prices: [String: CatalogCommerce] = [:]
                     do {
-                        let values = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: response.data).Products
+                        let values = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
                         guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
                               values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
                         for value in values {
@@ -177,7 +175,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                         images.merge(batchImages, uniquingKeysWith: { _, new in new })
                     }
                     if batchErrors != detailErrors { detailErrors = batchErrors }
-                    requested.formUnion(batch)
+                    for id in batchImages.keys { requested[id] = expirations[id] }
                 }
                 if generation == epoch, error != nil { error = nil }
             } catch is CancellationError { }
@@ -193,7 +191,7 @@ final class LibraryCatalogArtwork: ObservableObject {
     }
 
     func retry(id: String, market: String, language: String) async {
-        requested.remove(id)
+        requested.removeValue(forKey: id)
         await load(ids: [id], market: market, language: language)
     }
 

@@ -76,9 +76,49 @@ projection; a 20-product metadata response produces one revision. These are
 synthetic data preparation measurements, **not** SwiftUI rendering, trackpad
 scrolling, tab-switch latency, hitch ratio, production cache traffic or deployed
 app acceptance. The 565 fixture does not extend the 512 wire/aggregate bound.
-Public collection partial-resolution, cross-consumer descriptor sharing,
-target-sized bitmap variants, filesystem scheduling and IPC/producer work are
-not implemented by this slice.
+
+### Shared public descriptors and useful partial collection loading
+
+Collection resolution and Library artwork/details share a credential-free
+DisplayCatalog descriptor actor. Keys include StoreID, normalized market and
+case-normalized language. Validated raw public product records expire after
+300 seconds; reusable entries are bounded independently at 512 records and
+32 MiB. This memory bound does not raise collection/transport aggregate limits.
+Requests and reconstructed responses retain the existing 20-product/4 MiB
+bounds. Eviction means fetch again, not missing metadata. Active per-ID tasks
+are separate from reusable entries, and cancelling a consumer does not cancel
+another consumer's shared read. Missing/failed/invalid records are not negatively
+cached. Artwork's freshness uses the shared record expiry, not a renewed TTL
+for a near-expired cache hit. Retained images remain visible on failed refresh.
+
+A validated authoritative collection starts a generation-bound resolution;
+each completed public batch publishes useful PC records without waiting for
+later batches. Missing descriptors, unknown platforms and failed batches remain
+explicitly unresolved, not non-PC exclusions or invented PC membership. A
+partial result is not current account access. Existing PC title/artwork can
+remain only for unresolved IDs still in that same account's current collection;
+acquisition kind comes from the current collection, never the retained snapshot.
+Only authoritative collection IDs determine removals. Total descriptor failure
+remains an error; partial state remains visible as incomplete. Both legacy and
+unified controllers fence progress by generation; the unified path additionally
+checks the current confirmed account. Public descriptor sharing is not an
+account cache, licence cache or permission source.
+
+The isolated `--library-access-check` fixture compares the former independent
+collection/artwork fetch paths with shared reuse. At 36/300/512 titles, public
+request counts fall from 4/30/52 to 2/15/26. A 21-title fixture publishes its
+first 20 PC records before the failing second batch and retains one unresolved
+candidate. Checks cover cancellation, expiry, locale A-to-B-to-A publication,
+retry, eviction with active waiters, authoritative removal, current acquisition
+kind and late completion after account retirement. These are synthetic transport
+operation counts, not real Wi-Fi latency or authenticated scrolling evidence.
+No 565-title wire-coverage claim is made.
+
+Target-sized bitmap variants, optional filesystem scheduling and IPC/producer
+work remain separate from these slices. Current image decode still requests a
+2400-pixel thumbnail and the optional size store still admits different folder
+walks concurrently. Those source-level opportunities are not measurements of
+live scrolling or filesystem contention; installed-app evidence remains needed.
 
 Runtime declarations use a separate version-one configuration model and
 `runtime-plan` subprocess, not a C95 operation or an authentication route.
