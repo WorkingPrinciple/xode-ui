@@ -145,6 +145,10 @@ struct LiveRootView: View {
                          accountSymbol: session.accountSymbol,
                          libraryContrast: toolbarOverArtwork, openSearch: {
                              state.navigate(.discover)
+                         }, showSearchResults: {
+                             state.navigate(.discover)
+                             searchFocused = false
+                             state.discoverSelection.focusRequest += 1
                          }) {
                 state.openAccount()
             }
@@ -337,7 +341,7 @@ struct LiveRootView: View {
                 if !unifiedAccountMode { Task { await state.refreshGameServiceStatusAfterSignIn() } }
             } else if !confirmed {
                 state.librarySelection.projection.clear(to: .empty)
-                state.discoverSelection.projection.clear(to: .empty)
+                state.discoverSelection.clear()
                 if unifiedAccountMode {
                     companion.invalidateBinding()
                     state.installedGames.productAccess.retire()
@@ -567,7 +571,14 @@ struct LiveRootView: View {
                         allowsArtworkLoading: libraryArtworkAllowed,
                         allowsStartupTasks: startupAllowed && state.destination == .discover && scenePhase == .active,
                         allowsHeroAnimation: heroAnimationAllowed && state.destination == .discover && scenePhase == .active,
-                        clearSearch: { state.query = "" }, selection: state.discoverSelection)
+                        clearSearch: { state.query = "" }, selection: state.discoverSelection,
+                        searchLibrary: { query in
+                            state.navigate(.library)
+                            state.query = query
+                            state.librarySelection.filter = .all
+                        },
+                        selectSearch: { query in state.query = query },
+                        returnToSearch: { searchFocused = true })
     }
 }
 

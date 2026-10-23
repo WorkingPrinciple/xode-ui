@@ -244,7 +244,8 @@ struct LibraryGame: Identifiable {
             let id = game.storeId.isEmpty ? game.id.uuidString : game.storeId
             if held[id] == nil, permittedInstalledIDs.contains(id), seen.insert(id).inserted {
                 result.append(Self(id: id, title: game.title, installed: game, pc: nil,
-                    product: catalog[id] ?? pass[id], owned: false, gamePass: false))
+                    product: catalog[id] ?? pass[id], owned: false, gamePass: pass[id] != nil,
+                    accessIsCurrent: accessIsCurrent))
                 continue
             }
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
@@ -910,8 +911,9 @@ struct LibraryScrollEdge: ViewModifier {
     }
 }
 
-struct LibraryCover<Artwork: View, Actions: View, Status: View>: View {
+struct GameCard<Artwork: View, Actions: View, Status: View>: View {
     let title: String
+    var gameFacts = GameFacts()
     var openLabel = "Open"
     var alwaysShowsActions = false
     let open: () -> Void
@@ -929,20 +931,24 @@ struct LibraryCover<Artwork: View, Actions: View, Status: View>: View {
                 Button(action: open) {
                     artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(alignment: .bottomLeading) {
+                            AccessBadges(facts: gameFacts).padding(10)
+                        }
                         .contentShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain).accessibilityLabel("\(openLabel) \(title)")
-                actions().controlSize(.small).buttonBorderShape(.capsule)
-                    .fixedSize(horizontal: false, vertical: true).padding(12)
-                    .opacity(showsActions ? 1 : 0)
-                    .allowsHitTesting(showsActions)
+                .accessibilityValue(gameFacts.badgeLabels().joined(separator: ", "))
             }
-            .onHover { interaction.hovered = $0 }
             .focused($focused)
             Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
             status().font(.subheadline).foregroundStyle(.secondary)
+            actions().controlSize(.small).buttonBorderShape(.capsule)
+                .fixedSize(horizontal: false, vertical: true)
+                .opacity(showsActions ? 1 : 0)
+                .allowsHitTesting(showsActions)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onHover { interaction.hovered = $0 }
         .accessibilityElement(children: .contain)
     }
 }

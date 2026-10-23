@@ -42,6 +42,13 @@ enum NativeUIChecks {
               && NativeMinecraftInstallation(state: .ready, path: "/Applications/Minecraft.app",
                                              version: "1.0").action == "Open",
               "Minecraft details retain launcher, account, world and recovery actions without a testing journal")
+        check(NativeMinecraftInstallation(state: .missing).appears(in: .all, query: "")
+              && !NativeMinecraftInstallation(state: .missing).appears(in: .installed, query: "")
+              && NativeMinecraftInstallation(state: .ready).appears(in: .installed, query: " MINECRAFT ")
+              && !NativeMinecraftInstallation(state: .ready).appears(in: .owned, query: "")
+              && !NativeMinecraftInstallation(state: .ready).appears(in: .gamePass, query: "")
+              && !NativeMinecraftInstallation(state: .ready).appears(in: .all, query: "mortis"),
+              "REQ-64: Native game visibility/count follows the actual filter, query and installation, never ownership")
         let minecraftDetails = NSHostingView(rootView: NativeMinecraftDetailsContent(
             minecraft: NativeMinecraft(), saveLocation: EmptyView(), close: {}))
         minecraftDetails.sizingOptions = []
@@ -127,7 +134,7 @@ enum NativeUIChecks {
         let colours: [Color] = [.red, .green, .blue]
         let covers = LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
             ForEach(0..<3) { index in
-                LibraryCover(title: index == 1 ? "A longer two-line game title" : "Game \(index)",
+                GameCard(title: index == 1 ? "A longer two-line game title" : "Game \(index)",
                              open: {}) {
                     colours[index]
                 } status: {
@@ -340,11 +347,23 @@ enum NativeUIChecks {
         field.stringValue = ""
         _ = field.sendAction(field.action, to: field.target)
         check(text.isEmpty && edits == 2, "The native clear/search action updates the same scoped binding")
+        var resultRequests = 0
+        search.showResults = { resultRequests += 1 }
+        search.updateField(field, coordinator: coordinator)
+        let editor = NSTextView()
+        check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.moveDown(_:)))
+              && coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:)))
+              && resultRequests == 2,
+              "REQ-59: Down and Return in native search hand focus to results")
+        text = "mortis"
+        check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:)))
+              && text.isEmpty,
+              "REQ-59: Escape clears the query using the same native search binding")
         text = "next scope"
         search = NativeSearchField(text: search.$text, focused: search.$focused,
                                    placeholder: "Search Microsoft Store games")
         search.updateField(field, coordinator: coordinator)
-        check(field.stringValue == "next scope" && field.placeholderString == search.placeholder && edits == 2,
+        check(field.stringValue == "next scope" && field.placeholderString == search.placeholder && edits == 3,
               "Scope/binding refresh neither duplicates edits nor retains an old placeholder")
         focused = true
         search.enabled = false

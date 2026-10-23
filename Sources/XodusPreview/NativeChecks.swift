@@ -161,6 +161,7 @@ enum NativeChecks {
             try await PublicDescriptorChecks.run(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
+                try await CatalogDetailLoadingChecks.run(check: check)
                 try await InstalledProductAccessChecks.run(check: check)
                 try await PCGamesChecks.run(check: check)
                 print("\(count) Library access checks, \(failures) failures. Synthetic data only.")

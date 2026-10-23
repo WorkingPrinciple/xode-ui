@@ -7,9 +7,11 @@ struct ScopedSearchField: View {
     @Binding var focused: Bool
     let placeholder: String
     var enabled = true
+    var showResults: (() -> Void)?
 
     var body: some View {
-        NativeSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
+        NativeSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled,
+                          showResults: showResults)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
@@ -22,6 +24,7 @@ struct NativeToolbarSearch: View {
     let placeholder: String
     var enabled = true
     var openSearch: () -> Void = {}
+    var showResults: (() -> Void)?
 
     static func width(text: String, focused: Bool) -> CGFloat {
         focused || !text.isEmpty ? 220 : 32
@@ -44,7 +47,8 @@ struct NativeToolbarSearch: View {
                 .accessibilityLabel(placeholder)
                 .accessibilityIdentifier("xodus.catalog.openSearch")
             } else {
-                ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
+                ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled,
+                                  showResults: showResults)
             }
         }
         .frame(width: Self.width(text: text, focused: focused))
@@ -57,6 +61,7 @@ struct NativeSearchField: NSViewRepresentable {
     @Binding var focused: Bool
     let placeholder: String
     var enabled = true
+    var showResults: (() -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -113,6 +118,24 @@ struct NativeSearchField: NSViewRepresentable {
         }
         func controlTextDidBeginEditing(_ notification: Notification) { parent.focused = true }
         func controlTextDidEndEditing(_ notification: Notification) { parent.focused = false }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            if commandSelector == #selector(NSResponder.moveDown(_:))
+                || commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                guard let showResults = parent.showResults else { return false }
+                showResults()
+                return true
+            }
+            if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                if parent.text.isEmpty {
+                    parent.focused = false
+                    control.window?.makeFirstResponder(nil)
+                } else {
+                    parent.text = ""
+                }
+                return true
+            }
+            return false
+        }
     }
 }
 

@@ -976,13 +976,22 @@ enum PCGamesChecks {
         check(passOnly.facts(for: mortis.id).memberships.map(\.plan) == [.pcGamePass]
               && passOnly.facts(for: "FIXTURE00001").memberships.isEmpty,
               "REQ-63: PC catalogue membership never invents another plan or a negative membership badge")
-        check(DiscoverCopy.sourceDescription(query: "", corpus: "observedPublicProducts")
-                .contains("Previously loaded public product details")
-              && DiscoverCopy.sourceDescription(query: "", corpus: "pcGamePassDiscovery")
-                .contains("Source: Xbox PC Game Pass catalogue")
-              && DiscoverCopy.sourceDescription(query: "mortis", corpus: "observedPublicProducts")
-                .contains("Sources: Xbox and Microsoft Store search"),
-              "#44: Cached Explore never claims it came from a live search or the full Game Pass catalogue")
+        check(DiscoverCopy.noResults("mortis") == "No games match ‘mortis’."
+              && DiscoverCopy.partial == "Some results may be missing."
+              && DiscoverCopy.unavailable == "Search isn't available right now.",
+              "REQ-59/60: Search states have actionable product copy, not source or QA diagnostics")
+        check(GameSearchHistory.recording("  MORTIS ", in: ["mortis", "harbor"]) == ["MORTIS", "harbor"]
+              && GameSearchHistory.recording("new", in: (0..<12).map(String.init)).count == 8
+              && GameSearchHistory.recording("   ", in: ["harbor"]) == ["harbor"],
+              "REQ-59: Recent searches trim, deduplicate case-insensitively and retain at most eight")
+        let searchGame = LibraryGame(id: harbor.id, title: harbor.title, installed: imported,
+            pc: harbor, product: nil, owned: false, gamePass: true, accessIsCurrent: true)
+        check(GameSearchScope.allCases.allSatisfy { $0.includes(searchGame) }
+              && !GameSearchScope.installed.includes(LibraryGame(id: ridge.id, title: ridge.title,
+                  installed: nil, pc: ridge, product: nil, owned: true, gamePass: false, accessIsCurrent: true))
+              && !GameSearchScope.gamePass.includes(LibraryGame(id: ridge.id, title: ridge.title,
+                  installed: nil, pc: ridge, product: nil, owned: true, gamePass: false, accessIsCurrent: true)),
+              "REQ-59: Game Pass scope uses actual membership and Installed uses actual local installation")
         let romanianScope = CatalogLocale.preferred(region: "RO", languages: ["en-US", "ro-RO"])
         let americanScope = CatalogLocale.preferred(region: "US", languages: ["en-US", "ro-RO"])
         check(romanianScope.market == "RO" && romanianScope.language == "ro-RO"

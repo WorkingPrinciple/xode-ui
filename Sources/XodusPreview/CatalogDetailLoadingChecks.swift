@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import AppKit
+import SwiftUI
+import Vision
 
 private actor DetailPriorityTransport: PCGamesTransport {
     let malformedPrice: Bool
-    init(malformedPrice: Bool = false) { self.malformedPrice = malformedPrice }
+    let priced: Bool
+    init(malformedPrice: Bool = false, priced: Bool = false) {
+        self.malformedPrice = malformedPrice
+        self.priced = priced
+    }
     private(set) var started = false
     private(set) var finished = false
     private(set) var detailRequests = 0
@@ -29,6 +36,16 @@ private actor DetailPriorityTransport: PCGamesTransport {
             product["DisplaySkuAvailabilities"] = [[
                 "Sku": ["SkuType": "full"],
                 "Availabilities": [["OrderManagementData": ["Price": ["ListPrice": "invalid"]]]]
+            ]]
+        } else if priced {
+            product["DisplaySkuAvailabilities"] = [[
+                "Sku": ["SkuType": "full"],
+                "Availabilities": [[
+                    "Actions": ["Purchase"],
+                    "OrderManagementData": ["Price": [
+                        "ListPrice": 19.99, "MSRP": 19.99, "SalePrice": 9.99, "CurrencyCode": "USD"
+                    ]]
+                ]]
             ]]
         }
         let data = try JSONSerialization.data(withJSONObject: ["Products": [product]])
@@ -80,7 +97,55 @@ enum CatalogDetailLoadingChecks {
         check(malformed.images["FIXTURE00002"]?.product.title == "Synthetic game"
               && malformed.images["FIXTURE00002"]?.detail?.description == "Synthetic description.",
               "REQ-61: Removed offer data is ignored while catalogue identity and game details remain readable")
+        try await commerceAbsence(check: check)
         try await concurrency(check: check)
+    }
+
+    private static func commerceAbsence(check: (Bool, String) -> Void) async throws {
+        let catalogue = LibraryCatalogArtwork(transport: DetailPriorityTransport(priced: true))
+        await catalogue.loadDetail(id: "FIXTURE00002", market: "US", language: "en-US")
+        guard let image = catalogue.images["FIXTURE00002"] else { throw PCGamesError.transport }
+        let installed = InstalledGamesController()
+        let operations = GameOperationsController(installed: installed)
+        let game = PCGame(id: image.product.id, title: image.product.title, artwork: nil,
+                          acquisitionKind: .purchased)
+        let card = PCGameTile(game: game, installed: installed, operations: operations,
+            catalog: catalogue, allowsArtworkLoading: false, accessIsCurrent: true)
+        let detail = LiveProductView(product: image.product, library: PCGamesController(),
+            installedLibrary: installed, operations: operations, allowsStartupTasks: false,
+            allowsArtworkLoading: false, catalog: catalogue).environmentObject(LiveSession())
+        for (name, view) in [("catalogue card", AnyView(card)), ("product detail", AnyView(detail))] {
+            let size = name == "catalogue card" ? CGSize(width: 280, height: 700) : CGSize(width: 1000, height: 1100)
+            let host = NSHostingView(rootView: view.environment(\.colorScheme, .light).background(.white))
+            host.sizingOptions = []
+            host.frame = CGRect(origin: .zero, size: size)
+            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless],
+                                  backing: .buffered, defer: false)
+            window.contentView = host
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(50))
+            guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                throw PCGamesError.transport
+            }
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            guard let image = bitmap.cgImage else { throw PCGamesError.transport }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            try VNImageRequestHandler(cgImage: image).perform([request])
+            let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            check(labels.contains(where: { $0.localizedCaseInsensitiveContains("Synthetic game") })
+                  && labels.contains(where: { $0.localizedCaseInsensitiveContains("Install") }),
+                  "REQ-61: Priced-fixture \(name) renders its title and retained Install control (non-vacuous pixel guard)")
+            check(!labels.contains(where: {
+                let text = $0.lowercased()
+                return text.contains("$") || text.contains("19.99") || text.contains("9.99")
+                    || text.range(of: #"\b(buy|get|purchase|pre-order|claim)\b"#,
+                                  options: .regularExpression) != nil
+            }), "REQ-61: Priced-fixture \(name) exposes no price, Buy or acquisition action")
+            check(!window.isVisible && !window.isKeyWindow,
+                  "REQ-61: Rendered regression never presents or activates its synthetic window")
+            window.contentView = nil
+        }
     }
 
     private static func concurrency(check: (Bool, String) -> Void) async throws {

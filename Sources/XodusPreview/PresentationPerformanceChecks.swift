@@ -73,6 +73,31 @@ enum PresentationPerformanceChecks {
         check(cache.builds == 4, "Query, metadata revision and account replacement invalidate projections")
         cache.clear(to: .empty)
         check(cache.current.index.games.isEmpty, "Account retirement releases retained private projection data")
+        let searchSelection = DiscoverSelection()
+        let firstSearch = key(query: "Fixture")
+        searchSelection.prepare(firstSearch, accountScope: "account-a:US:en-US") {
+            CatalogProjection(key: firstSearch, facts: facts, isVisible: { _ in true })
+        }
+        let nextSearch = key(query: "Fixture 1")
+        searchSelection.prepare(nextSearch, accountScope: "account-a:US:en-US") { .empty }
+        check(!searchSelection.previousResults.visible.isEmpty
+              && !searchSelection.previousResults.owned.isEmpty
+              && searchSelection.projection.current.visible.isEmpty,
+              "REQ-59: Typing retains prior catalogue and library results separately from the pending query")
+        searchSelection.prepare(key(query: "Fixture 12"), accountScope: "account-a:US:en-US") { .empty }
+        check(!searchSelection.previousResults.visible.isEmpty,
+              "REQ-59: Rapid edits cannot replace useful dimmed results with an empty pending projection")
+        searchSelection.prepare(nextSearch, accountScope: "account-a:GB:en-GB") { .empty }
+        check(searchSelection.previousResults.index.games.isEmpty,
+              "REQ-59: A market/language change cannot retain prior-scope results")
+        searchSelection.prepare(firstSearch, accountScope: "account-a:GB:en-GB") {
+            CatalogProjection(key: firstSearch, facts: facts, isVisible: { _ in true })
+        }
+        searchSelection.prepare(nextSearch, accountScope: "account-a:GB:en-GB") { .empty }
+        searchSelection.clear()
+        check(searchSelection.previousResults.index.games.isEmpty
+              && searchSelection.projection.current.index.games.isEmpty,
+              "REQ-59: Account retirement releases current and dimmed private library results")
         func libraryKey(permitted: Set<String>) -> LibraryProjectionKey {
             LibraryProjectionKey(accountHash: "account-a", query: "", owned: [], products: products,
                 gamePass: [], active: false, installed: installed, permitted: permitted,

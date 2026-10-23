@@ -67,7 +67,7 @@ struct LiveProductView: View {
     var allowsArtworkLoading = true
     @EnvironmentObject private var session: LiveSession
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var catalog = LibraryCatalogArtwork.shared
+    @ObservedObject var catalog = LibraryCatalogArtwork.shared
     @ObservedObject private var stats = LibraryXboxStats.shared
 
     private var installed: InstalledGame? {

@@ -438,7 +438,7 @@ enum PreviewChecks {
             }
             let pass = try product("FIXTURE00003")
             let catalogOnly = try product("FIXTURE00004")
-            check(DiscoverCopy.noResults("tomb") == "No Results for “tomb”" &&
+            check(DiscoverCopy.noResults("tomb") == "No games match ‘tomb’." &&
                   DiscoverCopy.emptyDescription == "Try another title or clear your search.",
                   "A valid zero-result search names the query and offers title/clear recovery, never reconnection")
             check(DiscoverCopy.noOtherGames("gears") == "No other games match “gears”.",

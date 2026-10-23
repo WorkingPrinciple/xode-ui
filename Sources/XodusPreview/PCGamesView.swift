@@ -168,7 +168,7 @@ struct PCGameTile: View {
     let game: PCGame
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
-    @ObservedObject private var catalog = LibraryCatalogArtwork.shared
+    @ObservedObject var catalog = LibraryCatalogArtwork.shared
     var allowsArtworkLoading = true
     var gamePass = false
     var viewDetails: (() -> Void)?
@@ -181,21 +181,24 @@ struct PCGameTile: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        GameCard(title: game.title,
+                 gameFacts: GameFacts(pc: game, gamePass: gamePass, accessIsCurrent: accessIsCurrent),
+                 alwaysShowsActions: true, open: { viewDetails?() }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? game.artwork : nil,
                                status: game.artwork == nil ? .absent : .available, contentMode: .fit)
-                .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            Text(game.title).font(.headline)
-                .lineLimit(2).frame(minHeight: 40, alignment: .topLeading)
-            AccessBadges(facts: GameFacts(pc: game, gamePass: gamePass, accessIsCurrent: accessIsCurrent))
+        } status: {
             if !unsupportedIssues.isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues)
-            } else if let match = PCGamesController.installedMatch(game, in: installed.games) {
-                InstalledPlayButton(library: installed, operations: operations, game: match)
+            }
+            if let match = PCGamesController.installedMatch(game, in: installed.games) {
                 InstalledPlayError(library: installed, game: match)
             } else {
                 Text("Not installed").font(.callout).foregroundStyle(.secondary)
+            }
+        } actions: {
+            if unsupportedIssues.isEmpty, let match = PCGamesController.installedMatch(game, in: installed.games) {
+                InstalledPlayButton(library: installed, operations: operations, game: match)
+            } else if unsupportedIssues.isEmpty {
                 GameInstallAction(game: game, operations: operations, enabled: accessIsCurrent)
             }
             if let viewDetails { Button("View game", action: viewDetails) }

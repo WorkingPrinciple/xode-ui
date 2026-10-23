@@ -30,6 +30,7 @@ struct LiveLibraryView: View {
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
     @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
+    @ObservedObject private var nativeMinecraft = NativeMinecraft.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.catalogPresentationActive) private var presentationActive
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
@@ -58,8 +59,10 @@ struct LiveLibraryView: View {
     private var continuing: [InstalledGame] { projection.continuing }
     private var localRecords: [LibraryGame] { projection.local }
     private var showsNativeMinecraft: Bool {
-        [.all, .installed].contains(filter)
-            && (query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query))
+        nativeMinecraft.installation.appears(in: filter, query: query)
+    }
+    private var visibleLocalRecords: [LibraryGame] {
+        [.all, .installed].contains(filter) ? localRecords.filter(isVisible) : []
     }
     private var accountCollectionIncomplete: Bool {
         !library.accessIsCurrent || library.snapshot?.isComplete != true
@@ -146,7 +149,7 @@ struct LiveLibraryView: View {
                             browse: browse, recentActivity: recentActivity)
                 VStack(alignment: .leading, spacing: 22) {
                 VStack(spacing: 0) {
-                LibraryControls(count: visible.count,
+                LibraryControls(count: visible.count + (showsNativeMinecraft ? 1 : 0),
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
                                 filter: Binding(get: { filter }, set: { filter = $0 }), sort: $selection.sort,
                                 showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: {
@@ -167,7 +170,7 @@ struct LiveLibraryView: View {
                 }
                 if installed.loading { ProgressView("Loading installed games") }
                 if installed.productAccess.checking { ProgressView("Loading your games").controlSize(.small) }
-                if visible.isEmpty {
+                if visible.isEmpty && !showsNativeMinecraft && visibleLocalRecords.isEmpty {
                     if [.owned, .gamePass].contains(filter), accountCollectionIncomplete {
                         ContentUnavailableView {
                             Label(filter == .owned ? "Purchased library unavailable" : "Game Pass library unavailable",
@@ -217,11 +220,11 @@ struct LiveLibraryView: View {
                 if let error = xboxStats.error {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
-                if [.all, .installed].contains(filter), !localRecords.filter(isVisible).isEmpty {
+                if !visibleLocalRecords.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Installed on this Mac").font(.title2.weight(.semibold))
+                        Text("Local installations (\(visibleLocalRecords.count))").font(.title2.weight(.semibold))
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
-                            ForEach(localRecords.filter(isVisible)) { game in card(game).id("library-local-\(game.id)") }
+                            ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
                         }
                         .scrollTargetLayout()
                     }
@@ -443,7 +446,7 @@ struct LiveLibraryView: View {
     private var continuePlaying: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Continue Playing").font(.title2.weight(.semibold))
+                Text("Continue Playing (\(continuing.count))").font(.title2.weight(.semibold))
                 Spacer()
                 Button("See All") {
                     selection.beginScopeMeasurement(filter: .installed, target: "library-games")
@@ -486,7 +489,6 @@ struct LiveLibraryView: View {
                                 Text("Last played \(Text(date, style: .relative)) ago")
                                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                             }
-                            InstalledPlayError(library: installed, game: game)
                         }.frame(width: 260, alignment: .leading).id(game.id)
                     }
                 }
@@ -502,6 +504,9 @@ struct LiveLibraryView: View {
             }
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
                 selection.measureAncestor("horizontal", frame: $0)
+            }
+            ForEach(continuing) { game in
+                InstalledPlayError(library: installed, game: game)
             }
         }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
@@ -540,20 +545,15 @@ struct LiveLibraryView: View {
 
     private func card(_ game: LibraryGame) -> some View {
         let artworkID = game.installed?.storeId ?? game.id
-        return LibraryCover(title: game.title,
+        return GameCard(title: game.title, gameFacts: game.facts,
                      openLabel: "View",
                      alwaysShowsActions: true,
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
         } status: {
-            AccessBadges(facts: game.facts)
             if !unsupportedIssues(game).isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
-            }
-            if let evidence = OfflineGameCompatibility.publisherEvidence(for: artworkID) {
-                Label(evidence.technologies.joined(separator: ", "), systemImage: "shield")
-                    .accessibilityLabel("Anti-cheat: \(evidence.technologies.joined(separator: ", "))")
             }
             if let match = game.installed {
                 InstalledPlayError(library: installed, game: match)

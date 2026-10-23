@@ -98,10 +98,9 @@ struct FixtureLibraryView: View {
                         LazyVGrid(columns: LibraryGridLayout.columns,
                                   alignment: .leading, spacing: 30) {
                             ForEach(games) { game in
-                                LibraryCover(title: game.title, open: { state.selectedGame = game }) {
+                                GameCard(title: game.title, gameFacts: access(game), open: { state.selectedGame = game }) {
                                     GameArtwork(kind: game.art)
                                 } status: {
-                                    LibraryGameInformation(gameFacts: access(game), compact: true)
                                     if state.installed.contains(game.id) {
                                         Label("Installed fixture", systemImage: "internaldrive")
                                     }
