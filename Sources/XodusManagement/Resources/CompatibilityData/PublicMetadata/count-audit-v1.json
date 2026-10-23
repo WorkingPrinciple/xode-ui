@@ -1,0 +1,1793 @@
+{
+  "canonicalOverlap": 555,
+  "currentFeedProducts": 556,
+  "definition": "Current scoped feed; explicit full non-bundle non-preorder Game; past Store market listing date; known Windows.Desktop package; exclude ambiguous editions, collections/trilogies, previews, launchers and duplicate group/content/family/title components. Catalogue-only, not installed/tested/entitled.",
+  "desktopKnownFormatProducts": 386,
+  "duplicateIdentityGroups": [
+    [
+      "9MVSRJWZBG9G",
+      "9N1WT4X26SHW",
+      "9N42CT1J5WGW",
+      "9NBZ9JF6TFMD",
+      "9NDV7FRVD7ML",
+      "9NWNLS28ZG37",
+      "9NXQKPGMHH9G",
+      "9P1JS86M9SXH",
+      "9P2J5D12GJL5",
+      "9P2JXK37PFLZ",
+      "9P7Z1D3N8KR7",
+      "9PFXKRLVWJ0B",
+      "9PP7XSG5LDH1"
+    ],
+    [
+      "9MX8R81JW1B5",
+      "9NT0NT8JQMQN"
+    ],
+    [
+      "9MXND4PQLK3W",
+      "9NC7NRD0CM11",
+      "9NSL68D814GC",
+      "9P1Z43KRNQD4",
+      "9P46M5JQ2PTF",
+      "9P7L9H478GGV"
+    ],
+    [
+      "9N255K81XBD3",
+      "9N8C07SS8C9D",
+      "9N9C8SV0S16W",
+      "9NWDPFPPK30V",
+      "9P20JCF7BV93",
+      "9P8S1MN4066K"
+    ],
+    [
+      "9N8FQ28Z6QX3",
+      "9PHFTS44F99K"
+    ],
+    [
+      "9NCJSXWZTP88",
+      "9NQR437K7PQH"
+    ],
+    [
+      "9NF0RBL8SZL6",
+      "9NK2DT3K7DTF",
+      "9NMCRMS6WN78"
+    ],
+    [
+      "9NKK6CX54183",
+      "9P3ZRGNQVC7D",
+      "9PC288TN7R8K"
+    ],
+    [
+      "9NMNZ4CK59DM",
+      "9PD0Z90216RJ"
+    ],
+    [
+      "9P00SVGWDJCP",
+      "9P1303FCXW6X"
+    ]
+  ],
+  "exclusions": [
+    {
+      "productId": "9MSVPJCHHRPR",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MTD9ZS1G3CC",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MTNPX4WLP10",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MTP3NKHVWM6",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MTVHJXXF3K9",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MTVJ3HHTQGS",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9MVN4ND41DD3",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9MVPD3Z5N4QL",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MVSRJWZBG9G",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9MVV32Z0JPCL",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MW15L8FRT9P",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9MW715J1P29D",
+      "reasons": [
+        "missing-exact-localized-title"
+      ]
+    },
+    {
+      "productId": "9MWLS68W1P7Q",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MWQ083Z7L4F",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MX8R81JW1B5",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9MXG725MBV3N",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MXH73ZJVH4X",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MXJZGJC7BJC",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MXND4PQLK3W",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9MZ1RZTJTZKB",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9MZR11JRF7BX",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9N04NS8TP202",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N0H62KZ3BXV",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N0LFRXLDJHZ",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N0X5NFZTQJK",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N0ZHH9GPLGZ",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N123ZCCL33B",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N15KXND91S0",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N16SLB6FB96",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N1P6T7ZQ2KF",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N1T3ZCMNHGG",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N1WT4X26SHW",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N21G14CVS5L",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N255K81XBD3",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N2GWLMCHJTN",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N2S04LGXXH4",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N3XQQ1LHJ4X",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N40901WDQJD",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N42CT1J5WGW",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N42SSSX2MTG",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N431PX143P8",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N464X6CT772",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N4TT1T7H400",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N5VHX8KMVNV",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9N613NPQ9JJH",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N66JJQFX3RX",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N6J4RNFPKKL",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N6KPQ0XMT2B",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N7358JZPX1Z",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N7H29G7G485",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N7LPX50LSCH",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N8C07SS8C9D",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N8C8L9MVQ89",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N8D2CG0K9LL",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N8FQ28Z6QX3",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N8KMNW6942X",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N8N7NZSVTG3",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9N926481VT1Z",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N9C1TB18R3B",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N9C8SV0S16W",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9N9DKMNL85XZ",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9N9K5QP9G3GL",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NB6BVL3MTG4",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NB993S1TWSH",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NBLGGH3SHM5",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9NBLGGH515BD",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NBNXX6V9J43",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NBZ9JF6TFMD",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NC4PV16GVT1",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NC7NRD0CM11",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NCJSXWZTP88",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NCZ8W65H33V",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NDBKK9G0FHL",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NDKFJ6XDX2M",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NDLJ3HM721L",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NDP79SDLLLH",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NDV7FRVD7ML",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NF0RBL8SZL6",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NF6TK6D2DL9",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NF83PRZK6K3",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NFT3TR6MN9W",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NFZSND3LPPN",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NG3KNWZ7RZ7",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NGDQGHWZX13",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NGL4GBPXM1G",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NHCW3R1JB1C",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NHMC3SJBGZK",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NJ2FD5HJ7SB",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9NJ2SFHNCCRV",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NJ71RH89RJ5",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NJRRVNZ8MRJ",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NK2DT3K7DTF",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NK4NC5LFCQ7",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NKCCHCFTHV2",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NKFLWWM9CZ1",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NKK6CX54183",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NKX70BBCDRN",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NLD3ZRWF8DT",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9NLFKBTNP2VJ",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NLNTDTW66CC",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NM395CH685J",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NM7J25GMDHP",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NM857B8P3SC",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NMCRMS6WN78",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NMNZ4CK59DM",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NMW7RJ8FP94",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NN3HCKW5TPC",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NNFG8BQRCXL",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NNM7PKZN3JF",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9NP1P1WFS0LB",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NPSLX5HNN3H",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NPSWGMTPRVW",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NPVC7S5ZZ7R",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NQ51FFR2JWF",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NQJCGMK9VVD",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NQMVR9WL9FW",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NQR437K7PQH",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NRDH9Z85Q9B",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NRTXWCZ2ZJ0",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NSB55HX1GGN",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NSL68D814GC",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NT0NT8JQMQN",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NTK0V6ZK6T8",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NTM9HXNLSZX",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NTZH69PZSH0",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NV0Q705NQ2N",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NV8W1KJSQLL",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NVB51LMXLJF",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NVQ4ZLJGMDV",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NWB9PL1L2PQ",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NWDPFPPK30V",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NWNLS28ZG37",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NWX420Z2NLG",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NX17M8BNTX1",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NXLNL5JXBZJ",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NXP44L49SHJ",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NXQKPGMHH9G",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9NXR6469DM2P",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NZ1BL9SMVG4",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NZ4T5RFD7KF",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9NZ90QLG3H0V",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P00J6DXK9LX",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P00SVGWDJCP",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P02RMWG3SP9",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P1303FCXW6X",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P1CWNG8F7B5",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P1D3TD1KHLR",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P1H8K2V0NNP",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P1JS86M9SXH",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P1P7DWHBDBD",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P1Q06WQV414",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P1VNX9Z03N5",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P1WJCK9B8S6",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P1Z43KRNQD4",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P20JCF7BV93",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P28J28WGSPZ",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P2CHXX6D861",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P2J5D12GJL5",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P2JXK37PFLZ",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P2TFCCRKMRD",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9P2VGCTBMM52",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P36DQX6W9CS",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P3FG98R5X8F",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P3SX4QXR5MD",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P3XVD4HH30X",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P3ZRGNQVC7D",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P44PNW2MKHB",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P46M5JQ2PTF",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P4KMR76PLLQ",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P5241RBH1SZ",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P55XDLRJDHB",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P5DGQW39CTS",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P5F966564FS",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9P5MMCTL8MFX",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P5VB9G9CJ29",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P5X4QVLC2XR",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9P686C1GJ91L",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P698GM5GR3W",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P6Z93565T92",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P6ZKL905TMT",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P6ZKM2KSSHC",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P77PG7DK0W2",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9P7L9H478GGV",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P7LVXNVQ6K7",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P7RQ1QFFF8R",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P7S9F02293J",
+      "reasons": [
+        "no-scoped-desktop-catalogue"
+      ]
+    },
+    {
+      "productId": "9P7Z1D3N8KR7",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P82LXD5RH31",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P85NL6T3DHP",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity",
+        "base-game-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P8RC7S4NRQ3",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P8S1MN4066K",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9P91FNMH1GG0",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P96HK15H8W8",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P9JZZ79KHDK",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9P9XGNFNF11R",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PB301R051CQ",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PB5T776N2SW",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PB7921QZ087",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PBRN7JS4XPC",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PC288TN7R8K",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PCTJZRLV21G",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PD0Z90216RJ",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PDH3TB5548T",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PDNF24PP2V2",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PDZ14P56XRD",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PFNXM9G4N83",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PFXKRLVWJ0B",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PGQ76KP0WJL",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PGVZ5XPQ9SP",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PHFTS44F99K",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PHNM1C4T968",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PHR6KG3D1RQ",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PJ06TZX4NMH",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9PJ45NJCHSFS",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PJFC8RLNPH5",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PJNXM82ZX47",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PJPCB188SVG",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9PJPZ1DQD0WM",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PK09BL31FK1",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PK2KH9WR7SB",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PK7TLLPD7GV",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PK8PHLCQDF6",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PKDX735TR8K",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PKZN9K2HXJ9",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PLCL2VB2SC0",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PLKVSWR299F",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PM3J18QM4Q3",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "unreleased-or-market-release-date-ambiguous",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PMQDM08SNK9",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PMVJR05PFJW",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PMZ9LB06T8D",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PN3SWBMPJXJ",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PN8M16GG8M4",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection",
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PNRHXZ6ZSS9",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9PP7XSG5LDH1",
+      "reasons": [
+        "duplicate-or-edition-identity-ambiguous"
+      ]
+    },
+    {
+      "productId": "9PPH71DV44T7",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9PPJGBJ2LGV9",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9WZDNCRFHWD2",
+      "reasons": [
+        "ambiguous-edition-launcher-or-collection"
+      ]
+    },
+    {
+      "productId": "9WZDNCRFHWFH",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "9WZDNCRFJBFJ",
+      "reasons": [
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "BRKX5CRMRTC2",
+      "reasons": [
+        "bundle-preorder-or-full-sku-role-unknown",
+        "no-known-desktop-full-game-format",
+        "missing-desktop-content-identity"
+      ]
+    },
+    {
+      "productId": "BRMKDCZT0C4L",
+      "reasons": [
+        "unreleased-or-market-release-date-ambiguous"
+      ]
+    }
+  ],
+  "qualifiedDistinctReleasedBaseGames": 315,
+  "rulesVersion": "desktop-released-base-v1"
+}

@@ -1,0 +1,38 @@
+{
+  "authoringDatabaseSha256": "6d465a7ea4dd2db591bdfd503a19ea145bac2cce425eccf98bd330b975a26fc8",
+  "files": {
+    "AWACY-LICENSE.txt": {
+      "bytes": 1070,
+      "sha256": "dfc4aad1eb6a0ed5879f55293bbaad5ac36cb315e1a9eaf01068c68776c41f52"
+    },
+    "NOTICES.txt": {
+      "bytes": 2531,
+      "sha256": "eb975c9cd6b0648f0326e6758fec47d7eb178fa428c1835a47d52cb20b91c130"
+    },
+    "count-audit-v1.json": {
+      "bytes": 43662,
+      "sha256": "d677774eb3d7b8de14135e6347fe1daf7d3fd8edd17f8528ae708690400cb877"
+    },
+    "game-metadata-v1.json": {
+      "bytes": 1580736,
+      "sha256": "0b4d8ed76ac4afaf1881b27698a86afaf1d2dae6948bdf146c29afbda5ae68b6"
+    },
+    "game-metadata-v1.schema.json": {
+      "bytes": 13558,
+      "sha256": "06de85a74d9210b7886483dac64584327bb833b07dc6e06bd27f57a81097b152"
+    }
+  },
+  "metadataSchema": "urn:xodus:game-metadata:1",
+  "minimumReaderVersion": 1,
+  "observedAt": "2026-10-23T09:54:40+00:00",
+  "releaseStatus": "hold",
+  "schemaVersion": 1,
+  "signature": null,
+  "snapshotId": "40a564e915f19cbc86b992603ac1f37803c73c35786522007e7863c7c9ba87ad",
+  "sourceCode": {
+    "classify_catalogue.py": "7cdf793e6b75fd94d15f26f764950536269a25eba2a318b16a01544bc0cc0c43",
+    "game_metadata.py": "eef208e9e73e70394785567361641112d8b553560378644f0e4ecd8e5e20fe09"
+  },
+  "sourceCommit": "05f4a436e7c7ee5e6feb933508f84ba36d026f15",
+  "updaterSupported": false
+}
