@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import OSLog
 import SwiftUI
 import XodusManagement
 
@@ -19,6 +20,17 @@ enum LibraryGridLayout {
     }
 }
 
+struct LibraryScrollMeasurement: Equatable {
+    let offsetY: CGFloat
+    let contentHeight: CGFloat
+    let containerHeight: CGFloat
+    let insetTop: CGFloat
+    let insetBottom: CGFloat
+    let visibleY: CGFloat
+    let visibleMaxY: CGFloat
+    let visibleHeight: CGFloat
+}
+
 @MainActor
 final class LibrarySelection: ObservableObject {
     let projection = PresentationCache<LibraryProjectionKey, LibraryProjection>(empty: .empty)
@@ -31,6 +43,74 @@ final class LibrarySelection: ObservableObject {
     var scrollID: String?
     var collectionHeaderFrame = CGRect.zero
     var collectionViewportFrame = CGRect.zero
+    var collectionScrollFrame = CGRect.zero
+    private var measurement: LibraryScrollMeasurement?
+    private var scrollRevision = 0
+    private var headerRevision = 0
+    private var frameRevision = 0
+    private var measurementTime: Date?
+    private var actionOrdinal = 0
+    private var postSamples = 0
+    private var actionFilter = LibraryFilter.all
+    private let positionLogger = Logger(subsystem: "io.github.dragoshont.xodus", category: "library-position")
+
+    func beginScopeMeasurement(filter: LibraryFilter, target: String?) {
+        actionOrdinal += 1
+        postSamples = 0
+        actionFilter = filter
+        emitMeasurement(source: "pre", target: target)
+    }
+
+    func measureScroll(_ value: LibraryScrollMeasurement) {
+        measurement = value
+        measurementTime = Date()
+        scrollRevision += 1
+        emitPostMeasurement(source: "scroll")
+    }
+
+    func measureHeader(_ frame: CGRect) {
+        collectionHeaderFrame = frame
+        headerRevision += 1
+        emitPostMeasurement(source: "header")
+    }
+
+    func measureScrollFrame(_ frame: CGRect) {
+        collectionScrollFrame = frame
+        frameRevision += 1
+        emitPostMeasurement(source: "frame")
+    }
+
+    private func emitPostMeasurement(source: String) {
+        guard actionOrdinal > 0, postSamples < 12 else { return }
+        postSamples += 1
+        emitMeasurement(source: source, target: scrollID)
+    }
+
+    private func emitMeasurement(source: String, target: String?) {
+        func targetClass(_ value: String?) -> String {
+            guard let value else { return "nil" }
+            if value == "library-games" { return "header" }
+            if value.hasPrefix("library-card-") { return "card" }
+            if value.hasPrefix("library-local-") { return "local" }
+            return "other"
+        }
+        let available: Bool
+        if #available(macOS 15, *) { available = true } else { available = false }
+        let header = collectionHeaderFrame
+        let frame = collectionScrollFrame
+        let prefix = "Scope measurement: action=\(actionOrdinal); sample=\(postSamples); source=\(source); filter=\(actionFilter.rawValue); currentTargetClass=\(targetClass(scrollID)); requestedTargetClass=\(targetClass(target)); nativeAvailable=\(available); scrollRevision=\(scrollRevision); headerRevision=\(headerRevision); frameRevision=\(frameRevision)"
+        let geometry = "; headerGlobalX=\(header.minX); headerGlobalY=\(header.minY); headerWidth=\(header.width); headerHeight=\(header.height); scrollGlobalX=\(frame.minX); scrollGlobalY=\(frame.minY); scrollFrameWidth=\(frame.width); scrollFrameHeight=\(frame.height); viewportY=\(collectionViewportFrame.minY); viewportHeight=\(collectionViewportFrame.height)"
+        let values: String
+        if let measurement {
+            let age = measurementTime.map { Date().timeIntervalSince($0) } ?? -1
+            let approximateY = header.minY - frame.minY + measurement.offsetY
+            values = "; snapshotPresent=true; snapshotAgeSeconds=\(age); offsetY=\(measurement.offsetY); contentHeight=\(measurement.contentHeight); containerHeight=\(measurement.containerHeight); insetTop=\(measurement.insetTop); insetBottom=\(measurement.insetBottom); visibleY=\(measurement.visibleY); visibleMaxY=\(measurement.visibleMaxY); visibleHeight=\(measurement.visibleHeight); approximateHeaderDocumentY=\(approximateY); atomic=false"
+        } else {
+            values = "; snapshotPresent=false; atomic=false"
+        }
+        positionLogger.info("\(prefix + geometry + values, privacy: .public)")
+    }
+
     func collectionTarget(remaining: Set<String>) -> String? {
         let measured = !collectionHeaderFrame.isEmpty && !collectionViewportFrame.isEmpty
         let visible = measured && collectionHeaderFrame.intersects(collectionViewportFrame)

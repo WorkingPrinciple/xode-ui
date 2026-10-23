@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
-import OSLog
 import SwiftUI
 import XodusManagement
 
@@ -86,9 +85,6 @@ struct LiveLibraryView: View {
     }
 
     private func changeScope(filter nextFilter: LibraryFilter, showsUnsupported: Bool) {
-        let header = selection.collectionHeaderFrame
-        let viewport = selection.collectionViewportFrame
-        let headerVisible = !header.isEmpty && !viewport.isEmpty && header.intersects(viewport)
         let key = projectionKey(filter: nextFilter, showsUnsupported: showsUnsupported)
         let next = LibraryProjection(key: key,
             isVisible: { showsUnsupported || unsupportedIssues($0).isEmpty }, recommendable: recommendable)
@@ -97,11 +93,8 @@ struct LiveLibraryView: View {
             targets.formUnion(next.local.filter { showsUnsupported || unsupportedIssues($0).isEmpty }
                 .map { "library-local-\($0.id)" })
         }
-        let previous = selection.scrollID
-        let removed = previous.map { $0 != "library-games" && !targets.contains($0) } ?? false
         let target = selection.collectionTarget(remaining: targets)
-        let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "library-position")
-        logger.info("Scope action: from=\(previous ?? "nil", privacy: .public); to=\(target ?? "nil", privacy: .public); headerY=\(header.minY); headerHeight=\(header.height); viewportY=\(viewport.minY); viewportHeight=\(viewport.height); visible=\(headerVisible); removed=\(removed)")
+        selection.beginScopeMeasurement(filter: nextFilter, target: target)
         withTransaction(Transaction(animation: nil)) {
             positionCollection(target)
             selection.filter = nextFilter
@@ -161,7 +154,7 @@ struct LiveLibraryView: View {
                                 allowsSorting: true)
                     .id("library-games")
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
-                        selection.collectionHeaderFrame = $0
+                        selection.measureHeader($0)
                     }
                 }
                 .scrollTargetLayout()
@@ -452,6 +445,7 @@ struct LiveLibraryView: View {
                 Text("Continue Playing").font(.title2.weight(.semibold))
                 Spacer()
                 Button("See All") {
+                    selection.beginScopeMeasurement(filter: .installed, target: "library-games")
                     withTransaction(Transaction(animation: nil)) {
                         positionCollection("library-games")
                         selection.filter = .installed

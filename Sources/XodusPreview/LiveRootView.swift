@@ -426,6 +426,10 @@ struct LiveRootView: View {
                 .padding(immersive ? 0 : 30)
             }
             .scrollPosition(id: scrollID)
+            .modifier(LibraryScrollMeasurementObserver(selection: destination == .library ? state.librarySelection : nil))
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+                if destination == .library { state.librarySelection.measureScrollFrame($0) }
+            }
             .onGeometryChange(for: CGRect.self) {
                 let frame = $0.frame(in: .global)
                 return CGRect(x: frame.minX, y: frame.minY + $0.safeAreaInsets.top,
@@ -434,6 +438,7 @@ struct LiveRootView: View {
             } action: {
                 if destination == .library { state.librarySelection.collectionViewportFrame = $0 }
             }
+
             .modifier(LibraryScrollEdge(enabled: immersive))
             .modifier(LibraryImmersion(enabled: immersive,
                                       underlapsToolbar: destination == .discover || libraryHasHero))
@@ -444,6 +449,27 @@ struct LiveRootView: View {
         .allowsHitTesting(selected)
         .disabled(!selected)
         .accessibilityHidden(!selected)
+    }
+
+    private struct LibraryScrollMeasurementObserver: ViewModifier {
+        let selection: LibrarySelection?
+
+        @ViewBuilder
+        func body(content: Content) -> some View {
+            if #available(macOS 15, *), let selection {
+                content.onScrollGeometryChange(for: LibraryScrollMeasurement.self) { geometry in
+                    LibraryScrollMeasurement(offsetY: geometry.contentOffset.y,
+                        contentHeight: geometry.contentSize.height, containerHeight: geometry.containerSize.height,
+                        insetTop: geometry.contentInsets.top, insetBottom: geometry.contentInsets.bottom,
+                        visibleY: geometry.visibleRect.minY, visibleMaxY: geometry.visibleRect.maxY,
+                        visibleHeight: geometry.visibleRect.height)
+                } action: { _, value in
+                    selection.measureScroll(value)
+                }
+            } else {
+                content
+            }
+        }
     }
 
     private func library(positionCollection: @escaping (String?) -> Void) -> some View {
