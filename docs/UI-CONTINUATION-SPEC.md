@@ -121,6 +121,35 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
   13 games / 68 excluded / 10 unresolved, unchanged from 21:28 and 21:57
   (`req5-account-resolution.log`). This is not final visual acceptance across
   Library/Discover/genre; that input sequence remains pending.
+- **REQ-3/F04 PASS, bounded to the requested interaction checks.** During the
+  owner's quiet interval (22:21:49 through 22:26:29), HID restored Library All
+  and Title, with final AX radio All=1 and Sort submenu Title checked / Recently
+  played unchecked. The settled lane-arrow check began with the enabled arrow:
+  Brotato/Subnautica 2/Hollow Knight lane X positions 2616/2896/3176 became
+  2336/2616/2896 (exactly one 280-point advance), all at Y1129.5. Hero title
+  frames stayed fixed: Subnautica 2 at (2740,675.4775) and Hollow Knight at
+  (4252,675.5). No search or foreign input appeared in this check. Combined
+  with the earlier top-filter, compatibility, repeated See All and checked
+  Recently played evidence, this closes the interaction portion; the genuine
+  897-height/width-reflow qualification remains REQ-4, not a claimed pass here.
+  `req3-resumed-receipt.json` contains every short burst, target geometry and
+  pointer restoration; `req3-final-arrow*` binds AX and visible evidence.
+- **REQ-5/F05 UNVERIFIED at quiet-interval deadline, with positive partial
+  evidence.** A complete Library sweep found 45 unique visible games and none
+  of HP Smart/iCloud/PaintShop. Discover All genres sampling found 273 distinct
+  game cards, again none of those applications. Action & adventure was selected
+  through the real genre menu and visibly showed genuine games including
+  1000xRESIST, Abiotic Factor, A Way Out and Among Us, without the named apps.
+  The Discover sweep did not reach the end, and the attempted complete genre
+  sweep stopped when the genre menu was still above the viewport after an
+  insufficient top scroll. No fabricated completion: stopped all input by
+  22:26:29, restored Library All/Title, closed menus and restored the pointer.
+  Evidence: `req5-library-sweep-ax.json` (45), `req5-All-genres-sweep-ax.json`
+  and `req5-sweep-summary.json` (273; bottomReached=false),
+  `req5-genre-action-{top,grid}*`, `req5-final-restored-library*`, and the shared
+  `req3-resumed-receipt.json`. Counts remain the separately measured
+  13/68/10 account classification, not acquisition or exhaustive Discover
+  coverage. Full Discover/genre absence verification is still open.
 - Ordinary startup enumeration: 164 records, 93 active Game/Application rows,
   91 product IDs, 5 subscription-plan rows. Frontend: 91 candidates, zero
   affirmative purchased/subscription acquisitions, 91 unknown. These are not
