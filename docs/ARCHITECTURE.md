@@ -56,6 +56,14 @@ VoiceOver off and normal power; existing active-tab/scene, modal, hover, playbac
 and Reduce Motion gates remain independent. Without viewport visibility support,
 automatic paging stays off. Continue Playing's See All applies Installed/recent
 ordering and reveals the collection using its existing scroll route.
+Collection filters and compatibility/query scope do not alter the curated hero
+or Continue Playing membership/order. Those use the qualified, recommendable
+library and live launchability, not filtered grid rows. A native next-game
+chevron advances the existing horizontal lane position. When filtering removes
+the current grid anchor, navigation falls back to the surviving collection
+header rather than the hero; short results keep a viewport of collection space.
+Native Minecraft's separate local-launcher card appears only under All/Installed,
+never as invented Owned or Game Pass evidence.
 Ambient artwork retains the outgoing image/palette during same-context hero
 replacement; a new context starts with a dark hero backing, never old-account
 artwork. Foreground landscape images remain keyed to their requested game.
@@ -76,6 +84,12 @@ enter Owned; subscriptions retain their distinct label, and unknown held games
 say "In your library". Unknown provenance does not remove current held access or
 independent install/play authority. Account tiers/counts, search, projections and
 detail use the same distinction; public catalog membership grants no authority.
+Unavailable/incomplete account collection and unknown acquisition are explicit
+in Owned, not a definitive empty purchased library. Unified collection loading
+waits at most 30 seconds for the existing account-read admission to become idle,
+with cancellation/generation/account fencing; it does not change authentication,
+issued-request deadlines or retry a dispatched request. Sanitized counts record
+dispatch, acquisition kinds and unresolved/excluded PC descriptors.
 Ordinary detail content follows system appearance; dark treatment is local to
 the media header. See [native UI procedures](NATIVE_UI_PROCEDURES.md) for bounded
 real-product verification and evidence limits.

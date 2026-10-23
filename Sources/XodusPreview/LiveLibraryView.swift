@@ -26,6 +26,8 @@ struct LiveLibraryView: View {
     let browse: () -> Void
     let recentActivity: () -> Void
     var showCollection: () -> Void = {}
+    var restoreCollection: () -> Void = {}
+    var collectionViewportHeight: CGFloat = 0
     @ObservedObject var selection = LibrarySelection()
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
@@ -58,7 +60,29 @@ struct LiveLibraryView: View {
     private var continuing: [InstalledGame] { projection.continuing }
     private var localRecords: [LibraryGame] { projection.local }
     private var showsNativeMinecraft: Bool {
-        query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query)
+        [.all, .installed].contains(filter)
+            && (query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query))
+    }
+    private var accountCollectionIncomplete: Bool {
+        !library.accessIsCurrent || library.snapshot?.isComplete != true
+    }
+    private var purchaseNotice: String? {
+        guard filter == .owned else { return nil }
+        if accountCollectionIncomplete {
+            return "Your purchased PC games aren't fully available yet. Shown purchases may be incomplete; installed-game access is checked separately."
+        }
+        let unknown = library.representedGames.filter { $0.acquisitionKind == .unknown }.count
+        return unknown > 0
+            ? "\(unknown.formatted()) games in your PC library have an unidentified acquisition source and aren't classified as Owned."
+            : nil
+    }
+    private func restoreRemovedCollectionAnchor() {
+        guard let anchor = selection.scrollID else { return }
+        let valid = Set(visible.map { "library-card-\($0.id)" }
+            + ([.all, .installed].contains(filter) ? localRecords.filter(isVisible).map { "library-local-\($0.id)" } : []))
+        if (anchor.hasPrefix("library-card-") || anchor.hasPrefix("library-local-")), !valid.contains(anchor) {
+            restoreCollection()
+        }
     }
 
     var body: some View {
@@ -114,10 +138,25 @@ struct LiveLibraryView: View {
                                 showsUnsupportedGames: $showsUnsupportedGames,
                                 allowsSorting: true)
                     .id("library-games")
+                VStack(alignment: .leading, spacing: 22) {
+                if let purchaseNotice {
+                    Label(purchaseNotice, systemImage: "info.circle")
+                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.library.purchaseProvenance")
+                }
                 if installed.loading { ProgressView("Loading installed games") }
                 if installed.productAccess.checking { ProgressView("Loading your games").controlSize(.small) }
                 if visible.isEmpty {
-                    if hiddenUnsupportedCount > 0, !showsUnsupportedGames {
+                    if [.owned, .gamePass].contains(filter), accountCollectionIncomplete {
+                        ContentUnavailableView {
+                            Label(filter == .owned ? "Purchased library unavailable" : "Game Pass library unavailable",
+                                  systemImage: "books.vertical")
+                        } description: {
+                            Text(filter == .owned
+                                 ? "Ode to X hasn't loaded a complete current PC collection. This doesn't mean you own no games."
+                                 : "Ode to X hasn't loaded a complete current PC collection. Public catalog listings alone don't verify your account's subscription access.")
+                        }
+                    } else if hiddenUnsupportedCount > 0, !showsUnsupportedGames {
                         ContentUnavailableView {
                             Label("No games verified yet", systemImage: "gamecontroller")
                         } description: {
@@ -129,8 +168,13 @@ struct LiveLibraryView: View {
                         ContentUnavailableView.search(text: query)
                     } else if !collection.isEmpty {
                         ContentUnavailableView {
-                            Label("No \(filter.rawValue.lowercased()) games to show", systemImage: "gamecontroller")
-                        } description: { Text("Try another filter to see the games in your library.") }
+                            Label(filter == .owned ? "No confirmed purchases in this collection"
+                                  : "No \(filter.rawValue.lowercased()) games to show", systemImage: "gamecontroller")
+                        } description: {
+                            Text(filter == .owned
+                                 ? "Owned includes purchase or redemption evidence in your loaded PC library, not subscriptions or unidentified acquisition."
+                                 : "Try another filter to see the games in your library.")
+                        }
                         actions: { Button("Show all games") { filter = .all } }
                     } else if library.accessIsCurrent, library.representedGames.isEmpty,
                               localRecords.isEmpty, !installed.productAccess.checking {
@@ -167,6 +211,8 @@ struct LiveLibraryView: View {
                             status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
                     }.frame(maxWidth: 220)
                 }
+                }
+                .frame(minHeight: collectionViewportHeight, alignment: .topLeading)
             }
             .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id))
                 .sorted().joined(separator: ",") + ":\(presentationActive)") {
@@ -184,6 +230,8 @@ struct LiveLibraryView: View {
             }
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
+        .onChange(of: filter) { _, _ in restoreRemovedCollectionAnchor() }
+        .onChange(of: showsUnsupportedGames) { _, _ in restoreRemovedCollectionAnchor() }
         .sheet(item: $selection.localDetail) { entry in
             if let product = entry.product {
                 LiveProductView(product: product, library: library, installedLibrary: installed,
@@ -384,6 +432,16 @@ struct LiveLibraryView: View {
                     withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) { showCollection() }
                 }
                     .accessibilityLabel("Show installed games by last played")
+                Button("Show next recently played game", systemImage: "chevron.right") {
+                    let index = continuing.firstIndex { $0.id == selection.recentGameID } ?? 0
+                    guard continuing.indices.contains(index + 1) else { return }
+                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) {
+                        selection.recentGameID = continuing[index + 1].id
+                    }
+                }
+                .labelStyle(.iconOnly).buttonStyle(.borderless)
+                .disabled(continuing.last?.id == selection.recentGameID || continuing.count < 2)
+                .help("Scroll to the next recently played game")
             }
 
             ScrollView(.horizontal) {

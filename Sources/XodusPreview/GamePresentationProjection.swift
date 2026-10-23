@@ -159,7 +159,7 @@ struct LibraryProjection {
         visible = candidates.filter(isVisible)
         local = LibraryGame.localRecords(installed: key.installed, qualified: collection,
             query: key.query, sort: key.sort)
-        continuing = LibraryGame.continuing(visible, launchableIDs: key.launchable)
+        continuing = LibraryGame.continuing(collection.filter(recommendable), launchableIDs: key.launchable)
         hero = LibraryGame.heroCandidates(qualified: collection.filter(recommendable),
             catalogue: [], continuingIDs: continuing.map(\.id))
     }

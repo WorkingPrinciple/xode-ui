@@ -19,6 +19,7 @@ struct LiveRootView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
     @State private var searchFocused = false
+    @State private var browseViewportHeight: CGFloat = 0
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
     @State private var libraryVisited = false
@@ -416,12 +417,14 @@ struct LiveRootView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     if destination == .library {
-                        library { proxy.scrollTo("library-games", anchor: .top) }
+                        library(showCollection: { proxy.scrollTo("library-games", anchor: .top) },
+                                restoreCollection: { proxy.scrollTo("library-games") })
                     } else { catalog }
                 }
                 .padding(immersive ? 0 : 30)
             }
             .scrollPosition(id: scrollID)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { browseViewportHeight = $0 }
             .modifier(LibraryScrollEdge(enabled: immersive))
             .modifier(LibraryImmersion(enabled: immersive,
                                       underlapsToolbar: destination == .discover || libraryHasHero))
@@ -435,7 +438,7 @@ struct LiveRootView: View {
         .accessibilityHidden(!selected)
     }
 
-    private func library(showCollection: @escaping () -> Void) -> some View {
+    private func library(showCollection: @escaping () -> Void, restoreCollection: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             if state.showsRecentActivity {
                 Button("Back to Library", systemImage: "chevron.left") { state.navigate(.library) }
@@ -453,7 +456,8 @@ struct LiveRootView: View {
                                 allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() },
-                                showCollection: showCollection, selection: state.librarySelection)
+                                showCollection: showCollection, restoreCollection: restoreCollection,
+                                collectionViewportHeight: browseViewportHeight, selection: state.librarySelection)
             }
         }
     }

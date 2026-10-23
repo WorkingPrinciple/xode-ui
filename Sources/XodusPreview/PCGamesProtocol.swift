@@ -8,7 +8,7 @@ enum PCGamesError: Error, LocalizedError, Equatable {
     case invalidResponse, transport, responseTooLarge, http(Int)
     case signInExpired, signInDeclined, signInRequired, keychain(OSStatus)
     case noXboxProfile, childAccount, regionUnavailable, xboxSignIn, identityMismatch
-    case incompleteCollection(Int), incompleteCatalog(Int)
+    case incompleteCollection(Int), incompleteCatalog(Int), libraryReadBusy
     case credentialBrokerUnavailable, keychainApprovalRequired, keychainApprovalCancelled
 
     var errorDescription: String? {
@@ -31,6 +31,7 @@ enum PCGamesError: Error, LocalizedError, Equatable {
         case .identityMismatch: "Microsoft returned different accounts for this request. Sign out of PC games and sign in again."
         case .incompleteCollection(let pages): "Your library couldn't finish loading after \(pages) pages. Refresh to try again."
         case .incompleteCatalog(let count): "PC game details couldn't finish loading after \(count) products. Refresh to try again."
+        case .libraryReadBusy: "Your PC library is waiting for another account read. It hasn't been loaded completely."
         }
     }
 

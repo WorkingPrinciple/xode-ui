@@ -233,7 +233,7 @@ final class PCGamesController: ObservableObject {
 
     private func refreshUnifiedAccount() {
         guard !busy, !accountDisconnecting, !terminating, let session = unifiedSession,
-              session.hasConfirmedSignIn else { return }
+              session.hasConfirmedSignIn, let account = session.accountHash else { return }
         let token = UUID()
         generation = token
         busy = true
@@ -241,11 +241,29 @@ final class PCGamesController: ObservableObject {
         operation = Task {
             defer { finish(token) }
             do {
+                // This task has not entered readUnifiedAccount yet, so accountBusy cannot include itself.
+                let deadline = ContinuousClock.now.advanced(by: .seconds(30))
+                while session.accountBusy {
+                    try current(token)
+                    guard session.hasConfirmedSignIn, session.accountHash == account else {
+                        throw PCGamesError.identityMismatch
+                    }
+                    guard ContinuousClock.now < deadline else {
+                        logger.warning("Account collection admission timed out before dispatch")
+                        throw PCGamesError.libraryReadBusy
+                    }
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                try current(token)
+                guard session.hasConfirmedSignIn, session.accountHash == account else {
+                    throw PCGamesError.identityMismatch
+                }
+                logger.notice("Account collection dispatch")
                 let read = try await session.readUnifiedAccount(.library, market: market, language: language)
                 let collection = try read.payload.decode(OdeAccountCollection.self)
                 try collection.validate()
                 try current(token)
-                logger.notice("Account collection candidates: \(collection.items.count)")
+                logger.notice("Account collection candidates: \(collection.items.count), purchased: \(collection.items.filter { $0.acquisitionKind == .purchased }.count), subscription: \(collection.items.filter { $0.acquisitionKind == .subscription }.count), unknown: \(collection.items.filter { $0.acquisitionKind == .unknown }.count)")
                 let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,
@@ -261,14 +279,16 @@ final class PCGamesController: ObservableObject {
                     throw PCGamesError.identityMismatch
                 }
                 snapshot = result.retainingUnresolved(from: snapshot)
-                logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded")
+                logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 hasSavedSignIn = true
                 needsSignIn = false
             } catch is CancellationError { }
             catch {
                 guard generation == token, !terminating else { return }
                 if accountHash != session.accountHash || !session.hasConfirmedSignIn { snapshot = nil }
-                if error as? ManagementError == .authenticatedReadFailed(.responseInvalid) {
+                if error as? PCGamesError == .libraryReadBusy {
+                    self.error = PCGamesError.libraryReadBusy.localizedDescription
+                } else if error as? ManagementError == .authenticatedReadFailed(.responseInvalid) {
                     self.error = "Your account library couldn't be read completely. Your installed games are still available."
                 } else {
                     self.error = "Your PC library couldn't load. \(LiveSession.describe(error))"
