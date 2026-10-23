@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inputs": {
-    "asOf": "2026-10-23T05:35:16.881345+00:00",
+    "asOf": "2026-10-23T06:06:15.427405+00:00",
     "deadline": "2026-10-23T13:26:00+03:00",
     "launchDiskPolicy": {
       "minimumFreeGiB": 110,
@@ -646,11 +646,22 @@
       "minutes": 87.51817150000001
     }
   ],
-  "remainingWallMinutes": 290.71864424999995,
+  "remainingWallMinutes": 259.7428765833333,
   "scenarios": [
     {
       "label": "slow observed",
       "minutesPerTitle": 87.51817150000001,
+      "serialCycleSlots": 2,
+      "queueCappedAdditions": 2,
+      "conditionalTotalWorking": 14,
+      "gapTo20": 6,
+      "minimumPassRateRawSlots": 4.0,
+      "minimumPassRateCurrentQueue": 4.0,
+      "targetPossibleCurrentQueue": false
+    },
+    {
+      "label": "sample midpoint",
+      "minutesPerTitle": 65.71552045,
       "serialCycleSlots": 3,
       "queueCappedAdditions": 3,
       "conditionalTotalWorking": 15,
@@ -660,25 +671,14 @@
       "targetPossibleCurrentQueue": false
     },
     {
-      "label": "sample midpoint",
-      "minutesPerTitle": 65.71552045,
-      "serialCycleSlots": 4,
-      "queueCappedAdditions": 4,
-      "conditionalTotalWorking": 16,
-      "gapTo20": 4,
-      "minimumPassRateRawSlots": 2.0,
-      "minimumPassRateCurrentQueue": 2.0,
-      "targetPossibleCurrentQueue": false
-    },
-    {
       "label": "fast observed",
       "minutesPerTitle": 43.9128694,
-      "serialCycleSlots": 6,
-      "queueCappedAdditions": 6,
-      "conditionalTotalWorking": 18,
-      "gapTo20": 2,
-      "minimumPassRateRawSlots": 1.3333333333333333,
-      "minimumPassRateCurrentQueue": 1.3333333333333333,
+      "serialCycleSlots": 5,
+      "queueCappedAdditions": 5,
+      "conditionalTotalWorking": 17,
+      "gapTo20": 3,
+      "minimumPassRateRawSlots": 1.6,
+      "minimumPassRateCurrentQueue": 1.6,
       "targetPossibleCurrentQueue": false
     }
   ],
@@ -715,7 +715,7 @@
     "minutesPerAddition": 34.88528479166666,
     "limitation": "Between-run gaps are unallocated wall time, NOT proven screen/operator waiting. Run spans mix startup/play/input/save; no reliable finer split. Largest aggregate category across two cycles, not a universal per-title bottleneck."
   },
-  "requiredAverageMinutesPerAddition": 36.339830531249994,
+  "requiredAverageMinutesPerAddition": 32.467859572916666,
   "interpretation": "Estimate of capacity, NOT expected successful verdicts or a confidence interval. One exact passive-to-strict cycle (Halls), one broader title-probe-to-strict proxy (Hogwarts; passive unavailable). These overlap in wall time; their durations include handoffs, cache/retry and waits, not exclusive operator effort. Assume one serial qualification lane, continuous focus availability until deadline, unchanged disk/recipes and every counted queue attempt succeeds. No measured success probability or working-hours budget exists. Guaranteed/admitted total remains current strict count. Failures, sleep and holds reduce totals; dry packets are queued, NOT launch-admitted or WORKING-ready.",
   "blockerClasses": {
     "catalogue": {
