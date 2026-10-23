@@ -1,0 +1,132 @@
+{
+  "consumerCommit": "36994efed478939a85e80df1f143c0e96bae465a",
+  "consumerPath": "Sources/XodusPreview/OfflineGameCompatibility.swift",
+  "consumerSha256": "08dd436c938587fb9e49205f46aab2284ee4514f2602cbde5b5a62c52da9fd69",
+  "descriptiveClearanceMeaning": {
+    "manual-override": 2,
+    "not-detected": 7
+  },
+  "fieldAllowlist": {
+    "antiCheatEvidence": [
+      "source",
+      "checkedAt",
+      "method",
+      "type",
+      "mode",
+      "publicChecks",
+      "packageScan"
+    ],
+    "clearedEntryOnly": [
+      "supported01",
+      "packageFormatEvidence",
+      "antiCheatEvidence"
+    ],
+    "entry": [
+      "title",
+      "packageFormat",
+      "pcPackageIdentified",
+      "antiCheat",
+      "technologyReferences",
+      "referencePlatforms"
+    ],
+    "header": [
+      "version",
+      "checkedAt",
+      "market",
+      "packageSource",
+      "antiCheatReference"
+    ],
+    "packageFormatEvidence": [
+      "source",
+      "checkedAt",
+      "method",
+      "observedFormats"
+    ],
+    "packageIdentity": [
+      "storeId"
+    ],
+    "publicCheck": [
+      "sourceType",
+      "source",
+      "checkedAt",
+      "result"
+    ],
+    "publisherEntry": [
+      "title",
+      "technologies",
+      "scope",
+      "source",
+      "checkedAt"
+    ],
+    "scan": [
+      "complete",
+      "fileCount",
+      "result",
+      "fileListSha256",
+      "matches",
+      "symlinkCount",
+      "signatureSet",
+      "signatureVersion",
+      "packageIdentity"
+    ]
+  },
+  "fieldAudit": {
+    "removedProductFieldCounts": {
+      "antiCheatEvidence": 556,
+      "componentProductIDs": 1,
+      "desktopCatalog": 555,
+      "entitlementProductID": 2,
+      "launchMode": 1,
+      "launchProof": 565,
+      "nativeProviderID": 1,
+      "packageFormatEvidence": 556,
+      "productRole": 3,
+      "supported01": 556
+    },
+    "removedTopLevelFields": [
+      "desktopCatalogSnapshot",
+      "nativeProviders",
+      "testCandidates"
+    ],
+    "retainedInventoryDigests": 7,
+    "retainedManifestNames": 0,
+    "retainedPrivatePackageVersions": 0,
+    "retainedPrivateRoots": 0,
+    "retainedRawInventories": 0
+  },
+  "files": {
+    "CompatibilityData/AWACY-LICENSE.txt": {
+      "bytes": 1070,
+      "sha256": "dfc4aad1eb6a0ed5879f55293bbaad5ac36cb315e1a9eaf01068c68776c41f52"
+    },
+    "CompatibilityData/NOTICES.txt": {
+      "bytes": 1019,
+      "sha256": "d64d9e1e3ea38d3389779bbc59904ee6dac90320198ae1c8e2081e4319407339"
+    },
+    "CompatibilityData/game-compatibility-v1.json": {
+      "bytes": 153356,
+      "sha256": "ab818e62192164dbf2aa7437a52d17862de8594882c90b071cc2604132e9259b"
+    },
+    "CompatibilityData/publisher-anti-cheat-v1.json": {
+      "bytes": 1986,
+      "sha256": "4af1f48bb366a0f2f6cbd6aadeb2c5b20b4fd1aff4c53f9a92980386d89c9d5f"
+    },
+    "legacy-resource-v1.schema.json": {
+      "bytes": 6197,
+      "sha256": "c9288fcb69f55a16f00f2ae5dccc24745d9a2d7f3f06ea60ad45d9f40060b26b"
+    },
+    "publisher-resource-v1.schema.json": {
+      "bytes": 1137,
+      "sha256": "9626e1d2a1dc4e8d96ec0be3c6c0350452bec017dd830b8b21f6344219b09791"
+    }
+  },
+  "legacyPolicyCleared": 9,
+  "privateCandidateOnly": true,
+  "products": 565,
+  "publisherProducts": 4,
+  "releaseStatus": "hold",
+  "sanitizerSha256": "59f8d0693790fd174c5d2362872f487b1c49fd3db2edc6f3295bb882ec98f430",
+  "sourceDatabaseSha256": "6d465a7ea4dd2db591bdfd503a19ea145bac2cce425eccf98bd330b975a26fc8",
+  "sourcePublisherSha256": "4af1f48bb366a0f2f6cbd6aadeb2c5b20b4fd1aff4c53f9a92980386d89c9d5f",
+  "verifiedAbsence": 0
+}

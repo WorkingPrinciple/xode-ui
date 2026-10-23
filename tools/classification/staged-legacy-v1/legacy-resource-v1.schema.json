@@ -1,0 +1,233 @@
+{
+  "$id": "urn:xodus:private-legacy-resource:catalogue:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "antiCheatReference": {
+      "type": "string"
+    },
+    "checkedAt": {
+      "type": "string"
+    },
+    "market": {
+      "type": "string"
+    },
+    "packageSource": {
+      "type": "string"
+    },
+    "products": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "antiCheat": {
+            "type": "string"
+          },
+          "antiCheatEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "checkedAt": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "mode": {
+                "type": "string"
+              },
+              "packageScan": {
+                "additionalProperties": false,
+                "properties": {
+                  "complete": {
+                    "const": true
+                  },
+                  "fileCount": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "fileListSha256": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "type": "string"
+                  },
+                  "matches": {
+                    "additionalProperties": false,
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                  },
+                  "packageIdentity": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "storeId": {
+                        "pattern": "^[A-Z0-9]{12}$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "storeId"
+                    ],
+                    "type": "object"
+                  },
+                  "result": {
+                    "const": "no-known-signature"
+                  },
+                  "signatureSet": {
+                    "const": "anti-cheat-signatures-v1.json"
+                  },
+                  "signatureVersion": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "symlinkCount": {
+                    "const": 0
+                  }
+                },
+                "required": [
+                  "complete",
+                  "fileCount",
+                  "result",
+                  "fileListSha256",
+                  "matches",
+                  "symlinkCount",
+                  "signatureSet",
+                  "signatureVersion",
+                  "packageIdentity"
+                ],
+                "type": "object"
+              },
+              "publicChecks": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "checkedAt": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "sourceType": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "sourceType",
+                    "source",
+                    "checkedAt",
+                    "result"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 3,
+                "type": "array"
+              },
+              "source": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "package-scan",
+                  "public-source"
+                ]
+              }
+            },
+            "required": [
+              "source",
+              "checkedAt",
+              "method",
+              "type",
+              "mode",
+              "publicChecks"
+            ],
+            "type": "object"
+          },
+          "packageFormat": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "packageFormatEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "checkedAt": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "observedFormats": {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 16,
+                "type": "array"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source",
+              "checkedAt",
+              "method",
+              "observedFormats"
+            ],
+            "type": "object"
+          },
+          "pcPackageIdentified": {
+            "type": "boolean"
+          },
+          "referencePlatforms": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "type": "array"
+          },
+          "supported01": {
+            "const": true
+          },
+          "technologyReferences": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "type": "array"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "pcPackageIdentified",
+          "antiCheat",
+          "technologyReferences",
+          "referencePlatforms"
+        ],
+        "type": "object"
+      },
+      "maxProperties": 4096,
+      "propertyNames": {
+        "pattern": "^[A-Z0-9]{12}$"
+      },
+      "type": "object"
+    },
+    "version": {
+      "const": 1
+    }
+  },
+  "required": [
+    "checkedAt",
+    "market",
+    "packageSource",
+    "antiCheatReference",
+    "version",
+    "products"
+  ],
+  "type": "object"
+}

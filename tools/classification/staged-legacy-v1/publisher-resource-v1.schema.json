@@ -1,0 +1,54 @@
+{
+  "$id": "urn:xodus:private-legacy-resource:publisher:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "products": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "checkedAt": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "technologies": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "technologies",
+          "scope",
+          "source",
+          "checkedAt"
+        ],
+        "type": "object"
+      },
+      "maxProperties": 4096,
+      "propertyNames": {
+        "pattern": "^[A-Z0-9]{12}$"
+      },
+      "type": "object"
+    },
+    "version": {
+      "const": 1
+    }
+  },
+  "required": [
+    "version",
+    "products"
+  ],
+  "type": "object"
+}

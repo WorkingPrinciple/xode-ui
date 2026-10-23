@@ -1,0 +1,14 @@
+PRIVATE RELEASE-HELD LEGACY RESOURCE CANDIDATE
+Not authorized for public redistribution or app bundling.
+Source redistribution terms (including Microsoft and PCGamingWiki) remain
+unresolved. Publisher factual summaries/URLs and three public checks are retained
+only for the existing reader's private policy predicate, not as rights clearance.
+AWACY-derived references retain the accompanying MIT notice.
+The seven legacy path-signature inventories mean NOT DETECTED, never independently
+verified absence. Two user-directed overrides remain overrides. The legacy
+antiCheat="none" string is retained solely to preserve existing policy; it is not
+a new descriptive absence claim. No runtime qualification is granted.
+Only minimum scan summaries and non-secret inventory SHA256 provenance are
+retained under the explicit private-candidate allowance. No raw inventory,
+local roots, private package versions, manifest names, filenames or proofs.
+No updater. The containing authoring directory must never be copied wholesale.

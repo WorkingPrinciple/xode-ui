@@ -1,0 +1,5107 @@
+{
+  "antiCheatReference": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+  "checkedAt": "2026-10-22T00:00:00Z",
+  "market": "RO",
+  "packageSource": "https://displaycatalog.mp.microsoft.com/v7.0/products",
+  "products": {
+    "9MSVBF0KZFVW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Blood Dungeon"
+    },
+    "9MSVPJCHHRPR": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Avowed Standard Edition"
+    },
+    "9MSVVM5NS9L6": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DREDGE"
+    },
+    "9MT19Q3CRMQZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Star Trucker"
+    },
+    "9MT5KSV3RCWD": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Overthrown"
+    },
+    "9MT5NJ5W7B8Z": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Complete path-signature inventory: not detected; not independently verified absence.",
+        "mode": "unknown",
+        "packageScan": {
+          "complete": true,
+          "fileCount": 541,
+          "fileListSha256": "7fde98920dae4e030ab5e4cb5592d37f7d1d13f9541da5088078cebef70ddf25",
+          "matches": {},
+          "packageIdentity": {
+            "storeId": "9MT5NJ5W7B8Z"
+          },
+          "result": "no-known-signature",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "PCGamingWiki has a blank anti-cheat field and lists Denuvo under DRM/anti-tamper, not as an anti-cheat technology.",
+            "source": "https://www.pcgamingwiki.com/wiki/Hogwarts_Legacy",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Official Xbox product page reviewed; no anti-cheat technology is described.",
+            "source": "https://www.xbox.com/en-GB/games/store/hogwarts-legacy/9MT5NJ5W7B8Z",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Hogwarts_Legacy",
+        "type": "package-scan"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MT5NJ5W7B8Z&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "Hogwarts Legacy"
+    },
+    "9MTD9ZS1G3CC": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dead Space 3"
+    },
+    "9MTNPX4WLP10": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Plants vs. Zombies™ Game of the Year Edition"
+    },
+    "9MTP3NKHVWM6": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mass Effect 2 (2010 Edition)"
+    },
+    "9MTVHJXXF3K9": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Plants vs. Zombies™ Garden Warfare 2: Deluxe Edition"
+    },
+    "9MTVJ3HHTQGS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Retro Classics"
+    },
+    "9MVF0PGV94F7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dishonored®: Death of the Outsider™ (PC)"
+    },
+    "9MVN4ND41DD3": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Bard's Tale Trilogy"
+    },
+    "9MVPD3Z5N4QL": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Peggle®"
+    },
+    "9MVSRJWZBG9G": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "An Elder Scrolls Legend: Battlespire"
+    },
+    "9MVV32Z0JPCL": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FAR CRY 4"
+    },
+    "9MW15L8FRT9P": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Escape the Backrooms"
+    },
+    "9MW4RJDRSF78": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dishonored 2"
+    },
+    "9MW53ZKZH168": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Kiln"
+    },
+    "9MW715J1P29D": {
+      "antiCheat": "NEAC Protect",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "NEAC Protect"
+      ],
+      "title": "FragPunk"
+    },
+    "9MW79BJVF3QX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RV There Yet?"
+    },
+    "9MW9469V91LM": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Complete path-signature inventory: not detected; not independently verified absence.",
+        "mode": "unknown",
+        "packageScan": {
+          "complete": true,
+          "fileCount": 1796,
+          "fileListSha256": "d77c68a2f7f547f4476db9193d21ad9e62cdac15536d3f2e63847f3104faf6b5",
+          "matches": {},
+          "packageIdentity": {
+            "storeId": "9MW9469V91LM"
+          },
+          "result": "no-known-signature",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/Hollow_Knight",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/367520/Hollow_Knight/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Hollow_Knight",
+        "type": "package-scan"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9MW9469V91LM&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "Hollow Knight: Voidheart Edition"
+    },
+    "9MWGGC7JH35B": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Genesis Noir: Windows Edition"
+    },
+    "9MWLS68W1P7Q": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dragon Age™: Inquisition - Game of the Year Edition"
+    },
+    "9MWQ083Z7L4F": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dragon Age™: Origins - Ultimate Edition"
+    },
+    "9MWR1NC6VQ6L": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Stardew Valley"
+    },
+    "9MWXF3SRD7QN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "BALL x PIT"
+    },
+    "9MX8R81JW1B5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Evil Within (PC)"
+    },
+    "9MXG725MBV3N": {
+      "antiCheat": "BattlEye",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "epic"
+      ],
+      "technologyReferences": [
+        "BattlEye"
+      ],
+      "title": "Watch Dogs®: Legion"
+    },
+    "9MXH73ZJVH4X": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "STAR WARS Jedi: Survivor™"
+    },
+    "9MXHL3TT792F": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "KILL IT WITH FIRE! 2"
+    },
+    "9MXJZGJC7BJC": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "STAR WARS™ Battlefront™ II: Celebration Edition"
+    },
+    "9MXND4PQLK3W": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DOOM 64"
+    },
+    "9MXWL7VJ2SJW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dead Static Drive"
+    },
+    "9MZ1RZTJTZKB": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Black Ops 6 - Standard Edition (Windows)"
+    },
+    "9MZN3SMXN824": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "New Super Lucky's Tale"
+    },
+    "9MZR11JRF7BX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fallout: New Vegas Ultimate Edition"
+    },
+    "9MZZNL8J2MSZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "Appx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Broken Age"
+    },
+    "9MZZZCHZ26NK": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Thaumaturge"
+    },
+    "9N020KFQG301": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "INDIKA"
+    },
+    "9N034X5G08B7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Royal Writ"
+    },
+    "9N04NS8TP202": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Killer Instinct: Anniversary Edition"
+    },
+    "9N072VV7MFK7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Planet Crafter"
+    },
+    "9N0CCPMBLJQ8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Date Everything!"
+    },
+    "9N0H62KZ3BXV": {
+      "antiCheat": "Warden",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Diablo® IV PC"
+    },
+    "9N0LFRXLDJHZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Command & Conquer™ Remastered Collection"
+    },
+    "9N0P25WJHM8C": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Alters"
+    },
+    "9N0QWXC09MPT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Once Human"
+    },
+    "9N0SNSC9PK4D": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Vanguard - Standard Edition"
+    },
+    "9N0WDPMXNHWN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Shift At Midnight"
+    },
+    "9N0X5NFZTQJK": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Plants vs. Zombies Garden Warfare"
+    },
+    "9N0ZHH9GPLGZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "GRID Legends"
+    },
+    "9N116V0599HB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Hollow Knight: Silksong"
+    },
+    "9N11JM7F5CXK": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "World of Tanks: HEAT"
+    },
+    "9N123ZCCL33B": {
+      "antiCheat": "EA anticheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "EA anticheat"
+      ],
+      "title": "F1® 24"
+    },
+    "9N15KXND91S0": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Sims™ 3 Starter Pack"
+    },
+    "9N16RZ0S50V2": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Frog Sqwad"
+    },
+    "9N16SLB6FB96": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Diablo®"
+    },
+    "9N17PD34G54M": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Echo Generation 2"
+    },
+    "9N18L56XHK8Z": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Denshattack!"
+    },
+    "9N1M64W9XZQ7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Aliens: Dark Descent (Windows)"
+    },
+    "9N1P6T7ZQ2KF": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Pillars of Eternity: Definitive Edition"
+    },
+    "9N1T3ZCMNHGG": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Unravel Two"
+    },
+    "9N1WT4X26SHW": {
+      "antiCheat": "PunkBuster",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "PunkBuster"
+      ],
+      "title": "Return to Castle Wolfenstein"
+    },
+    "9N21G14CVS5L": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Avatar: Frontiers of Pandora"
+    },
+    "9N21ZCV0JW6V": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Barbie™ Horse Trails"
+    },
+    "9N255K81XBD3": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FINAL FANTASY VI"
+    },
+    "9N2GWLMCHJTN": {
+      "antiCheat": "Warden",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Warden"
+      ],
+      "title": "StarCraft® Remastered"
+    },
+    "9N2J0FGV30DX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Bluey: The Videogame"
+    },
+    "9N2S04LGXXH4": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Resident Evil Village"
+    },
+    "9N36BLQF3FX6": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Great God Grove"
+    },
+    "9N3F1LW9HC6C": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Lost Records: Bloom & Rage"
+    },
+    "9N3KQH8183GD": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Young Suns"
+    },
+    "9N3LGKGF3CC2": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Nine Sols"
+    },
+    "9N3NTDPJCD9Z": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dice A Million"
+    },
+    "9N3XQQ1LHJ4X": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "EA SPORTS FC™ 26 - PC"
+    },
+    "9N40901WDQJD": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Battlefield™ Hardline Ultimate Edition"
+    },
+    "9N40DK5N4LD4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Persona 4 Revival"
+    },
+    "9N42CT1J5WGW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fallout"
+    },
+    "9N42SSSX2MTG": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Age of Empires II: Definitive Edition"
+    },
+    "9N431PX143P8": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Forza Horizon 6 Standard Edition"
+    },
+    "9N464X6CT772": {
+      "antiCheat": "Vanguard",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Vanguard"
+      ],
+      "title": "Teamfight Tactics"
+    },
+    "9N4J937WLFPZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RoadCraft"
+    },
+    "9N4PT8HGCDHQ": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Gears of War: E-Day"
+    },
+    "9N4TT1T7H400": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Need for Speed™ Hot Pursuit Remastered"
+    },
+    "9N4W31HSMVVD": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Kingdom Come: Deliverance II"
+    },
+    "9N4X0WFZ2STM": {
+      "antiCheat": "miHoYo Protect",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "miHoYo Protect"
+      ],
+      "title": "Zenless Zone Zero"
+    },
+    "9N4X39HZ1CSQ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Beatdown City Survivors"
+    },
+    "9N4ZMKC3GX4M": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Beyond These Stars"
+    },
+    "9N51FH42VQDS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "NINJA GAIDEN 2 Black"
+    },
+    "9N51NR4GX891": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Shelldiver"
+    },
+    "9N5K7HWXL4Q6": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "REMATCH"
+    },
+    "9N5PKH0KW2L1": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minishoot' Adventures"
+    },
+    "9N5VHX8KMVNV": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Vapor World: Over The Mind (Game Preview)"
+    },
+    "9N613NPQ9JJH": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Sims™ 2 Legacy Collection"
+    },
+    "9N66JJQFX3RX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Descenders Next (Game Preview)"
+    },
+    "9N6J4RNFPKKL": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Halo: Campaign Evolved - Standard Edition"
+    },
+    "9N6JF50HZFW9": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Cricket 26 - The Official Game of the Ashes"
+    },
+    "9N6KPQ0XMT2B": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tales of Kenzera™: ZAU"
+    },
+    "9N6VS1BMZ3BW": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "epic"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Wildgate"
+    },
+    "9N6WN0ZHZQ6W": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "WUCHANG: Fallen Feathers"
+    },
+    "9N6Z8DQXSQWH": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Disneyland Adventures"
+    },
+    "9N7271QN4SGB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mortal Kombat™ 1"
+    },
+    "9N72DFC6GL91": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Echo Weaver"
+    },
+    "9N72SFQ24KW8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Black Ops Cold War (Windows)"
+    },
+    "9N732VFPMWKT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ni no Kuni™ II: Revenant Kingdom - The Prince's Edition"
+    },
+    "9N7358JZPX1Z": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "NINJA GAIDEN 4 Standard Edition"
+    },
+    "9N76QGDS5GJR": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Where Winds Meet"
+    },
+    "9N79TQTZTQQ4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MARVEL Cosmic Invasion"
+    },
+    "9N7CJX93ZGWN": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "epic"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Chivalry 2"
+    },
+    "9N7GCF5SGCXC": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Battletoads"
+    },
+    "9N7H29G7G485": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Need for Speed™ Most Wanted"
+    },
+    "9N7LPX50LSCH": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Populous™"
+    },
+    "9N7MVHP2R7VP": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FixForce"
+    },
+    "9N7P8GVMF6SS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Talos Principle 2"
+    },
+    "9N8BRH7PGJMJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Solarpunk"
+    },
+    "9N8C07SS8C9D": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FINAL FANTASY IV"
+    },
+    "9N8C8L9MVQ89": {
+      "antiCheat": "EA anticheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "epic",
+        "steam"
+      ],
+      "technologyReferences": [
+        "EA anticheat"
+      ],
+      "title": "Battlefield™ 2042"
+    },
+    "9N8CD0XZKLP4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ori and the Will of the Wisps"
+    },
+    "9N8D2CG0K9LL": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Battlefield 3 Premium Edition"
+    },
+    "9N8FQ28Z6QX3": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Indiana Jones and the Great Circle"
+    },
+    "9N8H4RRSRV2S": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "BlazBlue Entropy Effect X"
+    },
+    "9N8KMNW6942X": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Black Ops 7 - Cross-Gen Bundle"
+    },
+    "9N8N7NZSVTG3": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Pillars of Eternity 2: Deadfire - Ultimate Edition (PC)"
+    },
+    "9N8Q6DRTG22H": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Little Nightmares Enhanced Edition"
+    },
+    "9N9097G0XZMB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Hell is Us"
+    },
+    "9N926481VT1Z": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Cross-Gen Edition"
+    },
+    "9N92LSHFZ935": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dead Island 2 (Windows)"
+    },
+    "9N944N1WP67T": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mad King Redemption"
+    },
+    "9N94NCGM1Q2N": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Age of Empires IV: Anniversary Edition"
+    },
+    "9N9C1TB18R3B": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Sledding Game"
+    },
+    "9N9C8SV0S16W": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FINAL FANTASY V"
+    },
+    "9N9DKMNL85XZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Diablo® III: Reaper of Souls™ – Ultimate Evil Edition PC"
+    },
+    "9N9K5QP9G3GL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "VOID/BREAKER (Game Preview)"
+    },
+    "9N9PCZWHVP2L": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Warhammer 40,000: Space Marine 2"
+    },
+    "9N9X9PC8V9CP": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wo Long: Fallen Dynasty"
+    },
+    "9NB6BVL3MTG4": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minecraft Dungeons for Windows + Launcher"
+    },
+    "9NB993S1TWSH": {
+      "antiCheat": "PunkBuster",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "PunkBuster"
+      ],
+      "title": "Crysis®"
+    },
+    "9NBFGKQLMV33": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "House Flipper"
+    },
+    "9NBLGGH1Z6FB": {
+      "antiCheat": "unknown",
+      "packageFormat": "Appx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ori and the Blind Forest: Definitive Edition"
+    },
+    "9NBLGGH1Z6FQ": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "ReCore"
+    },
+    "9NBLGGH3SHM5": {
+      "antiCheat": "unknown",
+      "packageFormat": "Appx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Gears of War: Ultimate Edition for Windows 10"
+    },
+    "9NBLGGH43KZB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "ASTRONEER"
+    },
+    "9NBLGGH4PBBM": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Gears of War 4"
+    },
+    "9NBLGGH4SPK6": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RESIDENT EVIL 7 biohazard"
+    },
+    "9NBLGGH515BD": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Halo Wars 2: Standard Edition"
+    },
+    "9NBLGGH5342P": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "We Happy Few"
+    },
+    "9NBLGGH5WLR0": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Halo Wars: Definitive Edition (PC)"
+    },
+    "9NBLGGH6H0RV": {
+      "antiCheat": "unknown",
+      "packageFormat": "Appx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Quantum Break"
+    },
+    "9NBLHDB0WLHZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Symphonia 𝄞"
+    },
+    "9NBNXX6V9J43": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fe"
+    },
+    "9NBR2VXT87SJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Psychonauts 2"
+    },
+    "9NBZ7Z3JRXQ8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Firefighting Simulator - The Squad"
+    },
+    "9NBZ9JF6TFMD": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fallout 3: Game of the Year Edition"
+    },
+    "9NC0071DJ6XC": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Torment: Tides of Numenera"
+    },
+    "9NC4PV16GVT1": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Crew Motorfest"
+    },
+    "9NC7NRD0CM11": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Heretic + Hexen"
+    },
+    "9NC9M1NCZ7SD": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Microsoft Jewel"
+    },
+    "9NCDMPCPDTQF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Trepang2"
+    },
+    "9NCJSXWZTP88": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Starfield"
+    },
+    "9NCJWHHMVHR0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Keeper"
+    },
+    "9NCLP4LV5K7Z": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Hellblade: Senua's Sacrifice"
+    },
+    "9NCT87FKQ4GM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Psychonauts (Windows 10)"
+    },
+    "9NCZ8W65H33V": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tom Clancy's Rainbow Six® Siege - Elite Edition"
+    },
+    "9ND19JDMBS3R": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tiny Bookshop"
+    },
+    "9ND3HTTQ0GKB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Winter Burrow"
+    },
+    "9NDBKK9G0FHL": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wolfenstein II: Standard Edition"
+    },
+    "9NDC5LJS839S": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of the Wild: The Angler™"
+    },
+    "9NDJLXD2X2DM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "My Friend Peppa Pig"
+    },
+    "9NDJX252Q5BW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Moonlighter 2: The Endless Vault"
+    },
+    "9NDKFJ6XDX2M": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Modern Warfare® III - Standard Edition (Windows)"
+    },
+    "9NDLJ3HM721L": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Sid Meier's Alpha Centauri™ Planetary Pack"
+    },
+    "9NDP79SDLLLH": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Titanfall® 2: Ultimate Edition"
+    },
+    "9NDV7FRVD7ML": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fallout Tactics"
+    },
+    "9NF0RBL8SZL6": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Shadowrun Returns PC"
+    },
+    "9NF5S7MLM8XT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Little Kitty, Big City"
+    },
+    "9NF6TK6D2DL9": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mirror's Edge™ Catalyst"
+    },
+    "9NF6XPSBTTGB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "High On Life 2"
+    },
+    "9NF83PRZK6K3": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tell Me Why: Chapters 1-3"
+    },
+    "9NFB47H2SDRX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Forever Ago"
+    },
+    "9NFKN56ZBMR0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Long Dark"
+    },
+    "9NFQ1XMXDLN6": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DreamWorks Gabby’s Dollhouse: Ready to Party"
+    },
+    "9NFT3TR6MN9W": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "WILD HEARTS™"
+    },
+    "9NFTC552K3GJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Hi-Fi RUSH"
+    },
+    "9NFW93G1GFXG": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wo Long 2: Wings of Ember"
+    },
+    "9NFZSND3LPPN": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SimCity 2000™ Special Edition"
+    },
+    "9NG06CSMM97P": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wreckfest"
+    },
+    "9NG07QJNK38J": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Among Us"
+    },
+    "9NG3KNWZ7RZ7": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Far Cry® 5"
+    },
+    "9NG66K0Z31LH": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "TerraTech Legion"
+    },
+    "9NGCFDHR2MV3": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wheel World"
+    },
+    "9NGDQGHWZX13": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SimCity™ 4 Deluxe Edition"
+    },
+    "9NGH1FK0RJGL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wasteland Remastered"
+    },
+    "9NGL4GBPXM1G": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dungeon Keeper™ 2"
+    },
+    "9NGLST31DG26": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Complete path-signature inventory: not detected; not independently verified absence.",
+        "mode": "unknown",
+        "packageScan": {
+          "complete": true,
+          "fileCount": 36,
+          "fileListSha256": "d5776435096ec5062929565eca9ed4ce548941611ec08a36d2a3fa9a2ab0bced",
+          "matches": {},
+          "packageIdentity": {
+            "storeId": "9NGLST31DG26"
+          },
+          "result": "no-known-signature",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/A_Game_About_Digging_A_Hole",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/3244220/A_Game_About_Digging_A_Hole/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/A_Game_About_Digging_A_Hole",
+        "type": "package-scan"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9NGLST31DG26&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "A Game About Digging A Hole™"
+    },
+    "9NH019ZFFHTV": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Car Mechanic Simulator 2021"
+    },
+    "9NH0MSG29X6L": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mixtape"
+    },
+    "9NHCT85MKHCV": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ascend to ZERO"
+    },
+    "9NHCW3R1JB1C": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dragon Age™: The Veilguard - PC"
+    },
+    "9NHFVWX1V7QJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Deep Rock Galactic"
+    },
+    "9NHKL695M9F2": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Enlisted"
+    },
+    "9NHMC3SJBGZK": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SimCity™: Complete Edition"
+    },
+    "9NHMR19TS1M0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "TRIALS of MANA"
+    },
+    "9NJ2FD5HJ7SB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Crash Bandicoot™ N. Sane Trilogy"
+    },
+    "9NJ2SFHNCCRV": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Assassin's Creed® Valhalla"
+    },
+    "9NJ5WV40PD08": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Visions of Mana"
+    },
+    "9NJ67TQQ51Z0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Super Meat Boy 3D"
+    },
+    "9NJ71RH89RJ5": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MySims™ Kingdom"
+    },
+    "9NJC29JG70LM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Monster Train 2"
+    },
+    "9NJCVGS6T30K": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "South of Midnight"
+    },
+    "9NJJVQZ3BVPX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Crashout Crew"
+    },
+    "9NJRRVNZ8MRJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Blizzard® Arcade Collection PC"
+    },
+    "9NJRSC0B0K88": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Beastro"
+    },
+    "9NJWFF2KHL6H": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ben 10: Power Trip"
+    },
+    "9NJWTJSVGVLJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Age of Empires Definitive Edition"
+    },
+    "9NK2DT3K7DTF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Shadowrun: Hong Kong - Extended Edition PC"
+    },
+    "9NK4NC5LFCQ7": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mass Effect™: Andromeda Deluxe Edition"
+    },
+    "9NK8947Z28XL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Aphelion"
+    },
+    "9NK9K07FDPJV": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "World of Warships"
+    },
+    "9NKBDN695GTT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Escape Simulator"
+    },
+    "9NKCCHCFTHV2": {
+      "antiCheat": "Riot Vanguard",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Riot Vanguard"
+      ],
+      "title": "VALORANT PC"
+    },
+    "9NKFLWWM9CZ1": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Brawlhalla"
+    },
+    "9NKFS43DLFFL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Banishers: Ghosts of New Eden"
+    },
+    "9NKGNMNK3K3Z": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fallout 76 (PC)"
+    },
+    "9NKHKBQJSSC3": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Clone Drone in the Danger Zone"
+    },
+    "9NKK6CX54183": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Day of the Tentacle Remastered"
+    },
+    "9NKV34XDW014": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Palworld"
+    },
+    "9NKX70BBCDRN": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Forza Horizon 5 Standard Edition"
+    },
+    "9NL4714VTLRS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "High On Life"
+    },
+    "9NL8MF491NRZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FreeStyle Football 2"
+    },
+    "9NLD3ZRWF8DT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Spyro™ Reignited Trilogy"
+    },
+    "9NLFKBTNP2VJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Watch Dogs®2"
+    },
+    "9NLFZVMSQ7CC": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Construction Simulator"
+    },
+    "9NLNTDTW66CC": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Unravel"
+    },
+    "9NLRT31Z4RWM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "TUNIC"
+    },
+    "9NLT5XR52ZS7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wasteland 3 (PC)"
+    },
+    "9NM395CH685J": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minecraft Legends for Windows + Launcher"
+    },
+    "9NM4WQ7TTH3J": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Kabuto Park"
+    },
+    "9NM6NMBJ7ZK4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "to a T"
+    },
+    "9NM7J25GMDHP": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Warcraft® II: Remastered"
+    },
+    "9NM857B8P3SC": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Need for Speed™ Heat Deluxe Edition"
+    },
+    "9NM8GHT6CXN4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Microsoft Bubble"
+    },
+    "9NMCRMS6WN78": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Shadowrun: Dragonfall - Director's Cut PC"
+    },
+    "9NMF3KXT4P4G": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SpongeBob SquarePants™: The Patrick Star Game"
+    },
+    "9NMNMS626R59": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Halls of Torment"
+    },
+    "9NMNZ4CK59DM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Football Manager 26 Console"
+    },
+    "9NMPDV49K4TX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Modern Warfare® - Digital Standard Edition (Windows)"
+    },
+    "9NMPVJ7TCFD0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Vampire Crawlers: The Turbo Wildcard from Vampire Survivors"
+    },
+    "9NMS4SFNBGBH": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dead by Daylight Windows"
+    },
+    "9NMW7RJ8FP94": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Crash Bandicoot™ 4: It’s About Time (PC)"
+    },
+    "9NN3HCKW5TPC": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Gears Tactics"
+    },
+    "9NNFG8BQRCXL": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Warzone™"
+    },
+    "9NNHK7K8RV9C": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Herdling"
+    },
+    "9NNKJNRKFT0G": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Eternal Strands"
+    },
+    "9NNLBL0T2Z43": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Sunset Overdrive"
+    },
+    "9NNM7PKZN3JF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "9 Kings (Game Preview)"
+    },
+    "9NP1P1WFS0LB": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Halo Infinite"
+    },
+    "9NP6WL1XQDBW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SnowRunner - Windows"
+    },
+    "9NP86K57SQM3": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MIO: Memories in Orbit"
+    },
+    "9NPDN9R45JX4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "1000xRESIST"
+    },
+    "9NPKGVXPFRSX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Age of Mythology: Retold"
+    },
+    "9NPSLX5HNN3H": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Diablo® II: Resurrected™ PC"
+    },
+    "9NPSWGMTPRVW": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Battlefield 4™ Premium Edition"
+    },
+    "9NPVC7S5ZZ7R": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Alice: Madness Returns™"
+    },
+    "9NQ51FFR2JWF": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Battlefield™ 1 Revolution"
+    },
+    "9NQGN8TGNT8P": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DEATH STRANDING DIRECTOR'S CUT"
+    },
+    "9NQJCGMK9VVD": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mass Effect 3 (2012 Edition)"
+    },
+    "9NQMVR9WL9FW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Voidtrain"
+    },
+    "9NQR437K7PQH": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Elder Scrolls IV: Oblivion Remastered"
+    },
+    "9NQV7C0G1040": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "theHunter: Call of the Wild™"
+    },
+    "9NQVDQS2BC10": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "BATTLETECH"
+    },
+    "9NQVHHW88XW9": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Bluey's Happy Snaps"
+    },
+    "9NR0GCBSLDW4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Supermarket Simulator"
+    },
+    "9NR6NJ401NBS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Absolum"
+    },
+    "9NR7XDNVP5SW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "As Dusk Falls"
+    },
+    "9NRDH9Z85Q9B": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "EA SPORTS™ WRC"
+    },
+    "9NRH78B682L8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SUPERHOT: MIND CONTROL DELETE"
+    },
+    "9NRHQLZX3900": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Pigeon Simulator"
+    },
+    "9NRTXWCZ2ZJ0": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Plants vs. Zombies: Battle for Neighborville™ Deluxe Edition"
+    },
+    "9NS84HCWZD8B": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Rise of Nations: Extended Edition"
+    },
+    "9NS86BQ33SPX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wobbly Life"
+    },
+    "9NSB55HX1GGN": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Heroes of Might and Magic II - Gold Edition"
+    },
+    "9NSF0BGH8D86": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Disney Dreamlight Valley"
+    },
+    "9NSFGM8J6MBJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Trailmakers"
+    },
+    "9NSL68D814GC": {
+      "antiCheat": "PunkBuster",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "PunkBuster"
+      ],
+      "title": "DOOM 3"
+    },
+    "9NSM674QVLBS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Virtua Fighter 5 R.E.V.O. World Stage"
+    },
+    "9NT0NT8JQMQN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Evil Within® 2 (PC)"
+    },
+    "9NT3WC6RKBVQ": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Warhammer 40,000: Darktide"
+    },
+    "9NT4X7P8B9NB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "State of Decay 2: Juggernaut Edition"
+    },
+    "9NTK0V6ZK6T8": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Assassin’s Creed® Mirage"
+    },
+    "9NTM9HXNLSZX": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Halo: The Master Chief Collection"
+    },
+    "9NTRS771L8HL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Disco Elysium - The Final Cut"
+    },
+    "9NTXGKBW2HSM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Black Jacket"
+    },
+    "9NTZH69PZSH0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "STARSEEKER: Astroneer Expeditions (Game Preview)"
+    },
+    "9NV0Q705NQ2N": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Immortals Fenyx Rising™"
+    },
+    "9NV3L234VGXD": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "REPLACED"
+    },
+    "9NV8W1KJSQLL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SMITE 2 (Game Preview)"
+    },
+    "9NVB51LMXLJF": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mass Effect™"
+    },
+    "9NVC9KWJVLT0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "For The King II"
+    },
+    "9NVQ4ZLJGMDV": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "It Takes Two"
+    },
+    "9NVSNWWJCJZV": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tropico 7 (PC)"
+    },
+    "9NVV0M74W05C": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "inKONBINI: One Store. Many Stories"
+    },
+    "9NWB9PL1L2PQ": {
+      "antiCheat": "Warden",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Warden"
+      ],
+      "title": "Warcraft® III: Reforged"
+    },
+    "9NWDPFPPK30V": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FINAL FANTASY III"
+    },
+    "9NWNLS28ZG37": {
+      "antiCheat": "PunkBuster",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "PunkBuster"
+      ],
+      "title": "Quake III Arena"
+    },
+    "9NWQ686JB33G": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wartales"
+    },
+    "9NWVC7XP3PFD": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Cities: Skylines - Windows 10 Edition"
+    },
+    "9NWX420Z2NLG": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Far Cry New Dawn"
+    },
+    "9NX17M8BNTX1": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "epic",
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "STAR WARS™: Squadrons"
+    },
+    "9NX6K9HN4F4K": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Pentiment"
+    },
+    "9NX6XGVJ0J3D": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Bleeding Edge"
+    },
+    "9NX7HCWL13Z9": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Jurassic World Evolution 3"
+    },
+    "9NXLNL5JXBZJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Need for Speed™ Deluxe Edition"
+    },
+    "9NXP44L49SHJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minecraft: Java & Bedrock Edition for PC"
+    },
+    "9NXQKPGMHH9G": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Arx Fatalis"
+    },
+    "9NXR6469DM2P": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Crackdown 3"
+    },
+    "9NXSNQR7CM1Q": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Kernel Hearts"
+    },
+    "9NXVPTB0FXSZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Drop Duchy - Complete Edition"
+    },
+    "9NXWSWBM4H6T": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Beast of Reincarnation"
+    },
+    "9NZ1BL9SMVG4": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dead Space - 2008"
+    },
+    "9NZ4T5RFD7KF": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Riders Republic Standard Edition"
+    },
+    "9NZ90QLG3H0V": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dead Space 2"
+    },
+    "9NZDHXL9SJJ8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Persona 5 Royal"
+    },
+    "9NZG72SH3H4W": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Totally Reliable Delivery Service"
+    },
+    "9NZPKBFF0CV9": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Junkster"
+    },
+    "9NZQPT0MWTD0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Asphalt Legends"
+    },
+    "9NZX67J81X6F": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MAVRIX by Matt Jones"
+    },
+    "9P0073G9FW5Z": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MOTORSLICE"
+    },
+    "9P008L2LS87F": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Gunk"
+    },
+    "9P00J6DXK9LX": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Need for Speed™ Payback - Deluxe Edition"
+    },
+    "9P00SVGWDJCP": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Like a Dragon: Infinite Wealth"
+    },
+    "9P02RMWG3SP9": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dead Space"
+    },
+    "9P03JGQ4S1GC": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-22",
+        "method": "User-directed classification: legacy eligibility override; not independently verified absence or runtime qualification.",
+        "mode": "user-directed-correction",
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-22",
+            "result": "No exact normalized title record with an anti-cheat technology.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-22",
+            "result": "PCGamingWiki categorizes the Windows PC title as singleplayer and contains no anti-cheat technology entry; this page does not independently prove absence.",
+            "source": "https://www.pcgamingwiki.com/wiki/The_Elder_Scrolls_V:_Skyrim_Special_Edition",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-22",
+            "result": "Official Xbox product page reviewed; no anti-cheat technology is described.",
+            "source": "https://www.xbox.com/en-GB/games/store/the-elder-scrolls-v-skyrim-special-edition/9P03JGQ4S1GC",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/The_Elder_Scrolls_V:_Skyrim_Special_Edition",
+        "type": "public-source"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P03JGQ4S1GC&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "The Elder Scrolls V: Skyrim Special Edition (PC)"
+    },
+    "9P0NPLQ9P1DB": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Police Simulator: Patrol Officers"
+    },
+    "9P1303FCXW6X": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Like a Dragon: Pirate Yakuza in Hawaii"
+    },
+    "9P1CWNG8F7B5": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Need for Speed™ Rivals: Complete Edition"
+    },
+    "9P1D3TD1KHLR": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Crysis® 2 Maximum Edition"
+    },
+    "9P1H8K2V0NNP": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ultimate Sheep Raccoon"
+    },
+    "9P1JS86M9SXH": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fallout 2"
+    },
+    "9P1N07XDL1D4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dishonored® Definitive Edition (PC)"
+    },
+    "9P1P5Q3BNM7J": {
+      "antiCheat": "unknown",
+      "packageFormat": "Appx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Phoenix Point"
+    },
+    "9P1P7DWHBDBD": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Star Wars Outlaws"
+    },
+    "9P1Q06WQV414": {
+      "antiCheat": "EA anticheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "EA anticheat"
+      ],
+      "title": "F1® 25"
+    },
+    "9P1S707BPW6W": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Hope in the City"
+    },
+    "9P1VNX9Z03N5": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Anno 1800™"
+    },
+    "9P1WJCK9B8S6": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Rogue Prince of Persia™"
+    },
+    "9P1Z43KRNQD4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Quake"
+    },
+    "9P1ZW5K4S44V": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Winds of Arcana: Ruination"
+    },
+    "9P20JCF7BV93": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FINAL FANTASY"
+    },
+    "9P28J28WGSPZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Medal of Honor Airborne™"
+    },
+    "9P2CHXX6D861": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Assassin's Creed Origins"
+    },
+    "9P2HHT3VS7MP": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "PlateUp!"
+    },
+    "9P2J5D12GJL5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Elder Scrolls IV: Oblivion Game of the Year Edition (PC) – 2009"
+    },
+    "9P2J7WHV0K4N": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RAGE 2 (PC)"
+    },
+    "9P2JXK37PFLZ": {
+      "antiCheat": "PunkBuster",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "PunkBuster"
+      ],
+      "title": "Quake 4"
+    },
+    "9P2N57MC619K": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Sea of Thieves: 2026 Edition"
+    },
+    "9P2PP895LSBJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fogpiercer"
+    },
+    "9P2S2QVRB97N": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Legend of Mana"
+    },
+    "9P2TFCCRKMRD": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Heroes of Might and Magic: Olden Era (Game Preview)"
+    },
+    "9P2VGCTBMM52": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Microsoft Flight Simulator 2024 - Standard Edition"
+    },
+    "9P30BFHZ1BKN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Warhammer 40,000: Rogue Trader"
+    },
+    "9P33VJGVPHVP": {
+      "antiCheat": "BattlEye",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "BattlEye"
+      ],
+      "title": "ARK: Survival Ascended"
+    },
+    "9P36DQX6W9CS": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Overwatch® PC"
+    },
+    "9P3FG98R5X8F": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Madden NFL 25"
+    },
+    "9P3PL76N0KWZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Rush: A DisneyPixar Adventure"
+    },
+    "9P3QS4LX8BM9": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: WWII (Windows)"
+    },
+    "9P3SX4QXR5MD": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Peggle® Nights"
+    },
+    "9P3T7HVKM6D0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Kingdom Come: Deliverance"
+    },
+    "9P3XVD4HH30X": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Burnout™ Paradise Remastered"
+    },
+    "9P3ZRGNQVC7D": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Full Throttle Remastered"
+    },
+    "9P402RWR63H4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RuneScape: Dragonwilds"
+    },
+    "9P41GS5W1C6L": {
+      "antiCheat": "Anti-Cheat Expert",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "epic",
+        "steam"
+      ],
+      "technologyReferences": [
+        "Anti-Cheat Expert"
+      ],
+      "title": "Wuthering Waves"
+    },
+    "9P43RGDPJ62T": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tamashika"
+    },
+    "9P44PNW2MKHB": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Super Mega Baseball 3"
+    },
+    "9P45GGDTFNSM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "PowerWash Simulator 2"
+    },
+    "9P46M5JQ2PTF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DOOM + DOOM II"
+    },
+    "9P47S7NJGWZL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Roboquest"
+    },
+    "9P4KMR76PLLQ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Gears 5 Game of the Year Edition"
+    },
+    "9P4NV23Q6QC2": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Complete path-signature inventory: not detected; not independently verified absence.",
+        "mode": "unknown",
+        "packageScan": {
+          "complete": true,
+          "fileCount": 43,
+          "fileListSha256": "b3f6b119bbc68260ce66af2f238f080a8c98b7952689b827fcfc157844ac30cf",
+          "matches": {},
+          "packageIdentity": {
+            "storeId": "9P4NV23Q6QC2"
+          },
+          "result": "no-known-signature",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/Abiotic_Factor",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/427410/Abiotic_Factor/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Abiotic_Factor",
+        "type": "package-scan"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9P4NV23Q6QC2&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "Abiotic Factor"
+    },
+    "9P5241RBH1SZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Heroes of Might and Magic 3 - Complete Edition"
+    },
+    "9P55XDLRJDHB": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Battlefield™ 6 - PC"
+    },
+    "9P59J86GHDGL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Aerial_Knight's DropShot"
+    },
+    "9P5B8CPQ9S7F": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Buckshot Roulette"
+    },
+    "9P5DGQW39CTS": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Medal of Honor Allied Assault™ War Chest"
+    },
+    "9P5F966564FS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Manor Lords (Game Preview)"
+    },
+    "9P5MMCTL8MFX": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "STAR WARS™ Battlefront™ Ultimate Edition"
+    },
+    "9P5QV5XX8S9H": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Neon Abyss 2"
+    },
+    "9P5VB9G9CJ29": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dragon Age™ II"
+    },
+    "9P5X4QVLC2XR": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minecraft Preview for Windows"
+    },
+    "9P5Z4530318L": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DEATHLOOP"
+    },
+    "9P66TM1HLGLX": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Bounty Star"
+    },
+    "9P686C1GJ91L": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "ARK: Ultimate Survivor Edition"
+    },
+    "9P698GM5GR3W": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "A Way Out"
+    },
+    "9P6X0VL8BXZF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tempopo"
+    },
+    "9P6Z93565T92": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Immortals of Aveum™"
+    },
+    "9P6ZKL905TMT": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SPORE™"
+    },
+    "9P6ZKM2KSSHC": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mass Effect™ Legendary Edition"
+    },
+    "9P743P6195Q5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Escape Academy 2: Back 2 School"
+    },
+    "9P75CBJ9WT9W": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wolfenstein: The New Order (PC)"
+    },
+    "9P77PG7DK0W2": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Grounded 2 (Game Preview)"
+    },
+    "9P7L9H478GGV": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Quake II"
+    },
+    "9P7LVXNVQ6K7": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Control Ultimate Edition"
+    },
+    "9P7RQ1QFFF8R": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of Duty®: Modern Warfare® II - Standard Edition (Windows)"
+    },
+    "9P7SL78VHVMF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ni no Kuni Wrath of the White Witch™ Remastered"
+    },
+    "9P7T44TTDL7M": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RESIDENT EVIL 3 for Windows"
+    },
+    "9P7TLX79S7N7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Towerborne"
+    },
+    "9P7Z1D3N8KR7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wolfenstein 3D"
+    },
+    "9P81K2C8RBF4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Relic Hunters Legend"
+    },
+    "9P82LXD5RH31": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "For Honor Standard"
+    },
+    "9P85NL6T3DHP": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tom Clancy’s Ghost Recon Wildlands"
+    },
+    "9P861V1542BL": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Valor Mortis"
+    },
+    "9P86LLDCL5CC": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Starsand Island"
+    },
+    "9P88K6NQW12H": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Moving Out 2"
+    },
+    "9P8DL6W0JBB8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Hades"
+    },
+    "9P8FBXKMCLWC": {
+      "antiCheat": "Easy Anti-Cheat; Nexon Game Security",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat",
+        "Nexon Game Security"
+      ],
+      "title": "The First Descendant"
+    },
+    "9P8JRMWRQP4H": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Redfall"
+    },
+    "9P8LR42PTRGJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "33 Immortals"
+    },
+    "9P8NKVVB0XQJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Abyssus"
+    },
+    "9P8NSTDMZ11P": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Inscryption"
+    },
+    "9P8PS6993LSL": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Gears of War: Reloaded"
+    },
+    "9P8RC7S4NRQ3": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "EA SPORTS FC™ 25 - PC"
+    },
+    "9P8RMKXRML7D": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Outer Worlds 2"
+    },
+    "9P8S1MN4066K": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FINAL FANTASY II"
+    },
+    "9P8SQQJ5T94B": {
+      "antiCheat": "NEAC Protect",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "epic",
+        "steam"
+      ],
+      "technologyReferences": [
+        "NEAC Protect"
+      ],
+      "title": "NARAKA: BLADEPOINT"
+    },
+    "9P8V7HR160B4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "CloverPit"
+    },
+    "9P8X6TVW9ZW8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mistfall Hunter"
+    },
+    "9P8XJRLCLH2P": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Moonlighter"
+    },
+    "9P8XK6X57GBF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "STRANGER THAN HEAVEN"
+    },
+    "9P8XKV2D5DZ5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dome Keeper"
+    },
+    "9P91FNMH1GG0": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Age of Empires III: Definitive Edition"
+    },
+    "9P9278ZMGQLJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Remnant II® - Standard Edition"
+    },
+    "9P9446P7D9TZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Quarantine Zone: The Last Check"
+    },
+    "9P96HK15H8W8": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Super Mega Baseball™ 4"
+    },
+    "9P9FJCK32PMT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MechWarrior 5: Clans"
+    },
+    "9P9GX5D8H9DW": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "TCG Card Shop Simulator"
+    },
+    "9P9JZZ79KHDK": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MySims™"
+    },
+    "9P9VNSQK1W3K": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Brotato"
+    },
+    "9P9XGNFNF11R": {
+      "antiCheat": "Packman",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [
+        "Packman"
+      ],
+      "title": "Legends of Runeterra"
+    },
+    "9PB301R051CQ": {
+      "antiCheat": "Riot Vanguard",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "epic"
+      ],
+      "technologyReferences": [
+        "Riot Vanguard"
+      ],
+      "title": "League of Legends"
+    },
+    "9PB5T776N2SW": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Sims™ 4 EA Play Edition"
+    },
+    "9PB7921QZ087": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "StarCraft® II Campaign Collection"
+    },
+    "9PB86W3JK8Z5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "MechWarrior 5: Mercenaries"
+    },
+    "9PBB4QHMSDKR": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wolfenstein: The Old Blood (PC)"
+    },
+    "9PBC1QFBW563": {
+      "antiCheat": "PunkBuster",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "PunkBuster"
+      ],
+      "title": "Prey"
+    },
+    "9PBRN7JS4XPC": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Heroes of the Storm™"
+    },
+    "9PBWWQGXVMKC": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Monster Sanctuary (Windows Version)"
+    },
+    "9PC288TN7R8K": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Grim Fandango Remastered"
+    },
+    "9PC4RWP34M2D": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Totally Accurate Battle Simulator"
+    },
+    "9PCJT6TLCGGV": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "ROUTINE"
+    },
+    "9PCR3Z2MSM4T": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Complete path-signature inventory: not detected; not independently verified absence.",
+        "mode": "unknown",
+        "packageScan": {
+          "complete": true,
+          "fileCount": 6062,
+          "fileListSha256": "57c34607aea031a49103cfe8c599f83a6759735906ffda7a9f053865b1c9e77f",
+          "matches": {},
+          "packageIdentity": {
+            "storeId": "9PCR3Z2MSM4T"
+          },
+          "result": "no-known-signature",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/Hades_II",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/1145350/Hades_II/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Hades_II",
+        "type": "package-scan"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PCR3Z2MSM4T&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "Hades II"
+    },
+    "9PCTJZRLV21G": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Need for Speed™ Unbound"
+    },
+    "9PD0Z90216RJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Football Manager 26"
+    },
+    "9PD5BM2Z8C4L": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Vampire Survivors"
+    },
+    "9PD9SZGNCMDZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Death Howl"
+    },
+    "9PDC8J1BSV8B": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Easy Delivery Co."
+    },
+    "9PDC9X7BKZR3": {
+      "antiCheat": "BattlEye; Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "BattlEye",
+        "Easy Anti-Cheat"
+      ],
+      "title": "Albion Online"
+    },
+    "9PDCN8Z4HKRN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "FBC: Firebreak"
+    },
+    "9PDDP6ML6XHF": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Medieval Dynasty"
+    },
+    "9PDDRVKPF6KG": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ara History Untold: Anniversary Edition"
+    },
+    "9PDH3TB5548T": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Battlefield™ V Year 2 Edition"
+    },
+    "9PDKDBQGG2N2": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Egging On"
+    },
+    "9PDNF24PP2V2": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Assassin's Creed® Odyssey"
+    },
+    "9PDS2N82QNXG": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Goat Simulator 3: Windows Edition"
+    },
+    "9PDZ14P56XRD": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Sims™ Legacy Collection"
+    },
+    "9PF2ZS4XB4JH": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "GOALS"
+    },
+    "9PF697TG7PP7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Call of the Elder Gods"
+    },
+    "9PFNXM9G4N83": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Roadside Research (Game Preview)"
+    },
+    "9PFRTPRQ569Q": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Blue Prince"
+    },
+    "9PFWZMT737GG": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Outbound"
+    },
+    "9PFXKRLVWJ0B": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Elder Scrolls Adventures: Redguard"
+    },
+    "9PGB72NFG5JN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Overcooked! 2"
+    },
+    "9PGD71CMDS0Z": {
+      "antiCheat": "AnyBrain; Denuvo Anti-Cheat; Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "AnyBrain",
+        "Denuvo Anti-Cheat",
+        "Easy Anti-Cheat"
+      ],
+      "title": "THE FINALS"
+    },
+    "9PGFSLP8GWQK": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "NINJA GAIDEN: Ragebound"
+    },
+    "9PGQ76KP0WJL": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Sea of Solitude"
+    },
+    "9PGVZ5XPQ9SP": {
+      "antiCheat": "EA anticheat",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "EA anticheat"
+      ],
+      "title": "EA SPORTS™ Madden NFL 26"
+    },
+    "9PGW18NPBZV5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minecraft Launcher"
+    },
+    "9PGZ346PSLN0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Cities: Skylines II - PC Edition"
+    },
+    "9PH9X0760B0T": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DOOM: The Dark Ages"
+    },
+    "9PHFTS44F99K": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wolfenstein: Youngblood (PC)"
+    },
+    "9PHGK0538TXM": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "Pax Dei"
+    },
+    "9PHNM1C4T968": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Populous™ II: Trials of the Olympian Gods"
+    },
+    "9PHR6KG3D1RQ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tom Clancy’s The Division 2"
+    },
+    "9PHS0189K408": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Corsair Cove"
+    },
+    "9PHTX5QZ035T": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Total Chaos"
+    },
+    "9PJ06TZX4NMH": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Zoo Tycoon: Ultimate Animal Collection"
+    },
+    "9PJ45NJCHSFS": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Far Cry® 6"
+    },
+    "9PJ6FV3130QZ": {
+      "antiCheat": "BattlEye",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "BattlEye"
+      ],
+      "title": "Dune: Awakening"
+    },
+    "9PJ8266BHFWN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minecraft: Java Edition"
+    },
+    "9PJBKF27C16M": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Monsters are Coming!"
+    },
+    "9PJFC8RLNPH5": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Jade Empire™: Special Edition"
+    },
+    "9PJGM0T0827V": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DIRT 5"
+    },
+    "9PJNXM82ZX47": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "South Park™: The Fractured but Whole™"
+    },
+    "9PJPCB188SVG": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Subnautica 2 (Game Preview)"
+    },
+    "9PJPZ1DQD0WM": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Mirror's Edge"
+    },
+    "9PJRQHMCFQGS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "PBA Pro Bowling 2026"
+    },
+    "9PJTHRNVH62H": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Grounded"
+    },
+    "9PK087LNGJC5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Balatro"
+    },
+    "9PK09BL31FK1": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "DOOM Eternal Standard Edition (PC)"
+    },
+    "9PK0DZ68LGC0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Shape of Dreams"
+    },
+    "9PK2KH9WR7SB": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "STAR WARS Jedi: Fallen Order™"
+    },
+    "9PK5WS0HXQKQ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Planet Coaster 2"
+    },
+    "9PK7TLLPD7GV": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Warcraft® I: Remastered"
+    },
+    "9PK8PHLCQDF6": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Aniimo"
+    },
+    "9PKDX735TR8K": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Dungeon Keeper™"
+    },
+    "9PKF2LDFPXTN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RoboCop: Rogue City"
+    },
+    "9PKP39CL0C8D": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Ghostwire: Tokyo"
+    },
+    "9PKZN9K2HXJ9": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Populous™: The Beginning"
+    },
+    "9PKZRN4RJRC9": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Chained Beasts"
+    },
+    "9PL89B9HCZ9W": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Planet of Lana II"
+    },
+    "9PLBH9J0XGR8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Luna Abyss"
+    },
+    "9PLCL2VB2SC0": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "World War Z: Aftermath"
+    },
+    "9PLGBZWN65RG": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Cooking Simulator Windows"
+    },
+    "9PLH7R84GJWP": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Complete path-signature inventory: not detected; not independently verified absence.",
+        "mode": "unknown",
+        "packageScan": {
+          "complete": true,
+          "fileCount": 33,
+          "fileListSha256": "5d6582de8e7af15865451d077f32ff3a369add2877692ea54962274de81d79c3",
+          "matches": {},
+          "packageIdentity": {
+            "storeId": "9PLH7R84GJWP"
+          },
+          "result": "no-known-signature",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/Well_Dweller",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://store.steampowered.com/app/3699590/Well_Dweller/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Well_Dweller",
+        "type": "package-scan"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=9PLH7R84GJWP&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "Well Dweller"
+    },
+    "9PLKVSWR299F": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Forza Motorsport Standard Edition"
+    },
+    "9PLMGFWCFZ9G": {
+      "antiCheat": "unknown",
+      "packageFormat": "EAppx",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Super Lucky's Tale"
+    },
+    "9PLSCHRN5715": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Zombie Army 4: Dead War"
+    },
+    "9PM3J18QM4Q3": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Minecraft Dungeons II"
+    },
+    "9PM709J61828": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Farming Simulator 25 (PC)"
+    },
+    "9PMBB7NGHV95": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Hellblade II: Senua's Saga"
+    },
+    "9PMHGHXLGLJM": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "ANNO : Mutationem"
+    },
+    "9PMN4DGRT1LN": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fable"
+    },
+    "9PMQDM08SNK9": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Microsoft Flight Simulator (2020) Standard 40th Anniversary Edition"
+    },
+    "9PMVJR05PFJW": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Saboteur™"
+    },
+    "9PMZ9LB06T8D": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Sim City 3000™ Unlimited"
+    },
+    "9PN0LC4CNLPT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Nickelodeon All-Star Brawl 2"
+    },
+    "9PN3SWBMPJXJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Lost in Random™"
+    },
+    "9PN3VDFTB5HZ": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Bard's Tale ARPG : Remastered and Resnarkled"
+    },
+    "9PN8M16GG8M4": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Tears of Metal (Game Preview)"
+    },
+    "9PNG83MDD6SH": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "LIMBO"
+    },
+    "9PNRHXZ6ZSS9": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Crysis 3"
+    },
+    "9PP7XSG5LDH1": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Elder Scrolls III: Morrowind Game of the Year Edition (PC)"
+    },
+    "9PPBNCXP0096": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Resonance: A Plague Tale Legacy"
+    },
+    "9PPF72ZH6RP8": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Deep Dish Dungeon"
+    },
+    "9PPH71DV44T7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Sandustry (Game Preview)"
+    },
+    "9PPJGBJ2LGV9": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "EA SPORTS™ PGA TOUR™"
+    },
+    "9PPKR9N31BW6": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "SpeedRunners 2: King of Speed"
+    },
+    "9PPP5344B3LS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Relooted"
+    },
+    "9PPR10S4JNLV": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Brews & Bastards"
+    },
+    "9WZDNCRFHWCP": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIX",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Microsoft Mahjong"
+    },
+    "9WZDNCRFHWD2": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIX",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Microsoft Solitaire Collection"
+    },
+    "9WZDNCRFHWFH": {
+      "antiCheat": "unknown",
+      "packageFormat": "Appx",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Halo: Spartan Assault"
+    },
+    "9WZDNCRFJBFJ": {
+      "antiCheat": "unknown",
+      "packageFormat": "Appx",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Halo: Spartan Strike"
+    },
+    "BPQZT43FWD49": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Gang Beasts"
+    },
+    "BQVQTL3PCH05": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Complete path-signature inventory: not detected; not independently verified absence.",
+        "mode": "unknown",
+        "packageScan": {
+          "complete": true,
+          "fileCount": 163,
+          "fileListSha256": "f06bc70bfd90e95b3c22ffca43287dde50749ff2b4272135776c306231acd7b9",
+          "matches": {},
+          "packageIdentity": {
+            "storeId": "BQVQTL3PCH05"
+          },
+          "result": "no-known-signature",
+          "signatureSet": "anti-cheat-signatures-v1.json",
+          "signatureVersion": 1,
+          "symlinkCount": 0
+        },
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-21",
+            "result": "No exact normalized title record with an anti-cheat technology in the pinned AWACY dataset.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.pcgamingwiki.com/wiki/No_Man's_Sky",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-21",
+            "result": "Reviewed page/search results; no anti-cheat technology record for this Windows PC title.",
+            "source": "https://www.nomanssky.com/",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/No_Man's_Sky",
+        "type": "package-scan"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=BQVQTL3PCH05&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "No Man's Sky"
+    },
+    "BRG51C5MWFSG": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "BLiNX: The Time Sweeper"
+    },
+    "BRKX5CRMRTC2": {
+      "antiCheat": "unknown",
+      "packageFormat": "unknown",
+      "pcPackageIdentified": false,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Elder Scrolls Online: Standard Edition"
+    },
+    "BRMKDCZT0C4L": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "LEGO® Star Wars™: The Skywalker Saga"
+    },
+    "BSLX1RNXR6H7": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Batman™: Arkham Knight"
+    },
+    "BSMZH25V6V46": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Human Fall Flat"
+    },
+    "BSR9NLHVF1KL": {
+      "antiCheat": "BattlEye; VAC",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "BattlEye",
+        "VAC"
+      ],
+      "title": "DayZ"
+    },
+    "BVFB8CBS75R6": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Conker: Live and Reloaded"
+    },
+    "BWMH951M3G3P": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "RESIDENT EVIL 2"
+    },
+    "BWT2GPVWCH2F": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Kingdom Two Crowns"
+    },
+    "BX03760D0QGN": {
+      "antiCheat": "Easy Anti-Cheat",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "Easy Anti-Cheat"
+      ],
+      "title": "DRAGON BALL XENOVERSE 2"
+    },
+    "BX1DTCBD1HXJ": {
+      "antiCheat": "BattlEye",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [
+        "steam"
+      ],
+      "technologyReferences": [
+        "BattlEye"
+      ],
+      "title": "War Thunder"
+    },
+    "C17GQF31D617": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "INSIDE"
+    },
+    "C1ZT6N30L1WH": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "World of Warships: Legends"
+    },
+    "C20WW4W29FQ1": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Generation Zero®"
+    },
+    "C2B4T86TXLRS": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "The Bard's Tale IV: Director's Cut"
+    },
+    "C2P985H1H42H": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Fuzion Frenzy®"
+    },
+    "C3553MB4P5TT": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Lara Croft and the Temple of Osiris"
+    },
+    "C37XBX7DCBZ0": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Descenders"
+    },
+    "C3KLDKZBHNCZ": {
+      "antiCheat": "none",
+      "antiCheatEvidence": {
+        "checkedAt": "2026-10-22",
+        "method": "User-directed classification: legacy eligibility override; not independently verified absence or runtime qualification.",
+        "mode": "user-directed-correction",
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-22",
+            "result": "No exact normalized title record with an anti-cheat technology.",
+            "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
+            "sourceType": "awacy"
+          },
+          {
+            "checkedAt": "2026-10-22",
+            "result": "PCGamingWiki categorizes the Windows PC title as singleplayer and contains no anti-cheat technology entry; this page does not independently prove absence.",
+            "source": "https://www.pcgamingwiki.com/wiki/Fallout_4",
+            "sourceType": "pcgamingwiki"
+          },
+          {
+            "checkedAt": "2026-10-22",
+            "result": "Official Xbox product page reviewed; no anti-cheat technology is described.",
+            "source": "https://www.xbox.com/en-GB/games/store/fallout-4/C3KLDKZBHNCZ",
+            "sourceType": "publisher"
+          }
+        ],
+        "source": "https://www.pcgamingwiki.com/wiki/Fallout_4",
+        "type": "public-source"
+      },
+      "packageFormat": "MSIXVC",
+      "packageFormatEvidence": {
+        "checkedAt": "2026-10-21",
+        "method": "Legacy catalogue observation; exact observed formats retained.",
+        "observedFormats": [
+          "MSIXVC",
+          "XVC"
+        ],
+        "source": "https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=C3KLDKZBHNCZ&market=RO&languages=en-US"
+      },
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "supported01": true,
+      "technologyReferences": [],
+      "title": "Fallout 4"
+    },
+    "C4B8XR1LCXR5": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Crimson Skies®: High Road to Revenge™"
+    },
+    "C521HDXRTS7F": {
+      "antiCheat": "unknown",
+      "packageFormat": "MSIXVC",
+      "pcPackageIdentified": true,
+      "referencePlatforms": [],
+      "technologyReferences": [],
+      "title": "Wasteland 2: Director's Cut"
+    }
+  },
+  "version": 1
+}

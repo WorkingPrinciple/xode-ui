@@ -81,3 +81,43 @@ legacy anti-cheat other than `unknown`; it already rejects the inherited
 enriched database. This change does not claim to repair or validate that old
 app policy. S5 must use its admitted newer legacy reader and a separate metadata
 adapter; passing metadata tests is not installed-app integration evidence.
+
+## Private sanitized legacy staging
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 tools/classification/stage_legacy_resources.py
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/classification -p 'test_stage_legacy_resources.py'
+```
+
+This separate offline projection writes **only under tools** to
+`tools/classification/staged-legacy-v1/`. It does not change `Package.swift`,
+resources or policy. It targets S5 reader commit
+`36994efed478939a85e80df1f143c0e96bae465a`; the manifest pins that reader's
+bytes and the authoring input/sanitizer hashes. Schema files close every nested
+field; the manifest lists the exact retained allowlist and file byte/digest
+audit. Focused Python checks mirror its clearance predicate, not Swift execution.
+
+The staged `CompatibilityData/` contains exactly the legacy catalogue, publisher
+catalogue, AWACY MIT notice and private hold notice. Nothing from PublicMetadata
+is copied. S5 may later explicitly select these four files while preserving the
+`CompatibilityData/` resource lookup layout; never copy the authoring directory
+or the entire tools stage. The adjacent schemas/manifest/checksums are admission
+artifacts, not automatic app resources.
+
+All six legacy Entry values are retained (missing/null anti-cheat defaults only
+to unknown). Only cleared entries retain `supported01`, minimum package evidence,
+three public checks, and minimum clearance provenance. The narrow private
+allowance retains seven non-secret inventory digests and scan summary fields
+required by the reader, with store ID only in package identity. Roots, raw
+inventories, filenames, manifest/name/private versions, launch proofs, QA,
+technical history and account fields are not carried. Method descriptions are
+reduced to honest policy provenance without private installed-file details.
+Invalid existing clearances fail explicitly; the tool never downgrades/relabels
+them to evade the reader. Nine legacy clearances remain seven **not-detected**
+inventories plus two **manual overrides**, never verified absence.
+
+**This is a private release-held candidate, not rights clearance or permission
+to publish private evidence.** Required public-source prose/publisher summaries
+remain held for rights review. No signed build, app-load acceptance, deployment
+or new reader policy is claimed. S5 must compare its current reader contract
+with the pinned version before any later explicit allowlist integration.
