@@ -8,14 +8,14 @@ import XodusManagement
 enum NativeLifecycleChecks {
     static func run(check: (Bool, String) -> Void) async throws {
         check(NativePlayerFailure.message(errorCode: "TIMEOUT", error: nil, diagnostic: "",
-            windowRecorded: nil, monitorReliable: false, success: false)?.contains("took too long") == true,
-            "A confirmed launcher timeout has plain-language copy and an evidence route without claiming a fix")
+            windowRecorded: nil, monitorReliable: false, success: false)?.contains("Open the launch log") == true,
+            "A confirmed launcher timeout has plain-language copy and an actionable log route")
         check(NativePlayerFailure.message(errorCode: "OPERATION_FAILED", error: nil,
             diagnostic: "err:module:import_dll Library missing.dll not found",
             windowRecorded: false, monitorReliable: true, success: false)?.contains("runtime component") == true,
             "A loader's explicit missing-library report names a missing component, not an invented repair")
         check(NativePlayerFailure.message(errorCode: nil, error: nil, diagnostic: "",
-            windowRecorded: false, monitorReliable: true, success: true)?.contains("before a game window was recorded") == true,
+            windowRecorded: false, monitorReliable: true, success: true)?.contains("before Ode to X detected its window") == true,
             "A clean exit with reliable empty window evidence is not described as playable")
         for reliable in [true, false] {
             check(NativePlayerFailure.message(errorCode: "ACCOUNT_UNAVAILABLE", error: nil,
@@ -64,7 +64,7 @@ enum NativeLifecycleChecks {
             resultPath: failureLog.appendingPathComponent("result.json").path,
             progressPath: failureLog.appendingPathComponent("progress.jsonl").path)
         try Data().write(to: failureLog.appendingPathComponent("windows.jsonl"))
-        check(try await resultFixture.playerMessage()?.contains("before a game window was recorded") == true,
+        check(try await resultFixture.playerMessage()?.contains("before Ode to X detected its window") == true,
               "Player failure reader binds empty monitor evidence to the exact result run folder")
         try Data(#"{"dialog":false,"title":"Observed game"}"#.utf8)
             .write(to: failureLog.appendingPathComponent("windows.jsonl"))

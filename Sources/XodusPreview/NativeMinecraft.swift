@@ -57,6 +57,11 @@ struct NativeMinecraftInstallation: Equatable, Sendable {
     }
 }
 
+enum NativeMinecraftDetailsCopy {
+    static let summary = "Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your Ode to X account."
+    static let worldPreservation = "Install or reinstall the official launcher from this page. Your worlds are not removed by Ode to X."
+}
+
 @MainActor
 final class NativeMinecraft: ObservableObject {
     static let shared = NativeMinecraft()
@@ -126,7 +131,6 @@ final class NativeMinecraft: ObservableObject {
 
 struct NativeMinecraftCard<Artwork: View>: View {
     @ObservedObject private var minecraft = NativeMinecraft.shared
-    @ObservedObject private var evidence = MacGameEvidenceStore.shared
     @ViewBuilder let artwork: () -> Artwork
     @State private var showsDetails = false
 
@@ -136,7 +140,6 @@ struct NativeMinecraftCard<Artwork: View>: View {
             Label(minecraft.installation.version.map { "Native launcher · \($0)" } ?? "Native launcher",
                   systemImage: "desktopcomputer")
                 .help(minecraft.installation.path ?? "Official macOS Minecraft Launcher")
-            MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"])
             if minecraft.javaPID != nil { Text("Minecraft Java is running") }
             if let error = minecraft.errorMessage {
                 Text(error).fixedSize(horizontal: false, vertical: true)
@@ -168,10 +171,24 @@ struct NativeMinecraftCard<Artwork: View>: View {
             }
         }
         .sheet(isPresented: $showsDetails) {
-            ScrollView {
+            NativeMinecraftDetailsContent(
+                minecraft: minecraft,
+                saveLocation: GameSaveLocationView(productID: "9PJ8266BHFWN"),
+                close: { showsDetails = false })
+        }
+    }
+}
+
+struct NativeMinecraftDetailsContent<SaveLocation: View>: View {
+    @ObservedObject var minecraft: NativeMinecraft
+    let saveLocation: SaveLocation
+    let close: () -> Void
+
+    var body: some View {
+        ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Minecraft: Java Edition").font(.title2)
-                Text("Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your Ode to X account.")
+                Text(NativeMinecraftDetailsCopy.summary)
                 if let path = minecraft.installation.path {
                     LabeledContent("Launcher", value: path).textSelection(.enabled)
                 }
@@ -181,14 +198,14 @@ struct NativeMinecraftCard<Artwork: View>: View {
                 if let problem = minecraft.installation.problem { Text(problem) }
                 if minecraft.installation.state == .missing || minecraft.installation.state == .repair {
                     Link(minecraft.installation.action, destination: NativeMinecraft.downloadURL)
-                    Text("Install or reinstall the official launcher from this page. Your worlds are not removed by Ode to X.")
+                    Text(NativeMinecraftDetailsCopy.worldPreservation)
                 }
                 Button("Check launcher") { Task { await minecraft.refresh() } }
-                MacGameEvidenceView(record: evidence.games["9PJ8266BHFWN"], detailed: true)
-                GameSaveLocationView(productID: "9PJ8266BHFWN")
-                Button("Done") { showsDetails = false }.keyboardShortcut(.cancelAction)
-            }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            }.frame(width: 540, height: 640)
+                saveLocation
+                Button("Done", action: close).keyboardShortcut(.cancelAction)
+            }
+            .padding(24).frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(width: 540, height: 640)
     }
 }

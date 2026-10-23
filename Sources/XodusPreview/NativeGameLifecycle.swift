@@ -59,7 +59,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "ACCOUNT_UNAVAILABLE": "Your Xbox sign-in couldn't be read. Check Account and approve any macOS Keychain prompt."
         case "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED": "Your Xbox account changed. Refresh your library before trying again."
         case "CANCELLED": "The operation was cancelled. Partial files are kept; you can retry the installation."
-        case "TIMEOUT": "The launcher took too long and was stopped. A playable game window wasn't confirmed. Open the launch evidence to see what happened."
+        case "TIMEOUT": "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
         case "RESOURCE_BUSY": "This installation is in use. Wait for its current operation to finish and try again."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
@@ -98,16 +98,16 @@ enum NativePlayerFailure {
     static func message(errorCode: String?, error: String?, diagnostic: String,
                         windowRecorded: Bool?, monitorReliable: Bool, success: Bool) -> String? {
         if errorCode == "TIMEOUT" {
-            return "The launcher took too long and was stopped. Open the launch evidence to see what happened."
+            return "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
         }
         guard errorCode == nil || errorCode == "OPERATION_FAILED" else { return nil }
         let text = (error ?? "") + "\n" + diagnostic
         if !success, (text.contains("err:module:import_dll Library") && text.contains("not found")
             || text.contains("Library not loaded:") || text.contains("runtime DLL not found")) {
-            return "A required runtime component couldn't be loaded. Open the launch evidence for the missing component's name. No repair has been applied."
+            return "A required runtime component couldn't be loaded. Open the launch log to see its name. No repair has been applied."
         }
         if monitorReliable, windowRecorded == false {
-            return "The game closed before a game window was recorded. Open the launch evidence to review the exit. A clean exit alone doesn't mean the game was playable."
+            return "The game closed before Ode to X detected its window. Open the launch log to review the exit."
         }
         return nil
     }

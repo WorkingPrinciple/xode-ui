@@ -26,7 +26,6 @@ struct LiveProductView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
     @ObservedObject private var stats = LibraryXboxStats.shared
-    @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
 
     private var installed: InstalledGame? {
         installedLibrary.games.first { $0.storeId == product.id && (installationID == nil || $0.id == installationID) }
@@ -59,13 +58,6 @@ struct LiveProductView: View {
             packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat
         )
     }
-    private var compatibilitySummary: String {
-        if !unsupportedIssues.isEmpty { return unsupportedIssues.map(\.title).joined(separator: " + ") }
-        if operations.precheckingProductID == product.id { return "Checking" }
-        if operations.compatibility[product.id]?.supported == true { return "Saved installation check passed" }
-        return "Not verified"
-    }
-
     var body: some View {
         ZStack {
             LibraryAmbientBackdrop(references: landscape, installed: installed,
@@ -82,14 +74,6 @@ struct LiveProductView: View {
                                 game: installed, repairGame: library.accessIsCurrent ? owned : nil,
                                 close: dismiss.callAsFunction)
                         }
-                        GameCompatibilityFacts(productID: product.id,
-                            pcPackageListed: pcPackageListed,
-                            packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat,
-                            compatibility: operations.compatibility[product.id],
-                            checking: operations.precheckingProductID == product.id)
-                        evidence
-                        MacGameEvidenceView(record: macEvidence.games[product.id], detailed: true)
-                        GameSaveLocationView(productID: product.id)
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
                             HStack {
                                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
@@ -99,6 +83,7 @@ struct LiveProductView: View {
                                 }.disabled(!allowsArtworkLoading)
                             }
                         }
+                        availability
                         if let details {
                             media(details)
                             if let description = details.description ?? details.shortDescription {
@@ -113,6 +98,11 @@ struct LiveProductView: View {
                             gameInfo(details)
                             requirements(details)
                         }
+                        GameCompatibilityFacts(productID: product.id,
+                            pcPackageListed: pcPackageListed,
+                            packageFormat: installed?.packageType?.label ?? art?.facts.packageFormat,
+                            compatibility: operations.compatibility[product.id])
+                        GameSaveLocationView(productID: product.id)
                         }.padding(.horizontal, 40).padding(.bottom, 72)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -238,9 +228,6 @@ struct LiveProductView: View {
                             licensed: owned != nil, gamePass: gamePass, commerce: art?.facts.commerce,
                             enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
                     }.controlSize(.large)
-                    if installed == nil, operations.precheckingProductID == product.id {
-                        ProgressView("Checking Mac compatibility").controlSize(.small)
-                    }
                     if let installed { InstalledPlayError(library: installedLibrary, game: installed) }
                 }
                 Spacer(minLength: 0)
@@ -252,7 +239,7 @@ struct LiveProductView: View {
         .accessibilityElement(children: .contain)
     }
 
-    private var evidence: some View {
+    private var availability: some View {
         Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
             facet("Library", GameDetailFacetCopy.access(acquisition: owned?.acquisitionKind,
                                                       current: library.accessIsCurrent))
@@ -261,7 +248,6 @@ struct LiveProductView: View {
                 facet("Public subscription listings", CatalogGamePassListingCopy.description(for: listing))
             }
             facet("Installation", GameDetailFacetCopy.installation(installed: installed != nil))
-            facet("Mac compatibility", compatibilitySummary)
         }
         .font(.callout).frame(maxWidth: .infinity, alignment: .leading)
     }

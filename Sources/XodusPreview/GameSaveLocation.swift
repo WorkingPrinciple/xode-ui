@@ -34,10 +34,9 @@ enum GameSaveLocation {
     struct Observation: Equatable {
         let folder: URL
         let basis: String
-        let recorded: Bool
 
         var label: String {
-            recorded ? "Observed save directory" : "Folder found · save data not verified"
+            "Folder found · contents unchecked"
         }
     }
 
@@ -59,8 +58,7 @@ enum GameSaveLocation {
                             home: URL = FileManager.default.homeDirectoryForCurrentUser) throws -> Observation? {
         if let recordedPath {
             return Observation(folder: try directory(recordedPath, home: home),
-                               basis: "Save directory recorded in this title's local Mac test evidence and found on this Mac.",
-                               recorded: true)
+                               basis: "This folder exists on this Mac. Ode to X doesn't check its contents or which launcher profile uses it.")
         }
         let relative: String
         switch productID {
@@ -71,9 +69,9 @@ enum GameSaveLocation {
         let path = home.appendingPathComponent(relative).path
         guard FileManager.default.fileExists(atPath: path) else { return nil }
         let basis = productID == "C3KLDKZBHNCZ"
-            ? "This Documents folder exists, but Fallout's GDK container save location is unresolved. Directory existence is not save evidence."
-            : "This title-specific folder exists on this Mac. Contents and active launcher profile have not been verified."
-        return Observation(folder: try directory(path, home: home), basis: basis, recorded: false)
+            ? "This folder exists, but Fallout's GDK save location hasn't been confirmed."
+            : "This game folder exists on this Mac. Ode to X doesn't check its contents or which launcher profile uses it."
+        return Observation(folder: try directory(path, home: home), basis: basis)
     }
 }
 
@@ -92,20 +90,15 @@ struct GameSaveLocationView: View {
                 Text(observed.folder.path).textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(observed.basis).font(.caption).foregroundStyle(.secondary)
-                if observed.recorded {
-                    Text("Source: this title's saveObservation.saveDirectory in the local tried-games.json ledger.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
                 Button("Open folder") { open(observed.folder) }
                     .accessibilityIdentifier("xodus.saveLocation.openFolder")
                     .accessibilityLabel("Open save folder for this game")
             }
             if let cited {
-                Text("Cited location · not verified on this Mac").font(.subheadline.weight(.medium))
+                Text("Published Windows save location").font(.subheadline.weight(.medium))
                 Text(cited.path).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                 Text(cited.scope).font(.caption).foregroundStyle(.secondary)
-                Link("Source: PCGamingWiki", destination: cited.source)
-                    .help("\(cited.packet) · \(cited.commit)")
+                Link("Save-location source", destination: cited.source)
             }
             if observed == nil && cited == nil && errorMessage == nil {
                 Text("No save location recorded for this title.").foregroundStyle(.secondary)
@@ -114,7 +107,7 @@ struct GameSaveLocationView: View {
                 Label(errorMessage, systemImage: "exclamationmark.circle")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            Text("Location only. Save retention and cloud sync are not verified by this display.")
+            Text("Ode to X shows locations only; it doesn't check save contents or cloud sync.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .accessibilityIdentifier("xodus.saveLocation")

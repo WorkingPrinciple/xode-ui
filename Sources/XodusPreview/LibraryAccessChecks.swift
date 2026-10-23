@@ -173,7 +173,7 @@ enum LibraryAccessChecks {
               "An externally qualified WORKING record preserves its scoped evidence without granting Windows package admission")
         check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verifiedWorkingEvidence?.path == "/synthetic/proof.png"
               && decodedEvidence.games.first?.verifiedWorkingEvidence == nil,
-              "Only an exact WORKING ledger entry with recorded evidence earns the per-title Verified working badge")
+              "Only an exact WORKING ledger entry with recorded evidence qualifies per-title engine provenance")
         for verdict in ["GAMEPLAY_PASS", "MENU_PASS", "BLOCKED", "FAIL", "NOT_TESTED", "ANTI_CHEAT_EXCLUDED", "WORKING_CANDIDATE"] {
             let candidate = working.replacingOccurrences(of: "WORKING", with: verdict)
             check(try MacGameEvidence.decode(Data(candidate.utf8)).games.first?.verifiedWorkingEvidence == nil,
@@ -194,7 +194,7 @@ enum LibraryAccessChecks {
                                                          with: #""blocker":null,"launchAttempted":false"#)
         check(try MacGameEvidence.decode(Data(noProof.utf8)).games.first?.verifiedWorkingEvidence == nil
               && MacGameEvidence.decode(Data(neverLaunched.utf8)).games.first?.verifiedWorkingEvidence == nil,
-              "Missing evidence and explicit no-launch records cannot display a Verified working badge")
+              "Missing evidence and explicit no-launch records cannot qualify engine provenance")
         check(MacGameEvidence.Verdict.gameplay.label == "Playable, not fully verified"
               && MacGameEvidence.Verdict.working.label == "Works on Mac"
               && MacGameEvidence.Verdict.blocked.label == "Not tested on Mac yet"
@@ -202,7 +202,7 @@ enum LibraryAccessChecks {
               && MacGameEvidence.Verdict.failed.label == "Doesn't start yet"
               && decodedEvidence.games.first?.engineLabel == "Free Wine"
               && decodedEvidence.games.first?.provenEngine == "synthetic",
-              "Cards use compact verdict/provider copy; only successful gameplay supplies automatic engine selection")
+              "Internal verdict/provider data remains distinct; only successful gameplay supplies automatic engine selection")
         let preLaunch = String(decoding: evidence, as: UTF8.self)
             .replacingOccurrences(of: #""blocker":null"#, with: #""blocker":null,"launchAttempted":false"#)
         check(try MacGameEvidence.decode(Data(preLaunch.utf8)).games.first?.statusLabel == "Not tested on Mac yet",
@@ -271,7 +271,7 @@ enum LibraryAccessChecks {
               && mixedGames[4].verdict == .inconclusive && mixedGames[4].provenEngine == nil
               && mixedGames[4].verifiedWorkingEvidence == nil
               && mixedGames[4].statusLabel == "Inconclusive",
-              "Unknown and inconclusive verdicts preserve neighboring WORKING badges without gaining evidence or engine promotion")
+              "Unknown and inconclusive verdicts preserve neighboring engine provenance without gaining promotion")
         let bundledEvidence = try MacGameEvidence.bundled.get()
         let newWorkingIDs = Set(["9PCR3Z2MSM4T", "9P4NV23Q6QC2", "9NH0MSG29X6L"])
         check(Set(bundledEvidence.games.map(\.productId)) == newWorkingIDs
@@ -610,16 +610,18 @@ enum LibraryAccessChecks {
         let bytes = Data("unchanged synthetic save".utf8)
         try bytes.write(to: save)
         let found = try GameSaveLocation.observation(productID: "C3KLDKZBHNCZ", recordedPath: nil, home: root)
-        check(found?.folder.path == fallout.path && found?.recorded == false
-              && found?.label == "Folder found · save data not verified"
-              && found?.basis.contains("GDK container save location is unresolved") == true,
+        check(found?.folder.path == fallout.path
+              && found?.label == "Folder found · contents unchecked"
+              && found?.basis.contains("GDK save location hasn't been confirmed") == true,
               "An existing Fallout Documents folder does not become a verified GDK save location")
         let recorded = try GameSaveLocation.observation(productID: "9MW9469V91LM",
                                                         recordedPath: fallout.path, home: root)
         let after = try Data(contentsOf: save)
-        check(recorded?.recorded == true && recorded?.label == "Observed save directory"
-              && recorded?.folder.path == fallout.path && after == bytes,
-              "Recorded per-title directory observation is read-only and preserves actual save bytes")
+        check(recorded?.label == "Folder found · contents unchecked"
+              && recorded?.folder.path == fallout.path
+              && recorded?.basis.contains("local Mac test evidence") == false
+              && after == bytes,
+              "Recorded per-title folders stay player-facing and read-only without exposing test provenance")
         let link = root.appendingPathComponent("linked-folder")
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: fallout)
         for invalid in [link.path, save.path, root.path, root.path + "/../outside",

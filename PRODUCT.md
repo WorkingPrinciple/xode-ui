@@ -100,6 +100,11 @@ Play visible at rest, with Installed as secondary status.
 
 **Proposed v1:** account connection, entitled PC library, scoped catalog discovery, edition selection, explicit eligibility and compatibility, installation planning, durable downloads/recovery, launch, safe updates/removal and redacted diagnostics.
 
+Player-facing game cards and details prioritize real title information and
+actions. They never expose internal test verdicts, test progress, proof paths or
+agent notes. Real install/launch progress and errors remain visible; package and
+anti-cheat limitations stay concise and actionable.
+
 **Not promised in v1:** party/chat/LFG, follower counts not supplied by Xbox,
 Rewards, offers/checkout, cloud saves, cloud gaming, DLC/mod management,
 all-PC-title support or arbitrary runtime downloads/removal. Discover does not

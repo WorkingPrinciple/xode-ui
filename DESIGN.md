@@ -239,13 +239,18 @@ admission. No proprietary cover, account record or capture is committed.
 **Detail (Operate, D3 source candidate; visual review pending):** retain the
 original detail flow in a native resizable sheet: a 340-point landscape header,
 optional genuine title logo/portrait cover, existing native glass actions and
-visible independent Access / Windows PC package listing / Ode install check /
-On this Mac evidence. Package listing and estimated size come from the public
-Microsoft catalog; neither grants account download access nor establishes Mac
-installability. Only a registered installed entry has Play/Stop. An uninstalled entitled
-entry has Install; dismissal hands off to the existing protected package,
-space and consent sheet, never download-and-play. Unknown access is explicit.
-Public approximate size never becomes a verified package or support check.
+visible independent Access / installation state. Put real operation progress
+and recovery first, followed by actual title description, media, publisher,
+ratings and Windows PC requirements when available. Keep package format,
+anti-cheat facts and known blockers in a concise Compatibility section; never
+show internal test verdicts, test progress, evidence paths/screenshots or agent
+notes on game cards, details or native game information. Package listing and
+estimated size come from the public Microsoft catalog; neither grants account
+download access nor establishes Mac installability. Only a registered installed
+entry has Play/Stop. An uninstalled entitled entry has Install; dismissal hands
+off to the existing protected package, space and consent sheet, never
+download-and-play. Unknown access is explicit. Public approximate size never
+becomes a verified package or support check.
 
 Optional public content follows in flat sections: explicit trailer action and
 horizontal screenshots, a bounded description measure, game information and
@@ -545,7 +550,7 @@ modern rendering and constrained-window toolbar placement remain live gates.
 | Typography | SF system fonts and symbols; large feature title, native body/section hierarchy |
 | Spacing | 4 pt base; 30 pt body inset; 12-24 pt groups; toolbar geometry owned by macOS |
 | Entries | real Store covers fitted without branding crop / square history tiles; adaptive native grid |
-| Detail | actual catalog hero/cover, followed by readable ordered evidence and a fixed Done footer |
+| Detail | actual catalog hero/cover, useful title facts and relevant compatibility, with a fixed Done footer |
 | Motion | no nonessential animation/autoplay; reduced motion loses no information |
 
 ## Original imagery and licensing

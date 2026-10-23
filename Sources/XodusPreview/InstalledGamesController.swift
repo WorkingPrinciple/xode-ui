@@ -321,7 +321,7 @@ final class InstalledGamesController: ObservableObject {
         }
         if let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
             evidence: MacGameEvidenceStore.shared.games[game.storeId]) {
-            playErrors[game.id] = issue
+            playErrors[game.id] = InstalledGameActionCopy.launchUnavailable
             Self.launchLog.error("Candidate launch unavailable: \(game.storeId, privacy: .public): \(issue, privacy: .public)")
             return
         }
@@ -574,8 +574,8 @@ final class InstalledGamesController: ObservableObject {
                     do {
                         playerMessage = try await result.playerMessage()
                     } catch {
-                        playerMessage = "The launch evidence couldn't be read. Open its folder to review the result."
-                        Self.launchLog.error("Player evidence read failed: \(error.localizedDescription, privacy: .public)")
+                        playerMessage = "The launch log couldn't be read. Open its folder to review the error."
+                        Self.launchLog.error("Player log read failed: \(error.localizedDescription, privacy: .public)")
                     }
                     guard runToken == token else { return }
                     recordSession(gameID: game.id, startedAt: startedAt,

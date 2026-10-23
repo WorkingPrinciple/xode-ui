@@ -245,7 +245,7 @@ struct LibrarySupportMenu: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("When off, hides games with known package or anti-cheat blockers. Unknown games remain visible; installation and gameplay are not verified.")
+        .help("When off, hides titles with known package or anti-cheat blockers. Unknown classifications remain visible.")
         .accessibilityIdentifier("xodus.library.showUnsupported")
     }
 }
@@ -301,12 +301,16 @@ enum LibraryPCPackageEvidence {
     }
 }
 
+enum GameCompatibilityFactsCopy {
+    static let heading = "Compatibility"
+    static let unsupported = "Not supported yet"
+}
+
 struct GameCompatibilityFacts: View {
     let productID: String
     var pcPackageListed: Bool? = nil
     let packageFormat: String?
     let compatibility: GameCompatibilityResult?
-    let checking: Bool
     private var database: OfflineGameCompatibility? { OfflineGameCompatibility.snapshot }
     private var offline: OfflineGameCompatibility.Entry? { database?.products[productID] }
     private var packageListing: Bool? {
@@ -320,55 +324,43 @@ struct GameCompatibilityFacts: View {
         LibrarySupportVisibility.issues(productID: productID, installed: false,
             packageFormat: packageFormat, compatibility: compatibility)
     }
+    private var antiCheat: String? {
+        if let issue = issues.first(where: { $0.kind == .antiCheat }) { return issue.title }
+        guard let value = offline?.antiCheat ?? publisherEvidence?.technologies.joined(separator: ", ") else {
+            return nil
+        }
+        switch value.lowercased() {
+        case "none": return "None identified"
+        case "unknown": return "Unknown"
+        default: return value
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Compatibility").font(.headline)
-            LabeledContent("Windows PC package",
-                           value: packageListing == true ? "Found in Microsoft catalog"
-                           : packageListing == false ? "Not found in catalog data" : "Not verified")
-            LabeledContent("Package", value: GameSupportPolicy.packageFormat(
-                observed: packageFormat, classified: offline?.packageFormat) ?? "Not identified")
-            LabeledContent("Anti-cheat", value: issues.first(where: { $0.kind == .antiCheat })?.title
-                           ?? offline?.antiCheat ?? publisherEvidence?.technologies.joined(separator: ", ") ?? "Not verified")
-            LabeledContent("Ode install check", value: !issues.isEmpty ? "Known blocker"
-                           : checking ? "Checking" : compatibility?.supported == true
-                           ? "Passed; install review still required" : "Not verified")
+            Text(GameCompatibilityFactsCopy.heading).font(.headline)
+            if let package = GameSupportPolicy.packageFormat(
+                observed: packageFormat, classified: offline?.packageFormat) {
+                LabeledContent("Windows package", value: package)
+            }
+            if let packageListing {
+                LabeledContent("Microsoft Store", value: packageListing ? "PC package listed" : "No PC listing")
+            }
+            if let antiCheat {
+                LabeledContent("Anti-cheat", value: antiCheat)
+            }
+            if !issues.isEmpty {
+                Label(GameCompatibilityFactsCopy.unsupported, systemImage: "exclamationmark.triangle")
+                    .font(.callout.weight(.semibold))
+            }
             ForEach(issues) { issue in
                 Text(issue.detail).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                if let source = issue.source { Link("Compatibility source", destination: source) }
-            }
-            if let checkedAt = compatibility?.checkedDate {
-                Text("Installation check: \(checkedAt.formatted(date: .abbreviated, time: .shortened)).")
-                    .font(.caption).foregroundStyle(.secondary)
+                if let source = issue.source { Link("Learn more", destination: source) }
             }
             if let publisherEvidence {
-                Text(publisherEvidence.scope).font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
                 Link("Publisher anti-cheat information", destination: publisherEvidence.source)
-                if let date = GameCompatibilityResult.parseDate(publisherEvidence.checkedAt) {
-                    Text("Publisher source checked \(date.formatted(date: .abbreviated, time: .omitted)).")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            } else if case .failure = OfflineGameCompatibility.publisherEvidence {
-                Text("Publisher anti-cheat evidence couldn't be read; no clearance was assumed.")
-                    .font(.callout).foregroundStyle(.secondary)
-            } else if let offline, !offline.technologyReferences.isEmpty {
-                Text("Other-store reports: \(offline.technologyReferences.joined(separator: ", ")). These references concern \(offline.referencePlatforms.joined(separator: " / ")), not verification of this Microsoft Store build or Mac runtime.")
-                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                if let source = database?.antiCheatReference, let url = URL(string: source) {
-                    Link("Anti-cheat reference dataset", destination: url)
-                }
             }
-            if let database, let date = GameCompatibilityResult.parseDate(database.checkedAt) {
-                Text("Offline catalogue checked \(date.formatted(date: .abbreviated, time: .omitted)), market \(database.market). Live installed-file evidence takes precedence.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Text("Package inspection and known blockers are checked automatically. Unclassified games can be tried, but are not verified as supported. An installation check does not prove a game runs.")
-                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            Text("A PC package listing is not account download access or proof this Mac can install or run the game.")
-                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityIdentifier("xodus.game.compatibility")
     }

@@ -8,6 +8,36 @@ enum NativeUIChecks {
     static func run(check: (Bool, String) -> Void) {
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
+        check(GameDetailFacetCopy.installation(installed: false) == "Not installed"
+              && GameDetailFacetCopy.installation(installed: true) == "Installed on this Mac"
+              && GameCompatibilityFactsCopy.heading == "Compatibility"
+              && GameCompatibilityFactsCopy.unsupported == "Not supported yet"
+              && [
+                  InstalledGameActionCopy.launchUnavailable,
+                  GameCompatibilityFactsCopy.heading,
+                  GameCompatibilityFactsCopy.unsupported,
+                  NativeMinecraftDetailsCopy.summary,
+                  NativeMinecraftDetailsCopy.worldPreservation
+              ].allSatisfy { copy in
+                  ["test", "evidence", "candidate", "qualification", "CLI only"]
+                      .allSatisfy { !copy.localizedCaseInsensitiveContains($0) }
+              },
+              "Game details retain installation and compatibility facts without exposing launch qualification notes")
+        check(NativeMinecraftDetailsCopy.summary.contains("official macOS Minecraft Launcher")
+              && NativeMinecraftDetailsCopy.summary.contains("Microsoft sign-in")
+              && NativeMinecraftDetailsCopy.worldPreservation.contains("Your worlds")
+              && NativeMinecraftInstallation(state: .missing).action == "Install launcher"
+              && NativeMinecraftInstallation(state: .ready, path: "/Applications/Minecraft.app",
+                                             version: "1.0").action == "Open",
+              "Minecraft details retain launcher, account, world and recovery actions without a testing journal")
+        let minecraftDetails = NSHostingView(rootView: NativeMinecraftDetailsContent(
+            minecraft: NativeMinecraft(), saveLocation: EmptyView(), close: {}))
+        minecraftDetails.sizingOptions = []
+        minecraftDetails.frame = CGRect(x: 0, y: 0, width: 540, height: 640)
+        minecraftDetails.layoutSubtreeIfNeeded()
+        check(minecraftDetails.window == nil && minecraftDetails.frame.width == 540
+              && NativeMinecraft.shared.installation.state == .checking,
+              "Minecraft information lays out without a window, launcher scan or test journal")
         let application = NSApplication.shared
         let windows = application.windows.count
         var hasHero = LibraryHeroPresenceKey.defaultValue

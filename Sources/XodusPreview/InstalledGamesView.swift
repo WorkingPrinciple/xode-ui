@@ -145,8 +145,8 @@ struct InstalledPlayError: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("xodus.installed.playError")
             if library.playLogs[game.id] != nil {
-                Button("Show launch evidence") { library.showLog(for: game) }
-                    .accessibilityLabel("Show \(game.title) launch evidence in Finder")
+                Button("Show launch log") { library.showLog(for: game) }
+                    .accessibilityLabel("Show \(game.title) launch log in Finder")
                     .accessibilityIdentifier("xodus.installed.showLog")
             }
         } else if let notice = library.playNotices[game.id] {
@@ -297,11 +297,12 @@ struct InstalledPlayButton: View {
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
             GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
                               operations: operations, enabled: false, primary: prominent)
-        } else if !canStop, !launching, let issue = NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
-            evidence: evidenceStore.games[game.storeId]) {
+        } else if !canStop, !launching,
+                  NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+                    evidence: evidenceStore.games[game.storeId]) != nil {
             Label("Launch unavailable", systemImage: "exclamationmark.circle")
-                .font(.caption).help(issue)
-                .accessibilityLabel("Launch unavailable for \(game.title). \(issue)")
+                .font(.caption).help(InstalledGameActionCopy.launchUnavailable)
+                .accessibilityLabel("Launch unavailable for \(game.title). \(InstalledGameActionCopy.launchUnavailable)")
                 .accessibilityIdentifier("xodus.installed.candidateBlocked")
         } else if !canStop, !launching, !unsupportedIssues.isEmpty {
             LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: heroStyle)
@@ -309,10 +310,6 @@ struct InstalledPlayButton: View {
             nativeInstallationButton
         } else {
             actionButton
-            if game.storeId == "9NH0MSG29X6L" {
-                Text("DLL-only recipe · unqualified").font(.caption).foregroundStyle(.secondary)
-                    .help("Native VC DLL loading was observed in a separate STA diagnostic. This tile does not enable pending STA and is not gameplay or save qualified.")
-            }
             if library.updateStatus(for: game).hasUpdate {
                 Label("Update available", systemImage: "arrow.down.circle").font(.caption)
             }

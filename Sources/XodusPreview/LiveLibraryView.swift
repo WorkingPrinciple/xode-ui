@@ -125,8 +125,8 @@ struct LiveLibraryView: View {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
                 if !classifiedGames.isEmpty || showsNativeMinecraft {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Classified and tested games").font(.title2.weight(.semibold))
-                        Text("Package eligibility and observed Mac results. Game access is checked separately.")
+                        Text("Game compatibility").font(.title2.weight(.semibold))
+                        Text("Windows package and anti-cheat details. Game access is checked separately.")
                             .font(.callout).foregroundStyle(.secondary)
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
                             if showsNativeMinecraft {
@@ -138,9 +138,6 @@ struct LiveLibraryView: View {
                             ForEach(classifiedGames) { game in card(game) }
                         }
                     }
-                }
-                if let error = macEvidence.errorMessage {
-                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
                 if query.isEmpty {
                     ForEach(Array(passCollections.collections.filter { $0.key != "pcgaVTaz" }.prefix(2))) { category in
@@ -564,9 +561,6 @@ struct LiveLibraryView: View {
                                         .padding(12)
                                 }
                             Text(game.title).font(.headline).lineLimit(1)
-                            if macEvidence.games[game.storeId]?.verifiedWorkingEvidence != nil {
-                                MacGameEvidenceView(record: macEvidence.games[game.storeId])
-                            }
                             HStack {
                                 InstalledPackageTypeLabel(game: game)
                                 Spacer()
@@ -713,14 +707,9 @@ struct LiveLibraryView: View {
         let facts = metadata?.genres.isEmpty == false ? metadata :
             xbox.map { LibraryCatalogFacts(genres: $0.genres, capabilities: metadata?.capabilities ?? []) } ?? metadata
         let game = (filter == .gamePass ? gamePassCatalog : collection).first(where: { $0.id == id })
-        return VStack(alignment: .leading, spacing: 5) {
-            LibraryGameInformation(access: game.flatMap(LibraryAccess.init),
-                                   gamePass: game?.gamePass == true,
-                                   facts: facts, xbox: xbox, compact: compact)
-            if macEvidence.games[id]?.verifiedWorkingEvidence != nil {
-                MacGameEvidenceView(record: macEvidence.games[id])
-            }
-        }
+        return LibraryGameInformation(access: game.flatMap(LibraryAccess.init),
+                                      gamePass: game?.gamePass == true,
+                                      facts: facts, xbox: xbox, compact: compact)
     }
 
     private func card(_ game: LibraryGame) -> some View {
@@ -737,7 +726,7 @@ struct LiveLibraryView: View {
             }
             if let evidence = OfflineGameCompatibility.publisherEvidence(for: artworkID) {
                 Label(evidence.technologies.joined(separator: ", "), systemImage: "shield")
-                    .help(evidence.scope)
+                    .accessibilityLabel("Anti-cheat: \(evidence.technologies.joined(separator: ", "))")
             }
             LibraryGameSizeView(installed: game.installed,
                                 downloadBytes: art.images[artworkID]?.facts.downloadBytes,
@@ -747,7 +736,6 @@ struct LiveLibraryView: View {
                                 packageFormat: game.installed?.packageType?.label
                                     ?? art.images[artworkID]?.facts.packageFormat,
                                 allowsMeasurement: artworkAllowed)
-            MacGameEvidenceView(record: macEvidence.games[artworkID])
             if let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
             }

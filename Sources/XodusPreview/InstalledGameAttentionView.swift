@@ -3,6 +3,8 @@ import SwiftUI
 import XodusManagement
 
 enum InstalledGameActionCopy {
+    static let launchUnavailable = "This game can't launch from Ode to X yet. A supported launch setup isn't available."
+
     static func title(incomplete: Bool, installationIssue: Bool, launchIssue: Bool) -> String {
         incomplete ? "Install required" : installationIssue ? "Check installation"
             : launchIssue ? "Review launch issue" : "View details"
@@ -40,12 +42,12 @@ struct InstalledGameAttentionView: View {
                     .font(.headline)
                 Text(incomplete ? "This game isn't fully installed."
                      : localIssue ? "The installation or launch files need to be checked."
-                     : "Game launching isn't available in this development build yet.")
+                     : installed.accountAccessMessage)
                     .fixedSize(horizontal: false, vertical: true)
                 if !localIssue {
-                    Text("This is an app-wide limitation, not a failed compatibility check or a problem with your game files. Reinstalling the game won't fix it.")
+                    Text("Game launching is unavailable until Xbox service access is restored.")
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    Button("Open runtime settings", action: openSettings.callAsFunction)
+                    Button("Open settings", action: openSettings.callAsFunction)
                 }
                 if installed.checkingInstallations.contains(game.id) {
                     ProgressView("Checking installation").controlSize(.small)
@@ -108,7 +110,7 @@ struct LocalInstalledGameView: View {
             InstalledGameAttentionView(installed: installed, operations: operations, game: game,
                 close: dismiss.callAsFunction)
             GameCompatibilityFacts(productID: game.storeId, packageFormat: game.packageType?.label,
-                compatibility: operations.compatibility[game.storeId], checking: false)
+                compatibility: operations.compatibility[game.storeId])
             GameSaveLocationView(productID: game.storeId)
             }.frame(maxWidth: .infinity, alignment: .leading)
             }
