@@ -121,11 +121,42 @@ The shipping Library embeds the same partial-resolution notice outside the
 legacy pane's collection-grid flag; a failed partial refresh never claims to
 show a complete prior library.
 
-Target-sized bitmap variants, optional filesystem scheduling and IPC/producer
-work remain separate from these slices. Current image decode still requests a
-2400-pixel thumbnail and the optional size store still admits different folder
-walks concurrently. Those source-level opportunities are not measurements of
-live scrolling or filesystem contention; installed-app evidence remains needed.
+### Target-sized artwork
+
+Artwork chooses a 640/1280/2400 maximum-pixel bucket from rendered size, backing
+scale and source aspect ratio (including fill versus fit cropping). Zero-size
+layout requests no image; hero decoding remains capped at 2400. Bitmap identity
+includes validated URL, bucket and processing version. Concurrent variants
+coalesce the encoded byte read by URL; decode is per variant, not per card.
+Only two fetch/decode pipelines run at once. The existing 64 MiB/40-bitmap
+NSCache is charged `CGImage.bytesPerRow * height`, not NSImage point dimensions.
+HTTP expiry/no-store, redirects, approved URLs, MIME, byte and pixel bounds
+remain enforced. Disk writes follow successful decode; corrupt disk data can
+retry the real public URL. Memory-clear generations fence stale writes.
+
+Presentation reads also check the current URL/variant before displaying a
+bitmap, so a previous game's image cannot flash while a new task starts.
+Same-key revalidation retains its useful image; late responses cannot replace
+another request's presentation. Cancelling one consumer does not cancel shared
+fetch/decode work.
+
+Non-GUI inspection compiled the production shipping source set with a private
+entry point and the default production URLSession, then fetched real Microsoft
+Digging artwork without credentials or a production disk cache. The real
+640 and 1280 variants decoded to 640x360 (921,600 bytes) and 1280x720
+(3,686,400 bytes), shared one URL byte read, and decoded once per bucket.
+The former 2400-ceiling path decoded that same real source at 1920x1080
+(8,294,400 bytes): the 640 card variant used nine times fewer bitmap bytes.
+Reusing the fresh 640 variant returned the same bitmap. An older real network
+request finished after the current cached URL and did not replace it.
+At a 400x225-point destination, 1x selected 640 and 2x selected 1280.
+These observations validate the production image path, not installed-app
+trackpad scrolling, hitches, tab latency, Wi-Fi startup, an actual provider
+outage or lifecycle acceptance. No real frame-speed improvement is claimed.
+
+Optional filesystem scheduling remains deferred without contention evidence;
+the size store still permits different folder walks concurrently. IPC/producer
+work is outside these slices. Installed-app observation remains necessary.
 
 Runtime declarations use a separate version-one configuration model and
 `runtime-plan` subprocess, not a C95 operation or an authentication route.
