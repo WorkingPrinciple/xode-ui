@@ -4,6 +4,11 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. Source checks, real lifecycle results and external
 gameplay observations are distinguished explicitly.
 
+The dated [UI continuation specification](UI-CONTINUATION-SPEC.md) records the
+23 October source/installed divergence, failed current scroll acceptance,
+classification evidence and open F/A/T/UI/game requirements. Read it before
+inferring present readiness from the historical candidate reports below.
+
 ## Current catalogue, local runtime and Mac evidence (2026-10-22)
 
 S4 data commits `8401a51`, `ab2951c` and `e315aaf` are integrated unchanged.

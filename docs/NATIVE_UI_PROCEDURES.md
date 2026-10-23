@@ -12,6 +12,12 @@ refresh, window bounds, appearance, relevant accessibility preferences, input
 method, cache/network state, exact steps/timestamps, exit code and artifact path.
 Coordinate foreground ownership; use exact-target controls and fail closed on
 missing, ambiguous or wrong-role targets. Never interact with a guessed process.
+For each finding retain its requirement ID, severity/confidence, rule source,
+expected versus actual result, chosen correction and residuals. Distinguish
+requested window size from measured viewport and inspect all relevant displays:
+an activated offscreen window or another app's capture is not visible acceptance.
+Reference the [current UI acceptance map](UI-CONTINUATION-SPEC.md); use this shared
+schema for all five recipes rather than maintaining five duplicate manifests.
 
 Distinguish source observations, compilation, existing deterministic checks,
 real input, visible results and measured compositor behavior. None substitutes
@@ -25,6 +31,11 @@ failure without new evidence.
 
 **Trigger:** layout, controls, appearance or copy changes.
 **Prerequisites:** admitted candidate, foreground window, known system appearance.
+
+**Steps:** establish actual target/display and capture; compare populated and
+affected loading/empty/error layouts at measured minimum/reference/constrained
+bounds; inspect actions, text, footer and counts; preserve one coherent capture
+round with before/after identity. Change only the app window within scope.
 
 Inspect the populated app at its supported minimum and reference window sizes;
 include a short/wide and a tall layout when affected. Check fixed artwork bounds,
@@ -42,6 +53,11 @@ do not expand into a redesign or indefinite polishing.
 **Trigger:** navigation, selection, filtering or retained-host changes.
 **Prerequisites:** real populated Library and Discover; identify visible anchors.
 
+**Steps:** record per-tab scope/order/query and a recognizable visible row; perform
+one warm round trip and detail dismissal; derive mid controls by actual wheel
+input and filter through short/populated results; compare native offset/header
+geometry and screenshots; only after primary success test See All and arrow.
+
 Choose a recognizable row/artwork, filter/order and query in each destination.
 Move the viewport, switch Library to Discover and back, and compare settled
 anchors, not only stored IDs or normalized scrollbar fractions. Open and dismiss
@@ -58,6 +74,11 @@ manufacture a scenario. Stop rather than accepting a late or wrong-scope result.
 **Trigger:** low-FPS, delayed input or repeated-update report.
 **Prerequisites:** matched Release builds/content/window/input and exclusive
 profiling ownership; preserve the exact rollback.
+
+**Steps:** establish baseline content/window/cache/input; start the existing
+recorder and prove overlap with bounded real input; inspect updates, CPU and
+compositor tracks separately; compare the same workload after a demonstrated
+correction and retain limitations. Do not run another profiler concurrently.
 
 Record Instruments SwiftUI and Animation Hitches when available; use Time
 Profiler for CPU attribution, not as a GPU/FPS proxy. Synchronize recording-start
@@ -77,6 +98,11 @@ glass or cache rewrite; stop a measurement lane that cannot establish overlap.
 **Trigger:** actions, focus, modal, automatic paging or appearance changes.
 **Prerequisites:** exact target and coordinated keyboard/VoiceOver observation.
 
+**Steps:** traverse card/menu/search/sheet actions using ordinary keyboard, then
+Full Keyboard Access; inspect semantics and title-specific actions in Inspector
+and VoiceOver; observe focus return and separately eligible paging/video; check
+real composited contrast and scoped preferences without unapproved OS mutation.
+
 Check Tab/Shift-Tab, Return/Space, Escape, title-specific action names and focus
 return. Test ordinary keyboard navigation and Full Keyboard Access separately.
 Use Accessibility Inspector and VoiceOver for semantics/reachability; verify
@@ -94,6 +120,12 @@ Do not terminate gameplay as part of hidden-view or media cleanup.
 **Trigger:** entitlement, compatibility, operation or action-presentation changes.
 **Prerequisites:** admitted service/CLI contract and independently verified current
 account authorization for any real operation.
+
+**Steps:** evaluate the shared twelve-case state table in the continuation spec;
+exercise the admitted service/CLI behavior before its UI action; inspect only
+available real lifecycle states on an authorized target; compare authoritative
+result/progress/logs and visible tile/detail actions; preserve registry, files,
+saves and rollback and record any unobserved state explicitly.
 
 Check service behavior before UI behavior. Distinguish purchased, subscription,
 unknown held acquisition, public catalog membership and local installation.

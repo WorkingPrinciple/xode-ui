@@ -1,6 +1,8 @@
 # UX screens and state flows
 
 **Full consumer journey specification, not a claim that every step works.**
+The dated [UI continuation specification](UI-CONTINUATION-SPEC.md) records the
+current baseline, superseded flow assumptions and unclosed actual acceptance.
 The default native development app has real bounded account/catalog/registry and
 selected-folder inspection clients; [current integration evidence](NATIVE-INTEGRATION.md)
 distinguishes those from unfinished inventory/install/play gates. The original
