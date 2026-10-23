@@ -141,8 +141,14 @@ struct LiveProductView: View {
                                 }
                                 .id("detail-information")
                             }
-                            gameInfo(details)
                             requirements(details)
+                        }
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Details").font(.title2.weight(.semibold))
+                            DetailGameSizeView(installed: installed, downloadBytes: art?.facts.downloadBytes,
+                                               packageFormat: art?.facts.packageFormat,
+                                               allowsMeasurement: allowsArtworkLoading)
+                            if let details { gameInfo(details) }
                         }
                         GameCompatibilityFacts(productID: product.id,
                             pcPackageListed: pcPackageListed,
@@ -212,10 +218,6 @@ struct LiveProductView: View {
                     if let details {
                         GameHeroMetadata(details: details)
                     }
-                    LibraryGameSizeView(installed: installed, downloadBytes: art?.facts.downloadBytes,
-                                        productID: product.id, pcPackageListed: pcPackageListed,
-                                        packageFormat: art?.facts.packageFormat,
-                                        allowsMeasurement: allowsArtworkLoading)
                     if let date = installed?.lastPlayedAt {
                         Text("Last played \(date.formatted(.relative(presentation: .named))) on this Mac")
                             .font(.callout).foregroundStyle(.secondary)
@@ -318,7 +320,6 @@ struct LiveProductView: View {
         VStack(alignment: .leading, spacing: 16) {
             if details.developer != nil || details.publisher != nil || details.releaseDate != nil ||
                 details.storeRating != nil || details.contentRating != nil {
-                Text("Game information").font(.title2.weight(.semibold))
                 Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
                     if let developer = details.developer { facet("Developer", developer) }
                     if let publisher = details.publisher { facet("Publisher", publisher) }

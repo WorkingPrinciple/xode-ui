@@ -310,12 +310,6 @@ struct LiveCatalogView: View {
                 LibraryGameInformation(gameFacts: game.facts,
                                        facts: facts[game.id])
                 if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
-                LibraryGameSizeView(installed: game.installed, downloadBytes: facts[game.id]?.downloadBytes,
-                                    productID: game.id,
-                                    pcPackageListed: LibraryPCPackageEvidence.listed(
-                                        observed: facts[game.id]?.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                    packageFormat: facts[game.id]?.packageFormat,
-                                    allowsMeasurement: allowsArtworkLoading)
                 LibraryGlassCluster {
                     actions(game, primary: true)
                     Button("View game") { open(game) }
@@ -385,12 +379,6 @@ struct LiveCatalogView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
-            LibraryGameSizeView(installed: game.installed, downloadBytes: facts[game.id]?.downloadBytes,
-                                productID: game.id,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: facts[game.id]?.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                packageFormat: facts[game.id]?.packageFormat,
-                                allowsMeasurement: allowsArtworkLoading)
             if let match = game.installed { InstalledPlayError(library: installed, game: match) }
             if game.product?.freshness == "cached" { Text("Offline details").font(.caption) }
         } actions: {

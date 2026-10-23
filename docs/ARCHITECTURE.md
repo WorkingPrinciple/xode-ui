@@ -136,6 +136,11 @@ detail rejections remain explicit and do not withdraw game access.
 Ode has no commerce subsystem: no offer decoding, prices, purchase/claim actions
 or external acquisition handoffs. Install and Play remain independently gated by
 current game access.
+Package format and installed/download size are detail-sheet facts, not browse
+metadata. `DetailGameSizeView` is instantiated only under the detail's Details
+group; browsing no longer starts per-cell filesystem size measurements. Real
+download progress remains in operation status. Package admission still uses the
+original metadata, while a blocked browse action points to the detail sheet.
 
 Reproduce the isolated CPU-preparation comparison with
 `swift build --product XodusPreview --jobs 1` followed by

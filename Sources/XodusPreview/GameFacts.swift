@@ -49,10 +49,14 @@ struct GameFacts: Equatable {
     }
 
     init(pc: PCGame?, gamePass: Bool, installed: InstalledGame? = nil, accessIsCurrent: Bool) {
-        switch pc?.acquisitionKind {
-        case .purchased: ownership = .purchased(nil)
-        case .subscription, .unknown: ownership = .inLibraryUnknownAcquisition
-        case nil: ownership = accessIsCurrent ? .notInLibrary : .unknown
+        if accessIsCurrent {
+            switch pc?.acquisitionKind {
+            case .purchased: ownership = .purchased(nil)
+            case .subscription, .unknown: ownership = .inLibraryUnknownAcquisition
+            case nil: ownership = .notInLibrary
+            }
+        } else {
+            ownership = .unknown
         }
         // allgamespc proves PC catalogue membership, not an account plan.
         memberships = gamePass ? [Membership(plan: .pcGamePass)] : []
@@ -65,10 +69,12 @@ struct GameFacts: Equatable {
 
     func badgeLabels(detail: Bool = false) -> [String] {
         var labels: [String] = []
-        switch ownership {
-        case .purchased: labels.append("Owned")
-        case .inLibraryUnknownAcquisition: labels.append("In your library")
-        case .notInLibrary, .unknown: break
+        if accessIsCurrent {
+            switch ownership {
+            case .purchased: labels.append("Owned")
+            case .inLibraryUnknownAcquisition: labels.append("In your library")
+            case .notInLibrary, .unknown: break
+            }
         }
         for plan in Plan.allCases {
             guard let membership = memberships.first(where: { $0.plan == plan }) else { continue }

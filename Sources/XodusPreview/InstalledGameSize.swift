@@ -100,11 +100,9 @@ final class InstalledGameSizeStore: ObservableObject {
     }
 }
 
-struct LibraryGameSizeView: View {
+struct DetailGameSizeView: View {
     let installed: InstalledGame?
     let downloadBytes: Int64?
-    var productID: String? = nil
-    var pcPackageListed: Bool? = nil
     var packageFormat: String? = nil
     var allowsMeasurement = true
     @ObservedObject private var sizes = InstalledGameSizeStore.shared

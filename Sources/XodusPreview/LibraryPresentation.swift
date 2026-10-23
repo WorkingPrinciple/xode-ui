@@ -751,13 +751,13 @@ struct LibraryCompatibilityIndicators: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(issues) { issue in
-                Label(issue.title, systemImage: issue.kind.symbol)
+                Label(issue.browseTitle, systemImage: issue.kind.symbol)
                     .font(.callout)
                     .foregroundStyle(heroStyle ? Color.white.opacity(0.92) : .secondary)
                     .shadow(color: heroStyle ? .black.opacity(0.5) : .clear, radius: 3, y: 1)
                     .fixedSize(horizontal: false, vertical: true)
-                    .help("\(issue.title): \(issue.detail)")
-                    .accessibilityLabel("\(issue.title). \(issue.detail)")
+                    .help("\(issue.browseTitle): \(issue.browseDetail)")
+                    .accessibilityLabel("\(issue.browseTitle). \(issue.browseDetail)")
             }
         }
         .accessibilityIdentifier("xodus.library.unsupported")

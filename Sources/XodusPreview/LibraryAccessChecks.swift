@@ -574,6 +574,17 @@ enum LibraryAccessChecks {
         check(boughtAndIncluded.badgeLabels() == ["Owned", "Game Pass"]
               && boughtAndIncluded.badgeLabels(detail: true) == ["Owned", "Included with PC Game Pass"],
               "REQ-63: purchased plus catalogue membership always renders both independent badges")
+        var saved = boughtAndIncluded
+        saved.accessIsCurrent = false
+        check(saved.badgeLabels() == ["Game Pass"]
+              && saved.badgeLabels(detail: true) == ["Included with PC Game Pass"]
+              && GameFacts(pc: held, gamePass: false, accessIsCurrent: false).badgeLabels().isEmpty,
+              "REQ-63: stale ownership is suppressed on every surface without hiding public membership")
+        let unsupportedPackage = LibraryCompatibilityIssue(kind: .packageType, title: "MSIX",
+            detail: "MSIX package not supported", source: nil)
+        check(!unsupportedPackage.browseTitle.contains("MSIX")
+              && !unsupportedPackage.browseDetail.contains("MSIX"),
+              "REQ-62: blocked browse actions explain package admission without detail-only format labels")
         check(GameFacts(pc: granted[0].pc, gamePass: true, accessIsCurrent: true).badgeLabels()
                 == ["In your library", "Game Pass"]
               && GameFacts(pc: nil, gamePass: false, installed: local, accessIsCurrent: true).badgeLabels().isEmpty,

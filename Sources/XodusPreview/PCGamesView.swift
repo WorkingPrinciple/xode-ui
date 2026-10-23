@@ -198,14 +198,6 @@ struct PCGameTile: View {
                 Text("Not installed").font(.callout).foregroundStyle(.secondary)
                 GameInstallAction(game: game, operations: operations, enabled: accessIsCurrent)
             }
-            LibraryGameSizeView(installed: PCGamesController.installedMatch(game, in: installed.games),
-                                downloadBytes: catalog.images[game.id]?.facts.downloadBytes,
-                                productID: game.id,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: catalog.images[game.id]?.facts.pcPackageListed,
-                                    candidate: catalog.images[game.id]?.product.pcCatalogCandidate),
-                                packageFormat: catalog.images[game.id]?.facts.packageFormat,
-                                allowsMeasurement: allowsArtworkLoading)
             if let viewDetails { Button("View game", action: viewDetails) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

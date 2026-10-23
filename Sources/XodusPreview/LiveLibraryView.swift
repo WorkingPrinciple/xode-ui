@@ -181,7 +181,7 @@ struct LiveLibraryView: View {
                         ContentUnavailableView {
                             Label("No games verified yet", systemImage: "gamecontroller")
                         } description: {
-                            Text("Ode to X 0.1 installs MSIXVC games. Known anti-cheat is not supported. The supported filter shows verified classifications; other games may be untested on Mac.")
+                            Text("Some games have known package or anti-cheat blockers. Open game details for compatibility information, or show unsupported games.")
                         } actions: {
                             Button("Show unsupported games") { changeScope(filter: filter, showsUnsupported: true) }
                         }
@@ -375,12 +375,6 @@ struct LiveLibraryView: View {
                 .font(.callout.weight(.medium))
             information(id: id)
             if let details = art.images[id]?.detail { GameHeroMetadata(details: details) }
-            LibraryGameSizeView(installed: game.installed, downloadBytes: art.images[id]?.facts.downloadBytes,
-                                productID: id,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: art.images[id]?.facts.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                packageFormat: art.images[id]?.facts.packageFormat,
-                                allowsMeasurement: artworkAllowed)
         } actions: {
             if !unsupportedIssues(game).isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true)
@@ -561,14 +555,6 @@ struct LiveLibraryView: View {
                 Label(evidence.technologies.joined(separator: ", "), systemImage: "shield")
                     .accessibilityLabel("Anti-cheat: \(evidence.technologies.joined(separator: ", "))")
             }
-            LibraryGameSizeView(installed: game.installed,
-                                downloadBytes: art.images[artworkID]?.facts.downloadBytes,
-                                productID: artworkID,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: art.images[artworkID]?.facts.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                packageFormat: game.installed?.packageType?.label
-                                    ?? art.images[artworkID]?.facts.packageFormat,
-                                allowsMeasurement: artworkAllowed)
             if let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
             }
