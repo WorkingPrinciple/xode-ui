@@ -514,12 +514,12 @@ enum PreviewChecks {
                 products: [catalogOnly], gamePass: [pass, pass], active: true)
             check(all.count == 1 && Set(all.map(\.id)).count == 1,
                   "Refreshed Library joins only qualified identities once across repeated inputs")
-            check(all.first?.installed == nil && all.first?.owned == true,
+            check(all.first?.installed == nil && all.first?.owned == false && all.first?.eligibility == .library,
                   "An unverified import cannot enter the access-qualified Library")
             check(!all.contains { $0.id == catalogOnly.id },
                   "Library never imports unrelated Store discovery into an entitled collection")
-            check(LibraryGame.visible(all, query: "", filter: .owned, sort: .title).map(\.id) == [owned.id],
-                  "Owned filter is based only on the complete PC account collection")
+            check(LibraryGame.visible(all, query: "", filter: .owned, sort: .title).isEmpty,
+                  "Unknown acquisition stays in the account collection without entering Owned")
             check(LibraryGame.visible(all, query: "", filter: .gamePass, sort: .title).isEmpty,
                   "Public Game Pass-only candidates are not account access evidence")
             check(LibraryGame.collection(installed: [installed], owned: [owned], products: [],
@@ -532,12 +532,12 @@ enum PreviewChecks {
             let joined = LibraryGame.collection(installed: [installed],
                 owned: [PCGame(id: installed.storeId, title: "Account title", artwork: nil)],
                 products: [], gamePass: [try product(installed.storeId)], active: true)
-            check(joined.count == 1 && joined[0].owned && joined[0].gamePass && joined[0].installed != nil,
+            check(joined.count == 1 && !joined[0].owned && joined[0].gamePass && joined[0].installed != nil,
                   "One exact title can retain independent installation, account entitlement and subscription facets")
-            check(LibraryAccess.badges(joined[0]) == [.owned, .gamePass] &&
-                  LibraryGame.visible(joined, query: "", filter: .owned, sort: .title).count == 1 &&
+            check(LibraryAccess.badges(joined[0]) == [.library, .gamePass] &&
+                  LibraryGame.visible(joined, query: "", filter: .owned, sort: .title).isEmpty &&
                   LibraryGame.visible(joined, query: "", filter: .gamePass, sort: .title).count == 1,
-                  "Owned and Game Pass badges remain simultaneous and their filters overlap")
+                  "Held access and public Game Pass membership remain independent without invented ownership")
             check(owned.acquisitionKind == .unknown &&
                   joined[0].pc?.acquisitionKind == .unknown,
                   "PC collection identity records unknown acquisition kind without inferring a paid purchase")
@@ -546,7 +546,7 @@ enum PreviewChecks {
             let squareGame = LibraryGame(id: owned.id, title: owned.title, installed: nil,
                 pc: PCGame(id: owned.id, title: owned.title, artwork: square), product: nil, owned: true, gamePass: false)
             check(square != nil && squareGame.cover == nil, "Portrait Library covers do not stretch square Store icons")
-            check(LibraryAccess(joined[0]) == .owned && LibraryAccess(all[0]) == .owned &&
+            check(LibraryAccess(joined[0]) == .library && LibraryAccess(all[0]) == .library &&
                   LibraryGame.localRecords(installed: [installed], qualified: all, query: "", sort: .title)
                     .allSatisfy { LibraryAccess($0) == nil },
                   "Local-only copy never turns installation into account entitlement")

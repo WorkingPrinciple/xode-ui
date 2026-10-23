@@ -491,8 +491,8 @@ enum LibraryAccessChecks {
               && LibraryGame.visible(displayed, query: "", filter: .installed, sort: .title).first?.eligibility == .installedUnknown
               && locals[0].installed?.folder == local.folder,
               "Installed cards remain usable without inventing account ownership or subscription access")
-        check(collection.first?.eligibility == .owned && locals[0].eligibility == .installedUnknown,
-              "M10: eligibility classifies held access as owned and installed-only as installedUnknown")
+        check(collection.first?.eligibility == .library && locals[0].eligibility == .installedUnknown,
+              "M10: unknown held acquisition stays library-eligible without invented ownership")
         check(LibraryGame.continuing(collection, launchableIDs: [local.id]).isEmpty,
               "SDD-LIB-05: local unknown access cannot become hero or Continue Playing")
         let installedHeld = InstalledGame(id: local.id, title: local.title, identityName: local.identityName,
@@ -502,18 +502,18 @@ enum LibraryAccessChecks {
             market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: true)
         let both = LibraryGame.collection(installed: [installedHeld], owned: [held],
             products: [], gamePass: [overlap], active: true)
-        check(both.count == 1 && both[0].owned && both[0].gamePass
-              && LibraryAccess.badges(both[0]) == [.owned, .gamePass],
+        check(both.count == 1 && !both[0].owned && both[0].gamePass
+              && LibraryAccess.badges(both[0]) == [.library, .gamePass],
               "SDD-LIB-02: held access and explicitly public Game Pass membership remain independent overlapping facts")
-        check(both[0].eligibility == .owned,
-              "M10: eligibility prefers owned entitlement when a title is both owned and Game Pass")
-        check(LibraryGame.visible(both, query: "", filter: .owned, sort: .title).count == 1
+        check(both[0].eligibility == .library,
+              "M10: current held access remains independent of public Game Pass membership")
+        check(LibraryGame.visible(both, query: "", filter: .owned, sort: .title).isEmpty
               && LibraryGame.visible(both, query: "", filter: .gamePass, sort: .title).count == 1,
-              "SDD-LIB-05: Owned and Game Pass catalog filters overlap without double counting")
+              "SDD-LIB-05: unknown acquisition does not enter Owned despite public Game Pass membership")
         let catalogue = LibraryGame.gamePassCatalog(installed: [installedHeld], owned: [held],
             products: [overlap, overlap, publicPC, console])
-        check(catalogue.count == 2 && catalogue.first?.owned == true
-              && LibraryAccess.badges(catalogue[0]) == [.owned, .gamePass]
+        check(catalogue.count == 2 && catalogue.first?.owned == false
+              && LibraryAccess.badges(catalogue[0]) == [.library, .gamePass]
               && catalogue.last?.owned == false,
               "Game Pass catalogue includes unowned PC members and independently marks overlapping held access")
         check(catalogue.last?.eligibility == nil,

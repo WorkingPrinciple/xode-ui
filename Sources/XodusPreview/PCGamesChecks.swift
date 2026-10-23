@@ -824,8 +824,8 @@ enum PCGamesChecks {
         check(controller.snapshot?.games.map(\.id) == [first] && controller.error == nil
               && savedRotations == ["neutral-refresh-rotated"],
               "S4: Only refresh tokens rotate into the mocked Keychain; access/XSTS remain memory-only")
-        check(tierOperations.accountEntitlements(library: controller).tiers == [.owned],
-              "M10: current held PC snapshot supplies the account's Owned tier")
+        check(tierOperations.accountEntitlements(library: controller).tiers == [.library],
+              "M10: current unknown acquisition supplies library membership, not an Owned tier")
         controller.refresh()
         check(tierOperations.accountEntitlements(library: controller).tiers == [.unknown],
               "M10: in-flight refresh cannot extend current account access")
@@ -916,9 +916,9 @@ enum PCGamesChecks {
             storeProducts: [duplicate, storeOnly], gamePassProductIDs: [first, third])
         check(joined.ownedMatches.map(\.id) == [harbor.id] && joined.storeProducts.map(\.id) == [third],
               "B2: Case-insensitive owned title substring matches come first; exact Store duplicates are removed")
-        check(joined.badge(for: first) == .owned && joined.badge(for: third) == .gamePass
+        check(joined.badge(for: first) == .library && joined.badge(for: third) == .gamePass
               && joined.badge(for: "FIXTURE00004") == nil,
-              "B2: Owned takes precedence; Game Pass requires loaded feed membership; unknown access has no badge")
+              "B2: held acquisition has a truthful library badge; Game Pass requires loaded feed membership")
         check(joined.ownedGame(for: first)?.id == harbor.id
               && PCGamesController.installedMatch(harbor, in: [imported])?.id == imported.id
               && PCGamesController.installedMatch(ridge, in: [imported]) == nil,
