@@ -98,6 +98,15 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
   `req2-hid-*` receipt, geometry log/summary and captures are in the
   continuation session. Window captures on this host take about 52 s, so they
   are taken asynchronously and are not the source of the numbers.
+- **F04 partial (same candidate and HID harness, paused by the owner).** A
+  deliberate wheel to the top released the 1958.5 Owned reservation. Top
+  All/Installed/Owned/Game Pass/All kept native offset 0 and the filter row at
+  screen Y887.5 without stale reserve. The Compatibility toggle (visible count
+  45 -> 40 -> 45) kept offset 0. See All, run twice, set Installed at offset 0
+  with the lane and collection visible together; focus stayed on the window.
+  Still open: confirming the Recently played order and focus target, the lane
+  arrow, the 897-height resize, and restoring All/Title. Private `req3-*`
+  receipt, geometry log and captures.
 - Ordinary startup enumeration: 164 records, 93 active Game/Application rows,
   91 product IDs, 5 subscription-plan rows. Frontend: 91 candidates, zero
   affirmative purchased/subscription acquisitions, 91 unknown. These are not
