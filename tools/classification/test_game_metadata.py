@@ -163,6 +163,29 @@ class MetadataTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             metadata.anti_cheat_metadata(product)
 
+    def test_age_of_empires_unknown_retains_primary_source_citations(self):
+        database = load_json(CATALOGUE)
+        row = database["products"]["9N94NCGM1Q2N"]
+        self.assertEqual(row["title"], "Age of Empires IV: Anniversary Edition")
+        self.assertEqual(row["packageFormat"], "MSIXVC")
+        self.assertEqual(row["antiCheat"], "unknown")
+        self.assertEqual(row["antiCheatEvidence"]["type"], "unknown")
+        self.assertIsNone(row["supported01"])
+        checks = row["antiCheatEvidence"]["publicChecks"]
+        self.assertEqual(len(checks), 2)
+        self.assertTrue(all(c["sourceType"] == "publisher" for c in checks))
+        self.assertTrue(all("not evidence of absence" in c["result"] for c in checks))
+        projection, _ = metadata.project(database)
+        projected = next(x["antiCheat"] for x in projection["products"]
+                         if x["productId"] == "9N94NCGM1Q2N")
+        self.assertEqual(projected["claim"], "unknown")
+        self.assertEqual(projected["technologies"], [])
+        self.assertEqual(projected["sources"], [
+            row["antiCheatEvidence"]["source"],
+            "https://www.ageofempires.com/news/age-of-empires-iv-patch-16-2-10475/",
+            "https://support.ageofempires.com/hc/en-us/articles/4408424670484-Age-of-Empires-IV-Known-Issues-Solutions",
+        ])
+
     def test_schema_rejects_unknown_keys_and_wrong_types(self):
         projection, _ = metadata.project(sample_database())
         projection["products"][0]["proofPath"] = "/private"

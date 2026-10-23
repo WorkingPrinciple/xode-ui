@@ -58,6 +58,10 @@ Legacy `none` becomes `not-detected` for filename inventories or `manual-overrid
 for user-directed classifications, never verified absence. Named claims have
 unknown Xbox-PC build binding. PCGamingWiki imported claims are withheld pending
 terms review; links alone remain. AWACY-derived names include its MIT notice.
+Unknown classifications may retain official reviewed-source links without
+promoting absence. The Age of Empires IV check documents this: its package stays
+MSIXVC, while anti-cheat remains unknown after the cited publisher pages did not
+name middleware.
 No exported record grants or denies Install/Play.
 
 ## Distribution / S5 integration

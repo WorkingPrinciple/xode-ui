@@ -25,6 +25,11 @@ OUTPUT = DATA_DIR / "PublicMetadata"
 SCHEMA_ID = "urn:xodus:game-metadata:1"
 FEED_ID = "609d944c-d395-4c0a-9ea4-e9f39b52c1ad"
 RULES = "desktop-released-base-v1"
+ANTI_CHEAT_REFERENCE_HOSTS = {
+    "raw.githubusercontent.com", "www.pcgamingwiki.com",
+    "support.riotgames.com", "support.halowaypoint.com",
+    "www.ageofempires.com", "support.ageofempires.com",
+}
 MAX_PRODUCTS = 600
 MAX_BATCHES = 30
 MAX_SECONDS = 600
@@ -237,20 +242,24 @@ def anti_cheat_metadata(product):
         }
     source = evidence.get("source", "")
     parsed = urllib.parse.urlsplit(source)
-    if (parsed.scheme != "https" or parsed.hostname not in {
-        "raw.githubusercontent.com", "www.pcgamingwiki.com",
-        "support.riotgames.com", "support.halowaypoint.com",
-    } or parsed.query or parsed.fragment or parsed.username or parsed.password):
+    if (parsed.scheme != "https" or parsed.hostname not in ANTI_CHEAT_REFERENCE_HOSTS
+            or parsed.query or parsed.fragment or parsed.username or parsed.password):
         raise ValueError("Anti-cheat source is not an allowlisted public factual URL")
     # PCGamingWiki redistribution terms are not established: links only, no imported claim.
     pcgw = "pcgamingwiki.com" in urllib.parse.urlsplit(source).netloc
+    references = [source]
+    for check in evidence.get("publicChecks", []):
+        url = urllib.parse.urlsplit(check.get("source", ""))
+        if (url.scheme == "https" and url.hostname in ANTI_CHEAT_REFERENCE_HOSTS
+                and not url.query and not url.fragment and not url.username and not url.password):
+            references.append(check["source"])
     return {
         "claim": "unknown" if ac.lower() == "unknown" or pcgw else "reported-present",
         "technologies": [] if ac.lower() == "unknown" or pcgw else ac.split("; "),
         "checkedAt": evidence["checkedAt"],
         "buildBinding": "unknown",
         "scope": "Reference only; no current Xbox-PC build absence or compatibility claim.",
-        "sources": [source] if source.startswith("https://") else [],
+        "sources": list(dict.fromkeys(references)),
     }
 
 

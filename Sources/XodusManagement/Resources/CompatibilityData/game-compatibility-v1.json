@@ -12251,8 +12251,22 @@
     "9N94NCGM1Q2N": {
       "antiCheat": "unknown",
       "antiCheatEvidence": {
-        "checkedAt": "2026-10-21",
-        "method": "Searched the pinned AWACY dataset for an exact normalized title and checked the bundled publisher-evidence records for this product ID; no affirmative anti-cheat result was found. No installed package files or per-title PCGamingWiki/publisher pages were inspected. This is unknown, not evidence that the game has no anti-cheat.",
+        "checkedAt": "2026-10-24",
+        "method": "The pinned AWACY exact-title search and bundled publisher-evidence lookup produced no affirmative anti-cheat result. Reviewed the official Age of Empires IV June 2026 patch notes and Known Issues page (last updated 2026-09-02); neither names anti-cheat middleware. These limited sources do not establish absence; anti-cheat remains unknown.",
+        "publicChecks": [
+          {
+            "checkedAt": "2026-10-24",
+            "result": "Reviewed Age of Empires IV Patch 16.2.10604, published 2026-06-01. The patch notes discuss Microsoft Store and Steam PC builds but do not identify anti-cheat middleware; this is not evidence of absence.",
+            "source": "https://www.ageofempires.com/news/age-of-empires-iv-patch-16-2-10475/",
+            "sourceType": "publisher"
+          },
+          {
+            "checkedAt": "2026-10-24",
+            "result": "Reviewed the official Age of Empires IV Known Issues & Solutions page, last updated 2026-09-02. It covers Microsoft Store and Steam issues but does not identify anti-cheat middleware; this is not evidence of absence.",
+            "source": "https://support.ageofempires.com/hc/en-us/articles/4408424670484-Age-of-Empires-IV-Known-Issues-Solutions",
+            "sourceType": "publisher"
+          }
+        ],
         "mode": "unknown",
         "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
         "type": "unknown"

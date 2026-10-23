@@ -2118,7 +2118,7 @@
     {
       "alreadyInstalled": false,
       "antiCheat": "unknown",
-      "antiCheatEvidenceCheckedAt": "2026-10-21",
+      "antiCheatEvidenceCheckedAt": "2026-10-24",
       "antiCheatEvidenceSource": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
       "antiCheatScanStatus": "not-installed",
       "api": "DX12",
