@@ -59,11 +59,18 @@ ordering and reveals the collection using its existing scroll route.
 Collection filters and compatibility/query scope do not alter the curated hero
 or Continue Playing membership/order. Those use the qualified, recommendable
 library and live launchability, not filtered grid rows. A native next-game
-chevron advances the existing horizontal lane position. When filtering removes
-the current grid anchor, navigation falls back to the surviving collection
-header rather than the hero; short results keep a viewport of collection space.
+chevron advances the existing horizontal lane position. Collection controls and
+results share one top-aligned section with a viewport minimum height, so short
+results do not reserve an additional viewport below the controls. Filter changes
+do not issue competing scroll commands; See All retains its explicit reveal.
 Native Minecraft's separate local-launcher card appears only under All/Installed,
 never as invented Owned or Game Pass evidence.
+Management stderr retains only the exact count-only `Ode collection read` line,
+framed across chunks with a 512-byte line bound and the existing total-byte cap.
+Unified logging supplies capture time; a local read ordinal identifies the sole
+library request pending at capture, not a producer-supplied correlation ID.
+Without exactly one pending library request, the line is explicitly uncorrelated.
+No account, product, token or raw request identifiers are logged.
 Ambient artwork retains the outgoing image/palette during same-context hero
 replacement; a new context starts with a dark hero backing, never old-account
 artwork. Foreground landscape images remain keyed to their requested game.

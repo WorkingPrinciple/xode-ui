@@ -27,7 +27,6 @@ struct LiveLibraryView: View {
     let recentActivity: () -> Void
     var showCollection: () -> Void = {}
     var collectionViewportHeight: CGFloat = 0
-    var collectionViewportTop: CGFloat = 0
     @ObservedObject var selection = LibrarySelection()
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
@@ -76,17 +75,6 @@ struct LiveLibraryView: View {
             ? "\(unknown.formatted()) games in your PC library have an unidentified acquisition source and aren't classified as Owned."
             : nil
     }
-    private func changeCollectionScope(_ change: () -> Void) {
-        let reveal = selection.collectionHeaderAboveViewport
-        change()
-        if reveal {
-            Task { @MainActor in
-                await Task.yield()
-                showCollection()
-            }
-        }
-    }
-
     var body: some View {
         let key = LibraryProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
             products: session.products, gamePass: session.gamePassProducts, active: operations.gamePassActive,
@@ -134,19 +122,13 @@ struct LiveLibraryView: View {
                 PCGamesView(library: library, installed: installed, operations: operations,
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
+                VStack(alignment: .leading, spacing: 22) {
                 LibraryControls(count: visible.count,
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
-                                filter: Binding(get: { filter }, set: { value in
-                                    changeCollectionScope { filter = value }
-                                }), sort: $selection.sort,
-                                showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: { value in
-                                    changeCollectionScope { showsUnsupportedGames = value }
-                                }),
+                                filter: $selection.filter, sort: $selection.sort,
+                                showsUnsupportedGames: $showsUnsupportedGames,
                                 allowsSorting: true)
                     .id("library-games")
-                    .onGeometryChange(for: Bool.self) {
-                        $0.frame(in: .global).minY < collectionViewportTop + 80
-                    } action: { selection.collectionHeaderAboveViewport = $0 }
                 VStack(alignment: .leading, spacing: 22) {
                 if let purchaseNotice {
                     Label(purchaseNotice, systemImage: "info.circle")
@@ -219,6 +201,7 @@ struct LiveLibraryView: View {
                         CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
                             status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
                     }.frame(maxWidth: 220)
+                }
                 }
                 }
                 .frame(minHeight: collectionViewportHeight, alignment: .topLeading)

@@ -2,7 +2,7 @@
 import Foundation
 import CryptoKit
 import Darwin
-import XodusManagement
+@testable import XodusManagement
 
 @main
 enum ManagementChecks {
@@ -607,6 +607,27 @@ actor Checks {
             } catch { check(false, "Typed evidence edge \(index + 1)") }
         }
         var framer = JSONLineFramer()
+        let collectionCounts = "Ode collection read: records=12; activeGameRows=10; productIDs=9; subscriptionRows=3"
+        for split in 0...collectionCounts.utf8.count {
+            var diagnostic = ManagementClient.CollectionDiagnosticFramer()
+            let bytes = Data((collectionCounts + "\n").utf8)
+            check(diagnostic.append(bytes.prefix(split)).isEmpty,
+                  "Collection count diagnostics hold split \(split) until a full line")
+            check(diagnostic.append(bytes.dropFirst(split)) == [collectionCounts],
+                  "Collection count diagnostics admit exact split \(split)")
+        }
+        var diagnostic = ManagementClient.CollectionDiagnosticFramer()
+        for rejected in ["prefix " + collectionCounts, collectionCounts + " suffix",
+                         collectionCounts + "\r", collectionCounts.replacingOccurrences(of: "=12", with: "=-12"),
+                         String(repeating: "x", count: 513) + collectionCounts] {
+            check(diagnostic.append(Data((rejected + "\n").utf8)).isEmpty,
+                  "Nonexact or overlong collection diagnostics are discarded")
+        }
+        check(diagnostic.append(Data([0xff, 10])).isEmpty,
+              "Invalid UTF8 diagnostics are discarded")
+        check(diagnostic.append(Data((collectionCounts + "\n" + collectionCounts + "\n").utf8))
+              == [collectionCounts, collectionCounts],
+              "Count framing recovers after rejected lines and handles multiple lines")
         check(try framer.append(Data("{\"kind\"".utf8)).isEmpty, "Split frame is held, not decoded prematurely")
         check(try framer.append(Data(":\"fixture\"}\n".utf8)).count == 1, "Split frame completes in order")
         try framer.finish()

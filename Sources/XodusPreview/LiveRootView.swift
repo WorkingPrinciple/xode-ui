@@ -20,7 +20,6 @@ struct LiveRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var searchFocused = false
     @State private var browseViewportHeight: CGFloat = 0
-    @State private var browseViewportTop: CGFloat = 0
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
     @State private var libraryVisited = false
@@ -425,7 +424,6 @@ struct LiveRootView: View {
             }
             .scrollPosition(id: scrollID)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { browseViewportHeight = $0 }
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { browseViewportTop = $0 }
             .modifier(LibraryScrollEdge(enabled: immersive))
             .modifier(LibraryImmersion(enabled: immersive,
                                       underlapsToolbar: destination == .discover || libraryHasHero))
@@ -458,7 +456,7 @@ struct LiveRootView: View {
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() },
                                 showCollection: showCollection, collectionViewportHeight: browseViewportHeight,
-                                collectionViewportTop: browseViewportTop, selection: state.librarySelection)
+                                selection: state.librarySelection)
             }
         }
     }
