@@ -121,6 +121,28 @@ enum PresentationPerformanceChecks {
         check(libraryCache.builds == 2 && libraryCache.current.collection.isEmpty
               && libraryCache.current.local.count == installed.count && libraryCache.current.hero.isEmpty,
               "Expiry/negative authority changes immediately remove qualified rows and heroes, not installed records")
+        let localOnly = libraryCache.current.local
+        for qualifiedPresent in [false, true] {
+            for localPresent in [false, true] {
+                for nativePresent in [false, true] {
+                    let qualified = qualifiedPresent ? projection.visible : []
+                    let local = localPresent ? localOnly : []
+                    check(LibraryGame.displayedCount(qualified: qualified, local: local, native: nativePresent)
+                          == qualified.count + local.count + (nativePresent ? 1 : 0),
+                          "REQ-64: Displayed total includes qualified=\(qualifiedPresent), local=\(localPresent), native=\(nativePresent)")
+                }
+            }
+        }
+        let mixedInput = libraryKey(permitted: [installed[0].storeId])
+        let mixed = LibraryProjection(key: mixedInput, isVisible: { _ in true }, recommendable: { _ in true })
+        let qualifiedIDs = Set(mixed.visible.compactMap { $0.installed?.id })
+        let localIDs = Set(mixed.local.compactMap { $0.installed?.id })
+        check(qualifiedIDs.isDisjoint(with: localIDs)
+              && qualifiedIDs.union(localIDs) == Set(installed.map(\.id))
+              && LibraryGame.displayedCount(qualified: mixed.visible, local: mixed.local, native: true)
+                  == installed.count + 1
+              && (mixed.visible + mixed.local).allSatisfy { !$0.owned },
+              "REQ-64: Mixed qualified/local/native total counts each installation once without inventing ownership")
     }
 
     static func run() throws {

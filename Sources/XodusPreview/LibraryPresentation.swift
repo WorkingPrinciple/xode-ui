@@ -203,6 +203,9 @@ struct LibraryGame: Identifiable {
     let owned: Bool
     let gamePass: Bool
     var accessIsCurrent = true
+    static func displayedCount(qualified: [Self], local: [Self], native: Bool) -> Int {
+        qualified.count + local.count + (native ? 1 : 0)
+    }
     var cover: CatalogArtworkReference? {
         if let art = pc?.artwork, [.boxArt, .poster].contains(art.role),
            let width = art.width, let height = art.height, height > width { return art }
@@ -370,6 +373,8 @@ struct LibraryControls: View {
             Text(filter == .gamePass ? "PC Game Pass" : "Your Games").font(.title2.weight(.semibold))
             Text(count.formatted()).font(.title3).foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(count) games shown, \(filter.rawValue) filter")
     }
     private var filters: some View {
         Picker("Filter games", selection: $filter) {

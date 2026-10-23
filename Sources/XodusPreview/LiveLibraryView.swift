@@ -149,7 +149,8 @@ struct LiveLibraryView: View {
                             browse: browse, recentActivity: recentActivity)
                 VStack(alignment: .leading, spacing: 22) {
                 VStack(spacing: 0) {
-                LibraryControls(count: visible.count + (showsNativeMinecraft ? 1 : 0),
+                LibraryControls(count: LibraryGame.displayedCount(
+                                    qualified: visible, local: visibleLocalRecords, native: showsNativeMinecraft),
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
                                 filter: Binding(get: { filter }, set: { filter = $0 }), sort: $selection.sort,
                                 showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: {
