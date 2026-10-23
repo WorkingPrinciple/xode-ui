@@ -85,11 +85,19 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
 - Continuation handoff: corrected candidate reached the wheel-derived filter row
   at screen Y160 in the actual 1619 x 1231 window. Subsequent exact-target guards
   stopped twice when the GitHub app took foreground before filter input.
-  **Corrected F03 is unverified, not passed.** Resume only with exclusive
-  foreground and an unlocked/unoccluded screen; do not rebuild this unchanged
-  candidate, repeat the known GeometryReader failure or proceed to F04/F05 first.
-  Native geometry, captures, deployment receipts and source checks are private
-  `req2-*` artifacts in the continuation session above.
+- **Corrected F03 PASS (3fb6674, installed PID 44926, window 30334).** One
+  harness only: CGEvent HID clicks and pixel wheel posted at kCGHIDEventTap; one
+  inert-header click made Ode frontmost, then frontmost was confirmed before each
+  filter click and the pointer was restored afterwards. Admission bound the
+  window, PID and occlusion (none at run time). Real wheel input restored the
+  filter row to screen Y160, then HID clicks ran All -> Owned -> Game Pass -> All.
+  AX: all four filter radios stayed at Y160 with the clicked one selected.
+  Native: offset 727.5 at every sample, container 1231, header window-local Y32,
+  lane Y-245.5/height 196.5; Owned content 1054 with root reservation 1958.5
+  (727.5 + 1231), Game Pass content 1037, All content back to 4223.5. Private
+  `req2-hid-*` receipt, geometry log/summary and captures are in the
+  continuation session. Window captures on this host take about 52 s, so they
+  are taken asynchronously and are not the source of the numbers.
 - Ordinary startup enumeration: 164 records, 93 active Game/Application rows,
   91 product IDs, 5 subscription-plan rows. Frontend: 91 candidates, zero
   affirmative purchased/subscription acquisitions, 91 unknown. These are not
