@@ -105,6 +105,10 @@ enum NativeChecks {
                   "Height resize recalculates finite extent from current viewport, not old document height")
             check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 900, height: 700)) == nil,
                   "Width reflow drops obsolete action extent")
+            let underlappingExtent = LibraryActionExtent(offsetY: 727.5, insetBottom: 0, viewportWidth: 1619)
+            check(underlappingExtent.minimumHeight(viewport: CGSize(width: 1619, height: 1231)) == 1958.5
+                  && underlappingExtent.minimumHeight(viewport: CGSize(width: 1619, height: 1179)) == 1906.5,
+                  "Underlapping scroll reserves the measured native container, not the shorter safe-area parent")
             func resizeMeasurement(width: CGFloat) -> LibraryScrollMeasurement {
                 LibraryScrollMeasurement(offsetY: 599.5, contentHeight: 1830.5,
                     containerHeight: 1231, containerWidth: width, insetTop: 0, insetBottom: 0,

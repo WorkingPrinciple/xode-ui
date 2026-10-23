@@ -64,6 +64,14 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
   SIGTERM; registry, preferences, game-root identities and edbe964 rollback
   remained unchanged. Private continuation evidence is in session
   `e4efcf9f-9cec-4864-925d-bbb5cd5bc949/files/req1-*`.
+- REQ-2 first continuation pass on the startup correction still failed:
+  All -> Owned moved native offset 727.5 -> 675.5 and the visible filter row
+  down 52 points. Lane heights stayed 160/196.5 and width noise was tolerated.
+  The reserved root was 1906.5, exactly offset plus the 1179-point GeometryReader
+  rather than the underlapping 1231-point native scroll container. Reservation
+  now uses measured native container size; only size changes publish to the
+  outer document, not live offsets. Do not repeat the GeometryReader-height
+  reservation or treat this first failed pass as F03 acceptance.
 - Ordinary startup enumeration: 164 records, 93 active Game/Application rows,
   91 product IDs, 5 subscription-plan rows. Frontend: 91 candidates, zero
   affirmative purchased/subscription acquisitions, 91 unknown. These are not

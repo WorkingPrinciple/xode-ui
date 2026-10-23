@@ -20,6 +20,7 @@ struct LiveRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var searchFocused = false
     @State private var libraryScrollCommand = 0
+    @State private var libraryContainerSize: CGSize?
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
     @State private var libraryVisited = false
@@ -414,8 +415,7 @@ struct LiveRootView: View {
             if destination == .library { state.librarySelection.scrollID = value }
             else { state.discoverSelection.scrollID = value }
         })
-        return GeometryReader { viewport in
-            ScrollView {
+        return ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     if destination == .library {
                         library(positionCollection: { target in
@@ -425,12 +425,15 @@ struct LiveRootView: View {
                     } else { catalog }
                 }
                 .padding(immersive ? 0 : 30)
-                .frame(minHeight: destination == .library
-                       ? state.librarySelection.scopeMinimumHeight(viewport: viewport.size) : nil,
+                .frame(minHeight: destination == .library ? libraryContainerSize.flatMap {
+                    state.librarySelection.scopeMinimumHeight(viewport: $0)
+                } : nil,
                        alignment: .top)
             }
             .scrollPosition(id: scrollID)
-            .modifier(LibraryScrollMeasurementObserver(selection: destination == .library ? state.librarySelection : nil))
+            .modifier(LibraryScrollMeasurementObserver(
+                selection: destination == .library ? state.librarySelection : nil,
+                containerSize: $libraryContainerSize))
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
                 if destination == .library { state.librarySelection.measureScrollFrame($0) }
             }
@@ -447,7 +450,6 @@ struct LiveRootView: View {
             .modifier(LibraryImmersion(enabled: immersive,
                                       underlapsToolbar: destination == .discover || libraryHasHero))
             .background(Color(nsColor: .windowBackgroundColor))
-        }
         .modifier(LibraryActionExtentObserver(selection: state.librarySelection) {
             if destination == .library { libraryScrollCommand += 1 }
         })
@@ -461,6 +463,7 @@ struct LiveRootView: View {
 
     private struct LibraryScrollMeasurementObserver: ViewModifier {
         let selection: LibrarySelection?
+        @Binding var containerSize: CGSize?
 
         @ViewBuilder
         func body(content: Content) -> some View {
@@ -474,6 +477,8 @@ struct LiveRootView: View {
                         visibleHeight: geometry.visibleRect.height)
                 } action: { _, value in
                     selection.measureScroll(value)
+                    let size = CGSize(width: value.containerWidth, height: value.containerHeight)
+                    if containerSize != size { containerSize = size }
                 }
                 .onScrollPhaseChange { oldPhase, newPhase in
                     if newPhase == .idle, oldPhase == .interacting || oldPhase == .decelerating {
