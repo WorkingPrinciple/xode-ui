@@ -26,8 +26,8 @@ struct LiveLibraryView: View {
     let browse: () -> Void
     let recentActivity: () -> Void
     var showCollection: () -> Void = {}
-    var restoreCollection: () -> Void = {}
     var collectionViewportHeight: CGFloat = 0
+    var collectionViewportTop: CGFloat = 0
     @ObservedObject var selection = LibrarySelection()
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
@@ -76,12 +76,14 @@ struct LiveLibraryView: View {
             ? "\(unknown.formatted()) games in your PC library have an unidentified acquisition source and aren't classified as Owned."
             : nil
     }
-    private func restoreRemovedCollectionAnchor() {
-        guard let anchor = selection.scrollID else { return }
-        let valid = Set(visible.map { "library-card-\($0.id)" }
-            + ([.all, .installed].contains(filter) ? localRecords.filter(isVisible).map { "library-local-\($0.id)" } : []))
-        if (anchor.hasPrefix("library-card-") || anchor.hasPrefix("library-local-")), !valid.contains(anchor) {
-            restoreCollection()
+    private func changeCollectionScope(_ change: () -> Void) {
+        let reveal = selection.collectionHeaderAboveViewport
+        change()
+        if reveal {
+            Task { @MainActor in
+                await Task.yield()
+                showCollection()
+            }
         }
     }
 
@@ -134,10 +136,17 @@ struct LiveLibraryView: View {
                             browse: browse, recentActivity: recentActivity)
                 LibraryControls(count: visible.count,
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
-                                filter: $selection.filter, sort: $selection.sort,
-                                showsUnsupportedGames: $showsUnsupportedGames,
+                                filter: Binding(get: { filter }, set: { value in
+                                    changeCollectionScope { filter = value }
+                                }), sort: $selection.sort,
+                                showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: { value in
+                                    changeCollectionScope { showsUnsupportedGames = value }
+                                }),
                                 allowsSorting: true)
                     .id("library-games")
+                    .onGeometryChange(for: Bool.self) {
+                        $0.frame(in: .global).minY < collectionViewportTop + 80
+                    } action: { selection.collectionHeaderAboveViewport = $0 }
                 VStack(alignment: .leading, spacing: 22) {
                 if let purchaseNotice {
                     Label(purchaseNotice, systemImage: "info.circle")
@@ -230,8 +239,6 @@ struct LiveLibraryView: View {
             }
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
-        .onChange(of: filter) { _, _ in restoreRemovedCollectionAnchor() }
-        .onChange(of: showsUnsupportedGames) { _, _ in restoreRemovedCollectionAnchor() }
         .sheet(item: $selection.localDetail) { entry in
             if let product = entry.product {
                 LiveProductView(product: product, library: library, installedLibrary: installed,

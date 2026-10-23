@@ -29,6 +29,7 @@ final class LibrarySelection: ObservableObject {
     @Published var heroID: String?
     // ScrollView owns live scrolling; retaining its target must not invalidate the whole tab.
     var scrollID: String?
+    var collectionHeaderAboveViewport = false
     @Published var heroHovered = false
     @Published var heroPlaying = false
     var requestedGamePassScope: String?
