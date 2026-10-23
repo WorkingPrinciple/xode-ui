@@ -6,6 +6,7 @@ import XodusCore
 @MainActor
 enum NativeUIChecks {
     static func run(check: (Bool, String) -> Void) {
+        checkActionExtentObservation(check: check)
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))
@@ -686,6 +687,53 @@ enum NativeUIChecks {
     private static func ancestors(of view: NSView) -> [NSView] {
         guard let parent = view.superview else { return [] }
         return [parent] + ancestors(of: parent)
+    }
+
+    private static func checkActionExtentObservation(check: (Bool, String) -> Void) {
+        let selection = LibrarySelection()
+        var changes = 0
+        let host = NSHostingView(rootView: ExtentObservationCheck(selection: selection) { changes += 1 })
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 820, height: 600)
+        func settle() {
+            host.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.02))
+            host.layoutSubtreeIfNeeded()
+        }
+        settle()
+        check(changes == 0, "Initial nil action extent does not create a self-invalidating subscription")
+        selection.collectionHeaderFrame = CGRect(x: 0, y: 100, width: 820, height: 40)
+        selection.collectionViewportFrame = CGRect(x: 0, y: 0, width: 820, height: 600)
+        selection.measureScroll(LibraryScrollMeasurement(offsetY: 400, contentHeight: 1500,
+            containerHeight: 600, containerWidth: 820, insetTop: 0, insetBottom: 0,
+            visibleY: 400, visibleMaxY: 1000, visibleHeight: 600))
+        selection.prepareScopeExtent()
+        settle()
+        check(changes == 1, "A real action extent change invalidates the outer document exactly once")
+        selection.prepareScopeExtent()
+        selection.filter = .owned
+        settle()
+        check(changes == 1, "Equal extents and unrelated selection updates do not replay a document revision")
+        selection.clearScopeExtent()
+        settle()
+        selection.clearScopeExtent()
+        settle()
+        check(changes == 2 && host.window == nil,
+              "Clearing an extent publishes once and settles without a window or backend")
+    }
+
+    private struct ExtentObservationCheck: View {
+        let selection: LibrarySelection
+        let changed: () -> Void
+        @State private var revision = 0
+
+        var body: some View {
+            Text("Revision \(revision)")
+                .modifier(LibraryActionExtentObserver(selection: selection) {
+                    revision += 1
+                    changed()
+                })
+        }
     }
 
     private static func descendants(of view: NSView) -> [NSView] {

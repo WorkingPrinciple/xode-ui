@@ -47,6 +47,15 @@ struct LibraryActionExtent: Equatable {
     }
 }
 
+struct LibraryActionExtentObserver: ViewModifier {
+    @ObservedObject var selection: LibrarySelection
+    let changed: () -> Void
+
+    func body(content: Content) -> some View {
+        content.onChange(of: selection.actionExtent) { _, _ in changed() }
+    }
+}
+
 @MainActor
 final class LibrarySelection: ObservableObject {
     let projection = PresentationCache<LibraryProjectionKey, LibraryProjection>(empty: .empty)

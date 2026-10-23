@@ -448,9 +448,9 @@ struct LiveRootView: View {
                                       underlapsToolbar: destination == .discover || libraryHasHero))
             .background(Color(nsColor: .windowBackgroundColor))
         }
-        .onReceive(state.librarySelection.$actionExtent.removeDuplicates()) { _ in
+        .modifier(LibraryActionExtentObserver(selection: state.librarySelection) {
             if destination == .library { libraryScrollCommand += 1 }
-        }
+        })
         .environment(\.catalogPresentationActive, active)
         .opacity(selected ? 1 : 0)
         .zIndex(selected ? 1 : 0)

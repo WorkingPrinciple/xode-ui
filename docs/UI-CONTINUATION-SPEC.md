@@ -51,6 +51,19 @@ Do not rebuild or install merely to make a document commit match binary HEAD.
 
 ### Actual outcomes, including failures
 
+- REQ-1 continuation: installed bb8ffd8 was independently observed hanging again
+  (PID 72523, executable hash matching the precision candidate above). An isolated
+  native hosting reproduction of the inline
+  `$actionExtent.removeDuplicates()` subscription reached 100 revision changes
+  without an extent change: recreating the publisher replays its initial value,
+  which increments the view revision and recreates it again. The correction uses
+  a scoped observed-selection modifier with `onChange`, not an initial publisher
+  replay. Hosted regression checks cover initial nil, a real extent change,
+  equal/unrelated updates and clearing. This is source evidence, not visible
+  startup or F03 acceptance. The hung process was asked to quit, then sent
+  SIGTERM; registry, preferences, game-root identities and edbe964 rollback
+  remained unchanged. Private continuation evidence is in session
+  `e4efcf9f-9cec-4864-925d-bbb5cd5bc949/files/req1-*`.
 - Ordinary startup enumeration: 164 records, 93 active Game/Application rows,
   91 product IDs, 5 subscription-plan rows. Frontend: 91 candidates, zero
   affirmative purchased/subscription acquisitions, 91 unknown. These are not
