@@ -248,6 +248,12 @@ struct LiveLibraryView: View {
             }
             .padding(.horizontal, 56).padding(.vertical, 22)
             }
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+                selection.measureAncestor("content", frame: $0)
+            }
+        }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+            selection.measureAncestor("root", frame: $0)
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
         .sheet(item: $selection.localDetail) { entry in
@@ -496,6 +502,12 @@ struct LiveLibraryView: View {
                     selection.recentGameID = ids.first
                 }
             }
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+                selection.measureAncestor("horizontal", frame: $0)
+            }
+        }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+            selection.measureAncestor("lane", frame: $0)
         }
     }
 

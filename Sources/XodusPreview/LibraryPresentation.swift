@@ -48,6 +48,8 @@ final class LibrarySelection: ObservableObject {
     private var scrollRevision = 0
     private var headerRevision = 0
     private var frameRevision = 0
+    private var ancestorFrames: [String: CGRect] = [:]
+    private var ancestorRevisions: [String: Int] = [:]
     private var measurementTime: Date?
     private var actionOrdinal = 0
     private var postSamples = 0
@@ -80,6 +82,13 @@ final class LibrarySelection: ObservableObject {
         emitPostMeasurement(source: "frame")
     }
 
+    func measureAncestor(_ name: String, frame: CGRect) {
+        guard ["lane", "horizontal", "content", "root"].contains(name) else { return }
+        ancestorFrames[name] = frame
+        ancestorRevisions[name, default: 0] += 1
+        emitPostMeasurement(source: name)
+    }
+
     private func emitPostMeasurement(source: String) {
         guard actionOrdinal > 0, postSamples < 12 else { return }
         postSamples += 1
@@ -108,7 +117,11 @@ final class LibrarySelection: ObservableObject {
         } else {
             values = "; snapshotPresent=false; atomic=false"
         }
-        positionLogger.info("\(prefix + geometry + values, privacy: .public)")
+        let ancestors = ["lane", "horizontal", "content", "root"].map { name in
+            let rect = ancestorFrames[name] ?? .zero
+            return "; \(name)Revision=\(ancestorRevisions[name] ?? 0); \(name)GlobalY=\(rect.minY); \(name)Height=\(rect.height)"
+        }.joined()
+        positionLogger.info("\(prefix + geometry + values + ancestors, privacy: .public)")
     }
 
     func collectionTarget(remaining: Set<String>) -> String? {
