@@ -20,12 +20,29 @@
     "verificationScope": "S4 read receipt and verified receipt/manifest hashes; parent independently checked68/68 artifacts. Raw proofs stay protected local.",
     "limits": "No full lifecycle/filter/Appx/tier/production release acceptance, cloud claim or extra WORKING title. Earlier Brotato route-equivalent evidence and historical UI ingestion failure remain history, not current GUI outcome."
   },
-  "replacedPendingFinalEvidence": {
-    "reportedAt": "2026-10-23T03:04:05.014+03:00",
+  "replacedFinalEvidence": {
+    "reportedAt": "2026-10-23T09:28:07.064+03:00",
+    "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
     "packet": "687d",
     "run": "11f0168d",
-    "ownerReportedOutcome": "Pre-Wine ACCOUNT_UNAVAILABLE, management Keychain accessDenied-25293. No disk-floor check or game visited, no retry.",
-    "scope": "Await S2 final hashes before full result indexing; not a game compatibility verdict or WORKING admission."
+    "finalEvidenceHashes": {
+      "receipt": "7c440f4b",
+      "rawManifest": "bcf41a03",
+      "result": "01320e39"
+    },
+    "ownerReportedOutcome": "Coordinator verified 12/12: pre-Wine ACCOUNT_UNAVAILABLE, previously reported as management Keychain accessDenied-25293; no screenshot, disk-floor check, or game visit.",
+    "scope": "Final evidence hashes are coordinator-reported; S4 did not independently re-hash them. No game compatibility verdict or WORKING admission; retain the historical nonacquiring package GRANTED result separately."
+  },
+  "boundedCachedLibraryFilterObservation": {
+    "reportedAt": "2026-10-23T09:28:07.064+03:00",
+    "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+    "ownerReportedEvidenceCheck": "18/18 hashes/screens; recovered 47 review",
+    "observations": [
+      "Most popular: Gears Eday and Solitaire; hidden OFF; restored ON.",
+      "Valor Mortis unknown retained; supported Hades II retained.",
+      "Your Games remains on the same page."
+    ],
+    "scope": "Coordinator-admitted bounded cached Library filter observation only. S4 did not independently inspect the screens or hashes. Not proof of the full catalog, same-shelf supported/unsupported pairing, or search behavior. S5 owns app documentation."
   },
   "protectedSessionArchive": {
     "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
@@ -154,12 +171,17 @@
     },
     {
       "storeId": "9NV3L234VGXD", "title": "REPLACED",
-      "verdict": "NOT_TESTED", "reportedAt": "2026-10-23T01:39:07.314+03:00",
-      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": null,
+      "verdict": "NOT_TESTED", "reportedAt": "2026-10-23T09:28:07.064+03:00",
+      "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42", "runId": "11f0168d",
+      "ownerReportedFinalEvidenceHashes": {
+        "receipt": "7c440f4b",
+        "rawManifest": "bcf41a03",
+        "result": "01320e39"
+      },
       "gates": {"menu": "unknown", "gameplay": "unknown", "save": "unknown", "relaunch": "unknown", "quit": "unknown"},
-      "nextGate": "menu", "ownerStream": "S2/S3",
-      "blocker": "Historical nonacquiring package entitlement GRANTED receipt32119200, not game qualification.",
-      "scope": "Historical coordinator report: nonacquiring GRANTED receipt32119200; proofs/s2-entitlement-package-check-replaced-v1. Point-in-time package access only, not permanent ownership or gameplay. Later prepared687d dry packet is NOT launched per latest coordinator report; no promotion."
+      "nextGate": "account/auth prerequisite before menu", "ownerStream": "S2/S3",
+      "blocker": "687d/11f0168d stopped pre-Wine on ACCOUNT_UNAVAILABLE (previously reported as management Keychain accessDenied-25293); no screenshot, disk-floor check, or game visit. No retry.",
+      "scope": "Coordinator verified final result 12/12; final evidence hashes are owner-reported and were not independently re-hashed by S4. This is not a compatibility FAIL or WORKING result. Historical nonacquiring GRANTED receipt32119200 remains point-in-time package access only, not permanent ownership or gameplay."
     },
     {
       "storeId": "9MXND4PQLK3W", "title": "DOOM 64",
