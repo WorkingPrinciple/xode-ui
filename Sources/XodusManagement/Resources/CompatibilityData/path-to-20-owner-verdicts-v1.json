@@ -1,5 +1,32 @@
 {
   "schemaVersion": 1,
+  "brotatoCurrentAppGuiEvidence": {
+    "reportedAt": "2026-10-23T03:04:05.014+03:00",
+    "sourceSession": "24963110-1b48-4e35-bae1-a54927543f42",
+    "admission": "Coordinator-admitted bounded OX6 current-app GUI evidence; not a new WORKING title.",
+    "appSourceCommit": "30638b7a146ba41ccf3c44733eb37ec96ff6cef0",
+    "cliSha256": "3cdbf1dde6e136af29af9c8f3f17042abbd9f05eeca05f4f5efd57f27db67bea",
+    "receipt": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ode-tier-ui-5c8e764/brotato-gui-live-20261023T0256/acceptance-receipt.json",
+      "sha256": "ab8ac6b36a5f1d4e7532314e8012a7f6493b6b657f249ce327866645331294e7"
+    },
+    "integrity": {
+      "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/ode-tier-ui-5c8e764/brotato-gui-live-20261023T0256/evidence-sha256.json",
+      "sha256": "8a37762f54fcea7536abeabc655aaa61fd4d69e4345b78b38322f8548d1013a7"
+    },
+    "runs": ["0d721793-5586-453f-821f-95a24833cd32", "e92d025b-ff1d-4f01-87c6-92a348f25341"],
+    "observation": "Actual tile Play/action/ordinary quit, fresh tile Play/Chunky retained and usable/action/ordinary quit. Both canonical CLI0/Wine0 and wine-exit0 read by coordinator, actual screens viewed.",
+    "saveHashPrefixes": ["da5542fd", "96a4bd61", "fbd83db4"],
+    "verificationScope": "S4 read receipt and verified receipt/manifest hashes; parent independently checked68/68 artifacts. Raw proofs stay protected local.",
+    "limits": "No full lifecycle/filter/Appx/tier/production release acceptance, cloud claim or extra WORKING title. Earlier Brotato route-equivalent evidence and historical UI ingestion failure remain history, not current GUI outcome."
+  },
+  "replacedPendingFinalEvidence": {
+    "reportedAt": "2026-10-23T03:04:05.014+03:00",
+    "packet": "687d",
+    "run": "11f0168d",
+    "ownerReportedOutcome": "Pre-Wine ACCOUNT_UNAVAILABLE, management Keychain accessDenied-25293. No disk-floor check or game visited, no retry.",
+    "scope": "Await S2 final hashes before full result indexing; not a game compatibility verdict or WORKING admission."
+  },
   "protectedSessionArchive": {
     "sourceSession": "9df8acf4-7a95-43ac-84d5-d81fcdd55702",
     "reportedAt": "2026-10-22T21:20:05.486+00:00",

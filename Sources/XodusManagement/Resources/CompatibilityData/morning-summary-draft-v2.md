@@ -240,19 +240,27 @@ assertion is superseded, not just reload movement: no actual movement/unseated
 frame. L_Tower_Script.int40-46 separates boat-look and movement tutorials.
 Manual save162686B/7941eda2, same-world load and ordinary exits remain proven;
 neither world nor retention qualifies WORKING. Historical receipts untouched.
-F Use/RequestSkip not authorized guesses. Current GUI Brotato attempt pending
-actual outcome; REPLACED687d prepared/dry, not launched. No promotion.
+F Use/RequestSkip not authorized guesses.
+Parent now admits bounded current-app OX6 Brotato GUI evidence30638b7/CLI3cdb:
+actual tile Play/action/ordinary quit, fresh tile Play/Chunky retained usable/
+action/ordinary quit. Both canonicalCLI0/Wine0 and wine-exit0 read/screens
+viewed by parent,68/68 manifest checks; S4 verified receipt/manifest hashes.
+Raw continuityda5542fd ->96a4bd61 ->fbd83db4. Not a new title: strict12.
+No full lifecycle/filter/Appx/tier/production release or cloud claim.
+REPLACED687d/run11f0168d stopped pre-Wine ACCOUNT_UNAVAILABLE, Keychain
+accessDenied-25293 before disk-floor/game visit; no retry. Await S2 final
+hashes before full result indexing, not compatibility FAIL or WORKING.
 <!-- living-tracker:start -->
-Living tracker 2026-10-22T23:56:55.743263+00:00: **12/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, Stardew Valley, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Subnautica 2, Valor Mortis, Vampire Survivors, Wasteland Remastered, Well Dweller. Refresh every30min and owner verdict.
+Living tracker 2026-10-23T00:04:40.234218+00:00: **12/20** strict: Abiotic Factor, Brotato, Hades II, Halls of Torment, Hogwarts Legacy, Hollow Knight: Voidheart Edition, Minecraft: Java Edition with Minecraft Launcher, Mixtape, Monster Sanctuary, No Man's Sky, Stardew Valley, TUNIC. Installed-route-equivalent title qualification is not GUI Play-click proof or production UI acceptance; see per-title scope. Same-gate >2h: A Game About Digging A Hole, Age of Empires IV: Anniversary Edition, Balatro, Beast of Reincarnation, Blue Prince, DEATHLOOP, DREDGE, Disco Elysium - The Final Cut, Dome Keeper, Fable, Fallout 4, Forever Ago, High On Life 2, Hollow Knight: Silksong, INSIDE, Inscryption, Keeper, Kingdom Come: Deliverance, Kingdom Come: Deliverance II, LIMBO, Minishoot' Adventures, Nine Sols, Oblivion GOTY (2009), REPLACED, Resonance: A Plague Tale Legacy, SUPERHOT: MIND CONTROL DELETE, Skyrim Special Edition, South of Midnight, Subnautica 2, Valor Mortis, Vampire Survivors, Wasteland Remastered, Well Dweller. Refresh every30min and owner verdict.
 <!-- living-tracker:end -->
 <!-- burndown:start -->
 ## Burn-down estimate (not promised passes)
 
-Deadline **23 Oct 13:26 EEST** (user +12h extension); 10.48h from 2026-10-22T23:56:55.743263+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **7/9/14** slow/mid/fast cycles, capped by **15 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **19/21/26**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
+Deadline **23 Oct 13:26 EEST** (user +12h extension); 10.36h from 2026-10-23T00:04:40.234218+00:00. Halls passive-to-qualified: **43.9min**; Hogwarts title-probe-to-qualified proxy: **87.5min** (no bound passive start). One serial, continuously available lane yields **7/9/14** slow/mid/fast cycles, capped by **15 pipeline titles** (historical deduplicated packet baseline, not an executable queue): conditional totals **19/21/26**. These all-pass capacity ceilings assume uninterrupted focus; not predicted successes.
 
 Launch admission floor: **110 GiB** (user-directed, replaces 153 GiB during Valor Mortis download). No fresh disk reading or extra executable capacity inferred.
 
-Need **8** additions; slow scenario leaves **1**. Required mean: **78.6min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
+Need **8** additions; slow scenario leaves **1**. Required mean: **77.7min/addition**. Brotato is already counted; no extra promotion-only title is added. Qualification/recipe holds (Inscryption/Well) and eight catalogue titles (entitlement/disk/approval) are excluded alternatives, not extra time. Historical packet count is not proof of executable capacity; parked/failed routes still need their gates resolved. Inputs/hashes: `morning-burndown-v1.json`; S1 spec `dfe6ad5`, `retention-passive-batches.md`.
 
 Observed admission ratio: **12/24 matrix attempts (50.0%)**; including receipt/owner-reported attempts: **12/30 (40.0%)**. Matrix post-title-screen subset: **12/12**. Unfinished tests included; no probabilities. Minimum pass rates slow/mid/fast: **114.3%/88.9%/57.1%** of queue-capped attempts (>100% would be impossible). Fast raw-slot threshold 57.1% is no longer limited by the historical queue cap.
 

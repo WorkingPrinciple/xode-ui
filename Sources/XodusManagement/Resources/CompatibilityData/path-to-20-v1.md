@@ -1,6 +1,6 @@
 # Path to 20
 
-Updated 2026-10-22T23:56:55.743263+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
+Updated 2026-10-23T00:04:40.234218+00:00; **12/20 strict WORKING**. Title qualification is separate from production app UI acceptance. `?` means unverified, not failed.
 
 | Title | Verdict | Menu | Gameplay | Quit | Relaunch | Save | Next gate / owner | Blocker / packet | Stuck |
 |---|---|---|---|---|---|---|---|---|---|
@@ -42,7 +42,7 @@ Updated 2026-10-22T23:56:55.743263+00:00; **12/20 strict WORKING**. Title qualif
 | LIMBO | INCONCLUSIVE | ? | ? | ? | ? | ? | menu / S2/S3 | Firstspikegap not cleared; no confirmed newcheckpoint/retention. Ordinary0/0 established but75%quit rule missed. No automatic retry/reload. | >2h |
 | Minishoot' Adventures | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
 | Nine Sols | BLOCKED | ? | ? | ? | ? | ? | catalogue hold / entitlement / disk / user/coordinator | Catalogue closed tonight; membership is not entitlement; no install grant | >2h |
-| Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | owned matcher packet disk precheck / S2 | Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result. | - |
+| Oblivion GOTY (2009) | PRE_WINE_STAGE_ENOSPC | not passed | ? | ? | ? | ? | owned matcher packet disk precheck / S2 | Owned matcher packet67a1aabf requires112GiB; latest coordinator-reported111.56GiB after exact owned incremental reclaim fails this packet-specific precheck. No pass or retry result. | >2h |
 | Quake | HUMAN_CONSENT_HOLD | ? | ? | ? | ? | ? | menu / S2/S3 | HUMAN_CONSENT_HOLD. Exact-prefix forced-k0/-w0 at160.058s;CLI0/Wine0 not ordinary quit,5812 reconciled descriptive consent attribution. 30runfiles/8raw/3screens verified;0nonemptyxgs. Runtime save-fix untested, not FAIL. User alone decides agreement, no retry/reload. Historical100ms campaign/GAME SAVED/post-save input failure and earlier late quit retained unchanged. | - |
 | REPLACED | NOT_TESTED | ? | ? | ? | ? | ? | menu / S2/S3 | Historical nonacquiring package entitlement GRANTED receipt32119200, not game qualification. | >2h |
 | Resonance: A Plague Tale Legacy | BLOCKED | ? | ? | ? | ? | ? | install hold / entitlement / disk / user/coordinator | No installed manifest found in current owned-root inventory; ownership/entitlement unverified, install hold and 155+2 GiB margin apply. | >2h |
