@@ -19,7 +19,7 @@ struct LiveRootView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
     @State private var searchFocused = false
-    @State private var browseViewportHeight: CGFloat = 0
+    @State private var libraryScrollCommand = 0
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
     @State private var libraryVisited = false
@@ -408,27 +408,36 @@ struct LiveRootView: View {
         let active = selected && scenePhase == .active
         let immersive = destination == .discover || !state.showsRecentActivity
         let scrollID = Binding<String?>(get: {
-            destination == .library ? state.librarySelection.scrollID : state.discoverSelection.scrollID
+            _ = libraryScrollCommand
+            return destination == .library ? state.librarySelection.scrollID : state.discoverSelection.scrollID
         }, set: { value in
             if destination == .library { state.librarySelection.scrollID = value }
             else { state.discoverSelection.scrollID = value }
         })
-        return ScrollViewReader { proxy in
-            ScrollView {
+        return ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     if destination == .library {
-                        library(showCollection: { proxy.scrollTo("library-games", anchor: .top) })
+                        library(positionCollection: { target in
+                            state.librarySelection.scrollID = target
+                            libraryScrollCommand += 1
+                        })
                     } else { catalog }
                 }
                 .padding(immersive ? 0 : 30)
             }
             .scrollPosition(id: scrollID)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { browseViewportHeight = $0 }
+            .onGeometryChange(for: CGRect.self) {
+                let frame = $0.frame(in: .global)
+                return CGRect(x: frame.minX, y: frame.minY + $0.safeAreaInsets.top,
+                              width: frame.width,
+                              height: max(0, frame.height - $0.safeAreaInsets.top - $0.safeAreaInsets.bottom))
+            } action: {
+                if destination == .library { state.librarySelection.collectionViewportFrame = $0 }
+            }
             .modifier(LibraryScrollEdge(enabled: immersive))
             .modifier(LibraryImmersion(enabled: immersive,
                                       underlapsToolbar: destination == .discover || libraryHasHero))
             .background(Color(nsColor: .windowBackgroundColor))
-        }
         .environment(\.catalogPresentationActive, active)
         .opacity(selected ? 1 : 0)
         .zIndex(selected ? 1 : 0)
@@ -437,7 +446,7 @@ struct LiveRootView: View {
         .accessibilityHidden(!selected)
     }
 
-    private func library(showCollection: @escaping () -> Void) -> some View {
+    private func library(positionCollection: @escaping (String?) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             if state.showsRecentActivity {
                 Button("Back to Library", systemImage: "chevron.left") { state.navigate(.library) }
@@ -455,7 +464,7 @@ struct LiveRootView: View {
                                 allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() },
-                                showCollection: showCollection, collectionViewportHeight: browseViewportHeight,
+                                positionCollection: positionCollection,
                                 selection: state.librarySelection)
             }
         }

@@ -59,10 +59,14 @@ ordering and reveals the collection using its existing scroll route.
 Collection filters and compatibility/query scope do not alter the curated hero
 or Continue Playing membership/order. Those use the qualified, recommendable
 library and live launchability, not filtered grid rows. A native next-game
-chevron advances the existing horizontal lane position. Collection controls and
-results share one top-aligned section with a viewport minimum height, so short
-results do not reserve an additional viewport below the controls. Filter changes
-do not issue competing scroll commands; See All retains its explicit reveal.
+chevron advances the existing horizontal lane position. The collection header
+has a sibling scroll-target layout, separate from the grids so card targets
+remain registered. Filter and compatibility actions preserve surviving targets,
+retarget a visible header using native minimal movement, and clear a removed
+card target when the header remains below the viewport. See All uses the same ID
+binding, not a competing scroll proxy. Only explicit actions publish a local
+position-command revision; live scroll IDs and header/viewport geometry remain
+plain storage. No size-change anchor reset or viewport-height filler is applied.
 Native Minecraft's separate local-launcher card appears only under All/Installed,
 never as invented Owned or Game Pass evidence.
 Management stderr retains only the exact count-only `Ode collection read` line,

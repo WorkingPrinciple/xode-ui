@@ -76,6 +76,23 @@ enum NativeChecks {
                   && navigation.discoverSelection.featuredID == "discover-hero"
                   && navigation.discoverSelection.scrollID == "discover-card-fixture",
                   "Tab owners retain independent filter/sort/hero/scroll values without retaining hidden views")
+            let position = LibrarySelection()
+            position.scrollID = "library-card-fixture"
+            position.collectionViewportFrame = CGRect(x: 0, y: 100, width: 1000, height: 700)
+            position.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
+            check(position.collectionTarget(remaining: []) == "library-games",
+                  "Visible controls replace a removed card with the stable header target")
+            position.collectionHeaderFrame.origin.y = 850
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Top viewport clears a removed card without revealing collection")
+            check(position.collectionTarget(remaining: ["library-card-fixture"]) == "library-card-fixture",
+                  "Surviving card target remains retained outside header viewport")
+            position.collectionHeaderFrame.origin.y = 0
+            check(position.collectionTarget(remaining: []) == "library-games",
+                  "Removed offscreen card falls back to registered header, not hero")
+            position.collectionHeaderFrame = .zero
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Unavailable geometry never invents header visibility")
             let playbackArguments = (true, true, false, false, true, true, true)
             check(HeroMotionPolicy.permitsPlayback(allowed: playbackArguments.0, enabled: playbackArguments.1,
                     reduceMotion: playbackArguments.2, lowPower: playbackArguments.3,

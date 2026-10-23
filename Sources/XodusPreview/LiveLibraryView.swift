@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import OSLog
 import SwiftUI
 import XodusManagement
 
@@ -25,8 +26,7 @@ struct LiveLibraryView: View {
     var allowsHeroAnimation = true
     let browse: () -> Void
     let recentActivity: () -> Void
-    var showCollection: () -> Void = {}
-    var collectionViewportHeight: CGFloat = 0
+    var positionCollection: (String?) -> Void = { _ in }
     @ObservedObject var selection = LibrarySelection()
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
@@ -42,7 +42,7 @@ struct LiveLibraryView: View {
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
     private var filter: LibraryFilter {
         get { selection.filter }
-        nonmutating set { selection.filter = newValue }
+        nonmutating set { changeScope(filter: newValue, showsUnsupported: showsUnsupportedGames) }
     }
     private var sort: LibrarySort {
         get { selection.sort }
@@ -75,14 +75,42 @@ struct LiveLibraryView: View {
             ? "\(unknown.formatted()) games in your PC library have an unidentified acquisition source and aren't classified as Owned."
             : nil
     }
-    var body: some View {
-        let key = LibraryProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
+    private func projectionKey(filter: LibraryFilter, showsUnsupported: Bool) -> LibraryProjectionKey {
+        LibraryProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
             products: session.products, gamePass: session.gamePassProducts, active: operations.gamePassActive,
             installed: installed.games, permitted: Set(installed.games.map(\.storeId).filter {
                 installed.productAccess.permits($0, account: session.accountHash)
             }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
-            filter: filter, sort: sort, showsUnsupported: showsUnsupportedGames)
+            filter: filter, sort: sort, showsUnsupported: showsUnsupported)
+    }
+
+    private func changeScope(filter nextFilter: LibraryFilter, showsUnsupported: Bool) {
+        let header = selection.collectionHeaderFrame
+        let viewport = selection.collectionViewportFrame
+        let headerVisible = !header.isEmpty && !viewport.isEmpty && header.intersects(viewport)
+        let key = projectionKey(filter: nextFilter, showsUnsupported: showsUnsupported)
+        let next = LibraryProjection(key: key,
+            isVisible: { showsUnsupported || unsupportedIssues($0).isEmpty }, recommendable: recommendable)
+        var targets = Set(next.visible.map { "library-card-\($0.id)" })
+        if [.all, .installed].contains(nextFilter) {
+            targets.formUnion(next.local.filter { showsUnsupported || unsupportedIssues($0).isEmpty }
+                .map { "library-local-\($0.id)" })
+        }
+        let previous = selection.scrollID
+        let removed = previous.map { $0 != "library-games" && !targets.contains($0) } ?? false
+        let target = selection.collectionTarget(remaining: targets)
+        let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "library-position")
+        logger.info("Scope action: from=\(previous ?? "nil", privacy: .public); to=\(target ?? "nil", privacy: .public); headerY=\(header.minY); headerHeight=\(header.height); viewportY=\(viewport.minY); viewportHeight=\(viewport.height); visible=\(headerVisible); removed=\(removed)")
+        withTransaction(Transaction(animation: nil)) {
+            positionCollection(target)
+            selection.filter = nextFilter
+            showsUnsupportedGames = showsUnsupported
+        }
+    }
+
+    var body: some View {
+        let key = projectionKey(filter: filter, showsUnsupported: showsUnsupportedGames)
         selection.projection.prepare(key) {
             LibraryProjection(key: key, isVisible: isVisible, recommendable: recommendable)
         }
@@ -123,12 +151,20 @@ struct LiveLibraryView: View {
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
                 VStack(alignment: .leading, spacing: 22) {
+                VStack(spacing: 0) {
                 LibraryControls(count: visible.count,
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
-                                filter: $selection.filter, sort: $selection.sort,
-                                showsUnsupportedGames: $showsUnsupportedGames,
+                                filter: Binding(get: { filter }, set: { filter = $0 }), sort: $selection.sort,
+                                showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: {
+                                    changeScope(filter: filter, showsUnsupported: $0)
+                                }),
                                 allowsSorting: true)
                     .id("library-games")
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+                        selection.collectionHeaderFrame = $0
+                    }
+                }
+                .scrollTargetLayout()
                 VStack(alignment: .leading, spacing: 22) {
                 if let purchaseNotice {
                     Label(purchaseNotice, systemImage: "info.circle")
@@ -153,7 +189,7 @@ struct LiveLibraryView: View {
                         } description: {
                             Text("Ode to X 0.1 installs MSIXVC games. Known anti-cheat is not supported. The supported filter shows verified classifications; other games may be untested on Mac.")
                         } actions: {
-                            Button("Show unsupported games") { showsUnsupportedGames = true }
+                            Button("Show unsupported games") { changeScope(filter: filter, showsUnsupported: true) }
                         }
                     } else if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         ContentUnavailableView.search(text: query)
@@ -204,7 +240,6 @@ struct LiveLibraryView: View {
                 }
                 }
                 }
-                .frame(minHeight: collectionViewportHeight, alignment: .topLeading)
             }
             .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id))
                 .sorted().joined(separator: ",") + ":\(presentationActive)") {
@@ -417,9 +452,11 @@ struct LiveLibraryView: View {
                 Text("Continue Playing").font(.title2.weight(.semibold))
                 Spacer()
                 Button("See All") {
-                    filter = .installed
-                    sort = .recentlyPlayed
-                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) { showCollection() }
+                    withTransaction(Transaction(animation: nil)) {
+                        positionCollection("library-games")
+                        selection.filter = .installed
+                        sort = .recentlyPlayed
+                    }
                 }
                     .accessibilityLabel("Show installed games by last played")
                 Button("Show next recently played game", systemImage: "chevron.right") {

@@ -29,6 +29,16 @@ final class LibrarySelection: ObservableObject {
     @Published var heroID: String?
     // ScrollView owns live scrolling; retaining its target must not invalidate the whole tab.
     var scrollID: String?
+    var collectionHeaderFrame = CGRect.zero
+    var collectionViewportFrame = CGRect.zero
+    func collectionTarget(remaining: Set<String>) -> String? {
+        let measured = !collectionHeaderFrame.isEmpty && !collectionViewportFrame.isEmpty
+        let visible = measured && collectionHeaderFrame.intersects(collectionViewportFrame)
+        let above = measured && collectionHeaderFrame.maxY <= collectionViewportFrame.minY
+        let removed = scrollID.map { $0 != "library-games" && !remaining.contains($0) } ?? false
+        if visible || (above && removed) { return "library-games" }
+        return removed ? nil : scrollID
+    }
     @Published var heroHovered = false
     @Published var heroPlaying = false
     var requestedGamePassScope: String?
