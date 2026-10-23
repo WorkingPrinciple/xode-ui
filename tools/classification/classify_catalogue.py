@@ -6,12 +6,15 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import datetime as dt
+import hashlib
 import json
 import re
 import sys
+import time
 import unicodedata
 import urllib.parse
 import urllib.request
+import urllib.error
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -54,18 +57,84 @@ def catalog_url(product_id: str, market: str) -> str:
     return f"{CATALOGUE_ENDPOINT}?{query}"
 
 
-def request_json(url: str) -> dict[str, Any] | list[Any]:
+def fetch_json(url: str) -> tuple[dict[str, Any] | list[Any], dict[str, Any]]:
+    """Bounded metadata read with provenance; callers must project an allowlist."""
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=45) as response:
-        if response.status != 200:
-            raise RuntimeError(f"Unexpected HTTP status {response.status} for {url}")
-        content_length = response.headers.get("Content-Length", "0")
-        if content_length.isdigit() and int(content_length) > 16 * 1024 * 1024:
-            raise RuntimeError(f"Response exceeded the 16 MiB evidence bound: {url}")
-        body = response.read(16 * 1024 * 1024 + 1)
-    if len(body) > 16 * 1024 * 1024:
-        raise RuntimeError(f"Response exceeded the 16 MiB evidence bound: {url}")
-    return json.loads(body)
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"Unexpected HTTP status {response.status} for {url}")
+                if urllib.parse.urlsplit(response.geturl()).hostname != urllib.parse.urlsplit(url).hostname:
+                    raise RuntimeError("Public metadata redirected to a different host")
+                content_length = response.headers.get("Content-Length", "0")
+                if content_length.isdigit() and int(content_length) > 16 * 1024 * 1024:
+                    raise RuntimeError(f"Response exceeded the 16 MiB evidence bound: {url}")
+                body = response.read(16 * 1024 * 1024 + 1)
+                receipt = {
+                    "url": url,
+                    "checkedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                    "responseSha256": hashlib.sha256(body).hexdigest(),
+                    "responseBytes": len(body),
+                    "httpDate": response.headers.get("Date"),
+                }
+            if len(body) > 16 * 1024 * 1024:
+                raise RuntimeError(f"Response exceeded the 16 MiB evidence bound: {url}")
+            return json.loads(body), receipt
+        except urllib.error.HTTPError as error:
+            if error.code not in {429, 500, 502, 503, 504} or attempt == 2:
+                raise
+            retry_after = error.headers.get("Retry-After", "")
+            if retry_after and (not retry_after.isdigit() or int(retry_after) > 5):
+                raise RuntimeError("Retry-After exceeds the bounded metadata retry window") from error
+            time.sleep(int(retry_after) if retry_after.isdigit() else 2 ** attempt)
+        except (urllib.error.URLError, TimeoutError):
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
+    raise RuntimeError("Metadata retry budget exhausted")
+
+
+def request_json(url: str) -> dict[str, Any] | list[Any]:
+    return fetch_json(url)[0]
+
+
+def desktop_packages(product: dict[str, Any]) -> list[dict[str, Any]]:
+    """Allowlist catalogue facts, retaining SKU and content identity per observation."""
+    observations = []
+    for availability in product.get("DisplaySkuAvailabilities", []):
+        sku = availability.get("Sku") or {}
+        properties = sku.get("Properties") or {}
+        for package in properties.get("Packages", []):
+            platforms = sorted({
+                dependency["PlatformName"] for dependency in package.get("PlatformDependencies", [])
+                if isinstance(dependency, dict) and isinstance(dependency.get("PlatformName"), str)
+            })
+            if "Windows.Desktop" not in platforms:
+                continue
+            raw = package.get("PackageFormat")
+            observations.append({
+                "skuId": sku.get("SkuId"),
+                "skuType": sku.get("SkuType"),
+                "isBundle": properties.get("IsBundle"),
+                "isPreOrder": properties.get("IsPreOrder"),
+                "bundledProductIds": sorted({
+                    item["BigId"] for item in properties.get("BundledSkus", [])
+                    if isinstance(item, dict) and isinstance(item.get("BigId"), str)
+                }),
+                "platforms": platforms,
+                "rawFormat": raw if isinstance(raw, str) and raw else "unknown",
+                "family": FORMATS.get(raw, "unknown"),
+                "contentId": package.get("ContentId"),
+                "packageId": package.get("PackageId"),
+                "packageFamilyName": package.get("PackageFamilyName"),
+                "version": package.get("Version"),
+                "architectures": sorted(package.get("Architectures") or []),
+            })
+    return sorted(
+        {json.dumps(item, sort_keys=True): item for item in observations}.values(),
+        key=lambda item: json.dumps(item, sort_keys=True),
+    )
 
 
 def catalog_batch_evidence(product_ids: list[str], market: str) -> dict[str, dict[str, Any]]:
@@ -80,13 +149,8 @@ def catalog_batch_evidence(product_ids: list[str], market: str) -> dict[str, dic
         product_id = product.get("ProductId")
         if product_id not in product_ids:
             continue
-        observed_formats: set[str] = set()
-        for availability in product.get("DisplaySkuAvailabilities", []):
-            sku = availability.get("Sku") or {}
-            for package in (sku.get("Properties") or {}).get("Packages", []):
-                package_format = package.get("PackageFormat")
-                if isinstance(package_format, str) and package_format:
-                    observed_formats.add(package_format)
+        packages = desktop_packages(product)
+        observed_formats = {p["rawFormat"] for p in packages if p["rawFormat"] != "unknown"}
         raw_formats = sorted(observed_formats)
         family = next(
             (FORMATS[package_format] for package_format in ("MSIXVC",) if package_format in observed_formats),
@@ -121,8 +185,11 @@ def catalog_batch_evidence(product_ids: list[str], market: str) -> dict[str, dic
                 "checkedAt": dt.datetime.now(dt.timezone.utc).date().isoformat(),
                 "catalogModifiedAt": product.get("LastModifiedDate"),
                 "observedFormats": raw_formats,
+                "platform": "Windows.Desktop",
+                "packages": packages,
                 "method": (
-                    "Read DisplaySkuAvailabilities[].Sku.Properties.Packages[].PackageFormat "
+                    "Read only packages declaring PlatformDependencies Windows.Desktop; "
+                    "DisplaySkuAvailabilities[].Sku.Properties.Packages[].PackageFormat "
                     "from the product's Microsoft Display Catalog response. Bundle formats "
                     "are normalized to their package family; observedFormats preserves the "
                     "exact catalog values."

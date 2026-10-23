@@ -1,0 +1,543 @@
+{
+  "$id": "urn:xodus:game-metadata:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "counts": {
+      "additionalProperties": false,
+      "properties": {
+        "canonicalOverlap": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "currentFeedProducts": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "desktopKnownFormatProducts": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "qualifiedDistinctReleasedBaseGames": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "currentFeedProducts",
+        "canonicalOverlap",
+        "desktopKnownFormatProducts",
+        "qualifiedDistinctReleasedBaseGames"
+      ],
+      "type": "object"
+    },
+    "errors": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "pattern": "^[A-Z0-9]{12}$",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "stage": {
+            "maxLength": 2048,
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId",
+          "stage",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "membership": {
+      "additionalProperties": false,
+      "properties": {
+        "checkedAt": {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "httpDate": {
+          "maxLength": 2048,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "responseBytes": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "responseSha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 2048,
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "checkedAt",
+        "responseSha256",
+        "responseBytes",
+        "httpDate"
+      ],
+      "type": "object"
+    },
+    "minimumReaderVersion": {
+      "const": 1
+    },
+    "observedAt": {
+      "maxLength": 2048,
+      "type": "string"
+    },
+    "products": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "antiCheat": {
+            "additionalProperties": false,
+            "properties": {
+              "buildBinding": {
+                "const": "unknown"
+              },
+              "checkedAt": {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              "claim": {
+                "enum": [
+                  "unknown",
+                  "reported-present",
+                  "not-detected",
+                  "manual-override"
+                ]
+              },
+              "scope": {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              "sources": {
+                "items": {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                "maxItems": 4096,
+                "type": "array"
+              },
+              "technologies": {
+                "items": {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                "maxItems": 4096,
+                "type": "array"
+              }
+            },
+            "required": [
+              "claim",
+              "technologies",
+              "checkedAt",
+              "buildBinding",
+              "scope",
+              "sources"
+            ],
+            "type": "object"
+          },
+          "marketListingReleaseDates": {
+            "items": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "maxItems": 4096,
+            "type": "array"
+          },
+          "packages": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "architectures": {
+                  "items": {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  "maxItems": 4096,
+                  "type": "array"
+                },
+                "bundledProductIds": {
+                  "items": {
+                    "pattern": "^[A-Z0-9]{12}$",
+                    "type": "string"
+                  },
+                  "maxItems": 4096,
+                  "type": "array"
+                },
+                "contentId": {
+                  "maxLength": 2048,
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "family": {
+                  "enum": [
+                    "MSIXVC",
+                    "EAppx",
+                    "Appx",
+                    "MSIX",
+                    "unknown"
+                  ]
+                },
+                "isBundle": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "isPreOrder": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "packageFamilyName": {
+                  "maxLength": 2048,
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "packageId": {
+                  "maxLength": 2048,
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "platforms": {
+                  "items": {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  "maxItems": 4096,
+                  "type": "array"
+                },
+                "rawFormat": {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                "skuId": {
+                  "maxLength": 2048,
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "skuType": {
+                  "maxLength": 2048,
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "maxLength": 2048,
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "skuId",
+                "skuType",
+                "isBundle",
+                "isPreOrder",
+                "bundledProductIds",
+                "platforms",
+                "rawFormat",
+                "family",
+                "contentId",
+                "packageId",
+                "packageFamilyName",
+                "version",
+                "architectures"
+              ],
+              "type": "object"
+            },
+            "maxItems": 4096,
+            "type": "array"
+          },
+          "productId": {
+            "pattern": "^[A-Z0-9]{12}$",
+            "type": "string"
+          },
+          "qualificationExclusions": {
+            "items": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "maxItems": 4096,
+            "type": "array"
+          },
+          "qualifiedBaseGame": {
+            "type": "boolean"
+          },
+          "role": {
+            "additionalProperties": false,
+            "properties": {
+              "catalogFamily": {
+                "maxLength": 2048,
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "catalogKind": {
+                "maxLength": 2048,
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "catalogType": {
+                "maxLength": 2048,
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "fullSkus": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "bundledProductIds": {
+                      "items": {
+                        "pattern": "^[A-Z0-9]{12}$",
+                        "type": "string"
+                      },
+                      "maxItems": 4096,
+                      "type": "array"
+                    },
+                    "isBundle": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "isPreOrder": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "skuId": {
+                      "maxLength": 2048,
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "skuId",
+                    "isBundle",
+                    "isPreOrder",
+                    "bundledProductIds"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 4096,
+                "type": "array"
+              },
+              "isDemo": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "productGroupId": {
+                "maxLength": 2048,
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "catalogKind",
+              "catalogType",
+              "catalogFamily",
+              "isDemo",
+              "productGroupId",
+              "fullSkus"
+            ],
+            "type": "object"
+          },
+          "source": {
+            "additionalProperties": false,
+            "properties": {
+              "checkedAt": {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              "httpDate": {
+                "maxLength": 2048,
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "responseBytes": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "responseSha256": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              "url": {
+                "maxLength": 2048,
+                "type": "string"
+              }
+            },
+            "required": [
+              "url",
+              "checkedAt",
+              "responseSha256",
+              "responseBytes",
+              "httpDate"
+            ],
+            "type": "object"
+          },
+          "title": {
+            "maxLength": 2048,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "titleLanguages": {
+            "items": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "maxItems": 4096,
+            "type": "array"
+          }
+        },
+        "required": [
+          "productId",
+          "title",
+          "titleLanguages",
+          "role",
+          "marketListingReleaseDates",
+          "packages",
+          "source",
+          "antiCheat",
+          "qualifiedBaseGame",
+          "qualificationExclusions"
+        ],
+        "type": "object"
+      },
+      "maxItems": 600,
+      "type": "array"
+    },
+    "rights": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "releaseStatus": {
+          "const": "hold"
+        }
+      },
+      "required": [
+        "releaseStatus",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "schema": {
+      "const": "urn:xodus:game-metadata:1"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "scope": {
+      "additionalProperties": false,
+      "properties": {
+        "feedId": {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "feedTitle": {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "language": {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "market": {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "plan": {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        "platform": {
+          "maxLength": 2048,
+          "type": "string"
+        }
+      },
+      "required": [
+        "market",
+        "language",
+        "platform",
+        "plan",
+        "feedId",
+        "feedTitle"
+      ],
+      "type": "object"
+    },
+    "snapshotId": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "partial"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "schemaVersion",
+    "minimumReaderVersion",
+    "snapshotId",
+    "observedAt",
+    "scope",
+    "status",
+    "errors",
+    "membership",
+    "rights",
+    "counts",
+    "products"
+  ],
+  "type": "object"
+}

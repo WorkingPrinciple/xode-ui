@@ -1,0 +1,43 @@
+Xodus descriptive game metadata candidate
+
+RELEASE HOLD: Microsoft Display Catalog and Game Pass feed bulk acquisition and
+redistribution permission have not been established. This private candidate is
+not authorization for a public release. Source observations are factual fields
+and source URLs only, not a copy of upstream responses, artwork, descriptions,
+reviews, game content or account data. No universal licence is granted for
+third-party facts or trademarks by this notice.
+
+Microsoft sources:
+https://catalog.gamepass.com/
+https://displaycatalog.mp.microsoft.com/
+https://www.xbox.com/en-US/xbox-game-pass/games
+Availability is market, plan, platform and observation-time scoped. Membership
+does not grant entitlement, installation access or runtime compatibility.
+
+Anti-cheat names derived from the pinned AreWeAntiCheatYet dataset are supplied
+with its MIT notice in AWACY-LICENSE.txt:
+https://github.com/AreWeAntiCheatYet/AreWeAntiCheatYet/tree/d876c32d21c69067406e3db44a12ae6633fb5fa7
+Their applicability to the current Xbox-PC build is unknown. Publisher links
+are reference-only dated claims, not a verified absence assertion. PCGamingWiki
+redistribution terms are unverified: imported anti-cheat claims from that source
+are withheld; source links alone are included.
+
+Legacy no-signature scans are labelled not-detected; user-directed legacy
+classifications are labelled manual-override. Neither is verified absence.
+Build binding remains unknown; no legacy app execution policy is exported.
+
+The qualified count uses only current-feed products with explicit full,
+non-bundle/non-preorder game SKU metadata, a past Store market listing date,
+and known Windows.Desktop package metadata. It excludes ambiguous editions,
+collections/trilogies, previews, launchers, demos and duplicate
+title/group/content/package-family identities.
+This is a conservative catalogue-rule count, not independent proof of worldwide
+release, installation, playability, ownership or anti-cheat absence. Store dates
+are listing dates for the observed market, not worldwide original launch dates.
+Unknown and missing products remain explicit. Raw package formats are retained;
+unrecognized formats do not silently become MSIXVC.
+
+Only files listed in manifest-v1.json constitute the reusable candidate. Never
+distribute the entire CompatibilityData directory: its other files include
+internal QA and operational records. SHA256SUMS identifies bytes, not publisher
+authentication. No independent updater or detached signature is implemented.
