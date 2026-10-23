@@ -325,6 +325,60 @@ enum PCGamesChecks {
                   "Unified account data reads never launch another interactive Microsoft login")
             check(await session.disconnect(), "Unified-account synthetic management child is joined")
         }
+        for scenario in ["odelibrarywarm", "odelibraryfailure", "odelibraryempty"] {
+            let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
+                .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),
+                stateDirectory: root.appendingPathComponent(scenario))
+            let session = LiveSession(configuration: config)
+            await session.connect()
+            await session.refreshAccount()
+            let catalog = PCGamesHTTPResponse(status: 200, data: Data("""
+                {"Products":[{"ProductId":"FIXTURE00001","LocalizedProperties":[{"ProductTitle":"Held fixture"}],
+                 "DisplaySkuAvailabilities":[{"Sku":{"Properties":{"Packages":[
+                 {"PlatformDependencies":[{"PlatformName":"Windows.Desktop"}]}]}}}]}]}
+                """.utf8))
+            let transport = PCGamesMockTransport([catalog, catalog])
+            let library = PCGamesController(store: PCGamesMockStore(), client: PCGamesClient(transport: transport))
+            library.useUnifiedAccount(session)
+            await library.loadOnAppear()
+            check(library.representedGames.map(\.id) == ["FIXTURE00001"] && library.accessIsCurrent,
+                  "Cold signed-in Library loads the exact account collection automatically")
+            let traceURL = config.stateDirectory.appendingPathComponent("lifecycle.log")
+            let firstTrace = try String(contentsOf: traceURL, encoding: .utf8)
+            await library.loadOnAppear()
+            await library.refreshInBackground()
+            check(try String(contentsOf: traceURL, encoding: .utf8) == firstTrace,
+                  "Warm entry and adjacent foreground events deduplicate automatic collection requests")
+            let next = Date().addingTimeInterval(61)
+            let refresh = Task { await library.refreshInBackground(now: next) }
+            for _ in 0..<50 {
+                if library.busy { break }
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            check(library.busy && library.representedGames.count == 1 && !library.accessIsCurrent,
+                  "Same-account complete snapshot stays visible during refresh without granting unchecked operations")
+            await library.refreshInBackground(now: next)
+            await refresh.value
+            let trace = try String(contentsOf: traceURL, encoding: .utf8)
+            check(trace.components(separatedBy: "ode.account.read.v1").count == 3,
+                  "Only one background collection read runs at a time")
+            if scenario == "odelibraryfailure" {
+                check(library.representedGames.count == 1 && library.error != nil && !library.accessIsCurrent,
+                      "Provider failure retains the same-account complete Library and reports failure, not empty success")
+            } else if scenario == "odelibraryempty" {
+                check(library.representedGames.isEmpty && library.error == nil && library.accessIsCurrent,
+                      "A complete genuine zero result replaces prior access instead of resurrecting removed games")
+            } else {
+                check(library.representedGames.count == 1 && library.error == nil && library.accessIsCurrent,
+                      "Successful automatic refresh restores current exact-product access")
+            }
+            check(await session.disconnect(), "Warm Library fixture joins its management child")
+            check(library.representedGames.isEmpty && !library.accessIsCurrent,
+                  "An unconfirmed account cannot expose another session's retained Library")
+            await library.retireUnifiedAccount()
+            check(library.snapshot == nil && library.representedGames.isEmpty,
+                  "Account retirement clears retained Library and automatic-refresh ownership")
+        }
     }
 
     static func run(check: (Bool, String) -> Void) async throws {
@@ -537,18 +591,13 @@ enum PCGamesChecks {
             await controller.waitForOperation()
             check(controller.accessIsCurrent && controller.representedGames.map(\.id) == [first],
                   "SDD-LIB-06: complete account snapshot is the live qualified source before \(mode)")
-            let installedAccess = InstalledGamesController()
-            installedAccess.useAccountLibrary(controller)
-            installedAccess.setAccountAccessAllowed(true)
-            check(installedAccess.hasCurrentAccess(to: first)
-                  && !installedAccess.hasCurrentAccess(to: "NOTHELD00001"),
-                  "Play admission requires the exact current account-held product, not sign-in or installed files")
+            check(controller.representedGames.contains(where: { $0.id == first })
+                  && !controller.representedGames.contains(where: { $0.id == "NOTHELD00001" }),
+                  "Account collection facts describe only exact returned products, not installed files")
             controller.refresh()
-            check(!controller.accessIsCurrent && !installedAccess.hasCurrentAccess(to: first),
-                  "SDD-LIB-06: refresh in flight cannot authorize new installs or Play")
+            check(!controller.accessIsCurrent,
+                  "SDD-LIB-06: refresh in flight cannot authorize new installs")
             await controller.waitForOperation()
-            check(!installedAccess.hasCurrentAccess(to: first),
-                  "Changed, revoked, partial or removed account access cannot leave Play enabled")
             if mode == "partial" {
                 check(controller.snapshot?.games.map(\.id) == [first] && !controller.accessIsCurrent
                       && controller.error != nil && !controller.needsSignIn,

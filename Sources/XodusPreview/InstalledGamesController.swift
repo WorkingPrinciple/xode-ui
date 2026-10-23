@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
-import Combine
 import Foundation
 import OSLog
 import XodusCore
@@ -45,8 +44,6 @@ final class InstalledGamesController: ObservableObject {
     @Published var runtimeRepairActive = false
     @Published var accountDisconnecting = false
     @Published private(set) var accountAccessAllowed = false
-    private weak var accountLibrary: PCGamesController?
-    private var accountLibraryObservation: AnyCancellable?
     @Published private(set) var accountAccessMessage = "Reconnect Xbox services to play this game."
     var applicationTerminating = false {
         didSet {
@@ -285,21 +282,6 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
-    func useAccountLibrary(_ library: PCGamesController) {
-        accountLibrary = library
-        accountLibraryObservation = library.objectWillChange.sink { [weak self] in
-            self?.objectWillChange.send()
-        }
-    }
-
-    func hasCurrentAccess(to productID: String) -> Bool {
-        guard accountAccessAllowed else { return false }
-        guard let accountLibrary else { return !usesUnifiedAccount }
-        return accountLibrary.accessIsCurrent
-            && (!usesUnifiedAccount || accountLibrary.accountHash == unifiedSession?.accountHash)
-            && accountLibrary.representedGames.contains { $0.id == productID }
-    }
-
     func suspendAccountView() {
         guard runningGameID == nil, stoppingGameID == nil, !mutationActive else { return }
         games = []
@@ -321,10 +303,8 @@ final class InstalledGamesController: ObservableObject {
         Self.launchLog.notice("Play requested: \(game.storeId, privacy: .public)")
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
-              hasCurrentAccess(to: game.storeId), games.contains(game) else {
+              accountAccessAllowed, games.contains(game) else {
             let message = !accountAccessAllowed ? accountAccessMessage
-                : !hasCurrentAccess(to: game.storeId)
-                    ? "Refresh your PC library to confirm access to this game."
                 : runningGameID != nil ? "Quit the running game before starting another."
                 : "Your library is busy. Wait for the current operation to finish and try again."
             if runningGameID == game.id {
@@ -552,7 +532,7 @@ final class InstalledGamesController: ObservableObject {
             let arguments = try await launch.arguments()
             let executables = try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder)).executables
             let existingWindows = NativeGameForeground.windowIDs()
-            guard hasCurrentAccess(to: game.storeId), session.accountHash == account,
+            guard accountAccessAllowed, session.accountHash == account,
                   session.nativeLifecycleConfiguration?.executable == configuration.executable,
                   runningGameID == game.id, runToken == token, !accountDisconnecting, !applicationTerminating,
                   games.contains(game) else { throw GameScriptError.busy }

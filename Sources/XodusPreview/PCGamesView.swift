@@ -111,10 +111,6 @@ struct PCGamesView: View {
                         if library.error != nil { Text("Showing the last complete library.") }
                     }
                     .font(.callout).foregroundStyle(.secondary) }
-                    if !showsCollection, !library.accessIsCurrent {
-                        Text("Refresh your PC library to check current game access.")
-                            .font(.callout).foregroundStyle(.secondary)
-                    }
                 }
                 if showsCollection { HStack {
                     Button("Browse games", action: browse)

@@ -1053,7 +1053,7 @@ enum MockBackend {
             var loggedOut = false, flowStarted = false, cancelledLate = false
             var flowReads = 0, discoveryReads = 0, profileReads = 0
             var activityReads = 0, registryReads = 0
-            var recentReads = 0
+            var recentReads = 0, accountLibraryReads = 0
             var gatedAttempts = 0
             hello["capabilities"] = .array(ManagementCommand.allCases.map { command in .object([
                 "command": .string(command.rawValue), "supported": .bool(supported.contains(command)),
@@ -1095,7 +1095,11 @@ enum MockBackend {
                         }
                         if command == "ode.account.read.v1" {
                             let section = request["params"]?["section"]?.string ?? ""
-                            if scenario == "odefailure" {
+                            if section == "library" { accountLibraryReads += 1 }
+                            let warm = scenario.hasPrefix("odelibrary")
+                            if warm, accountLibraryReads > 1 { Thread.sleep(forTimeInterval: 0.15) }
+                            if scenario == "odefailure"
+                                || (scenario == "odelibraryfailure" && accountLibraryReads > 1) {
                                 let failure = AuthenticatedReadFailure.authRejected
                                 var response = result(request, data: .null)
                                 response["ok"] = .bool(false)
@@ -1106,7 +1110,10 @@ enum MockBackend {
                                 try emit(.object(response))
                                 continue
                             }
-                            let payload: JSONValue = section == "library" ? .object(["items": .array([])])
+                            let items: [JSONValue] = warm
+                                && !(scenario == "odelibraryempty" && accountLibraryReads > 1)
+                                ? [.object(["productID": .string("FIXTURE00001"), "acquisitionKind": .string("purchased")])] : []
+                            let payload: JSONValue = section == "library" ? .object(["items": .array(items)])
                                 : .object(["gamertag": .string("Fixture"), "displayName": .null,
                                     "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null])
                             let response = result(request, data: .object([

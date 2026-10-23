@@ -229,7 +229,6 @@ struct InstalledPlayButton: View {
                 incomplete: library.placeholderIDs.contains(game.id),
                 installationIssue: library.packageErrors[game.id] != nil,
                 launchIssue: library.accountAccessAllowed && library.playErrors[game.id] != nil)
-            : !library.hasCurrentAccess(to: game.storeId) ? "Refresh library to play"
             : needsRepair ? "Repair"
             : library.playErrors[game.id] == nil ? "Play" : "Try again"
     }
@@ -341,14 +340,14 @@ struct InstalledPlayButton: View {
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.checkingInstallations.contains(game.id)
-                  || library.accountDisconnecting || !library.hasCurrentAccess(to: game.storeId))
+                  || library.accountDisconnecting || !library.accountAccessAllowed)
         .accessibilityLabel(opensAttention ? "\(title) for \(game.title)"
              : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
-            : !library.hasCurrentAccess(to: game.storeId) ? "Refresh your PC library to confirm access to \(game.title)"
+            : !library.accountAccessAllowed ? "Play \(game.title), game access is being checked"
             : needsRepair ? "Repair \(game.title)" : "Play \(game.title)")
         .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
-              : !canStop && !library.hasCurrentAccess(to: game.storeId)
-                ? "Refresh your PC library to confirm access to this game." : "")
+              : !canStop && !library.accountAccessAllowed
+                ? "This account's access to the game hasn't been confirmed." : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
         .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"
                                 : canStop ? "xodus.installed.stop" : "xodus.installed.play")

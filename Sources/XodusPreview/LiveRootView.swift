@@ -29,11 +29,11 @@ struct LiveRootView: View {
     private var accountRecoveryAllowed: Bool { startupAllowed && session.hasConfirmedSignIn }
     private var unifiedAccountMode: Bool { session.supports(.odeAccountRead) }
     private var boundAccountHash: String? {
-        guard accountRecoveryAllowed, state.pcGames.accessIsCurrent,
-              !state.installedGames.accountDisconnecting else { return nil }
+        guard accountRecoveryAllowed, !state.installedGames.accountDisconnecting else { return nil }
         if unifiedAccountMode {
-            return session.accountHash == state.pcGames.accountHash ? session.accountHash : nil
+            return session.accountHash
         }
+        guard state.pcGames.accessIsCurrent else { return nil }
         return XboxAccountBinding.matching(application: session.accountHash,
             library: state.pcGames.accountHash, service: state.gameOperations.serviceStatus)
     }
@@ -139,19 +139,6 @@ struct LiveRootView: View {
                     .disabled(!state.installedGames.loaded || state.installedGames.editing ||
                               state.installedGames.choosing || state.installedGames.mutationActive)
                     .accessibilityIdentifier("xodus.installed.import")
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Refresh Library", systemImage: "arrow.clockwise") {
-                        Task { await state.pcGames.retryLibraryLoad() }
-                        Task { await refreshXboxStats() }
-                        if state.gameOperations.gamePassActive, session.isReady, session.supports(.discover) {
-                            Task { await session.refreshCatalog("") }
-                        }
-                    }
-                        .labelStyle(.iconOnly).help(refreshHelp).keyboardShortcut("r")
-                        .modifier(NativeToolbarIconStyle())
-                        .disabled(!startupAllowed || state.pcGames.busy || state.pcGames.restoringPresence)
-                        .accessibilityIdentifier("xodus.pcGames.refresh")
                 }
             }
             if state.destination == .discover {
@@ -261,6 +248,7 @@ struct LiveRootView: View {
         .task(id: scenePhase == .active) {
             if startupAllowed, scenePhase == .active {
                 await session.revalidateAccountOnForeground()
+                await state.pcGames.refreshInBackground()
             }
         }
         .task(id: "\(session.hasConfirmedSignIn):\(state.gameOperations.serviceStatus?.accountHash ?? ""):\(state.gameOperations.serviceStatus?.signedIn == true):\(state.gameOperations.serviceSigningIn)") {

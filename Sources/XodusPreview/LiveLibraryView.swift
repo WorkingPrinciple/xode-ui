@@ -94,13 +94,6 @@ struct LiveLibraryView: View {
                 PCGamesView(library: library, installed: installed, operations: operations,
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
-                HStack {
-                    Spacer()
-                    Button("Refresh library") { library.refresh() }
-                        .disabled(!allowsStartupTasks || library.busy || library.restoringPresence
-                                  || !session.hasConfirmedSignIn || library.needsKeychainApproval)
-                        .accessibilityIdentifier("xodus.pcGames.refresh")
-                }
                 LibraryControls(count: visible.count,
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
                                 filter: $selection.filter, sort: $selection.sort,
@@ -142,41 +135,22 @@ struct LiveLibraryView: View {
                 if let error = xboxStats.error {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
-                if !localRecords.isEmpty || showsNativeMinecraft {
-                    DisclosureGroup("Manage installed games on this Mac") {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Installed files can be managed here even when this account has no current access. Refresh your PC library before playing.")
-                                .font(.callout).foregroundStyle(.secondary)
-                            ForEach(localRecords) { game in
-                                if let local = game.installed {
-                                    HStack {
-                                        Text(local.title).font(.headline)
-                                        Spacer()
-                                        Button("Manage") { open(game) }
-                                            .accessibilityLabel("Manage installed \(local.title)")
-                                    }
-                                }
-                            }
-                            if showsNativeMinecraft {
-                                NativeMinecraftCard {
-                                    CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
-                                        status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
-                                }.frame(maxWidth: 220)
-                            }
-                        }.padding(.top, 12)
-                    }
-                    .accessibilityIdentifier("xodus.library.installedManagement")
+                if showsNativeMinecraft {
+                    NativeMinecraftCard {
+                        CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
+                            status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
+                    }.frame(maxWidth: 220)
                 }
             }
             .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id))
                 .sorted().joined(separator: ",")) {
                 guard artworkAllowed else { return }
-                await art.load(ids: heroGames.map(\.id) + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
+                await art.load(ids: heroGames.map { $0.installed?.storeId ?? $0.id } + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
                     .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
                     + ["9PJ8266BHFWN"],
                     market: session.market, language: session.language)
                 for game in heroGames {
-                    await art.loadDetail(id: game.id, market: session.market, language: session.language)
+                    await art.loadDetail(id: game.installed?.storeId ?? game.id, market: session.market, language: session.language)
                 }
             }
             .padding(.horizontal, 56).padding(.vertical, 22)
@@ -213,12 +187,13 @@ struct LiveLibraryView: View {
 
     private var heroGames: [LibraryGame] {
         func recommendable(_ game: LibraryGame) -> Bool {
-            LibrarySupportVisibility.issues(productID: game.id, installed: false,
-                packageFormat: art.images[game.id]?.facts.packageFormat,
-                compatibility: operations.compatibility[game.id]).isEmpty
+            let id = game.installed?.storeId ?? game.id
+            return LibrarySupportVisibility.issues(productID: id, installed: game.installed != nil,
+                packageFormat: game.installed?.packageType?.label ?? art.images[id]?.facts.packageFormat,
+                compatibility: operations.compatibility[id]).isEmpty
         }
         return LibraryGame.heroCandidates(qualified: collection.filter(recommendable),
-            catalogue: [], continuingIDs: continuing.map(\.id))
+            catalogue: localRecords.filter(recommendable), continuingIDs: continuing.map(\.id))
     }
 
     private var heroCarousel: some View {
@@ -286,7 +261,7 @@ struct LiveLibraryView: View {
                                  installed: game.installed, allowsLoading: artworkAllowed)
         } information: {
             Text(game.pc?.acquisitionKind == .subscription ? "Included with your subscription"
-                 : game.pc != nil ? "In your library" : "PC Game Pass catalogue")
+                 : game.pc != nil ? "In your library" : "Installed on this Mac")
                 .font(.callout.weight(.medium))
             information(id: id)
             if let details = art.images[id]?.detail { GameHeroMetadata(details: details) }

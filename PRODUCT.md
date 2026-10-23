@@ -88,14 +88,18 @@ grant. Only successful preflight and explicit confirmation can proceed.
 The first SDD candidate removed this working route; the frontend follow-up
 restores it without admitting unresolved titles to the personal Library.
 
-Library lists only games from the current account-bound PC collection. Its
-Game Pass filter selects account-accessible subscription/catalogue overlap,
-not the public catalogue. Discover remains the place to browse public games.
-Installed-only records remain reachable under **Manage installed games on this
-Mac**, without treating files or public catalogue membership as entitlement.
-Play requires current per-product account access in addition to installation
-and runtime readiness. Cover grids top-align artwork regardless of metadata
-height.
+Library preserves the incumbent installed-game cards without labeling local files
+as ownership or subscription access. Account-held PC games load automatically in
+the background; the last complete same-account snapshot stays visible during
+refresh and transient failure, and is cleared on account retirement. Discover
+remains public browsing. There are no additional refresh controls or management
+disclosures. Native Play still requires the matched account/runtime and the
+service's actual per-game licensing; installation alone grants no access.
+The frozen Collections producer currently returns zero raw records and does not
+separately enumerate Game Pass access, so the requested fully account-qualified
+Library remains unresolved pending an authoritative per-product source. This is
+not an empty-account conclusion. Cover grids top-align artwork regardless of
+metadata height.
 
 **Proposed v1:** account connection, entitled PC library, scoped catalog discovery, edition selection, explicit eligibility and compatibility, installation planning, durable downloads/recovery, launch, safe updates/removal and redacted diagnostics.
 

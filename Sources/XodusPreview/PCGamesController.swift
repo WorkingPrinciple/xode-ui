@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
 import Foundation
+import OSLog
 import XodusCredentials
 import XodusManagement
 
@@ -31,6 +32,8 @@ final class PCGamesController: ObservableObject {
     private let signInOwner = UUID()
     private weak var unifiedSession: LiveSession?
     private(set) var usesUnifiedAccount = false
+    private var lastAutomaticAttempt: (account: String, date: Date)?
+    private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
 
     func useUnifiedAccount(_ session: LiveSession) {
         guard !busy, !restoringPresence else { return }
@@ -38,7 +41,14 @@ final class PCGamesController: ObservableObject {
         usesUnifiedAccount = true
     }
 
-    var representedGames: [PCGame] { needsSignIn ? [] : snapshot?.games ?? [] }
+    var representedGames: [PCGame] {
+        guard !needsSignIn else { return [] }
+        if usesUnifiedAccount {
+            guard unifiedSession?.hasConfirmedSignIn == true,
+                  accountHash == unifiedSession?.accountHash else { return [] }
+        }
+        return snapshot?.games ?? []
+    }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var accessIsCurrent: Bool {
         snapshot != nil && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
@@ -88,12 +98,31 @@ final class PCGamesController: ObservableObject {
     }
 
     func loadOnAppear() async {
+        if usesUnifiedAccount {
+            await refreshInBackground()
+            return
+        }
         guard !attemptedAutomaticLoad, !accountDisconnecting, !terminating else { return }
         await restorePresence()
         guard restored else { return }
         attemptedAutomaticLoad = true
         guard snapshot == nil, hasSavedSignIn, !needsKeychainApproval, !needsSignIn, !busy, error == nil else { return }
         refresh()
+    }
+
+    func refreshInBackground(now: Date = Date()) async {
+        guard usesUnifiedAccount, !busy, !accountDisconnecting, !terminating,
+              let session = unifiedSession, session.hasConfirmedSignIn,
+              let account = session.accountHash else { return }
+        if let lastAutomaticAttempt, lastAutomaticAttempt.account == account,
+           now.timeIntervalSince(lastAutomaticAttempt.date) < 60 { return }
+        if accountHash != account { snapshot = nil }
+        hasSavedSignIn = true
+        needsSignIn = false
+        restored = true
+        lastAutomaticAttempt = (account, now)
+        refreshUnifiedAccount()
+        await waitForLoad()
     }
 
     func retryLibraryLoad() async {
@@ -200,6 +229,7 @@ final class PCGamesController: ObservableObject {
                 let collection = try read.payload.decode(OdeAccountCollection.self)
                 try collection.validate()
                 try current(token)
+                logger.notice("Account collection candidates: \(collection.items.count)")
                 let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,
@@ -210,12 +240,13 @@ final class PCGamesController: ObservableObject {
                     throw PCGamesError.identityMismatch
                 }
                 snapshot = result
+                logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded")
                 hasSavedSignIn = true
                 needsSignIn = false
             } catch is CancellationError { }
             catch {
                 guard generation == token, !terminating else { return }
-                snapshot = nil
+                if accountHash != session.accountHash || !session.hasConfirmedSignIn { snapshot = nil }
                 if error as? ManagementError == .authenticatedReadFailed(.responseInvalid) {
                     self.error = "Your account library couldn't be read completely. Your installed games are still available."
                 } else {
@@ -236,6 +267,7 @@ final class PCGamesController: ObservableObject {
         hasSavedSignIn = false
         restored = false
         attemptedAutomaticLoad = false
+        lastAutomaticAttempt = nil
         needsSignIn = false
         error = nil
         await old?.value

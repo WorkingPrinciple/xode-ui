@@ -269,20 +269,16 @@ struct LiveProductView: View {
                             .disabled(true)
                             .help("Current ownership or Game Pass access is required to install this game.")
                         }
-                        CatalogAcquisitionAction(productID: product.id, title: product.title,
-                            market: product.market, language: product.language,
-                            licensed: library.accessIsCurrent && owned != nil,
-                            gamePass: gamePass && !installedLibrary.hasCurrentAccess(to: product.id),
-                            commerce: art?.facts.commerce,
-                            enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
+                        if installed == nil {
+                            CatalogAcquisitionAction(productID: product.id, title: product.title,
+                                market: product.market, language: product.language,
+                                licensed: library.accessIsCurrent && owned != nil, gamePass: gamePass,
+                                commerce: art?.facts.commerce,
+                                enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
+                        }
                     }.controlSize(.large)
                     if let installed {
                         InstalledPlayError(library: installedLibrary, game: installed)
-                        if !installedLibrary.hasCurrentAccess(to: product.id) {
-                            Button("Refresh PC library") { library.refresh() }
-                                .disabled(!allowsStartupTasks || library.busy || !session.hasConfirmedSignIn)
-                                .help("Check this account's current game access before playing.")
-                        }
                     }
                 }
                 Spacer(minLength: 0)

@@ -73,7 +73,6 @@ struct LibraryGame: Identifiable {
     static func collection(installed: [InstalledGame], owned: [PCGame], products: [CatalogProduct],
                            gamePass: [CatalogProduct], active: Bool,
                            accessIsCurrent: Bool = true) -> [Self] {
-        guard accessIsCurrent else { return [] }
         var result: [Self] = []
         var seen = Set<String>()
         let catalog = Dictionary(products.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -88,12 +87,14 @@ struct LibraryGame: Identifiable {
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
             result.append(Self(id: id, title: game.title, installed: game, pc: entitlement,
                                product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind != .subscription,
-                               gamePass: entitlement.acquisitionKind == .subscription || pass[id] != nil))
+                               gamePass: entitlement.acquisitionKind == .subscription || pass[id] != nil,
+                               accessIsCurrent: accessIsCurrent))
         }
         for game in owned where seen.insert(game.id).inserted {
             result.append(Self(id: game.id, title: game.title, installed: nil, pc: game,
                                product: catalog[game.id] ?? pass[game.id], owned: game.acquisitionKind != .subscription,
-                               gamePass: game.acquisitionKind == .subscription || pass[game.id] != nil))
+                               gamePass: game.acquisitionKind == .subscription || pass[game.id] != nil,
+                               accessIsCurrent: accessIsCurrent))
         }
         return result
     }
@@ -104,7 +105,7 @@ struct LibraryGame: Identifiable {
         let records = installed.filter { !qualifiedInstallations.contains($0.id) }.map {
             // UUID keeps separate imports reachable even if Store IDs overlap.
             Self(id: $0.id.uuidString, title: $0.title, installed: $0, pc: nil, product: nil,
-                 owned: false, gamePass: false)
+                 owned: false, gamePass: false, accessIsCurrent: false)
         }
         return visible(records, query: query, filter: .installed, sort: sort)
     }
@@ -148,7 +149,7 @@ struct LibraryGame: Identifiable {
     }
 
     static func displayCollection(installed: [InstalledGame], account: [Self]) -> [Self] {
-        account.filter { $0.accessIsCurrent && $0.pc != nil }
+        account + localRecords(installed: installed, qualified: account, query: "", sort: .title)
     }
 
     var eligibility: LibraryEligibility? {

@@ -487,10 +487,10 @@ enum LibraryAccessChecks {
         check(locals.count == 1 && locals[0].installed == local && !locals[0].owned && !locals[0].gamePass,
               "SDD-LIB-04: live local-record seam preserves exact registry data without access badges")
         let displayed = LibraryGame.displayCollection(installed: [local], account: collection)
-        check(displayed.map(\.id) == collection.map(\.id)
-              && LibraryGame.visible(displayed, query: "", filter: .installed, sort: .title).isEmpty
+        check(displayed.count == collection.count + locals.count
+              && LibraryGame.visible(displayed, query: "", filter: .installed, sort: .title).first?.eligibility == .installedUnknown
               && locals[0].installed?.folder == local.folder,
-              "Library contains only account-held games; installed-only records remain separate for management")
+              "Installed cards remain usable without inventing account ownership or subscription access")
         check(collection.first?.eligibility == .owned && locals[0].eligibility == .installedUnknown,
               "M10: eligibility classifies held access as owned and installed-only as installedUnknown")
         check(LibraryGame.continuing(collection, launchableIDs: [local.id]).isEmpty,
@@ -545,9 +545,10 @@ enum LibraryAccessChecks {
               "SDD-LIB-03: console catalogue flag cannot become PC Game Pass membership")
         let stale = LibraryGame.collection(installed: [installedHeld], owned: [held],
             products: [], gamePass: [overlap], active: true, accessIsCurrent: false)
-        check(stale.isEmpty && LibraryGame.localRecords(installed: [installedHeld],
-            qualified: stale, query: "", sort: .title).first?.eligibility == .installedUnknown,
-              "M10: stale held evidence leaves Your Games and preserves the qualified local installation")
+        check(stale.map(\.id) == [held.id] && stale.first?.accessIsCurrent == false
+              && LibraryGame.localRecords(installed: [installedHeld],
+                qualified: stale, query: "", sort: .title).isEmpty,
+              "Same-account saved games stay visible while refreshing without current install or Play admission")
         check(GameDetailFacetCopy.access(acquisition: .subscription, current: true) == "Subscription (plan unknown)"
               && GameDetailFacetCopy.access(acquisition: .purchased, current: false).contains("refresh required")
               && GameDetailFacetCopy.access(acquisition: nil, current: true) == "Access not verified",
