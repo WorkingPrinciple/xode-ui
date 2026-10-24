@@ -51,8 +51,16 @@ does not establish gameplay qualification or general Calimocho support.
 The unsigned provenance is not compatible with `build_app.sh`'s exact sealed-input
 command validator. That validator and its command pins remain unchanged.
 The existing selected-signed-CLI refresh rebuilds and signs the app and AuthHost;
-their executable bytes are not preserved. Consumer UI source remains based on
+their executable bytes are not preserved. The pin-only consumer
+`d7e36f3be2632b0b9fc45aa2ff434ba3d9088d50` was based on delivered
 `023904cc620b27311e0fee4310d62cfbc3003f04`, with producer-binding changes only.
+That describes the historical pin-only packet, not corrected UI source
+`950145d04c4a1203926fa77baf0b41b08893aba6`. The corrected UI retains the
+exact-ID access and detail-dismiss/visible-consent corrections, including the
+account-bound handoff from `329ef9789c071ee53b8d06fc706c5bdea80a9f58`,
+and integrates the reviewed six-file producer-binding delta from `d7e36f3`.
+These remain distinct candidates; source ancestry or a signed stage does not
+establish installation, deployment ordering or gameplay acceptance.
 
 The runtime catalogue's `cliSha256` also binds the selected signed CLI above.
 Its bundled SHA256 is
