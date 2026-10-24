@@ -612,6 +612,21 @@ enum PCGamesChecks {
               && partialController.installAccessNotice(for: first) == nil
               && partialController.installAccessNotice(for: second)?.contains("Refresh your library") == true,
               "REQ88: Only exact resolved titles have current access; unresolved titles have supported recovery copy")
+        for pcCandidate in [true, false] {
+            let nonheldID = "NOTHELD00001"
+            let canReview = DiscoverBrowse.canReviewInstall(
+                owned: partialController.representedGames.contains { $0.id == nonheldID },
+                accessIsCurrent: partialController.accessIsCurrent(for: nonheldID),
+                gamePass: true, subscriptionActive: false, pcCandidate: pcCandidate)
+            let status = GameDetailFacetCopy.gamePassCheckStatus(
+                libraryAccessIsCurrent: partialController.accessIsCurrent)
+            check(partialController.hasSavedSignIn && !partialController.busy
+                  && partialController.error == nil && !canReview
+                  && status == "Refresh your PC library before checking Game Pass access.",
+                  "REQ88: Nonheld title (PC candidate \(pcCandidate)) explains aggregate library gate, not ownership or PC availability")
+        }
+        check(GameDetailFacetCopy.gamePassCheckStatus(libraryAccessIsCurrent: true) == nil,
+              "REQ88: Current aggregate library does not show a false Game Pass refresh blocker")
         for uri in ["//evil.invalid/image/square", "http://store-images.s-microsoft.com/image/square",
                     "//store-images.s-microsoft.com/image/a?token=secret", "//store-images.s-microsoft.com/image/../file",
                     "//store-images.s-microsoft.com@evil.invalid/image/a"] {
