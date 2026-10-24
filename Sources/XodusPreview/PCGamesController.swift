@@ -25,6 +25,19 @@ enum PCGamesAccountReadiness {
     }
 }
 
+enum PCGamesInstallRecovery {
+    case none, accountSettings, refreshLibrary, retryLibrary
+
+    var title: String? {
+        switch self {
+        case .none: nil
+        case .accountSettings: "Account settings"
+        case .refreshLibrary: "Refresh library"
+        case .retryLibrary: "Try loading library again"
+        }
+    }
+}
+
 @MainActor
 final class PCGamesController: ObservableObject {
     @Published private(set) var hasSavedSignIn = false
@@ -85,7 +98,7 @@ final class PCGamesController: ObservableObject {
     private var accountAccessIsCurrent: Bool {
         accountReadiness == .ready
     }
-    private var accountReadiness: PCGamesAccountReadiness {
+    var accountReadiness: PCGamesAccountReadiness {
         if accountDisconnecting || terminating { return .closing }
         if busy || restoringPresence { return .updating }
         if needsKeychainApproval { return .keychainApproval }
@@ -98,6 +111,16 @@ final class PCGamesController: ObservableObject {
     }
     var gamePassCheckNotice: String? {
         accountReadiness.gamePassCheckNotice(libraryIsComplete: snapshot?.isComplete == true)
+    }
+    func installRecovery(for productID: String) -> PCGamesInstallRecovery {
+        switch accountReadiness {
+        case .closing, .updating: return .none
+        case .keychainApproval, .signIn: return .accountSettings
+        case .unavailable: return presenceUnavailable ? .retryLibrary : .refreshLibrary
+        case .accountMismatch: return .refreshLibrary
+        case .ready:
+            return snapshot?.unresolvedIDs.contains(productID) == true ? .refreshLibrary : .accountSettings
+        }
     }
     func accessIsCurrent(for productID: String) -> Bool {
         accountAccessIsCurrent && snapshot?.hasResolvedGame(productID) == true

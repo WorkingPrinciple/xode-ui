@@ -126,7 +126,7 @@ final class GameOperationsController: ObservableObject {
     var installUnavailableReason: String? {
         guard !canStartMutation else { return nil }
         if installed.accountDisconnecting || terminating { return "Account access is closing. Installation is unavailable." }
-        if usesUnifiedAccount && nativeAccount == nil {
+        if installAccountUnavailable {
             return "Installation access for this account hasn't been confirmed. Review Account settings."
         }
         if recoveryRequired { return "Check the last operation in Downloads before starting another installation." }
@@ -136,6 +136,7 @@ final class GameOperationsController: ObservableObject {
         if checkingCompatibility { return "Wait for the compatibility check to finish." }
         return "Wait for the current game operation to finish before installing."
     }
+    var installAccountUnavailable: Bool { usesUnifiedAccount && nativeAccount == nil }
     var canQuit: Bool {
         !installingDirectly && !preparingConsent
             && mutationTask == nil && compatibilityTask == nil && gamePassTask == nil && stopTask == nil

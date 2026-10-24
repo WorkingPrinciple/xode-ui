@@ -612,6 +612,26 @@ enum PCGamesChecks {
               && partialController.installAccessNotice(for: first) == nil
               && partialController.installAccessNotice(for: second)?.contains("Refresh your library") == true,
               "REQ88: Only exact resolved titles have current access; unresolved titles have supported recovery copy")
+        check(partialController.installRecovery(for: second) == .refreshLibrary
+              && partialController.installRecovery(for: "NOTHELD00001") == .accountSettings,
+              "COR88: Exact unresolved title offers library refresh; unconfirmed nonheld access offers account review, not a guessed purchase")
+        let selectedAccess = InstalledProductAccess()
+        let selectedAccount = partialController.accountHash!
+        let selectedNow = ISO8601DateFormatter().date(from: "2030-01-01T00:00:00Z")!
+        var selectedRequests: [String] = []
+        await selectedAccess.refresh(account: selectedAccount, installedIDs: [third], now: selectedNow) { id in
+            selectedRequests.append(id)
+            return try JSONDecoder().decode(OdeAccountRead.self, from: response([
+                "section": "license", "accountHash": selectedAccount, "checkedAt": "2030-01-01T00:00:00Z",
+                "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]
+            ]).data)
+        }
+        check(!partialController.accessIsCurrent && !partialController.representedGames.contains { $0.id == third }
+              && selectedRequests == [third]
+              && selectedAccess.permitsReview(third, account: selectedAccount, pcCandidate: true, now: selectedNow)
+              && !selectedAccess.permitsReview(third, account: selectedAccount, pcCandidate: false, now: selectedNow),
+              "COR89: Uninstalled selected ID actually queries exact account access despite unrelated unresolved library; PC evidence still required")
+        selectedAccess.retire()
         for pcCandidate in [true, false] {
             let nonheldID = "NOTHELD00001"
             let canReview = DiscoverBrowse.canReviewInstall(
@@ -682,6 +702,8 @@ enum PCGamesChecks {
                   "REQ88: Per-title access remains blocked with visible status while refresh is busy")
             check(controller.gamePassCheckNotice?.hasPrefix("Wait for your library") == true,
                   "REQ88: Rendered Game Pass caption uses actual busy account status instead of an unavailable refresh")
+            check(controller.installRecovery(for: first) == .none,
+                  "COR88: Busy title does not offer a disabled refresh as its recovery")
             check(controller.busy && controller.representedGames.map(\.id) == [first]
                   && !LibraryLoadingPresentation.showsPlaceholders(library: controller,
                       hasUsableContent: !controller.representedGames.isEmpty),
@@ -839,6 +861,8 @@ enum PCGamesChecks {
               "REQ88: Per-title review cannot bypass credential approval")
         check(migrating.gamePassCheckNotice?.hasPrefix("Approve Keychain access") == true,
               "REQ88: Rendered Game Pass caption preserves Keychain recovery precedence")
+        check(migrating.installRecovery(for: first) == .accountSettings,
+              "COR88: Keychain blocker points to the existing Account settings recovery")
         migrating.approveKeychain()
         migrating.approveKeychain()
         await migrating.waitForOperation()

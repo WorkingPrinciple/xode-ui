@@ -5,6 +5,17 @@ import XodusManagement
 @MainActor
 enum LibraryAccessChecks {
     static func run(check: (Bool, String) -> Void) throws {
+        check(GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: "Wait for the Game Pass access check to finish.")
+                  == "Wait for the Game Pass access check to finish."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true,
+                  libraryNotice: "Approve Keychain access in Account settings.",
+                  operationNotice: "Wait for the current game operation.") == "Approve Keychain access in Account settings."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: false, libraryNotice: nil,
+                  operationNotice: nil) == "Wait for Ode to X to finish starting."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: nil) == nil,
+              "COR88: Actual Game Pass action caption covers operation-only, account, startup and ready gates")
         let utc = TimeZone(secondsFromGMT: 0)!
         func seasonalDate(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0,
                           timeZone: TimeZone = TimeZone(secondsFromGMT: 0)!) -> Date {

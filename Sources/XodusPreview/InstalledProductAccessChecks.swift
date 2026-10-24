@@ -37,6 +37,13 @@ enum InstalledProductAccessChecks {
               "Installed access checks only deduplicated valid installed StoreIDs, sequentially")
         check(controller.facts.count == 3 && !controller.checking && controller.errors.isEmpty,
               "Typed access facts retain permitted, denied and unknown independently")
+        check(controller.permitsReview(product, account: account, pcCandidate: true, now: now)
+              && controller.reviewNotice(for: product, account: account, now: now) == nil
+              && !controller.permitsReview(denied, account: account, pcCandidate: true, now: now)
+              && controller.reviewNotice(for: denied, account: account, now: now)?.contains("didn't grant access") == true
+              && !controller.permitsReview(unknown, account: account, pcCandidate: true, now: now)
+              && controller.reviewNotice(for: unknown, account: account, now: now)?.contains("unconfirmed") == true,
+              "COR89: Selected account access permits review only; denial/unknown explain exact outcome without inventing ownership")
         check(controller.permits(product, account: account, now: now)
               && !controller.permits(denied, account: account, now: now)
               && !controller.permits(unknown, account: account, now: now),
@@ -44,6 +51,10 @@ enum InstalledProductAccessChecks {
         check(!controller.permits(product, account: other, now: now)
               && !controller.permits(product, account: nil, now: now),
               "Different or absent account cannot borrow an installed access fact")
+        check(!controller.permitsReview(product, account: other, pcCandidate: true, now: now)
+              && !controller.permitsReview(product, account: nil, pcCandidate: true, now: now)
+              && !controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(120)),
+              "COR89: Exact account binding and actual grant expiry revoke selected-title review")
         check(!controller.permits(product, account: account, now: now.addingTimeInterval(120)),
               "Actual license expiry withdraws permission at the boundary")
         let purchased = PCGame(id: product, title: "Purchased installed fixture", artwork: nil,
@@ -68,6 +79,9 @@ enum InstalledProductAccessChecks {
         }
         check(controller.errors[product] != nil && !controller.permits(product, account: account,
             now: now.addingTimeInterval(301)), "Transport failure cannot extend a stale permission or become denial")
+        check(!controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(301))
+              && controller.reviewNotice(for: product, account: account, now: now.addingTimeInterval(301))?.contains("couldn't be checked") == true,
+              "COR89: Failed selected-title read shows retryable error, never a denial or successful review")
         check(controller.facts[denied] == nil && controller.facts[unknown] == nil,
               "Removed installed IDs leave the access cache")
         await controller.refresh(account: other, installedIDs: [product], now: now) { id in
@@ -93,6 +107,14 @@ enum InstalledProductAccessChecks {
         check(controller.permits(product, account: account, now: now.addingTimeInterval(299))
               && !controller.permits(product, account: account, now: now.addingTimeInterval(300)),
               "Perpetual grants still have a finite five-minute account cache")
+        var explicitRetries = 0
+        await controller.refresh(account: account, installedIDs: [product], now: now, force: true) { id in
+            explicitRetries += 1
+            return try response(id)
+        }
+        check(explicitRetries == 1
+              && !controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(300)),
+              "COR89: Explicit exact-ID retry bypasses cooldown once, never bypassing finite account-cache expiry")
         var renewals = 0
         var preservedDuringRenewal = false
         await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(121)) { id in

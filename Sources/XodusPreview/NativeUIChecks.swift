@@ -25,6 +25,20 @@ enum NativeUIChecks {
             check(image.map { $0.width == Int(width) && $0.height >= 39 } == true,
                   "REQ88: Disabled Install and wrapping recovery text render offscreen at \(Int(width)) points (\(image?.width ?? 0)x\(image?.height ?? 0))")
         }
+        var recoverySelected = false
+        let heroNotice = InstallUnavailableNotice(
+            message: "PC Game Pass download access hasn't been confirmed for this account.",
+            recoveryTitle: "Account settings", recover: { recoverySelected = true })
+        heroNotice.recover?()
+        check(recoverySelected && heroNotice.recoveryTitle == "Account settings",
+              "COR88: Disabled Install recovery is an independent actionable control, not disabled with Install")
+        for width in [CGFloat(220), 380] {
+            let renderer = ImageRenderer(content: heroNotice
+                .environment(\.libraryOnHeroMedia, true)
+                .frame(width: width).background(Color.white))
+            check(renderer.cgImage.map { $0.width == Int(width) && $0.height > 70 } == true,
+                  "COR88: White-on-dark hero blocker and recovery wrap above bright artwork at \(Int(width))pt without clipping")
+        }
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))

@@ -326,12 +326,39 @@ struct GameOperationProgressView: View {
     }
 }
 
+struct InstallUnavailableNotice: View {
+    let message: String
+    var recoveryTitle: String? = nil
+    var recover: (() -> Void)? = nil
+    @Environment(\.libraryOnHeroMedia) private var onHero
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(message).fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("xodus.pcGames.installUnavailableReason")
+            if let recoveryTitle, let recover {
+                Button(recoveryTitle, action: recover).buttonStyle(.bordered)
+                    .accessibilityIdentifier("xodus.pcGames.installRecovery")
+            }
+        }
+        .font(.callout)
+        .foregroundStyle(onHero ? Color.white : Color.primary)
+        .padding(onHero ? 12 : 0)
+        .background(onHero ? Color.black.opacity(0.8) : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 10))
+        .frame(maxWidth: 380, alignment: .leading)
+        .accessibilityElement(children: .contain)
+    }
+}
+
 struct GameInstallAction: View {
     let game: PCGame
     @ObservedObject var operations: GameOperationsController
     var enabled = true
     var primary = true
     var disabledReason: String? = nil
+    var recoveryTitle: String? = nil
+    var recover: (() -> Void)? = nil
     var preparing: Bool {
         operations.installingDirectly && operations.directInstallProductID == game.id
     }
@@ -395,10 +422,8 @@ struct GameInstallAction: View {
                 .accessibilityLabel("\(failed ? "Retry installation of" : "Install") \(game.title)")
                 .accessibilityIdentifier("xodus.pcGames.download")
                 if let unavailableReason {
-                    Text(unavailableReason)
-                        .font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("xodus.pcGames.installUnavailableReason")
+                    InstallUnavailableNotice(message: unavailableReason,
+                        recoveryTitle: recoveryTitle, recover: recover)
                 }
                 if failed {
                     Label("Installation needs attention", systemImage: "exclamationmark.circle")

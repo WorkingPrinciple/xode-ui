@@ -36,6 +36,32 @@ final class InstalledProductAccess: ObservableObject {
             && (fact.value.expiresAt == nil || fact.expiresAt.map { $0 > now } == true)
     }
 
+    func permitsReview(_ productID: String, account: String?, pcCandidate: Bool, now: Date = Date()) -> Bool {
+        pcCandidate && !checking && errors[productID] == nil && permits(productID, account: account, now: now)
+    }
+
+    func reviewNotice(for productID: String, account: String?, now: Date = Date()) -> String? {
+        guard let account, accountHash == account else {
+            return "Access for this account hasn't been checked for this game."
+        }
+        if checking { return "Checking access for this game." }
+        if let error = errors[productID] { return "Access for this game couldn't be checked. \(error)" }
+        if permits(productID, account: account, now: now) { return nil }
+        guard let fact = facts[productID] else { return "Access for this game hasn't been checked." }
+        if now.timeIntervalSince(fact.checkedAt) < 0 || now.timeIntervalSince(fact.checkedAt) >= 300
+            || fact.expiresAt.map({ $0 <= now }) == true {
+            return "The access check for this game has expired. Check access again."
+        }
+        switch fact.value.reason {
+        case .providerDenied: return "The account provider didn't grant access to this game."
+        case .productNotListed: return "The account response didn't include this game. Access is unconfirmed."
+        case .validityUnavailable: return "The account provider couldn't confirm a valid access period for this game."
+        case .grantExpired: return "The access grant returned for this game has expired."
+        case .grantNotStarted: return "The access grant returned for this game isn't active yet."
+        case nil: return "Access for this game hasn't been confirmed."
+        }
+    }
+
     func retire() {
         generation = UUID()
         operation?.cancel()
@@ -50,10 +76,10 @@ final class InstalledProductAccess: ObservableObject {
         checking = false
     }
 
-    func refresh(session: LiveSession, installedIDs: [String], now: Date = Date()) async {
+    func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false) async {
         let account = session.hasConfirmedSignIn ? session.accountHash : nil
         guard account == nil || session.nativeLifecycleConfiguration != nil else { return }
-        await refresh(account: account, installedIDs: installedIDs, now: now) { id in
+        await refresh(account: account, installedIDs: installedIDs, now: now, force: force) { id in
             for _ in 0..<100 where session.accountBusy {
                 try await Task.sleep(for: .milliseconds(100))
             }
@@ -61,7 +87,7 @@ final class InstalledProductAccess: ObservableObject {
         }
     }
 
-    func refresh(account: String?, installedIDs: [String], now: Date = Date(),
+    func refresh(account: String?, installedIDs: [String], now: Date = Date(), force: Bool = false,
                  read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
         if account != accountHash {
             let old = operation
@@ -87,6 +113,7 @@ final class InstalledProductAccess: ObservableObject {
         attempts = attempts.filter { installed.contains($0.key) }
         if let operation { await operation.value; return }
         let ids = installed.sorted().filter { id in
+            if force { return true }
             guard let last = attempts[id] else { return true }
             return now.timeIntervalSince(last) >= 60
                 && (errors[id] != nil || !permits(id, account: account, now: now)

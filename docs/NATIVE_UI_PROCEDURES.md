@@ -337,6 +337,21 @@ tier: omit a tier ring/badge rather than infer Ultimate from title access or
 a PC Game Pass probe. Offscreen source layout does not establish actual
 window-corner clearance; capture minimum/wide native evidence under a lease.
 
+Unified game details use a separate detail-owned `InstalledProductAccess`
+instance to read the selected uninstalled PC product ID through the existing
+`ode.account.read.v1` license section. This does not depend on unrelated
+library completeness and does not replace the installed-inventory reader.
+The current-account, exact-ID, unexpired permitted response admits only
+installation review/consent, not a download entitlement or ownership badge.
+Denied/unknown/error/expired results remain explicit beside Install, with
+an exact-ID retry; account replacement/sign-out revoke the response.
+The actual native `install <ID>` path remains authoritative for Windows
+package selection, content license/key, destination, disk and operation
+admission. Legacy/unified routes are not interchangeable, and the legacy
+unbound Game Pass receipt is not promoted to unified account evidence.
+Hero blockers use an opaque-dark scrim with white text and independent
+recovery controls; the hero grows rather than clipping long reasons.
+
 **Outcome:** labels, filters/counts and actions agree with their actual authorities.
 **Limits/stop:** unavailable entitled titles or unsafe lifecycle scenarios remain
 unverified. Do not create mocks or damage installations to claim acceptance.
