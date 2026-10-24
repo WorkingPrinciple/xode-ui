@@ -463,9 +463,7 @@ struct LiveLibraryView: View {
     private var continuePlaying: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Continue Playing (\(continuing.count))").font(.title2.weight(.semibold))
-                Spacer()
-                Button("See All") {
+                Button {
                     selection.beginScopeMeasurement(filter: .installed, target: "library-games")
                     withTransaction(Transaction(animation: nil)) {
                         selection.clearScopeExtent()
@@ -473,8 +471,20 @@ struct LiveLibraryView: View {
                         selection.filter = .installed
                         sort = .recentlyPlayed
                     }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Continue Playing (\(continuing.count))")
+                        Image(systemName: "chevron.right").font(.headline)
+                    }
+                    .font(.title2.weight(.semibold))
+                    .contentShape(Rectangle())
                 }
-                    .accessibilityLabel("Show installed games by last played")
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("xodus.library.continuePlaying.showAll")
+                .accessibilityLabel("Continue Playing (\(continuing.count))")
+                .accessibilityHint("Show installed games by last played")
+                .help("Show installed games by last played")
+                Spacer()
                 Button("Show next recently played game", systemImage: "chevron.right") {
                     let index = continuing.firstIndex { $0.id == selection.recentGameID } ?? 0
                     guard continuing.indices.contains(index + 1) else { return }

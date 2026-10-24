@@ -71,13 +71,15 @@ Do not launch a real game or change accounts merely to manufacture this evidence
 without the corresponding authorization. Offscreen checks are source evidence,
 not installed visual acceptance.
 
-For Continue Playing, include the macOS persistent-scroller case as well as
-overlay scrolling. Its shelf-specific native scroller leaves the material visible
-behind the knob slot; it must still expose the native knob, track paging and AX
-scrollbar actions. Verify first-to-last cards by supported wheel/trackpad, keyboard
-and accessibility routes. Do not change the owner's scrollbar preference without
-authorization or substitute globally hidden indicators. Instance-local legacy
-scroller checks are source evidence, not proof of the user's system preference.
+For Continue Playing, COR-64 intentionally hides only the shelf's horizontal
+indicator, including when macOS uses persistent scrollers. Preserve real native
+scrolling and verify first-to-last cards by wheel/trackpad, keyboard and
+accessibility routes; a hidden knob is not itself an available AX control.
+The title/count and adjacent disclosure are one accessible navigation button
+using the former See All destination (installed games, recently played sort).
+The separate next-game arrow remains a scrolling action, not duplicate navigation.
+Do not change the owner's scrollbar preference or hide indicators globally.
+Instance-local legacy checks are source evidence, not installed acceptance.
 
 Playable heroes show account acquisition separately from public subscription
 catalog membership; the latter is not an active plan or satisfying entitlement.

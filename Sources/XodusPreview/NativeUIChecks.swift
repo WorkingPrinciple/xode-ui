@@ -724,8 +724,6 @@ enum NativeUIChecks {
     }
 
     private static func checkContinuePlayingScroller(check: (Bool, String) -> Void) {
-        check(ContinuePlayingScroller.isCompatibleWithOverlayScrollers,
-              "REQ-76: Material scrollers retain native overlay compatibility rather than forcing persistent tracks")
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let host = NSHostingView(rootView: ContinuePlayingScrollView {
                 HStack(spacing: 20) {
@@ -752,27 +750,12 @@ enum NativeUIChecks {
             host.layoutSubtreeIfNeeded()
             check(!scroll.drawsBackground && !scroll.contentView.drawsBackground,
                   "REQ-76: The actual shelf has no opaque native scroll/clip background in \(appearance.rawValue)")
-            check(scroll.hasHorizontalScroller && scroll.horizontalScroller != nil
-                  && scroll.horizontalScroller?.isHidden == false && scroll.scrollerStyle == .legacy,
-                  "REQ-76: Instance-local Always-style scroller remains native and visible in \(appearance.rawValue)")
-            check(scroll.horizontalScroller is ContinuePlayingScroller,
-                  "REQ-76: Material integration reaches only the actual shelf's native scroller in \(appearance.rawValue)")
-            if let scroller = scroll.horizontalScroller {
-                let image = NSImage(size: NSSize(width: 200, height: 16))
-                image.lockFocus()
-                NSColor.systemBlue.setFill()
-                NSRect(x: 0, y: 0, width: 200, height: 16).fill()
-                scroller.drawKnobSlot(in: NSRect(x: 0, y: 0, width: 200, height: 16), highlight: false)
-                image.unlockFocus()
-                let pixel = image.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0) }?
-                    .colorAt(x: 190, y: 8)?.usingColorSpace(.deviceRGB)
-                check(pixel.map { $0.blueComponent > $0.redComponent + 0.2 } == true,
-                      "REQ-76: The actual native knob slot preserves the shelf material instead of painting an opaque track in \(appearance.rawValue)")
-            }
+            check(!scroll.hasHorizontalScroller || scroll.horizontalScroller?.isHidden == true,
+                  "COR-64: Only the shelf indicator stays hidden even with instance-local legacy style in \(appearance.rawValue)")
             let native = NSScrollView(frame: host.bounds)
             native.hasHorizontalScroller = true
             native.scrollerStyle = .legacy
-            native.horizontalScroller = ContinuePlayingScroller()
+            native.hasHorizontalScroller = false
             let document = NSView(frame: NSRect(x: 0, y: 0, width: 7 * 280 - 20, height: 150))
             native.documentView = document
             native.tile()
@@ -780,9 +763,8 @@ enum NativeUIChecks {
             native.contentView.scroll(to: NSPoint(x: maxX, y: 0))
             native.reflectScrolledClipView(native.contentView)
             check(maxX > 0 && native.contentView.bounds.maxX >= document.bounds.maxX - 1
-                  && native.horizontalScroller?.target === native
-                  && native.horizontalScroller?.action != nil,
-                  "REQ-76: The material scroller retains AppKit target/action and native seven-card document reachability in \(appearance.rawValue)")
+                  && !native.hasHorizontalScroller,
+                  "COR-64: Native seven-card document remains scrollable without a visible indicator in \(appearance.rawValue)")
             check(host.window == nil, "REQ-76: Shelf regression never opens a window or changes global preferences")
         }
     }

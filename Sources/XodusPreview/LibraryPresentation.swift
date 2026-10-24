@@ -28,16 +28,8 @@ struct ContinuePlayingScrollView<Content: View>: View {
             content().background(ContinuePlayingScrollerIntegration())
         }
             .fixedSize(horizontal: false, vertical: true)
-            .scrollIndicators(.automatic)
+            .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
-    }
-}
-
-final class ContinuePlayingScroller: NSScroller {
-    override class var isCompatibleWithOverlayScrollers: Bool { true }
-
-    override func drawKnobSlot(in slotRect: NSRect, highlight flag: Bool) {
-        // The shelf supplies the material; AppKit still draws and operates the native knob.
     }
 }
 
@@ -58,17 +50,7 @@ private struct ContinuePlayingScrollerIntegration: NSViewRepresentable {
             integrate()
         }
         func integrate() {
-            guard let scroll = enclosingScrollView,
-                  let incumbent = scroll.horizontalScroller,
-                  !(incumbent is ContinuePlayingScroller) else { return }
-            let scroller = ContinuePlayingScroller(frame: incumbent.frame)
-            scroller.controlSize = incumbent.controlSize
-            scroller.knobStyle = incumbent.knobStyle
-            scroller.doubleValue = incumbent.doubleValue
-            scroller.knobProportion = incumbent.knobProportion
-            scroller.target = incumbent.target
-            scroller.action = incumbent.action
-            scroll.horizontalScroller = scroller
+            enclosingScrollView?.hasHorizontalScroller = false
         }
     }
 }
