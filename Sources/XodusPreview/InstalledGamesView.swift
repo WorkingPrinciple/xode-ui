@@ -302,15 +302,6 @@ struct InstalledPlayButton: View {
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
             GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
                               operations: operations, enabled: false, primary: prominent)
-        } else if !canStop, !launching, library.unavailableDriveIDs.contains(game.id) {
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Drive unavailable", systemImage: "externaldrive.badge.exclamationmark")
-                Text(InstalledGamesController.driveUnavailableMessage)
-                    .font(.caption).fixedSize(horizontal: false, vertical: true)
-                Button("Check again") { Task { await library.checkInstallation(game) } }
-                    .disabled(library.editing || library.mutationActive || library.accountDisconnecting
-                              || library.applicationTerminating)
-            }.accessibilityIdentifier("xodus.installed.driveUnavailable")
         } else if !canStop, !launching,
                   NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
                     evidence: evidenceStore.games[game.storeId]) != nil {

@@ -23,7 +23,6 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
     /// silently substitutes another runner.
     var engineOverride: RuntimeProviderKind? = nil
     var usesNativeLifecycle: Bool? = nil
-    var storageVolume: GameStorageVolume? = nil
 }
 
 enum InstalledGameError: Error, LocalizedError {
@@ -217,7 +216,6 @@ actor InstalledGameStore {
         guard Set(games.map(\.id)).count == games.count, Set(games.map(\.folder)).count == games.count,
               games.allSatisfy({ !$0.title.isEmpty && !$0.identityName.isEmpty && !$0.version.isEmpty
                   && !$0.storeId.isEmpty && $0.folder.hasPrefix("/")
-                  && ($0.storageVolume?.contains($0.folder) ?? true)
                   && ($0.usesNativeLifecycle == true ? $0.launcher.isEmpty : $0.launcher.hasPrefix("/"))
                   && ($0.lastSessionSeconds.map { $0.isFinite && $0 >= 0 } ?? true)
                   && ($0.lastPlayedAt.map { $0.timeIntervalSince1970.isFinite } ?? true) }) else {
@@ -261,7 +259,6 @@ actor InstalledGameStore {
             updated.lastSessionSeconds = previous.lastSessionSeconds
             updated.packageType = game.packageType ?? previous.packageType
             updated.engineOverride = game.engineOverride ?? previous.engineOverride
-            updated.storageVolume = game.storageVolume ?? previous.storageVolume
         }
         games.removeAll { $0.folder == game.folder }
         games.append(updated)
@@ -294,16 +291,6 @@ actor InstalledGameStore {
         }
         if let observedAtImport, games[index].importedAt != observedAtImport { return games }
         games[index].packageType = type
-        try save(games)
-        return games
-    }
-
-    func recordStorageVolume(id: UUID, volume: GameStorageVolume, observedAtImport: Date) throws -> [InstalledGame] {
-        var games = try load()
-        guard let index = games.firstIndex(where: { $0.id == id }),
-              games[index].importedAt == observedAtImport,
-              games[index].storageVolume != volume else { return games }
-        games[index].storageVolume = volume
         try save(games)
         return games
     }
