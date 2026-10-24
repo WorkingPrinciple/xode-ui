@@ -45,6 +45,18 @@ path with its paired helper and manifest. No integrity check is waived.
 These pins permit exact candidate packaging; installation, observed capabilities
 and gameplay remain distinct evidence. Calimocho's production admission is empty.
 
+The runtime catalogue's `cliSha256` also binds the selected signed CLI above.
+Its bundled SHA256 is
+`636b66174e052053dd5b1ae96600df7db848e38cab5c225c5401342c6f457824`;
+both the byte digest and lifecycle equality checks remain mandatory. This
+packaging binding does not rewrite `evidenceCliSha256` or any title's observed
+recipe/evidence, and does not establish gameplay qualification with the new CLI.
+Current CLI5bd7 title/runtime qualification remains pending. Its retained launch
+arguments do not prove equivalent behavior: provider admission, prefix ownership,
+staging and the popup monitor changed since the historical CLIadf8 title runs.
+Leaving the catalogue bound to CLI3121 while updating the lifecycle pin rejects
+all profile resolution, including otherwise unrelated titles.
+
 ### Header search regression (#40)
 
 The collapsed header lens is an explicit accessible button, not a 32-point
