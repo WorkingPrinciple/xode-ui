@@ -2,6 +2,34 @@
 
 ## Purpose and authorization
 
+### Current paired schema reconciliation
+
+The app resource now uses the exact canonical management contract from producer
+`3f65a162d4b4ab417c3ccd60e61694c9b78b3415`, tree
+`c22cda9dd1216642eb9a8afe6b5be2fe607dfa7c`, SHA256
+`23df3f6eb0d09c035b0575c02dd314bdb876208f1f3cc404473c2340975fb164`.
+This corrects the generator's rejection of the producer's actual combined
+Xbox/Store Edge query source and cached product descriptors. Both legacy
+Store Edge and combined query sources remain valid for successful and failed
+pages; page freshness is still live and products remain PC candidates.
+Descriptor request branch order, references and formatting now match the
+producer bytes rather than a separately maintained app variant.
+
+Focused source verification compares the bundled resource byte-for-byte and
+validates supported producer fixtures through both contracts:
+
+```sh
+swift run XodusManagementChecks --contract-schema-checks /absolute/frozen-producer/docs/contracts/management-v1.schema.json
+```
+
+Schema parity does not admit a new executable. The existing debug CLI
+`8ba24aed...` was built at `891b941`, not at this schema-only successor.
+Signed CLI, embedded helper, producer manifest and lifecycle pins must be
+reconciled from actual reviewed artifacts before paired packaging. Source
+`ShippingPairPins.approved` stays nil; packaging generates exact pair identities
+only in its isolated stage. App-only refresh retaining CLI3121 cannot claim
+delivery of the shared descriptor backend.
+
 ### Header search regression (#40)
 
 The collapsed header lens is an explicit accessible button, not a 32-point

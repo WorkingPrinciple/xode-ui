@@ -21,6 +21,12 @@ enum ManagementChecks {
                     discover: CommandLine.arguments.contains("--probe-discovery"),
                     query: CommandLine.arguments.contains("--probe-query"),
                     inspect: CommandLine.arguments.contains("--probe-inspect"))
+            } else if let index = CommandLine.arguments.firstIndex(of: "--contract-schema-checks") {
+                guard CommandLine.arguments.indices.contains(index + 1) else {
+                    throw ManagementError.invalidPayload
+                }
+                try await checks.contractSchemaChecks(canonicalURL:
+                    URL(fileURLWithPath: CommandLine.arguments[index + 1]))
             } else if CommandLine.arguments.contains("--install-plan-development-checks") {
                 try await checks.registryDevelopmentChecks()
                 try await checks.installPlanDevelopmentChecks()
@@ -61,6 +67,82 @@ actor Checks {
     func finish() -> Bool {
         print("\(count) management checks, \(failures) failures.")
         return failures == 0
+    }
+
+    func contractSchemaChecks(canonicalURL: URL) throws {
+        let bundledURL = try ContractValidator.bundledSchemaURL()
+        let canonical = try Data(contentsOf: canonicalURL)
+        let bundled = try Data(contentsOf: bundledURL)
+        check(bundled == canonical, "App contract bytes exactly match the frozen canonical producer schema")
+        let validator = try ContractValidator()
+        let producer = try ContractValidator(schemaURL: canonicalURL, schemaIdentifier: "urn:xodus:management:1.0")
+        let positive = try fixture("positive").array ?? []
+        for frame in positive {
+            try validator.validate(frame)
+            try producer.validate(frame)
+        }
+        check(positive.count == 102, "App and canonical validators preserve all 102 supported producer frames")
+        for definition in ["queryData", "failedQueryData"] {
+            guard var page = positive.first(where: {
+                let value = definition == "queryData" ? $0["data"] : $0["error"]?["details"]
+                return value?["corpus"]?.string == "publicMicrosoftStoreSearch"
+            }).flatMap({ definition == "queryData" ? $0["data"]?.object : $0["error"]?["details"]?.object }) else {
+                throw ManagementError.invalidPayload
+            }
+            for source in ["MicrosoftStoreEdge:v9.0/searchResults",
+                           "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"] {
+                page["source"] = .string(source)
+                try validator.validate(.object(page), definition: definition)
+                try producer.validate(.object(page), definition: definition)
+                check(true, "Both contracts accept actual producer \(definition) source \(source)")
+                if definition == "queryData", var product = page["products"]?.array?.first?.object {
+                    let originalProducts = page["products"]
+                    product["freshness"] = .string("cached")
+                    page["products"] = .array([.object(product)])
+                    try validator.validate(.object(page), definition: definition)
+                    try producer.validate(.object(page), definition: definition)
+                    check(true, "Both contracts preserve cached product descriptors under live query source \(source)")
+                    for invalid in ["pageFreshness", "pcCandidate"] {
+                        var rejected = page
+                        if invalid == "pageFreshness" { rejected["freshness"] = .string("cached") }
+                        else {
+                            var nonPC = product
+                            nonPC["pcCatalogCandidate"] = .bool(false)
+                            rejected["products"] = .array([.object(nonPC)])
+                        }
+                        for contract in [validator, producer] {
+                            do {
+                                try contract.validate(.object(rejected), definition: definition)
+                                check(false, "Query contract rejects \(invalid) despite cached descriptor compatibility")
+                            } catch ManagementError.invalidPayload {
+                                check(true, "Query contract rejects \(invalid) despite cached descriptor compatibility")
+                            }
+                        }
+                    }
+                    page["products"] = originalProducts
+                }
+            }
+            page["source"] = .string("untrustedSource")
+            for contract in [validator, producer] {
+                do {
+                    try contract.validate(.object(page), definition: definition)
+                    check(false, "Contract rejects unknown query source in \(definition)")
+                } catch ManagementError.invalidPayload {
+                    check(true, "Contract rejects unknown query source in \(definition)")
+                }
+            }
+        }
+        for item in try fixture("negative").array ?? [] {
+            guard let frame = item["frame"] else { throw ManagementError.invalidPayload }
+            for contract in [validator, producer] {
+                do {
+                    try contract.validate(frame)
+                    check(false, "Contract retains negative fixture rejection")
+                } catch ManagementError.invalidFrame {
+                    check(true, "Contract retains negative fixture rejection")
+                }
+            }
+        }
     }
 
     func run() async throws {
