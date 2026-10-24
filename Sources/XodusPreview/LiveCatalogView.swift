@@ -93,6 +93,33 @@ enum SubscriberBenefits {
     static let officialURL = URL(string: "https://www.xbox.com/xbox-game-pass/in-game-benefits")!
 }
 
+enum HalloweenShelf {
+    static func isActive(on date: Date, timeZone: TimeZone = .autoupdatingCurrent) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let year = calendar.component(.year, from: date)
+        guard let start = calendar.date(from: DateComponents(year: year, month: 10, day: 1)),
+              let halloween = calendar.date(from: DateComponents(year: year, month: 10, day: 31)),
+              let end = calendar.date(byAdding: .day,
+                value: (8 - calendar.component(.weekday, from: halloween)) % 7 + 1,
+                to: halloween) else { return false }
+        return date >= start && date < end
+    }
+
+    static func products(_ loaded: [CatalogProduct], facts: [String: LibraryCatalogFacts],
+                         on date: Date, timeZone: TimeZone = .autoupdatingCurrent) -> [CatalogProduct] {
+        guard isActive(on: date, timeZone: timeZone) else { return [] }
+        var seen = Set<String>()
+        return Array(loaded.filter { product in
+            guard product.pcCatalogCandidate, facts[product.id]?.genres.contains(where: { genre in
+                let words = genre.lowercased().split { !$0.isLetter }
+                return words.contains("horror") || words.contains("spooky") || words.contains("halloween")
+            }) == true else { return false }
+            return seen.insert(product.id).inserted
+        }.prefix(12))
+    }
+}
+
 #if !XODUS_SHIPPING
 struct CatalogReviewSnapshot: Decodable {
     let products: [CatalogProduct]
@@ -132,6 +159,7 @@ struct LiveCatalogView: View {
     @FocusState private var focusedResult: String?
     @State private var showsCoverage = false
     @State private var detailFocusReturnID: String?
+    @State private var seasonalDate = Date()
 
     private var projection: CatalogProjection { selection.projection.current }
     private var results: CatalogSearchResults { projection.index.results }
@@ -208,6 +236,18 @@ struct LiveCatalogView: View {
                         }
                     }
                     if !genres.isEmpty { browseGenres }
+                    if selection.genre == nil {
+                        let halloween = HalloweenShelf.products(visible, facts: facts, on: seasonalDate)
+                        if !halloween.isEmpty {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Halloween games").font(.title2.weight(.semibold))
+                                Text("Horror and spooky categories from the games loaded here.")
+                                    .font(.callout).foregroundStyle(.secondary)
+                                browseShelf(halloween, demandLoads: false, shelfID: "Halloween")
+                            }
+                            .accessibilityIdentifier("xodus.catalog.halloween")
+                        }
+                    }
                 } else {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Results for \"\(query)\"").font(.title2.bold())
@@ -362,6 +402,19 @@ struct LiveCatalogView: View {
         .onChange(of: query) { _, value in
             selection.genre = nil
             if value.isEmpty { selection.scope = .allGames }
+        }
+        .onAppear { seasonalDate = Date() }
+        .onChange(of: presentationActive) { _, active in
+            if active { seasonalDate = Date() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            seasonalDate = Date()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            seasonalDate = Date()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
+            seasonalDate = Date()
         }
         .onChange(of: session.selectedProduct) { previous, current in
             guard previous != nil, current == nil else { return }

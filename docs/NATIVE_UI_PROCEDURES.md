@@ -315,6 +315,18 @@ Synthetic source checks use `swift run XodusPreview --library-access-check`
 and `swift run XodusPreview --game-operation-check`; these do not establish
 the disabled branch or successful installation of any title in a running app.
 
+The recurring Discover Halloween shelf uses a provisional local Gregorian
+October 1 through Sunday on or immediately after October 31 window, ending
+at Monday midnight. It refreshes its date on appearance, activation, local
+day change and timezone change, without a scheduled job or additional fetch.
+Selection is limited to twelve deduplicated loaded PC catalogue products whose
+existing Microsoft DisplayCatalog category metadata explicitly contains the
+English words horror, spooky or Halloween. Broad categories, untranslated
+categories without those words and missing metadata do not qualify by guesswork.
+An empty selection omits the shelf. Ordinary cards/details and installation
+guards are reused; shelf presence implies no discount, account access or Mac
+compatibility. No complete seasonal catalogue is claimed.
+
 **Outcome:** labels, filters/counts and actions agree with their actual authorities.
 **Limits/stop:** unavailable entitled titles or unsafe lifecycle scenarios remain
 unverified. Do not create mocks or damage installations to claim acceptance.
