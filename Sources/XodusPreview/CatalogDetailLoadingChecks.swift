@@ -97,9 +97,47 @@ enum CatalogDetailLoadingChecks {
         check(malformed.images["FIXTURE00002"]?.product.title == "Synthetic game"
               && malformed.images["FIXTURE00002"]?.detail?.description == "Synthetic description.",
               "REQ-61: Removed offer data is ignored while catalogue identity and game details remain readable")
+        try await detailPackageFallback(check: check)
         try await commerceAbsence(check: check)
         try await statusContrast(check: check)
         try await concurrency(check: check)
+    }
+
+    private static func detailPackageFallback(check: (Bool, String) -> Void) async throws {
+        let view = VStack(alignment: .leading, spacing: 8) {
+            Text("Details").font(.title2.weight(.semibold))
+            DetailGameSizeView(installed: nil, downloadBytes: nil, packageFormat: "MSIXVC",
+                               allowsMeasurement: false)
+        }
+        .padding(24)
+        .frame(width: 420, height: 160, alignment: .topLeading)
+        .background(Color.white)
+        .environment(\.colorScheme, .light)
+        let host = NSHostingView(rootView: view)
+        host.appearance = NSAppearance(named: .aqua)
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 420, height: 160)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless],
+                              backing: .buffered, defer: false)
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = host
+        defer { window.contentView = nil }
+        host.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(50))
+        guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+            throw PCGamesError.transport
+        }
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        guard let image = bitmap.cgImage else { throw PCGamesError.transport }
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        try VNImageRequestHandler(cgImage: image).perform([request])
+        let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        check(labels.contains { $0 == "Details" }
+              && labels.contains { $0.localizedCaseInsensitiveContains("MSIXVC") }
+              && !labels.contains { $0.localizedCaseInsensitiveContains("download") }
+              && !window.isVisible && !window.isKeyWindow,
+              "REQ-62: Detail-only package label remains visible without rich catalogue metadata: \(labels)")
     }
 
     private static func statusContrast(check: (Bool, String) -> Void) async throws {
