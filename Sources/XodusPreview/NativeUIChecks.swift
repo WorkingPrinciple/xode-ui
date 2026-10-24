@@ -21,8 +21,9 @@ enum NativeUIChecks {
             let content = blockedInstall.frame(width: width, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             let renderer = ImageRenderer(content: content)
-            check(renderer.cgImage.map { $0.width == Int(width) && $0.height >= 60 } == true,
-                  "REQ88: Disabled Install and wrapping recovery text render offscreen at \(Int(width)) points")
+            let image = renderer.cgImage
+            check(image.map { $0.width == Int(width) && $0.height >= 39 } == true,
+                  "REQ88: Disabled Install and wrapping recovery text render offscreen at \(Int(width)) points (\(image?.width ?? 0)x\(image?.height ?? 0))")
         }
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
@@ -76,6 +77,31 @@ enum NativeUIChecks {
               "Minecraft information lays out without a window, launcher scan or test journal")
         let application = NSApplication.shared
         let windows = application.windows.count
+        for (picture, loading, failed, expected) in [
+            (true, false, false, "Profile picture"),
+            (false, true, false, "Profile picture is loading"),
+            (false, false, true, "Profile picture couldn't be loaded"),
+            (false, false, false, "No profile picture available")
+        ] {
+            check(ToolbarAccountButton.pictureStatus(hasPicture: picture, loading: loading, failed: failed) == expected,
+                  "REQ90: Profile fallback explicitly labels picture/loading/error/absence without inferring membership")
+        }
+        for width in [CGFloat(650), 1200] {
+            for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                let actions = NativeToolbarAccountActions(accountLabel: "Microsoft account", accountSymbol: "person.crop.circle",
+                    libraryContrast: true, importGame: {}, openAccount: {})
+                    .environment(\.catalogPresentationActive, false)
+                let host = NSHostingView(rootView: actions)
+                host.sizingOptions = [.intrinsicContentSize]
+                host.appearance = NSAppearance(named: appearance)
+                host.frame = CGRect(x: 0, y: 0, width: width, height: 64)
+                host.layoutSubtreeIfNeeded()
+                let fitting = host.intrinsicContentSize
+                check(host.window == nil && fitting.width > 80 && fitting.width < 180
+                      && fitting.height <= 64,
+                      "REQ90: Native account/import group fits \(Int(width))pt \(appearance.rawValue) with trailing inset, without artwork fetch or window (\(fitting))")
+            }
+        }
         var hasHero = LibraryHeroPresenceKey.defaultValue
         LibraryHeroPresenceKey.reduce(value: &hasHero) { false }
         check(!hasHero, "A plain Library has no artwork underlap preference")

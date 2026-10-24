@@ -327,6 +327,16 @@ An empty selection omits the shelf. Ordinary cards/details and installation
 guards are reused; shelf presence implies no discount, account access or Mac
 compatibility. No complete seasonal catalogue is claimed.
 
+Toolbar account/import actions share a native group with twelve points of
+trailing clearance. The account button reuses the existing validated Xbox
+profile avatar only when its cache matches the current account binding;
+sign-out/account replacement removes that identity immediately. Missing,
+loading and failed pictures retain a labeled account fallback, not a generic
+game-art placeholder. The profile contract has no authoritative membership
+tier: omit a tier ring/badge rather than infer Ultimate from title access or
+a PC Game Pass probe. Offscreen source layout does not establish actual
+window-corner clearance; capture minimum/wide native evidence under a lease.
+
 **Outcome:** labels, filters/counts and actions agree with their actual authorities.
 **Limits/stop:** unavailable entitled titles or unsafe lifecycle scenarios remain
 unverified. Do not create mocks or damage installations to claim acceptance.
