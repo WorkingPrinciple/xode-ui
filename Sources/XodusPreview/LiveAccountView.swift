@@ -18,6 +18,7 @@ struct LiveAccountView: View {
     @Environment(\.layoutDirection) private var layoutDirection
     @StateObject private var interaction = AccountInteraction()
     @ObservedObject private var companion = XboxCompanionController.shared
+    var onClose: (() -> Void)? = nil
 #if !XODUS_SHIPPING
     var refreshStatusOnAppear = true
 #endif
@@ -80,7 +81,7 @@ struct LiveAccountView: View {
         } actions: {
             if state.showingSetup || state.accountDestination != .account {
                 AccountActionsLayout(layoutDirection: layoutDirection) {
-                    Button("Close", action: dismiss.callAsFunction).keyboardShortcut(.cancelAction)
+                    Button("Close", action: close).keyboardShortcut(.cancelAction)
                     Button("Back to Account") {
                         state.showingSetup = false
                         state.accountDestination = .account
@@ -94,12 +95,12 @@ struct LiveAccountView: View {
                             let cancelling = session.signInPending
                             if cancelling { await state.cancelUnifiedSignIn(session: session) }
                             if !session.signInPending,
-                               !cancelling || session.authentication?.flow?.state != .completed { dismiss() }
+                               !cancelling || session.authentication?.flow?.state != .completed { close() }
                         }
                     }
-                    .keyboardShortcut(session.hasConfirmedSignIn ? .defaultAction : .cancelAction)
+                    .keyboardShortcut(.cancelAction)
                     .modifier(XboxProminentButton(enabled: session.hasConfirmedSignIn))
-                    .disabled(session.accountBusy)
+                    .disabled(session.signInPending && session.accountBusy)
                     .accessibilityLabel(session.signInPending ? "Cancel sign-in" : "Close account")
                     .accessibilityIdentifier(session.signInPending ? "xodus.account.cancelSignIn" : "xodus.account.close")
                     if session.isReady {
@@ -155,7 +156,7 @@ struct LiveAccountView: View {
             }
         }
         .tint(XboxBrand.green)
-        .interactiveDismissDisabled(session.accountBusy || session.signInPending)
+        .interactiveDismissDisabled(session.signInPending)
         .confirmationDialog("Sign out of Xbox Live on this Mac?", isPresented: $interaction.confirmingSignOut) {
             Button("Sign out of Xbox Live", role: .destructive) { Task { await state.signOut(session: session) } }
             Button("Cancel", role: .cancel) {}
@@ -177,6 +178,11 @@ struct LiveAccountView: View {
         case .engines:
             EnginesView()
         }
+    }
+
+    private func close() {
+        if let onClose { onClose() }
+        else { dismiss() }
     }
 }
 

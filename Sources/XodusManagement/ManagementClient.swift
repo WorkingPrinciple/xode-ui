@@ -190,6 +190,7 @@ public actor ManagementClient {
 
         let stdout = Self.chunks(output.fileHandleForReading, origin: .stdoutQueue)
         outputTask = Task { [weak self] in
+            defer { stdout.cancel() }
             do {
                 for try await bytes in stdout {
                     guard let self else { return }
@@ -202,6 +203,7 @@ public actor ManagementClient {
         }
         let stderr = Self.chunks(diagnostics.fileHandleForReading, origin: .stderrQueue)
         diagnosticTask = Task { [weak self] in
+            defer { stderr.cancel() }
             do {
                 for try await bytes in stderr {
                     guard let self else { return }
@@ -678,32 +680,107 @@ public actor ManagementClient {
         (error as? ManagementError) ?? .disconnected
     }
 
-    static func chunks(_ handle: FileHandle, origin: OverflowOrigin) -> AsyncThrowingStream<Data, Error> {
-        AsyncThrowingStream(bufferingPolicy: .bufferingOldest(128)) { continuation in
-            DispatchQueue(label: "Xodus.management.\(origin.rawValue)").async {
-                defer { try? handle.close() }
-                var buffer = [UInt8](repeating: 0, count: 8192)
-                while true {
-                    // One pipe read returns available bytes; read(upToCount:) may wait for a full buffer.
-                    let count = Darwin.read(handle.fileDescriptor, &buffer, buffer.count)
-                    if count == 0 { continuation.finish(); return }
-                    if count < 0 {
-                        if errno == EINTR { continue }
-                        continuation.finish(throwing: ManagementError.disconnected)
-                        return
-                    }
-                    switch continuation.yield(Data(buffer.prefix(count))) {
-                    case .enqueued: break
-                    case .dropped:
-                        continuation.finish(throwing: OverflowFailure(origin: origin, count: 129))
-                        return
-                    case .terminated: return
-                    @unknown default:
-                        continuation.finish(throwing: OverflowFailure(origin: origin, count: 129))
-                        return
-                    }
+    struct ChunkStream: AsyncSequence, Sendable {
+        typealias Element = Data
+        let stream: AsyncThrowingStream<Data, Error>
+        let continuation: AsyncThrowingStream<Data, Error>.Continuation
+        let permits: ChunkReadPermits
+
+        var bufferedChunkCount: Int { permits.count }
+        func cancel() { continuation.finish() }
+
+        struct AsyncIterator: AsyncIteratorProtocol {
+            var base: AsyncThrowingStream<Data, Error>.Iterator
+            let permits: ChunkReadPermits
+
+            mutating func next() async throws -> Data? {
+                let bytes = try await base.next()
+                if bytes != nil { permits.release() }
+                return bytes
+            }
+        }
+
+        func makeAsyncIterator() -> AsyncIterator {
+            AsyncIterator(base: stream.makeAsyncIterator(), permits: permits)
+        }
+    }
+
+    // The pipe pump is a blocking dispatch worker, never an actor executor.
+    // Reserve bounded queue space before reading so a busy consumer applies
+    // pipe backpressure rather than dropping a legitimate response fragment.
+    final class ChunkReadPermits: @unchecked Sendable {
+        private let condition = NSCondition()
+        private var reserved = 0
+        private var cancelled = false
+
+        var count: Int {
+            condition.lock()
+            defer { condition.unlock() }
+            return reserved
+        }
+
+        func reserve() -> Bool {
+            condition.lock()
+            defer { condition.unlock() }
+            while reserved == 128 && !cancelled { condition.wait() }
+            guard !cancelled else { return false }
+            reserved += 1
+            return true
+        }
+
+        func release() {
+            condition.lock()
+            reserved -= 1
+            condition.signal()
+            condition.unlock()
+        }
+
+        func cancel() {
+            condition.lock()
+            cancelled = true
+            condition.broadcast()
+            condition.unlock()
+        }
+    }
+
+    static func chunks(_ handle: FileHandle, origin: OverflowOrigin) -> ChunkStream {
+        let permits = ChunkReadPermits()
+        let channel = AsyncThrowingStream<Data, Error>.makeStream(bufferingPolicy: .bufferingOldest(128))
+        let continuation = channel.continuation
+        continuation.onTermination = { _ in permits.cancel() }
+        DispatchQueue(label: "Xodus.management.\(origin.rawValue)").async {
+            defer { try? handle.close() }
+            var buffer = [UInt8](repeating: 0, count: 8192)
+            while permits.reserve() {
+                // One pipe read returns available bytes; read(upToCount:) may wait for a full buffer.
+                let count = Darwin.read(handle.fileDescriptor, &buffer, buffer.count)
+                if count == 0 {
+                    permits.release()
+                    continuation.finish()
+                    return
+                }
+                if count < 0 {
+                    permits.release()
+                    if errno == EINTR { continue }
+                    continuation.finish(throwing: ManagementError.disconnected)
+                    return
+                }
+                switch continuation.yield(Data(buffer.prefix(count))) {
+                case .enqueued: break
+                case .dropped:
+                    permits.release()
+                    continuation.finish(throwing: OverflowFailure(origin: origin, count: 129))
+                    return
+                case .terminated:
+                    permits.release()
+                    return
+                @unknown default:
+                    permits.release()
+                    continuation.finish(throwing: OverflowFailure(origin: origin, count: 129))
+                    return
                 }
             }
         }
+        return ChunkStream(stream: channel.stream, continuation: continuation, permits: permits)
     }
 }

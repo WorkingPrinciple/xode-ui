@@ -7,15 +7,15 @@ import XodusManagement
 @MainActor
 enum NativeChecks {
     static func launch(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
-                       libraryAccessOnly: Bool = false) -> Never {
+                       libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false) -> Never {
         Task { exit(await run(gameOperationsOnly: gameOperationsOnly, mediaOnly: mediaOnly, statsOnly: statsOnly,
-                              libraryAccessOnly: libraryAccessOnly) ? 0 : 1) }
+                              libraryAccessOnly: libraryAccessOnly, accountPresentationOnly: accountPresentationOnly) ? 0 : 1) }
         CFRunLoopRun()
         fatalError("The native check run loop ended before completion.")
     }
 
     static func run(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
-                    libraryAccessOnly: Bool = false) async -> Bool {
+                    libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false) async -> Bool {
         var count = 0, failures = 0
         func check(_ condition: Bool, _ name: String) {
             count += 1
@@ -51,6 +51,24 @@ enum NativeChecks {
             }
         }
         do {
+            if accountPresentationOnly {
+                let pendingConfiguration = configuration("statuspermission")
+                let pending = LiveSession(configuration: pendingConfiguration)
+                await pending.connect()
+                await pending.refreshAccount()
+                let reading = Task { await pending.revalidateAccountOnForeground() }
+                try await wait { pending.accountStatusChecking }
+                try await NativeUIChecks.checkAccountDismissalWhileLoading(session: pending, check: check)
+                await reading.value
+                check(pending.hasConfirmedSignIn && !pending.accountBusy,
+                      "COR95: The unrelated account read completes normally after dismissal")
+                check(try trace(pendingConfiguration).filter { $0.hasPrefix("auth.") } == ["auth.status", "auth.status"],
+                      "COR95: Dismissal issues no sign-in, cancellation, logout or replacement read")
+                check(await pending.disconnect(), "COR95: The check retires only its synthetic management child")
+                try cleanLifecycle(pendingConfiguration)
+                print("\(count) Account presentation checks, \(failures) failures. Detached views and mock child only.")
+                return failures == 0
+            }
             let navigation = AppState()
             navigation.query = "Library search"
             navigation.navigate(.discover)

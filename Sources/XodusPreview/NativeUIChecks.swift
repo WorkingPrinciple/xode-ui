@@ -35,6 +35,39 @@ private struct InstallSheetFixtureView: View {
 
 @MainActor
 enum NativeUIChecks {
+    static func checkAccountDismissalWhileLoading(session: LiveSession,
+                                                   check: (Bool, String) -> Void) async throws {
+        let windows = NSApplication.shared.windows.count
+        let state = AppState()
+        state.showingAccount = true
+        var closed = false
+        let host = NSHostingView(rootView: LiveAccountView(onClose: { closed = true },
+            refreshStatusOnAppear: false).environmentObject(state).environmentObject(session))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: 520)
+        host.layoutSubtreeIfNeeded()
+        let buttons = descendants(of: host).compactMap { $0 as? NSButton }
+        let close = buttons.first { ["\r", "\u{1b}"].contains($0.keyEquivalent) }
+        let protectedFooter = buttons.suffix(3).filter { $0 !== close }
+        check(session.hasConfirmedSignIn && session.accountBusy && session.accountStatusChecking,
+              "COR95: Populated Account is rendered while an existing-account status read is pending")
+        check(close?.isEnabled == true,
+              "COR95: Actual Account Close remains enabled during background account loading")
+        check(close?.keyEquivalent == "\u{1b}",
+              "COR95: Actual Account Close retains Escape while signed in and loading")
+        check(protectedFooter.count == 2 && protectedFooter.allSatisfy { !$0.isEnabled }
+              && !state.canSignOut(session: session),
+              "COR95: Background loading still fences status and protected account mutations")
+        close?.performClick(nil)
+        for _ in 0..<10 where !closed {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        check(closed && session.accountBusy && !session.signInPending,
+              "COR95: Actual rendered Close invokes dismissal without cancelling the pending account read")
+        check(host.window == nil && NSApplication.shared.windows.count == windows,
+              "COR95: Loading dismissal check creates no native window or desktop input")
+    }
+
     static func checkInstallSheetPresentation(operations: GameOperationsController, game: PCGame,
                                               check: (Bool, String) -> Void) async throws {
         let fixture = InstallSheetFixture()

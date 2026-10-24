@@ -124,6 +124,30 @@ Descriptor measurement is disabled unless the app process has the exact
 `XODUS_DESCRIPTOR_METRICS=1` opt-in. Its owned launcher forwards only that exact
 value in addition to the existing operational environment allowlist. It does not
 forward arbitrary environment variables or change the fixed Rust log level.
+
+For REQ-94, the pipe pump reserves space before each read at the unchanged
+128-chunk capacity. A delayed framing/validation consumer now pauses the reader
+and applies pipe backpressure instead of dropping a response fragment. The
+stream retains its overflow guard; frame, diagnostic-lifetime, event and request
+limits and account admission are unchanged. Cancelling a full stream wakes its
+owned reader; transport failure never replays a mutation. Run
+`swift run XodusManagementChecks --overflow-checks` for delayed-consumer byte
+and frame preservation, exact capacity and cancellation checks. The installed
+950 incident established `stdoutQueue` count 129, not its triggering payload or
+a causal relationship to observed SwiftUI CPU work. Passing synthetic checks
+does not establish an installed recurrence-free interval.
+
+Account dismissal has an independent focused source check:
+`swift run XodusPreview --account-presentation-check`. It renders the real
+Account footer detached during a synthetic in-flight status read, activates
+its Close button and verifies Escape binding, dismissal callback, protected
+account guards and completion of the unrelated read. It creates no window or
+desktop input and does not prove actual native sheet detachment. Background
+account loading must not disable Close or interactive dismissal; active sign-in
+still requires its existing explicit cancellation path. Under an allocated
+native window, verify Close and Escape while Account/Profile is open and the
+background status is loading, without cancelling unrelated work.
+
 The management stderr reader accepts only ASCII LF-terminated lines of at most
 256 bytes, under a separate 65,536-byte metrics lifetime budget:
 

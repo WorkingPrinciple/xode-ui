@@ -135,22 +135,59 @@ actor Checks {
             do { try FileManager.default.removeItem(at: root) }
             catch { check(false, "Owned overflow fixtures cleaned") }
         }
+        let burstFile = root.appendingPathComponent("delayed-consumer-stdout")
+        guard let value = try fixture("positive").array?.first else { throw ManagementError.invalidFrame }
+        var frame = try JSONEncoder().encode(value)
+        frame.append(10)
+        var burst = Data()
+        var expectedFrames = 0
+        while burst.count < 3 * JSONLineFramer.maximumBytes {
+            burst.append(frame)
+            expectedFrames += 1
+        }
+        try burst.write(to: burstFile)
+        let burstHandle = try FileHandle(forReadingFrom: burstFile)
+        let burstStream = ManagementClient.chunks(burstHandle, origin: .stdoutQueue)
+        var receivedBytes = 0
+        var receivedHash = SHA256()
+        var receivedFrames = 0
+        var framer = JSONLineFramer()
+        let validator = try ContractValidator()
+        do {
+            for try await bytes in burstStream {
+                try await Task.sleep(for: .milliseconds(1))
+                receivedBytes += bytes.count
+                receivedHash.update(data: bytes)
+                for line in try framer.append(bytes) {
+                    try validator.validate(JSONDecoder().decode(JSONValue.self, from: line))
+                    receivedFrames += 1
+                }
+            }
+            try framer.finish()
+            check(receivedBytes == burst.count && receivedFrames == expectedFrames
+                  && receivedHash.finalize() == SHA256.hash(data: burst),
+                  "REQ94: A delayed stdout consumer receives every byte beyond 128 chunks without overflow or loss")
+        } catch {
+            check(false, "REQ94: A delayed stdout consumer receives every byte beyond 128 chunks without overflow or loss")
+        }
         for origin in [ManagementClient.OverflowOrigin.stdoutQueue, .stderrQueue] {
             let file = root.appendingPathComponent(origin.rawValue)
             try Data(repeating: 32, count: 2 * JSONLineFramer.maximumBytes).write(to: file)
             let handle = try FileHandle(forReadingFrom: file)
             let stream = ManagementClient.chunks(handle, origin: origin)
             let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while stream.bufferedChunkCount < 128, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            check(stream.bufferedChunkCount == 128
+                  && (try? handle.offset()) == UInt64(128 * 8192),
+                  "REQ94: Unread \(origin.rawValue) pauses its reader at the unchanged 128-chunk limit")
+            stream.cancel()
             while (try? handle.offset()) != nil, ContinuousClock.now < deadline {
                 try await Task.sleep(for: .milliseconds(10))
             }
-            do {
-                for try await _ in stream {}
-                check(false, "Burst \(origin.rawValue) queue overflow is distinguished")
-            } catch let failure as ManagementClient.OverflowFailure {
-                check(failure.origin == origin && failure.count == 129,
-                      "Burst \(origin.rawValue) queue overflow is distinguished")
-            }
+            check((try? handle.offset()) == nil,
+                  "REQ94: Cancelling a full \(origin.rawValue) queue wakes and closes its owned reader")
         }
 
         try await requestPressureChecks()
