@@ -170,6 +170,7 @@ actor Checks {
         } catch {
             check(false, "REQ94: A delayed stdout consumer receives every byte beyond 128 chunks without overflow or loss")
         }
+        try await pressuredPipeChecks(file: burstFile, expected: burst, expectedFrames: expectedFrames)
         for origin in [ManagementClient.OverflowOrigin.stdoutQueue, .stderrQueue] {
             let file = root.appendingPathComponent(origin.rawValue)
             try Data(repeating: 32, count: 2 * JSONLineFramer.maximumBytes).write(to: file)
@@ -191,6 +192,80 @@ actor Checks {
         }
 
         try await requestPressureChecks()
+    }
+
+    private func pressuredPipeChecks(file: URL, expected: Data, expectedFrames: Int) async throws {
+        for cancelling in [false, true] {
+            let pipe = Pipe()
+            let descriptor = pipe.fileHandleForReading.fileDescriptor
+            let stream = ManagementClient.chunks(pipe.fileHandleForReading, origin: .stdoutQueue)
+            let child = Process()
+            child.executableURL = URL(fileURLWithPath: "/bin/cat")
+            child.arguments = [file.path]
+            child.standardInput = FileHandle.nullDevice
+            child.standardOutput = pipe
+            child.standardError = FileHandle.nullDevice
+            try child.run()
+            let watchdog = Task {
+                do { try await Task.sleep(for: .seconds(15)) }
+                catch { return }
+                stream.cancel()
+                if child.isRunning { child.terminate() }
+            }
+            defer {
+                watchdog.cancel()
+                stream.cancel()
+                if child.isRunning { child.terminate() }
+            }
+            let fullDeadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while stream.bufferedChunkCount < 128, child.isRunning, ContinuousClock.now < fullDeadline {
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            try await Task.sleep(for: .milliseconds(25))
+            check(stream.bufferedChunkCount == 128 && child.isRunning,
+                  "REQ94 pipe \(cancelling ? "cancel" : "drain"): A live writer is backpressured at exactly 128 unread chunks")
+            if cancelling {
+                stream.cancel()
+            } else {
+                var count = 0, frames = 0, chunks = 0
+                var shortRead = false
+                var hash = SHA256()
+                var framer = JSONLineFramer()
+                let validator = try ContractValidator()
+                do {
+                    for try await bytes in stream {
+                        try await Task.sleep(for: .milliseconds(1))
+                        count += bytes.count
+                        chunks += 1
+                        shortRead = shortRead || bytes.count < 8192
+                        hash.update(data: bytes)
+                        for line in try framer.append(bytes) {
+                            try validator.validate(JSONDecoder().decode(JSONValue.self, from: line))
+                            frames += 1
+                        }
+                    }
+                    try framer.finish()
+                    check(count == expected.count && chunks > 128 && shortRead && frames == expectedFrames
+                          && hash.finalize() == SHA256.hash(data: expected),
+                          "REQ94 pipe drain: Short reads preserve every byte/hash and validated frame beyond 128 chunks through EOF")
+                } catch {
+                    check(false, "REQ94 pipe drain: Short reads preserve every byte/hash and validated frame beyond 128 chunks through EOF")
+                    stream.cancel()
+                }
+            }
+            let exitDeadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while child.isRunning, ContinuousClock.now < exitDeadline {
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            check(!child.isRunning && (cancelling ? child.terminationStatus != 0 : child.terminationStatus == 0),
+                  "REQ94 pipe \(cancelling ? "cancel" : "drain"): The owned writer exits within the bound without hanging or replay")
+            let closeDeadline = ContinuousClock.now.advanced(by: .seconds(1))
+            while fcntl(descriptor, F_GETFD) != -1, ContinuousClock.now < closeDeadline {
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            check(fcntl(descriptor, F_GETFD) == -1 && errno == EBADF,
+                  "REQ94 pipe \(cancelling ? "cancel" : "drain"): The owned pipe reader closes after full-queue cancellation or orderly EOF")
+        }
     }
 
     func descriptorMetricsChecks() async throws {
