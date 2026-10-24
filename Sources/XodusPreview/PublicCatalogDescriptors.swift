@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import OSLog
 import XodusManagement
 
 actor PublicCatalogDescriptors {
@@ -17,6 +18,11 @@ actor PublicCatalogDescriptors {
     private struct Batch {
         var entries: [String: Entry] = [:]
         var failures: [String: String] = [:]
+        var retryable = Set<String>()
+    }
+    private struct TransientFailure: Error {
+        let status: Int
+        let retryAfter: TimeInterval?
     }
     private struct Pending {
         let task: Task<Data?, Error>
@@ -24,6 +30,9 @@ actor PublicCatalogDescriptors {
     }
     private let transport: any PCGamesTransport
     private let now: @Sendable () -> Date
+    private let sleep: @Sendable (Duration) async throws -> Void
+    private var batches: [UUID: Task<Batch, Error>] = [:]
+    private var retryNotBefore: Date?
     private var client: ManagementClient?
     private var owner: UUID?
     private var generation = UUID()
@@ -37,9 +46,11 @@ actor PublicCatalogDescriptors {
     var cachedBytes: Int { bytes }
 
     init(transport: any PCGamesTransport = PCGamesHTTP(),
-         now: @escaping @Sendable () -> Date = { Date() }) {
+         now: @escaping @Sendable () -> Date = { Date() },
+         sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
         self.transport = transport
         self.now = now
+        self.sleep = sleep
     }
 
     func bind(_ client: ManagementClient?, owner: UUID) {
@@ -57,6 +68,9 @@ actor PublicCatalogDescriptors {
     }
 
     private func reset() {
+        for task in batches.values { task.cancel() }
+        for read in pending.values { read.task.cancel() }
+        batches = [:]
         generation = UUID()
         entries = [:]
         errors = [:]
@@ -115,14 +129,18 @@ actor PublicCatalogDescriptors {
             } else { missing.append(key) }
         }
         if !missing.isEmpty {
-            let client = client
-            let batch = Task { () throws -> Batch in
-                if let client {
-                    return try await managed(ids: missing.map(\.id), market: market,
-                                             language: wireLanguage, client: client, refresh: refresh)
-                }
-                return try await direct(ids: missing.map(\.id), market: market, language: language)
+            if client == nil, let retryNotBefore, retryNotBefore > now() {
+                throw PCGamesError.http(429)
             }
+            let client = client
+            let batchID = UUID()
+            let batch = Task { () throws -> Batch in
+                defer { batches[batchID] = nil }
+                return try await recovering(ids: missing.map(\.id), market: market,
+                    language: client == nil ? language : wireLanguage, client: client, refresh: refresh,
+                    epoch: epoch)
+            }
+            batches[batchID] = batch
             for key in missing {
                 let task = Task { () throws -> Data? in
                     defer { if generation == epoch { pending[key] = nil } }
@@ -160,6 +178,68 @@ actor PublicCatalogDescriptors {
         return data
     }
 
+    private func recovering(ids: [String], market: String, language: String,
+                            client: ManagementClient?, refresh: Bool, epoch: UUID) async throws -> Batch {
+        var remaining = ids
+        var result = Batch()
+        for attempt in 0...3 {
+            try Task.checkCancellation()
+            guard epoch == generation else { throw CancellationError() }
+            var delay: TimeInterval = pow(2, Double(attempt))
+            do {
+                let next: Batch
+                if let client {
+                    next = try await managed(ids: remaining, market: market, language: language,
+                                             client: client, refresh: refresh || attempt > 0)
+                } else {
+                    next = try await direct(ids: remaining, market: market, language: language)
+                }
+                result.entries.merge(next.entries, uniquingKeysWith: { _, new in new })
+                for id in remaining { result.failures[id] = next.failures[id] }
+                remaining = remaining.filter { next.retryable.contains($0) }
+                if remaining.isEmpty { return result }
+            } catch is CancellationError { throw CancellationError() }
+            catch {
+                let retry: Bool
+                if let failure = error as? TransientFailure {
+                    // Do not shorten a server's cooldown to fit the automatic retry budget.
+                    if let after = failure.retryAfter {
+                        guard after <= 30 else { throw PCGamesError.http(failure.status) }
+                        delay = max(delay, after)
+                    }
+                    retry = true
+                } else {
+                    retry = error as? PCGamesError == .transport
+                }
+                guard retry, attempt < 3 else {
+                    if !result.entries.isEmpty {
+                        for id in remaining { result.failures[id] = "Game details are temporarily unavailable. Try again." }
+                        return result
+                    }
+                    if let failure = error as? TransientFailure { throw PCGamesError.http(failure.status) }
+                    throw error
+                }
+            }
+            guard attempt < 3 else { return result }
+            Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                .notice("Retrying transient public details read; attempt \(attempt + 1), products \(remaining.count)")
+            try Task.checkCancellation()
+            guard epoch == generation else { throw CancellationError() }
+            try await sleep(.seconds(delay))
+        }
+        return result
+    }
+
+    private func retryAfter(_ text: String?) -> TimeInterval? {
+        guard let text else { return nil }
+        if let seconds = TimeInterval(text), seconds.isFinite, seconds >= 0 { return seconds }
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.timeZone = TimeZone(secondsFromGMT: 0)
+        parser.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
+        return parser.date(from: text).map { max(0, $0.timeIntervalSince(now())) }
+    }
+
     private func direct(ids: [String], market: String, language: String) async throws -> Batch {
         var url = URLComponents(string: "https://displaycatalog.mp.microsoft.com/v7.0/products")
         url?.queryItems = [
@@ -172,6 +252,11 @@ actor PublicCatalogDescriptors {
         request.httpShouldHandleCookies = false
         requests += 1
         let response = try await transport.send(request)
+        if [408, 429, 500, 502, 503, 504].contains(response.status) {
+            let after = retryAfter(response.retryAfter)
+            if let after { retryNotBefore = max(retryNotBefore ?? .distantPast, now().addingTimeInterval(after)) }
+            throw TransientFailure(status: response.status, retryAfter: after)
+        }
         guard response.status == 200 else { throw PCGamesError.http(response.status) }
         guard response.data.count <= PCGamesHTTP.maximumBytes else { throw PCGamesError.responseTooLarge }
         guard let object = try JSONSerialization.jsonObject(with: response.data) as? [String: Any],
@@ -208,7 +293,9 @@ actor PublicCatalogDescriptors {
             result.entries[record.productID] = Entry(bytes: bytes,
                 expiresAt: try record.expiration(), usedAt: now())
         }
-        let oversized = response.failures.filter { $0.error.code == "LIMIT_EXCEEDED" }.map(\.productID)
+        let oversized = response.failures.filter {
+            $0.error.code == "LIMIT_EXCEEDED" && !$0.error.retryable
+        }.map(\.productID)
         if !oversized.isEmpty, ids.count > 1 {
             let size = max(1, ids.count / 2)
             for start in stride(from: 0, to: oversized.count, by: size) {
@@ -218,15 +305,21 @@ actor PublicCatalogDescriptors {
                                                     client: client, refresh: refresh)
                     result.entries.merge(smaller.entries, uniquingKeysWith: { _, new in new })
                     result.failures.merge(smaller.failures, uniquingKeysWith: { _, new in new })
+                    result.retryable.formUnion(smaller.retryable)
                 } catch let error as ManagementError {
                     for id in ids { result.failures[id] = error.localizedDescription }
                 }
             }
         }
-        for failure in response.failures where failure.error.code != "LIMIT_EXCEEDED" || ids.count == 1 {
-            result.failures[failure.productID] = failure.error.code == "LIMIT_EXCEEDED"
+        for failure in response.failures where failure.error.code != "LIMIT_EXCEEDED"
+            || failure.error.retryable || ids.count == 1 {
+            result.failures[failure.productID] = failure.error.code == "LIMIT_EXCEEDED" && !failure.error.retryable
                 ? "This game's public details exceed the safe response size."
                 : "Some public game details couldn't be loaded. Try again."
+            if failure.error.retryable,
+               ["NETWORK_UNAVAILABLE", "LIMIT_EXCEEDED"].contains(failure.error.code) {
+                result.retryable.insert(failure.productID)
+            }
         }
         return result
     }

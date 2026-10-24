@@ -366,7 +366,7 @@ enum CatalogDetailLoadingChecks {
               "Joined selected details both complete with the admitted public response")
         let failure = Task { await catalogue.load(ids: ["FIXTURE00003"], market: "US", language: "en-US") }
         try await wait(transport, 3)
-        await transport.complete(2, status: 503)
+        await transport.complete(2, status: 404)
         await failure.value
         check(catalogue.images.count == 21 && catalogue.error != nil,
               "Failed public refresh retains useful admitted metadata and reports failure, not empty success")

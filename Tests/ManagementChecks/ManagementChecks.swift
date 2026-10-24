@@ -1614,6 +1614,7 @@ enum MockBackend {
             }
             var loggedOut = false, flowStarted = false, cancelledLate = false
             var catalogQueryReads = 0
+            var descriptorReads = 0
             var flowReads = 0, discoveryReads = 0, profileReads = 0
             var activityReads = 0, registryReads = 0
             var recentReads = 0, accountLibraryReads = 0
@@ -2014,6 +2015,7 @@ enum MockBackend {
                         continue
                     }
                     if scenario.hasPrefix("descriptors"), command == "catalog.descriptors" {
+                        descriptorReads += 1
                         let params = request["params"] ?? .null
                         let ids = params["productIDs"]?.array?.compactMap(\.string) ?? []
                         let timestamp = ISO8601DateFormatter()
@@ -2022,7 +2024,13 @@ enum MockBackend {
                             try emitFailure(request, code: "NETWORK_UNAVAILABLE")
                             continue
                         }
-                        let failed = scenario == "descriptorsoversized" ? ids
+                        let recovering = ["descriptorsretry", "descriptorscapacity", "descriptorsauth",
+                                          "descriptorsretryexhausted"].contains(scenario)
+                        if recovering, descriptorReads > 1, ids != ["9DESC0000002"] { exit(3) }
+                        let failed = recovering && (descriptorReads < 3 || scenario == "descriptorsauth"
+                            || scenario == "descriptorsretryexhausted")
+                            ? ids.filter { $0 == "9DESC0000002" }
+                            : scenario == "descriptorsoversized" ? ids
                             : scenario == "descriptorssplitfailure" && ids.count > 1 ? Array(ids.dropFirst()) : []
                         let records = ids.filter { !failed.contains($0) }.map { id -> JSONValue in
                             .object([
@@ -2054,8 +2062,11 @@ enum MockBackend {
                         }
                         let failures = failed.map { id -> JSONValue in
                             .object(["productID": .string(id), "error": .object([
-                                "code": .string("LIMIT_EXCEEDED"), "message": .string("Synthetic oversized record"),
-                                "retryable": .bool(false)
+                                "code": .string(["descriptorsretry", "descriptorsretryexhausted"].contains(scenario)
+                                    ? "NETWORK_UNAVAILABLE"
+                                    : scenario == "descriptorsauth" ? "AUTH_INVALID" : "LIMIT_EXCEEDED"),
+                                "message": .string("Synthetic public descriptor failure"),
+                                "retryable": .bool(recovering)
                             ])])
                         }
                         try emit(.object(result(request, data: .object([

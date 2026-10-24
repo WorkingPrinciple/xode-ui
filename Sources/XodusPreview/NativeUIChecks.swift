@@ -111,6 +111,32 @@ enum NativeUIChecks {
     }
 
     static func run(check: (Bool, String) -> Void) {
+        var retried = false
+        let recovery = LibraryDetailsRecoveryNotice(
+            message: "Some game details are unavailable. Your available games are still here.",
+            retry: { retried = true })
+        recovery.retry()
+        check(retried, "REQ98 Library recovery has a real retry action independent of the hidden collection header")
+        for width in [CGFloat(220), 380] {
+            let renderer = ImageRenderer(content: recovery.frame(width: width, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true))
+            check(renderer.cgImage.map { $0.width == Int(width) && $0.height >= 50 } == true,
+                  "REQ98 native recovery notice and keyboard-accessible Button wrap at \(Int(width))pt")
+            if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+                for scheme in [ColorScheme.light, .dark] {
+                    let host = NSHostingView(rootView: recovery.padding(16)
+                        .frame(width: width + 32, height: 140, alignment: .topLeading)
+                        .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, scheme))
+                    host.sizingOptions = []
+                    host.appearance = NSAppearance(named: scheme == .light ? .aqua : .darkAqua)
+                    host.frame = CGRect(x: 0, y: 0, width: width + 32, height: 140)
+                    host.layoutSubtreeIfNeeded()
+                    saveDetachedEvidence(host, directory: directory,
+                        name: "library-recovery-\(scheme == .light ? "light" : "dark")-\(Int(width)).png",
+                        check: check)
+                }
+            }
+        }
         checkContinuePlayingScroller(check: check)
         checkDetailFirstCards(check: check)
         checkLoadingPresentation(check: check)

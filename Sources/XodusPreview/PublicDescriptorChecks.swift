@@ -25,10 +25,15 @@ private actor DescriptorTransport: PCGamesTransport {
     var failures = Set<Int>()
     var omitted = Set<String>()
     var foreign = false
+    var failureStatus = 400
+    var retryAfter: String?
 
-    func configure(blocked: Set<Int> = [], failures: Set<Int> = [], omitted: Set<String> = [], foreign: Bool = false) {
+    func configure(blocked: Set<Int> = [], failures: Set<Int> = [], omitted: Set<String> = [], foreign: Bool = false,
+                   failureStatus: Int = 400, retryAfter: String? = nil) {
         self.blocked = blocked; self.failures = failures; self.omitted = omitted
         self.foreign = foreign
+        self.failureStatus = failureStatus
+        self.retryAfter = retryAfter
     }
 
     func release(_ index: Int) { continuations.removeValue(forKey: index)?.resume() }
@@ -37,7 +42,9 @@ private actor DescriptorTransport: PCGamesTransport {
         let index = requests.count
         requests.append(request)
         if blocked.contains(index) { await withCheckedContinuation { continuations[index] = $0 } }
-        if failures.contains(index) { return PCGamesHTTPResponse(status: 503, data: Data()) }
+        if failures.contains(index) {
+            return PCGamesHTTPResponse(status: failureStatus, data: Data(), retryAfter: retryAfter)
+        }
         let items = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!.queryItems!
         let ids = items.first { $0.name == "bigIds" }!.value!.split(separator: ",").map(String.init)
         let products: [[String: Any]] = ids.filter { !omitted.contains($0) }.map {
@@ -50,6 +57,17 @@ private actor DescriptorTransport: PCGamesTransport {
         }
         return PCGamesHTTPResponse(status: 200,
             data: try JSONSerialization.data(withJSONObject: ["Products": products]))
+    }
+}
+
+private actor DescriptorRetryClock {
+    private(set) var delays: [Duration] = []
+    let block: Bool
+    init(block: Bool = false) { self.block = block }
+    func sleep(_ duration: Duration) async throws {
+        delays.append(duration)
+        if block { try await Task.sleep(for: .seconds(3_600)) }
+        try Task.checkCancellation()
     }
 }
 
@@ -71,6 +89,92 @@ enum PublicDescriptorChecks {
         let shared = PublicCatalogDescriptors(transport: transport, now: { clock.now() })
         let client = PCGamesClient(transport: transport, descriptors: shared)
         let sample = ids(3)
+        for status in [503, 429] {
+            let transient = DescriptorTransport()
+            await transient.configure(failures: [0, 1], failureStatus: status,
+                                      retryAfter: status == 429 ? "3" : nil)
+            let delay = DescriptorRetryClock()
+            let recovery = PublicCatalogDescriptors(transport: transient, sleep: { try await delay.sleep($0) })
+            let data = try await recovery.load(ids: sample, market: "US", language: "en-US")
+            check(try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products.count == 3,
+                  "REQ98 transient descriptor reads eventually recover without losing games")
+            let requests = await transient.requests.count, delays = await delay.delays
+            check(requests == 3
+                  && delays == (status == 429 ? [.seconds(3), .seconds(3)] : [.seconds(1), .seconds(2)]),
+                  "REQ98 deterministic exponential backoff honors exposed Retry-After")
+        }
+        let exhausted = DescriptorTransport()
+        await exhausted.configure(failures: [0, 1, 2, 3, 4], failureStatus: 503)
+        let capClock = DescriptorRetryClock()
+        let capped = PublicCatalogDescriptors(transport: exhausted, sleep: { try await capClock.sleep($0) })
+        do {
+            _ = try await capped.load(ids: sample, market: "US", language: "en-US")
+            check(false, "REQ98 exhausted retries must report failure")
+        } catch PCGamesError.http(503) {
+            let requests = await exhausted.requests.count, delays = await capClock.delays
+            check(requests == 4 && delays == [.seconds(1), .seconds(2), .seconds(4)],
+                  "REQ98 automatic recovery stops after three retries with bounded delays")
+        }
+        for status in [401, 403, 404, 429] {
+            let permanent = DescriptorTransport()
+            await permanent.configure(failures: [0, 1], failureStatus: status, retryAfter: "120")
+            let delay = DescriptorRetryClock()
+            let noRetry = PublicCatalogDescriptors(transport: permanent, sleep: { try await delay.sleep($0) })
+            do {
+                _ = try await noRetry.load(ids: sample, market: "US", language: "en-US")
+                check(false, "REQ98 permanent failures cannot appear successful")
+            } catch PCGamesError.http {
+                let requests = await permanent.requests.count, delays = await delay.delays
+                check(requests == 1 && delays.isEmpty,
+                      "REQ98 no auth/permanent retry or shortened server cooldown for HTTP \(status)")
+            }
+            if status == 429 {
+                do {
+                    _ = try await noRetry.load(ids: sample, market: "US", language: "en-US")
+                    check(false, "REQ98 manual Retry cannot bypass server cooldown")
+                } catch PCGamesError.http(429) {
+                    check(await permanent.requests.count == 1, "REQ98 manual Retry honors retained server cooldown without network")
+                }
+            }
+        }
+        let datedTransport = DescriptorTransport()
+        let serverClock = DescriptorClock()
+        let retryDateFormatter = DateFormatter()
+        retryDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        retryDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        retryDateFormatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
+        await datedTransport.configure(failures: [0], failureStatus: 429,
+            retryAfter: retryDateFormatter.string(from: serverClock.now().addingTimeInterval(5)))
+        let datedDelay = DescriptorRetryClock()
+        let datedStore = PublicCatalogDescriptors(transport: datedTransport, now: { serverClock.now() },
+            sleep: { duration in
+                try await datedDelay.sleep(duration)
+                serverClock.advance(5)
+            })
+        _ = try await datedStore.load(ids: sample, market: "US", language: "en-US")
+        check(await datedDelay.delays == [.seconds(5)], "REQ98 HTTP-date Retry-After uses the injected current clock")
+        let retiringTransport = DescriptorTransport()
+        await retiringTransport.configure(failures: [0], failureStatus: 503)
+        let waitingDelay = DescriptorRetryClock(block: true)
+        let retiringStore = PublicCatalogDescriptors(transport: retiringTransport,
+            sleep: { try await waitingDelay.sleep($0) })
+        let scope = UUID()
+        await retiringStore.bind(nil, owner: scope)
+        let firstWaiter = Task { try await retiringStore.load(ids: sample, market: "US", language: "en-US") }
+        for _ in 0..<200 {
+            if await !waitingDelay.delays.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let secondWaiter = Task { try await retiringStore.load(ids: sample, market: "US", language: "en-US") }
+        for _ in 0..<10 { await Task.yield() }
+        await retiringStore.unbind(owner: scope)
+        for waiter in [firstWaiter, secondWaiter] {
+            do { _ = try await waiter.value; check(false, "REQ98 retired read cannot publish") }
+            catch is CancellationError { check(true, "REQ98 session retirement cancels coalesced retry waiters") }
+        }
+        let retiredRequests = await retiringTransport.requests.count, retiredCache = await retiringStore.cachedCount
+        check(retiredRequests == 1 && retiredCache == 0,
+              "REQ98 coalesced consumers issue no stale-account retry or cache publication after retirement")
         let collection = try await client.resolveCollection(ids: sample, kinds: [:], candidateCount: 3,
             market: "US", language: "en-US", accountHash: "account-a")
         let artwork = LibraryCatalogArtwork(descriptors: shared, now: { clock.now() })
@@ -213,6 +317,33 @@ enum PublicDescriptorChecks {
         let managedConfiguration = BackendConfiguration(executable: helper,
             stateDirectory: root.appendingPathComponent("descriptors"))
         let management = try ManagementClient()
+        for scenario in ["descriptorsretry", "descriptorscapacity", "descriptorsauth", "descriptorsretryexhausted"] {
+            let backend = try ManagementClient()
+            _ = try await backend.connect(BackendConfiguration(executable: helper,
+                stateDirectory: root.appendingPathComponent(scenario)))
+            let clock = DescriptorRetryClock()
+            let recovery = PublicCatalogDescriptors(transport: DescriptorTransport(),
+                sleep: { try await clock.sleep($0) })
+            await recovery.bind(backend, owner: UUID())
+            let data = try await recovery.load(ids: sample, market: "US", language: "en-US")
+            let products = try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products
+            let delays = await clock.delays, requests = await recovery.requests
+            let failures = await recovery.failures(ids: sample, market: "US", language: "en-US")
+            let expected: Bool
+            switch scenario {
+            case "descriptorsauth":
+                expected = products.count == 2 && requests == 1 && delays.isEmpty && failures.count == 1
+            case "descriptorsretryexhausted":
+                expected = products.count == 2 && requests == 4
+                    && delays == [.seconds(1), .seconds(2), .seconds(4)] && failures.count == 1
+            default:
+                expected = products.count == 3 && requests == 3
+                    && delays == [.seconds(1), .seconds(2)] && failures.isEmpty
+            }
+            check(expected,
+                  "REQ98 managed \(scenario) retries only transient failed IDs, preserving successful peers and refusing auth retry")
+            check(await backend.close(), "REQ98 managed retry fixture closes its synthetic backend")
+        }
         let hello = try await management.connect(managedConfiguration)
         check(hello.supports(.descriptors), "REQ-82: Shared public reads are explicitly capability-negotiated")
         let fallbackTransport = DescriptorTransport()
@@ -417,7 +548,7 @@ enum PublicDescriptorChecks {
         await failedController.loadOnAppear()
         check(failedController.error != nil && failedController.snapshot?.isComplete == false
               && failedController.retainedLibraryNotice == "Showing available details from an incomplete library."
-              && failedController.resolutionNotice?.contains("Refresh your library") == true
+              && failedController.resolutionNotice?.contains("available games are still here") == true
               && failedController.resolutionNotice?.contains("classification") == false
               && !failedController.accessIsCurrent,
               "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim")

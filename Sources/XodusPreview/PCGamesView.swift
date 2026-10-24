@@ -2,6 +2,22 @@
 import SwiftUI
 import XodusManagement
 
+struct LibraryDetailsRecoveryNotice: View {
+    let message: String
+    let retry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(message).font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("xodus.pcGames.partialResolution")
+            Button("Retry game details", action: retry)
+                .accessibilityIdentifier("xodus.pcGames.retryDetails")
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
 struct PCGamesView: View {
     @EnvironmentObject private var session: LiveSession
     @ObservedObject var library: PCGamesController
@@ -44,9 +60,8 @@ struct PCGamesView: View {
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
             if let notice = library.resolutionNotice {
-                Text(notice).font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.pcGames.partialResolution")
+                LibraryDetailsRecoveryNotice(message: notice, retry: { library.refresh() })
+                    .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
             }
             if library.presenceUnavailable {
                 ContentUnavailableView {

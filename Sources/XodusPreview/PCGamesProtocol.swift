@@ -127,11 +127,13 @@ struct PCGamesHTTPResponse: Sendable {
     let status: Int
     let data: Data
     let location: String?
+    let retryAfter: String?
 
-    init(status: Int, data: Data, location: String? = nil) {
+    init(status: Int, data: Data, location: String? = nil, retryAfter: String? = nil) {
         self.status = status
         self.data = data
         self.location = location
+        self.retryAfter = retryAfter
     }
 }
 
@@ -187,7 +189,8 @@ struct PCGamesHTTP: PCGamesTransport {
                 data.append(byte)
             }
             return PCGamesHTTPResponse(status: http.statusCode, data: data,
-                                       location: http.value(forHTTPHeaderField: "Location"))
+                                       location: http.value(forHTTPHeaderField: "Location"),
+                                       retryAfter: http.value(forHTTPHeaderField: "Retry-After"))
         } catch is CancellationError { throw CancellationError() }
         catch let error as PCGamesError { throw error }
         catch {

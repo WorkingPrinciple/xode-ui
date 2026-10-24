@@ -40,6 +40,23 @@ separate from it. CrossOver setup belongs in Settings, not routine welcome copy.
 Library and Discover share an unchecked default for Show unsupported games and
 preserve explicit saved choices.
 
+REQ98 public game-detail reads retry transient failures at most three times,
+with 1/2/4-second exponential delays. Direct HTTP respects numeric or HTTP-date
+Retry-After; cooldowns longer than 30 seconds stop automatic recovery without
+shortening the server delay, and manual Retry cannot bypass the retained
+cooldown. The current management contract exposes no server cooldown: only
+NETWORK_UNAVAILABLE and inflight LIMIT_EXCEEDED with retryable=true are retried.
+Permanent oversized records retain bounded splitting, not repeated single-ID
+requests. Successful peers stay reusable; authentication, malformed responses,
+permanent errors and mutation commands are never automatically replayed here.
+Session unbinding cancels owned coalesced reads and their backoff waits.
+After recovery is exhausted, Library keeps available games visible and provides
+an accessible **Retry game details** button beside its concise notice, even when
+the collection header is hidden. Existing account/generation and busy gates
+still govern that explicit reload. `--library-access-check` exercises synthetic
+read recovery and cancellation; `--self-check` renders native recovery layouts.
+These are source checks, not installed network-failure acceptance.
+
 `swift run XodusPreview --self-check` exercises the detached presentation.
 Optionally set `XODUS_REFINEMENT_EVIDENCE` to an existing private output directory
 to save synthetic light/dark cover and constrained welcome PNGs. No window,
