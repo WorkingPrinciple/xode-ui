@@ -70,7 +70,6 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
 final class NativeInstallationQuery {
     static let defaultTimeout: Duration = .seconds(120)
     private var process: Process?
-    private let storageProbe = GameStorageProbe()
     var isRunning: Bool { process?.isRunning == true }
 
     static func failureMessage(_ error: Error) -> String {
@@ -81,8 +80,7 @@ final class NativeInstallationQuery {
     }
 
     func run(configuration: BackendConfiguration, product: String, gameDirectory: URL,
-             stateDirectory: URL? = nil, timeout: Duration = NativeInstallationQuery.defaultTimeout,
-             storageProbe: GameStorageProbe? = nil) async throws -> NativeInstallationStatus {
+             stateDirectory: URL? = nil, timeout: Duration = NativeInstallationQuery.defaultTimeout) async throws -> NativeInstallationStatus {
         guard process == nil, PCGamesClient.validProductID(product) else { throw GameScriptError.busy }
 #if XODUS_SHIPPING
         guard configuration.executableIdentity != nil else { throw GameScriptError.runtimeUnavailable }
@@ -92,9 +90,7 @@ final class NativeInstallationQuery {
             _ = try await Task.detached { try identity.validatedArguments() }.value
         }
         try Task.checkCancellation()
-        try await (storageProbe ?? self.storageProbe).read {
-            try GameScriptFiles.checkPath(gameDirectory, allowMissing: true)
-        }
+        try GameScriptFiles.checkPath(gameDirectory, allowMissing: true)
         let state = stateDirectory ?? URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent("Library/Application Support/Xodus/InstallationStatus/\(InstalledGamesController.runID())")
         try GameScriptFiles.checkPath(state, allowMissing: true)
