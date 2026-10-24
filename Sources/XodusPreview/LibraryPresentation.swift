@@ -672,6 +672,7 @@ private struct LibraryInformationStyle: ViewModifier {
 struct LibraryGameInformation: View {
     var gameFacts = GameFacts()
     var detail = false
+    var showsAccessBadges = true
     var facts: LibraryCatalogFacts?
     var xbox: LibraryXboxStatsCache.Game?
     var localPlaySeconds: Double? = nil
@@ -681,7 +682,7 @@ struct LibraryGameInformation: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 5 : 8) {
             HStack(spacing: 8) {
-                AccessBadges(facts: gameFacts, detail: detail)
+                if showsAccessBadges { AccessBadges(facts: gameFacts, detail: detail) }
                 if let facts, !facts.genres.isEmpty {
                     Label(compact ? facts.genres[0] : facts.genres.joined(separator: " / "), systemImage: "tag")
                         .lineLimit(compact ? 1 : 2)

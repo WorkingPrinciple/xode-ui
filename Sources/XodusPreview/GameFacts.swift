@@ -41,6 +41,7 @@ struct GameFacts: Equatable {
     var support: Support = .unknown
     var classification: Classification = .unresolved
     var accessIsCurrent = false
+    var subscriptionAcquisition = false
 
     init(ownership: Ownership = .unknown, memberships: [Membership] = [], accessIsCurrent: Bool = false) {
         self.ownership = ownership
@@ -49,6 +50,7 @@ struct GameFacts: Equatable {
     }
 
     init(pc: PCGame?, gamePass: Bool, installed: InstalledGame? = nil, accessIsCurrent: Bool) {
+        subscriptionAcquisition = accessIsCurrent && pc?.acquisitionKind == .subscription
         if accessIsCurrent {
             switch pc?.acquisitionKind {
             case .purchased: ownership = .purchased(nil)
@@ -84,6 +86,41 @@ struct GameFacts: Equatable {
             }
         }
         return labels
+    }
+
+    func heroAccessLabels() -> [String] {
+        var labels: [String] = []
+        if accessIsCurrent {
+            switch ownership {
+            case .purchased: labels.append("Owned")
+            case .inLibraryUnknownAcquisition:
+                if !subscriptionAcquisition { labels.append("In your library") }
+            case .notInLibrary, .unknown: break
+            }
+            if subscriptionAcquisition { labels.append("Subscription (plan unknown)") }
+        }
+        if labels.isEmpty { labels.append("Access not verified") }
+        for plan in Plan.allCases where memberships.contains(where: { $0.plan == plan }) {
+            labels.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
+        }
+        return labels
+    }
+}
+
+struct GameHeroAccess: View {
+    let facts: GameFacts
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) { labels }
+            VStack(alignment: .leading, spacing: 4) { labels }
+        }
+        .font(.callout.weight(.medium))
+        .accessibilityIdentifier("xodus.game.heroAccess")
+    }
+
+    private var labels: some View {
+        ForEach(facts.heroAccessLabels(), id: \.self) { Text($0) }
     }
 }
 

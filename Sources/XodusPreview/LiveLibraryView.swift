@@ -392,10 +392,8 @@ struct LiveLibraryView: View {
             LibraryLandscapeView(references: art.images[id]?.cover.map { [$0] } ?? (game.cover.map { [$0] } ?? []),
                                  installed: game.installed, allowsLoading: artworkAllowed)
         } information: {
-            Text(game.pc?.acquisitionKind == .subscription ? "Included with your subscription"
-                 : game.pc != nil ? "In your library" : "Installed on this Mac")
-                .font(.callout.weight(.medium))
-            information(id: id)
+            GameHeroAccess(facts: game.facts)
+            information(id: id, showsAccessBadges: false)
             if let details = art.images[id]?.detail { GameHeroMetadata(details: details) }
         } actions: {
             if !unsupportedIssues(game).isEmpty {
@@ -566,13 +564,14 @@ struct LiveLibraryView: View {
         self.detailFocusReturnID = nil
     }
 
-    private func information(id: String, compact: Bool = false) -> some View {
+    private func information(id: String, compact: Bool = false, showsAccessBadges: Bool = true) -> some View {
         let metadata = art.images[id]?.facts
         let xbox = xboxStats.cache?.games[id]
         let facts = metadata?.genres.isEmpty == false ? metadata :
             xbox.map { LibraryCatalogFacts(genres: $0.genres, capabilities: metadata?.capabilities ?? []) } ?? metadata
         let game = projection.byID[id]
         return LibraryGameInformation(gameFacts: game?.facts ?? GameFacts(),
+                                       showsAccessBadges: showsAccessBadges,
                                       facts: facts, xbox: xbox, compact: compact)
     }
 

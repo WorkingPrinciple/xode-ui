@@ -213,7 +213,9 @@ struct LiveProductView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     LibraryLogoTitle(title: product.title, references: art?.logos ?? [],
                                      allowsLoading: allowsArtworkLoading)
+                    GameHeroAccess(facts: gameFacts)
                     LibraryGameInformation(gameFacts: gameFacts, detail: true,
+                                           showsAccessBadges: false,
                                            facts: art?.facts, xbox: stats.cache?.games[product.id])
                     if let details {
                         GameHeroMetadata(details: details)

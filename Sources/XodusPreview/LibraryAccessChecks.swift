@@ -553,6 +553,29 @@ enum LibraryAccessChecks {
               && GameDetailFacetCopy.access(acquisition: .purchased, current: false).contains("refresh required")
               && GameDetailFacetCopy.access(acquisition: nil, current: true) == "Access not verified",
               "M10: detail facets never relabel subscription, stale or absent access as current Owned")
+        let heroPurchase = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .purchased), gamePass: false, installed: installedHeld, accessIsCurrent: true)
+        let heroSubscription = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: true)
+        check(heroPurchase.heroAccessLabels() == ["Owned"]
+              && heroSubscription.heroAccessLabels() == ["Subscription (plan unknown)", "In PC Game Pass catalog"],
+              "REQ-77: Actual purchase/subscription collection facts provide separate provenance, not installation or an inferred plan")
+        var heroBoth = heroPurchase
+        heroBoth.subscriptionAcquisition = true
+        heroBoth.memberships = [.init(plan: .pcGamePass)]
+        check(heroBoth.heroAccessLabels() == ["Owned", "Subscription (plan unknown)", "In PC Game Pass catalog"],
+              "REQ-77: Independently evidenced purchase, subscription acquisition and public catalog membership may coexist")
+        let heroCatalogOnly = GameFacts(pc: nil, gamePass: true, installed: installedHeld, accessIsCurrent: true)
+        let heroUnknown = GameFacts(pc: nil, gamePass: false, installed: installedHeld, accessIsCurrent: false)
+        let heroStale = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: false)
+        check(heroCatalogOnly.heroAccessLabels() == ["Access not verified", "In PC Game Pass catalog"]
+              && heroUnknown.heroAccessLabels() == ["Access not verified"]
+              && heroStale.heroAccessLabels() == ["Access not verified", "In PC Game Pass catalog"],
+              "REQ-77: Public membership, stale subscription and installed/launchable files cannot invent current account provenance")
+        check([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale]
+            .allSatisfy { !$0.heroAccessLabels().contains("Installed on this Mac") },
+              "REQ-77: All playable hero evidence combinations omit the redundant prominent installed subtitle")
         let refusal = GameScriptError.failed(11).localizedDescription
         check(refusal.contains("download") && refusal.contains("doesn't establish")
               && refusal.contains("Check download access")
