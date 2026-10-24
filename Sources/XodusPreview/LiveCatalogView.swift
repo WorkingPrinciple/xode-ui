@@ -68,6 +68,20 @@ enum DiscoverBrowse {
         return products.filter { facts[$0.id]?.genres.contains(genre) == true }
     }
 
+    static func genreShelves(products: [CatalogProduct], facts: [String: LibraryCatalogFacts],
+                             genres: [String], shelfLimit: Int = 3, productLimit: Int = 12)
+        -> [String: [CatalogProduct]] {
+        let selectedGenres = genres.prefix(max(0, min(shelfLimit, 3)))
+        let boundedProductLimit = max(0, min(productLimit, 12))
+        var shelves: [String: [CatalogProduct]] = [:]
+        for genre in selectedGenres where shelves[genre] == nil {
+            shelves[genre] = Array(products.lazy.filter {
+                facts[$0.id]?.genres.contains(genre) == true
+            }.prefix(boundedProductLimit))
+        }
+        return shelves
+    }
+
     static func canReviewInstall(owned: Bool, accessIsCurrent: Bool, gamePass: Bool,
                                  subscriptionActive: Bool, pcCandidate: Bool) -> Bool {
         guard pcCandidate else { return false }
@@ -85,12 +99,82 @@ enum DiscoverCopy {
     }
     static let emptyDescription = String(localized: "Try another title or clear your search.")
 
-    static let partial = "Some results may be missing."
+    static let partial = "Some games couldn't be loaded."
     static let unavailable = "Search isn't available right now."
 }
 
 enum SubscriberBenefits {
     static let officialURL = URL(string: "https://www.xbox.com/xbox-game-pass/in-game-benefits")!
+}
+
+enum DiscoverSearchFocus: Hashable {
+    case search(String)
+    case clear
+}
+
+enum DiscoverSearchOverlayLayout {
+    static let topInset: CGFloat = 62
+    private static let toolbarSearchCenterOffset: CGFloat = 104
+
+    static func panelWidth(containerWidth: CGFloat) -> CGFloat {
+        min(320, max(220, containerWidth - 32))
+    }
+
+    static func panelLeading(containerWidth: CGFloat) -> CGFloat {
+        let width = panelWidth(containerWidth: containerWidth)
+        let centeredUnderSearch = containerWidth / 2 + toolbarSearchCenterOffset - width / 2
+        return min(max(centeredUnderSearch, 16), max(16, containerWidth - width - 16))
+    }
+
+    static func isPresented(searchFocused: Bool, suggestionFocused: Bool,
+                            query: String, searches: [String]) -> Bool {
+        (searchFocused || suggestionFocused)
+            && query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !searches.isEmpty
+    }
+}
+
+struct DiscoverRecentSearches: View {
+    @ObservedObject var selection: DiscoverSelection
+    @FocusState.Binding var focused: DiscoverSearchFocus?
+    var select: (String) -> Void
+    var dismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Recent searches").font(.headline)
+                Spacer()
+                Button("Clear") { selection.clearHistory() }
+                    .buttonStyle(.plain)
+                    .focused($focused, equals: .clear)
+                    .accessibilityIdentifier("xodus.discover.clearRecentSearches")
+            }
+            ForEach(selection.recentSearches.prefix(8), id: \.self) { query in
+                Button {
+                    select(query)
+                } label: {
+                    Label(query, systemImage: "clock")
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 4)
+                .focused($focused, equals: .search(query))
+                .accessibilityIdentifier("xodus.discover.recentSearch.\(query)")
+            }
+        }
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12).stroke(.quaternary, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.16), radius: 14, x: 0, y: 6)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Recent searches")
+        .onExitCommand(perform: dismiss)
+    }
 }
 
 enum HalloweenShelf {
@@ -157,7 +241,6 @@ struct LiveCatalogView: View {
     var selectSearch: (String) -> Void = { _ in }
     var returnToSearch: () -> Void = {}
     @FocusState private var focusedResult: String?
-    @State private var showsCoverage = false
     @State private var detailFocusReturnID: String?
     @State private var seasonalDate = Date()
 
@@ -222,27 +305,12 @@ struct LiveCatalogView: View {
             if query.isEmpty, !visible.isEmpty { featuredCarousel }
             VStack(alignment: .leading, spacing: 28) {
                 if query.isEmpty {
-                    if !selection.recentSearches.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Recent searches").font(.headline)
-                                Spacer()
-                                Button("Clear recent searches") { selection.clearHistory() }
-                            }
-                            ForEach(selection.recentSearches.prefix(8), id: \.self) { recent in
-                                Button(recent, systemImage: "clock") { selectSearch(recent) }
-                                    .buttonStyle(.plain)
-                            }
-                        }
-                    }
                     if !genres.isEmpty { browseGenres }
                     if selection.genre == nil {
                         let halloween = HalloweenShelf.products(visible, facts: facts, on: seasonalDate)
                         if !halloween.isEmpty {
                             VStack(alignment: .leading, spacing: 16) {
                                 Text("Halloween games").font(.title2.weight(.semibold))
-                                Text("Horror and spooky categories from the games loaded here.")
-                                    .font(.callout).foregroundStyle(.secondary)
                                 browseShelf(halloween, demandLoads: false, shelfID: "Halloween")
                             }
                             .accessibilityIdentifier("xodus.catalog.halloween")
@@ -301,10 +369,6 @@ struct LiveCatalogView: View {
                                 .accessibilityIdentifier("xodus.catalog.stop")
                         }
                     }
-                    if query.isEmpty {
-                        Text("Browsing loaded games, not the full catalogue. Scroll along a row for more; previously loaded games stay visible while refreshing.")
-                            .font(.callout).foregroundStyle(.secondary)
-                    }
                     if searchUnavailable {
                         HStack {
                             Label(DiscoverCopy.unavailable, systemImage: "exclamationmark.circle")
@@ -331,10 +395,9 @@ struct LiveCatalogView: View {
                                             Label(genre, systemImage: "chevron.right")
                                                 .font(.title2.weight(.semibold))
                                         }.buttonStyle(.plain)
-                                            .accessibilityLabel("Browse loaded \(genre) games")
-                                        browseShelf(Array(visible.filter {
-                                            facts[$0.id]?.genres.contains(genre) == true
-                                        }.prefix(12)), demandLoads: false, shelfID: genre)
+                                            .accessibilityLabel("Browse \(genre) games")
+                                        browseShelf(projection.genreShelves[genre] ?? [],
+                                                    demandLoads: false, shelfID: genre)
                                     }.padding(.top, 16)
                                 }
                             }
@@ -387,14 +450,10 @@ struct LiveCatalogView: View {
                     }
                 }
                 if query.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Subscriber benefits").font(.headline)
-                        Text("No current free-to-keep game offers are verified here. Included Game Pass access, limited-time play and in-game benefits are different from owning a game. Check Benefits on your Xbox for current eligibility and redemption steps.")
-                            .font(.callout).foregroundStyle(.secondary)
-                        Link("View official Xbox benefits", destination: SubscriberBenefits.officialURL)
-                    }
+                    Link("Game Pass benefits", destination: SubscriberBenefits.officialURL)
+                        .font(.callout)
+                        .foregroundStyle(.primary)
                 }
-                catalogInfo
             }
             .padding(.horizontal, 56).padding(.bottom, 32)
             .padding(.top, query.isEmpty ? (visible.isEmpty ? 86 : 0) : 32)
@@ -433,11 +492,27 @@ struct LiveCatalogView: View {
             await art.load(ids: metadataIDs,
                            market: session.market, language: session.language)
         }
+        .background { ambientBackdrop }
     }
 
     private var metadataIDs: [String] {
         DiscoverBrowse.admittedIDs(results.storeProducts,
             limit: query.isEmpty ? selection.browseLimit : 512)
+    }
+
+    private var ambientGame: LibraryGame? {
+        let product = visible.first { $0.id == selection.featuredID } ?? visible.first
+        return product.map(game)
+    }
+
+    @ViewBuilder private var ambientBackdrop: some View {
+        if query.isEmpty, let game = ambientGame {
+            LibraryAmbientBackdrop(references: landscape(game), installed: game.installed,
+                                   allowsLoading: allowsArtworkLoading)
+                .opacity(0.22)
+        } else {
+            Color(nsColor: .windowBackgroundColor).frame(height: 820)
+        }
     }
 
     private func browseShelf(_ products: [CatalogProduct], demandLoads: Bool, shelfID: String? = nil) -> some View {
@@ -455,7 +530,7 @@ struct LiveCatalogView: View {
                 }
             }.scrollTargetLayout().padding(.bottom, 8)
         }
-        .scrollIndicators(.automatic)
+        .scrollIndicators(.never)
         .accessibilityElement(children: .contain)
         .accessibilityLabel((shelfID ?? selection.genre).map { "\($0) games" }
             ?? (session.supports(.discover) ? "Loaded PC Game Pass games" : "Loaded games"))
@@ -733,13 +808,13 @@ struct LiveCatalogView: View {
         ContentUnavailableView {
             Label(hiddenUnsupportedCount > 0 ? "No games verified yet"
                   : validEmptySearch ? DiscoverCopy.noResults(query)
-                  : selection.genre != nil && query.isEmpty ? "No loaded games in this genre" : session.catalogEmptyTitle,
+                  : selection.genre != nil && query.isEmpty ? "No games to show" : session.catalogEmptyTitle,
                   systemImage: "magnifyingglass")
         } description: {
             Text(hiddenUnsupportedCount > 0
                  ? "Some games have known package or anti-cheat blockers. Show unsupported games to see each reason."
                  : validEmptySearch ? DiscoverCopy.emptyDescription
-                 : selection.genre != nil && query.isEmpty ? "This is a partial selection. Load more games or choose another genre."
+                 : selection.genre != nil && query.isEmpty ? "Try another genre."
                  : session.catalogMessage(query: query, canRefresh: canRefresh))
         } actions: {
             if hiddenUnsupportedCount > 0 { Button("Show unsupported games") { showsUnsupportedGames = true } }
@@ -752,28 +827,4 @@ struct LiveCatalogView: View {
         }.frame(maxWidth: .infinity, minHeight: 220)
     }
 
-    private var catalogInfo: some View {
-        Button("Game Pass catalogue coverage", systemImage: "info.circle") { showsCoverage = true }
-        .buttonStyle(.plain).font(.callout).foregroundStyle(.primary)
-        .popover(isPresented: $showsCoverage) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Catalogue coverage").font(.headline)
-                switch session.catalogCorpus {
-                case "pcGamePassDiscovery":
-                    Text("Xbox PC Game Pass catalogue.")
-                case "publicMicrosoftStoreSearch":
-                    Text("Xbox and Microsoft Store search, plus loaded PC Game Pass games.")
-                default:
-                    Text("Previously loaded public game details.")
-                }
-                Text(session.discoveryCheckedAt.map { "Last refreshed: \($0)" } ?? "Refresh time unavailable.")
-                Text("Membership badges have partial coverage. A missing badge doesn't mean a game isn't included.")
-                Text("A catalogue listing doesn't verify your account's access. Mac compatibility varies by game.")
-                if !session.supports(.descriptors) {
-                    Text("This engine doesn't share its metadata cache with Library yet. Public details can be downloaded again between app and engine.")
-                }
-            }
-            .font(.callout).textSelection(.enabled).padding(20).frame(width: 340)
-        }
-    }
 }

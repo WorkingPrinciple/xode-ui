@@ -19,6 +19,7 @@ struct LiveRootView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
     @State private var searchFocused = false
+    @FocusState private var discoverSuggestionFocus: DiscoverSearchFocus?
     @State private var libraryScrollCommand = 0
     @State private var libraryContainerSize: CGSize?
     @State private var libraryHasHero = false
@@ -413,6 +414,12 @@ struct LiveRootView: View {
         (state.destination == .library && !state.showsRecentActivity) || state.destination == .discover
     }
 
+    private var showsDiscoverRecentSearches: Bool {
+        DiscoverSearchOverlayLayout.isPresented(searchFocused: searchFocused,
+            suggestionFocused: discoverSuggestionFocus != nil, query: scopedQuery,
+            searches: state.discoverSelection.recentSearches)
+    }
+
     private func retainedBrowse(_ destination: Destination) -> some View {
         let selected = state.destination == destination
         let active = selected && scenePhase == .active
@@ -440,6 +447,31 @@ struct LiveRootView: View {
                        alignment: .top)
             }
             .scrollPosition(id: scrollID)
+            .scrollIndicators(destination == .discover ? .never : .automatic)
+            .overlay(alignment: .topLeading) {
+                if destination == .discover && selected && showsDiscoverRecentSearches {
+                    GeometryReader { geometry in
+                        DiscoverRecentSearches(selection: state.discoverSelection,
+                            focused: $discoverSuggestionFocus,
+                            select: { query in
+                                state.query = query
+                                discoverSuggestionFocus = nil
+                                searchFocused = true
+                            },
+                            dismiss: {
+                                discoverSuggestionFocus = nil
+                                searchFocused = false
+                            })
+                        .frame(width: DiscoverSearchOverlayLayout.panelWidth(
+                            containerWidth: geometry.size.width))
+                        .offset(x: DiscoverSearchOverlayLayout.panelLeading(
+                            containerWidth: geometry.size.width),
+                                y: DiscoverSearchOverlayLayout.topInset)
+                    }
+                    .zIndex(10)
+                    .accessibilityIdentifier("xodus.discover.recentSearches")
+                }
+            }
             .modifier(LibraryScrollMeasurementObserver(
                 selection: destination == .library ? state.librarySelection : nil,
                 containerSize: $libraryContainerSize))

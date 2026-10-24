@@ -8,7 +8,7 @@ import XodusManagement
 enum PresentationPerformanceChecks {
     static func launch() -> Never {
         Task {
-            do { try run(); exit(0) }
+            do { try run(); try runCachedShelfComparison(); exit(0) }
             catch {
                 FileHandle.standardError.write(Data("Presentation benchmark failed: \(error)\n".utf8))
                 exit(1)
@@ -28,6 +28,35 @@ enum PresentationPerformanceChecks {
               "REQ-81/82: Initial metadata admission uses sixteen ordered public IDs, never all Library games")
         check(DiscoverBrowse.admittedIDs(products, limit: 32).count == 32,
               "REQ-81: One explicit demand admits one further sixteen-game page")
+        let shelfFacts = Dictionary(uniqueKeysWithValues: products.prefix(2).map {
+            ($0.id, LibraryCatalogFacts(genres: ["Puzzle"], isBaseGame: true))
+        })
+        let boundedShelves = DiscoverBrowse.genreShelves(products: Array(products.prefix(2)),
+            facts: shelfFacts, genres: ["Puzzle", "Action"], shelfLimit: 1, productLimit: 1)
+        check(boundedShelves.keys.sorted() == ["Puzzle"]
+              && boundedShelves["Puzzle"]?.map(\.id) == [products[0].id],
+              "Discover genre shelf projections retain source order and enforce shelf/card bounds")
+        check(DiscoverBrowse.genreShelves(products: products, facts: [:], genres: ["Puzzle"],
+                  shelfLimit: -1, productLimit: -1).isEmpty,
+              "Invalid shelf limits fail closed instead of trapping or expanding rendered work")
+        let recent = ["Halo", "Forza"]
+        check(DiscoverSearchOverlayLayout.isPresented(searchFocused: true, suggestionFocused: false,
+                  query: "  ", searches: recent)
+              && DiscoverSearchOverlayLayout.isPresented(searchFocused: false, suggestionFocused: true,
+                  query: "", searches: recent)
+              && !DiscoverSearchOverlayLayout.isPresented(searchFocused: false, suggestionFocused: false,
+                  query: "", searches: recent)
+              && !DiscoverSearchOverlayLayout.isPresented(searchFocused: true, suggestionFocused: false,
+                  query: "Halo", searches: recent)
+              && !DiscoverSearchOverlayLayout.isPresented(searchFocused: true, suggestionFocused: false,
+                  query: "", searches: []),
+              "Recent searches appear only for an empty active Discover search and dismiss on selection, blur or clear")
+        for width in [CGFloat(820), 900, 1_440, 1_920] {
+            let panelWidth = DiscoverSearchOverlayLayout.panelWidth(containerWidth: width)
+            let leading = DiscoverSearchOverlayLayout.panelLeading(containerWidth: width)
+            check(panelWidth <= 320 && leading >= 16 && leading + panelWidth <= width - 16,
+                  "Recent search panel remains within a \(Int(width)) point toolbar window")
+        }
         check(SubscriberBenefits.officialURL.scheme == "https"
               && SubscriberBenefits.officialURL.host == "www.xbox.com"
               && SubscriberBenefits.officialURL.path == "/xbox-game-pass/in-game-benefits",
@@ -220,6 +249,74 @@ enum PresentationPerformanceChecks {
             print(String(decoding: try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys]), as: UTF8.self))
             }
         }
+        let categories = ["Action", "Adventure", "Role-playing", "Strategy"]
+        let shelfProducts = try (0..<512).map { index in
+            try LibraryGame.details(id: String(format: "9SHELF%06d", index),
+                title: String(format: "Shelf fixture %04d", index), market: "US", language: "en-US",
+                source: "SyntheticRenderOnly", pcCandidate: true)
+        }
+        let shelfFacts = Dictionary(uniqueKeysWithValues: shelfProducts.enumerated().map { index, product in
+            (product.id, LibraryCatalogFacts(genres: [categories[index % categories.count]], isBaseGame: true))
+        })
+        let genres = Array(categories.prefix(3))
+        var bodyUpdateSamples: [Double] = []
+        var shelfChecksum = 0
+        for _ in 0..<20 {
+            let start = ContinuousClock.now
+            for _ in 0..<80 {
+                for genre in genres {
+                    shelfChecksum += DiscoverBrowse.visible(products: shelfProducts, facts: shelfFacts,
+                                                            genre: genre).prefix(12).count
+                }
+            }
+            let elapsed = start.duration(to: .now).components
+            bodyUpdateSamples.append(Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15)
+        }
+        bodyUpdateSamples.sort()
+        print(String(decoding: try JSONSerialization.data(withJSONObject: [
+            "kind": "synthetic-discover-scroll-shelf-body-updates",
+            "implementation": "repeated-body-filter", "loadedProducts": shelfProducts.count,
+            "shelves": genres.count, "simulatedBodyUpdates": 80, "samples": bodyUpdateSamples.count,
+            "medianMS": (bodyUpdateSamples[9] + bodyUpdateSamples[10]) / 2,
+            "p95MS": bodyUpdateSamples[18], "checksum": shelfChecksum, "actualFramesMeasured": false
+        ], options: [.sortedKeys]), as: UTF8.self))
+    }
+
+    private static func runCachedShelfComparison() throws {
+        let categories = ["Action", "Adventure", "Role-playing", "Strategy"]
+        let products = try (0..<512).map { index in
+            try LibraryGame.details(id: String(format: "9SHELF%06d", index),
+                title: String(format: "Shelf fixture %04d", index), market: "US", language: "en-US",
+                source: "SyntheticRenderOnly", pcCandidate: true)
+        }
+        let facts = Dictionary(uniqueKeysWithValues: products.enumerated().map { index, product in
+            (product.id, LibraryCatalogFacts(genres: [categories[index % categories.count]], isBaseGame: true))
+        })
+        let genres = Array(categories.prefix(3))
+        let key = CatalogProjectionKey(accountHash: nil, query: "", owned: [], products: products,
+            gamePass: [], gamePassIDs: [], installed: [], accessIsCurrent: false,
+            metadataRevision: 0, compatibility: [:], genre: nil, showsUnsupported: true)
+        let projection = CatalogProjection(key: key, facts: facts, isVisible: { _ in true })
+        var samples: [Double] = []
+        var checksum = 0
+        for _ in 0..<20 {
+            let start = ContinuousClock.now
+            for _ in 0..<80 {
+                for genre in genres {
+                    checksum += projection.genreShelves[genre]?.count ?? 0
+                }
+            }
+            let elapsed = start.duration(to: .now).components
+            samples.append(Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15)
+        }
+        samples.sort()
+        print(String(decoding: try JSONSerialization.data(withJSONObject: [
+            "kind": "synthetic-discover-scroll-shelf-body-updates",
+            "implementation": "cached-projection-shelves", "loadedProducts": products.count,
+            "shelves": genres.count, "simulatedBodyUpdates": 80, "samples": samples.count,
+            "medianMS": (samples[9] + samples[10]) / 2, "p95MS": samples[18],
+            "checksum": checksum, "actualFramesMeasured": false
+        ], options: [.sortedKeys]), as: UTF8.self))
     }
 }
 #endif

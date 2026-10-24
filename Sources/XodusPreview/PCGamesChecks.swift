@@ -1078,7 +1078,7 @@ enum PCGamesChecks {
               && passOnly.facts(for: "FIXTURE00001").memberships.isEmpty,
               "REQ-63: PC catalogue membership never invents another plan or a negative membership badge")
         check(DiscoverCopy.noResults("mortis") == "No games match ‘mortis’."
-              && DiscoverCopy.partial == "Some results may be missing."
+              && DiscoverCopy.partial == "Some games couldn't be loaded."
               && DiscoverCopy.unavailable == "Search isn't available right now.",
               "REQ-59/60: Search states have actionable product copy, not source or QA diagnostics")
         check(GameSearchHistory.recording("  MORTIS ", in: ["mortis", "harbor"]) == ["MORTIS", "harbor"]

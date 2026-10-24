@@ -70,6 +70,7 @@ struct CatalogProjection {
     let facts: [String: LibraryCatalogFacts]
     let genres: [String]
     let genreProducts: [String: CatalogProduct]
+    let genreShelves: [String: [CatalogProduct]]
     let visible: [CatalogProduct]
     let owned: [PCGame]
     let hiddenCount: Int
@@ -80,7 +81,7 @@ struct CatalogProjection {
 
     static let empty = Self(index: CatalogCardIndex(query: "", owned: [], products: [], gamePass: [],
         gamePassIDs: [], installed: [], accessIsCurrent: false), facts: [:], genres: [],
-        genreProducts: [:], visible: [], owned: [], hiddenCount: 0, artworkIDs: [])
+        genreProducts: [:], genreShelves: [:], visible: [], owned: [], hiddenCount: 0, artworkIDs: [])
 
     init(key: CatalogProjectionKey, facts: [String: LibraryCatalogFacts],
          isVisible: (LibraryGame) -> Bool) {
@@ -99,9 +100,11 @@ struct CatalogProjection {
         genreProducts = first
         let candidates = DiscoverBrowse.visible(products: games, facts: facts,
             genre: key.query.isEmpty ? key.genre : nil)
-        visible = candidates.filter { product in
+        let visibleProducts = candidates.filter { product in
             !key.query.isEmpty || index.games[product.id].map(isVisible) == true
         }
+        visible = visibleProducts
+        genreShelves = DiscoverBrowse.genreShelves(products: visibleProducts, facts: facts, genres: genres)
         owned = index.results.ownedMatches.filter { pc in
             !key.query.isEmpty || index.games[pc.id].map(isVisible) == true
         }
@@ -110,9 +113,11 @@ struct CatalogProjection {
     }
 
     private init(index: CatalogCardIndex, facts: [String: LibraryCatalogFacts], genres: [String],
-                 genreProducts: [String: CatalogProduct], visible: [CatalogProduct], owned: [PCGame],
+                 genreProducts: [String: CatalogProduct], genreShelves: [String: [CatalogProduct]],
+                 visible: [CatalogProduct], owned: [PCGame],
                  hiddenCount: Int, artworkIDs: [String]) {
         self.index = index; self.facts = facts; self.genres = genres; self.genreProducts = genreProducts
+        self.genreShelves = genreShelves
         self.visible = visible; self.owned = owned; self.hiddenCount = hiddenCount; self.artworkIDs = artworkIDs
     }
 }
