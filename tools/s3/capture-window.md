@@ -23,6 +23,16 @@ Input admission is separate and still requires the input sender's exact
 foreground-window binding plus its process/image/creation/title/class guards.
 Passive capture does not grant permission to send keys, click or focus a window.
 
+Title controllers must call `LaunchAdmission.spawn` from `launch-admission.py`
+instead of directly spawning after a separate shell precheck. The single-use
+gate observes all Wine-named processes and checks the exact capture binary pin
+in-process immediately before spawn, writes independently labelled private
+outcomes, and refuses spawn on either failure or an unreadable observation.
+Both checks run even if one fails. A consumed instance or existing receipt
+cannot spawn again, including after a failed spawn. This is an admission
+observation, not an OS-wide process lock or a substitute for the exclusive
+lease and the controller's title/runtime/save/disk guards.
+
 The wrapper owns and reaps only its capture child on timeout. A published image
 requires child exit 0, matching completion identity/dimensions, complete PNG
 chunks/checksums and decoded pixel data. Publication uses an exclusive atomic
