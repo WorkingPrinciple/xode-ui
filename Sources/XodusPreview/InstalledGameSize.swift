@@ -100,14 +100,13 @@ final class InstalledGameSizeStore: ObservableObject {
     }
 }
 
-struct LibraryGameSizeView: View {
+struct DetailGameSizeView: View {
     let installed: InstalledGame?
     let downloadBytes: Int64?
-    var productID: String? = nil
-    var pcPackageListed: Bool? = nil
     var packageFormat: String? = nil
     var allowsMeasurement = true
     @ObservedObject private var sizes = InstalledGameSizeStore.shared
+    @Environment(\.catalogPresentationActive) private var presentationActive
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -129,8 +128,8 @@ struct LibraryGameSizeView: View {
             }
         }
         .font(.caption).foregroundStyle(.secondary)
-        .task(id: installed.map { "\($0.id):\($0.version):\($0.importedAt)" }) {
-            if allowsMeasurement, let installed { await sizes.load(installed) }
+        .task(id: installed.map { "\($0.id):\($0.version):\($0.importedAt):\(presentationActive)" }) {
+            if allowsMeasurement, presentationActive, let installed { await sizes.load(installed) }
         }
     }
 }

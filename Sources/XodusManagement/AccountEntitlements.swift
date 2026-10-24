@@ -39,7 +39,7 @@ public enum GamePassAccess: Equatable, Sendable {
 }
 
 public enum AccountTier: Equatable, Sendable {
-    case unknown, free, owned
+    case unknown, free, owned, library
     case gamePass(GamePassPlan)
 
     public var label: String {
@@ -47,6 +47,7 @@ public enum AccountTier: Equatable, Sendable {
         case .unknown: "Access not verified"
         case .free: "Free"
         case .owned: "Owned library"
+        case .library: "In your library"
         case let .gamePass(plan): plan.label
         }
     }
@@ -56,6 +57,7 @@ public enum AccountTier: Equatable, Sendable {
         case .unknown: "questionmark.circle"
         case .free: "person.crop.circle"
         case .owned: "checkmark.seal"
+        case .library: "books.vertical"
         case .gamePass: "ticket"
         }
     }
@@ -66,9 +68,10 @@ public struct AccountEntitlements: Equatable, Sendable {
     public let accessIsCurrent: Bool
     public let ownsGames: Bool
     public let gamePass: GamePassAccess
+    private let hasUnclassifiedGames: Bool
 
     public static let signedOut = Self(signedIn: false, accessIsCurrent: false,
-                                      ownsGames: false, gamePass: .unknown)
+                                      ownsGames: false, gamePass: .unknown, hasUnclassifiedGames: false)
 
     // The optional probe must be current and bound to the PC-library account.
     // A saved credential, stale snapshot or a different game-service account is not evidence.
@@ -76,9 +79,10 @@ public struct AccountEntitlements: Equatable, Sendable {
                               gamePassActive: Bool?, accessIsCurrent: Bool) -> Self {
         guard signedIn else { return .signedOut }
         guard accessIsCurrent else {
-            return Self(signedIn: true, accessIsCurrent: false, ownsGames: false, gamePass: .unknown)
+            return Self(signedIn: true, accessIsCurrent: false, ownsGames: false, gamePass: .unknown,
+                        hasUnclassifiedGames: false)
         }
-        let owns = held.contains { $0 != .subscription }
+        let owns = held.contains(.purchased)
         let access: GamePassAccess
         if gamePassActive == true { access = .active(.pc) }
         else if held.contains(.subscription) {
@@ -86,7 +90,8 @@ public struct AccountEntitlements: Equatable, Sendable {
             access = .active(.undetermined)
         } else if gamePassActive == false { access = .inactive }
         else { access = .unknown }
-        return Self(signedIn: true, accessIsCurrent: true, ownsGames: owns, gamePass: access)
+        return Self(signedIn: true, accessIsCurrent: true, ownsGames: owns, gamePass: access,
+                    hasUnclassifiedGames: held.contains(.unknown))
     }
 
     public var tiers: [AccountTier] {
@@ -94,6 +99,7 @@ public struct AccountEntitlements: Equatable, Sendable {
         guard accessIsCurrent else { return [.unknown] }
         var result: [AccountTier] = []
         if ownsGames { result.append(.owned) }
+        if hasUnclassifiedGames { result.append(.library) }
         if case let .active(plan) = gamePass { result.append(.gamePass(plan)) }
         if result.isEmpty { result.append(gamePass == .inactive ? .free : .unknown) }
         return result
@@ -108,12 +114,16 @@ public struct AccountEntitlements: Equatable, Sendable {
 }
 
 public enum LibraryEligibility: String, Codable, Sendable {
-    case owned, gamePass, installedUnknown
+    case owned, library, gamePass, installedUnknown
 
     public static func evaluate(entitlement: PCGameAcquisitionKind?, accessIsCurrent: Bool,
                                 verifiedGamePassAccess: Bool, installed: Bool) -> Self? {
         if accessIsCurrent, let entitlement {
-            return entitlement == .subscription ? .gamePass : .owned
+            switch entitlement {
+            case .purchased: return .owned
+            case .subscription: return .gamePass
+            case .unknown: return .library
+            }
         }
         if verifiedGamePassAccess { return .gamePass }
         return installed ? .installedUnknown : nil

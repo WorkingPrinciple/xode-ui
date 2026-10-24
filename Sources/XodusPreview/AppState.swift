@@ -49,6 +49,8 @@ final class AppState: ObservableObject {
     let runtimeSettings = RuntimeProviderSettings()
     let installedGames: InstalledGamesController
     let pcGames: PCGamesController
+    let librarySelection = LibrarySelection()
+    let discoverSelection = DiscoverSelection()
     private let gameScriptPaths: GameScriptPaths
     lazy var gameOperations = GameOperationsController(installed: installedGames, paths: gameScriptPaths)
     lazy var downloadQueue = DownloadQueueController(
@@ -124,6 +126,8 @@ final class AppState: ObservableObject {
     @discardableResult
     func signOut(session: LiveSession) async -> Bool {
         guard canSignOut(session: session), gameOperations.beginAccountDisconnect() else { return false }
+        librarySelection.projection.clear(to: .empty)
+        discoverSelection.projection.clear(to: .empty)
         installedGames.setAccountAccessAllowed(false)
         installedGames.productAccess.retire()
         defer { gameOperations.finishAccountDisconnect() }
@@ -177,6 +181,10 @@ final class AppState: ObservableObject {
 
     var navigationSelection: Binding<Destination> {
         Binding(get: { self.destination }, set: { self.navigate($0) })
+    }
+
+    func query(for destination: Destination) -> String {
+        destination == self.destination ? query : destinationQueries[destination] ?? ""
     }
 
     func navigate(_ value: Destination) {

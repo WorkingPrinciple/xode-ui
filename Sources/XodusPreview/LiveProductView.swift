@@ -12,9 +12,14 @@ enum GameDetailFacetCopy {
         return "Checking installation requirements"
     }
 
-    static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String {
-        guard let acquisition else { return "Access not verified" }
-        let label = acquisition == .subscription ? "Subscription (plan unknown)" : "Owned"
+    static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String? {
+        guard let acquisition else { return nil }
+        let label: String
+        switch acquisition {
+        case .purchased: label = "Owned"
+        case .subscription: label = "Subscription (plan unknown)"
+        case .unknown: label = "In your library"
+        }
         return current ? label : "Saved \(label) - refresh required"
     }
 }
@@ -62,7 +67,7 @@ struct LiveProductView: View {
     var allowsArtworkLoading = true
     @EnvironmentObject private var session: LiveSession
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var catalog = LibraryCatalogArtwork.shared
+    @ObservedObject var catalog = LibraryCatalogArtwork.shared
     @ObservedObject private var stats = LibraryXboxStats.shared
 
     private var installed: InstalledGame? {
@@ -78,9 +83,8 @@ struct LiveProductView: View {
         LibraryPCPackageEvidence.listed(observed: art?.facts.pcPackageListed,
                                        candidate: product.pcCatalogCandidate)
     }
-    private var access: LibraryAccess? {
-        (library.accessIsCurrent ? owned : nil)
-            .map { $0.acquisitionKind == .subscription ? .subscription : .owned } ?? (gamePass ? .gamePass : nil)
+    private var gameFacts: GameFacts {
+        GameFacts(pc: owned, gamePass: gamePass, installed: installed, accessIsCurrent: library.accessIsCurrent)
     }
     private var canReviewGamePass: Bool {
         DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent,
@@ -137,8 +141,14 @@ struct LiveProductView: View {
                                 }
                                 .id("detail-information")
                             }
-                            gameInfo(details)
                             requirements(details)
+                        }
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Details").font(.title2.weight(.semibold))
+                            DetailGameSizeView(installed: installed, downloadBytes: art?.facts.downloadBytes,
+                                               packageFormat: art?.facts.packageFormat,
+                                               allowsMeasurement: allowsArtworkLoading)
+                            if let details { gameInfo(details) }
                         }
                         GameCompatibilityFacts(productID: product.id,
                             pcPackageListed: pcPackageListed,
@@ -164,7 +174,6 @@ struct LiveProductView: View {
         }
         .frame(minWidth: 820, idealWidth: 1040, maxWidth: 1200,
                minHeight: 600, idealHeight: 780, maxHeight: 850)
-        .environment(\.colorScheme, .dark)
         .task(id: "\(product.id):\(product.market):\(product.language)") {
             if allowsArtworkLoading {
                 await catalog.loadDetail(id: product.id, market: product.market, language: product.language)
@@ -204,16 +213,13 @@ struct LiveProductView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     LibraryLogoTitle(title: product.title, references: art?.logos ?? [],
                                      allowsLoading: allowsArtworkLoading)
-                    LibraryGameInformation(access: access, gamePass: gamePass,
-                                           facts: art?.facts, xbox: stats.cache?.games[product.id],
-                                           showsPrice: owned == nil && installed == nil)
+                    GameHeroAccess(facts: gameFacts)
+                    LibraryGameInformation(gameFacts: gameFacts, detail: true,
+                                           showsAccessBadges: false,
+                                           facts: art?.facts, xbox: stats.cache?.games[product.id])
                     if let details {
                         GameHeroMetadata(details: details)
                     }
-                    LibraryGameSizeView(installed: installed, downloadBytes: art?.facts.downloadBytes,
-                                        productID: product.id, pcPackageListed: pcPackageListed,
-                                        packageFormat: art?.facts.packageFormat,
-                                        allowsMeasurement: allowsArtworkLoading)
                     if let date = installed?.lastPlayedAt {
                         Text("Last played \(date.formatted(.relative(presentation: .named))) on this Mac")
                             .font(.callout).foregroundStyle(.secondary)
@@ -269,13 +275,6 @@ struct LiveProductView: View {
                             .disabled(true)
                             .help("Current ownership or Game Pass access is required to install this game.")
                         }
-                        if installed == nil {
-                            CatalogAcquisitionAction(productID: product.id, title: product.title,
-                                market: product.market, language: product.language,
-                                licensed: library.accessIsCurrent && owned != nil, gamePass: gamePass,
-                                commerce: art?.facts.commerce,
-                                enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
-                        }
                     }.controlSize(.large)
                     if let installed {
                         InstalledPlayError(library: installedLibrary, game: installed)
@@ -286,6 +285,9 @@ struct LiveProductView: View {
             .padding(.horizontal, 40).padding(.bottom, 48)
         }
         .frame(height: 388).clipped()
+        .foregroundStyle(.white)
+        .environment(\.libraryOnHeroMedia, true)
+        .environment(\.colorScheme, .dark)
         .padding(.bottom, -42)
         .accessibilityElement(children: .contain)
     }
@@ -320,7 +322,6 @@ struct LiveProductView: View {
         VStack(alignment: .leading, spacing: 16) {
             if details.developer != nil || details.publisher != nil || details.releaseDate != nil ||
                 details.storeRating != nil || details.contentRating != nil {
-                Text("Game information").font(.title2.weight(.semibold))
                 Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
                     if let developer = details.developer { facet("Developer", developer) }
                     if let publisher = details.publisher { facet("Publisher", publisher) }

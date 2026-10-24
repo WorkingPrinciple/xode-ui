@@ -4,9 +4,48 @@ import XodusManagement
 
 @MainActor
 final class DiscoverSelection: ObservableObject {
+    let projection = PresentationCache<CatalogProjectionKey, CatalogProjection>(empty: .empty)
     @Published var genre: String?
     @Published var featuredID: String?
+    var scrollID: String?
     @Published var featuredVisible = false
+    @Published var scope: GameSearchScope = .allGames
+    @Published var focusRequest = 0
+    @Published var recentSearches = UserDefaults.standard.stringArray(forKey: "Xodus.recentGameSearches") ?? []
+    private(set) var previousResults = CatalogProjection.empty
+    private var query: String?
+    private var accountScope: String?
+
+    func recordSearch(_ query: String) {
+        recentSearches = GameSearchHistory.recording(query, in: recentSearches)
+        UserDefaults.standard.set(recentSearches, forKey: "Xodus.recentGameSearches")
+    }
+
+    func clearHistory() {
+        recentSearches = []
+        UserDefaults.standard.removeObject(forKey: "Xodus.recentGameSearches")
+    }
+
+    func clear() {
+        projection.clear(to: .empty)
+        previousResults = .empty
+        query = nil
+        accountScope = nil
+    }
+
+    func prepare(_ key: CatalogProjectionKey, accountScope: String,
+                 build: () -> CatalogProjection) {
+        if self.accountScope != accountScope {
+            projection.clear(to: .empty)
+            previousResults = .empty
+            self.accountScope = accountScope
+        } else if query != key.query,
+                  (!projection.current.visible.isEmpty || !projection.current.owned.isEmpty) {
+            previousResults = projection.current
+        }
+        query = key.query
+        projection.prepare(key, build: build)
+    }
 }
 
 enum DiscoverBrowse {
@@ -32,22 +71,15 @@ enum DiscoverBrowse {
 
 enum DiscoverCopy {
     static func noResults(_ query: String) -> String {
-        String(localized: "No Results for “\(query)”")
+        String(localized: "No games match ‘\(query)’.")
     }
     static func noOtherGames(_ query: String) -> String {
         String(localized: "No other games match “\(query)”.")
     }
     static let emptyDescription = String(localized: "Try another title or clear your search.")
 
-    static func sourceDescription(query: String, corpus: String) -> String {
-        if !query.isEmpty {
-            return "Sources: Xbox and Microsoft Store search, plus loaded PC Game Pass matches. Your games appear separately."
-        }
-        if corpus == "pcGamePassDiscovery" {
-            return "Source: Xbox PC Game Pass catalogue. Catalogue membership is not account access."
-        }
-        return "Source: Previously loaded public product details. This selection is not the full Store or Game Pass catalogue."
-    }
+    static let partial = "Some results may be missing."
+    static let unavailable = "Search isn't available right now."
 }
 
 #if !XODUS_SHIPPING
@@ -73,38 +105,51 @@ struct LiveCatalogView: View {
     @ObservedObject var operations: GameOperationsController
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openSettings) private var openSettings
-    @ObservedObject private var art = LibraryCatalogArtwork.shared
-    @StateObject private var selection = DiscoverSelection()
+    @ObservedObject var art = LibraryCatalogArtwork.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     let query: String
     var allowsArtworkLoading = true
     var allowsStartupTasks = true
     var allowsHeroAnimation = true
+    @Environment(\.catalogPresentationActive) private var presentationActive
     let clearSearch: () -> Void
+    @ObservedObject var selection = DiscoverSelection()
+    var searchLibrary: (String) -> Void = { _ in }
+    var selectSearch: (String) -> Void = { _ in }
+    var returnToSearch: () -> Void = {}
+    @FocusState private var focusedResult: String?
+    @State private var showsCoverage = false
+    @State private var detailFocusReturnID: String?
 
-    private var results: CatalogSearchResults {
-        CatalogSearchResults(query: query, ownedGames: library.representedGames,
-            storeProducts: session.catalogMatches(query: query) ? session.products : [],
-            gamePassProductIDs: session.gamePassProductIDs, gamePassProducts: session.gamePassProducts)
+    private var projection: CatalogProjection { selection.projection.current }
+    private var results: CatalogSearchResults { projection.index.results }
+    private var facts: [String: LibraryCatalogFacts] { projection.facts }
+    private var genres: [String] { projection.genres }
+    private var visible: [CatalogProduct] {
+        projection.visible.filter { selection.scope.includes(game($0)) }
     }
-    private var facts: [String: LibraryCatalogFacts] { art.images.mapValues(\.facts) }
-    private var genres: [String] { DiscoverBrowse.genres(products: results.storeProducts, facts: facts) }
-    private var visibleCandidates: [CatalogProduct] {
-        DiscoverBrowse.visible(products: results.storeProducts, facts: facts, genre: query.isEmpty ? selection.genre : nil)
+    private var ownedMatches: [PCGame] {
+        projection.owned.filter { selection.scope.includes(game($0)) }
     }
-    private var visible: [CatalogProduct] { visibleCandidates.filter { !query.isEmpty || isVisible(game($0)) } }
-    private var ownedMatches: [PCGame] { results.ownedMatches.filter { !query.isEmpty || isVisible(game($0)) } }
-    private var hiddenUnsupportedCount: Int {
-        visibleCandidates.count - visible.count + results.ownedMatches.count - ownedMatches.count
+    private var hiddenUnsupportedCount: Int { projection.hiddenCount }
+    private var retainedPublicIDs: Set<String> {
+        session.retainedPublicIDs(query: query, pending: pending)
     }
     private var canRefresh: Bool {
         allowsStartupTasks && session.isReady && (session.supports(.search)
             || (query.isEmpty ? session.supports(.discover) : session.supports(.query)))
     }
-    private var storeHeading: String {
-        if !query.isEmpty { return "Store and Game Pass" }
-        return session.catalogCorpus == "pcGamePassDiscovery" ? "PC Game Pass catalog" : "Explore games"
+    private var pending: Bool {
+        canRefresh && !query.isEmpty && (!session.catalogMatches(query: query) || session.searching)
+            && session.catalogError == nil && !session.catalogStopped
+    }
+    private var searchUnavailable: Bool {
+        session.catalogError != nil || (!query.isEmpty && !canRefresh && !session.searching)
+    }
+    private var partial: Bool {
+        !session.discoveryFailures.isEmpty || projection.unresolvedClassificationCount > 0
+            || session.gamePassCatalogError != nil
     }
     private var validEmptySearch: Bool {
         !query.isEmpty && session.catalogMatches(query: query) && !session.searching &&
@@ -114,6 +159,19 @@ struct LiveCatalogView: View {
     private var columns: [GridItem] { LibraryGridLayout.columns }
 
     var body: some View {
+        let key = CatalogProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
+            products: session.catalogMatches(query: query) ? session.products : [],
+            gamePass: session.gamePassProducts, gamePassIDs: session.gamePassProductIDs,
+            installed: installed.games, accessIsCurrent: library.accessIsCurrent,
+            metadataRevision: art.revision, compatibility: operations.compatibility,
+            genre: selection.genre, showsUnsupported: showsUnsupportedGames)
+        selection.prepare(key, accountScope: "\(session.accountHash ?? ""):\(session.market):\(session.language)") {
+            CatalogProjection(key: key, facts: art.images.mapValues(\.facts), isVisible: isVisible)
+        }
+        return content
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 28) {
             if operations.hasDownloadStatus {
                 GameOperationProgressView(operations: operations)
@@ -123,98 +181,246 @@ struct LiveCatalogView: View {
             if query.isEmpty, !visible.isEmpty { featuredCarousel }
             VStack(alignment: .leading, spacing: 28) {
                 if query.isEmpty {
-                    if !genres.isEmpty { browseGenres }
-                } else {
-                    Text("Results for \"\(query)\"").font(.largeTitle.bold())
-                    if !ownedMatches.isEmpty {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Your games").font(.title2.weight(.semibold))
-                            if library.error != nil || library.busy {
-                                Text("Showing your last complete PC library.").font(.callout).foregroundStyle(.secondary)
+                    if !selection.recentSearches.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Recent searches").font(.headline)
+                                Spacer()
+                                Button("Clear recent searches") { selection.clearHistory() }
                             }
-                            LazyVGrid(columns: columns, spacing: 28) {
-                                ForEach(ownedMatches) { card(game($0)) }
+                            ForEach(selection.recentSearches.prefix(8), id: \.self) { recent in
+                                Button(recent, systemImage: "clock") { selectSearch(recent) }
+                                    .buttonStyle(.plain)
                             }
                         }
+                    }
+                    if !genres.isEmpty { browseGenres }
+                } else {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Results for \"\(query)\"").font(.title2.bold())
+                            .textSelection(.enabled)
+                        Spacer(minLength: 24)
+                        Picker("Search scope", selection: $selection.scope) {
+                            ForEach(GameSearchScope.allCases) { scope in Text(scope.rawValue).tag(scope) }
+                        }
+                        .pickerStyle(.menu).labelsHidden().fixedSize()
+                        .accessibilityLabel("Search scope")
+                        .accessibilityIdentifier("xodus.catalog.scope")
+                    }
+                    if !ownedMatches.isEmpty {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("In your library (\(ownedMatches.count))").font(.title2.weight(.semibold))
+                            VStack(spacing: 0) {
+                                ForEach(ownedMatches.prefix(5)) { owned in
+                                    libraryRow(game(owned))
+                                    Divider()
+                                }
+                            }
+                            if ownedMatches.count > 5 {
+                                Button("Show all \(ownedMatches.count) in Library") { searchLibrary(query) }
+                            }
+                        }
+                    } else if pending, !selection.previousResults.owned.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Previous library results · Updating…").font(.headline)
+                            ForEach(selection.previousResults.owned.prefix(5)) { owned in
+                                if let game = selection.previousResults.index.games[owned.id],
+                                   selection.scope.includes(game) {
+                                    libraryRow(game)
+                                }
+                            }
+                        }
+                        .opacity(0.45).allowsHitTesting(false).disabled(true).accessibilityHidden(true)
                     }
                 }
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
-                        Text(storeHeading).font(.title2.weight(.semibold))
+                        Text("Games (\(visible.count))").font(.title2.weight(.semibold))
                         Spacer()
-                        LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount,
-                                           showsUnsupportedGames: $showsUnsupportedGames)
-                        if session.searching {
+                        if query.isEmpty {
+                            LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount,
+                                               showsUnsupportedGames: $showsUnsupportedGames)
+                        }
+                        if pending || session.searching {
                             ProgressView().controlSize(.small).accessibilityLabel("Searching for games")
                             Button("Stop search") { session.stopCatalogSearch() }
                                 .accessibilityIdentifier("xodus.catalog.stop")
                         }
                     }
-                    Text(DiscoverCopy.sourceDescription(query: query, corpus: session.catalogCorpus))
-                        .font(.callout).foregroundStyle(.secondary)
-                        .accessibilityIdentifier("xodus.catalog.sources")
-                    if !query.isEmpty, library.snapshot == nil {
-                        Text("Load your PC library in Library to include your games in search.")
-                            .font(.callout).foregroundStyle(.secondary)
-                    }
-                    if let notice = session.catalogNotice {
-                        Label(notice, systemImage: session.catalogStopped ? "pause.circle" : "exclamationmark.circle")
-                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    if searchUnavailable {
+                        HStack {
+                            Label(DiscoverCopy.unavailable, systemImage: "exclamationmark.circle")
+                            Button("Retry") { retry() }.disabled(!canRefresh)
+                        }.foregroundStyle(.secondary)
+                    } else if session.catalogStopped {
+                        HStack {
+                            Text("Search stopped.")
+                            Button("Retry") { retry() }.disabled(!canRefresh)
+                        }
+                    } else if partial {
+                        HStack {
+                            Text(DiscoverCopy.partial)
+                            Button("Retry") { retry() }.disabled(!canRefresh)
+                        }
                     }
                     if !visible.isEmpty {
                         LazyVGrid(columns: columns, spacing: 28) {
-                            ForEach(visible) { card(game($0)) }
+                            ForEach(visible) { product in
+                                card(game(product)).id("discover-card-\(product.id)")
+                                    .opacity(retainedPublicIDs.contains(product.id) ? 0.45 : 1)
+                                    .disabled(retainedPublicIDs.contains(product.id))
+                                    .allowsHitTesting(!retainedPublicIDs.contains(product.id))
+                                    .accessibilityHidden(retainedPublicIDs.contains(product.id))
+                            }
+                        }
+                        .scrollTargetLayout()
+                    } else if pending {
+                        let previous = selection.previousResults.visible.filter {
+                            selection.previousResults.index.games[$0.id].map(selection.scope.includes) == true
+                        }
+                        if !previous.isEmpty {
+                            Text("Previous results · Updating…").font(.callout).foregroundStyle(.secondary)
+                            LazyVGrid(columns: columns, spacing: 28) {
+                                ForEach(previous) { product in
+                                    if let game = selection.previousResults.index.games[product.id] {
+                                        card(game)
+                                    }
+                                }
+                            }.opacity(0.45).allowsHitTesting(false).disabled(true).accessibilityHidden(true)
                         }
                     } else if ownedMatches.isEmpty {
-                        unavailable
+                        if !searchUnavailable && !partial {
+                            unavailable
+                        }
                     } else if !session.searching && session.catalogError == nil {
                         Text(DiscoverCopy.noOtherGames(query)).foregroundStyle(.secondary)
                     }
                     if session.nextCursor != nil, session.catalogMatches(query: query) {
-                        Button("More games") { Task { await session.refreshCatalog(query, more: true) } }
-                            .disabled(!canRefresh || !session.canLoadMoreCatalog)
-                            .accessibilityLabel("Load more catalog results")
-                            .accessibilityIdentifier("xodus.catalog.loadMore")
+                        if session.catalogAtLimit {
+                            Text("The catalogue reached this build's limit. Some games remain unloaded.")
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("xodus.catalog.limit")
+                        } else {
+                            Button("More games") { Task { await session.refreshCatalog(query, more: true) } }
+                                .disabled(!canRefresh || !session.canLoadMoreCatalog)
+                                .accessibilityLabel("Load more catalog results")
+                                .accessibilityIdentifier("xodus.catalog.loadMore")
+                        }
                     }
                 }
                 catalogInfo
             }
             .padding(.horizontal, 56).padding(.bottom, 32)
-            .padding(.top, query.isEmpty && !visible.isEmpty ? 0 : 86)
+            .padding(.top, query.isEmpty ? (visible.isEmpty ? 86 : 0) : 32)
         }
-        .onChange(of: query) { _, _ in selection.genre = nil }
-        .task(id: "\(session.market):\(session.language):\(results.storeProducts.map(\.id).joined(separator: ",")):\(library.snapshot?.games.map(\.id).joined(separator: ",") ?? "")") {
-            guard allowsArtworkLoading else { return }
+        .onChange(of: query) { _, value in
+            selection.genre = nil
+            if value.isEmpty { selection.scope = .allGames }
+        }
+        .onChange(of: session.selectedProduct) { previous, current in
+            guard previous != nil, current == nil else { return }
+            restoreDetailFocus()
+        }
+        .onChange(of: selection.focusRequest) { _, _ in
+            selection.recordSearch(query)
+            focusedResult = GameSearchPresentation.firstFocusableID(local: ownedMatches.map(\.id),
+                publicResults: visible.map(\.id), retainedPublic: retainedPublicIDs)
+            if focusedResult == nil { returnToSearch() }
+        }
+        .onExitCommand(perform: exitSearchResults)
+        .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
+                                       ids: presentationActive ? projection.artworkIDs : [])) {
+            guard allowsArtworkLoading, presentationActive else { return }
             await art.load(ids: results.storeProducts.map(\.id) + (library.snapshot?.games.map(\.id) ?? []),
                            market: session.market, language: session.language)
         }
     }
 
+    func exitSearchResults() {
+        focusedResult = nil
+        clearSearch()
+        returnToSearch()
+    }
+
+    private func retry() {
+        Task { await session.refreshCatalog(query) }
+    }
+
+    private func libraryRow(_ game: LibraryGame) -> some View {
+        HStack(spacing: 14) {
+            Button { open(game) } label: {
+                HStack(spacing: 14) {
+                    CatalogArtworkView(reference: allowsArtworkLoading ? art.images[game.id]?.cover ?? game.cover : nil,
+                                       status: .available)
+                        .frame(width: 48, height: 48).clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(game.title).font(.headline)
+                        AccessBadges(facts: game.facts)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).accessibilityLabel("View \(game.title)")
+            .accessibilityValue(game.facts.badgeLabels().joined(separator: ", "))
+            .focusable()
+            .focused($focusedResult, equals: game.id)
+            .onKeyPress(.return) { open(game); return .handled }
+            Text(game.installed == nil ? "Not installed" : "Installed")
+                .font(.callout).foregroundStyle(.secondary)
+            if !unsupportedIssues(game).isEmpty {
+                Button("View details") { open(game) }
+                    .help("Open compatibility details")
+                    .accessibilityLabel(GameSearchPresentation.compatibilityDetailsActionLabel(for: game.title))
+            } else {
+                actions(game, primary: false)
+            }
+        }
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .contain)
+    }
+
     private func game(_ product: CatalogProduct) -> LibraryGame {
-        LibraryGame(id: product.id, title: product.title,
+        projection.index.games[product.id] ?? LibraryGame(id: product.id, title: product.title,
             installed: installed.games.first { $0.storeId == product.id },
             pc: results.ownedGame(for: product.id), product: product,
-            owned: results.ownedGame(for: product.id).map { $0.acquisitionKind != .subscription } ?? false,
-            gamePass: session.gamePassProductIDs.contains(product.id),
-            accessIsCurrent: library.accessIsCurrent)
+            owned: results.ownedGame(for: product.id).map { $0.acquisitionKind == .purchased } ?? false,
+            gamePass: session.gamePassProductIDs.contains(product.id), accessIsCurrent: library.accessIsCurrent)
     }
 
     private func game(_ owned: PCGame) -> LibraryGame {
-        LibraryGame(id: owned.id, title: owned.title,
+        projection.index.games[owned.id] ?? LibraryGame(id: owned.id, title: owned.title,
             installed: installed.games.first { $0.storeId == owned.id }, pc: owned,
-            product: session.products.first { $0.id == owned.id },
-            owned: owned.acquisitionKind != .subscription,
-            gamePass: session.gamePassProductIDs.contains(owned.id),
-            accessIsCurrent: library.accessIsCurrent)
+            product: session.products.first { $0.id == owned.id }, owned: owned.acquisitionKind == .purchased,
+            gamePass: session.gamePassProductIDs.contains(owned.id), accessIsCurrent: library.accessIsCurrent)
     }
 
     private func open(_ game: LibraryGame) {
+        detailFocusReturnID = nil
         do {
-            session.selectedProduct = try game.product ?? art.images[game.id]?.product ??
+            let product = try game.product ?? art.images[game.id]?.product ??
                 LibraryGame.details(id: game.id, title: game.title,
                     market: session.market, language: session.language,
                     source: "AccountPCLibrary:identityOnly", pcCandidate: false)
+            if !query.isEmpty {
+                detailFocusReturnID = game.id
+                if allowsStartupTasks { selection.recordSearch(query) }
+            }
+            session.selectedProduct = product
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
+    }
+
+    private func restoreDetailFocus() {
+        guard let detailFocusReturnID else { return }
+        let available = Set(ownedMatches.map(\.id) + visible.map(\.id)).subtracting(retainedPublicIDs)
+        if let target = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
+                                                                  available: available) {
+            focusedResult = target
+        } else {
+            returnToSearch()
+        }
+        self.detailFocusReturnID = nil
     }
 
     private func landscape(_ game: LibraryGame) -> [CatalogArtworkReference] {
@@ -290,15 +496,9 @@ struct LiveCatalogView: View {
             VStack(alignment: .leading, spacing: 14) {
                 LibraryLogoTitle(title: game.title, references: art.images[game.id]?.logos ?? [],
                                  allowsLoading: allowsArtworkLoading)
-                LibraryGameInformation(access: LibraryAccess(game), gamePass: game.gamePass,
+                LibraryGameInformation(gameFacts: game.facts,
                                        facts: facts[game.id])
                 if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
-                LibraryGameSizeView(installed: game.installed, downloadBytes: facts[game.id]?.downloadBytes,
-                                    productID: game.id,
-                                    pcPackageListed: LibraryPCPackageEvidence.listed(
-                                        observed: facts[game.id]?.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                    packageFormat: facts[game.id]?.packageFormat,
-                                    allowsMeasurement: allowsArtworkLoading)
                 LibraryGlassCluster {
                     actions(game, primary: true)
                     Button("View game") { open(game) }
@@ -325,7 +525,7 @@ struct LiveCatalogView: View {
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220, maximum: 340), spacing: 24)], spacing: 16) {
                 ForEach(Array(genres.prefix(4)), id: \.self) { genre in
-                    if let product = results.storeProducts.first(where: { facts[$0.id]?.genres.contains(genre) == true }) {
+                    if let product = projection.genreProducts[genre] {
                         Button { selection.genre = selection.genre == genre ? nil : genre } label: {
                             ZStack(alignment: .bottomLeading) {
                                 LibraryLandscapeView(references: landscape(game(product)), installed: nil,
@@ -353,60 +553,37 @@ struct LiveCatalogView: View {
 
     private func card(_ game: LibraryGame) -> some View {
         let cover = art.images[game.id]?.cover ?? game.cover
-        return LibraryCover(title: game.title, openLabel: "View",
+        return GameCard(title: game.title, gameFacts: game.facts, openLabel: "View",
+                            searchFocus: query.isEmpty ? nil : ($focusedResult, game.id),
                             alwaysShowsActions: true, open: { open(game) }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
-            if !unsupportedIssues(game).isEmpty {
+            if query.isEmpty, !unsupportedIssues(game).isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
             }
-            LibraryGameInformation(access: LibraryAccess(game), gamePass: game.gamePass,
-                                   facts: facts[game.id], compact: true, showsPrice: true)
-            Text("Source: \(results.sourceLabel(for: game.id))")
-                .font(.caption).foregroundStyle(.secondary)
-                .accessibilityIdentifier("xodus.catalog.source.\(game.id)")
-            if game.gamePass {
-                Text("PC Game Pass catalogue · account coverage not verified")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("xodus.catalog.plan.\(game.id)")
-            }
-            if let listing = game.product?.gamePass {
-                Text(CatalogGamePassListingCopy.description(for: listing))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.catalog.subscriptions.\(game.id)")
-            }
-            if game.pc == nil, !game.owned {
-                Text(library.accessIsCurrent ? "Not in your PC library" : "Ownership not verified")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
-            LibraryGameSizeView(installed: game.installed, downloadBytes: facts[game.id]?.downloadBytes,
-                                productID: game.id,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: facts[game.id]?.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                packageFormat: facts[game.id]?.packageFormat,
-                                allowsMeasurement: allowsArtworkLoading)
-            if let match = game.installed { InstalledPlayError(library: installed, game: match) }
-            if game.product?.freshness == "cached" { Text("Offline details").font(.caption) }
+            if query.isEmpty, let match = game.installed {
+                InstalledPlayError(library: installed, game: match)
+            }
         } actions: {
             VStack(alignment: .leading, spacing: 8) {
             LibraryGlassCluster {
-                actions(game, primary: false)
+                if !query.isEmpty, !unsupportedIssues(game).isEmpty {
+                    Button("View details") { open(game) }
+                        .help("Open compatibility details")
+                        .accessibilityLabel(GameSearchPresentation.compatibilityDetailsActionLabel(for: game.title))
+                } else {
+                    actions(game, primary: false)
+                }
                 if let match = game.installed {
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
-                } else {
+                } else if query.isEmpty || unsupportedIssues(game).isEmpty {
                     Button("View game", systemImage: "ellipsis") { open(game) }
                         .modifier(LibraryActionStyle(primary: false)).labelStyle(.iconOnly)
                         .buttonBorderShape(.circle)
                 }
             }
-            CatalogAcquisitionAction(productID: game.id, title: game.title,
-                market: session.market, language: session.language,
-                licensed: game.pc != nil || game.owned, gamePass: game.gamePass,
-                commerce: facts[game.id]?.commerce,
-                enabled: allowsStartupTasks && session.hasConfirmedSignIn && library.accessIsCurrent)
             }
         }
     }
@@ -448,26 +625,32 @@ struct LiveCatalogView: View {
             if hiddenUnsupportedCount > 0 { Button("Show unsupported games") { showsUnsupportedGames = true } }
             if selection.genre != nil { Button("All genres") { selection.genre = nil } }
             if !session.isReady, allowsStartupTasks { Button("Settings", action: openSettings.callAsFunction) }
-            if !query.isEmpty { Button("Clear Search", action: clearSearch) }
+            if !query.isEmpty {
+                Button("Search Library") { searchLibrary(query) }
+                Button("Clear Search", action: clearSearch)
+            }
         }.frame(maxWidth: .infinity, minHeight: 220)
     }
 
     private var catalogInfo: some View {
-        DisclosureGroup("About these games") {
+        Button("Game Pass catalogue coverage", systemImage: "info.circle") { showsCoverage = true }
+        .buttonStyle(.plain).font(.callout).foregroundStyle(.primary)
+        .popover(isPresented: $showsCoverage) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Owned games come from your PC library. Game Pass games require an active subscription.")
-                Text("Genres filter the games currently shown. Search coverage is partial; Mac compatibility varies by game.")
-                if !allowsStartupTasks { Text("Read-only preview. Search uses the loaded games; installation and gameplay are disabled.") }
-                if let error = session.catalogError { Text(error) }
-                if !session.discoveryFailures.isEmpty {
-                    Text("Some games couldn't be loaded. Refresh to try again.")
-                    ForEach(session.discoveryFailures) { failure in
-                        Text("\(failure.productID): \(failure.error.code)")
-                            .accessibilityIdentifier("xodus.catalog.failure.\(failure.productID)")
-                    }
+                Text("Catalogue coverage").font(.headline)
+                switch session.catalogCorpus {
+                case "pcGamePassDiscovery":
+                    Text("Xbox PC Game Pass catalogue.")
+                case "publicMicrosoftStoreSearch":
+                    Text("Xbox and Microsoft Store search, plus loaded PC Game Pass games.")
+                default:
+                    Text("Previously loaded public game details.")
                 }
+                Text(session.discoveryCheckedAt.map { "Last refreshed: \($0)" } ?? "Refresh time unavailable.")
+                Text("Membership badges have partial coverage. A missing badge doesn't mean a game isn't included.")
+                Text("A catalogue listing doesn't verify your account's access. Mac compatibility varies by game.")
             }
-            .font(.callout).foregroundStyle(.secondary).textSelection(.enabled).padding(.top, 12)
+            .font(.callout).textSelection(.enabled).padding(20).frame(width: 340)
         }
     }
 }

@@ -46,6 +46,17 @@ enum InstalledProductAccessChecks {
               "Different or absent account cannot borrow an installed access fact")
         check(!controller.permits(product, account: account, now: now.addingTimeInterval(120)),
               "Actual license expiry withdraws permission at the boundary")
+        let purchased = PCGame(id: product, title: "Purchased installed fixture", artwork: nil,
+                               acquisitionKind: .purchased)
+        let installedFact = InstalledGame(id: UUID(), title: purchased.title, identityName: "Fixture.Permit",
+            version: "1.0.0.0", storeId: product, folder: "/synthetic/permit",
+            launcher: "/synthetic/never-run", importedAt: now)
+        let purchaseFacts = GameFacts(pc: purchased, gamePass: true, installed: installedFact, accessIsCurrent: true)
+        check(purchaseFacts.badgeLabels() == ["Owned", "Game Pass"]
+              && purchaseFacts.installation == .installed(installedFact.folder)
+              && controller.permits(product, account: account, now: now.addingTimeInterval(119))
+              && !controller.permits(product, account: account, now: now.addingTimeInterval(120)),
+              "REQ-50: Expired Play permit withdraws action eligibility without erasing purchase, membership or installation facts")
         await controller.refresh(account: account, installedIDs: [product, denied, unknown],
             now: now.addingTimeInterval(30), read: reader)
         check(requests.count == 3, "Warm account access is cached without repeated provider calls")
@@ -130,6 +141,10 @@ enum InstalledProductAccessChecks {
         let game = InstalledGame(id: UUID(), title: "Synthetic installed title", identityName: "Synthetic",
             version: "1.0.0.0", storeId: product, folder: "/synthetic/never-read",
             launcher: "/synthetic/never-executed", importedAt: now)
+        let importedFacts = GameFacts(pc: nil, gamePass: false, installed: game, accessIsCurrent: false)
+        check(importedFacts.badgeLabels().isEmpty && importedFacts.installation == .installed(game.folder)
+              && !local.canRequestPlay(product) && !local.launchStarted,
+              "REQ-50: Imported installation stays installed and manageable without ownership badges or a Play permit")
         let unqualified = LibraryGame.collection(installed: [game], owned: [], products: [],
             gamePass: [], active: true)
         check(unqualified.isEmpty && LibraryGame.localRecords(installed: [game], qualified: unqualified,
@@ -147,6 +162,66 @@ enum InstalledProductAccessChecks {
         check(LibraryGame.collection(installed: [], owned: [], products: [], gamePass: [],
             active: true, permittedInstalledIDs: [product]).isEmpty,
               "Installed-product grant cannot fan out into uninstalled catalogue entitlement")
+        let switched = InstalledProductAccess()
+        defer { switched.retire() }
+        func waitForSwitch(_ predicate: () -> Bool) async throws -> Bool {
+            for _ in 0..<200 {
+                if predicate() { return true }
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            return predicate()
+        }
+        var releaseOld: CheckedContinuation<OdeAccountRead, Never>?
+        var releaseNew: CheckedContinuation<OdeAccountRead, Never>?
+        let oldRead = Task {
+            await switched.refresh(account: account, installedIDs: [product], now: now) { _ in
+                await withCheckedContinuation { releaseOld = $0 }
+            }
+        }
+        let oldStarted = try await waitForSwitch { releaseOld != nil }
+        check(oldStarted, "REQ-50: Old-account allowed reader explicitly starts before switching")
+        guard let oldCompletion = releaseOld else { throw ManagementError.requestTimedOut }
+        let newRead = Task {
+            await switched.refresh(account: other, installedIDs: [product], now: now) { _ in
+                await withCheckedContinuation { releaseNew = $0 }
+            }
+        }
+        let retired = try await waitForSwitch { switched.accountHash == nil }
+        check(retired && switched.facts.isEmpty && releaseNew == nil,
+              "REQ-50: Account switch explicitly retires old facts and joins old reader before starting the new reader")
+        oldCompletion.resume(returning: try response(product))
+        await oldRead.value
+        let newStarted = try await waitForSwitch { releaseNew != nil }
+        check(newStarted && switched.accountHash == other,
+              "REQ-50: New-account reader explicitly starts and holds its response after old completion joins")
+        guard let newCompletion = releaseNew else {
+            newRead.cancel()
+            await newRead.value
+            throw ManagementError.requestTimedOut
+        }
+        let pendingCollection = LibraryGame.collection(installed: [game], owned: [], products: [],
+            gamePass: [], active: true,
+            permittedInstalledIDs: switched.permits(product, account: other, now: now) ? [product] : [])
+        let pendingDisplay = LibraryGame.displayCollection(installed: [game], account: pendingCollection)
+        check(retired && newStarted && switched.checking && switched.facts.isEmpty
+              && !switched.permits(product, account: account, now: now)
+              && !switched.permits(product, account: other, now: now)
+              && pendingCollection.isEmpty && pendingDisplay.first?.facts.badgeLabels().isEmpty == true
+              && pendingDisplay.first?.facts.installation == .installed(game.folder),
+              "REQ-50: Joined old allowed completion cannot transiently restore permission or shared qualification while new denial is still held")
+        newCompletion.resume(returning: try response(product, accountHash: other,
+                                                      access: "denied", reason: "providerDenied"))
+        await newRead.value
+        let switchedCollection = LibraryGame.collection(installed: [game], owned: [], products: [],
+            gamePass: [], active: true,
+            permittedInstalledIDs: switched.permits(product, account: other, now: now) ? [product] : [])
+        let switchedDisplay = LibraryGame.displayCollection(installed: [game], account: switchedCollection)
+        check(switched.accountHash == other && switched.facts[product]?.value.access == .denied
+              && !switched.permits(product, account: account, now: now)
+              && !switched.permits(product, account: other, now: now)
+              && switchedCollection.isEmpty && switchedDisplay.first?.facts.badgeLabels().isEmpty == true
+              && switchedDisplay.first?.facts.installation == .installed(game.folder),
+              "REQ-50: Account-switch late completion cannot restore old access; current UI retains only unqualified installed facts")
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("InstalledAccessChecks-\(UUID().uuidString)")
         let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
             .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),

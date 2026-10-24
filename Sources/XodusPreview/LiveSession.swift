@@ -18,6 +18,7 @@ final class LiveSession: ObservableObject {
     @Published private(set) var products: [CatalogProduct] = []
     @Published private(set) var activity = ActivityStore()
     @Published private(set) var searching = false
+    @Published private var catalogRequestAppends = false
     @Published private(set) var catalogStopped = false
     @Published private var accountOperationBusy = false
     @Published private(set) var recentLibraryBootstrapRunning = false
@@ -556,7 +557,8 @@ final class LiveSession: ObservableObject {
         isReady && accountStatusCurrent && !accountBusy && !signInPending
             && (authentication?.state == .signedOut || (supports(.authLogout) && needsAccountDisconnect))
     }
-    var canLoadMoreCatalog: Bool { nextCursor != nil && !searching }
+    var catalogAtLimit: Bool { Set(products.map(\.id) + discoveryFailures.map(\.id)).count >= 512 }
+    var canLoadMoreCatalog: Bool { nextCursor != nil && !searching && !catalogAtLimit }
     var catalogEmptyTitle: String {
         if searching { return "Finding games" }
         if catalogStopped { return "Search stopped" }
@@ -1441,14 +1443,16 @@ final class LiveSession: ObservableObject {
         guard validScope else { catalogError = "Use a two-letter market and a language such as en-US."; return }
         let corpus = command == .query ? "publicMicrosoftStoreSearch"
             : command == .discover ? "pcGamePassDiscovery" : "observedPublicProducts"
-        if more && (searching || nextCursor == nil || catalogCorpus != corpus || currentQuery != query) { return }
+        if more && (!canLoadMoreCatalog || catalogCorpus != corpus || currentQuery != query) { return }
+        let retainsProducts = currentQuery == query && catalogCorpus == corpus
+            && catalogRequestScope == "\(market):\(language)"
         queryGeneration += 1
         queuedCatalog = CatalogRequest(command: command, query: query, market: market, language: language,
             cursor: more ? nextCursor : nil, more: more, generation: generation, queryGeneration: queryGeneration)
         currentQuery = query
         catalogRequestScope = "\(market):\(language)"
         if !more {
-            products = []
+            if !retainsProducts { products = [] }
             nextCursor = nil
             cacheRevision = nil
             discoveryFailures = []
@@ -1456,6 +1460,7 @@ final class LiveSession: ObservableObject {
             discoveryRevision = nil
         }
         catalogCorpus = corpus
+        catalogRequestAppends = more
         searching = true
         catalogStopped = false
         catalogError = nil
@@ -1573,7 +1578,7 @@ final class LiveSession: ObservableObject {
         for _ in 0..<32 {
             guard current(), catalogCorpus == "pcGamePassDiscovery", currentQuery.isEmpty,
                   catalogError == nil, !catalogStopped, let cursor = nextCursor else { return }
-            guard products.count + discoveryFailures.count < 512 else {
+            guard !catalogAtLimit else {
                 gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
                 gamePassCatalogHasMore = false
                 return
@@ -1591,6 +1596,11 @@ final class LiveSession: ObservableObject {
 
     func catalogMatches(query: String) -> Bool {
         currentQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func retainedPublicIDs(query: String, pending: Bool) -> Set<String> {
+        GameSearchPresentation.retainedPublicIDs(pending: pending, searching: searching && !catalogRequestAppends,
+            matchesQuery: catalogMatches(query: query), products: products)
     }
 
     func stopCatalogSearch() {
@@ -1638,12 +1648,19 @@ final class LiveSession: ObservableObject {
             products += page.products
             discoveryFailures += page.failures
         } else {
-            products = page.products
+            products = refreshedProducts(page.products, failures: page.failures.map(\.productID))
             discoveryFailures = page.failures
         }
         nextCursor = page.nextCursor
         discoveryCheckedAt = page.checkedAt
         catalogCorpus = page.corpus
+    }
+
+    private func refreshedProducts(_ incoming: [CatalogProduct], failures: [String]) -> [CatalogProduct] {
+        if incoming.isEmpty, !failures.isEmpty { return products }
+        let failed = Set(failures)
+        let successful = Set(incoming.map(\.id))
+        return incoming + products.filter { failed.contains($0.id) && !successful.contains($0.id) }
     }
 
     private func browseDiscovery(_ request: CatalogRequest) async {
@@ -1694,7 +1711,7 @@ final class LiveSession: ObservableObject {
             products += page.products
             discoveryFailures += page.failures
         } else {
-            products = page.products
+            products = refreshedProducts(page.products, failures: page.failures.map(\.productID))
             discoveryFailures = page.failures
         }
         nextCursor = page.nextCursor

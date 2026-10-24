@@ -42,6 +42,11 @@ struct PCGamesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
+            if let notice = library.resolutionNotice {
+                Text(notice).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.pcGames.partialResolution")
+            }
             if library.presenceUnavailable {
                 ContentUnavailableView {
                     Label("Saved sign-in unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
@@ -52,6 +57,10 @@ struct PCGamesView: View {
                         .disabled(library.busy || library.restoringPresence)
                         .accessibilityIdentifier("xodus.pcGames.retryPresence")
                 }
+            } else if library.restoringPresence {
+                OdeLoadingStatus(title: "Checking your saved sign-in")
+            } else if library.busy && !library.hasSavedSignIn && !library.needsSignIn && !library.needsKeychainApproval {
+                OdeLoadingStatus(title: "Loading your PC games")
             } else if !library.hasSavedSignIn || library.needsSignIn {
                 ContentUnavailableView {
                     Label("Sign in to see your PC games", systemImage: "gamecontroller")
@@ -85,19 +94,22 @@ struct PCGamesView: View {
                     Text("Manage sign-in in Account").font(.callout).foregroundStyle(.secondary)
                 } }
                 if library.busy && !library.approvingKeychain {
-                    ProgressView("Loading your PC games").controlSize(.small)
+                    OdeLoadingStatus(title: library.representedGames.isEmpty
+                        ? "Loading your PC games" : "Refreshing your PC games",
+                        message: library.representedGames.isEmpty ? nil : "Your available games stay visible while we check for changes.")
                         .accessibilityIdentifier("xodus.pcGames.loading")
                 }
                 if let snapshot = library.snapshot {
                     if showsCollection, snapshot.games.isEmpty {
-                        Text("No PC games were found in this account.").foregroundStyle(.secondary)
+                        Text(snapshot.isComplete ? "No PC games were found in this account."
+                             : "PC game details aren't available yet.").foregroundStyle(.secondary)
                     } else if showsCollection, visibleGames.isEmpty {
                         ContentUnavailableView.search(text: query)
                     } else if showsCollection {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 180, maximum: 240), spacing: 24)], spacing: 28) {
                             ForEach(visibleGames) { game in
                                 PCGameTile(game: game, installed: installed, operations: operations,
-                                           allowsArtworkLoading: allowsStartupTasks, badge: query.isEmpty ? nil : .owned,
+                                           allowsArtworkLoading: allowsStartupTasks,
                                            accessIsCurrent: library.accessIsCurrent)
                             }
 
@@ -105,10 +117,10 @@ struct PCGamesView: View {
                     }
                     if showsCollection { VStack(alignment: .leading, spacing: 6) {
                         if snapshot.excludedCount > 0 {
-                            Text("\(snapshot.excludedCount) games not shown (not for PC or unavailable)")
+                            Text("\(snapshot.excludedCount) games not shown (not listed for PC)")
                         }
                         Text("Last updated \(Text(snapshot.updatedAt, style: .relative)) ago")
-                        if library.error != nil { Text("Showing the last complete library.") }
+                        if let notice = library.retainedLibraryNotice { Text(notice) }
                     }
                     .font(.callout).foregroundStyle(.secondary) }
                 }
@@ -162,9 +174,9 @@ struct PCGameTile: View {
     let game: PCGame
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
-    @ObservedObject private var catalog = LibraryCatalogArtwork.shared
+    @ObservedObject var catalog = LibraryCatalogArtwork.shared
     var allowsArtworkLoading = true
-    var badge: CatalogAccessBadge?
+    var gamePass = false
     var viewDetails: (() -> Void)?
     var accessIsCurrent = true
 
@@ -175,36 +187,26 @@ struct PCGameTile: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        GameCard(title: game.title,
+                 gameFacts: GameFacts(pc: game, gamePass: gamePass, accessIsCurrent: accessIsCurrent),
+                 alwaysShowsActions: true, open: { viewDetails?() }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? game.artwork : nil,
                                status: game.artwork == nil ? .absent : .available, contentMode: .fit)
-                .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            Text(game.title).font(.headline)
-                .lineLimit(2).frame(minHeight: 40, alignment: .topLeading)
-            if let badge {
-                Text(accessIsCurrent
-                     ? (game.acquisitionKind == .subscription ? "Subscription (plan unknown)" : badge.rawValue)
-                     : "Saved library - refresh required")
-                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            }
+        } status: {
             if !unsupportedIssues.isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues)
-            } else if let match = PCGamesController.installedMatch(game, in: installed.games) {
-                InstalledPlayButton(library: installed, operations: operations, game: match)
+            }
+            if let match = PCGamesController.installedMatch(game, in: installed.games) {
                 InstalledPlayError(library: installed, game: match)
             } else {
                 Text("Not installed").font(.callout).foregroundStyle(.secondary)
+            }
+        } actions: {
+            if unsupportedIssues.isEmpty, let match = PCGamesController.installedMatch(game, in: installed.games) {
+                InstalledPlayButton(library: installed, operations: operations, game: match)
+            } else if unsupportedIssues.isEmpty {
                 GameInstallAction(game: game, operations: operations, enabled: accessIsCurrent)
             }
-            LibraryGameSizeView(installed: PCGamesController.installedMatch(game, in: installed.games),
-                                downloadBytes: catalog.images[game.id]?.facts.downloadBytes,
-                                productID: game.id,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: catalog.images[game.id]?.facts.pcPackageListed,
-                                    candidate: catalog.images[game.id]?.product.pcCatalogCandidate),
-                                packageFormat: catalog.images[game.id]?.facts.packageFormat,
-                                allowsMeasurement: allowsArtworkLoading)
             if let viewDetails { Button("View game", action: viewDetails) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -10,6 +10,14 @@ struct NativeMinecraftInstallation: Equatable, Sendable {
     var version: String? = nil
     var problem: String? = nil
 
+    func appears(in filter: LibraryFilter, query: String) -> Bool {
+        guard filter == .all || (filter == .installed && (state == .ready || state == .repair)) else {
+            return false
+        }
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query)
+    }
+
     var action: String {
         switch state {
         case .checking: "Checking launcher"
@@ -135,7 +143,7 @@ struct NativeMinecraftCard<Artwork: View>: View {
     @State private var showsDetails = false
 
     var body: some View {
-        LibraryCover(title: "Minecraft: Java Edition", openLabel: "Details for",
+        GameCard(title: "Minecraft: Java Edition", openLabel: "Details for",
                      alwaysShowsActions: true, open: { showsDetails = true }, artwork: artwork) {
             Label(minecraft.installation.version.map { "Native launcher · \($0)" } ?? "Native launcher",
                   systemImage: "desktopcomputer")

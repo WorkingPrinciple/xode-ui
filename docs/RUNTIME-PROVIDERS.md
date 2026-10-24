@@ -56,6 +56,14 @@ refuse launch; there is no fallback to CLI3121 or another engine. The inspector
 bounds stdout/stderr, deadline, cancellation and owned-child cleanup. These
 source checks do not constitute new-CLI delivery or Calimocho game acceptance.
 
+For optional source integration coverage, set
+`XODUS_ENGINE_INSPECTION_TEST_BACKEND` to an explicitly approved, pinned source
+CLI executable when running `XodusPreview --live-check`. The consumer probes
+that executable and inspects only owned neutral generic-Wine and unadmitted
+Calimocho fixtures; it never launches their artifacts. The normal suite uses
+synthetic CLI scripts, including an unsupported old-CLI fixture. Neither mode
+establishes installed delivery or production admission.
+
 ### Research and native proposal
 
 Reviewed 24 October 2026 against Heroic main
@@ -159,7 +167,8 @@ cannot replace newer reimport observations. Store updates additionally compare
 the observed import date before writing refreshed package facts.
 No UWP/EAppx support status or installation policy is changed.
 
-Official, separately installed CrossOver is the first-release dependency.
+Official, separately installed CrossOver is required for CrossOver launch routes,
+not a universal dependency for every configured engine or game.
 GPTK3/GPTK4 and user-selected standalone/source-built Wine remain Experimental
 tracks; any explicit graphics override is also Experimental. The UI requires
 acknowledgement before their pure planning, reset by configuration or observed
@@ -191,7 +200,7 @@ Wine and graphics identities remain unknown. Existing explicit decoded/selected
 configurations, including a deliberately cleared choice, are not rewritten.
 The current UI is memory-only; this does not introduce persistence/migration.
 Library/Account/Settings share checking/absent/unverified/verified presentation.
-Absent/unverified CrossOver blocks first-release gameplay setup, not public
+Absent/unverified CrossOver blocks CrossOver runtime-plan setup, not public
 browsing or Microsoft sign-in. No license, game, device, existing bottle, save,
 credential or provider process is inspected/executed by this separate app check.
 

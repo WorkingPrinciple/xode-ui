@@ -80,6 +80,7 @@ struct XodusToolbar: ToolbarContent {
     let accountSymbol: String
     var libraryContrast = false
     var openSearch: () -> Void = {}
+    var showSearchResults: (() -> Void)?
     let openAccount: () -> Void
 
     var body: some ToolbarContent {
@@ -104,9 +105,10 @@ struct XodusToolbar: ToolbarContent {
     }
 
     @ViewBuilder private var navigationControls: some View {
-        navigation.fixedSize().accessibilityLabel("Navigate Ode to X").accessibilityIdentifier("xodus.navigation")
+        navigation.fixedSize().accessibilityIdentifier("xodus.navigation")
         NativeToolbarSearch(text: searchText, focused: searchFocused,
-                            placeholder: searchPlaceholder, enabled: searchEnabled, openSearch: openSearch)
+                            placeholder: searchPlaceholder, enabled: searchEnabled, openSearch: openSearch,
+                            showResults: showSearchResults)
     }
 
     private var picker: some View {

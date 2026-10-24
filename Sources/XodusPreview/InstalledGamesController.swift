@@ -471,7 +471,9 @@ final class InstalledGamesController: ObservableObject {
     private func inspectNativeInstallation(_ game: InstalledGame) async -> NativeInstallationStatus? {
         if let pending = nativeInspectionTasks[game.id] {
             do { return try await pending.value }
+            catch is CancellationError { return nil }
             catch {
+                guard !Task.isCancelled else { return nil }
                 if loaded, !applicationTerminating, games.contains(game) {
                     installationErrors[game.id] = NativeInstallationQuery.failureMessage(error)
                 }
@@ -503,7 +505,7 @@ final class InstalledGamesController: ObservableObject {
             let result = try await withTaskCancellationHandler {
                 try await task.value
             } onCancel: { task.cancel() }
-            guard !applicationTerminating, loaded, games.contains(game) else { return nil }
+            guard !Task.isCancelled, !applicationTerminating, loaded, games.contains(game) else { return nil }
             installationStatuses[game.id] = result
             installationErrors[game.id] = result.success ? nil : result.explanation
             nativeInspectionDates[game.id] = ContinuousClock.now
@@ -513,7 +515,10 @@ final class InstalledGamesController: ObservableObject {
                 packageErrors[game.id] = nil
             } else { launchableIDs.remove(game.id) }
             return result
+        } catch is CancellationError {
+            return nil
         } catch {
+            guard !Task.isCancelled else { return nil }
             guard !applicationTerminating, loaded, games.contains(game) else { return nil }
             installationStatuses[game.id] = nil
             installationErrors[game.id] = NativeInstallationQuery.failureMessage(error)

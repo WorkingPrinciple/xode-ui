@@ -59,6 +59,109 @@ enum NativeChecks {
             check(navigation.query == "Library search", "Library query survives tab navigation")
             navigation.navigate(.discover)
             check(navigation.query == "Store search", "Discover query survives tab navigation")
+            navigation.librarySelection.filter = .installed
+            navigation.librarySelection.sort = .recentlyPlayed
+            navigation.librarySelection.heroID = "library-hero"
+            navigation.librarySelection.scrollID = "library-card-fixture"
+            navigation.discoverSelection.genre = "Adventure"
+            navigation.discoverSelection.scope = .installed
+            navigation.discoverSelection.featuredID = "discover-hero"
+            navigation.discoverSelection.scrollID = "discover-card-fixture"
+            navigation.navigate(.library)
+            navigation.navigate(.discover)
+            check(navigation.librarySelection.filter == .installed
+                  && navigation.librarySelection.sort == .recentlyPlayed
+                  && navigation.librarySelection.heroID == "library-hero"
+                  && navigation.librarySelection.scrollID == "library-card-fixture"
+                  && navigation.discoverSelection.genre == "Adventure"
+                  && navigation.discoverSelection.scope == .installed
+                  && navigation.discoverSelection.featuredID == "discover-hero"
+                  && navigation.discoverSelection.scrollID == "discover-card-fixture",
+                  "REQ-8: Warm tab navigation retains filter/sort/query/genre/search scope/hero/position without retaining hidden views")
+            let position = LibrarySelection()
+            position.scrollID = "library-card-fixture"
+            position.collectionViewportFrame = CGRect(x: 0, y: 100, width: 1000, height: 700)
+            position.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Scope changes clear removed targets without commanding a header reveal")
+            position.collectionHeaderFrame.origin.y = 850
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Top viewport clears a removed card without revealing collection")
+            check(position.collectionTarget(remaining: ["library-card-fixture"]) == "library-card-fixture",
+                  "Surviving card target remains retained outside header viewport")
+            position.collectionHeaderFrame.origin.y = 0
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Removed offscreen cards never force another target position")
+            position.collectionHeaderFrame = .zero
+            check(position.collectionTarget(remaining: []) == nil,
+                  "Unavailable geometry never invents header visibility")
+            position.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
+            position.collectionScrollFrame = CGRect(x: 0, y: 0, width: 1000, height: 700)
+            position.measureScroll(LibraryScrollMeasurement(offsetY: 789.5, contentHeight: 3729.5,
+                containerHeight: 700, containerWidth: 1000, insetTop: 24, insetBottom: 12,
+                visibleY: 789.5, visibleMaxY: 1489.5, visibleHeight: 700))
+            position.prepareScopeExtent()
+            check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 700)) == 1477.5,
+                  "Visible-controls extent retains only offset plus container minus native bottom inset")
+            check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 897)) == 1674.5,
+                  "Height resize recalculates finite extent from current viewport, not old document height")
+            check(position.actionExtent?.minimumHeight(viewport: CGSize(width: 900, height: 700)) == nil,
+                  "Width reflow drops obsolete action extent")
+            let underlappingExtent = LibraryActionExtent(offsetY: 727.5, insetBottom: 0, viewportWidth: 1619)
+            check(underlappingExtent.minimumHeight(viewport: CGSize(width: 1619, height: 1231)) == 1958.5
+                  && underlappingExtent.minimumHeight(viewport: CGSize(width: 1619, height: 1179)) == 1906.5,
+                  "Underlapping scroll reserves the measured native container, not the shorter safe-area parent")
+            func resizeMeasurement(width: CGFloat) -> LibraryScrollMeasurement {
+                LibraryScrollMeasurement(offsetY: 599.5, contentHeight: 1830.5,
+                    containerHeight: 1231, containerWidth: width, insetTop: 0, insetBottom: 0,
+                    visibleY: 599.5, visibleMaxY: 1830.5, visibleHeight: 1231)
+            }
+            position.measureScroll(resizeMeasurement(width: 1619.0000000000002))
+            position.prepareScopeExtent()
+            position.measureScrollFrame(CGRect(x: 0, y: 0, width: 1619, height: 1231))
+            position.measureScroll(resizeMeasurement(width: 1619))
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1619, height: 1231)) == 1830.5,
+                  "Observed 1619.0000000000002 to 1619 representation noise preserves exact required extent")
+            position.measureScroll(resizeMeasurement(width: 1619.0000000000002))
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1619.0000000000002, height: 897)) == 1496.5,
+                  "Width representation noise in reverse preserves current-height semantics")
+            position.measureScroll(resizeMeasurement(width: 1500))
+            position.measureScroll(resizeMeasurement(width: 1619))
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1619, height: 1231)) == nil,
+                  "Real native width reflow permanently invalidates extent despite returning to old width")
+            check(position.scopeMinimumHeight(viewport: CGSize(width: 1000, height: 700)) == nil,
+                  "Returning to an earlier width cannot resurrect its obsolete scope extent")
+            position.collectionHeaderFrame.origin.y = 850
+            position.prepareScopeExtent()
+            check(position.actionExtent == nil, "Hero/top scope action does not reserve stale grid extent")
+            position.collectionHeaderFrame.origin.y = 300
+            position.prepareScopeExtent()
+            position.clearScopeExtent()
+            check(position.actionExtent == nil, "See All explicitly releases the filter extent")
+            position.prepareScopeExtent()
+            position.measureScroll(LibraryScrollMeasurement(offsetY: -24, contentHeight: 1477.5,
+                containerHeight: 700, containerWidth: 1000, insetTop: 24, insetBottom: 12,
+                visibleY: 0, visibleMaxY: 700, visibleHeight: 700))
+            position.finishedUserScroll()
+            check(position.actionExtent == nil, "Deliberate user scroll to native top releases filter extent")
+            position.prepareScopeExtent()
+            check(position.actionExtent == nil, "Native top never reserves extra document extent")
+            let filteredHistory = LibrarySelection()
+            filteredHistory.scrollID = "library-card-filtered-out"
+            filteredHistory.collectionViewportFrame = CGRect(x: 0, y: 100, width: 1000, height: 700)
+            filteredHistory.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
+            filteredHistory.measureScroll(LibraryScrollMeasurement(offsetY: 789.5, contentHeight: 3729.5,
+                containerHeight: 700, containerWidth: 1000, insetTop: 24, insetBottom: 12,
+                visibleY: 789.5, visibleMaxY: 1489.5, visibleHeight: 700))
+            filteredHistory.beginScopeMeasurement(filter: .owned, target: nil)
+            filteredHistory.prepareScopeExtent()
+            check(filteredHistory.collectionTarget(remaining: []) == nil
+                  && filteredHistory.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 700)) == 1477.5
+                  && filteredHistory.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 897)) == 1674.5,
+                  "REQ-4: Filtering away the scrolled-to title clears its target but reserves the measured history at current height")
+            filteredHistory.measureScroll(resizeMeasurement(width: 1500))
+            check(filteredHistory.scopeMinimumHeight(viewport: CGSize(width: 1500, height: 897)) == nil,
+                  "REQ-4: A real width reflow retires the filtered-history reservation")
             let playbackArguments = (true, true, false, false, true, true, true)
             check(HeroMotionPolicy.permitsPlayback(allowed: playbackArguments.0, enabled: playbackArguments.1,
                     reduceMotion: playbackArguments.2, lowPower: playbackArguments.3,
@@ -72,8 +175,11 @@ enum NativeChecks {
                       "Hero playback respects lifecycle fence \(fence)")
             }
             try LibraryAccessChecks.run(check: check)
+            try PresentationPerformanceChecks.correctness(check: check)
+            try await PublicDescriptorChecks.run(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
+                try await CatalogDetailLoadingChecks.run(check: check)
                 try await InstalledProductAccessChecks.run(check: check)
                 try await PCGamesChecks.run(check: check)
                 print("\(count) Library access checks, \(failures) failures. Synthetic data only.")
@@ -781,7 +887,13 @@ enum NativeChecks {
                   && boundedCatalogue.nextCursor != nil && !boundedCatalogue.gamePassCatalogHasMore
                   && boundedCatalogue.gamePassCatalogError?.contains("limit") == true,
                   "Catalogue limit preserves partial coverage and stops offering an impossible Load remaining action")
+            check(!boundedCatalogue.canLoadMoreCatalog,
+                  "Discover does not offer More games when the catalogue bound prevents another page")
             let readsAtLimit = try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count
+            await boundedCatalogue.refreshCatalog("", more: true)
+            check(try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count == readsAtLimit
+                  && boundedCatalogue.catalogError == nil,
+                  "Explicit continuation at capacity preserves content without a request or false service error")
             await boundedCatalogue.loadGamePassCatalog()
             check(try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count == readsAtLimit,
                   "Repeated requests at the catalogue bound make no additional producer calls")
@@ -792,10 +904,12 @@ enum NativeChecks {
             await partialFeed.connect()
             await partialFeed.refreshCatalog("")
             let retainedFeedIDs = partialFeed.gamePassProductIDs
+            let retainedVisibleIDs = Set(partialFeed.products.map(\.id))
             check(!retainedFeedIDs.isEmpty && partialFeed.gamePassCatalogError == nil,
                   "SDD-LIB-06: partial PC discovery records remain metadata, not a personal access grant")
             await partialFeed.refreshCatalog("")
             check(partialFeed.gamePassProductIDs == retainedFeedIDs
+                  && Set(partialFeed.products.map(\.id)) == retainedVisibleIDs
                   && Set(partialFeed.gamePassProducts.map(\.id)) == retainedFeedIDs
                   && partialFeed.gamePassCatalogError != nil
                   && partialFeed.gamePassLibraryNotice.contains("retained")
@@ -953,6 +1067,39 @@ enum NativeChecks {
                   && stopped.catalogEmptyExplanation(query: "Stopped", canRefresh: true).contains("new search"),
                   "Cancelled catalog UI remains distinct from a confirmed empty result")
             await stopped.disconnect()
+
+            let staleScope = session("queryslow")
+            await staleScope.connect()
+            let staleRequest = Task { await staleScope.refreshCatalog("Old market query") }
+            try await wait { staleScope.searching }
+            staleScope.market = "FR"
+            check(staleScope.products.isEmpty && !staleScope.searching
+                  && staleScope.catalogCorpus == "observedPublicProducts"
+                  && staleScope.catalogError == nil,
+                  "REQ-9: Changing market immediately retires the old query, cursor and loading state")
+            await staleRequest.value
+            check(staleScope.products.isEmpty && staleScope.catalogCorpus == "observedPublicProducts"
+                  && staleScope.catalogError == nil && !staleScope.searching,
+                  "REQ-9: A late old-market completion cannot repopulate the retired catalogue scope")
+            await staleScope.disconnect()
+
+            let refreshRecovery = session("queryrefreshfailure")
+            await refreshRecovery.connect()
+            await refreshRecovery.refreshCatalog("Recovery title")
+            let retainedProducts = refreshRecovery.products
+            check(!retainedProducts.isEmpty && refreshRecovery.catalogError == nil,
+                  "REQ-12: A successful same-scope query establishes truthful content before refresh")
+            await refreshRecovery.refreshCatalog("Recovery title")
+            check(refreshRecovery.products == retainedProducts && refreshRecovery.catalogError != nil
+                  && !refreshRecovery.searching
+                  && refreshRecovery.catalogNotice == "Games couldn't be loaded. Choose Refresh to try again."
+                  && refreshRecovery.catalogEmptyTitle != "No Store matches",
+                  "REQ-12: Same-scope transport failure retains prior results with explicit actionable error")
+            await refreshRecovery.refreshCatalog("Recovery title")
+            check(refreshRecovery.products.map(\.id) == retainedProducts.map(\.id)
+                  && refreshRecovery.catalogError == nil && !refreshRecovery.searching,
+                  "REQ-12: Explicit retry clears only the recovered catalog error and restores current results")
+            await refreshRecovery.disconnect()
 
             let startupConfiguration = configuration("startupquery")
             let startup = LiveSession(configuration: startupConfiguration)

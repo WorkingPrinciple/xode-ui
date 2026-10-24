@@ -121,7 +121,7 @@ struct EngineProviderOverview: View {
                     $0.ready && $0.admittedProvider == "calimocho"
                 }) ? "Admitted local build" : "Identification unavailable")
                     .font(.headline)
-                Text("Calimocho needs a provider-declared registry record admitted by a supporting app engine. Generic Wine records and source checkouts do not establish Calimocho identity or game qualification.")
+                Text("Refresh your engine registry to check a local Calimocho build. If it cannot be verified, keep using a configured Wine or CrossOver route. A source checkout alone is not an installed engine.")
                     .foregroundStyle(.secondary)
                 Link("Calimocho official source", destination: EngineManagementPolicy.calimochoSource)
                     .accessibilityIdentifier("xodus.engines.calimocho.source")

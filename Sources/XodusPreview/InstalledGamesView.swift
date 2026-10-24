@@ -223,6 +223,12 @@ struct InstalledPlayButton: View {
     private var launching: Bool {
         library.runningGameID == game.id && library.playState == .launching
     }
+    var loadingTitle: String? {
+        guard library.stoppingGameID == game.id || launching else { return nil }
+        return GameLaunchPresentation.title(game: game.title,
+            stopping: library.stoppingGameID == game.id,
+            checking: library.checkingInstallations.contains(game.id), started: library.launchStarted)
+    }
     var title: String {
         library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : canStop ? "Stop"
             : opensAttention ? InstalledGameActionCopy.title(
@@ -351,8 +357,9 @@ struct InstalledPlayButton: View {
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
         .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"
                                 : canStop ? "xodus.installed.stop" : "xodus.installed.play")
-        if library.stoppingGameID == game.id || launching {
-            ProgressView(library.stoppingGameID == game.id ? "Stopping" : "Launching").controlSize(.small)
+        if let loadingTitle {
+            OdeLoadingStatus(title: loadingTitle,
+                message: library.stoppingGameID == game.id ? nil : "Waiting for the game launcher.")
         }
     }
 }

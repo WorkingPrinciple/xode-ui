@@ -33,6 +33,8 @@ public actor ManagementClient {
     private var diagnosticTask: Task<Void, Never>?
     private var framer = JSONLineFramer()
     private var diagnosticBytes = 0
+    private var collectionDiagnostics = CollectionDiagnosticFramer()
+    private var libraryReadNumber: UInt64 = 0
     private var stopped = false
     private var exitStatus: Int32?
     private var hello: ManagementHello?
@@ -41,6 +43,7 @@ public actor ManagementClient {
 
     private struct Pending {
         let command: ManagementCommand
+        let libraryReadNumber: UInt64?
         let continuation: CheckedContinuation<JSONValue, Error>
         let deadline: Task<Void, Never>
     }
@@ -120,7 +123,7 @@ public actor ManagementClient {
             do {
                 for try await bytes in stderr {
                     guard let self else { return }
-                    try await self.discardDiagnostics(count: bytes.count)
+                    try await self.consumeDiagnostics(bytes)
                 }
             } catch { await self?.fail(Self.safeError(error)) }
         }
@@ -172,7 +175,14 @@ public actor ManagementClient {
                 catch { return }
                 await self?.timedOut(id)
             }
-            pending[id] = Pending(command: command, continuation: continuation, deadline: deadline)
+            let readNumber: UInt64?
+            if command == .odeAccountRead, params["section"]?.string == "library" {
+                libraryReadNumber += 1
+                readNumber = libraryReadNumber
+                logger.info("Collection request dispatched: localRead=\(self.libraryReadNumber, privacy: .public).")
+            } else { readNumber = nil }
+            pending[id] = Pending(command: command, libraryReadNumber: readNumber,
+                                  continuation: continuation, deadline: deadline)
             writer.async { [weak self] in
                 do { try stdin.write(contentsOf: bytes) }
                 catch { Task { await self?.fail(.writeFailed) } }
@@ -293,10 +303,48 @@ public actor ManagementClient {
         }
     }
 
-    private func discardDiagnostics(count: Int) throws {
+    private func consumeDiagnostics(_ bytes: Data) throws {
         guard !stopped else { return }
-        guard count <= JSONLineFramer.maximumBytes - diagnosticBytes else { throw ManagementError.outputOverflow }
-        diagnosticBytes += count
+        guard bytes.count <= JSONLineFramer.maximumBytes - diagnosticBytes else { throw ManagementError.outputOverflow }
+        diagnosticBytes += bytes.count
+        for line in collectionDiagnostics.append(bytes) {
+            let reads = pending.values.compactMap(\.libraryReadNumber)
+            if reads.count == 1, let read = reads.first {
+                logger.info("Collection counts captured: pendingLocalRead=\(read, privacy: .public); \(line, privacy: .public)")
+            } else {
+                logger.info("Collection counts captured: uncorrelated; \(line, privacy: .public)")
+            }
+        }
+    }
+
+    struct CollectionDiagnosticFramer {
+        private var line = Data()
+        private var discarding = false
+        private static let maximumLineBytes = 512
+
+        mutating func append(_ bytes: Data) -> [String] {
+            var counts: [String] = []
+            for byte in bytes {
+                if byte == 10 {
+                    if !discarding, let text = String(data: line, encoding: .utf8),
+                       let match = text.range(of: "^Ode collection read: records=[0-9]+; activeGameRows=[0-9]+; productIDs=[0-9]+; subscriptionRows=[0-9]+$",
+                                              options: .regularExpression),
+                       match == text.startIndex..<text.endIndex {
+                        counts.append(text)
+                    }
+                    line.removeAll(keepingCapacity: true)
+                    discarding = false
+                } else if !discarding {
+                    if line.count < Self.maximumLineBytes {
+                        line.append(byte)
+                    } else {
+                        line.removeAll(keepingCapacity: true)
+                        discarding = true
+                    }
+                }
+            }
+            return counts
+        }
     }
 
     private func outputEnded() {

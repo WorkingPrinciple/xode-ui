@@ -5,31 +5,6 @@ import XodusManagement
 
 @MainActor
 enum PreviewChecks {
-    static func checkOfferMetadata() -> Bool {
-        do {
-            let args = CommandLine.arguments
-            guard args.count == 5, PCGamesClient.market(args[3]) == args[3],
-                  PCGamesClient.language(args[4]) == args[4],
-                  let data = try GameScriptFiles.read(
-                    URL(fileURLWithPath: args[2]), maximumBytes: 4 * 1024 * 1024) else {
-                throw PCGamesError.invalidResponse
-            }
-            let products = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
-            guard !products.isEmpty, products.count <= 20,
-                  products.allSatisfy({ PCGamesClient.validProductID($0.ProductId) }) else {
-                throw PCGamesError.invalidResponse
-            }
-            for product in products {
-                let commerce = CatalogCommerce.price(product, market: args[3])
-                print("Public PC offer \(product.ProductId): \(commerce?.label ?? "Price unavailable"); free=\(commerce?.isFree() == true). No acquisition attempted.")
-            }
-            return true
-        } catch {
-            FileHandle.standardError.write(Data("Saved public PC offer metadata was rejected: \(error).\n".utf8))
-            return false
-        }
-    }
-
     static func checkXboxCompanion() -> Bool {
         do {
             let args = CommandLine.arguments
@@ -74,6 +49,7 @@ enum PreviewChecks {
                   Set(products.map(\.ProductId)) == Set(payload.map(\.ProductId)) else {
                 throw PCGamesError.invalidResponse
             }
+            print("Public classification: baseGames=\(products.filter { $0.isBaseGame == true }.count); nonGames=\(products.filter { $0.isBaseGame == false }.count); unresolved=\(products.filter { $0.isBaseGame == nil }.count); admittedPCGames=\(products.compactMap(\.game).count).")
             var videos = 0, screenshots = 0, ratings = 0, requirements = 0
             for product in payload {
                 guard PCGamesClient.validProductID(product.ProductId),
@@ -462,7 +438,7 @@ enum PreviewChecks {
             }
             let pass = try product("FIXTURE00003")
             let catalogOnly = try product("FIXTURE00004")
-            check(DiscoverCopy.noResults("tomb") == "No Results for “tomb”" &&
+            check(DiscoverCopy.noResults("tomb") == "No games match ‘tomb’." &&
                   DiscoverCopy.emptyDescription == "Try another title or clear your search.",
                   "A valid zero-result search names the query and offers title/clear recovery, never reconnection")
             check(DiscoverCopy.noOtherGames("gears") == "No other games match “gears”.",
@@ -514,12 +490,12 @@ enum PreviewChecks {
                 products: [catalogOnly], gamePass: [pass, pass], active: true)
             check(all.count == 1 && Set(all.map(\.id)).count == 1,
                   "Refreshed Library joins only qualified identities once across repeated inputs")
-            check(all.first?.installed == nil && all.first?.owned == true,
+            check(all.first?.installed == nil && all.first?.owned == false && all.first?.eligibility == .library,
                   "An unverified import cannot enter the access-qualified Library")
             check(!all.contains { $0.id == catalogOnly.id },
                   "Library never imports unrelated Store discovery into an entitled collection")
-            check(LibraryGame.visible(all, query: "", filter: .owned, sort: .title).map(\.id) == [owned.id],
-                  "Owned filter is based only on the complete PC account collection")
+            check(LibraryGame.visible(all, query: "", filter: .owned, sort: .title).isEmpty,
+                  "Unknown acquisition stays in the account collection without entering Owned")
             check(LibraryGame.visible(all, query: "", filter: .gamePass, sort: .title).isEmpty,
                   "Public Game Pass-only candidates are not account access evidence")
             check(LibraryGame.collection(installed: [installed], owned: [owned], products: [],
@@ -532,12 +508,12 @@ enum PreviewChecks {
             let joined = LibraryGame.collection(installed: [installed],
                 owned: [PCGame(id: installed.storeId, title: "Account title", artwork: nil)],
                 products: [], gamePass: [try product(installed.storeId)], active: true)
-            check(joined.count == 1 && joined[0].owned && joined[0].gamePass && joined[0].installed != nil,
+            check(joined.count == 1 && !joined[0].owned && joined[0].gamePass && joined[0].installed != nil,
                   "One exact title can retain independent installation, account entitlement and subscription facets")
-            check(LibraryAccess.badges(joined[0]) == [.owned, .gamePass] &&
-                  LibraryGame.visible(joined, query: "", filter: .owned, sort: .title).count == 1 &&
+            check(joined[0].facts.badgeLabels() == ["In your library", "Game Pass"] &&
+                  LibraryGame.visible(joined, query: "", filter: .owned, sort: .title).isEmpty &&
                   LibraryGame.visible(joined, query: "", filter: .gamePass, sort: .title).count == 1,
-                  "Owned and Game Pass badges remain simultaneous and their filters overlap")
+                  "Held access and public Game Pass membership remain independent without invented ownership")
             check(owned.acquisitionKind == .unknown &&
                   joined[0].pc?.acquisitionKind == .unknown,
                   "PC collection identity records unknown acquisition kind without inferring a paid purchase")
@@ -546,9 +522,9 @@ enum PreviewChecks {
             let squareGame = LibraryGame(id: owned.id, title: owned.title, installed: nil,
                 pc: PCGame(id: owned.id, title: owned.title, artwork: square), product: nil, owned: true, gamePass: false)
             check(square != nil && squareGame.cover == nil, "Portrait Library covers do not stretch square Store icons")
-            check(LibraryAccess(joined[0]) == .owned && LibraryAccess(all[0]) == .owned &&
+            check(joined[0].facts.ownership == .inLibraryUnknownAcquisition && all[0].facts.ownership == .inLibraryUnknownAcquisition &&
                   LibraryGame.localRecords(installed: [installed], qualified: all, query: "", sort: .title)
-                    .allSatisfy { LibraryAccess($0) == nil },
+                    .allSatisfy { $0.facts.badgeLabels().isEmpty },
                   "Local-only copy never turns installation into account entitlement")
             let metadata = try JSONDecoder().decode(PCGamesCatalog.Product.self, from: Data("""
                 {"ProductId":"FIXTURE00002","Properties":{

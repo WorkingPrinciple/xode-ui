@@ -1,6 +1,13 @@
 # UX screens and state flows
 
+> **Historical reference, not the active SDD.** Use `dragoshont/dragos-core`,
+> `projects/ode-to-x/SPEC.md` for current flows, acceptance and Handoff.
+> The material below records earlier implementations and evidence only.
+> In conflicts, the consolidated SDD's corrections and active contract win.
+
 **Full consumer journey specification, not a claim that every step works.**
+The dated [UI continuation specification](UI-CONTINUATION-SPEC.md) records the
+current baseline, superseded flow assumptions and unclosed actual acceptance.
 The default native development app has real bounded account/catalog/registry and
 selected-folder inspection clients; [current integration evidence](NATIVE-INTEGRATION.md)
 distinguishes those from unfinished inventory/install/play gates. The original

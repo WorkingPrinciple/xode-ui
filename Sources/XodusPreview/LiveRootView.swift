@@ -2,14 +2,29 @@
 import SwiftUI
 import XodusManagement
 
+private struct CatalogPresentationActiveKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var catalogPresentationActive: Bool {
+        get { self[CatalogPresentationActiveKey.self] }
+        set { self[CatalogPresentationActiveKey.self] = newValue }
+    }
+}
+
 struct LiveRootView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openSettings) private var openSettings
     @Environment(\.scenePhase) private var scenePhase
     @State private var searchFocused = false
+    @State private var libraryScrollCommand = 0
+    @State private var libraryContainerSize: CGSize?
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
+    @State private var libraryVisited = false
+    @State private var discoverVisited = false
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
@@ -96,26 +111,28 @@ struct LiveRootView: View {
         ScrollViewReader { proxy in
         Group {
             if requiresAccountGate {
-                Text("Ode to X").font(.title.bold()).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(nsColor: .windowBackgroundColor))
+                OdeStartupBackdrop()
                     .accessibilityIdentifier("xodus.welcome.background")
-            } else if state.destination == .downloads {
-                LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue) { state.navigate(.discover) }
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        if state.destination == .library {
-                            library { proxy.scrollTo("library-games", anchor: .top) }
-                        }
-                        else { catalog }
+                ZStack {
+                    if libraryVisited || state.destination == .library {
+                        retainedBrowse(.library)
                     }
-                    .padding(immersiveDestination ? 0 : 30)
+                    if discoverVisited || state.destination == .discover {
+                        retainedBrowse(.discover)
+                    }
+                    if state.destination == .downloads {
+                        LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue) {
+                            state.navigate(.discover)
+                        }
+                    }
                 }
-                .modifier(LibraryScrollEdge(enabled: immersiveDestination))
-                .modifier(LibraryImmersion(enabled: immersiveDestination, underlapsToolbar: toolbarOverArtwork))
-                .background(Color(nsColor: .windowBackgroundColor))
+                .id("\(session.accountHash ?? ""):\(session.market):\(session.language)")
             }
+        }
+        .onChange(of: state.destination, initial: true) { _, destination in
+            if destination == .library { libraryVisited = true }
+            if destination == .discover { discoverVisited = true }
         }
         .toolbar {
             if !requiresAccountGate {
@@ -126,6 +143,10 @@ struct LiveRootView: View {
                          accountSymbol: session.accountSymbol,
                          libraryContrast: toolbarOverArtwork, openSearch: {
                              state.navigate(.discover)
+                         }, showSearchResults: {
+                             state.navigate(.discover)
+                             searchFocused = false
+                             state.discoverSelection.focusRequest += 1
                          }) {
                 state.openAccount()
             }
@@ -186,10 +207,11 @@ struct LiveRootView: View {
                     state.gameOperations.useUnifiedAccount(session)
                     state.installedGames.useUnifiedAccount(session)
                 }
-                await state.pcGames.loadOnAppear()
                 await state.installedGames.load()
+                async let collectionLoad: Void = state.pcGames.loadOnAppear()
                 await state.installedGames.discoverNativeInstallations()
                 await state.gameOperations.restore()
+                await collectionLoad
                 if unifiedAccountMode {
                     await state.pcGames.waitForLoad()
                     await companion.refresh(for: nil)
@@ -302,8 +324,10 @@ struct LiveRootView: View {
         }
         .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
             guard accountContentAllowed, state.destination == .discover else { return }
-            do { try await Task.sleep(for: .milliseconds(250)) }
-            catch { return }
+            if !state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                do { try await Task.sleep(for: .milliseconds(250)) }
+                catch { return }
+            }
             await session.loadCatalogOnEntry(state.query)
             if state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                session.supports(.discover), !session.catalogStopped {
@@ -314,6 +338,8 @@ struct LiveRootView: View {
             if confirmed, state.consumeUnifiedSignInRequest() {
                 if !unifiedAccountMode { Task { await state.refreshGameServiceStatusAfterSignIn() } }
             } else if !confirmed {
+                state.librarySelection.projection.clear(to: .empty)
+                state.discoverSelection.clear()
                 if unifiedAccountMode {
                     companion.invalidateBinding()
                     state.installedGames.productAccess.retire()
@@ -380,7 +406,94 @@ struct LiveRootView: View {
         (state.destination == .library && !state.showsRecentActivity) || state.destination == .discover
     }
 
-    private func library(showCollection: @escaping () -> Void) -> some View {
+    private func retainedBrowse(_ destination: Destination) -> some View {
+        let selected = state.destination == destination
+        let active = selected && scenePhase == .active
+        let immersive = destination == .discover || !state.showsRecentActivity
+        let scrollID = Binding<String?>(get: {
+            _ = libraryScrollCommand
+            return destination == .library ? state.librarySelection.scrollID : state.discoverSelection.scrollID
+        }, set: { value in
+            if destination == .library { state.librarySelection.scrollID = value }
+            else { state.discoverSelection.scrollID = value }
+        })
+        return ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    if destination == .library {
+                        library(positionCollection: { target in
+                            state.librarySelection.scrollID = target
+                            libraryScrollCommand += 1
+                        })
+                    } else { catalog }
+                }
+                .padding(immersive ? 0 : 30)
+                .frame(minHeight: destination == .library ? libraryContainerSize.flatMap {
+                    state.librarySelection.scopeMinimumHeight(viewport: $0)
+                } : nil,
+                       alignment: .top)
+            }
+            .scrollPosition(id: scrollID)
+            .modifier(LibraryScrollMeasurementObserver(
+                selection: destination == .library ? state.librarySelection : nil,
+                containerSize: $libraryContainerSize))
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+                if destination == .library { state.librarySelection.measureScrollFrame($0) }
+            }
+            .onGeometryChange(for: CGRect.self) {
+                let frame = $0.frame(in: .global)
+                return CGRect(x: frame.minX, y: frame.minY + $0.safeAreaInsets.top,
+                              width: frame.width,
+                              height: max(0, frame.height - $0.safeAreaInsets.top - $0.safeAreaInsets.bottom))
+            } action: {
+                if destination == .library { state.librarySelection.collectionViewportFrame = $0 }
+            }
+
+            .modifier(LibraryScrollEdge(enabled: immersive))
+            .modifier(LibraryImmersion(enabled: immersive,
+                                      underlapsToolbar: destination == .discover || libraryHasHero))
+            .background(Color(nsColor: .windowBackgroundColor))
+        .modifier(LibraryActionExtentObserver(selection: state.librarySelection) {
+            if destination == .library { libraryScrollCommand += 1 }
+        })
+        .environment(\.catalogPresentationActive, active)
+        .opacity(selected ? 1 : 0)
+        .zIndex(selected ? 1 : 0)
+        .allowsHitTesting(selected)
+        .disabled(!selected)
+        .accessibilityHidden(!selected)
+    }
+
+    private struct LibraryScrollMeasurementObserver: ViewModifier {
+        let selection: LibrarySelection?
+        @Binding var containerSize: CGSize?
+
+        @ViewBuilder
+        func body(content: Content) -> some View {
+            if #available(macOS 15, *), let selection {
+                content.onScrollGeometryChange(for: LibraryScrollMeasurement.self) { geometry in
+                    LibraryScrollMeasurement(offsetY: geometry.contentOffset.y,
+                        contentHeight: geometry.contentSize.height, containerHeight: geometry.containerSize.height,
+                        containerWidth: geometry.containerSize.width,
+                        insetTop: geometry.contentInsets.top, insetBottom: geometry.contentInsets.bottom,
+                        visibleY: geometry.visibleRect.minY, visibleMaxY: geometry.visibleRect.maxY,
+                        visibleHeight: geometry.visibleRect.height)
+                } action: { _, value in
+                    selection.measureScroll(value)
+                    let size = CGSize(width: value.containerWidth, height: value.containerHeight)
+                    if containerSize != size { containerSize = size }
+                }
+                .onScrollPhaseChange { oldPhase, newPhase in
+                    if newPhase == .idle, oldPhase == .interacting || oldPhase == .decelerating {
+                        selection.finishedUserScroll()
+                    }
+                }
+            } else {
+                content
+            }
+        }
+    }
+
+    private func library(positionCollection: @escaping (String?) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             if state.showsRecentActivity {
                 Button("Back to Library", systemImage: "chevron.left") { state.navigate(.library) }
@@ -391,13 +504,15 @@ struct LiveRootView: View {
                     .accessibilityIdentifier("xodus.library.recentActivity")
             } else {
                 LiveLibraryView(library: state.pcGames, installed: state.installedGames,
-                                operations: state.gameOperations, query: scopedQuery,
-                                allowsStartupTasks: startupAllowed,
+                                operations: state.gameOperations,
+                                query: state.query(for: .library).trimmingCharacters(in: .whitespacesAndNewlines),
+                                allowsStartupTasks: startupAllowed && state.destination == .library && scenePhase == .active,
                                 allowsArtworkLoading: libraryArtworkAllowed,
-                                allowsHeroAnimation: heroAnimationAllowed,
+                                allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() },
-                                showCollection: showCollection)
+                                positionCollection: positionCollection,
+                                selection: state.librarySelection)
             }
         }
     }
@@ -449,10 +564,19 @@ struct LiveRootView: View {
     }
     private var catalog: some View {
         LiveCatalogView(library: state.pcGames, installed: state.installedGames,
-                        operations: state.gameOperations, query: scopedQuery,
+                        operations: state.gameOperations,
+                        query: state.query(for: .discover).trimmingCharacters(in: .whitespacesAndNewlines),
                         allowsArtworkLoading: libraryArtworkAllowed,
-                        allowsStartupTasks: startupAllowed, allowsHeroAnimation: heroAnimationAllowed,
-                        clearSearch: { state.query = "" })
+                        allowsStartupTasks: startupAllowed && state.destination == .discover && scenePhase == .active,
+                        allowsHeroAnimation: heroAnimationAllowed && state.destination == .discover && scenePhase == .active,
+                        clearSearch: { state.query = "" }, selection: state.discoverSelection,
+                        searchLibrary: { query in
+                            state.navigate(.library)
+                            state.query = query
+                            state.librarySelection.filter = .all
+                        },
+                        selectSearch: { query in state.query = query },
+                        returnToSearch: { searchFocused = true })
     }
 }
 

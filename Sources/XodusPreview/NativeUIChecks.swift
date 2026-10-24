@@ -6,6 +6,9 @@ import XodusCore
 @MainActor
 enum NativeUIChecks {
     static func run(check: (Bool, String) -> Void) {
+        checkContinuePlayingScroller(check: check)
+        checkLoadingPresentation(check: check)
+        checkActionExtentObservation(check: check)
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))
@@ -41,6 +44,13 @@ enum NativeUIChecks {
               && NativeMinecraftInstallation(state: .ready, path: "/Applications/Minecraft.app",
                                              version: "1.0").action == "Open",
               "Minecraft details retain launcher, account, world and recovery actions without a testing journal")
+        check(NativeMinecraftInstallation(state: .missing).appears(in: .all, query: "")
+              && !NativeMinecraftInstallation(state: .missing).appears(in: .installed, query: "")
+              && NativeMinecraftInstallation(state: .ready).appears(in: .installed, query: " MINECRAFT ")
+              && !NativeMinecraftInstallation(state: .ready).appears(in: .owned, query: "")
+              && !NativeMinecraftInstallation(state: .ready).appears(in: .gamePass, query: "")
+              && !NativeMinecraftInstallation(state: .ready).appears(in: .all, query: "mortis"),
+              "REQ-64: Native game visibility/count follows the actual filter, query and installation, never ownership")
         let minecraftDetails = NSHostingView(rootView: NativeMinecraftDetailsContent(
             minecraft: NativeMinecraft(), saveLocation: EmptyView(), close: {}))
         minecraftDetails.sizingOptions = []
@@ -126,7 +136,7 @@ enum NativeUIChecks {
         let colours: [Color] = [.red, .green, .blue]
         let covers = LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
             ForEach(0..<3) { index in
-                LibraryCover(title: index == 1 ? "A longer two-line game title" : "Game \(index)",
+                GameCard(title: index == 1 ? "A longer two-line game title" : "Game \(index)",
                              open: {}) {
                     colours[index]
                 } status: {
@@ -276,6 +286,11 @@ enum NativeUIChecks {
         check(NativeToolbarSearch.width(text: "", focused: false) == 32
               && NativeToolbarSearch.width(text: "", focused: true) == 220,
               "Grouped native toolbar search stays compact until native editing or Command-F focus")
+        let searchAccessibility = NativeToolbarSearch.collapsedAccessibility(for: "Search all games")
+        check(searchAccessibility.label == "Search all games"
+              && searchAccessibility.help == "Open catalogue search"
+              && searchAccessibility.help != searchAccessibility.label,
+              "REQ-19/59: Toolbar search help explains the action without repeating its accessible name")
         check(NativeToolbarSearch.width(text: "scoped query", focused: false) == 220,
               "A nonempty toolbar query retains the editor and native clear control after focus leaves")
         var lensFocus = false
@@ -325,6 +340,9 @@ enum NativeUIChecks {
         check(field.window == nil && field.stringValue == text
               && field.placeholderString == "Search your Library",
               "Shared native search initializes text and scope without a window")
+        check(field.accessibilityLabel() == NativeSearchField.accessibilityName
+              && field.accessibilityLabel() != field.placeholderString,
+              "REQ-19/59: Search editor has a concise accessibility name distinct from its visible placeholder")
         check(field.isBezeled && cell?.searchButtonCell != nil && cell?.cancelButtonCell != nil,
               "Shared search retains the stock bezel and one native search/cancel pair")
         let placeholderColor = field.placeholderAttributedString?
@@ -339,11 +357,28 @@ enum NativeUIChecks {
         field.stringValue = ""
         _ = field.sendAction(field.action, to: field.target)
         check(text.isEmpty && edits == 2, "The native clear/search action updates the same scoped binding")
+        var resultRequests = 0
+        search.showResults = { resultRequests += 1 }
+        search.updateField(field, coordinator: coordinator)
+        let editor = NSTextView()
+        check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.moveDown(_:)))
+              && coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:)))
+              && resultRequests == 2,
+              "REQ-59: Down and Return in native search hand focus to results")
+        check(GameSearchPresentation.focusReturnTarget(preferred: "known-title",
+                available: ["other-title", "known-title"]) == "known-title"
+              && GameSearchPresentation.focusReturnTarget(preferred: "removed-title",
+                available: ["other-title"]) == nil,
+              "REQ-11: Detail focus returns to its named title button only while that result remains available")
+        text = "mortis"
+        check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:)))
+              && text.isEmpty,
+              "REQ-59: Escape clears the query using the same native search binding")
         text = "next scope"
         search = NativeSearchField(text: search.$text, focused: search.$focused,
                                    placeholder: "Search Microsoft Store games")
         search.updateField(field, coordinator: coordinator)
-        check(field.stringValue == "next scope" && field.placeholderString == search.placeholder && edits == 2,
+        check(field.stringValue == "next scope" && field.placeholderString == search.placeholder && edits == 3,
               "Scope/binding refresh neither duplicates edits nor retains an old placeholder")
         focused = true
         search.enabled = false
@@ -686,6 +721,141 @@ enum NativeUIChecks {
     private static func ancestors(of view: NSView) -> [NSView] {
         guard let parent = view.superview else { return [] }
         return [parent] + ancestors(of: parent)
+    }
+
+    private static func checkContinuePlayingScroller(check: (Bool, String) -> Void) {
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            let host = NSHostingView(rootView: ContinuePlayingScrollView {
+                HStack(spacing: 20) {
+                    ForEach(0..<7) { index in
+                        Button("Fixture title \(index + 1)") {}.frame(width: 260, height: 150)
+                    }
+                }.scrollTargetLayout()
+            }.background(Color.blue.opacity(0.25)))
+            host.sizingOptions = []
+            host.appearance = NSAppearance(named: appearance)
+            host.frame = CGRect(x: 0, y: 0, width: 820, height: 200)
+            host.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
+            host.layoutSubtreeIfNeeded()
+            guard let scroll = descendants(of: host).compactMap({ $0 as? NSScrollView }).first else {
+                check(false, "REQ-76: Continue Playing has an actual native horizontal scroll view")
+                continue
+            }
+            scroll.scrollerStyle = .legacy
+            scroll.autohidesScrollers = false
+            scroll.tile()
+            host.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
+            host.layoutSubtreeIfNeeded()
+            check(!scroll.drawsBackground && !scroll.contentView.drawsBackground,
+                  "REQ-76: The actual shelf has no opaque native scroll/clip background in \(appearance.rawValue)")
+            check(!scroll.hasHorizontalScroller || scroll.horizontalScroller?.isHidden == true,
+                  "COR-64: Only the shelf indicator stays hidden even with instance-local legacy style in \(appearance.rawValue)")
+            let native = NSScrollView(frame: host.bounds)
+            native.hasHorizontalScroller = true
+            native.scrollerStyle = .legacy
+            native.hasHorizontalScroller = false
+            let document = NSView(frame: NSRect(x: 0, y: 0, width: 7 * 280 - 20, height: 150))
+            native.documentView = document
+            native.tile()
+            let maxX = document.bounds.width - native.contentView.bounds.width
+            native.contentView.scroll(to: NSPoint(x: maxX, y: 0))
+            native.reflectScrolledClipView(native.contentView)
+            check(maxX > 0 && native.contentView.bounds.maxX >= document.bounds.maxX - 1
+                  && !native.hasHorizontalScroller,
+                  "COR-64: Native seven-card document remains scrollable without a visible indicator in \(appearance.rawValue)")
+            check(host.window == nil, "REQ-76: Shelf regression never opens a window or changes global preferences")
+        }
+    }
+
+    private static func checkLoadingPresentation(check: (Bool, String) -> Void) {
+        for pending in [false, true] {
+            for content in [false, true] {
+                for failed in [false, true] {
+                    for accountAction in [false, true] {
+                        for query in ["", "mortis"] {
+                            let actual = LibraryLoadingPresentation.showsPlaceholders(pending: pending,
+                                hasUsableContent: content, failed: failed,
+                                requiresAccountAction: accountAction, query: query)
+                            check(actual == (pending && !content && !failed && !accountAction && query.isEmpty),
+                                  "REQ-75: Cold placeholders pending=\(pending) content=\(content) error=\(failed) consent=\(accountAction) query=\(query)")
+                        }
+                    }
+                }
+            }
+        }
+        check(GameLaunchPresentation.title(game: "Neutral game", stopping: false, checking: true, started: false)
+                == "Checking Neutral game"
+              && GameLaunchPresentation.title(game: "Neutral game", stopping: false, checking: false, started: false)
+                == "Preparing Neutral game"
+              && GameLaunchPresentation.title(game: "Neutral game", stopping: false, checking: false, started: true)
+                == "Opening Neutral game"
+              && GameLaunchPresentation.title(game: "Neutral game", stopping: true, checking: true, started: true)
+                == "Stopping Neutral game",
+              "REQ-75: Actual launch facts name checking/preparation/opening/stop without invented progress or success")
+        for size in [CGSize(width: 820, height: 600), CGSize(width: 1440, height: 874),
+                     CGSize(width: 1619, height: 1231)] {
+            let host = NSHostingView(rootView: ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    OdeLoadingStatus(title: "Loading your PC games")
+                    LibraryLoadingPlaceholders()
+                }.padding(56)
+            })
+            host.sizingOptions = []
+            host.frame = CGRect(origin: .zero, size: size)
+            host.layoutSubtreeIfNeeded()
+            check(host.window == nil && host.fittingSize.width <= size.width + 1
+                  && descendants(of: host).compactMap { $0 as? NSButton }.isEmpty,
+                  "REQ-75: Static placeholders fit \(Int(size.width))x\(Int(size.height)) without window or actions")
+        }
+    }
+
+    private static func checkActionExtentObservation(check: (Bool, String) -> Void) {
+        let selection = LibrarySelection()
+        var changes = 0
+        let host = NSHostingView(rootView: ExtentObservationCheck(selection: selection) { changes += 1 })
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 820, height: 600)
+        func settle() {
+            host.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.02))
+            host.layoutSubtreeIfNeeded()
+        }
+        settle()
+        check(changes == 0, "Initial nil action extent does not create a self-invalidating subscription")
+        selection.collectionHeaderFrame = CGRect(x: 0, y: 100, width: 820, height: 40)
+        selection.collectionViewportFrame = CGRect(x: 0, y: 0, width: 820, height: 600)
+        selection.measureScroll(LibraryScrollMeasurement(offsetY: 400, contentHeight: 1500,
+            containerHeight: 600, containerWidth: 820, insetTop: 0, insetBottom: 0,
+            visibleY: 400, visibleMaxY: 1000, visibleHeight: 600))
+        selection.prepareScopeExtent()
+        settle()
+        check(changes == 1, "A real action extent change invalidates the outer document exactly once")
+        selection.prepareScopeExtent()
+        selection.filter = .owned
+        settle()
+        check(changes == 1, "Equal extents and unrelated selection updates do not replay a document revision")
+        selection.clearScopeExtent()
+        settle()
+        selection.clearScopeExtent()
+        settle()
+        check(changes == 2 && host.window == nil,
+              "Clearing an extent publishes once and settles without a window or backend")
+    }
+
+    private struct ExtentObservationCheck: View {
+        let selection: LibrarySelection
+        let changed: () -> Void
+        @State private var revision = 0
+
+        var body: some View {
+            Text("Revision \(revision)")
+                .modifier(LibraryActionExtentObserver(selection: selection) {
+                    revision += 1
+                    changed()
+                })
+        }
     }
 
     private static func descendants(of view: NSView) -> [NSView] {

@@ -2,7 +2,7 @@
 import Foundation
 import CryptoKit
 import Darwin
-import XodusManagement
+@testable import XodusManagement
 
 @main
 enum ManagementChecks {
@@ -607,6 +607,27 @@ actor Checks {
             } catch { check(false, "Typed evidence edge \(index + 1)") }
         }
         var framer = JSONLineFramer()
+        let collectionCounts = "Ode collection read: records=12; activeGameRows=10; productIDs=9; subscriptionRows=3"
+        for split in 0...collectionCounts.utf8.count {
+            var diagnostic = ManagementClient.CollectionDiagnosticFramer()
+            let bytes = Data((collectionCounts + "\n").utf8)
+            check(diagnostic.append(bytes.prefix(split)).isEmpty,
+                  "Collection count diagnostics hold split \(split) until a full line")
+            check(diagnostic.append(bytes.dropFirst(split)) == [collectionCounts],
+                  "Collection count diagnostics admit exact split \(split)")
+        }
+        var diagnostic = ManagementClient.CollectionDiagnosticFramer()
+        for rejected in ["prefix " + collectionCounts, collectionCounts + " suffix",
+                         collectionCounts + "\r", collectionCounts.replacingOccurrences(of: "=12", with: "=-12"),
+                         String(repeating: "x", count: 513) + collectionCounts] {
+            check(diagnostic.append(Data((rejected + "\n").utf8)).isEmpty,
+                  "Nonexact or overlong collection diagnostics are discarded")
+        }
+        check(diagnostic.append(Data([0xff, 10])).isEmpty,
+              "Invalid UTF8 diagnostics are discarded")
+        check(diagnostic.append(Data((collectionCounts + "\n" + collectionCounts + "\n").utf8))
+              == [collectionCounts, collectionCounts],
+              "Count framing recovers after rejected lines and handles multiple lines")
         check(try framer.append(Data("{\"kind\"".utf8)).isEmpty, "Split frame is held, not decoded prematurely")
         check(try framer.append(Data(":\"fixture\"}\n".utf8)).count == 1, "Split frame completes in order")
         try framer.finish()
@@ -1038,7 +1059,8 @@ enum MockBackend {
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
                 "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario) { supported.insert(.discover) }
             if ["queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
-                "querynulldetails", "querycoalesce", "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
+                "querynulldetails", "querycoalesce", "querypagination", "queryrefreshfailure",
+                "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
             if scenario == "startupquery" { supported.insert(.search) }
             if ["publiccapture", "registryempty", "registryunavailable", "uifailures"].contains(scenario) {
                 supported.insert(.installed)
@@ -1051,6 +1073,7 @@ enum MockBackend {
                 supported.formUnion([.authBegin, .authCancel])
             }
             var loggedOut = false, flowStarted = false, cancelledLate = false
+            var catalogQueryReads = 0
             var flowReads = 0, discoveryReads = 0, profileReads = 0
             var activityReads = 0, registryReads = 0
             var recentReads = 0, accountLibraryReads = 0
@@ -1416,6 +1439,28 @@ enum MockBackend {
                         try emitFailure(request, code: "PACKAGE_UNAVAILABLE")
                         continue
                     }
+                    if scenario == "queryrefreshfailure", command == "catalog.query" {
+                        catalogQueryReads += 1
+                        if catalogQueryReads == 2 {
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE")
+                            continue
+                        }
+                        guard var page = frames.first(where: {
+                            $0["data"]?["corpus"]?.string == "publicMicrosoftStoreSearch"
+                                && $0["data"]?["products"]?.array?.isEmpty == false
+                        })?["data"]?.object, var product = page["products"]?.array?.first?.object else { exit(3) }
+                        let params = request["params"] ?? .null
+                        product["source"] = .string("syntheticPublicSource")
+                        product["market"] = params["market"]
+                        product["language"] = params["language"]
+                        product["resolvedLanguage"] = params["language"]
+                        page["query"] = params["query"]
+                        page["products"] = .array([.object(product)])
+                        page["failures"] = .array([])
+                        page["nextCursor"] = .null
+                        try emit(.object(result(request, data: .object(page))))
+                        continue
+                    }
                     if scenario == "querynulldetails", command == "catalog.query" {
                         var response = result(request, data: .null)
                         response.removeValue(forKey: "data")
@@ -1425,7 +1470,7 @@ enum MockBackend {
                         try emit(.object(response))
                         continue
                     }
-                    if scenario == "querycoalesce", command == "catalog.query" {
+                    if ["querycoalesce", "querypagination"].contains(scenario), command == "catalog.query" {
                         guard queryCounters.started() else {
                             queryCounters.finished()
                             try emitFailure(request, code: "LIMIT_EXCEEDED")
@@ -1442,7 +1487,16 @@ enum MockBackend {
                         product["resolvedLanguage"] = params["language"]
                         page["query"] = params["query"]
                         page["failures"] = .array([])
+                        let fixtureCursor = page["nextCursor"]
                         page["nextCursor"] = .null
+                        if scenario == "querypagination" {
+                            if params["cursor"]?.string == nil {
+                                page["nextCursor"] = fixtureCursor
+                            } else {
+                                product["productID"] = .string("FIXTUREPAGE2")
+                                product["editions"] = .array([])
+                            }
+                        }
                         let basePage = page, baseProduct = product
                         DispatchQueue.global().async {
                             Thread.sleep(forTimeInterval: 2)

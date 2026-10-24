@@ -243,6 +243,7 @@ enum GameOperationChecks {
             exit 0
             """)
         try script(.uninstall, """
+            printf '%s\\n' "$2" >> '\(root.path)/uninstall-calls'
             mode="$(cat '\(root.path)/mode')"
             if [ "$mode" = preservefail ]; then code=20; else code=0; fi
             printf '%s\\n' "$code" | publish '\(paths.processed.path)'/"$1.status"
@@ -341,6 +342,42 @@ enum GameOperationChecks {
               && !installed.serviceSignInActive && operations.canQuit,
               "XO-018: Explicit retry consumes a fresh bound status and removes the verification action")
         let game = PCGame(id: "FIXTURE00001", title: "Fixture Game", artwork: nil)
+        for (kind, labels) in [
+            (PCGameAcquisitionKind.unknown, ["In your library"]),
+            (.purchased, ["Owned"])
+        ] {
+            let held = PCGame(id: game.id, title: game.title, artwork: nil, acquisitionKind: kind)
+            let row = LibraryGame.collection(installed: [], owned: [held], products: [],
+                gamePass: [], active: false)[0]
+            let action = GameInstallAction(game: held, operations: operations,
+                enabled: DiscoverBrowse.canReviewInstall(owned: row.pc != nil,
+                    accessIsCurrent: row.accessIsCurrent, gamePass: row.gamePass,
+                    subscriptionActive: false, pcCandidate: true))
+            check(row.facts.badgeLabels() == labels && row.installed == nil
+                  && row.owned == (kind == .purchased) && action.actionTitle == "Install" && action.canInstall
+                  && operations.installConsent == nil && !operations.canConfirmInstall,
+                  "REQ-50: \(kind) held acquisition pairs truthful uninstalled badges with review, not unchecked confirmation")
+        }
+        let publicProduct = try LibraryGame.details(id: game.id, title: game.title,
+            market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: true)
+        let publicRow = LibraryGame.gamePassCatalog(installed: [], owned: [], products: [publicProduct])[0]
+        for subscription in [false, true] {
+            let action = GameInstallAction(game: PCGame(product: publicProduct), operations: operations,
+                enabled: DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
+                    gamePass: publicRow.gamePass, subscriptionActive: subscription, pcCandidate: true))
+            check(publicRow.facts.badgeLabels() == ["Game Pass"] && publicRow.eligibility == nil
+                  && !publicRow.owned && action.canInstall == subscription && !operations.canConfirmInstall,
+                  "REQ-50: Public-only Game Pass stays membership-only; active probe permits review, never confirmation")
+        }
+        let unknownOperations = GameOperationsController(installed: installed, paths: paths,
+                                                          compatibilityCatalogue: nil)
+        let unknownAction = GameInstallAction(game: game, operations: unknownOperations,
+            enabled: DiscoverBrowse.canReviewInstall(owned: true, accessIsCurrent: true,
+                gamePass: false, subscriptionActive: false, pcCandidate: true))
+        check(GameFacts(pc: game, gamePass: false, accessIsCurrent: true).support == .unknown
+              && unknownOperations.supportIssues(productID: game.id).isEmpty && unknownAction.canInstall
+              && unknownOperations.compatibility[game.id] == nil && !unknownOperations.canConfirmInstall,
+              "REQ-50: Unknown compatibility is not an unsupported fact or a verified install permit")
         for (format, technology) in [("MSIXVC", "Easy Anti-Cheat"),
                                      ("Appx", "none"), ("EAppx", "none")] {
             let blockedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
@@ -360,6 +397,9 @@ enum GameOperationChecks {
                     reason: nil, checkedAt: catalogue.checkedAt))
             blocked.installConsent = forged
             check(!blocked.canConfirmInstall, "UI-5: A positive runtime verdict cannot enable unsupported confirmation")
+            check(GameFacts(pc: game, gamePass: false, accessIsCurrent: true).badgeLabels() == ["In your library"]
+                  && !blocked.supportIssues(productID: game.id).isEmpty && !blocked.canConfirmInstall,
+                  "REQ-50: Known unsupported classification blocks confirmation without erasing held acquisition facts")
             blocked.confirmInstall(forged)
             check(blocked.operation == nil && blocked.installConsent == nil && !installed.mutationActive
                   && blocked.error?.contains(technology == "none" ? format.uppercased() : technology) == true,
@@ -976,10 +1016,43 @@ enum GameOperationChecks {
         check(reloaded == installed.games, "S5 validated installation survives a registry reload")
         check(installed.runningGameID == nil && !installed.launchStarted,
               "Library Install completes registration without automatically calling Play")
+        let completedRow = LibraryGame.collection(installed: installed.games, owned: [game],
+            products: [], gamePass: [], active: false)[0]
+        let completedFacts = completedRow.facts
+        check(completedFacts.badgeLabels() == ["In your library"]
+              && completedFacts.installation == .installed(imported.folder)
+              && !completedRow.owned && installed.runningGameID == nil && !installed.launchStarted
+              && !GameInstallAction(game: game, operations: operations).active
+              && operations.operation == nil && operations.canRepair(imported),
+              "REQ-50: Completed installation updates shared installation facts and repair eligibility without auto-launch or Owned promotion")
+        let removalStore = InstalledGameStore(file: root.appendingPathComponent("remove-only/installed-games.json"))
+        try await removalStore.save([imported])
+        let removalLibrary = InstalledGamesController(store: removalStore)
+        await removalLibrary.load()
+        let removalOperations = GameOperationsController(installed: removalLibrary, paths: paths,
+                                                          compatibilityCatalogue: catalogue)
+        removalOperations.prepareUninstall(imported)
+        check(removalOperations.uninstallConsent == imported && !removalOperations.isBusy,
+              "REQ-50: Uninstall requires its own explicit consent, not a list-removal side effect")
+        removalOperations.uninstallConsent = nil
+        await removalLibrary.remove(imported)
+        let removedDisplay = LibraryGame.displayCollection(installed: removalLibrary.games,
+            account: LibraryGame.collection(installed: [], owned: [game], products: [],
+                gamePass: [], active: false))
+        check(removalLibrary.games.isEmpty && removedDisplay.first?.installed == nil
+              && removedDisplay.first?.facts.badgeLabels() == ["In your library"]
+              && FileManager.default.fileExists(atPath: imported.folder)
+              && removalOperations.operation == nil && removalOperations.uninstallConsent == nil
+              && !FileManager.default.fileExists(atPath: root.appendingPathComponent("uninstall-calls").path),
+              "REQ-50: List removal withdraws installed presentation, preserves held access and files, and never starts uninstall")
         installed.setAccountAccessAllowed(true)
         let play = InstalledPlayButton(library: installed, operations: operations, game: imported)
         check(play.title == "Play" && play.unsupportedIssues.isEmpty && operations.canRepair(imported),
               "UI-9 source: Shared Library/Discover installed controls offer Play and Repair for cleared MSIXVC")
+        check(completedFacts.installation == .installed(imported.folder)
+              && play.title == "Play" && installed.canRequestPlay(game.id)
+              && installed.runningGameID == nil && !installed.launchStarted,
+              "REQ-50: Install-complete exposes an eligible explicit Play action without activating it")
         for technology in ["BattlEye"] {
             let blockedCatalogue = OfflineGameCompatibility(version: 1, checkedAt: catalogue.checkedAt,
                 market: catalogue.market, packageSource: catalogue.packageSource,
@@ -1095,6 +1168,14 @@ enum GameOperationChecks {
         check(installed.games.isEmpty && !operations.isBusy
               && FileManager.default.fileExists(atPath: repaired.folder),
               "S6 only status zero removes registration; app itself never deletes game files")
+        let uninstallCalls = try String(contentsOf: root.appendingPathComponent("uninstall-calls"), encoding: .utf8)
+        let afterUninstall = LibraryGame.collection(installed: installed.games, owned: [game],
+            products: [], gamePass: [], active: false)[0]
+        check(uninstallCalls.split(separator: "\n").count == 2
+              && afterUninstall.facts.installation == .notInstalled
+              && afterUninstall.facts.badgeLabels() == ["In your library"]
+              && GameInstallAction(game: game, operations: operations).canInstall,
+              "REQ-50: Only explicit uninstall invokes its transport; success withdraws installed facts but preserves held reinstall eligibility")
         for code in [10, 11, 12, 14] {
             try writeMode(String(code))
             try await install()

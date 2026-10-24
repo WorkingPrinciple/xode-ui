@@ -7,9 +7,11 @@ struct ScopedSearchField: View {
     @Binding var focused: Bool
     let placeholder: String
     var enabled = true
+    var showResults: (() -> Void)?
 
     var body: some View {
-        NativeSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
+        NativeSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled,
+                          showResults: showResults)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
@@ -22,6 +24,11 @@ struct NativeToolbarSearch: View {
     let placeholder: String
     var enabled = true
     var openSearch: () -> Void = {}
+    var showResults: (() -> Void)?
+
+    static func collapsedAccessibility(for placeholder: String) -> (label: String, help: String) {
+        (label: placeholder, help: "Open catalogue search")
+    }
 
     static func width(text: String, focused: Bool) -> CGFloat {
         focused || !text.isEmpty ? 220 : 32
@@ -34,6 +41,7 @@ struct NativeToolbarSearch: View {
     }
 
     var body: some View {
+        let accessibility = Self.collapsedAccessibility(for: placeholder)
         Group {
             if Self.width(text: text, focused: focused) == 32 {
                 Button(action: expand) {
@@ -41,22 +49,26 @@ struct NativeToolbarSearch: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!enabled)
-                .accessibilityLabel(placeholder)
+                .accessibilityLabel(accessibility.label)
                 .accessibilityIdentifier("xodus.catalog.openSearch")
+                .help(accessibility.help)
             } else {
-                ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
+                ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled,
+                                  showResults: showResults)
             }
         }
         .frame(width: Self.width(text: text, focused: focused))
-        .help(placeholder)
     }
 }
 
 struct NativeSearchField: NSViewRepresentable {
+    static let accessibilityName = "Search games"
+
     @Binding var text: String
     @Binding var focused: Bool
     let placeholder: String
     var enabled = true
+    var showResults: (() -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -90,7 +102,7 @@ struct NativeSearchField: NSViewRepresentable {
         view.isEnabled = enabled
         if view.stringValue != text { view.stringValue = text }
         view.placeholderString = placeholder
-        view.setAccessibilityLabel(placeholder)
+        view.setAccessibilityLabel(Self.accessibilityName)
         if view.wantsFocus, view.window != nil, view.currentEditor() == nil {
             DispatchQueue.main.async { [weak view] in
                 guard let view, view.wantsFocus, view.isEnabled else { return }
@@ -113,6 +125,24 @@ struct NativeSearchField: NSViewRepresentable {
         }
         func controlTextDidBeginEditing(_ notification: Notification) { parent.focused = true }
         func controlTextDidEndEditing(_ notification: Notification) { parent.focused = false }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            if commandSelector == #selector(NSResponder.moveDown(_:))
+                || commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                guard let showResults = parent.showResults else { return false }
+                showResults()
+                return true
+            }
+            if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                if parent.text.isEmpty {
+                    parent.focused = false
+                    control.window?.makeFirstResponder(nil)
+                } else {
+                    parent.text = ""
+                }
+                return true
+            }
+            return false
+        }
     }
 }
 

@@ -10,15 +10,33 @@ enum ArtworkLoadError: Error, Equatable {
     case unavailable, oversized, invalidImage
 }
 
+enum CatalogImageBucket: Int, CaseIterable, Sendable {
+    case card = 640, medium = 1280, hero = 2400
+
+    static func target(reference: CatalogArtworkReference?, size: CGSize, scale: CGFloat,
+                       mode: ContentMode) -> Self? {
+        guard size.width.isFinite, size.height.isFinite, scale.isFinite,
+              size.width > 0, size.height > 0, scale > 0 else { return nil }
+        var pixels = max(size.width, size.height) * scale
+        if let width = reference?.width, let height = reference?.height, width > 0, height > 0 {
+            let horizontal = size.width / CGFloat(width), vertical = size.height / CGFloat(height)
+            let ratio = mode == .fill ? max(horizontal, vertical) : min(horizontal, vertical)
+            pixels = CGFloat(max(width, height)) * ratio * scale
+        }
+        return allCases.first { CGFloat($0.rawValue) >= pixels } ?? .hero
+    }
+}
+
 enum CatalogImagePolicy {
     static let maximumBytes = 8 * 1024 * 1024
+    static let processingVersion = 1
 
     static func validatePixels(width: Int, height: Int) throws {
         guard (1...8192).contains(width), (1...8192).contains(height),
               width * height <= 16_777_216 else { throw ArtworkLoadError.oversized }
     }
 
-    static func decode(_ data: Data) throws -> CGImage {
+    static func validatedSource(_ data: Data) throws -> CGImageSource {
         guard data.count <= maximumBytes else { throw ArtworkLoadError.oversized }
         guard let source = CGImageSourceCreateWithData(data as CFData,
                 [kCGImageSourceShouldCache: false] as CFDictionary),
@@ -29,13 +47,61 @@ enum CatalogImagePolicy {
             throw ArtworkLoadError.invalidImage
         }
         try validatePixels(width: width, height: height)
+        return source
+    }
+
+    static func decode(_ data: Data, bucket: CatalogImageBucket = .hero) throws -> CGImage {
+        let source = try validatedSource(data)
         guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: 2400,
+            kCGImageSourceThumbnailMaxPixelSize: bucket.rawValue,
             kCGImageSourceShouldCacheImmediately: true
         ] as CFDictionary) else { throw ArtworkLoadError.invalidImage }
         return image
+    }
+}
+
+private actor ArtworkWorkAdmission {
+    private struct Waiter {
+        let id: UUID
+        let continuation: CheckedContinuation<Void, Error>
+    }
+    private var active = 0
+    private var waiters: [Waiter] = []
+    #if DEBUG
+    private(set) var peak = 0
+    #endif
+
+    func acquire() async throws {
+        try Task.checkCancellation()
+        if active < 2 {
+            active += 1
+            #if DEBUG
+            peak = max(peak, active)
+            #endif
+            return
+        }
+        guard waiters.count < 64 else { throw ArtworkLoadError.unavailable }
+        let id = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                if Task.isCancelled { continuation.resume(throwing: CancellationError()) }
+                else { waiters.append(Waiter(id: id, continuation: continuation)) }
+            }
+        } onCancel: {
+            Task { await self.cancelQueued(id) }
+        }
+    }
+
+    private func cancelQueued(_ id: UUID) {
+        guard let index = waiters.firstIndex(where: { $0.id == id }) else { return }
+        waiters.remove(at: index).continuation.resume(throwing: CancellationError())
+    }
+
+    func release() {
+        if waiters.isEmpty { active -= 1 }
+        else { waiters.removeFirst().continuation.resume() }
     }
 }
 
@@ -56,12 +122,36 @@ private final class ArtworkRedirectPolicy: NSObject, URLSessionTaskDelegate, Sen
 @MainActor
 final class CatalogArtworkStore {
     static let shared = CatalogArtworkStore()
-    private let cache = NSCache<NSURL, NSImage>()
-    private var pending: [URL: Task<NSImage, Error>] = [:]
+    private struct ByteKey: Hashable { let url: URL; let generation: Int }
+    private struct ImageKey: Hashable {
+        let bytes: ByteKey
+        let bucket: CatalogImageBucket
+        let version = CatalogImagePolicy.processingVersion
+        var cacheKey: NSString { "\(bytes.generation):\(version):\(bucket.rawValue):\(bytes.url.absoluteString)" as NSString }
+    }
+    private struct DiskUpdate: Sendable { let entry: CatalogMediaEntry?; let generation: Int }
+    private struct ImageRead {
+        let task: Task<NSImage, Error>
+        var consumers: Set<UUID>
+    }
+    private struct ImageBytes: Sendable {
+        let data: Data
+        let expiry: Date?
+        let isDiskHit: Bool
+        let update: DiskUpdate?
+    }
+    private let cache = NSCache<NSString, NSImage>()
+    private var pending: [ImageKey: ImageRead] = [:]
+    private var bytePending: [ByteKey: Task<ImageBytes, Error>] = [:]
+    private let admission = ArtworkWorkAdmission()
     private let session: URLSession
     private let disk: CatalogMediaDiskCache?
-    private var expires: [URL: Date] = [:]
+    private var expires: [ImageKey: Date] = [:]
     private var generation = 0
+    #if DEBUG
+    private(set) var decodedVariants = 0
+    private(set) var byteReads = 0
+    #endif
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "catalog-artwork")
 
     init(diskCache: CatalogMediaDiskCache? = CatalogArtworkStore.defaultDiskCache(), session suppliedSession: URLSession? = nil) {
@@ -81,7 +171,7 @@ final class CatalogArtworkStore {
     }
 
     nonisolated private static func defaultDiskCache() -> CatalogMediaDiskCache? {
-        let isolated = ["--library-preview", "--export-preview", "--export-live", "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check"]
+        let isolated = ["--library-preview", "--export-preview", "--export-live", "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--presentation-performance-check"]
         return CommandLine.arguments.contains(where: isolated.contains) ? nil : .production()
     }
 
@@ -92,25 +182,113 @@ final class CatalogArtworkStore {
         try await disk?.clear()
     }
 
-    func image(for reference: CatalogArtworkReference) async throws -> NSImage {
+    #if DEBUG
+    func peakConcurrentWork() async -> Int { await admission.peak }
+    #endif
+
+    func image(for reference: CatalogArtworkReference, bucket: CatalogImageBucket = .hero) async throws -> NSImage {
+        try Task.checkCancellation()
         let url = try reference.validatedURL()
-        if let image = cache.object(forKey: url as NSURL), expires[url].map({ $0 > Date() }) == true { return image }
-        if let task = pending[url] { return try await task.value }
+        let key = ImageKey(bytes: ByteKey(url: url, generation: generation), bucket: bucket)
+        if let image = cache.object(forKey: key.cacheKey), expires[key].map({ $0 > Date() }) == true { return image }
+        let consumer = UUID()
+        let task: Task<NSImage, Error>
+        if var read = pending[key] {
+            read.consumers.insert(consumer)
+            pending[key] = read
+            task = read.task
+        } else {
+            task = startImage(key, url: url, bucket: bucket)
+            pending[key] = ImageRead(task: task, consumers: [consumer])
+        }
+        defer { releaseConsumer(consumer, key: key) }
+        let image = try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            Task { @MainActor in self.releaseConsumer(consumer, key: key) }
+        }
+        try Task.checkCancellation()
+        return image
+    }
+
+    private func releaseConsumer(_ consumer: UUID, key: ImageKey) {
+        guard var read = pending[key], read.consumers.remove(consumer) != nil else { return }
+        if read.consumers.isEmpty {
+            pending[key] = nil
+            read.task.cancel()
+        } else { pending[key] = read }
+    }
+
+    private func startImage(_ key: ImageKey, url: URL, bucket: CatalogImageBucket) -> Task<NSImage, Error> {
+        Task {
+            try await admission.acquire()
+            do {
+                try Task.checkCancellation()
+                var bytes = try await imageBytes(key.bytes)
+                try Task.checkCancellation()
+                let decoded: CGImage
+                do { decoded = try await decode(bytes.data, bucket: bucket) }
+                catch {
+                    guard bytes.isDiskHit, let disk else { throw error }
+                    logger.warning("stage=imageCacheDecodeFailed; requesting public artwork")
+                    do { try await disk.remove(url) }
+                    catch { logger.warning("stage=imageCacheRemoveFailed; bypassing saved artwork") }
+                    bytes = try await imageBytes(key.bytes, bypassingSaved: true)
+                    try Task.checkCancellation()
+                    decoded = try await decode(bytes.data, bucket: bucket)
+                }
+                try Task.checkCancellation()
+                if let update = bytes.update, let disk {
+                    do { try await disk.store(update.entry, for: url, generation: update.generation) }
+                    catch { logger.warning("stage=imageCacheWriteFailed; public artwork is memory-only") }
+                }
+                try Task.checkCancellation()
+                #if DEBUG
+                decodedVariants += 1
+                #endif
+                let image = NSImage(cgImage: decoded, size: .zero)
+                if key.bytes.generation == generation, let expiry = bytes.expiry, expiry > Date() {
+                    expires[key] = expiry
+                    cache.setObject(image, forKey: key.cacheKey, cost: decoded.bytesPerRow * decoded.height)
+                    if expires.count > 160 {
+                        expires = expires.filter { cache.object(forKey: $0.key.cacheKey) != nil }
+                    }
+                }
+                logger.notice("stage=imageDecoded count=1 maxPixels=\(bucket.rawValue)")
+                await admission.release()
+                return image
+            } catch {
+                await admission.release()
+                throw error
+            }
+        }
+    }
+
+    private func decode(_ data: Data, bucket: CatalogImageBucket) async throws -> CGImage {
+        try await Task.detached(priority: .utility) { try CatalogImagePolicy.decode(data, bucket: bucket) }.value
+    }
+
+    private func imageBytes(_ key: ByteKey, bypassingSaved: Bool = false) async throws -> ImageBytes {
+        if let task = bytePending[key] { return try await task.value }
+        let url = key.url
         let session = session
         let disk = disk
         let logger = logger
-        let epoch = generation
+        #if DEBUG
+        byteReads += 1
+        #endif
         let task = Task {
-            let (image, expiry) = try await Task.detached(priority: .utility) {
+            try await Task.detached(priority: .utility) {
                 var saved: CatalogMediaEntry?
                 var diskGeneration: Int?
                 if let disk {
                     do {
                         let lookup = try await disk.lookup(url)
                         diskGeneration = lookup.generation
-                        saved = lookup.entry
+                        saved = bypassingSaved ? nil : lookup.entry
                         if let saved, saved.expiresAt > Date() {
-                            return (try CatalogImagePolicy.decode(saved.data), saved.expiresAt)
+                            _ = try CatalogImagePolicy.validatedSource(saved.data)
+                            return ImageBytes(data: saved.data, expiry: saved.expiresAt, isDiskHit: true, update: nil)
                         }
                     } catch {
                         saved = nil
@@ -147,10 +325,11 @@ final class CatalogArtworkStore {
                         data.append(byte)
                     }
                 }
-                let decoded = try CatalogImagePolicy.decode(data)
+                _ = try CatalogImagePolicy.validatedSource(data)
                 let now = Date()
                 let expiry = CatalogMediaHTTPPolicy.expiry(http, now: now)
-                if let disk, let diskGeneration {
+                var update: DiskUpdate?
+                if disk != nil, let diskGeneration {
                     let entry = expiry.map {
                         CatalogMediaEntry(url: url.absoluteString, data: data,
                             digest: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(),
@@ -161,30 +340,20 @@ final class CatalogArtworkStore {
                                 (http.statusCode == 304 ? saved?.lastModified : nil),
                             expiresAt: $0)
                     }
-                    do { try await disk.store(entry, for: url, generation: diskGeneration) }
-                    catch { logger.warning("stage=imageCacheWriteFailed; public artwork is memory-only") }
+                    update = DiskUpdate(entry: entry, generation: diskGeneration)
                 }
-                return (decoded, expiry ?? now)
+                return ImageBytes(data: data, expiry: expiry, isDiskHit: false, update: update)
             }.value
-            if epoch == generation { expires[url] = expiry }
-            return NSImage(cgImage: image, size: .zero)
         }
-        pending[url] = task
-        defer { pending[url] = nil }
-        let image = try await task.value
-        if epoch == generation {
-            cache.setObject(image, forKey: url as NSURL,
-                            cost: Int(image.size.width * image.size.height) * 4)
-            if expires.count > 160 { expires = expires.filter { cache.object(forKey: $0.key as NSURL) != nil } }
-        }
-        logger.notice("stage=imageDecoded count=1")
-        return image
+        bytePending[key] = task
+        defer { bytePending[key] = nil }
+        return try await task.value
     }
 
     func preload(_ references: [CatalogArtworkReference]) async -> Int {
         let tasks = references.map { reference in
             Task {
-                do { _ = try await image(for: reference); return true }
+                do { _ = try await image(for: reference, bucket: .card); return true }
                 catch { return false }
             }
         }
@@ -194,23 +363,35 @@ final class CatalogArtworkStore {
     }
 }
 
+struct CatalogArtworkRequest: Hashable {
+    let reference: CatalogArtworkReference?
+    let bucket: CatalogImageBucket?
+}
+
 @MainActor
-private final class ArtworkPresentation: ObservableObject {
+final class ArtworkPresentation: ObservableObject {
     @Published private(set) var image: NSImage?
     @Published private(set) var loading = false
     @Published private(set) var failed = false
     private var loadID = UUID()
+    private var request: CatalogArtworkRequest?
+    private let store: CatalogArtworkStore
 
-    func load(_ reference: CatalogArtworkReference?) async {
+    init(store: CatalogArtworkStore = .shared) { self.store = store }
+
+    func image(for request: CatalogArtworkRequest) -> NSImage? { self.request == request ? image : nil }
+
+    func load(_ request: CatalogArtworkRequest) async {
         let token = UUID()
         loadID = token
-        image = nil
+        if self.request != request { image = nil }
+        self.request = request
         failed = false
-        guard let reference else { loading = false; return }
+        guard let reference = request.reference, let bucket = request.bucket else { loading = false; return }
         loading = true
         defer { if loadID == token { loading = false } }
         do {
-            let loaded = try await CatalogArtworkStore.shared.image(for: reference)
+            let loaded = try await store.image(for: reference, bucket: bucket)
             try Task.checkCancellation()
             guard loadID == token else { return }
             image = loaded
@@ -224,6 +405,8 @@ struct CatalogArtworkView: View {
     var status: CatalogArtworkStatus = .absent
     var contentMode: ContentMode = .fill
     @StateObject private var presentation = ArtworkPresentation()
+    @Environment(\.displayScale) private var displayScale
+    @Environment(\.catalogPresentationActive) private var presentationActive
 
     private var fallbackMessage: String {
         if presentation.failed { return "Artwork couldn't be loaded" }
@@ -237,8 +420,11 @@ struct CatalogArtworkView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let request = CatalogArtworkRequest(reference: reference,
+                bucket: CatalogImageBucket.target(reference: reference, size: geometry.size,
+                                                   scale: displayScale, mode: contentMode))
             Group {
-                if let image = presentation.image {
+                if let image = presentation.image(for: request) {
                     Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode)
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                 } else {
@@ -253,8 +439,11 @@ struct CatalogArtworkView: View {
                     .help(fallbackMessage)
                 }
             }
+            .task(id: presentationActive ? request : nil) {
+                guard presentationActive else { return }
+                await presentation.load(request)
+            }
         }
         .accessibilityHidden(true)
-        .task(id: reference) { await presentation.load(reference) }
     }
 }

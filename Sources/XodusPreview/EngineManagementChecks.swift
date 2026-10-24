@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import CryptoKit
 import Foundation
 import SwiftUI
 import XodusCore
@@ -30,6 +31,9 @@ enum EngineManagementChecks {
                 from: JSONSerialization.data(withJSONObject: fields))
         }
         let wine = try entry()
+        check(CrossOverDependencyState.absent.title == "CrossOver is not installed"
+              && CrossOverDependencyState.absent.explanation.contains("only for games configured to use it"),
+              "REQ79 missing CrossOver copy is route-specific, not a universal gameplay prerequisite")
         let crossOver = try entry("cross", kind: "CrossOver")
         check(EngineManagementPolicy.matches(wine, provider: .standaloneWine)
               && !EngineManagementPolicy.matches(wine, provider: .crossover)
@@ -257,6 +261,34 @@ enum EngineManagementChecks {
             check(true, "REQ80 cancellation cannot publish provider success")
         }
         check(!(await inspector.hasOwnedProcess), "REQ80 cancellation joins its exact subprocess before returning")
+        if let sourceBackend = ProcessInfo.processInfo.environment["XODUS_ENGINE_INSPECTION_TEST_BACKEND"] {
+            let server = root.appendingPathComponent("wineserver")
+            try Data("neutral server, never executed".utf8).write(to: server)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: server.path)
+            func hash(_ bytes: Data) -> String {
+                SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+            }
+            var record: [String: Any] = [
+                "name": "fixture-engine", "kind": "free", "wine": executable.path,
+                "wineserver": server.path, "sha256": hash(try Data(contentsOf: executable)),
+                "wineserver_sha256": hash(try Data(contentsOf: server)),
+                "smoke_test": ["status": "pass"]
+            ]
+            for declared in [false, true] {
+                if declared { record["provider"] = ["id": "calimocho", "contract_version": 1] }
+                let data = try JSONSerialization.data(withJSONObject: ["schema_version": 1, "engines": [record]])
+                try data.write(to: registryURL)
+                let actual = try await inspector.inspect(executable: URL(fileURLWithPath: sourceBackend),
+                    registry: registryURL, engine: "fixture-engine", expectedDigest: hash(data))
+                check(actual.registrySha256 == hash(data) && actual.engineName == "fixture-engine"
+                      && !actual.qualified && actual.admittedProvider == nil
+                      && (declared
+                          ? actual.admission == "unadmitted" && !actual.ready
+                              && actual.error?.code == "PROVIDER_NOT_ADMITTED"
+                          : actual.admission == "genericWine" && actual.ready && actual.error == nil),
+                      "REQ80 actual source backend projection matches consumer: \(declared ? "unadmitted Calimocho" : "generic Wine")")
+            }
+        }
         let settings = RuntimeProviderSettings(detectCrossOver: { .absent })
         await settings.refreshCrossOverDependency()
         for width in [CGFloat(440), CGFloat(560)] {

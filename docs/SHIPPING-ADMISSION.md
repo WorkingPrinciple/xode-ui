@@ -51,7 +51,20 @@ private local candidate admission, not gameplay requalification or public
 distribution. The recursive CompatibilityData bundle and redistribution-rights
 hold remain separate release blockers; no held PublicMetadata is admitted here.
 
-Installed `122532b` with that signed pair passed the full local check and actual
+The consumer-collection correction candidate explicitly pairs signed CLI
+`3121df540f1ef9bb6d161f02f3c6ac958d74aa1559502304147542ad735da5b6`
+with producer `8b091460e74879980081d899b1dab349141561e0`, tree
+`a4d92a96ebc9070c2d1e9b9bec031aba8437b3b8`, and manifest
+`d66c7a6cb55854b08e6ecda757ff1ecd10ad9bc7d5930df5424732740ca0fbfc`.
+The Windows helper and management schema hashes above are unchanged. Only the
+launch recipe's CLI identity binding changes; runtime rules and historical
+gameplay evidence are not requalified. This is reviewed source/build pairing
+for a bounded local candidate, not installation permission, live collection
+qualification, restored-purchase proof or a notarization exception. Explicit
+unknown acquisition remains unknown. The installed e641cfa/71a3 pair remains
+the rollback baseline until independent combined-candidate admission.
+
+Installed `122532b` with the earlier signed 71a3 pair passed the full local check and actual
 AX observation: the lens focused its 220-point editor, `mortis` returned Valor
 Mortis at `199,99 RON`, Asphalt Legends displayed Free, and its real external-page
 confirmation was cancelled by Escape without invoking Open. All eight distinct
@@ -76,19 +89,44 @@ names as partial public listings and keeps account-plan coverage unverified.
 It does not infer tiers or platforms from IDs/names, nor grant install access
 from public listing data.
 
-Product links (#42) resolve Microsoft's public `/store/productId/<id>` route
-with explicit market and locale, follow only matching Microsoft/Xbox redirects,
-and require a successful Xbox page with a matching canonical slug, ID and locale.
-No slug is synthesized from a title, and a store-root URL is never returned.
-The read-only `--xbox-product-link-check <id> <market> <locale>` development
-command verifies this live without opening a browser or accessing credentials.
-Live startup takes the device's market and a preferred language matching that
-market when available (for example RO with preferred en-US/ro-RO selects ro-RO),
-rather than silently using US prices and links. Explicit test connections keep
-their explicit test scope.
-For an English-only Mac in Romania, Microsoft's resolver chooses the actual
-market-correct ro-RO product route; that returned canonical locale is accepted
-without inventing a slug or requiring an unavailable preferred language.
+Live startup takes the device's market independently from the first valid
+preferred UI language (for example RO with preferred en-US/ro-RO selects
+RO/en-US). An empty language preference falls back to en-US without changing
+the market. Explicit test connections keep their explicit test scope.
+
+The Library access check renders the shared card's Installed status and Discover's
+coverage control in nonvisible light/dark fixture windows. OCR locates each label;
+sRGB glyph-core/background samples must reach 4.5:1. These controls use primary
+semantic text after a lossless installed light-mode sample exposed insufficient
+secondary-text contrast. The fixture does not replace installed-build appearance
+and accessibility acceptance or change any global appearance preferences.
+
+Search uses a compact title/scope-menu header and keeps compact Library matches
+separate from the shared poster grid. Result Escape clears the query; poster
+focus targets its named artwork button, with an explicit ring and handled Return.
+Only retained public results dim while their refresh is pending; valid local
+Library matches remain usable. Appending More games keeps the current public
+page reachable and focusable; only replacement requests fence retained public
+placeholders. A delayed synthetic query/pagination regression exercises both
+pending request types through the actual catalogue queue. Search routes blocked poster actions to details
+without repeating browse diagnostics or changing installation admission.
+The Library access check renders one-match and six-match synthetic compositions
+offscreen at 1440x874 and 1619x1231, including overflow and a package-blocked public
+result. Optional `XODUS_SEARCH_CAPTURE_DIRECTORY` saves these fixture PNGs and OCR
+text in an existing directory. These are source regressions, not installed native
+keyboard, VoiceOver or provider-response acceptance.
+
+The shared state/action contract is covered by paired deterministic assertions:
+`--library-access-check` covers permit expiry, imported installation,
+account-switch late completion, same-scope refresh failure and metadata failure;
+`--media-check` pairs rejected artwork with retained held-game facts and review
+eligibility; `--game-operation-check` covers unknown held acquisition,
+public-only Game Pass, purchased-uninstalled, unknown/unsupported compatibility,
+list removal versus explicit uninstall, and install completion without
+auto-launch. These use existing synthetic clocks, transports, stores and scripts,
+not real account/provider or native-game evidence. Public membership, purchase,
+installation and compatibility remain independent facts; review eligibility is
+not permission to confirm an unchecked install or to launch a game.
 
 Optional DisplayCatalog details accept the explicit `neutral` language tag as
 unlocalized product metadata, alongside exact/same-language responses.
@@ -97,22 +135,11 @@ dates, exact requested product identities, and game-access gates remain unchange
 The saved-response `--catalog-detail-check` runs offline and does not establish
 that the installed app has displayed the updated details.
 
-Acquisition (#41) is a confirmed external-page fallback, not an in-app licence
-grant. Microsoft's documented [grant-free-products API](https://learn.microsoft.com/en-us/windows/uwp/monetize/grant-free-products)
-requires a publisher service identity and a Store ID key; this app's consumer
-sign-in does not establish that capability. No purchase or grant endpoint is
-called. Eligible unlicensed titles show **Get free on xbox.com** or
-**View Game Pass on xbox.com**, explicitly confirm browser opening, and resolve
-the verified product page before opening it. Returning never creates an Owned
-badge: the user must refresh the real PC library.
-
-Public prices use current full-PC purchase offers in the selected market.
-Trials, licensing-only rows, subscription upsells/remediations, console-only,
-expired or unknown offers are not free-game evidence. Paid non-Game-Pass titles
-have no acquisition action. Public Game Pass membership is not an account grant.
-`--catalog-offer-check <saved-json> <market> <locale>` validates saved public
-offers without credentials, browser actions or acquisition. Price failures stay
-explicitly unavailable and cannot hide game identity or grant install access.
+REQ-61 / COR-21: Ode never offers commerce on any distribution channel.
+Offer decoding, price formatting, purchase/claim actions, external acquisition
+links and their development commands are deleted, not feature-gated.
+Entitled games retain Install and Play. Public Game Pass membership remains
+independent of account access and never grants installation on its own.
 
 ### Brotato candidate route (#43)
 

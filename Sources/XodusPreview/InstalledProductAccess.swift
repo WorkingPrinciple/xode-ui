@@ -8,6 +8,13 @@ final class InstalledProductAccess: ObservableObject {
     struct Fact {
         let value: OdeProductAccess
         let checkedAt: Date
+        let expiresAt: Date?
+
+        init(value: OdeProductAccess, checkedAt: Date) {
+            self.value = value
+            self.checkedAt = checkedAt
+            expiresAt = value.expiryDate
+        }
     }
 
     @Published private(set) var facts: [String: Fact] = [:]
@@ -25,7 +32,8 @@ final class InstalledProductAccess: ObservableObject {
         guard let account, accountHash == account, let fact = facts[productID],
               now.timeIntervalSince(fact.checkedAt) >= 0,
               now.timeIntervalSince(fact.checkedAt) < 300 else { return false }
-        return fact.value.permitsAccess(at: now)
+        return fact.value.access == .permitted && fact.value.reason == nil
+            && (fact.value.expiresAt == nil || fact.expiresAt.map { $0 > now } == true)
     }
 
     func retire() {
@@ -70,8 +78,12 @@ final class InstalledProductAccess: ObservableObject {
             return
         }
         installed = currentInstalled
-        facts = facts.filter { installed.contains($0.key) }
-        errors = errors.filter { installed.contains($0.key) }
+        if facts.keys.contains(where: { !installed.contains($0) }) {
+            facts = facts.filter { installed.contains($0.key) }
+        }
+        if errors.keys.contains(where: { !installed.contains($0) }) {
+            errors = errors.filter { installed.contains($0.key) }
+        }
         attempts = attempts.filter { installed.contains($0.key) }
         if let operation { await operation.value; return }
         let ids = installed.sorted().filter { id in
@@ -79,7 +91,7 @@ final class InstalledProductAccess: ObservableObject {
             return now.timeIntervalSince(last) >= 60
                 && (errors[id] != nil || !permits(id, account: account, now: now)
                     || facts[id].map { now.timeIntervalSince($0.checkedAt) >= 120
-                        || $0.value.expiryDate.map { $0.timeIntervalSince(now) <= 180 } == true } == true)
+                        || $0.expiresAt.map { $0.timeIntervalSince(now) <= 180 } == true } == true)
         }
         guard !ids.isEmpty else { return }
         let epoch = generation
@@ -108,7 +120,7 @@ final class InstalledProductAccess: ObservableObject {
                     }
                     facts[id] = Fact(value: value, checkedAt: checkedAt)
                     scheduleExpiry()
-                    errors[id] = nil
+                    if errors[id] != nil { errors[id] = nil }
                     logger.notice("Product access \(id, privacy: .public): \(value.access.rawValue, privacy: .public)")
                 } catch is CancellationError { return }
                 catch {
@@ -128,7 +140,7 @@ final class InstalledProductAccess: ObservableObject {
         let now = Date()
         let deadlines = facts.values.flatMap { fact -> [Date] in
             var dates = [fact.checkedAt.addingTimeInterval(300)]
-            if let date = fact.value.expiryDate {
+            if let date = fact.expiresAt {
                 dates.append(date)
             }
             return dates

@@ -123,7 +123,18 @@ enum CatalogMediaChecks {
             do {
                 _ = try await CatalogArtworkStore(diskCache: reopened, session: session).image(for: rejected)
                 check(false, "Redirect/non-image/oversize/invalid media is rejected before persistence")
-            } catch { check(true, "Redirect/non-image/oversize/invalid media is rejected before persistence") }
+            } catch {
+                check(true, "Redirect/non-image/oversize/invalid media is rejected before persistence")
+                let held = PCGame(id: "FIXTURE00001", title: "Held with unavailable artwork", artwork: rejected)
+                let row = LibraryGame.collection(installed: [], owned: [held], products: [],
+                    gamePass: [], active: false)[0]
+                check(row.title == held.title && row.facts.badgeLabels() == ["In your library"]
+                      && row.facts.support == .unknown
+                      && DiscoverBrowse.canReviewInstall(owned: row.pc != nil,
+                        accessIsCurrent: row.accessIsCurrent, gamePass: false,
+                        subscriptionActive: false, pcCandidate: true),
+                      "REQ-50: Actual artwork load failure does not withdraw held UI facts or review eligibility")
+            }
             check(try await reopened.lookup(rejected.validatedURL()).entry == nil,
                   "Rejected public media creates no persistent entry")
         }

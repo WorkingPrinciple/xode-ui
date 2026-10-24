@@ -8,14 +8,14 @@ on run arguments
         set ownedProcess to item 1 of ownedProcesses
         if bundle identifier of ownedProcess is not "io.github.dragoshont.xodus.development" then error "Unexpected bundle identity."
         if (count of windows of ownedProcess) is not 1 then error "Refusing Settings while another owned window is open."
-        set mainWindow to window "Xodus" of ownedProcess
+        set mainWindow to window "Ode to X" of ownedProcess
         if (count of sheets of mainWindow) is not 0 then error "Refusing Settings during a modal flow."
         set frontmost of ownedProcess to true
         if not frontmost of ownedProcess then error "Exact owned app is not foreground."
         keystroke "," using command down
         set settingsWindows to {}
         repeat 30 times
-            set settingsWindows to every window of ownedProcess whose name is "Xodus Settings" or name is "Settings"
+            set settingsWindows to every window of ownedProcess whose name is "Ode to X Settings" or name is "Settings"
             if (count of settingsWindows) is 1 then exit repeat
             delay 0.1
         end repeat

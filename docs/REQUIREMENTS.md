@@ -1,6 +1,17 @@
 # Requirements and acceptance criteria
 
+> **Historical reference, not the active SDD.** All current requirements,
+> design, corrections and acceptance are in `dragoshont/dragos-core`,
+> `projects/ode-to-x/SPEC.md` (REQ-68). The content below preserves earlier
+> contracts/evidence; do not execute its proposed backlog or use its statuses.
+> Query reset, acquisition handoffs and old ownership wording are superseded.
+
 Status: **proposed v1 requirements**, not implemented functionality. "Must" below is a release gate. The current preview demonstrates only the subset listed in [verification](VERIFICATION.md).
+
+For the 23 October source/installed divergence, active UI acceptance map and
+remaining work, use the dated [UI continuation specification](UI-CONTINUATION-SPEC.md).
+It explicitly reconciles superseded query/layout/acquisition descriptions below;
+neither historical checks nor the new source checkpoint establish product PASS.
 
 ## Ode to X 0.1 support and actions
 

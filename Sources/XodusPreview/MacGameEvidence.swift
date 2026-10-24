@@ -34,12 +34,12 @@ struct MacGameEvidence: Decodable, Sendable {
             }
         }
     }
-    struct Screenshot: Decodable, Sendable {
+    struct Screenshot: Decodable, Equatable, Sendable {
         let path: String
         let caption: String
     }
-    struct Game: Decodable, Sendable {
-        struct SaveObservation: Decodable, Sendable {
+    struct Game: Decodable, Equatable, Sendable {
+        struct SaveObservation: Decodable, Equatable, Sendable {
             let saveDirectory: String?
             let retentionVerified: Bool?
             let normalMenuQuitObserved: Bool?
@@ -202,8 +202,9 @@ final class MacGameEvidenceStore: ObservableObject {
             return
         }
         if selected == nil && !FileManager.default.fileExists(atPath: path) {
-            games = Dictionary(uniqueKeysWithValues: bundled.games.map { ($0.productId, $0) })
-            errorMessage = nil
+            let next = Dictionary(uniqueKeysWithValues: bundled.games.map { ($0.productId, $0) })
+            if games != next { games = next }
+            if errorMessage != nil { errorMessage = nil }
             lastBytes = nil
             return
         }
