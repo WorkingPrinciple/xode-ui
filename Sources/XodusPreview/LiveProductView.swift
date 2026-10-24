@@ -192,7 +192,6 @@ struct LiveProductView: View {
                             }
                         }
                         if let details {
-                            media(details)
                             if let description = details.description ?? details.shortDescription {
                                 VStack(alignment: .leading, spacing: 14) {
                                     Text("About the game").font(.title2.weight(.semibold))
@@ -202,6 +201,7 @@ struct LiveProductView: View {
                                 }
                                 .id("detail-information")
                             }
+                            media(details)
                             requirements(details)
                         }
                         VStack(alignment: .leading, spacing: 16) {
@@ -375,14 +375,8 @@ struct LiveProductView: View {
     @ViewBuilder private func media(_ details: CatalogDetailFacts) -> some View {
         if !details.trailers.isEmpty || !details.screenshots.isEmpty {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Trailers and screenshots").font(.title2.weight(.semibold))
-                if let trailer = details.trailers.first {
-                    CatalogTrailerView(trailer: trailer, allowsLoading: allowsArtworkLoading,
-                                       allowsPlayback: allowsStartupTasks)
-                        .frame(maxWidth: 640, alignment: .leading)
-                }
-
                 if !details.screenshots.isEmpty {
+                    Text("Screenshots").font(.title2.weight(.semibold))
                     ScrollView(.horizontal) {
                         LazyHStack(spacing: 16) {
                             ForEach(Array(details.screenshots.enumerated()), id: \.element.url) { index, image in
@@ -393,6 +387,12 @@ struct LiveProductView: View {
                             }
                         }.scrollTargetLayout()
                     }.scrollTargetBehavior(.viewAligned).scrollIndicators(.hidden)
+                }
+                if let trailer = details.trailers.first {
+                    Text("Trailer").font(.title2.weight(.semibold))
+                    CatalogTrailerView(trailer: trailer, allowsLoading: allowsArtworkLoading,
+                                       allowsPlayback: allowsStartupTasks)
+                        .frame(maxWidth: 640, alignment: .leading)
                 }
             }
         }

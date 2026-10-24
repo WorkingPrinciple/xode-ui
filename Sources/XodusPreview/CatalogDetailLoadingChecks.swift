@@ -7,9 +7,11 @@ import Vision
 private actor DetailPriorityTransport: PCGamesTransport {
     let malformedPrice: Bool
     let priced: Bool
-    init(malformedPrice: Bool = false, priced: Bool = false) {
+    let media: Bool
+    init(malformedPrice: Bool = false, priced: Bool = false, media: Bool = false) {
         self.malformedPrice = malformedPrice
         self.priced = priced
+        self.media = media
     }
     private(set) var started = false
     private(set) var finished = false
@@ -32,6 +34,15 @@ private actor DetailPriorityTransport: PCGamesTransport {
                                          "ProductDescription": "Synthetic description."]],
                 "Properties": ["Categories": ["Games"]],
         ]
+        if media {
+            product["LocalizedProperties"] = [[
+                "ProductTitle": "Synthetic game", "ProductDescription": "Synthetic description.",
+                "Images": [["ImagePurpose": "Screenshot", "Uri": "//store-images.s-microsoft.com/image/apps.fixture",
+                            "Width": 1920, "Height": 1080]],
+                "CMSVideos": [["HLS": "https://cdn-dynmedia-1.microsoft.com/is/content/microsoftassets/original-fixture-AVS.m3u8?packagedStreaming=true",
+                               "Caption": "Synthetic trailer"]]
+            ]]
+        }
         if malformedPrice {
             product["DisplaySkuAvailabilities"] = [[
                 "Sku": ["SkuType": "full"],
@@ -99,6 +110,7 @@ enum CatalogDetailLoadingChecks {
               "REQ-61: Removed offer data is ignored while catalogue identity and game details remain readable")
         try await detailPackageFallback(check: check)
         try await commerceAbsence(check: check)
+        try await detailReadingOrder(check: check)
         try await statusContrast(check: check)
         try await concurrency(check: check)
     }
@@ -267,6 +279,61 @@ enum CatalogDetailLoadingChecks {
                   "REQ-61: Rendered regression never presents or activates its synthetic window")
             window.contentView = nil
         }
+    }
+
+    private static func detailReadingOrder(check: (Bool, String) -> Void) async throws {
+        let catalogue = LibraryCatalogArtwork(transport: DetailPriorityTransport(media: true))
+        await catalogue.loadDetail(id: "FIXTURE00002", market: "US", language: "en-US")
+        guard let image = catalogue.images["FIXTURE00002"], let facts = image.detail else {
+            throw PCGamesError.transport
+        }
+        check(facts.description == "Synthetic description." && facts.screenshots.count == 1 && facts.trailers.count == 1,
+              "COR106/107: Reading-order fixture includes unchanged description, screenshot and trailer")
+        let installed = InstalledGamesController()
+        let operations = GameOperationsController(installed: installed)
+        let detail = LiveProductView(product: image.product, library: PCGamesController(),
+            installedLibrary: installed, operations: operations, allowsStartupTasks: false,
+            allowsArtworkLoading: false, catalog: catalogue).environmentObject(LiveSession())
+        let host = NSHostingView(rootView: detail.environment(\.colorScheme, .light).background(.white))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 1000, height: 850)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        defer { window.contentView = nil }
+        host.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(50))
+        func scrollViews(_ view: NSView) -> [NSScrollView] {
+            (view as? NSScrollView).map { [$0] } ?? [] + view.subviews.flatMap(scrollViews)
+        }
+        guard let document = scrollViews(host).compactMap(\.documentView).max(by: {
+            $0.bounds.height < $1.bounds.height
+        }), let bitmap = document.bitmapImageRepForCachingDisplay(in: document.bounds) else {
+            throw PCGamesError.transport
+        }
+        document.cacheDisplay(in: document.bounds, to: bitmap)
+        guard let image = bitmap.cgImage,
+              let context = CGContext(data: nil, width: image.width, height: image.height,
+                  bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { throw PCGamesError.transport }
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        guard let rendered = context.makeImage() else { throw PCGamesError.transport }
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.minimumTextHeight = 0.004
+        try VNImageRequestHandler(cgImage: rendered).perform([request])
+        let labels = (request.results ?? []).compactMap { result -> (String, Double)? in
+            result.topCandidates(1).first.map { ($0.string, result.boundingBox.midY) }
+        }
+        let headings = ["Synthetic game", "About the game", "Screenshots", "Trailer"]
+        let positions = headings.map { heading in labels.first { $0.0 == heading }?.1 }
+        check(positions.allSatisfy { $0 != nil }
+              && zip(positions.compactMap { $0 }, positions.compactMap { $0 }.dropFirst()).allSatisfy { $0.0 > $0.1 },
+              "COR106/107: Actual detail reads hero -> About the game -> screenshots -> trailer; observed \(labels.map(\.0))")
+        check(!window.isVisible && !window.isKeyWindow && !operations.isBusy,
+              "COR106/107: Reading-order check uses no visible window, playback, downloads or operation")
     }
 
     private static func concurrency(check: (Bool, String) -> Void) async throws {
