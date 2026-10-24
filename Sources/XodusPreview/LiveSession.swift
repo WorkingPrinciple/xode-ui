@@ -18,6 +18,7 @@ final class LiveSession: ObservableObject {
     @Published private(set) var products: [CatalogProduct] = []
     @Published private(set) var activity = ActivityStore()
     @Published private(set) var searching = false
+    @Published private var catalogRequestAppends = false
     @Published private(set) var catalogStopped = false
     @Published private var accountOperationBusy = false
     @Published private(set) var recentLibraryBootstrapRunning = false
@@ -1459,6 +1460,7 @@ final class LiveSession: ObservableObject {
             discoveryRevision = nil
         }
         catalogCorpus = corpus
+        catalogRequestAppends = more
         searching = true
         catalogStopped = false
         catalogError = nil
@@ -1594,6 +1596,11 @@ final class LiveSession: ObservableObject {
 
     func catalogMatches(query: String) -> Bool {
         currentQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func retainedPublicIDs(query: String, pending: Bool) -> Set<String> {
+        GameSearchPresentation.retainedPublicIDs(pending: pending, searching: searching && !catalogRequestAppends,
+            matchesQuery: catalogMatches(query: query), products: products)
     }
 
     func stopCatalogSearch() {

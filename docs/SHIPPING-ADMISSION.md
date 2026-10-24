@@ -105,7 +105,10 @@ Search uses a compact title/scope-menu header and keeps compact Library matches
 separate from the shared poster grid. Result Escape clears the query; poster
 focus targets its named artwork button, with an explicit ring and handled Return.
 Only retained public results dim while their refresh is pending; valid local
-Library matches remain usable. Search routes blocked poster actions to details
+Library matches remain usable. Appending More games keeps the current public
+page reachable and focusable; only replacement requests fence retained public
+placeholders. A delayed synthetic query/pagination regression exercises both
+pending request types through the actual catalogue queue. Search routes blocked poster actions to details
 without repeating browse diagnostics or changing installation admission.
 The Library access check renders one-match and six-match synthetic compositions
 offscreen at 1440x874 and 1619x1231, including overflow and a package-blocked public

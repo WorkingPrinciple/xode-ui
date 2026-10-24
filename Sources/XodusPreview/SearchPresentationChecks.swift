@@ -31,11 +31,13 @@ enum SearchPresentationChecks {
         let configuration = BackendConfiguration(
             executable: URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
                 .appendingPathComponent("XodusManagementChecks"),
-            stateDirectory: state.appendingPathComponent("querycoalesce"))
+            stateDirectory: state.appendingPathComponent("querypagination"))
         defer { try? FileManager.default.removeItem(at: state) }
         let session = LiveSession(configuration: configuration)
         await session.connect()
         await session.refreshCatalog("Neutral")
+        check(session.isReady && session.products.count == 1,
+              "REQ-73: Delayed public fixture is ready with one product (phase \(session.phase), error \(session.catalogError ?? session.errorMessage ?? "none"))")
         guard session.isReady, session.products.count == 1,
               library.representedGames.count > 0 else { throw PCGamesError.transport }
         let art = LibraryCatalogArtwork(transport: SearchMetadataTransport())
@@ -178,6 +180,38 @@ enum SearchPresentationChecks {
                   && !scopedLabels.contains { $0.contains("In your library") || $0.contains("Neutral Game 1") },
                   "REQ-73: Changing the actual scope binding filters uninstalled local rows without changing query")
             selection.scope = .allGames
+        }
+        if library.representedGames.count == 1 {
+            let originalIDs = session.products.map(\.id)
+            check(session.canLoadMoreCatalog, "REQ-73: Pagination fixture supplies an actual next cursor")
+            let pagination = Task { await session.refreshCatalog("Neutral", more: true) }
+            for _ in 0..<100 where !session.searching {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            check(session.searching && session.products.map(\.id) == originalIDs
+                  && session.retainedPublicIDs(query: "Neutral", pending: true).isEmpty
+                  && GameSearchPresentation.firstFocusableID(local: [],
+                    publicResults: originalIDs,
+                    retainedPublic: session.retainedPublicIDs(query: "Neutral", pending: true)) == originalIDs.first,
+                  "REQ-73: Actual pending more:true keeps the current public page reachable and focusable")
+            await pagination.value
+            check(session.catalogError == nil && session.products.count == 2,
+                  "REQ-73: Pagination appends a distinct public product without replacing the current page")
+            let refreshedIDs = Set(session.products.map(\.id))
+            let replacement = Task { await session.refreshCatalog("Neutral") }
+            for _ in 0..<100 where !session.searching {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            check(session.searching && Set(session.products.map(\.id)) == refreshedIDs
+                  && session.retainedPublicIDs(query: "Neutral", pending: true) == refreshedIDs
+                  && GameSearchPresentation.firstFocusableID(local: [],
+                    publicResults: session.products.map(\.id),
+                    retainedPublic: session.retainedPublicIDs(query: "Neutral", pending: true)) == nil,
+                  "REQ-73: Actual replacement pending fences retained placeholders instead of admitting focus")
+            await replacement.value
+            check(session.catalogError == nil && session.products.count == 1
+                  && session.retainedPublicIDs(query: "Neutral", pending: true).isEmpty,
+                  "REQ-73: Replacement completion restores fresh public result admission")
         }
         check(await session.disconnect(), "REQ-73: Search composition releases its neutral mock child")
     }

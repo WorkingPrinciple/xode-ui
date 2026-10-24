@@ -133,8 +133,7 @@ struct LiveCatalogView: View {
     }
     private var hiddenUnsupportedCount: Int { projection.hiddenCount }
     private var retainedPublicIDs: Set<String> {
-        GameSearchPresentation.retainedPublicIDs(pending: pending, searching: session.searching,
-            matchesQuery: session.catalogMatches(query: query), products: session.products)
+        session.retainedPublicIDs(query: query, pending: pending)
     }
     private var canRefresh: Bool {
         allowsStartupTasks && session.isReady && (session.supports(.search)

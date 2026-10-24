@@ -1059,7 +1059,7 @@ enum MockBackend {
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
                 "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario) { supported.insert(.discover) }
             if ["queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
-                "querynulldetails", "querycoalesce", "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
+                "querynulldetails", "querycoalesce", "querypagination", "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
             if scenario == "startupquery" { supported.insert(.search) }
             if ["publiccapture", "registryempty", "registryunavailable", "uifailures"].contains(scenario) {
                 supported.insert(.installed)
@@ -1446,7 +1446,7 @@ enum MockBackend {
                         try emit(.object(response))
                         continue
                     }
-                    if scenario == "querycoalesce", command == "catalog.query" {
+                    if ["querycoalesce", "querypagination"].contains(scenario), command == "catalog.query" {
                         guard queryCounters.started() else {
                             queryCounters.finished()
                             try emitFailure(request, code: "LIMIT_EXCEEDED")
@@ -1463,7 +1463,16 @@ enum MockBackend {
                         product["resolvedLanguage"] = params["language"]
                         page["query"] = params["query"]
                         page["failures"] = .array([])
+                        let fixtureCursor = page["nextCursor"]
                         page["nextCursor"] = .null
+                        if scenario == "querypagination" {
+                            if params["cursor"]?.string == nil {
+                                page["nextCursor"] = fixtureCursor
+                            } else {
+                                product["productID"] = .string("FIXTUREPAGE2")
+                                product["editions"] = .array([])
+                            }
+                        }
                         let basePage = page, baseProduct = product
                         DispatchQueue.global().async {
                             Thread.sleep(forTimeInterval: 2)
