@@ -1021,7 +1021,8 @@ enum MockBackend {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
                                      "savedpermission", "startupquery", "uifailures",
-                                     "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded"].contains(scenario) || scenario.hasPrefix("recent") || scenario.hasPrefix("ode")
+                                     "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded",
+                                     "discoveryhundreds"].contains(scenario) || scenario.hasPrefix("recent") || scenario.hasPrefix("ode")
             func trace(_ entry: String) throws {
                 guard lifecycleScenario else { return }
                 try FileManager.default.createDirectory(at: lifecycleDirectory, withIntermediateDirectories: true,
@@ -1052,12 +1053,14 @@ enum MockBackend {
             }
             var hello = frames.first(where: { $0["data"]?["schema"] != nil })?["data"]?.object ?? [:]
             var supported: Set<ManagementCommand> = [.authStatus, .authLogout, .jobs]
+            if scenario.hasPrefix("descriptors") { supported.insert(.descriptors) }
             if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
             if scenario == "diagnostics" { supported.insert(.diagnostics) }
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
-                "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario) { supported.insert(.discover) }
+                "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded",
+                "discoverypartialretry", "discoveryretryfailure"].contains(scenario) { supported.insert(.discover) }
             if ["queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
                 "querynulldetails", "querycoalesce", "querypagination", "queryrefreshfailure",
                 "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
@@ -1268,7 +1271,8 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired"].contains(scenario) { try trace(command) }
+                    if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired",
+                        "discoveryhundreds", "discoverybounded"].contains(scenario) { try trace(command) }
                     if scenario == "foregroundexpired", command == "auth.status" {
                         profileReads += 1
                         try emit(.object(result(request, data: authStatus(
@@ -1435,6 +1439,56 @@ enum MockBackend {
                         }
                         continue
                     }
+                    if scenario.hasPrefix("descriptors"), command == "catalog.descriptors" {
+                        let params = request["params"] ?? .null
+                        let ids = params["productIDs"]?.array?.compactMap(\.string) ?? []
+                        let timestamp = ISO8601DateFormatter()
+                        let now = Date().addingTimeInterval(params["refresh"]?.string == "network" ? 0 : -240)
+                        if scenario == "descriptorssplitfailure", ids == ["9DESC0000002"] {
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE")
+                            continue
+                        }
+                        let failed = scenario == "descriptorsoversized" ? ids
+                            : scenario == "descriptorssplitfailure" && ids.count > 1 ? Array(ids.dropFirst()) : []
+                        let records = ids.filter { !failed.contains($0) }.map { id -> JSONValue in
+                            .object([
+                                "productID": .string(id), "market": params["market"] ?? .null,
+                                "language": params["language"] ?? .null,
+                                "checkedAt": .string(timestamp.string(from: now)),
+                                "expiresAt": .string(timestamp.string(from: now.addingTimeInterval(300))),
+                                "freshness": .string("cached"),
+                                "product": .object([
+                                    "ProductId": .string(id), "ProductType": .string("Game"),
+                                    "ProductKind": .string("Game"),
+                                    "LocalizedProperties": .array([.object([
+                                        "ProductTitle": .string("Synthetic managed game"), "Images": .array([]),
+                                        "ProductDescription": .string("Managed public descriptor.")
+                                    ])]),
+                                    "DisplaySkuAvailabilities": .array([.object([
+                                        "Sku": .object([
+                                            "SkuId": .string("synthetic"),
+                                            "Properties": .object(["Packages": .array([.object([
+                                                "PlatformDependencies": .array([.object([
+                                                    "PlatformName": .string("Windows.Desktop")
+                                                ])])
+                                            ])])])
+                                        ]),
+                                        "Availabilities": .array([])
+                                    ])])
+                                ])
+                            ])
+                        }
+                        let failures = failed.map { id -> JSONValue in
+                            .object(["productID": .string(id), "error": .object([
+                                "code": .string("LIMIT_EXCEEDED"), "message": .string("Synthetic oversized record"),
+                                "retryable": .bool(false)
+                            ])])
+                        }
+                        try emit(.object(result(request, data: .object([
+                            "descriptors": .array(records), "failures": .array(failures)
+                        ]))))
+                        continue
+                    }
                     if scenario == "querynodetails", command == "catalog.query" {
                         try emitFailure(request, code: "PACKAGE_UNAVAILABLE")
                         continue
@@ -1587,8 +1641,15 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario),
+                    if ["discoveryhundreds", "discoveryrepeatedpage", "discoverybounded", "discoveryretryfailure"].contains(scenario),
                        command == "catalog.discover" {
+                        discoveryReads += 1
+                        if scenario == "discoveryretryfailure", discoveryReads == 3 {
+                            guard request["params"]?["cursor"] == .null else { exit(3) }
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE",
+                                message: "Synthetic retry failure without page details")
+                            continue
+                        }
                         guard request["params"]?["limit"]?.uint64 == 16,
                               var page = frames.first(where: {
                                   $0["data"]?["corpus"]?.string == "pcGamePassDiscovery"
@@ -1625,6 +1686,37 @@ enum MockBackend {
                         page["failures"] = .array([])
                         let next = scenario == "discoveryrepeatedpage" && start > 0 ? start : end
                         page["nextCursor"] = next < total ? .string("\(prefix)\(next)") : .null
+                        try emit(.object(result(request, data: .object(page))))
+                        continue
+                    }
+                    if scenario == "discoverypartialretry", command == "catalog.discover" {
+                        discoveryReads += 1
+                        guard var page = frames.first(where: {
+                            $0["data"]?["corpus"]?.string == "pcGamePassDiscovery"
+                        })?["data"]?.object,
+                              let template = page["products"]?.array?.first?.object else { exit(3) }
+                        let range = discoveryReads == 1 ? 0..<6 : 6..<7
+                        page["products"] = .array(range.map { index in
+                            let id = String(format: "RETRY%07d", index)
+                            var item = template
+                            item["productID"] = .string(id)
+                            item["title"] = .string("Synthetic retry game \(index)")
+                            item["source"] = .string("syntheticPublicSource")
+                            item["pcCatalogCandidate"] = .bool(true)
+                            item["editions"] = .array((item["editions"]?.array ?? []).map { edition in
+                                var value = edition.object ?? [:]
+                                value["productID"] = .string(id)
+                                return .object(value)
+                            })
+                            return .object(item)
+                        })
+                        page["failures"] = .array([.object([
+                            "productID": .string("RETRY9999999"), "error": .object([
+                                "code": .string("NETWORK_UNAVAILABLE"), "message": .string("Synthetic partial failure"),
+                                "retryable": .bool(true)
+                            ])
+                        ])])
+                        page["nextCursor"] = .string("d1-\(page["corpusRevision"]?.string ?? "")-16")
                         try emit(.object(result(request, data: .object(page))))
                         continue
                     }

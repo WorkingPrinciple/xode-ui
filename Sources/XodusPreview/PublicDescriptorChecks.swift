@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #if !XODUS_SHIPPING
+import Darwin
 import Foundation
 import XodusManagement
 
@@ -114,6 +115,21 @@ enum PublicDescriptorChecks {
               && delayedRequests == 1,
               "A cancelled consumer cannot cancel another consumer's same-ID shared public read")
 
+        let refreshTransport = DescriptorTransport()
+        await refreshTransport.configure(blocked: [0])
+        let refreshStore = PublicCatalogDescriptors(transport: refreshTransport)
+        let cacheRead = Task { try await refreshStore.load(ids: sample, market: "US", language: "en-US") }
+        try await wait(refreshTransport, count: 1)
+        let forcedRead = Task {
+            try await refreshStore.load(ids: sample, market: "US", language: "en-US", refresh: true)
+        }
+        for _ in 0..<10 { await Task.yield() }
+        await refreshTransport.release(0)
+        _ = try await cacheRead.value
+        _ = try await forcedRead.value
+        check(await refreshTransport.requests.count == 2,
+              "REQ-82: Explicit Network refresh waits for a pending Cache read, then actually refreshes instead of borrowing its result")
+
         let partialTransport = DescriptorTransport()
         await partialTransport.configure(failures: [1])
         let partialClient = PCGamesClient(transport: partialTransport)
@@ -191,6 +207,179 @@ enum PublicDescriptorChecks {
             do { try FileManager.default.removeItem(at: root) }
             catch { check(false, "Descriptor retirement fixture is cleaned") }
         }
+        let managedConfiguration = BackendConfiguration(executable: helper,
+            stateDirectory: root.appendingPathComponent("descriptors"))
+        let management = try ManagementClient()
+        let hello = try await management.connect(managedConfiguration)
+        check(hello.supports(.descriptors), "REQ-82: Shared public reads are explicitly capability-negotiated")
+        let fallbackTransport = DescriptorTransport()
+        let managedStore = PublicCatalogDescriptors(transport: fallbackTransport)
+        let owner = UUID()
+        await managedStore.bind(management, owner: owner)
+        _ = try await managedStore.load(ids: sample, market: "US", language: "en-US")
+        let managedArtwork = LibraryCatalogArtwork(descriptors: managedStore)
+        await managedArtwork.load(ids: sample, market: "US", language: "en-US")
+        let managedRequests = await managedStore.requests
+        let fallbackRequests = await fallbackTransport.requests.count
+        check(managedRequests == 1 && managedArtwork.images.count == sample.count
+              && managedArtwork.images.values.allSatisfy { $0.detail?.description == "Managed public descriptor." }
+              && fallbackRequests == 0,
+              "REQ-82: Library/Discover rich public metadata shares one management read with no independent HTTP request")
+        let originalExpiry = await managedStore.expirations(ids: sample, market: "US", language: "en-US")
+        check(originalExpiry.count == 3 && originalExpiry.values.allSatisfy { $0 < Date().addingTimeInterval(61) },
+              "REQ-82: Four-minute-old backend descriptors keep only their original remaining minute")
+        _ = try await managedStore.load(ids: sample, market: "US", language: "en-US")
+        check(await managedStore.expirations(ids: sample, market: "US", language: "en-US") == originalExpiry,
+              "REQ-82: Warm app reuse retains original backend expiry, not a new five-minute lease")
+        await managedArtwork.retry(id: sample[0], market: "US", language: "en-US")
+        check(await managedStore.requests == 2,
+              "REQ-82: Explicit detail retry forces one fresh management read even inside the app freshness window")
+        _ = try await managedStore.load(ids: sample, market: "GB", language: "en-GB")
+        check(await managedStore.requests == 3,
+              "REQ-82: Shared management reads cannot reuse another market/language key")
+        await managedStore.unbind(owner: owner)
+        _ = try await managedStore.load(ids: sample, market: "US", language: "en-US")
+        check(await fallbackTransport.requests.count == 1,
+              "REQ-82: Retired capability binding releases cached source and falls back honestly to public HTTP")
+        _ = await management.close()
+
+        let oversizedConfiguration = BackendConfiguration(executable: helper,
+            stateDirectory: root.appendingPathComponent("descriptorsoversized"))
+        let oversizedManagement = try ManagementClient()
+        _ = try await oversizedManagement.connect(oversizedConfiguration)
+        let oversized = PublicCatalogDescriptors(transport: fallbackTransport)
+        await oversized.bind(oversizedManagement, owner: UUID())
+        let oversizedArtwork = LibraryCatalogArtwork(descriptors: oversized)
+        await oversizedArtwork.load(ids: sample, market: "US", language: "en-US")
+        let oversizedRequests = await oversized.requests
+        check(oversizedRequests == 4 && oversizedArtwork.images.isEmpty
+              && oversizedArtwork.detailErrors.count == 3 && oversizedArtwork.error != nil,
+              "REQ-82: Oversized response splits once to single IDs and terminates with explicit errors, never an automatic retry loop")
+        _ = await oversizedManagement.close()
+
+        let splitManagement = try ManagementClient()
+        _ = try await splitManagement.connect(BackendConfiguration(executable: helper,
+            stateDirectory: root.appendingPathComponent("descriptorssplitfailure")))
+        let splitStore = PublicCatalogDescriptors(transport: DescriptorTransport())
+        await splitStore.bind(splitManagement, owner: UUID())
+        let splitData = try await splitStore.load(ids: sample, market: "GB", language: "en-GB")
+        let splitFailures = await splitStore.failures(ids: sample, market: "GB", language: "en-GB")
+        let splitRequests = await splitStore.requests
+        check(try JSONDecoder().decode(PCGamesCatalog.self, from: splitData).Products.map(\.ProductId) == Array(sample.prefix(2))
+              && splitFailures.keys.sorted() == [sample[2]] && splitRequests == 3,
+              "REQ-82: A failed smaller-batch retry preserves both successful raw peers and an explicit unresolved error")
+        _ = await splitManagement.close()
+
+        let wireTime = Date(timeIntervalSince1970: 2_000_000_000)
+        let formatter = ISO8601DateFormatter()
+        let validRecord: [String: JSONValue] = [
+            "productID": .string(sample[0]), "market": .string("GB"), "language": .string("en-GB"),
+            "checkedAt": .string(formatter.string(from: wireTime)),
+            "expiresAt": .string(formatter.string(from: wireTime.addingTimeInterval(300))),
+            "freshness": .string("cached"), "product": .object(["ProductId": .string(sample[0])])
+        ]
+        func validateRecord(_ record: [String: JSONValue], now: Date? = nil) throws {
+            let response = try JSONValue.object([
+                "descriptors": .array([.object(record)]), "failures": .array([])
+            ]).decode(CatalogDescriptors.self)
+            try response.validate(ids: [sample[0]], market: "GB", language: "en-GB",
+                                  now: now ?? wireTime.addingTimeInterval(1))
+        }
+        try validateRecord(validRecord)
+        for (label, field, value) in [
+            ("market", "market", JSONValue.string("US")),
+            ("language", "language", .string("en-gb")),
+            ("identity", "product", .object(["ProductId": .string(sample[1])])),
+            ("extended freshness", "expiresAt", .string(formatter.string(from: wireTime.addingTimeInterval(301))))
+        ] {
+            var record = validRecord
+            record[field] = value
+            do {
+                try validateRecord(record)
+                check(false, "REQ-82: Managed descriptor rejects wrong \(label)")
+            } catch ManagementError.invalidPayload {
+                check(true, "REQ-82: Managed descriptor rejects wrong \(label)")
+            }
+        }
+        for (label, now) in [
+            ("expired freshness", wireTime.addingTimeInterval(300)),
+            ("future fetch", wireTime.addingTimeInterval(-1))
+        ] {
+            do {
+                try validateRecord(validRecord, now: now)
+                check(false, "REQ-82: Managed descriptor rejects \(label) despite a valid 300-second lease")
+            } catch ManagementError.invalidPayload {
+                check(true, "REQ-82: Managed descriptor rejects \(label) despite a valid 300-second lease")
+            }
+        }
+
+        if let path = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_CHECK_CLI"] {
+            let state = root.appendingPathComponent("source-descriptor-envelope")
+            try FileManager.default.createDirectory(at: state, withIntermediateDirectories: false,
+                                                    attributes: [.posixPermissions: 0o700])
+            guard let canonical = realpath(state.path, nil) else { throw PCGamesError.transport }
+            let directory = URL(fileURLWithPath: String(cString: canonical), isDirectory: true)
+            free(canonical)
+            let timestamp = ISO8601DateFormatter()
+            let checked = Date(), expiry = checked.addingTimeInterval(300)
+            let raw: [String: Any] = [
+                "ProductId": "FIXTURE00001", "ProductType": "Game", "ProductKind": "Game",
+                "Properties": ["Category": "Games"],
+                "LocalizedProperties": [[
+                    "ProductTitle": "Neutral source fixture", "Language": "en-GB", "Images": [],
+                    "ProductDescription": "Preserved neutral rich detail"
+                ]],
+                "DisplaySkuAvailabilities": [[
+                    "Sku": ["SkuId": "fixture-edition", "Properties": ["Packages": [[
+                        "PackageId": "fixture-package", "Version": "1.0.0.0",
+                        "PlatformDependencies": [["PlatformName": "Windows.Desktop"]]
+                    ]]]],
+                    "Availabilities": []
+                ]]
+            ]
+            let record: [String: Any] = [
+                "productID": "FIXTURE00001", "market": "GB", "language": "en-GB",
+                "checkedAt": timestamp.string(from: checked), "expiresAt": timestamp.string(from: expiry),
+                "freshness": "live", "product": raw
+            ]
+            let file = directory.appendingPathComponent("public-descriptors-v1.json")
+            try JSONSerialization.data(withJSONObject: [
+                "version": 1, "records": ["FIXTURE00001:GB:en-gb": record]
+            ], options: [.sortedKeys]).write(to: file)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+            let sourceClient = try ManagementClient()
+            do {
+                let sourceHello = try await sourceClient.connect(BackendConfiguration(
+                    executable: URL(fileURLWithPath: path), stateDirectory: directory))
+                check(sourceHello.supports(.descriptors),
+                      "REQ-82 SOURCE CLI: Real hello negotiates catalog.descriptors with the app schema")
+                let sourceFallback = DescriptorTransport()
+                let sourceStore = PublicCatalogDescriptors(transport: sourceFallback)
+                await sourceStore.bind(sourceClient, owner: UUID())
+                let sourceData = try await sourceStore.load(ids: ["FIXTURE00001"], market: "GB", language: "en-GB")
+                let sourceArtwork = LibraryCatalogArtwork(descriptors: sourceStore)
+                await sourceArtwork.load(ids: ["FIXTURE00001"], market: "GB", language: "en-GB")
+                let sourceRequests = await sourceStore.requests
+                let sourceHTTP = await sourceFallback.requests.count
+                let original = await sourceStore.expirations(ids: ["FIXTURE00001"], market: "GB", language: "en-GB")
+                check(sourceRequests == 1 && sourceHTTP == 0
+                      && sourceArtwork.images["FIXTURE00001"]?.detail?.description == "Preserved neutral rich detail"
+                      && sourceArtwork.images["FIXTURE00001"]?.facts.isBaseGame == true
+                      && abs((original["FIXTURE00001"] ?? .distantPast).timeIntervalSince(expiry)) < 1
+                      && !sourceData.isEmpty,
+                      "REQ-82 SOURCE CLI: Actual app consumer decodes persisted raw identity/rich fields and original expiry without independent HTTP")
+                _ = try await sourceStore.load(ids: ["FIXTURE00001"], market: "GB", language: "en-GB")
+                let warmRequests = await sourceStore.requests, warmHits = await sourceStore.hits
+                check(warmRequests == 1 && warmHits == 2,
+                      "REQ-82 SOURCE CLI: Shared Library/Discover warm consumers record two hits and one management request total")
+                check(await sourceClient.close(),
+                      "REQ-82 SOURCE CLI: Neutral source-only management process retires without account operations")
+            } catch {
+                _ = await sourceClient.close()
+                throw error
+            }
+        }
+
         let config = BackendConfiguration(executable: helper,
             stateDirectory: root.appendingPathComponent("odelibrarywarm"))
         let session = LiveSession(configuration: config)

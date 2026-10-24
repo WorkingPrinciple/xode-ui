@@ -107,7 +107,35 @@ Local installed registry loading precedes the remote
 collection wait. Empty Discover entry starts immediately; typed queries retain
 the 250 ms debounce. Same-scope/query public refresh keeps useful products while
 loading; explicitly failed IDs may retain prior descriptors with failure state.
+Same-scope Retry also retains the cursor and revision until a validated
+replacement page is admitted. A failure without page details leaves prior
+products and continuation usable rather than stranding later pages.
 Changing scope/query clears wrong-key content.
+
+Discover entry and post-login preparation request one page of at most 16 public
+products, not the entire PC Game Pass catalogue. The Library-active warm path
+prepares only those first 16 metadata records. Warm entry does not refresh an
+already checked scope. Horizontal lazy shelves show Explore PC Game Pass and up
+to three actual genres from the loaded subset; the feed provides no verified
+addition dates or popularity ranks, so these labels are deliberately not
+"Recently added" or "Most popular". Search keeps its scoped grid.
+Horizontal end-of-row viewport visibility (macOS 15+) or More games admits one
+further 16-record page; macOS 14 retains explicit More games rather than treating
+lazy view creation as a scroll signal.
+Sparse or filtered rows keep an explicit More games action instead of scanning
+the catalogue automatically. The 512-record safety bound remains. Refreshing
+page one preserves later-page successes and continuation deduplicates them;
+a loaded-subset genre is never presented as an authoritative empty catalogue.
+Retained public metadata is not renewed account access or current membership.
+
+The official [Xbox catalogue](https://www.xbox.com/en-US/xbox-game-pass/games)
+uses separate PC/console recently-added carousels and genre filters. The current
+backend consumes the general PC membership feed only, not those ranked/editorial
+feeds. The official [benefits guide](https://www.xbox.com/xbox-game-pass/in-game-benefits)
+distinguishes in-game benefits and their console/app redemption steps.
+No current, market/tier-qualified free-to-keep offer feed is implemented;
+Discover omits offer cards and links only to that official guidance on explicit
+user action. Included access, limited-time play and benefits are not ownership.
 
 Public metadata publishes one image/fact revision per response batch (at most
 20 products), retains useful earlier results on failure, coalesces same-key
@@ -115,6 +143,37 @@ selected details and serializes bulk waiters. Locale changes advance a generatio
 so A-to-B-to-A cannot admit an obsolete A completion. Selected-detail priority
 remains independent of blocked bulk work. These are public descriptors, never
 PC membership, ownership or permission.
+When the negotiated engine advertises `catalog.descriptors`, the same app actor
+routes Library classification, rich facts and Discover artwork metadata through
+the engine's shared public raw-descriptor provider, also used by discovery/query.
+Keys are product ID, normalized market and language, never account authority.
+The engine owns persistent raw caching; the app keeps at most 512 records/32 MiB
+and preserves each original five-minute expiry instead of extending it on reuse.
+Requests contain 1–20 IDs, not raw records in CLI arguments. The existing 1 MiB
+frame ceiling is unchanged; `LIMIT_EXCEEDED` records are retried in strictly
+smaller batches, terminating with an explicit error at a single oversized record.
+Successful peers remain usable. Detail Retry requests `refresh: network`.
+Retirement fences old-source completions; locale keys cannot borrow other-region
+records. Older engines retain direct public HTTP with an explicit coverage
+notice and cannot claim backend/app no-redownload behavior.
+The existing URL-keyed artwork store shares in-flight bytes and decoded card
+variants across both tabs, with bounded memory, persistent HTTP freshness and
+off-main decode. Different display-size variants reuse source bytes, not new
+downloads while fresh.
+
+`--media-check` covers bounded metadata/artwork reuse, expiry, locale/source
+retirement, cancellation and finite size-error retries. To additionally exercise
+the actual Swift consumer against a compatible source-built CLI, use
+`XODUS_DESCRIPTOR_CHECK_CLI=/absolute/path/to/xodus-cli .build/debug/XodusPreview --media-check`.
+That opt-in fixture creates only a new canonical private directory with one
+neutral raw public record and requests the seeded exact locale with Cache.
+It checks real hello/capability negotiation, rich-field decoding, original expiry
+and warm app reuse, then retires the child and removes the fixture.
+It makes no account or Network-refresh request. This proves persisted-cache
+wire compatibility, not counted HTTP avoidance across real tabs; backend
+counted-provider tests supply the separate network-cache evidence. Installed
+app/CLI pairing and native latency/scrolling acceptance remain separate.
+
 Acquisition presentation uses all three acquisition kinds: only purchased games
 enter Owned; subscriptions retain their distinct label, and unknown held games
 say "In your library". Unknown provenance does not remove current held access or

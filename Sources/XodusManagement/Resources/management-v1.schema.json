@@ -70,6 +70,7 @@
             "inventory.snapshot",
             "catalog.search",
             "catalog.discover",
+            "catalog.descriptors",
             "catalog.query",
             "product.detail",
             "install.plan",
@@ -373,6 +374,20 @@
                 },
                 "additionalProperties": false
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "command": {
+                "const": "catalog.descriptors"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": { "$ref": "#/$defs/descriptorsParams" }
             }
           }
         },
@@ -1134,6 +1149,9 @@
             },
             {
               "$ref": "#/$defs/discoveryData"
+            },
+            {
+              "$ref": "#/$defs/descriptorsData"
             },
             {
               "$ref": "#/$defs/queryData"
@@ -2786,6 +2804,110 @@
         }
       },
       "additionalProperties": false
+    },
+    "descriptorsParams": {
+      "type": "object",
+      "required": ["productIDs", "market", "language", "refresh"],
+      "properties": {
+        "productIDs": {
+          "type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Z0-9]{12}$" }
+        },
+        "market": { "type": "string", "pattern": "^[A-Z]{2}$" },
+        "language": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$" },
+        "refresh": { "enum": ["cache", "network"] }
+      },
+      "additionalProperties": false
+    },
+    "descriptorRecord": {
+      "type": "object",
+      "required": ["productID", "market", "language", "checkedAt", "expiresAt", "freshness", "product"],
+      "properties": {
+        "productID": { "type": "string", "pattern": "^[A-Z0-9]{12}$" },
+        "market": { "type": "string", "pattern": "^[A-Z]{2}$" },
+        "language": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$" },
+        "checkedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "freshness": { "enum": ["live", "cached"] },
+        "product": {
+          "type": "object",
+          "required": ["ProductId", "LocalizedProperties", "DisplaySkuAvailabilities"],
+          "properties": {
+            "ProductId": { "type": "string", "pattern": "^[A-Z0-9]{12}$" },
+            "LocalizedProperties": {
+              "type": "array", "minItems": 1,
+              "items": {
+                "type": "object", "required": ["ProductTitle"],
+                "properties": {
+                  "ProductTitle": { "type": "string", "minLength": 1, "maxLength": 1024 },
+                  "Language": { "type": "string" }
+                },
+                "additionalProperties": true
+              }
+            },
+            "DisplaySkuAvailabilities": {
+              "type": "array", "minItems": 1, "maxItems": 256,
+              "items": {
+                "type": "object", "required": ["Sku", "Availabilities"],
+                "properties": {
+                  "Sku": {
+                    "type": "object", "required": ["SkuId", "Properties"],
+                    "properties": {
+                      "SkuId": { "$ref": "#/$defs/identifier" },
+                      "Properties": {
+                        "type": "object", "required": ["Packages"],
+                        "properties": {
+                          "Packages": {
+                            "type": "array",
+                            "items": {
+                              "type": "object", "required": ["PlatformDependencies"],
+                              "properties": {
+                                "PlatformDependencies": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object", "required": ["PlatformName"],
+                                    "properties": { "PlatformName": { "type": "string" } },
+                                    "additionalProperties": true
+                                  }
+                                }
+                              },
+                              "additionalProperties": true
+                            }
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "additionalProperties": true
+                  },
+                  "Availabilities": { "type": "array", "items": { "type": "object" } }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "descriptorsData": {
+      "type": "object",
+      "required": ["descriptors", "failures"],
+      "properties": {
+        "descriptors": {
+          "type": "array", "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/descriptorRecord"
+          }
+        },
+        "failures": {
+          "type": "array", "maxItems": 20,
+          "items": { "$ref": "#/$defs/discoveryFailure" }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Whole serialized result including envelope <=896KiB; per-ID LIMIT_EXCEEDED. Single oversized records must not cause unbounded split retries."
     },
     "discoveryData": {
       "type": "object",
