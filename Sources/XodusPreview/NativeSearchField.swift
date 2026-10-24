@@ -25,6 +25,8 @@ struct NativeToolbarSearch: View {
     var enabled = true
     var openSearch: () -> Void = {}
     var showResults: (() -> Void)?
+    var recentSearchesPresented: Binding<Bool> = .constant(false)
+    var recentSearchesContent = AnyView(EmptyView())
 
     static func collapsedAccessibility(for placeholder: String) -> (label: String, help: String) {
         (label: placeholder, help: "Open catalogue search")
@@ -58,6 +60,10 @@ struct NativeToolbarSearch: View {
             }
         }
         .frame(width: Self.width(text: text, focused: focused))
+        .popover(isPresented: recentSearchesPresented, attachmentAnchor: .rect(.bounds),
+                 arrowEdge: .bottom) {
+            recentSearchesContent
+        }
     }
 }
 

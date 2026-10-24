@@ -142,43 +142,7 @@ struct LiveRootView: View {
             if destination == .library { libraryVisited = true }
             if destination == .discover { discoverVisited = true }
         }
-        .toolbar {
-            if !requiresAccountGate {
-            XodusToolbar(selection: state.navigationSelection, searchText: $state.query,
-                         searchFocused: Binding(get: { searchFocused }, set: { searchFocused = $0 }),
-                         searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,
-                         accountLabel: session.accountLabel,
-                         accountSymbol: session.accountSymbol,
-                         accountArtwork: XboxCompanionArtwork.reference(toolbarProfile?.avatarURL),
-                         accountBinding: boundAccountHash,
-                         profileLoading: companion.refreshing,
-                         profileFailed: companion.error != nil,
-                         importGame: state.destination == .library && !state.showsRecentActivity
-                            ? { Task { await state.installedGames.chooseGame() } } : nil,
-                         importEnabled: canImportGame,
-                         libraryContrast: toolbarOverArtwork, openSearch: {
-                             state.navigate(.discover)
-                         }, showSearchResults: {
-                             state.navigate(.discover)
-                             searchFocused = false
-                             state.discoverSelection.focusRequest += 1
-                         }) {
-                state.openAccount()
-            }
-            if state.destination == .discover {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Refresh Discover", systemImage: "arrow.clockwise") {
-                        Task { await session.refreshCatalog(state.query) }
-                    }
-                    .labelStyle(.iconOnly).help(refreshHelp).keyboardShortcut("r")
-                    .modifier(NativeToolbarIconStyle())
-                    .disabled(!startupAllowed || !session.isReady || session.searching)
-                    .accessibilityIdentifier("xodus.catalog.refresh")
-                    .padding(.trailing, 12)
-                }
-            }
-            }
-        }
+        .toolbar { rootToolbar }
         .onAppear {
 #if !XODUS_SHIPPING
             PreviewExporter.startIfRequested(state: state, session: session)
@@ -410,14 +374,81 @@ struct LiveRootView: View {
             signingIn: state.gameOperations.serviceSigningIn)
     }
 
+    @ToolbarContentBuilder
+    private var rootToolbar: some ToolbarContent {
+        if !requiresAccountGate {
+            XodusToolbar(selection: state.navigationSelection, searchText: $state.query,
+                         searchFocused: Binding(get: { searchFocused }, set: { searchFocused = $0 }),
+                         searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,
+                         accountLabel: session.accountLabel,
+                         accountSymbol: session.accountSymbol,
+                         accountArtwork: XboxCompanionArtwork.reference(toolbarProfile?.avatarURL),
+                         accountBinding: boundAccountHash,
+                         profileLoading: companion.refreshing,
+                         profileFailed: companion.error != nil,
+                         importGame: state.destination == .library && !state.showsRecentActivity
+                            ? { Task { await state.installedGames.chooseGame() } } : nil,
+                         importEnabled: canImportGame,
+                         libraryContrast: toolbarOverArtwork, openSearch: {
+                             state.navigate(.discover)
+                         }, showSearchResults: showToolbarSearchResults,
+                         recentSearchesPresented: Binding(get: { showsDiscoverRecentSearches },
+                             set: { presented in
+                                 if !presented { dismissDiscoverRecentSearches() }
+                             }),
+                         recentSearchesContent: AnyView(DiscoverRecentSearches(
+                            selection: state.discoverSelection,
+                            focused: $discoverSuggestionFocus,
+                            select: selectRecentSearch,
+                            dismiss: dismissDiscoverRecentSearches))) {
+                state.openAccount()
+            }
+            if state.destination == .discover {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Refresh Discover", systemImage: "arrow.clockwise") {
+                        Task { await session.refreshCatalog(state.query) }
+                    }
+                    .labelStyle(.iconOnly).help(refreshHelp).keyboardShortcut("r")
+                    .modifier(NativeToolbarIconStyle())
+                    .disabled(!startupAllowed || !session.isReady || session.searching)
+                    .accessibilityIdentifier("xodus.catalog.refresh")
+                    .padding(.trailing, 12)
+                }
+            }
+        }
+    }
+
     private var immersiveDestination: Bool {
         (state.destination == .library && !state.showsRecentActivity) || state.destination == .discover
     }
 
     private var showsDiscoverRecentSearches: Bool {
-        DiscoverSearchOverlayLayout.isPresented(searchFocused: searchFocused,
+        state.destination == .discover
+            && DiscoverSearchOverlayLayout.isPresented(searchFocused: searchFocused,
             suggestionFocused: discoverSuggestionFocus != nil, query: scopedQuery,
             searches: state.discoverSelection.recentSearches)
+    }
+
+    private func showToolbarSearchResults() {
+        state.navigate(.discover)
+        searchFocused = false
+        if let focus = DiscoverSearchOverlayLayout.keyboardFocus(
+            query: state.query, searches: state.discoverSelection.recentSearches) {
+            discoverSuggestionFocus = focus
+        } else {
+            state.discoverSelection.focusRequest += 1
+        }
+    }
+
+    private func selectRecentSearch(_ query: String) {
+        state.query = query
+        discoverSuggestionFocus = nil
+        searchFocused = true
+    }
+
+    private func dismissDiscoverRecentSearches() {
+        discoverSuggestionFocus = nil
+        searchFocused = false
     }
 
     private func retainedBrowse(_ destination: Destination) -> some View {
@@ -448,30 +479,6 @@ struct LiveRootView: View {
             }
             .scrollPosition(id: scrollID)
             .scrollIndicators(destination == .discover ? .never : .automatic)
-            .overlay(alignment: .topLeading) {
-                if destination == .discover && selected && showsDiscoverRecentSearches {
-                    GeometryReader { geometry in
-                        DiscoverRecentSearches(selection: state.discoverSelection,
-                            focused: $discoverSuggestionFocus,
-                            select: { query in
-                                state.query = query
-                                discoverSuggestionFocus = nil
-                                searchFocused = true
-                            },
-                            dismiss: {
-                                discoverSuggestionFocus = nil
-                                searchFocused = false
-                            })
-                        .frame(width: DiscoverSearchOverlayLayout.panelWidth(
-                            containerWidth: geometry.size.width))
-                        .offset(x: DiscoverSearchOverlayLayout.panelLeading(
-                            containerWidth: geometry.size.width),
-                                y: DiscoverSearchOverlayLayout.topInset)
-                    }
-                    .zIndex(10)
-                    .accessibilityIdentifier("xodus.discover.recentSearches")
-                }
-            }
             .modifier(LibraryScrollMeasurementObserver(
                 selection: destination == .library ? state.librarySelection : nil,
                 containerSize: $libraryContainerSize))

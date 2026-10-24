@@ -416,6 +416,12 @@ enum NativeUIChecks {
         check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:)))
               && text.isEmpty,
               "REQ-59: Escape clears the query using the same native search binding")
+        focused = true
+        check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:)))
+              && !focused
+              && !DiscoverSearchOverlayLayout.isPresented(searchFocused: focused,
+                  suggestionFocused: false, query: text, searches: ["Halo"]),
+              "Escape from an empty native search resigns editor focus and dismisses recent suggestions")
         text = "next scope"
         search = NativeSearchField(text: search.$text, focused: search.$focused,
                                    placeholder: "Search Microsoft Store games")

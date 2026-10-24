@@ -51,12 +51,10 @@ enum PresentationPerformanceChecks {
               && !DiscoverSearchOverlayLayout.isPresented(searchFocused: true, suggestionFocused: false,
                   query: "", searches: []),
               "Recent searches appear only for an empty active Discover search and dismiss on selection, blur or clear")
-        for width in [CGFloat(820), 900, 1_440, 1_920] {
-            let panelWidth = DiscoverSearchOverlayLayout.panelWidth(containerWidth: width)
-            let leading = DiscoverSearchOverlayLayout.panelLeading(containerWidth: width)
-            check(panelWidth <= 320 && leading >= 16 && leading + panelWidth <= width - 16,
-                  "Recent search panel remains within a \(Int(width)) point toolbar window")
-        }
+        check(DiscoverSearchOverlayLayout.keyboardFocus(query: "  ", searches: recent) == .search("Halo")
+              && DiscoverSearchOverlayLayout.keyboardFocus(query: "", searches: []) == nil
+              && DiscoverSearchOverlayLayout.keyboardFocus(query: "Halo", searches: recent) == nil,
+              "Native Down/Return hands an empty search to its first recent suggestion without changing populated-search behavior")
         check(SubscriberBenefits.officialURL.scheme == "https"
               && SubscriberBenefits.officialURL.host == "www.xbox.com"
               && SubscriberBenefits.officialURL.path == "/xbox-game-pass/in-game-benefits",
@@ -69,10 +67,12 @@ enum PresentationPerformanceChecks {
                 storeId: $0.id, folder: "/synthetic/not-read", launcher: "/synthetic/not-executed",
                 importedAt: .distantPast)
         }
-        func key(query: String = "", revision: UInt64 = 0, account: String? = "account-a") -> CatalogProjectionKey {
+        func key(query: String = "", revision: UInt64 = 0, account: String? = "account-a",
+                 scope: GameSearchScope = .allGames, genre: String? = nil) -> CatalogProjectionKey {
             CatalogProjectionKey(accountHash: account, query: query, owned: owned, products: products,
                 gamePass: [], gamePassIDs: [products[20].id], installed: installed, accessIsCurrent: false,
-                metadataRevision: revision, compatibility: [:], genre: nil, showsUnsupported: true)
+                metadataRevision: revision, compatibility: [:], genre: genre, scope: scope,
+                showsUnsupported: true)
         }
         for query in ["", "Fixture 1", "fixture", "missing"] {
             let input = key(query: query)
@@ -99,15 +99,46 @@ enum PresentationPerformanceChecks {
             check(!mixed.visible.contains { $0.id == products[0].id } && !mixed.genres.contains("Productivity"),
                   "Explicit public applications cannot leak through Discover cards or genre navigation")
         }
+        let scopedFacts = Dictionary(uniqueKeysWithValues: products.map {
+            ($0.id, LibraryCatalogFacts(genres: ["Puzzle"], isBaseGame: true))
+        })
+        let allScope = CatalogProjection(key: key(genre: "Puzzle"), facts: scopedFacts, isVisible: { _ in true })
+        let installedScope = CatalogProjection(key: key(scope: .installed, genre: "Puzzle"), facts: scopedFacts,
+                                               isVisible: { _ in true })
+        let gamePassScope = CatalogProjection(key: key(scope: .gamePass, genre: "Puzzle"), facts: scopedFacts,
+                                              isVisible: { _ in true })
+        check(allScope.visible.count == products.count
+              && allScope.genreShelves["Puzzle"]?.map(\.id) == Array(products.prefix(12).map(\.id))
+              && installedScope.visible.map(\.id) == Array(products.prefix(4).map(\.id))
+              && installedScope.genreShelves["Puzzle"]?.map(\.id) == Array(products.prefix(4).map(\.id))
+              && gamePassScope.visible.map(\.id) == [products[20].id]
+              && gamePassScope.genreShelves["Puzzle"]?.map(\.id) == [products[20].id],
+              "Discover scope filters genre shelves as well as the main result set")
+        let scopedCache = PresentationCache<CatalogProjectionKey, CatalogProjection>(empty: .empty)
+        let installedKey = key(scope: .installed, genre: "Puzzle")
+        scopedCache.prepare(installedKey) {
+            CatalogProjection(key: installedKey, facts: scopedFacts, isVisible: { _ in true })
+        }
+        var updatedScopedFacts = scopedFacts
+        updatedScopedFacts[products[0].id] = LibraryCatalogFacts(genres: ["Puzzle"], isBaseGame: false)
+        let revisedInstalledKey = key(revision: 1, scope: .installed, genre: "Puzzle")
+        scopedCache.prepare(revisedInstalledKey) {
+            CatalogProjection(key: revisedInstalledKey, facts: updatedScopedFacts, isVisible: { _ in true })
+        }
+        check(scopedCache.builds == 2
+              && scopedCache.current.genreShelves["Puzzle"]?.map(\.id)
+                == Array(products[1...3].map(\.id)),
+              "Metadata revision rebuilds a scoped genre shelf without retaining a newly ineligible title")
         let cache = PresentationCache<CatalogProjectionKey, CatalogProjection>(empty: .empty)
         for _ in 0..<100 {
             cache.prepare(key()) { CatalogProjection(key: key(), facts: [:], isVisible: { _ in true }) }
         }
         check(cache.builds == 1, "Unchanged body/scroll/hero updates retain one Discover projection")
-        for changed in [key(query: "Fixture 1"), key(revision: 1), key(account: "account-b")] {
+        for changed in [key(query: "Fixture 1"), key(revision: 1), key(account: "account-b"),
+                        key(scope: .installed)] {
             cache.prepare(changed) { CatalogProjection(key: changed, facts: [:], isVisible: { _ in true }) }
         }
-        check(cache.builds == 4, "Query, metadata revision and account replacement invalidate projections")
+        check(cache.builds == 5, "Query, metadata revision, account and scope changes invalidate projections")
         cache.clear(to: .empty)
         check(cache.current.index.games.isEmpty, "Account retirement releases retained private projection data")
         let searchSelection = DiscoverSelection()

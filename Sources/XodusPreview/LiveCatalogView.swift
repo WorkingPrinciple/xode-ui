@@ -113,24 +113,17 @@ enum DiscoverSearchFocus: Hashable {
 }
 
 enum DiscoverSearchOverlayLayout {
-    static let topInset: CGFloat = 62
-    private static let toolbarSearchCenterOffset: CGFloat = 104
-
-    static func panelWidth(containerWidth: CGFloat) -> CGFloat {
-        min(320, max(220, containerWidth - 32))
-    }
-
-    static func panelLeading(containerWidth: CGFloat) -> CGFloat {
-        let width = panelWidth(containerWidth: containerWidth)
-        let centeredUnderSearch = containerWidth / 2 + toolbarSearchCenterOffset - width / 2
-        return min(max(centeredUnderSearch, 16), max(16, containerWidth - width - 16))
-    }
-
     static func isPresented(searchFocused: Bool, suggestionFocused: Bool,
                             query: String, searches: [String]) -> Bool {
         (searchFocused || suggestionFocused)
             && query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !searches.isEmpty
+    }
+
+    static func keyboardFocus(query: String, searches: [String]) -> DiscoverSearchFocus? {
+        guard query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let first = searches.first else { return nil }
+        return .search(first)
     }
 }
 
@@ -165,6 +158,7 @@ struct DiscoverRecentSearches: View {
                 .accessibilityIdentifier("xodus.discover.recentSearch.\(query)")
             }
         }
+        .frame(width: 300, alignment: .leading)
         .padding(12)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         .overlay {
@@ -173,6 +167,7 @@ struct DiscoverRecentSearches: View {
         .shadow(color: .black.opacity(0.16), radius: 14, x: 0, y: 6)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Recent searches")
+        .accessibilityIdentifier("xodus.discover.recentSearches")
         .onExitCommand(perform: dismiss)
     }
 }
@@ -249,10 +244,10 @@ struct LiveCatalogView: View {
     private var facts: [String: LibraryCatalogFacts] { projection.facts }
     private var genres: [String] { projection.genres }
     private var visible: [CatalogProduct] {
-        projection.visible.filter { selection.scope.includes(game($0)) }
+        projection.visible
     }
     private var ownedMatches: [PCGame] {
-        projection.owned.filter { selection.scope.includes(game($0)) }
+        projection.owned
     }
     private var hiddenUnsupportedCount: Int { projection.hiddenCount }
     private var retainedPublicIDs: Set<String> {
@@ -288,7 +283,7 @@ struct LiveCatalogView: View {
             gamePassIDs: session.gamePassProductIDs,
             installed: installed.games, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
-            genre: selection.genre, showsUnsupported: showsUnsupportedGames)
+            genre: selection.genre, scope: selection.scope, showsUnsupported: showsUnsupportedGames)
         selection.prepare(key, accountScope: "\(session.accountHash ?? ""):\(session.market):\(session.language)") {
             CatalogProjection(key: key, facts: art.images.mapValues(\.facts), isVisible: isVisible)
         }

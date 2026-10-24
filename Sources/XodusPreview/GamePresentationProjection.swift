@@ -62,6 +62,7 @@ struct CatalogProjectionKey: Equatable {
     let metadataRevision: UInt64
     let compatibility: [String: GameCompatibilityResult]
     let genre: String?
+    var scope: GameSearchScope = .allGames
     let showsUnsupported: Bool
 }
 
@@ -100,15 +101,22 @@ struct CatalogProjection {
         genreProducts = first
         let candidates = DiscoverBrowse.visible(products: games, facts: facts,
             genre: key.query.isEmpty ? key.genre : nil)
-        let visibleProducts = candidates.filter { product in
+        let classifiedProducts = candidates.filter { product in
             !key.query.isEmpty || index.games[product.id].map(isVisible) == true
+        }
+        let visibleProducts = classifiedProducts.filter { product in
+            index.games[product.id].map(key.scope.includes) == true
         }
         visible = visibleProducts
         genreShelves = DiscoverBrowse.genreShelves(products: visibleProducts, facts: facts, genres: genres)
-        owned = index.results.ownedMatches.filter { pc in
+        let classifiedOwned = index.results.ownedMatches.filter { pc in
             !key.query.isEmpty || index.games[pc.id].map(isVisible) == true
         }
-        hiddenCount = candidates.count - visible.count + index.results.ownedMatches.count - owned.count
+        owned = classifiedOwned.filter { pc in
+            index.games[pc.id].map(key.scope.includes) == true
+        }
+        hiddenCount = candidates.count - classifiedProducts.count
+            + index.results.ownedMatches.count - classifiedOwned.count
         artworkIDs = Array(Set(index.results.storeProducts.map(\.id) + key.owned.map(\.id))).sorted()
     }
 
