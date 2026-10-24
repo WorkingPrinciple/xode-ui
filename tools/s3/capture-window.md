@@ -13,6 +13,16 @@ the admitted app. The helper uses ScreenCaptureKit's one-shot image completion;
 it initializes AppKit and refuses absent Screen Recording permission without
 requesting it. It neither activates the app nor sends input.
 
+Capture is passive: a different frontmost application is not a reason to
+activate the game or refuse an otherwise exact PID/window/title/onscreen SCK
+match. Do not put an external foreground/activation gate before this wrapper.
+The desktop-independent window filter captures only the selected owned window,
+not the whole screen or occluding applications. A successfully validated image
+must still be inspected; metadata or renderer logs are not visible-render proof.
+Input admission is separate and still requires the input sender's exact
+foreground-window binding plus its process/image/creation/title/class guards.
+Passive capture does not grant permission to send keys, click or focus a window.
+
 The wrapper owns and reaps only its capture child on timeout. A published image
 requires child exit 0, matching completion identity/dimensions, complete PNG
 chunks/checksums and decoded pixel data. Publication uses an exclusive atomic

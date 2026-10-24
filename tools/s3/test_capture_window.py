@@ -3,12 +3,14 @@
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import struct
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 import zlib
 
 SPEC = importlib.util.spec_from_file_location("capture_window", Path(__file__).with_name("capture-window.py"))
@@ -24,6 +26,25 @@ def png():
 
 
 class CaptureTests(unittest.TestCase):
+    def test_passive_exact_window_capture_does_not_require_foreground_or_activate(self):
+        swift = Path(__file__).with_name("capture-window.swift").read_text()
+        wrapper = Path(__file__).with_name("capture-window.py").read_text()
+        # Foreground is diagnostic metadata, never capture admission or input.
+        self.assertEqual(swift.count("frontmostApplication"), 1)
+        self.assertIn("frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier", swift)
+        for forbidden in ("activateWithOptions", "activate(options:", "SendInput", "CGEventPost",
+                          "SetForegroundWindow"):
+            self.assertNotIn(forbidden, swift)
+            self.assertNotIn(forbidden, wrapper)
+        self.assertNotIn("frontmost", wrapper)
+        with TemporaryDirectory() as temporary:
+            binary, digest, output = self.fixture(Path(temporary))
+            with patch.dict(os.environ, {"S3_FIXTURE_FRONTMOST_PID": "999"}):
+                result = capture.capture(binary, digest, 123, 456, "Owned", output, 2)
+            self.assertTrue(result["completed"])
+            self.assertEqual(result["argv"][1:4], ["123", "456", "Owned"])
+            self.assertEqual(capture.validate_png(output), (1, 1))
+
     def test_identity_guard_stays_fail_closed_and_diagnostics_are_failure_only(self):
         source = Path(__file__).with_name("capture-window.swift").read_text()
         guard = source.index("guard matches.count == 1, let window = matches.first else {")
