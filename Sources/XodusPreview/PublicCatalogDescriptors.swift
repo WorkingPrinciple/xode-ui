@@ -209,7 +209,11 @@ actor PublicCatalogDescriptors {
                     }
                     retry = true
                 } else {
-                    retry = error as? PCGamesError == .transport
+                    if case let ManagementError.backendError(code, retryable) = error {
+                        retry = retryable && ["NETWORK_UNAVAILABLE", "LIMIT_EXCEEDED"].contains(code)
+                    } else {
+                        retry = error as? PCGamesError == .transport
+                    }
                 }
                 guard retry, attempt < 3 else {
                     if !result.entries.isEmpty {
@@ -241,6 +245,16 @@ actor PublicCatalogDescriptors {
     }
 
     private func direct(ids: [String], market: String, language: String) async throws -> Batch {
+        try Task.checkCancellation()
+        if let retryNotBefore, retryNotBefore > now() {
+            let remaining = retryNotBefore.timeIntervalSince(now())
+            guard remaining <= 30 else { throw PCGamesError.http(429) }
+            try await sleep(.seconds(remaining))
+            try Task.checkCancellation()
+            if let current = self.retryNotBefore, current > now() {
+                throw PCGamesError.http(429)
+            }
+        }
         var url = URLComponents(string: "https://displaycatalog.mp.microsoft.com/v7.0/products")
         url?.queryItems = [
             URLQueryItem(name: "bigIds", value: ids.joined(separator: ",")),

@@ -2016,6 +2016,25 @@ enum MockBackend {
                     }
                     if scenario.hasPrefix("descriptors"), command == "catalog.descriptors" {
                         descriptorReads += 1
+                        if scenario.hasPrefix("descriptorscommand") {
+                            if scenario == "descriptorscommandmalformed" {
+                                try emit(.object(result(request, data: .object([:]))))
+                                continue
+                            }
+                            if descriptorReads < 3 || scenario != "descriptorscommandretry" {
+                                var frame = result(request, data: .null)
+                                frame.removeValue(forKey: "data")
+                                frame["ok"] = .bool(false)
+                                frame["error"] = .object([
+                                    "code": .string(scenario == "descriptorscommandauth"
+                                        ? "AUTH_INVALID" : "NETWORK_UNAVAILABLE"),
+                                    "message": .string("Synthetic descriptor command failure."),
+                                    "retryable": .bool(scenario != "descriptorscommandpermanent")
+                                ])
+                                try emit(.object(frame))
+                                continue
+                            }
+                        }
                         let params = request["params"] ?? .null
                         let ids = params["productIDs"]?.array?.compactMap(\.string) ?? []
                         let timestamp = ISO8601DateFormatter()

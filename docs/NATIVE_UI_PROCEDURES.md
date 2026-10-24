@@ -46,6 +46,9 @@ Retry-After; cooldowns longer than 30 seconds stop automatic recovery without
 shortening the server delay, and manual Retry cannot bypass the retained
 cooldown. The current management contract exposes no server cooldown: only
 NETWORK_UNAVAILABLE and inflight LIMIT_EXCEEDED with retryable=true are retried.
+The same allowlist applies to typed command-level failures as well as individual
+descriptor failures. Every direct request rechecks the shared cooldown, including
+an older batch waking from backoff after another batch received Retry-After.
 Permanent oversized records retain bounded splitting, not repeated single-ID
 requests. Successful peers stay reusable; authentication, malformed responses,
 permanent errors and mutation commands are never automatically replayed here.

@@ -71,6 +71,17 @@ private actor DescriptorRetryClock {
     }
 }
 
+private actor DescriptorRetryBarrier {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private(set) var waiting = false
+    func sleep(_ duration: Duration) async throws {
+        waiting = true
+        await withCheckedContinuation { continuation = $0 }
+        try Task.checkCancellation()
+    }
+    func release() { continuation?.resume(); continuation = nil }
+}
+
 @MainActor
 enum PublicDescriptorChecks {
     static func run(check: (Bool, String) -> Void) async throws {
@@ -94,7 +105,11 @@ enum PublicDescriptorChecks {
             await transient.configure(failures: [0, 1], failureStatus: status,
                                       retryAfter: status == 429 ? "3" : nil)
             let delay = DescriptorRetryClock()
-            let recovery = PublicCatalogDescriptors(transport: transient, sleep: { try await delay.sleep($0) })
+            let time = DescriptorClock()
+            let recovery = PublicCatalogDescriptors(transport: transient, now: { time.now() }, sleep: {
+                try await delay.sleep($0)
+                time.advance(Double($0.components.seconds))
+            })
             let data = try await recovery.load(ids: sample, market: "US", language: "en-US")
             check(try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products.count == 3,
                   "REQ98 transient descriptor reads eventually recover without losing games")
@@ -153,6 +168,27 @@ enum PublicDescriptorChecks {
             })
         _ = try await datedStore.load(ids: sample, market: "US", language: "en-US")
         check(await datedDelay.delays == [.seconds(5)], "REQ98 HTTP-date Retry-After uses the injected current clock")
+        let overlappingTransport = DescriptorTransport()
+        await overlappingTransport.configure(failures: [0], failureStatus: 503)
+        let barrier = DescriptorRetryBarrier()
+        let overlapping = PublicCatalogDescriptors(transport: overlappingTransport,
+            sleep: { try await barrier.sleep($0) })
+        let earlier = Task { try await overlapping.load(ids: [sample[0]], market: "US", language: "en-US") }
+        for _ in 0..<200 {
+            if await barrier.waiting { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        await overlappingTransport.configure(failures: [1], failureStatus: 429, retryAfter: "120")
+        do { _ = try await overlapping.load(ids: [sample[1]], market: "US", language: "en-US") }
+        catch PCGamesError.http(429) { }
+        await barrier.release()
+        do {
+            _ = try await earlier.value
+            check(false, "REQ98 existing retry loop cannot bypass another batch's server cooldown")
+        } catch PCGamesError.http(429) {
+            check(await overlappingTransport.requests.count == 2,
+                  "REQ98 overlapping direct batches honor newly published shared cooldown before every request")
+        }
         let retiringTransport = DescriptorTransport()
         await retiringTransport.configure(failures: [0], failureStatus: 503)
         let waitingDelay = DescriptorRetryClock(block: true)
@@ -317,7 +353,9 @@ enum PublicDescriptorChecks {
         let managedConfiguration = BackendConfiguration(executable: helper,
             stateDirectory: root.appendingPathComponent("descriptors"))
         let management = try ManagementClient()
-        for scenario in ["descriptorsretry", "descriptorscapacity", "descriptorsauth", "descriptorsretryexhausted"] {
+        for scenario in ["descriptorsretry", "descriptorscapacity", "descriptorsauth", "descriptorsretryexhausted",
+                         "descriptorscommandretry", "descriptorscommandexhausted", "descriptorscommandauth",
+                         "descriptorscommandpermanent", "descriptorscommandmalformed"] {
             let backend = try ManagementClient()
             _ = try await backend.connect(BackendConfiguration(executable: helper,
                 stateDirectory: root.appendingPathComponent(scenario)))
@@ -325,12 +363,39 @@ enum PublicDescriptorChecks {
             let recovery = PublicCatalogDescriptors(transport: DescriptorTransport(),
                 sleep: { try await clock.sleep($0) })
             await recovery.bind(backend, owner: UUID())
-            let data = try await recovery.load(ids: sample, market: "US", language: "en-US")
+            let data: Data
+            do {
+                data = try await recovery.load(ids: sample, market: "US", language: "en-US")
+            } catch {
+                let requests = await recovery.requests, delays = await clock.delays
+                let expected: Bool
+                switch scenario {
+                case "descriptorscommandexhausted":
+                    expected = error as? ManagementError == .backendError("NETWORK_UNAVAILABLE", retryable: true)
+                        && requests == 4 && delays == [.seconds(1), .seconds(2), .seconds(4)]
+                case "descriptorscommandauth":
+                    expected = error as? ManagementError == .backendError("AUTH_INVALID", retryable: true)
+                        && requests == 1 && delays.isEmpty
+                case "descriptorscommandpermanent":
+                    expected = error as? ManagementError == .backendError("NETWORK_UNAVAILABLE", retryable: false)
+                        && requests == 1 && delays.isEmpty
+                case "descriptorscommandmalformed":
+                    expected = (error as? ManagementError == .invalidPayload || error as? ManagementError == .invalidFrame)
+                        && requests == 1 && delays.isEmpty
+                default: expected = false
+                }
+                check(expected, "REQ98 typed command failure \(scenario) has exact bounded retry/refusal behavior (\(error), requests \(requests), delays \(delays))")
+                check(await backend.close(), "REQ98 command failure fixture closes its synthetic backend")
+                continue
+            }
             let products = try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products
             let delays = await clock.delays, requests = await recovery.requests
             let failures = await recovery.failures(ids: sample, market: "US", language: "en-US")
             let expected: Bool
             switch scenario {
+            case "descriptorscommandretry":
+                expected = products.count == 3 && requests == 3
+                    && delays == [.seconds(1), .seconds(2)] && failures.isEmpty
             case "descriptorsauth":
                 expected = products.count == 2 && requests == 1 && delays.isEmpty && failures.count == 1
             case "descriptorsretryexhausted":
