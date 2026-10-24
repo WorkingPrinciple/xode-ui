@@ -329,10 +329,14 @@ struct LiveRootView: View {
                 catch { return }
             }
             await session.loadCatalogOnEntry(state.query)
-            if state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-               session.supports(.discover), !session.catalogStopped {
-                await session.loadGamePassCatalog()
-            }
+        }
+        .task(id: "\(accountContentAllowed):\(session.isReady):\(session.market):\(session.language)") {
+            guard accountContentAllowed, session.isReady, state.destination == .library,
+                  state.query.isEmpty, session.catalogMatches(query: "") else { return }
+            await session.loadCatalogOnEntry("")
+            guard !Task.isCancelled, session.catalogMatches(query: "") else { return }
+            await LibraryCatalogArtwork.shared.load(ids: Array(session.products.prefix(16).map(\.id)),
+                market: session.market, language: session.language)
         }
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
             if confirmed, state.consumeUnifiedSignInRequest() {

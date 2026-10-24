@@ -83,6 +83,7 @@ final class LiveSession: ObservableObject {
     @Published private(set) var diagnosticSaved = false
     @Published private(set) var diagnosticExportError: String?
     private var client: ManagementClient?
+    private var descriptorsOwner: UUID?
     private var connectedConfiguration: BackendConfiguration?
     private var accountRuntime: OdeRuntimeProcess?
     private var runtimeGeneration = UUID()
@@ -940,6 +941,11 @@ final class LiveSession: ObservableObject {
             let negotiated = try await connection.connect(admittedTarget)
             guard token == generation, revision == lifecycleRevision, client === connection else { return }
             hello = negotiated
+            let descriptorOwner = UUID()
+            descriptorsOwner = descriptorOwner
+            await PublicCatalogDescriptors.shared.bind(
+                negotiated.supports(.descriptors) ? connection : nil, owner: descriptorOwner)
+            guard token == generation, revision == lifecycleRevision, client === connection else { return }
             connectedConfiguration = admittedTarget
             nativeSignInHostAdmitted = admittedTarget.nativeAuthHost != nil
             let startupQueryRevision = queryGeneration
@@ -1062,6 +1068,10 @@ final class LiveSession: ObservableObject {
         accountOperationBusy = false
         signingOut = false
         accountStatusChecking = false
+        if let owner = descriptorsOwner {
+            descriptorsOwner = nil
+            await PublicCatalogDescriptors.shared.unbind(owner: owner)
+        }
         guard let previous = client else {
             phase = .disconnected
             return true
@@ -1569,29 +1579,19 @@ final class LiveSession: ObservableObject {
             discoveryCheckedAt == nil {
             gamePassCatalogExhausted = false
             await refreshCatalog("")
+            return
         } else if gamePassCatalogExhausted && nextCursor == nil {
             return
         }
         guard current(), catalogCorpus == "pcGamePassDiscovery", currentQuery.isEmpty,
               catalogError == nil, !catalogStopped else { return }
-        var cursors = Set<String>()
-        for _ in 0..<32 {
-            guard current(), catalogCorpus == "pcGamePassDiscovery", currentQuery.isEmpty,
-                  catalogError == nil, !catalogStopped, let cursor = nextCursor else { return }
-            guard !catalogAtLimit else {
-                gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
-                gamePassCatalogHasMore = false
-                return
-            }
-            guard cursors.insert(cursor).inserted else {
-                gamePassCatalogError = "Xbox returned a repeated catalogue page. Refresh to try again."
-                return
-            }
-            await refreshCatalog("", more: true)
+        guard nextCursor != nil else { return }
+        guard !catalogAtLimit else {
+            gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
+            gamePassCatalogHasMore = false
+            return
         }
-        if current(), nextCursor != nil {
-            gamePassCatalogError = "The catalogue is partially loaded. Choose Load remaining games to continue."
-        }
+        await refreshCatalog("", more: true)
     }
 
     func catalogMatches(query: String) -> Bool {
@@ -1704,16 +1704,20 @@ final class LiveSession: ObservableObject {
         let existingIDs = Set(products.map(\.id) + discoveryFailures.map(\.id))
         let incomingIDs = Set(page.products.map(\.id) + page.failures.map(\.id))
         if request.more {
-            guard page.corpusRevision == discoveryRevision, existingIDs.isDisjoint(with: incomingIDs),
-                  existingIDs.count + incomingIDs.count <= 512, page.nextCursor != request.cursor else {
+            guard page.corpusRevision == discoveryRevision,
+                  existingIDs.union(incomingIDs).count <= 512, page.nextCursor != request.cursor else {
                 throw ManagementError.backendError("REVISION_CONFLICT", retryable: true)
             }
-            products += page.products
-            discoveryFailures += page.failures
-        } else {
-            products = refreshedProducts(page.products, failures: page.failures.map(\.productID))
-            discoveryFailures = page.failures
         }
+        // A first page cannot revoke successful records from later pages.
+        let incoming = Dictionary(uniqueKeysWithValues: page.products.map { ($0.id, $0) })
+        let successful = Set(page.products.map(\.id))
+        let priorProducts = Set(products.map(\.id))
+        products = products.map { incoming[$0.id] ?? $0 }
+            + page.products.filter { !priorProducts.contains($0.id) }
+        discoveryFailures = request.more
+            ? discoveryFailures.filter { !successful.contains($0.id) && !incomingIDs.contains($0.id) } + page.failures
+            : page.failures
         nextCursor = page.nextCursor
         gamePassCatalogHasMore = page.nextCursor != nil
         gamePassCatalogExhausted = page.nextCursor == nil
@@ -1726,10 +1730,14 @@ final class LiveSession: ObservableObject {
             // Retain bounded public records, with the explicit unconfirmed/partial notice.
             gamePassRevision = page.corpusRevision
         }
-        let incoming = Dictionary(uniqueKeysWithValues: pcProducts.map { ($0.id, $0) })
-        gamePassProducts = gamePassProducts.map { incoming[$0.id] ?? $0 }
+        let incomingPC = Dictionary(uniqueKeysWithValues: pcProducts.map { ($0.id, $0) })
+        gamePassProducts = gamePassProducts.map { incomingPC[$0.id] ?? $0 }
             + pcProducts.filter { !gamePassProductIDs.contains($0.id) }
         gamePassProductIDs.formUnion(pcProducts.map(\.id))
+        if catalogAtLimit, nextCursor != nil {
+            gamePassCatalogHasMore = false
+            gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
+        }
     }
 
 #if !XODUS_SHIPPING

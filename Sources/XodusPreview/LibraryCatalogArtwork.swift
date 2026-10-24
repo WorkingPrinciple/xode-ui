@@ -75,7 +75,7 @@ final class LibraryCatalogArtwork: ObservableObject {
         if generation == epoch { detailPending[id] = nil }
     }
 
-    func load(ids: [String], market: String, language: String) async {
+    func load(ids: [String], market: String, language: String, refresh: Bool = false) async {
         let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language).lowercased())"
         let epoch = enterScope(nextScope)
         while let pending {
@@ -85,7 +85,7 @@ final class LibraryCatalogArtwork: ObservableObject {
         guard !Task.isCancelled, generation == epoch else { return }
         let time = now()
         let ids = Set(ids.filter(PCGamesClient.validProductID))
-            .filter { requested[$0].map { $0 <= time } ?? true }.sorted()
+            .filter { refresh || (requested[$0].map { $0 <= time } ?? true) }.sorted()
         guard !ids.isEmpty else { return }
         let token = UUID()
         let task = Task {
@@ -96,8 +96,9 @@ final class LibraryCatalogArtwork: ObservableObject {
                 for start in stride(from: 0, to: ids.count, by: 20) {
                     try Task.checkCancellation()
                     let batch = Array(ids[start..<min(start + 20, ids.count)])
-                    let data = try await descriptors.load(ids: batch, market: market, language: language)
+                    let data = try await descriptors.load(ids: batch, market: market, language: language, refresh: refresh)
                     let expirations = await descriptors.expirations(ids: batch, market: market, language: language)
+                    let failures = await descriptors.failures(ids: batch, market: market, language: language)
                     guard !Task.isCancelled, generation == epoch else { return }
                     let parsed = try await Self.parseResponse(data, batch: batch, market: market, language: language)
                     guard !Task.isCancelled, generation == epoch else { return }
@@ -108,6 +109,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                         logger.warning("Optional public game details were rejected; game access and actions are unchanged.")
                     }
                     var batchErrors = detailErrors
+                    for (id, message) in failures { batchErrors[id] = message }
                     for id in parsed.images.keys { batchErrors[id] = parsed.errors[id] }
                     if !parsed.images.isEmpty {
                         images.merge(parsed.images, uniquingKeysWith: { _, new in new })
@@ -115,7 +117,10 @@ final class LibraryCatalogArtwork: ObservableObject {
                     if batchErrors != detailErrors { detailErrors = batchErrors }
                     for id in parsed.images.keys { requested[id] = expirations[id] }
                 }
-                if generation == epoch, error != nil { error = nil }
+                if generation == epoch {
+                    let failures = await descriptors.failures(ids: ids, market: market, language: language)
+                    error = failures.isEmpty ? nil : "Some public game details couldn't be loaded. Try again."
+                }
             } catch is CancellationError { }
             catch {
                 guard generation == epoch else { return }
@@ -217,7 +222,7 @@ final class LibraryCatalogArtwork: ObservableObject {
 
     func retry(id: String, market: String, language: String) async {
         requested.removeValue(forKey: id)
-        await load(ids: [id], market: market, language: language)
+        await load(ids: [id], market: market, language: language, refresh: true)
     }
 
     func preload() async -> Int {

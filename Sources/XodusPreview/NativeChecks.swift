@@ -196,7 +196,9 @@ enum NativeChecks {
                 catch {
                     check(false, "Public-media fixture failed: \(error.localizedDescription)")
                 }
-                print("\(count) public-media checks, \(failures) failures. Synthetic transport only.")
+                let source = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_CHECK_CLI"] == nil
+                    ? "Synthetic transport only." : "Synthetic fixtures plus neutral source CLI envelope; no account operations."
+                print("\(count) public-media checks, \(failures) failures. \(source)")
                 return failures == 0
             }
             if gameOperationsOnly {
@@ -843,9 +845,18 @@ enum NativeChecks {
                   "Successful continuation retains earlier failures without ownership promotion")
             await discovery.disconnect()
 
-            let hundreds = session("discoveryhundreds")
+            let hundredsConfiguration = configuration("discoveryhundreds")
+            let hundreds = LiveSession(configuration: hundredsConfiguration)
             await hundreds.connect()
             await hundreds.loadGamePassCatalog()
+            check(hundreds.products.count == 16 && hundreds.nextCursor != nil,
+                  "REQ-81: First useful Discover load resolves one sixteen-game page, not the 300-game catalogue")
+            check(try trace(hundredsConfiguration).filter { $0 == "catalog.discover" }.count == 1,
+                  "REQ-81: First view has exactly one catalogue request")
+            await hundreds.loadCatalogOnEntry("")
+            check(try trace(hundredsConfiguration).filter { $0 == "catalog.discover" }.count == 1,
+                  "REQ-81: Warm Discover entry performs zero additional catalogue requests")
+            for _ in 0..<18 { await hundreds.loadGamePassCatalog() }
             check(hundreds.gamePassProducts.count == 300
                   && hundreds.gamePassProductIDs.count == 300
                   && hundreds.nextCursor == nil && !hundreds.gamePassCatalogHasMore
@@ -865,13 +876,21 @@ enum NativeChecks {
             await hundreds.loadGamePassCatalog()
             check(hundreds.gamePassProducts.count == 300 && !hundreds.gamePassCatalogPaging,
                   "Completed Game Pass paging is reused without render-triggered reload or duplicate games")
+            await hundreds.refreshCatalog("")
+            check(hundreds.products.count == 300 && Set(hundreds.products.map(\.id)) == Set(retainedIDs),
+                  "REQ-81: Retry of page one preserves later-page successes needed by the selected genre")
+            await hundreds.refreshCatalog("", more: true)
+            check(hundreds.products.count == 300 && hundreds.catalogError == nil,
+                  "REQ-81: Continuation after retry deduplicates retained games instead of a false revision error")
             await hundreds.disconnect()
             check(!hundreds.gamePassCatalogPaging && !hundreds.gamePassCatalogHasMore
                   && !hundreds.gamePassCatalogExhausted && hundreds.gamePassProducts.isEmpty,
                   "Disconnect retires the full catalogue scope and paging state")
+            try cleanLifecycle(hundredsConfiguration)
 
             let repeatedPage = session("discoveryrepeatedpage")
             await repeatedPage.connect()
+            await repeatedPage.loadGamePassCatalog()
             await repeatedPage.loadGamePassCatalog()
             check(repeatedPage.gamePassProducts.count == 16
                   && repeatedPage.gamePassCatalogError != nil && !repeatedPage.gamePassCatalogPaging,
@@ -881,7 +900,7 @@ enum NativeChecks {
             let boundedConfiguration = configuration("discoverybounded")
             let boundedCatalogue = LiveSession(configuration: boundedConfiguration)
             await boundedCatalogue.connect()
-            await boundedCatalogue.loadGamePassCatalog()
+            for _ in 0..<32 { await boundedCatalogue.loadGamePassCatalog() }
             check(boundedCatalogue.gamePassProducts.count == 512
                   && boundedCatalogue.nextCursor != nil && !boundedCatalogue.gamePassCatalogHasMore
                   && boundedCatalogue.gamePassCatalogError?.contains("limit") == true,
@@ -889,6 +908,7 @@ enum NativeChecks {
             check(!boundedCatalogue.canLoadMoreCatalog,
                   "Discover does not offer More games when the catalogue bound prevents another page")
             let readsAtLimit = try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count
+            check(readsAtLimit == 32, "REQ-81: Reaching the 512 bound requires exactly 32 individually demanded pages")
             await boundedCatalogue.refreshCatalog("", more: true)
             check(try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count == readsAtLimit
                   && boundedCatalogue.catalogError == nil,
@@ -918,6 +938,29 @@ enum NativeChecks {
             check(partialFeed.gamePassProductIDs.isEmpty && partialFeed.gamePassProducts.isEmpty
                   && partialFeed.gamePassCatalogError == nil && !partialFeed.gamePassCatalogLoading,
                   "SDD-LIB-06: disconnect retires prior catalog scope and transient refresh state")
+
+            let partialRetry = session("discoverypartialretry")
+            await partialRetry.connect()
+            await partialRetry.refreshCatalog("")
+            let classics = partialRetry.products
+            let classicsFacts = Dictionary(uniqueKeysWithValues: classics.map {
+                ($0.id, LibraryCatalogFacts(genres: ["Classics"], isBaseGame: true))
+            })
+            let genreSelection = DiscoverSelection()
+            genreSelection.genre = "Classics"
+            check(classics.count == 6 && !partialRetry.discoveryFailures.isEmpty,
+                  "REQ-81: Reproduce six useful games plus partial-results Retry")
+            await partialRetry.refreshCatalog("")
+            let retryKey = CatalogProjectionKey(accountHash: nil, query: "", owned: [],
+                products: partialRetry.products, gamePass: partialRetry.gamePassProducts,
+                gamePassIDs: partialRetry.gamePassProductIDs, installed: [], accessIsCurrent: false,
+                metadataRevision: 1, compatibility: [:], genre: genreSelection.genre, showsUnsupported: true)
+            let retryProjection = CatalogProjection(key: retryKey, facts: classicsFacts, isVisible: { _ in true })
+            check(partialRetry.products.count == 7 && retryProjection.visible.count == 6
+                  && genreSelection.genre == "Classics" && partialRetry.nextCursor != nil
+                  && !partialRetry.discoveryFailures.isEmpty,
+                  "REQ-81: Partial Retry retains all six Classics, genre intent and continuation instead of false Games(0)")
+            await partialRetry.disconnect()
 
             let feed = session("discoverypcflag")
             await feed.connect()
@@ -1327,7 +1370,10 @@ enum NativeChecks {
             check(false, (error as? LocalizedError)?.errorDescription
                   ?? "Native fixture regression did not complete: \(String(describing: error))")
         }
-        print("\(count) native session checks, \(failures) failures. Mock children only; no Keychain or Microsoft operation.")
+        let source = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_CHECK_CLI"] == nil
+            ? "Mock children only; no Keychain or Microsoft operation."
+            : "Mock fixtures plus neutral source CLI envelope; no account operations."
+        print("\(count) native session checks, \(failures) failures. \(source)")
         return failures == 0
     }
 

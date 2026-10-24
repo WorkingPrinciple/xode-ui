@@ -24,6 +24,14 @@ enum PresentationPerformanceChecks {
                 market: "US", language: "en-US", source: "SyntheticRenderOnly", pcCandidate: true)
         }
         let owned = products.prefix(12).map { PCGame(product: $0) }
+        check(DiscoverBrowse.admittedIDs(products, limit: 16) == products.prefix(16).map(\.id),
+              "REQ-81/82: Initial metadata admission uses sixteen ordered public IDs, never all Library games")
+        check(DiscoverBrowse.admittedIDs(products, limit: 32).count == 32,
+              "REQ-81: One explicit demand admits one further sixteen-game page")
+        check(SubscriberBenefits.officialURL.scheme == "https"
+              && SubscriberBenefits.officialURL.host == "www.xbox.com"
+              && SubscriberBenefits.officialURL.path == "/xbox-game-pass/in-game-benefits",
+              "REQ-83: Unavailable free-to-keep offers route only to official benefits guidance, not fabricated claim cards")
         let facts = Dictionary(uniqueKeysWithValues: products.map {
             ($0.id, LibraryCatalogFacts(genres: [], isBaseGame: true))
         })
@@ -161,7 +169,13 @@ enum PresentationPerformanceChecks {
             let key = CatalogProjectionKey(accountHash: nil, query: "", owned: owned,
                 products: products, gamePass: [], gamePassIDs: [], installed: installed, accessIsCurrent: true,
                 metadataRevision: 0, compatibility: [:], genre: nil, showsUnsupported: true)
-            for implementation in ["baseline", "indexed-cold", "indexed-warm"] {
+            for implementation in ["baseline", "indexed-cold", "indexed-warm", "bounded-first-view"] {
+              let evaluatedKey = implementation == "bounded-first-view"
+                ? CatalogProjectionKey(accountHash: nil, query: "", owned: owned,
+                    products: Array(products.prefix(16)), gamePass: [], gamePassIDs: [],
+                    installed: installed, accessIsCurrent: true, metadataRevision: 0,
+                    compatibility: [:], genre: nil, showsUnsupported: true)
+                : key
               let cache = PresentationCache<CatalogProjectionKey, CatalogProjection>(empty: .empty)
               if implementation == "indexed-warm" {
                   cache.prepare(key) { CatalogProjection(key: key, facts: [:], isVisible: { _ in true }) }
@@ -180,8 +194,8 @@ enum PresentationPerformanceChecks {
                     checksum += installed.first(where: { $0.storeId == product.id })?.title.count ?? 0
                 }
                 } else {
-                    if implementation == "indexed-cold" { cache.clear(to: .empty) }
-                    cache.prepare(key) { CatalogProjection(key: key, facts: [:], isVisible: { _ in true }) }
+                    if implementation != "indexed-warm" { cache.clear(to: .empty) }
+                    cache.prepare(evaluatedKey) { CatalogProjection(key: evaluatedKey, facts: [:], isVisible: { _ in true }) }
                     let projection = cache.current
                     for product in projection.index.results.storeProducts {
                         checksum += projection.index.games[product.id]?.pc?.title.count ?? 0
@@ -195,8 +209,9 @@ enum PresentationPerformanceChecks {
             let result: [String: Any] = [
                 "kind": "synthetic-discover-card-preparation", "implementation": implementation,
                 "items": count, "samples": samples.count, "medianMS": (samples[9] + samples[10]) / 2, "p95MS": samples[18],
+                "admittedProducts": evaluatedKey.products.count,
                 "worstMS": samples.last!, "resultBuildsPerEvaluation":
-                    implementation == "baseline" ? count + 1 : implementation == "indexed-cold" ? 1 : 0,
+                    implementation == "baseline" ? count + 1 : implementation == "indexed-warm" ? 0 : 1,
                 "installedComparisonsPerEvaluation": implementation == "baseline" ? count * (count + 1) / 2 : 0,
                 "projectionBuilds": cache.builds,
                 "checksum": checksum, "renderOnlyNotWireCoverage": true,
