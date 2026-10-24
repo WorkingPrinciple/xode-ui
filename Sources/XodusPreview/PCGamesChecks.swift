@@ -632,7 +632,14 @@ enum PCGamesChecks {
             controller.refresh()
             check(!controller.accessIsCurrent,
                   "SDD-LIB-06: refresh in flight cannot authorize new installs")
+            check(controller.busy && controller.representedGames.map(\.id) == [first]
+                  && !LibraryLoadingPresentation.showsPlaceholders(library: controller,
+                      hasUsableContent: !controller.representedGames.isEmpty),
+                  "REQ-75: A real warm refresh keeps the existing title and never replaces it with skeletons (\(mode))")
             await controller.waitForOperation()
+            check(!controller.busy && !LibraryLoadingPresentation.showsPlaceholders(library: controller,
+                hasUsableContent: !controller.representedGames.isEmpty),
+                  "REQ-75: Refresh completion/error/removal retires placeholders without a fabricated loading interval (\(mode))")
             if mode == "partial" {
                 check(controller.snapshot?.games.map(\.id) == [first] && !controller.accessIsCurrent
                       && controller.error != nil && !controller.needsSignIn,
@@ -695,7 +702,15 @@ enum PCGamesChecks {
             try page([item(first)]), try response(["Products": [catalogProduct(first)]])])
         let automatic = PCGamesController(store: autoStore, client: PCGamesClient(transport: autoTransport))
         await automatic.loadOnAppear()
+        check(automatic.busy && LibraryLoadingPresentation.showsPlaceholders(library: automatic,
+                hasUsableContent: !automatic.representedGames.isEmpty),
+              "REQ-75: An actual cold account load reserves collection geometry before its transport completes")
+        check(!LibraryLoadingPresentation.showsPlaceholders(library: automatic, hasUsableContent: true),
+              "REQ-75: Local installed content prevents cold placeholders during the same account request")
         await automatic.waitForOperation()
+        check(!automatic.busy && !LibraryLoadingPresentation.showsPlaceholders(library: automatic,
+                hasUsableContent: !automatic.representedGames.isEmpty),
+              "REQ-75: Real successful collection completion retires cold placeholders immediately")
         await automatic.loadOnAppear()
         let automaticReads = await autoStore.reads
         check(automatic.snapshot?.games.map(\.id) == [first] && automaticReads == 1 && !automatic.busy,
@@ -713,6 +728,8 @@ enum PCGamesChecks {
             retry.refresh()
             check(!retry.busy && !retry.accessIsCurrent,
                   "F3: Presence restoration deduplicates reentry and fences sign-in/library work")
+            check(LibraryLoadingPresentation.showsPlaceholders(library: retry, hasUsableContent: false),
+                  "REQ-75: Pending saved-sign-in restoration reserves collection geometry rather than showing empty success")
             await restoration.value
             let failedChecks = await retryStore.presenceChecks
             let failedReads = await retryStore.reads
@@ -721,6 +738,8 @@ enum PCGamesChecks {
                   && retry.error == PCGamesError.credentialBrokerUnavailable.localizedDescription
                   && failedChecks == 1 && failedReads == 0 && failedRequests.isEmpty,
                   "F3: Failed presence/metadata stage \(stage) is unavailable, not signed out or partially admitted")
+            check(!LibraryLoadingPresentation.showsPlaceholders(library: retry, hasUsableContent: false),
+                  "REQ-75: Actual credential-restoration failure removes placeholders for explicit retry")
             retry.signIn()
             retry.refresh()
             check(!retry.busy, "F3: Unavailable presence cannot start OAuth or read a saved token")

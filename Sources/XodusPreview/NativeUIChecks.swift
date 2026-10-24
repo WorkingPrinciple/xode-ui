@@ -6,6 +6,7 @@ import XodusCore
 @MainActor
 enum NativeUIChecks {
     static func run(check: (Bool, String) -> Void) {
+        checkLoadingPresentation(check: check)
         checkActionExtentObservation(check: check)
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
@@ -719,6 +720,48 @@ enum NativeUIChecks {
     private static func ancestors(of view: NSView) -> [NSView] {
         guard let parent = view.superview else { return [] }
         return [parent] + ancestors(of: parent)
+    }
+
+    private static func checkLoadingPresentation(check: (Bool, String) -> Void) {
+        for pending in [false, true] {
+            for content in [false, true] {
+                for failed in [false, true] {
+                    for accountAction in [false, true] {
+                        for query in ["", "mortis"] {
+                            let actual = LibraryLoadingPresentation.showsPlaceholders(pending: pending,
+                                hasUsableContent: content, failed: failed,
+                                requiresAccountAction: accountAction, query: query)
+                            check(actual == (pending && !content && !failed && !accountAction && query.isEmpty),
+                                  "REQ-75: Cold placeholders pending=\(pending) content=\(content) error=\(failed) consent=\(accountAction) query=\(query)")
+                        }
+                    }
+                }
+            }
+        }
+        check(GameLaunchPresentation.title(game: "Neutral game", stopping: false, checking: true, started: false)
+                == "Checking Neutral game"
+              && GameLaunchPresentation.title(game: "Neutral game", stopping: false, checking: false, started: false)
+                == "Preparing Neutral game"
+              && GameLaunchPresentation.title(game: "Neutral game", stopping: false, checking: false, started: true)
+                == "Opening Neutral game"
+              && GameLaunchPresentation.title(game: "Neutral game", stopping: true, checking: true, started: true)
+                == "Stopping Neutral game",
+              "REQ-75: Actual launch facts name checking/preparation/opening/stop without invented progress or success")
+        for size in [CGSize(width: 820, height: 600), CGSize(width: 1440, height: 874),
+                     CGSize(width: 1619, height: 1231)] {
+            let host = NSHostingView(rootView: ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    OdeLoadingStatus(title: "Loading your PC games")
+                    LibraryLoadingPlaceholders()
+                }.padding(56)
+            })
+            host.sizingOptions = []
+            host.frame = CGRect(origin: .zero, size: size)
+            host.layoutSubtreeIfNeeded()
+            check(host.window == nil && host.fittingSize.width <= size.width + 1
+                  && descendants(of: host).compactMap { $0 as? NSButton }.isEmpty,
+                  "REQ-75: Static placeholders fit \(Int(size.width))x\(Int(size.height)) without window or actions")
+        }
     }
 
     private static func checkActionExtentObservation(check: (Bool, String) -> Void) {

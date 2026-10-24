@@ -48,6 +48,29 @@ Use one batched capture round, fix confirmed defects coherently and confirm once
 **Limits/stop:** an injected appearance is not an observed OS preference change;
 do not expand into a redesign or indefinite polishing.
 
+### Loading transitions
+
+Verify startup/account checking separately from cold Library collection loading,
+warm refresh and a title's launch. Cold, unfiltered Library loading without usable
+account or local rows reserves the native card grid using static, noninteractive
+placeholders. Pending requests must not suggest an empty collection or require
+another sign-in. Existing local/account rows remain visible during a warm refresh;
+errors, account approval and search results replace placeholders, not the content
+they qualify. Observe immediate retirement on completion, failure and cancellation,
+without a minimum display interval.
+
+With the native lease admitted, inspect the branded startup and welcome controls,
+the cold grid and a warm refresh at constrained/reference bounds in both
+appearances. Check keyboard/VoiceOver navigation: decorative placeholders must not
+be exposed as games or actions; the status and consent/retry controls must remain
+available. Check Reduce Motion without changing an owner's global settings unless
+separately authorized. A supported launch must name its title and actual
+checking/preparation/opening/stopping state; existing error, retry, technical
+details and Stop remain reachable. Never dismiss or cover a game's own failure.
+Do not launch a real game or change accounts merely to manufacture this evidence
+without the corresponding authorization. Offscreen checks are source evidence,
+not installed visual acceptance.
+
 ## Continuity
 
 **Trigger:** navigation, selection, filtering or retained-host changes.

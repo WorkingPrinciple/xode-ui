@@ -111,9 +111,7 @@ struct LiveRootView: View {
         ScrollViewReader { proxy in
         Group {
             if requiresAccountGate {
-                Text("Ode to X").font(.title.bold()).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(nsColor: .windowBackgroundColor))
+                OdeStartupBackdrop()
                     .accessibilityIdentifier("xodus.welcome.background")
             } else {
                 ZStack {

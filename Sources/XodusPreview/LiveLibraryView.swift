@@ -69,6 +69,14 @@ struct LiveLibraryView: View {
     private var accountCollectionIncomplete: Bool {
         !library.accessIsCurrent || library.snapshot?.isComplete != true
     }
+    private var showsLoadingPlaceholders: Bool {
+        LibraryLoadingPresentation.showsPlaceholders(
+            library: library, loadingInstalled: installed.loading,
+            checkingAccess: installed.productAccess.checking,
+            hasUsableContent: !collection.isEmpty || !localRecords.isEmpty
+                || (showsNativeMinecraft && [.ready, .repair].contains(nativeMinecraft.installation.state)),
+            query: query) && installed.error == nil
+    }
     private var purchaseNotice: String? {
         guard filter == .owned else { return nil }
         if accountCollectionIncomplete {
@@ -171,9 +179,11 @@ struct LiveLibraryView: View {
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("xodus.library.purchaseProvenance")
                 }
-                if installed.loading { ProgressView("Loading installed games") }
-                if installed.productAccess.checking { ProgressView("Loading your games").controlSize(.small) }
-                if visible.isEmpty && !showsNativeMinecraft && visibleLocalRecords.isEmpty {
+                if installed.loading { OdeLoadingStatus(title: "Loading installed games") }
+                if installed.productAccess.checking { OdeLoadingStatus(title: "Checking game access") }
+                if showsLoadingPlaceholders {
+                    LibraryLoadingPlaceholders()
+                } else if visible.isEmpty && !showsNativeMinecraft && visibleLocalRecords.isEmpty {
                     if [.owned, .gamePass].contains(filter), accountCollectionIncomplete {
                         ContentUnavailableView {
                             Label(filter == .owned ? "Purchased library unavailable" : "Game Pass library unavailable",

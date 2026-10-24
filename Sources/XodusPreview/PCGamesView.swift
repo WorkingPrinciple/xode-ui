@@ -57,6 +57,10 @@ struct PCGamesView: View {
                         .disabled(library.busy || library.restoringPresence)
                         .accessibilityIdentifier("xodus.pcGames.retryPresence")
                 }
+            } else if library.restoringPresence {
+                OdeLoadingStatus(title: "Checking your saved sign-in")
+            } else if library.busy && !library.hasSavedSignIn && !library.needsSignIn && !library.needsKeychainApproval {
+                OdeLoadingStatus(title: "Loading your PC games")
             } else if !library.hasSavedSignIn || library.needsSignIn {
                 ContentUnavailableView {
                     Label("Sign in to see your PC games", systemImage: "gamecontroller")
@@ -90,7 +94,9 @@ struct PCGamesView: View {
                     Text("Manage sign-in in Account").font(.callout).foregroundStyle(.secondary)
                 } }
                 if library.busy && !library.approvingKeychain {
-                    ProgressView("Loading your PC games").controlSize(.small)
+                    OdeLoadingStatus(title: library.representedGames.isEmpty
+                        ? "Loading your PC games" : "Refreshing your PC games",
+                        message: library.representedGames.isEmpty ? nil : "Your available games stay visible while we check for changes.")
                         .accessibilityIdentifier("xodus.pcGames.loading")
                 }
                 if let snapshot = library.snapshot {

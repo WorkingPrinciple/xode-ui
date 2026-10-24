@@ -47,10 +47,8 @@ struct LiveWelcomeView: View {
                         .accessibilityIdentifier("xodus.welcome.signIn")
                     }
                     if session.connectionTransitioning || session.accountBusy {
-                        ProgressView("Checking Xbox Live").controlSize(.small)
-                        Text("If macOS asks for Keychain access, the request is to check or save this Ode to X sign-in.")
-                            .font(.callout).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                        OdeLoadingStatus(title: "Checking Xbox Live",
+                            message: "If macOS asks for Keychain access, the request is to check or save this Ode to X sign-in.")
                             .frame(maxWidth: 360)
                     }
                     if operations.hasDownloadStatus {

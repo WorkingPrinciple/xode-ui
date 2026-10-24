@@ -297,6 +297,10 @@ enum InstalledGameChecks {
               "AC1.3: A short-lived Xodus-launched failure records its start and measured lifetime atomically")
         check(library.playErrors[game.id] == "The game launcher reported an error (code 3)." && library.playState == nil,
               "Nonzero fake session exit returns to Play with exact code and retry message")
+        let failedButton = InstalledPlayButton(library: library,
+            operations: GameOperationsController(installed: library), game: failedGame)
+        check(failedButton.loadingTitle == nil && failedButton.title == "Try again",
+              "REQ-75: A real launcher failure retires loading and exposes retry while preserving its exact error")
         check(library.playLogs[game.id] == nil, "AC2.3: A nonzero session without its stderr file offers no Show log")
         let logs = root.appendingPathComponent("logs")
         try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: false)
@@ -322,8 +326,14 @@ enum InstalledGameChecks {
         await library.play(slowGame)
         check(library.playState == .launching && library.runningGameID == slowGame.id,
               "A live fake launcher first publishes Launching")
+        let launchingButton = InstalledPlayButton(library: library,
+            operations: GameOperationsController(installed: library), game: slowGame)
+        check(launchingButton.loadingTitle == "Opening \(slowGame.title)" && library.launchStarted,
+              "REQ-75: A started synthetic launcher presents title-specific opening status, not game readiness")
         await library.play(slowGame)
         try await wait { library.playState == .playing }
+        check(launchingButton.loadingTitle == nil && launchingButton.title == "Stop",
+              "REQ-75: Actual launch transition retires loading and keeps the supported Stop action")
         await library.waitForSessionPersistence()
         check(try await store.load().first?.lastPlayedAt == library.games.first?.lastPlayedAt
               && library.games.first?.lastSessionSeconds == nil && library.continuingGame?.id == slowGame.id,
