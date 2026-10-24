@@ -457,7 +457,8 @@ struct NativeLaunchConfiguration {
                         defaults: UserDefaults = .standard,
                         runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
                         shims: NativeShimReference = .approved,
-                        provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil) throws -> Self {
+                        provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
+                        detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
@@ -515,6 +516,9 @@ struct NativeLaunchConfiguration {
         }
         let engineName = entry.name
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
+            throw NativeLaunchError.engineUnavailable
+        }
+        if entry.kind.lowercased() == "crossover", !detectCrossOver().isVerified {
             throw NativeLaunchError.engineUnavailable
         }
         let prefix = qualified?.prefix ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(

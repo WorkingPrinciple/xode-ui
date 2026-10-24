@@ -169,6 +169,13 @@ No UWP/EAppx support status or installation policy is changed.
 
 Official, separately installed CrossOver is required for CrossOver launch routes,
 not a universal dependency for every configured engine or game.
+The account-bound resolver reuses the current `CrossOverDetector` observation
+when the final selected registry record has `kind:"crossover"` (case-insensitive),
+including recipe-pinned and fallback selections. Missing, unverified or incomplete
+observations refuse that route before prefix resolution; they do not substitute
+another engine. This app dependency check does not authenticate the registry
+executable as part of the detected bundle or replace backend artifact validation.
+Generic Wine and Calimocho admission remain independent of this CrossOver check.
 GPTK3/GPTK4 and user-selected standalone/source-built Wine remain Experimental
 tracks; any explicit graphics override is also Experimental. The UI requires
 acknowledgement before their pure planning, reset by configuration or observed

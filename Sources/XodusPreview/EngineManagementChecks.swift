@@ -215,6 +215,32 @@ enum EngineManagementChecks {
         defaults.set(declaredRegistry.path, forKey: "Xodus.lifecycle.registry")
         let game = InstalledGame(id: UUID(), title: "Neutral", identityName: "Neutral", version: "1.0.0.0",
             storeId: "FIXTURE00001", folder: root.path, launcher: "", importedAt: Date(), usesNativeLifecycle: true)
+        try bytes.write(to: registryURL)
+        defaults.set(registryURL.path, forKey: "Xodus.lifecycle.registry")
+        defaults.set("cross", forKey: "Xodus.lifecycle.engine.crossover")
+        let verifiedCrossOver = CrossOverDependencyState.installed(.init(
+            location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
+            version: "26.3", buildVersion: "26.3.0.39832"))
+        for state in [CrossOverDependencyState.absent, .unverified, .notChecked, .checking, verifiedCrossOver] {
+            for recipePinned in [false, true] {
+                do {
+                    let resolved = try NativeLaunchConfiguration.resolve(game: game,
+                        provider: recipePinned ? nil : .crossover, defaults: defaults, runtime: runtime,
+                        provenEngine: recipePinned ? "cross" : nil, detectCrossOver: { state })
+                    check(state.isVerified && resolved.engine == "cross",
+                          "REQ79 CrossOver resolver requires current verified dependency for \(recipePinned ? "pinned" : "explicit") route: \(state.title)")
+                } catch NativeLaunchError.engineUnavailable {
+                    check(!state.isVerified,
+                          "REQ79 CrossOver resolver refuses unavailable dependency without fallback: \(state.title)")
+                }
+            }
+            defaults.set("fixture", forKey: "Xodus.lifecycle.engine.standaloneWine")
+            let generic = try NativeLaunchConfiguration.resolve(game: game, provider: .standaloneWine,
+                defaults: defaults, runtime: runtime, detectCrossOver: { state })
+            check(generic.engine == "fixture",
+                  "REQ79 generic Wine resolution is independent of CrossOver dependency: \(state.title)")
+        }
+        defaults.set(declaredRegistry.path, forKey: "Xodus.lifecycle.registry")
         do {
             _ = try NativeLaunchConfiguration.resolve(game: game, provider: nil, defaults: defaults,
                                                       runtime: runtime, provenEngine: "candidate")
