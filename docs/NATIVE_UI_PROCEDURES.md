@@ -110,6 +110,16 @@ to manufacture a cold sample. Record overlapping builds or probes as confounders
 Targets such as 2.5 seconds cold or 200 milliseconds warm remain unproven until
 the corresponding end-to-end native measurement exists.
 
+An installed `outputOverflow` is not evidence of another running copy or an
+AuthHost failure. The management OSLog category records a count-only overflow
+origin: `diagnosticLifetime`, `stdoutQueue`, `stderrQueue`, `eventQueue` or
+`requestBudget`. Preserve the first origin and its interval before choosing a
+fix; the owned management child's exit can be a consequence of transport
+retirement. The existing 1MiB diagnostic lifetime, 128-chunk/event queues and
+64-pending-request limits remain unchanged. Source-only reproductions run with
+`swift run XodusManagementChecks --overflow-checks`; they distinguish candidate
+paths but do not identify the origin of a prior uninstrumented installed failure.
+
 For keyboard acceptance, read the current keyboard-navigation setting without
 changing it. Poster focus participation is explicit, including browse Library,
 Continue Playing and Discover, not only search. Under `AppleKeyboardUIMode=0`,

@@ -19,6 +19,17 @@ public struct BackendConfiguration: Sendable {
 }
 
 public actor ManagementClient {
+    enum OverflowOrigin: String, Sendable {
+        case requestBudget, eventQueue, diagnosticLifetime, stdoutQueue, stderrQueue
+    }
+
+    struct OverflowFailure: Error {
+        let origin: OverflowOrigin
+        let count: Int
+    }
+
+    private(set) var lastOverflow: OverflowFailure?
+    var pendingRequestCount: Int { pending.count }
     public nonisolated let events: AsyncThrowingStream<ManagementEvent, Error>
     private let eventContinuation: AsyncThrowingStream<ManagementEvent, Error>.Continuation
     private let validator: ContractValidator
@@ -106,7 +117,7 @@ public actor ManagementClient {
         stdin = input.fileHandleForWriting
         logger.info("Management process started.")
 
-        let stdout = Self.chunks(output.fileHandleForReading, label: "Xodus.management.stdout")
+        let stdout = Self.chunks(output.fileHandleForReading, origin: .stdoutQueue)
         outputTask = Task { [weak self] in
             do {
                 for try await bytes in stdout {
@@ -115,17 +126,17 @@ public actor ManagementClient {
                 }
                 await self?.outputEnded()
             } catch {
-                await self?.fail(Self.safeError(error))
+                await self?.transportFailed(error)
             }
         }
-        let stderr = Self.chunks(diagnostics.fileHandleForReading, label: "Xodus.management.stderr")
+        let stderr = Self.chunks(diagnostics.fileHandleForReading, origin: .stderrQueue)
         diagnosticTask = Task { [weak self] in
             do {
                 for try await bytes in stderr {
                     guard let self else { return }
                     try await self.consumeDiagnostics(bytes)
                 }
-            } catch { await self?.fail(Self.safeError(error)) }
+            } catch { await self?.transportFailed(error) }
         }
         do {
             let result = try await request(.hello, params: [
@@ -156,7 +167,9 @@ public actor ManagementClient {
             guard let hello else { throw ManagementError.disconnected }
             guard hello.supports(command) else { throw ManagementError.capabilityMissing(command.rawValue) }
         } else if hello != nil { throw ManagementError.alreadyConnected }
-        guard pending.count < 64, usedIDs.count < 100_000 else { throw ManagementError.outputOverflow }
+        guard pending.count < 64, usedIDs.count < 100_000 else {
+            throw overflow(.requestBudget, count: pending.count >= 64 ? pending.count : usedIDs.count)
+        }
         let id = UUID().uuidString
         let frame = JSONValue.object([
             "kind": .string("request"), "protocol": .object(["major": .integer(1), "minor": .integer(0)]),
@@ -233,7 +246,7 @@ public actor ManagementClient {
                 guard event.sessionID == hello.sessionID,
                       event.jobID == event.data.jobID, event.revision == event.data.revision,
                       event.requestID == event.data.requestID else { throw ManagementError.invalidEvent }
-                if case .dropped = eventContinuation.yield(event) { throw ManagementError.outputOverflow }
+                try enqueueEvent(event)
             default: throw ManagementError.invalidFrame
             }
         }
@@ -303,9 +316,11 @@ public actor ManagementClient {
         }
     }
 
-    private func consumeDiagnostics(_ bytes: Data) throws {
+    func consumeDiagnostics(_ bytes: Data) throws {
         guard !stopped else { return }
-        guard bytes.count <= JSONLineFramer.maximumBytes - diagnosticBytes else { throw ManagementError.outputOverflow }
+        guard bytes.count <= JSONLineFramer.maximumBytes - diagnosticBytes else {
+            throw overflow(.diagnosticLifetime, count: diagnosticBytes + bytes.count)
+        }
         diagnosticBytes += bytes.count
         for line in collectionDiagnostics.append(bytes) {
             let reads = pending.values.compactMap(\.libraryReadNumber)
@@ -314,6 +329,29 @@ public actor ManagementClient {
             } else {
                 logger.info("Collection counts captured: uncorrelated; \(line, privacy: .public)")
             }
+        }
+    }
+
+    func enqueueEvent(_ event: ManagementEvent) throws {
+        if case .dropped = eventContinuation.yield(event) {
+            throw overflow(.eventQueue, count: 129)
+        }
+    }
+
+    private func overflow(_ origin: OverflowOrigin, count: Int) -> ManagementError {
+        if lastOverflow == nil {
+            lastOverflow = OverflowFailure(origin: origin, count: count)
+            logger.error("Management overflow: origin=\(origin.rawValue, privacy: .public) count=\(count, privacy: .public)")
+        }
+        return .outputOverflow
+    }
+
+    private func transportFailed(_ error: Error) {
+        guard !stopped else { return }
+        if let failure = error as? OverflowFailure {
+            fail(overflow(failure.origin, count: failure.count))
+        } else {
+            fail(Self.safeError(error))
         }
     }
 
@@ -408,9 +446,9 @@ public actor ManagementClient {
         (error as? ManagementError) ?? .disconnected
     }
 
-    private static func chunks(_ handle: FileHandle, label: String) -> AsyncThrowingStream<Data, Error> {
+    static func chunks(_ handle: FileHandle, origin: OverflowOrigin) -> AsyncThrowingStream<Data, Error> {
         AsyncThrowingStream(bufferingPolicy: .bufferingOldest(128)) { continuation in
-            DispatchQueue(label: label).async {
+            DispatchQueue(label: "Xodus.management.\(origin.rawValue)").async {
                 defer { try? handle.close() }
                 var buffer = [UInt8](repeating: 0, count: 8192)
                 while true {
@@ -425,11 +463,11 @@ public actor ManagementClient {
                     switch continuation.yield(Data(buffer.prefix(count))) {
                     case .enqueued: break
                     case .dropped:
-                        continuation.finish(throwing: ManagementError.outputOverflow)
+                        continuation.finish(throwing: OverflowFailure(origin: origin, count: 129))
                         return
                     case .terminated: return
                     @unknown default:
-                        continuation.finish(throwing: ManagementError.outputOverflow)
+                        continuation.finish(throwing: OverflowFailure(origin: origin, count: 129))
                         return
                     }
                 }

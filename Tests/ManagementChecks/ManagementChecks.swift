@@ -21,6 +21,8 @@ enum ManagementChecks {
                     discover: CommandLine.arguments.contains("--probe-discovery"),
                     query: CommandLine.arguments.contains("--probe-query"),
                     inspect: CommandLine.arguments.contains("--probe-inspect"))
+            } else if CommandLine.arguments.contains("--overflow-checks") {
+                try await checks.overflowChecks()
             } else if let index = CommandLine.arguments.firstIndex(of: "--contract-schema-checks") {
                 guard CommandLine.arguments.indices.contains(index + 1) else {
                     throw ManagementError.invalidPayload
@@ -67,6 +69,110 @@ actor Checks {
     func finish() -> Bool {
         print("\(count) management checks, \(failures) failures.")
         return failures == 0
+    }
+
+    func overflowChecks() async throws {
+        let diagnostics = try ManagementClient()
+        for _ in 0..<256 {
+            try await diagnostics.consumeDiagnostics(Data(repeating: 10, count: 4096))
+        }
+        check(await diagnostics.lastOverflow == nil,
+              "Cumulative diagnostics admit exactly the unchanged 1MiB lifetime boundary")
+        do {
+            try await diagnostics.consumeDiagnostics(Data([10]))
+            check(false, "Cumulative stderr overflow is distinguished")
+        } catch {
+            let failure = await diagnostics.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .diagnosticLifetime
+                  && failure?.count == JSONLineFramer.maximumBytes + 1,
+                  "Cumulative stderr overflow is distinguished without logging payload")
+        }
+        do {
+            try await diagnostics.consumeDiagnostics(Data([10, 10]))
+            check(false, "First overflow origin/count is retained once")
+        } catch {
+            check(await diagnostics.lastOverflow?.count == JSONLineFramer.maximumBytes + 1,
+                  "First overflow origin/count is retained once")
+        }
+        check(await diagnostics.close(), "Isolated diagnostic client closes")
+        let stderrClient = try ManagementClient()
+        _ = try await stderrClient.connect(mockConfiguration("diagnosticlifetime"))
+        do {
+            _ = try await stderrClient.request(.jobs)
+            check(false, "Actual fixture stderr lifetime overflow retires the owned transport")
+        } catch {
+            let failure = await stderrClient.lastOverflow
+            check(error as? ManagementError == .outputOverflow && failure?.origin == .diagnosticLifetime,
+                  "Actual fixture stderr lifetime overflow retires the owned transport")
+        }
+        check(await stderrClient.close(), "Owned cumulative-stderr fixture joins")
+
+        guard let eventValue = try fixture("positive").array?.first(where: { $0["kind"]?.string == "event" }) else {
+            throw ManagementError.invalidPayload
+        }
+        let event = try eventValue.decode(ManagementEvent.self)
+        let events = try ManagementClient()
+        for _ in 0..<128 { try await events.enqueueEvent(event) }
+        do {
+            try await events.enqueueEvent(event)
+            check(false, "Unread events retain their unchanged bounded queue")
+        } catch {
+            let failure = await events.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .eventQueue,
+                  "Unread events retain their unchanged bounded queue")
+        }
+        check(await events.close(), "Isolated event client closes")
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ManagementOverflowChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Owned overflow fixtures cleaned") }
+        }
+        for origin in [ManagementClient.OverflowOrigin.stdoutQueue, .stderrQueue] {
+            let file = root.appendingPathComponent(origin.rawValue)
+            try Data(repeating: 32, count: 2 * JSONLineFramer.maximumBytes).write(to: file)
+            let handle = try FileHandle(forReadingFrom: file)
+            let stream = ManagementClient.chunks(handle, origin: origin)
+            let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while (try? handle.offset()) != nil, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            do {
+                for try await _ in stream {}
+                check(false, "Burst \(origin.rawValue) queue overflow is distinguished")
+            } catch let failure as ManagementClient.OverflowFailure {
+                check(failure.origin == origin && failure.count == 129,
+                      "Burst \(origin.rawValue) queue overflow is distinguished")
+            }
+        }
+
+        let requests = try ManagementClient()
+        _ = try await requests.connect(mockConfiguration("requestpressure"))
+        let held = (0..<64).map { _ in Task {
+            do { _ = try await requests.request(.jobs); return false }
+            catch { return error as? ManagementError == .disconnected }
+        } }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while await requests.pendingRequestCount < 64, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(await requests.pendingRequestCount == 64, "Fixture holds sixty-four actual requests")
+        do {
+            _ = try await requests.request(.jobs)
+            check(false, "Request pressure is distinguished before dispatch")
+        } catch {
+            let failure = await requests.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .requestBudget,
+                  "Request pressure is distinguished before dispatch")
+        }
+        check(await requests.close(), "Owned request-pressure fixture closes")
+        for task in held { check(await task.value, "Held read terminates on owned close") }
     }
 
     func contractSchemaChecks(canonicalURL: URL) throws {
@@ -146,6 +252,7 @@ actor Checks {
     }
 
     func run() async throws {
+        try await overflowChecks()
         try odeAccountChecks()
         try accountTierChecks()
         try registryDevelopmentChecks()
@@ -1195,6 +1302,13 @@ enum MockBackend {
                     if scenario == "mismatch" { result["protocol"] = .object(["major": .integer(2), "minor": .integer(0)]) }
                     try emit(.object(result))
                 } else {
+                    if scenario == "requestpressure", command == ManagementCommand.jobs.rawValue { continue }
+                    if scenario == "diagnosticlifetime", command == ManagementCommand.jobs.rawValue {
+                        for _ in 0..<257 {
+                            try FileHandle.standardError.write(contentsOf: Data(repeating: 10, count: 4096))
+                            usleep(2_000)
+                        }
+                    }
                     if scenario.hasPrefix("ode") {
                         try trace(command)
                         if command == "auth.status" {
