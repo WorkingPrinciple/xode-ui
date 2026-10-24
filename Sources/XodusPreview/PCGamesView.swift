@@ -3,6 +3,7 @@ import SwiftUI
 import XodusManagement
 
 struct PCGamesView: View {
+    @EnvironmentObject private var session: LiveSession
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
@@ -110,6 +111,7 @@ struct PCGamesView: View {
                             ForEach(visibleGames) { game in
                                 PCGameTile(game: game, installed: installed, operations: operations,
                                            allowsArtworkLoading: allowsStartupTasks,
+                                           viewDetails: { open(game) },
                                            accessIsCurrent: library.accessIsCurrent)
                             }
 
@@ -168,6 +170,15 @@ struct PCGamesView: View {
             .interactiveDismissDisabled(library.busy)
         }
     }
+    private func open(_ game: PCGame) {
+        do {
+            session.selectedProduct = try LibraryGame.details(id: game.id, title: game.title,
+                artwork: game.artwork.map { [$0] } ?? [], market: session.market, language: session.language,
+                source: "AccountPCLibrary:identityOnly", pcCandidate: false)
+        } catch {
+            session.errorMessage = "Game details couldn't be opened. Your games haven't changed."
+        }
+    }
 }
 
 struct PCGameTile: View {
@@ -177,7 +188,7 @@ struct PCGameTile: View {
     @ObservedObject var catalog = LibraryCatalogArtwork.shared
     var allowsArtworkLoading = true
     var gamePass = false
-    var viewDetails: (() -> Void)?
+    let viewDetails: () -> Void
     var accessIsCurrent = true
 
     private var unsupportedIssues: [LibraryCompatibilityIssue] {
@@ -189,7 +200,7 @@ struct PCGameTile: View {
     var body: some View {
         GameCard(title: game.title,
                  gameFacts: GameFacts(pc: game, gamePass: gamePass, accessIsCurrent: accessIsCurrent),
-                 alwaysShowsActions: true, open: { viewDetails?() }) {
+                 open: viewDetails) {
             CatalogArtworkView(reference: allowsArtworkLoading ? game.artwork : nil,
                                status: game.artwork == nil ? .absent : .available, contentMode: .fit)
         } status: {
@@ -201,13 +212,6 @@ struct PCGameTile: View {
             } else {
                 Text("Not installed").font(.callout).foregroundStyle(.secondary)
             }
-        } actions: {
-            if unsupportedIssues.isEmpty, let match = PCGamesController.installedMatch(game, in: installed.games) {
-                InstalledPlayButton(library: installed, operations: operations, game: match)
-            } else if unsupportedIssues.isEmpty {
-                GameInstallAction(game: game, operations: operations, enabled: accessIsCurrent)
-            }
-            if let viewDetails { Button("View game", action: viewDetails) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)

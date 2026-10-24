@@ -147,7 +147,7 @@ enum CatalogDetailLoadingChecks {
             Color.clear.frame(height: 80)
         } status: {
             Label("Installed", systemImage: "internaldrive").font(.caption)
-        } actions: { EmptyView() }
+        }
         let catalogue = LiveCatalogView(library: PCGamesController(), installed: installed,
             operations: operations, query: "", allowsArtworkLoading: false,
             allowsStartupTasks: false, allowsHeroAnimation: false, clearSearch: {})
@@ -230,7 +230,7 @@ enum CatalogDetailLoadingChecks {
         let game = PCGame(id: image.product.id, title: image.product.title, artwork: nil,
                           acquisitionKind: .purchased)
         let card = PCGameTile(game: game, installed: installed, operations: operations,
-            catalog: catalogue, allowsArtworkLoading: false, accessIsCurrent: true)
+            catalog: catalogue, allowsArtworkLoading: false, viewDetails: {}, accessIsCurrent: true)
         let detail = LiveProductView(product: image.product, library: PCGamesController(),
             installedLibrary: installed, operations: operations, allowsStartupTasks: false,
             allowsArtworkLoading: false, catalog: catalogue).environmentObject(LiveSession())
@@ -253,9 +253,10 @@ enum CatalogDetailLoadingChecks {
             request.recognitionLevel = .accurate
             try VNImageRequestHandler(cgImage: image).perform([request])
             let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let showsInstall = labels.contains { $0.caseInsensitiveCompare("Install") == .orderedSame }
             check(labels.contains(where: { $0.localizedCaseInsensitiveContains("Synthetic game") })
-                  && labels.contains(where: { $0.localizedCaseInsensitiveContains("Install") }),
-                  "REQ-61: Priced-fixture \(name) renders its title and retained Install control (non-vacuous pixel guard)")
+                  && (name == "product detail" ? showsInstall : !showsInstall),
+                  "REQ-61/85: Priced-fixture \(name) retains its title and exposes Install only in details (non-vacuous pixel guard)")
             check(!labels.contains(where: {
                 let text = $0.lowercased()
                 return text.contains("$") || text.contains("19.99") || text.contains("9.99")

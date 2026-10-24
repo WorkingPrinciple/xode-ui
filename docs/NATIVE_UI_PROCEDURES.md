@@ -81,6 +81,35 @@ The separate next-game arrow remains a scrolling action, not duplicate navigatio
 Do not change the owner's scrollbar preference or hide indicators globally.
 Instance-local legacy checks are source evidence, not installed acceptance.
 
+### Detail-first shelf benchmark (REQ-84/85)
+
+Compare the actual Apple TV sidebar destination (not an empty purchased Movies
+library) with Ode's populated Library and Discover. Record exact PIDs, window
+IDs/bounds and bundle versions before scoped captures or input. Inspect neutral
+genre shelves and recorded Continue Playing groups; never infer a popularity
+ranking from their position. Posters have one named detail action and no action
+row, even on hover. Play/Install and native launcher recovery remain in details;
+compatibility, operation failures and account-access restrictions remain honest.
+Verify Return, context-menu View details, sheet dismissal and return focus,
+including Continue Playing's separate disclosure/next-card controls.
+
+For timing, use a finite sample (three warm tab/card transitions and a down/up
+scroll pair per app) during a coordinated quiet interval. Start a monotonic
+timer immediately before input and poll the smallest destination-specific AX
+marker that was absent before the action. For an Ode detail sheet, query only
+the window's immediate children for `AXSheet`; do not time a whole-library AX
+traversal. Record dispatch and marker times separately. Acknowledged scrollbar
+values are not painted-frame latency or sustained scrolling FPS. Likewise, AX
+availability is not compositor completion: retain scoped before/after captures
+and identify any transition/layout-shift observation separately. Discard stale
+markers, wrong-focus samples and uncertain geometry, not just slow samples.
+
+Already-running apps provide first-visit/warm observations, not cold launch or
+cold network/cache proof. Do not clear the owner's caches or restart apps just
+to manufacture a cold sample. Record overlapping builds or probes as confounders.
+Targets such as 2.5 seconds cold or 200 milliseconds warm remain unproven until
+the corresponding end-to-end native measurement exists.
+
 Playable heroes show account acquisition separately from public subscription
 catalog membership; the latter is not an active plan or satisfying entitlement.
 Installation/Play must never be used to infer either. Verify purchase,
