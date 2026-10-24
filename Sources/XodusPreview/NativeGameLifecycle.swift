@@ -193,6 +193,13 @@ final class NativeGameLifecycle {
             _ = try await Task.detached { try identity.validatedArguments() }.value
         }
         guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+        if launchArguments.contains("--expected-registry-sha256") {
+            let selection = try UserDefaults.standard.data(forKey: AdmittedEngineSelection.preferenceKey)
+                .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+            try await EngineInspectionClient().validateLaunch(configuration: configuration,
+                arguments: launchArguments, selection: selection)
+            guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+        }
         try GameScriptFiles.checkPath(gameDirectory, allowMissing: operation == "install")
         let state = stateRoot ?? Self.directory(runID: runID)
         try GameScriptFiles.checkPath(state, allowMissing: true)

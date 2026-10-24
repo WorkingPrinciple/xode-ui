@@ -599,7 +599,7 @@ struct EnginesView: View {
             Form {
                 RuntimeProviderSection(settings: state.runtimeSettings, backendPath: session.backendPath)
                 Section("Launch routing") {
-                    RuntimeInstallationPicker(settings: state.runtimeSettings)
+                    RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
                 }
             }
             .formStyle(.grouped)

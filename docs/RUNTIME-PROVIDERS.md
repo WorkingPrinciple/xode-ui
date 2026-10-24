@@ -1,6 +1,103 @@
 # Runtime provider configuration v1
 
+## Engine management source candidate (REQ-79/80)
+
+Settings now puts **Calimocho** and **CrossOver** first as provider choices to
+understand and acquire, not two simultaneous effective defaults. CrossOver's
+existing publisher-signature check reports observed version/build/location.
+Its Get action opens the [official CodeWeavers portal](https://www.codeweavers.com/crossover/download);
+Ode does not download, redistribute, purchase or accept a licence.
+Calimocho has no verified public binary distribution. Its
+[official source](https://github.com/dragoshont/calimocho) is guidance, not an
+installer. A source checkout or a Wine-looking filename never means installed.
+
+Registered engines are read locally from `Xodus.lifecycle.registry`. All
+records remain visible, including missing executables, failed/pending smoke
+tests and unsupported kinds. Versions/source URLs are explicitly declarations.
+Smoke tested means a local record reports pass and the executable is present;
+only the launch service verifies the complete registered artifacts. No provider
+row grants whole-provider game qualification. Refresh retires stale observations
+on errors and offers retry. Choosing a registry performs no installation.
+
+For account-bound native launches, `Xodus.lifecycle.engine.crossover` and
+`Xodus.lifecycle.engine.standaloneWine` select exact records of the matching
+kind. A CrossOver preference cannot silently point at generic free Wine.
+The existing optional `Xodus.defaultEngine` and per-game `engineOverride` remain
+in use. Pinned title recipes retain their exact engine/graphics binding; their
+existing precedence is not replaced by these preferences. Unpinned per-game
+choices override the default; a missing explicit record refuses launch.
+Legacy imported-game executable/bottle registrations remain separate and are
+labelled accordingly. No prefix, bottle or save is migrated by Settings.
+
+The separate, account-free **source-only** `engine-inspect` v1 consumer matches
+producer `ce6e6d56c880698303afdc587f7f65f09e284849`:
+`docs/contracts/engine-inspect-v1.schema.json` and `docs/LIFECYCLE-CLI.md` in the
+private backend repository. It is not a management operation or runtime-plan
+capability. `engine-inspect --contract-version 1` must explicitly advertise
+`engineAdmissionV1` before a registry inspection is attempted. The installed
+CLI3121 does not implement it and is not replaced by this work.
+
+An optional schema1 declaration
+`"provider":{"id":"calimocho","contract_version":1}` is **untrusted**.
+Only the supporting backend's independently reviewed admission manifest and
+complete artifact validation can return `admittedProvider:"calimocho"`.
+The production manifest is currently empty: there is no production-admitted
+Calimocho selection or downloadable release claimed here. Generic records,
+including existing source-built Wine records without a declaration, stay Wine.
+No substring heuristic, self-trusted manifest or app-only allowlist is used.
+
+A successful admitted selection persists the registry path and exact projection
+(registry SHA256, unique engine name, Wine/server SHA256, provider admission).
+The app binds to the bytes it actually decoded, re-inspects with the **actual
+launch executable and its paired identity** before lifecycle side effects, then
+passes `--expected-registry-sha256` to the supporting backend's shared launch
+validator. Stale/malformed tuples, capability failures and changed identities
+refuse launch; there is no fallback to CLI3121 or another engine. The inspector
+bounds stdout/stderr, deadline, cancellation and owned-child cleanup. These
+source checks do not constitute new-CLI delivery or Calimocho game acceptance.
+
+### Research and native proposal
+
+Reviewed 24 October 2026 against Heroic main
+[`509a34feea8541b73c928e289f2cf262d432db4a`](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/tree/509a34feea8541b73c928e289f2cf262d432db4a):
+
+- [Official Heroic feature documentation](https://heroicgameslauncher.com/docs/faq)
+  describes Wine Manager downloads and Wine Settings. Current
+  [manager code](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/backend/wine/manager/utils.ts)
+  reconciles cached releases with existing install directories and compatible
+  architectures; discovery and installation are separate observations.
+- [Downloader implementation](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/backend/wine/manager/downloader/main.ts)
+  has progress, unpacking, abort/error handling and optional upstream SHA512
+  checks. It warns rather than refuses when no checksum exists; Ode does not
+  adopt that weaker trust policy or its destructive update/removal semantics.
+  [Repository constants](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/backend/wine/manager/downloader/constants.ts)
+  identify Heroic Wine-Crossover builds, **not the commercial CrossOver app**.
+- [WineVersionSelector](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/frontend/screens/Settings/components/WineVersionSelector.tsx)
+  resolves actual binary paths, reports missing versions and retains valid
+  selected installations. The
+  [install selector](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/frontend/screens/Library/components/InstallModal/WineSelector/index.tsx)
+  separates global configuration, selected version and per-title prefix/bottle.
+  Ode retains its own pinned-recipe and no-silent-substitution rules.
+- [Porting Kit](https://www.portingkit.com/) describes itself in its official
+  page metadata as a Windows-game/app installer using **Wineskin technology**.
+  It is a product/wrapper workflow, not another Wine engine identity. Apple's
+  [Game Porting Toolkit](https://developer.apple.com/games/game-porting-toolkit/)
+  and graphics payload identity are also distinct from provider identity.
+
+The coordinator received this research and native UI proposal before
+implementation: retain the grouped macOS Form; prominent provider observations
+and real acquisition actions; configured default and exact registry selection;
+progressive disclosure for legacy bottles, graphics declarations and diagnostics.
+Use standard Pickers, buttons, selectable locations, semantic text and adaptive
+action rows, with explicit missing/checking/error/unsupported states. Actual
+download UI is withheld until a trusted distribution exists. Source/native
+render evidence, installed delivery and product acceptance are separate gates.
+
 ## Persisted launch selection (M3)
+
+The following M3 description covers legacy imported-game routing. The
+account-bound registry path and source-only admission extension above supersede
+any implication that all current games use this legacy selector handoff.
 
 Launch selection is separate from the configuration-only planning contract below.
 `Xodus.defaultEngine` persists the optional default. The private installed-game

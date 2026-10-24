@@ -182,6 +182,7 @@ enum NativeChecks {
                       "Exact \(reason) boundary wording requires the unchanged approved failure tuple")
             }
             try await CrossOverDependencyChecks.run(check: check)
+            try await EngineManagementChecks.run(check: check)
             try await ApplicationTerminationChecks.run(check: check)
             try await RecentLibraryChecks.run(check: check)
             try await CatalogMediaChecks.run(check: check)

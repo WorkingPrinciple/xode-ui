@@ -7,6 +7,7 @@ import XodusManagement
 struct NativeEngineRegistry: Decodable {
     struct Entry: Decodable, Identifiable {
         struct SmokeTest: Decodable { let status: String }
+        struct Provider: Decodable { let id: String; let contract_version: Int }
         let name: String
         let kind: String
         let wine: String
@@ -14,6 +15,9 @@ struct NativeEngineRegistry: Decodable {
         let presentation_validation: SmokeTest?
         let engine_label: String?
         let environment: [String: String]?
+        let version: String?
+        let source_url: String?
+        let provider: Provider?
         var id: String { name }
         var isAvailable: Bool {
             smoke_test.status == "pass" && presentation_validation?.status != "failed"
@@ -21,16 +25,20 @@ struct NativeEngineRegistry: Decodable {
         }
     }
     let engines: [Entry]
+    private(set) var byteDigest: String = ""
+    enum CodingKeys: String, CodingKey { case engines }
 
     static func read(_ url: URL) throws -> Self {
         try GameScriptFiles.checkPath(url)
         let bytes = try InstalledGameFiles.readRegular(url, maximumBytes: 2_097_152)
-        let registry = try JSONDecoder().decode(Self.self, from: bytes)
+        var registry = try JSONDecoder().decode(Self.self, from: bytes)
+        registry.byteDigest = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
         guard Set(registry.engines.map(\.name)).count == registry.engines.count,
               registry.engines.allSatisfy({
                   !$0.name.isEmpty && $0.name.utf8.count <= 128
                       && $0.name.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0)
                           || (97...122).contains($0) || [45, 46, 95].contains($0) }
+                      && ($0.provider.map { !$0.id.isEmpty && $0.id.utf8.count <= 64 && $0.contract_version == 1 } ?? true)
               }) else { throw GameScriptError.runtimeUnavailable }
         return registry
     }
@@ -443,6 +451,7 @@ struct NativeLaunchConfiguration {
     let runtime: NativeRuntimeReference
     let profile: NativeTitleLaunchProfile?
     let shims: NativeShimReference
+    var admittedSelection: AdmittedEngineSelection? = nil
 
     static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
                         defaults: UserDefaults = .standard,
@@ -514,8 +523,18 @@ struct NativeLaunchConfiguration {
         if let selected = profile?.shimDirectory, selected != shims.directory.path {
             throw NativeLaunchError.invalidProfile
         }
+        var admitted: AdmittedEngineSelection?
+        if entry.provider?.id == "calimocho" {
+            guard let bytes = defaults.data(forKey: AdmittedEngineSelection.preferenceKey) else {
+                throw NativeLaunchError.engineUnavailable
+            }
+            let selection = try JSONDecoder().decode(AdmittedEngineSelection.self, from: bytes)
+            try selection.validate(registryPath: registryURL.path, engineName: entry.name,
+                                   registryDigest: registry.byteDigest)
+            admitted = selection
+        }
         return Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
-                        profile: profile, shims: shims)
+                        profile: profile, shims: shims, admittedSelection: admitted)
     }
 
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
@@ -524,21 +543,36 @@ struct NativeLaunchConfiguration {
         if provider != nil || provenEngine != nil {
             guard let name = provider != nil ? selected : provenEngine,
                   let entry = registry.engines.first(where: { $0.name == name }),
+                  provider.map({ EngineManagementPolicy.matches(entry, provider: $0)
+                      || ($0 == .standaloneWine && entry.provider?.id == "calimocho"
+                          && defaults.data(forKey: AdmittedEngineSelection.preferenceKey) != nil) }) ?? true,
                   entry.isAvailable else {
                 throw NativeLaunchError.engineUnavailable
             }
             return entry
         }
-        let available = registry.engines.filter(\.isAvailable)
+        let available = registry.engines.filter { $0.isAvailable && $0.provider?.id != "calimocho" }
         guard let entry = available.first(where: { $0.engine_label == "Free Wine" || $0.kind.lowercased() == "free" })
                 ?? available.first else { throw NativeLaunchError.engineUnavailable }
         return entry
     }
 
     func arguments() async throws -> [String] {
+        if admittedSelection != nil {
+            guard profile?.prefixRegistryImports == nil, profile?.prefixOverlays == nil,
+                  profile?.dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
+        }
         let dll = try await runtime.validate()
         try await shims.validate()
         let selectedRegistry = try await profile?.registryForLaunch(base: registry, engine: engine) ?? registry
+        if let admittedSelection {
+            guard selectedRegistry == registry, let digest = admittedSelection.inspection.registrySha256 else {
+                throw NativeLaunchError.engineUnavailable
+            }
+            return ["--engine", engine, "--registry", selectedRegistry.path,
+                    "--expected-registry-sha256", digest, "--prefix", prefix.path,
+                    "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+        }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
                 "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
     }
