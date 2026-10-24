@@ -8,6 +8,219 @@ import XodusCore
 
 @MainActor
 enum InstalledGameChecks {
+    static func storageLocationChecks(check: (Bool, String) -> Void) async throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/StorageChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "REQ92: Synthetic storage files are cleaned") }
+        }
+        let a = root.appendingPathComponent("drive-a"), b = root.appendingPathComponent("drive-b")
+        let detachedB = root.appendingPathComponent("detached-b")
+        let launcher = root.appendingPathComponent("never-run.sh")
+        try Data("#!/bin/sh\nexit 99\n".utf8).write(to: launcher)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: launcher.path)
+        var entries: [InstalledGame] = []
+        for (index, drive) in [a, b].enumerated() {
+            let folder = drive.appendingPathComponent("installed-game")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let product = String(format: "FIXTURE%05d", index + 1)
+            try Data("""
+                <Game><Identity Name="Storage.Game" Version="1.0.0.0"/>
+                <StoreId>\(product)</StoreId></Game>
+                """.utf8).write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+            entries.append(InstalledGame(id: UUID(), title: "Storage game \(index)", identityName: "Storage.Game",
+                version: "1.0.0.0", storeId: product, folder: folder.path, launcher: launcher.path,
+                importedAt: Date(), packageType: .msixvc, storageVolume: GameStorageVolume(path: drive.path)))
+        }
+        let store = InstalledGameStore(file: root.appendingPathComponent("registry/games.json"))
+        var legacy = entries[0]
+        legacy.storageVolume = nil
+        let legacyData = try JSONEncoder().encode(legacy)
+        check(try JSONDecoder().decode(InstalledGame.self, from: legacyData).storageVolume == nil
+              && !String(decoding: legacyData, as: UTF8.self).contains("storageVolume"),
+              "REQ92: Existing registry entries without volume evidence remain decodable without invented drive status")
+        try await store.save(entries)
+        let controller = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
+            mountedStorageRoots: { [a, b].filter { FileManager.default.fileExists(atPath: $0.path) }.map(\.path) })
+        await controller.load()
+        check(Set(controller.games.map(\.folder)) == Set(entries.map(\.folder))
+              && controller.launchableIDs == Set(entries.map(\.id)),
+              "REQ92: Games across multiple recorded roots retain their exact paths and local readiness")
+        try FileManager.default.moveItem(at: b, to: detachedB)
+        await controller.checkInstallation(entries[1])
+        let savedOffline = try await store.load()
+        check(controller.games.map(\.folder) == entries.map(\.folder)
+              && controller.unavailableDriveIDs == [entries[1].id]
+              && !controller.launchableIDs.contains(entries[1].id)
+              && controller.launchableIDs.contains(entries[0].id)
+              && savedOffline.map(\.folder) == entries.map(\.folder),
+              "REQ92: Missing recorded mount preserves both entries/paths and fences only that drive")
+        let offlineOperations = GameOperationsController(installed: controller)
+        let offlineAttention = InstalledGameAttentionView(installed: controller, operations: offlineOperations,
+            game: entries[1], repairGame: PCGame(id: entries[1].storeId, title: entries[1].title, artwork: nil), close: {})
+        check(!offlineAttention.offersRepair && !offlineOperations.canRepair(entries[1]),
+              "REQ92: An unavailable drive offers read-only recovery rather than repair or replacement")
+        try FileManager.default.moveItem(at: detachedB, to: b)
+        await controller.checkInstallation(entries[1])
+        check(controller.unavailableDriveIDs.isEmpty
+              && controller.launchableIDs.contains(entries[1].id)
+              && controller.games.map(\.folder) == entries.map(\.folder),
+              "REQ92: Read-only Check again restores readiness after a drive returns without relocation or reimport")
+        try FileManager.default.removeItem(at: URL(fileURLWithPath: entries[1].folder))
+        await controller.checkInstallation(entries[1])
+        check(controller.unavailableDriveIDs.isEmpty && controller.games.count == 2
+              && !controller.launchableIDs.contains(entries[1].id)
+              && controller.packageErrors[entries[1].id] == InstalledGameError.missingFolder.localizedDescription,
+              "REQ92: A deleted folder on a mounted drive is not mislabeled as an unavailable drive")
+        let probe = GameStorageProbe()
+        do {
+            _ = try await probe.read(timeout: .milliseconds(10)) {
+                Thread.sleep(forTimeInterval: 0.15)
+                return 1
+            }
+            check(false, "REQ92: A stalled filesystem read releases its UI waiter at the deadline")
+        } catch {
+            check(error as? GameStorageProbeError == .timedOut,
+                  "REQ92: A stalled filesystem read releases its UI waiter at the deadline")
+        }
+        do {
+            _ = try await probe.read { 2 }
+            check(false, "REQ92: Timed-out syscall retains its one worker reservation until it actually returns")
+        } catch {
+            check(error as? GameStorageProbeError == .pending,
+                  "REQ92: Timed-out syscall retains its one worker reservation until it actually returns")
+        }
+        try await Task.sleep(for: .milliseconds(200))
+        check(try await probe.read { 3 } == 3,
+              "REQ92: Late completion cannot republish its old result and a returned worker can be reused")
+        let gate = PackageInspectionInterleaving()
+        defer { gate.release() }
+        let cancelledRead = Task { try await probe.read { try gate.inspect(root) } }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !gate.isWaiting && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        check(gate.isWaiting, "COR105: Synthetic blocked storage worker starts off the main actor")
+        cancelledRead.cancel()
+        do {
+            _ = try await cancelledRead.value
+            check(false, "COR105: Cancellation completes only the storage waiter")
+        } catch {
+            check(error is CancellationError, "COR105: Cancellation completes only the storage waiter")
+        }
+        do {
+            _ = try await probe.read { 4 }
+            check(false, "COR105: Cancelled blocked worker prevents a replacement worker")
+        } catch {
+            check(error as? GameStorageProbeError == .pending,
+                  "COR105: Cancelled blocked worker prevents a replacement worker")
+        }
+        gate.release()
+        try await Task.sleep(for: .milliseconds(50))
+        check(try await probe.read { 5 } == 5,
+              "COR105: Only actual worker return releases the cancelled storage reservation")
+        try await discoveryLocationChecks(root: root, check: check)
+    }
+
+    private static func discoveryLocationChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let original = root.appendingPathComponent("original")
+        let selected = root.appendingPathComponent("selected")
+        let recorded = root.appendingPathComponent("recorded")
+        var folders: [String: URL] = [:]
+        for (index, parent) in [recorded, original, selected, recorded, selected].enumerated() {
+            let product = String(format: "FIXTURE%05d", index + 1)
+            let folder = parent.appendingPathComponent(product)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try Data("""
+                <Game><Identity Name="Discovery.\(index)" Version="1.0.0.0"/>
+                <StoreId>\(product)</StoreId></Game>
+                """.utf8).write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+            folders[product] = folder
+        }
+        let savedLocation = try GameInstallLocation(folder: selected)
+        let existing = InstalledGame(id: UUID(), title: "Recorded", identityName: "Discovery.0",
+            version: "1.0.0.0", storeId: "FIXTURE00001",
+            folder: recorded.appendingPathComponent("FIXTURE00001").path,
+            launcher: "", importedAt: Date(), packageType: .msixvc, usesNativeLifecycle: true,
+            storageVolume: GameStorageVolume(path: recorded.path))
+        let store = InstalledGameStore(file: root.appendingPathComponent("discovery/games.json"))
+        try await store.save([existing])
+        let expectedFolders = folders
+        var inspections: [String] = []
+        let controller = InstalledGamesController(store: store, inspectPackage: { _ in
+            guard !Thread.isMainThread else { throw InstalledGameError.invalidConfig }
+            return .msixvc
+        }, mountedStorageRoots: { (GameStorageVolume.mountedRoots() ?? []) + [recorded.path] },
+            discoveryRoot: original, installLocation: { savedLocation }, discoveryCompleteness: { product, folder in
+                inspections.append(product)
+                return product != "FIXTURE00005" && expectedFolders[product]?.path == folder.path
+            })
+        let session = LiveSession()
+        await controller.load()
+        controller.useUnifiedAccount(session)
+        await controller.discoverNativeInstallations()
+        check(Set(controller.games.map(\.folder)) == Set(folders.filter { $0.key != "FIXTURE00005" }.map(\.value.path))
+              && Set(inspections) == Set(["FIXTURE00002", "FIXTURE00003", "FIXTURE00004", "FIXTURE00005"]),
+              "COR105: Discovery scans original, saved default and recorded roots using exact product/folder completeness checks")
+        check(!controller.games.contains { $0.storeId == "FIXTURE00005" }
+              && controller.discoveryError?.contains("incomplete") == true && controller.launchableIDs.isEmpty,
+              "COR105: Config-only incomplete payload is not adopted or promoted to launch/account readiness")
+        await controller.discoverNativeInstallations()
+        check(controller.games.count == 4 && controller.games.filter { $0.id == existing.id }.count == 1,
+              "COR105: Repeated discovery deduplicates roots and preserves the registered identity")
+
+        let offline = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
+            discoveryRoot: original, installLocation: { savedLocation }, discoveryCompleteness: { _, _ in false })
+        await offline.load()
+        offline.useUnifiedAccount(session)
+        await offline.discoverNativeInstallations()
+        check(offline.games.count == 4 && offline.games.contains { $0.id == existing.id && $0.folder == existing.folder }
+              && offline.discoveryError?.contains("unavailable") == true,
+              "COR105: Offline recorded root reports unavailable without pruning or relocating its entries")
+        let invalid = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
+            discoveryRoot: original, installLocation: { throw GameScriptError.invalidDestination },
+            discoveryCompleteness: { _, _ in true })
+        await invalid.load()
+        invalid.useUnifiedAccount(session)
+        await invalid.discoverNativeInstallations()
+        check(invalid.games.count == 4 && invalid.discoveryError != nil,
+              "COR105: Invalid saved default reports failure instead of silently falling back")
+        let changingRoot = root.appendingPathComponent("changing")
+        let changingFolder = changingRoot.appendingPathComponent("game")
+        try FileManager.default.createDirectory(at: changingFolder, withIntermediateDirectories: true)
+        let changingConfig = changingFolder.appendingPathComponent("MicrosoftGame.config")
+        let before = """
+            <Game><Identity Name="Before" Version="1.0.0.0"/><StoreId>FIXTURE00006</StoreId></Game>
+            """
+        try Data(before.utf8).write(to: changingConfig)
+        let changingStore = InstalledGameStore(file: root.appendingPathComponent("changing-registry/games.json"))
+        let changing = InstalledGamesController(store: changingStore, inspectPackage: { _ in .msixvc },
+            discoveryRoot: changingRoot, installLocation: { nil }, discoveryCompleteness: { _, _ in
+                try await Task.detached {
+                    try Data(before.replacingOccurrences(of: "Before", with: "After").utf8).write(to: changingConfig)
+                }.value
+                return true
+            })
+        await changing.load()
+        changing.useUnifiedAccount(session)
+        await changing.discoverNativeInstallations()
+        check(changing.games.isEmpty && changing.discoveryError?.contains("configuration changed") == true,
+              "COR105: Same-product config identity changed during completeness checking cannot be adopted from stale metadata")
+        let capped = root.appendingPathComponent("capped")
+        try FileManager.default.createDirectory(at: capped, withIntermediateDirectories: false)
+        for index in 0..<513 {
+            try Data().write(to: capped.appendingPathComponent("child-\(index)"))
+        }
+        let observed = try await GameStorageProbe().read {
+            try GameInstallationDiscovery.scan(originalRoot: capped, location: nil, entries: [],
+                mountedRoots: [], inspectPackage: { _ in .msixvc })
+        }
+        check(observed.candidates.isEmpty && observed.errors.count == 1,
+              "COR105: Discovery stops at the existing 512-child bound rather than scanning an unbounded root")
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         try await LaunchAssociationChecks.run(check: check)
         let catalogue = OfflineGameCompatibility(version: 1, checkedAt: "2026-10-21T00:00:00Z",

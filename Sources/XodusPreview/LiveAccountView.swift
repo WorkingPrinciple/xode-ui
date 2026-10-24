@@ -195,9 +195,13 @@ struct LiveSettingsView: View {
 
     var body: some View {
         Form {
+            Section("Game storage") {
+                GameInstallLocationSettings()
+            }
             Section("Game runtime") {
                 RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
             }
+
             Section("Account") {
                 LabeledContent("Status", value: session.accountJourneyTitle)
                 Button("Open account") { state.openAccount() }

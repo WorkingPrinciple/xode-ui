@@ -929,6 +929,58 @@ enum GameOperationChecks {
               && pendingReview.resolve(accountHash: String(repeating: "b", count: 64)) == nil
               && pendingReview.resolve(accountHash: nil) == nil,
               "COR89 pending detail review retains its exact account and rejects account-switch/sign-out handoff")
+        let locationSuite = "Xodus.install-location-checks.\(UUID().uuidString)"
+        guard let locationDefaults = UserDefaults(suiteName: locationSuite) else { throw GameScriptError.storage }
+        defer { locationDefaults.removePersistentDomain(forName: locationSuite) }
+        let firstRoot = root.appendingPathComponent("first drive")
+        let secondRoot = root.appendingPathComponent("second drive")
+        for directory in [firstRoot, secondRoot] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        }
+        let firstLocation = try await Task.detached { try GameInstallLocation(folder: firstRoot) }.value
+        locationDefaults.set(try JSONEncoder().encode(firstLocation), forKey: GameInstallLocation.preferenceKey)
+        let locationOperations = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue, installLocationDefaults: locationDefaults)
+        await locationOperations.prepareInstall(game)
+        guard let defaultConsent = locationOperations.installConsent else { throw GameScriptError.invalidDestination }
+        check(defaultConsent.destination.deletingLastPathComponent().path == firstRoot.path
+              && locationOperations.presentedInstallConsent != nil && locationOperations.operation == nil,
+              "REQ92: Persisted default prefills the actual review without installation")
+        await locationOperations.updateInstallLocation(defaultConsent, root: secondRoot)
+        let retainedDefault = try GameInstallLocation.load(locationDefaults)
+        check(locationOperations.installConsent?.destination.deletingLastPathComponent().path == secondRoot.path
+              && locationOperations.installConsent?.id == defaultConsent.id
+              && retainedDefault == firstLocation
+              && locationOperations.operation == nil && installed.games.isEmpty,
+              "REQ92: Per-install override updates the reviewed destination, not the default or existing paths")
+        locationOperations.confirmInstall(defaultConsent)
+        check(locationOperations.operation == nil && locationOperations.installConsent != nil,
+              "REQ92: A retained pre-override consent cannot install into the old destination")
+        await locationOperations.cancelInstallConsent()
+        let secondLocation = try await Task.detached { try GameInstallLocation(folder: secondRoot) }.value
+        locationDefaults.set(try JSONEncoder().encode(secondLocation), forKey: GameInstallLocation.preferenceKey)
+        let reloadedDefaults = UserDefaults(suiteName: locationSuite)!
+        let reloadedLocations = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue, installLocationDefaults: reloadedDefaults)
+        check(try await reloadedLocations.installDestination(for: game).deletingLastPathComponent().path == secondRoot.path,
+              "REQ92: A new preference/controller instance retains the selected default")
+        locationDefaults.set(Data("invalid".utf8), forKey: GameInstallLocation.preferenceKey)
+        do {
+            _ = try await locationOperations.installDestination(for: game)
+            check(false, "REQ92: Invalid saved location never silently falls back to another drive")
+        } catch { check(true, "REQ92: Invalid saved location never silently falls back to another drive") }
+        let unavailableLocation = Data("""
+            {"folder":"/Volumes/REQ92-Synthetic-Unmounted/Games","volume":{"path":"/Volumes/REQ92-Synthetic-Unmounted"}}
+            """.utf8)
+        locationDefaults.set(unavailableLocation, forKey: GameInstallLocation.preferenceKey)
+        do {
+            _ = try await locationOperations.installDestination(for: game)
+            check(false, "REQ92: Unmounted selected drive is rejected without creating a substitute directory")
+        } catch {
+            check(error as? GameInstallLocationError == .driveUnavailable,
+                  "REQ92: Unmounted selected drive is rejected without creating a substitute directory")
+        }
+        try await InstalledGameChecks.storageLocationChecks(check: check)
         if ProcessInfo.processInfo.environment["XODUS_NATIVE_CONSENT_PRESENTATION_CHECK"] == "1" {
             try await NativeUIChecks.checkInstallSheetPresentation(operations: operations, game: game, check: check)
             check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
@@ -1125,6 +1177,15 @@ enum GameOperationChecks {
         await installed.waitForSessionPersistence()
         guard let played = installed.games.first else { throw GameScriptError.invalidReceipt }
         let history = played.lastPlayedAt
+        await reloadedLocations.prepareInstall(game, repairing: played)
+        guard let locationRepair = reloadedLocations.installConsent else { throw GameScriptError.invalidDestination }
+        await reloadedLocations.updateInstallLocation(locationRepair, root: secondRoot)
+        check(reloadedLocations.installConsent?.destination.path == played.folder
+              && reloadedLocations.installConsent?.installedID == played.id
+              && installed.games.first?.folder == played.folder
+              && installed.games.first?.lastPlayedAt == history,
+              "REQ92: Changed or unavailable default never redirects repair, and repair rejects folder overrides")
+        await reloadedLocations.cancelInstallConsent()
         await operations.prepareInstall(game, repairing: played)
         guard let repair = operations.installConsent else { throw GameScriptError.invalidDestination }
         check(repair.destination.path == played.folder && repair.installedID == played.id,
