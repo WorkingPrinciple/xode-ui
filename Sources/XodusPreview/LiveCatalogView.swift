@@ -511,7 +511,7 @@ struct LiveCatalogView: View {
     }
 
     private func canReviewInstall(_ game: LibraryGame) -> Bool {
-        DiscoverBrowse.canReviewInstall(owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent,
+        DiscoverBrowse.canReviewInstall(owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
             gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
             pcCandidate: game.pc != nil || game.product?.pcCatalogCandidate == true)
     }
@@ -668,7 +668,11 @@ struct LiveCatalogView: View {
                                 usesGlass: true, prominent: primary)
         } else if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
             GameInstallAction(game: pc, operations: operations,
-                              enabled: allowsStartupTasks && canReviewInstall(game), primary: primary)
+                              enabled: allowsStartupTasks && canReviewInstall(game), primary: primary,
+                              disabledReason: !allowsStartupTasks ? "Wait for Ode to X to finish starting."
+                                : game.pc == nil && game.product?.pcCatalogCandidate != true
+                                    ? "PC availability for this title hasn't been confirmed. Installation is unavailable."
+                                    : library.installAccessNotice(for: game.id))
         }
     }
 

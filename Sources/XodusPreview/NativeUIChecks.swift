@@ -10,6 +10,20 @@ enum NativeUIChecks {
         checkDetailFirstCards(check: check)
         checkLoadingPresentation(check: check)
         checkActionExtentObservation(check: check)
+        let blockedGame = PCGame(id: "FIXTURE00001", title: "Unavailable details", artwork: nil)
+        let blockedOperations = GameOperationsController(installed: InstalledGamesController())
+        let blockedReason = "PC game details for this title couldn't be loaded. Refresh your library to try again."
+        let blockedInstall = GameInstallAction(game: blockedGame, operations: blockedOperations,
+            enabled: false, disabledReason: blockedReason)
+        check(!blockedInstall.canInstall && blockedInstall.unavailableReason == blockedReason,
+              "REQ88: Disabled Install retains a visible, title-specific reason rather than tooltip-only help")
+        for width in [CGFloat(220), 320, 650] {
+            let content = blockedInstall.frame(width: width, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            let renderer = ImageRenderer(content: content)
+            check(renderer.cgImage.map { $0.width == Int(width) && $0.height >= 60 } == true,
+                  "REQ88: Disabled Install and wrapping recovery text render offscreen at \(Int(width)) points")
+        }
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))

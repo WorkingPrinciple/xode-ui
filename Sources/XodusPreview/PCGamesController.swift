@@ -52,8 +52,8 @@ final class PCGamesController: ObservableObject {
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var resolutionNotice: String? {
         guard let snapshot, snapshot.unresolvedCount > 0 else { return nil }
-        if busy { return "Checking game classification and PC availability for \(snapshot.unresolvedCount) library items." }
-        return "Game classification or PC availability couldn't be checked for \(snapshot.unresolvedCount) library items. Your library may be incomplete."
+        if busy { return "Loading library details. Available games stay visible." }
+        return "Some library details couldn't be loaded. Refresh your library to try again. Available games remain visible."
     }
     var retainedLibraryNotice: String? {
         guard error != nil, let snapshot else { return nil }
@@ -61,10 +61,33 @@ final class PCGamesController: ObservableObject {
             : "Showing available details from an incomplete library."
     }
     var accessIsCurrent: Bool {
-        snapshot?.isComplete == true && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
+        snapshot?.isComplete == true && accountAccessIsCurrent
+    }
+    private var accountAccessIsCurrent: Bool {
+        hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
             && !presenceUnavailable && error == nil && !needsKeychainApproval
+            && !accountDisconnecting && !terminating
             && (!usesUnifiedAccount || (unifiedSession?.hasConfirmedSignIn == true
                 && accountHash == unifiedSession?.accountHash))
+    }
+    func accessIsCurrent(for productID: String) -> Bool {
+        accountAccessIsCurrent && snapshot?.hasResolvedGame(productID) == true
+    }
+    func installAccessNotice(for productID: String) -> String? {
+        guard !accessIsCurrent(for: productID) else { return nil }
+        if accountDisconnecting || terminating { return "Account access is closing. Installation is unavailable." }
+        if busy || restoringPresence { return "Wait for your library to finish updating before installing." }
+        if needsKeychainApproval { return "Approve Keychain access in Account settings, then refresh your library." }
+        if !hasSavedSignIn || needsSignIn { return "Sign in in Account settings, then refresh your library to check access." }
+        if presenceUnavailable || error != nil { return "Your library couldn't be updated. Refresh your library to check access before installing." }
+        if usesUnifiedAccount && (unifiedSession?.hasConfirmedSignIn != true
+            || accountHash != unifiedSession?.accountHash) {
+            return "Refresh your library for the current account before installing."
+        }
+        if snapshot?.unresolvedIDs.contains(productID) == true {
+            return "PC game details for this title couldn't be loaded. Refresh your library to try again."
+        }
+        return "Current ownership or active PC Game Pass access is required to install this game."
     }
 
     init(store: any PCGamesRefreshStore = PCGamesCredentialStore(), client: PCGamesClient = PCGamesClient(),

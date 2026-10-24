@@ -383,6 +383,8 @@ enum PCGamesChecks {
             check(await session.disconnect(), "Warm Library fixture joins its management child")
             check(library.representedGames.isEmpty && !library.accessIsCurrent,
                   "An unconfirmed account cannot expose another session's retained Library")
+            check(!library.accessIsCurrent(for: "FIXTURE00001"),
+                  "REQ88: Unified account confirmation is required for per-title access")
             await library.retireUnifiedAccount()
             check(library.snapshot == nil && library.representedGames.isEmpty,
                   "Account retirement clears retained Library and automatic-refresh ownership")
@@ -593,6 +595,23 @@ enum PCGamesChecks {
             accessToken: "neutral", market: "US", language: "en-US")
         check(incompleteShelf.games.map(\.id) == [first] && incompleteShelf.excludedCount == 0,
               "S4: Incomplete unrelated rows do not fail the joined shelf or inflate hidden-game count")
+        let partialTransport = PCGamesMockTransport([try response([
+            "access_token": "neutral-access", "refresh_token": "neutral-refresh"
+        ])] + (try authResponses()) + [try page([item(first), item(second)]),
+                                       try response(["Products": [catalogProduct(first)]])])
+        let partialController = PCGamesController(store: PCGamesMockStore("neutral-refresh"),
+            client: PCGamesClient(transport: partialTransport))
+        await partialController.restorePresence()
+        partialController.refresh()
+        await partialController.waitForOperation()
+        check(partialController.snapshot?.unresolvedCount == 1 && !partialController.accessIsCurrent
+              && partialController.accessIsCurrent(for: first),
+              "REQ88: Unrelated unresolved metadata does not stale the resolved account library")
+        check(!partialController.accessIsCurrent(for: second)
+              && !partialController.accessIsCurrent(for: "NOTHELD00001")
+              && partialController.installAccessNotice(for: first) == nil
+              && partialController.installAccessNotice(for: second)?.contains("Refresh your library") == true,
+              "REQ88: Only exact resolved titles have current access; unresolved titles have supported recovery copy")
         for uri in ["//evil.invalid/image/square", "http://store-images.s-microsoft.com/image/square",
                     "//store-images.s-microsoft.com/image/a?token=secret", "//store-images.s-microsoft.com/image/../file",
                     "//store-images.s-microsoft.com@evil.invalid/image/a"] {
@@ -632,6 +651,8 @@ enum PCGamesChecks {
             controller.refresh()
             check(!controller.accessIsCurrent,
                   "SDD-LIB-06: refresh in flight cannot authorize new installs")
+            check(!controller.accessIsCurrent(for: first) && controller.installAccessNotice(for: first) != nil,
+                  "REQ88: Per-title access remains blocked with visible status while refresh is busy")
             check(controller.busy && controller.representedGames.map(\.id) == [first]
                   && !LibraryLoadingPresentation.showsPlaceholders(library: controller,
                       hasUsableContent: !controller.representedGames.isEmpty),
@@ -644,6 +665,8 @@ enum PCGamesChecks {
                 check(controller.snapshot?.games.map(\.id) == [first] && !controller.accessIsCurrent
                       && controller.error != nil && !controller.needsSignIn,
                       "SDD-LIB-06: failed paging retains last-complete representation with stale access")
+                check(!controller.accessIsCurrent(for: first) && controller.installAccessNotice(for: first) != nil,
+                      "REQ88: Retained title after a failed refresh is not current account access")
             } else if mode == "removed" {
                 check(controller.representedGames.isEmpty && controller.error == nil
                       && controller.snapshot?.games.isEmpty == true,
@@ -651,6 +674,8 @@ enum PCGamesChecks {
             } else {
                 check(controller.needsSignIn && controller.snapshot == nil && controller.representedGames.isEmpty,
                       "SDD-LIB-03/06: \(mode) retires account A access rather than showing it as current")
+                check(!controller.accessIsCurrent(for: first),
+                      "REQ88: Revocation or a different account cannot reuse per-title access")
             }
         }
         let pollingTransport = PCGamesMockTransport([
@@ -738,6 +763,8 @@ enum PCGamesChecks {
                   && retry.error == PCGamesError.credentialBrokerUnavailable.localizedDescription
                   && failedChecks == 1 && failedReads == 0 && failedRequests.isEmpty,
                   "F3: Failed presence/metadata stage \(stage) is unavailable, not signed out or partially admitted")
+            check(!retry.accessIsCurrent(for: first) && retry.installAccessNotice(for: first) != nil,
+                  "REQ88: Unavailable saved-account evidence blocks title access with visible status")
             check(!LibraryLoadingPresentation.showsPlaceholders(library: retry, hasUsableContent: false),
                   "REQ-75: Actual credential-restoration failure removes placeholders for explicit retry")
             retry.signIn()
@@ -778,6 +805,9 @@ enum PCGamesChecks {
         check(migrating.hasSavedSignIn && migrating.needsKeychainApproval && !migrating.busy
               && beforeApproval == 0 && beforeMigrationReads == 0 && beforeMigrationRequests.isEmpty,
               "B6: Migration presence gates sign-in/refresh without reading a token or prompting at startup")
+        check(!migrating.accessIsCurrent(for: first)
+              && migrating.installAccessNotice(for: first)?.contains("Keychain") == true,
+              "REQ88: Per-title review cannot bypass credential approval")
         migrating.approveKeychain()
         migrating.approveKeychain()
         await migrating.waitForOperation()

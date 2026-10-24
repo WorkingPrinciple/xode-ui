@@ -112,7 +112,7 @@ struct PCGamesView: View {
                                 PCGameTile(game: game, installed: installed, operations: operations,
                                            allowsArtworkLoading: allowsStartupTasks,
                                            viewDetails: { open(game) },
-                                           accessIsCurrent: library.accessIsCurrent)
+                                           accessIsCurrent: library.accessIsCurrent(for: game.id))
                             }
 
                         }

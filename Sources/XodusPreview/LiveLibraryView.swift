@@ -408,9 +408,11 @@ struct LiveLibraryView: View {
                 if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
                     GameInstallAction(game: pc, operations: operations,
                         enabled: allowsStartupTasks && DiscoverBrowse.canReviewInstall(
-                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent,
+                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
                             gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: true))
+                            pcCandidate: true),
+                        disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
+                            : "Wait for Ode to X to finish starting.")
                 }
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
                 if operations.precheckingProductID == game.id {

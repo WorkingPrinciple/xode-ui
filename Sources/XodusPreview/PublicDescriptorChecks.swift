@@ -149,6 +149,9 @@ enum PublicDescriptorChecks {
         check(retained.games.count == 21 && !retained.games.contains { $0.id == "FIXTURE00001" }
               && retained.unresolvedCount == 1 && retained.games.first { $0.id == many[20] }?.acquisitionKind == .subscription,
               "Partial metadata preserves prior PC facts only for current authoritative collection IDs")
+        check(retained.hasResolvedGame(many[0]) && !retained.hasResolvedGame(many[20])
+              && !retained.hasResolvedGame("FIXTURE00001"),
+              "REQ88: Retained unresolved metadata never establishes current title resolution or restores removed membership")
         let other = PCGamesSnapshot(games: previous.games, excludedCount: 0, updatedAt: .distantPast,
             boundAccountHash: "account-b")
         check(partial.retainingUnresolved(from: other).games.count == 20,
@@ -414,7 +417,8 @@ enum PublicDescriptorChecks {
         await failedController.loadOnAppear()
         check(failedController.error != nil && failedController.snapshot?.isComplete == false
               && failedController.retainedLibraryNotice == "Showing available details from an incomplete library."
-              && failedController.resolutionNotice?.contains("couldn't be checked") == true
+              && failedController.resolutionNotice?.contains("Refresh your library") == true
+              && failedController.resolutionNotice?.contains("classification") == false
               && !failedController.accessIsCurrent,
               "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim")
         check(await session.disconnect(), "Descriptor retirement check joins its isolated management child")

@@ -296,6 +296,19 @@ states only when real evidence exists. Preserve expiry/account/launch guards.
 Separate removing a list entry from uninstalling files; installation never
 implies an unrequested launch.
 
+For per-title installation readiness, keep whole-library completeness separate
+from the current account's resolved title. Unrelated missing details must not
+disable a resolved held title; retained metadata for the unresolved title itself
+must not authorize it. Check refresh-in-flight, failed refresh, account replacement,
+credential approval, subscription alternatives and operation-busy states.
+Disabled Install must show a visible reason, with only supported recovery
+(for example, Refresh library); public PC metadata is not entitlement proof.
+The existing public descriptor cache already persists scoped metadata for five
+minutes; do not create account ownership records from that cache.
+Synthetic source checks use `swift run XodusPreview --library-access-check`
+and `swift run XodusPreview --game-operation-check`; these do not establish
+the disabled branch or successful installation of any title in a running app.
+
 **Outcome:** labels, filters/counts and actions agree with their actual authorities.
 **Limits/stop:** unavailable entitled titles or unsafe lifecycle scenarios remain
 unverified. Do not create mocks or damage installations to claim acceptance.
