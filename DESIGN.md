@@ -1,5 +1,18 @@
 # Design system: native art-first Library
 
+**24 October Apple TV benchmark correction (REQ-84/85):** browsing cards are
+detail-first, without persistent or hover-only Play/Install/ellipsis rows below
+the artwork. This supersedes the card-action treatments described below.
+Poster and Continue Playing artwork activate the existing game detail surface;
+native context menus also expose View details. Keep guarded Play, Install,
+launcher recovery and entitlement/compatibility facts in details, with keyboard
+activation, named accessibility buttons and return focus. Preserve the loaded
+genre shelves and recorded recently-played grouping, rather than inventing
+popular/new rankings. Fixed artwork ratios and reserved title height prevent
+image loading from moving adjacent cards. Existing paging/cache/admission
+contracts are unchanged. Actual TV/Ode scoped observations informed this
+direction; neither screenshots nor source checks establish a latency target.
+
 **19 October naming/layout correction:** App-owned display name and wordmark
 are **Ode to X**. Retain the existing native vector X and system typography.
 Welcome uses the app mark; signed-in Account uses only the user's gamer picture

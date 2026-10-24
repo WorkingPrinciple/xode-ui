@@ -290,6 +290,7 @@ enum NativeChecks {
                       "Exact \(reason) boundary wording requires the unchanged approved failure tuple")
             }
             try await CrossOverDependencyChecks.run(check: check)
+            try await EngineManagementChecks.run(check: check)
             try await ApplicationTerminationChecks.run(check: check)
             try await RecentLibraryChecks.run(check: check)
             try await CatalogMediaChecks.run(check: check)
@@ -962,6 +963,36 @@ enum NativeChecks {
                   "REQ-81: Partial Retry retains all six Classics, genre intent and continuation instead of false Games(0)")
             await partialRetry.disconnect()
 
+            let failedRetry = session("discoveryretryfailure")
+            await failedRetry.connect()
+            await failedRetry.refreshCatalog("")
+            await failedRetry.refreshCatalog("", more: true)
+            let loadedBeforeRetry = failedRetry.products
+            let cursorBeforeRetry = failedRetry.nextCursor
+            let retryGenre = DiscoverSelection()
+            retryGenre.genre = "Classics"
+            let retryFacts = Dictionary(uniqueKeysWithValues: loadedBeforeRetry.map {
+                ($0.id, LibraryCatalogFacts(genres: ["Classics"], isBaseGame: true))
+            })
+            check(loadedBeforeRetry.count == 32 && cursorBeforeRetry != nil,
+                  "REQ-81: Failed page-one Retry fixture first admits two pages and a continuation")
+            await failedRetry.refreshCatalog("")
+            let failedRetryKey = CatalogProjectionKey(accountHash: nil, query: "", owned: [],
+                products: failedRetry.products, gamePass: failedRetry.gamePassProducts,
+                gamePassIDs: failedRetry.gamePassProductIDs, installed: [], accessIsCurrent: false,
+                metadataRevision: 1, compatibility: [:], genre: retryGenre.genre, showsUnsupported: true)
+            let failedRetryProjection = CatalogProjection(key: failedRetryKey, facts: retryFacts, isVisible: { _ in true })
+            check(failedRetry.products.map(\.id) == loadedBeforeRetry.map(\.id)
+                  && failedRetry.nextCursor == cursorBeforeRetry && failedRetry.canLoadMoreCatalog
+                  && failedRetry.catalogError != nil && failedRetryProjection.visible.count == 32
+                  && retryGenre.genre == "Classics",
+                  "REQ-81: Retry failure without page details preserves loaded games, genre and usable continuation")
+            await failedRetry.refreshCatalog("", more: true)
+            check(failedRetry.products.count == 48 && failedRetry.catalogError == nil
+                  && failedRetry.nextCursor != cursorBeforeRetry,
+                  "REQ-81: Continuation after detail-free Retry failure uses retained revision and cursor")
+            await failedRetry.disconnect()
+
             let feed = session("discoverypcflag")
             await feed.connect()
             await feed.refreshCatalog("")
@@ -1350,6 +1381,8 @@ enum NativeChecks {
             check(diagnostics.diagnosticExportError != nil && !FileManager.default.fileExists(atPath: output.path),
                   "Diagnostic export requires a current reviewed preview and creates no unreviewed file")
             await diagnostics.previewDiagnostics()
+            check(diagnostics.descriptorMetricCounts == nil && !diagnostics.descriptorMetricIntervalCompleted,
+                  "Ordinary diagnostic preview keeps opt-in descriptor measurement disabled")
             guard let reviewed = diagnostics.diagnosticPreview else { throw ManagementError.invalidPayload }
             await diagnostics.saveDiagnosticSummary(to: output)
             check(try String(contentsOf: output, encoding: .utf8) == reviewed && diagnostics.diagnosticSaved,
@@ -1362,6 +1395,38 @@ enum NativeChecks {
             await diagnostics.saveDiagnosticSummary(to: remote)
             check(diagnostics.diagnosticExportError != nil && !diagnostics.diagnosticSaved,
                   "Diagnostic export rejects nonlocal destinations without writing")
+
+            for scenario in ["metricsearly", "metricsmissing"] {
+                let measured = session(scenario)
+                let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+                setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
+                await measured.connect()
+                if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                await measured.previewDiagnostics()
+                check(measured.descriptorMetricCounts?.checkpoint == 2
+                      && !measured.descriptorMetricIntervalCompleted
+                      && measured.diagnosticPreview != nil && !measured.diagnosticSaved,
+                      "Existing diagnostic preview captures baseline on the same opted-in app-owned session without file export")
+                let priorPreview = measured.diagnosticPreview
+                let priorAccount = measured.accountHash
+                if scenario == "metricsmissing" { measured.errorMessage = "Retained synthetic status" }
+                await measured.loadCatalogOnEntry("")
+                await measured.previewDiagnostics()
+                if scenario == "metricsmissing" {
+                    check(measured.descriptorMetricCounts == nil && !measured.descriptorMetricIntervalCompleted
+                          && measured.errorMessage == "Retained synthetic status"
+                          && measured.diagnosticPreview == priorPreview && measured.accountHash == priorAccount,
+                          "Missing session end marker reports incomplete proof without corrupting the redacted summary or error state")
+                } else {
+                    check(measured.descriptorMetricCounts?.checkpoint == 3
+                          && measured.descriptorMetricIntervalCompleted && measured.diagnosticPreview != nil,
+                          "Second existing preview certifies a bounded interval on the original Library/Discover manager")
+                }
+                await measured.disconnect()
+                check(measured.descriptorMetricCounts == nil && !measured.descriptorMetricIntervalCompleted,
+                      "Session retirement clears descriptor interval ownership")
+            }
             await diagnostics.disconnect()
             await diagnostics.saveDiagnosticSummary(to: output)
             check(diagnostics.diagnosticExportError != nil && !diagnostics.diagnosticSaved,

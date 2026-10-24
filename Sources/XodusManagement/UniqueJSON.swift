@@ -2,7 +2,7 @@
 import Foundation
 
 extension JSONValue {
-    static func decodeUnique(_ data: Data, maximumBytes: Int) throws -> JSONValue {
+    public static func decodeUnique(_ data: Data, maximumBytes: Int) throws -> JSONValue {
         guard !data.isEmpty, data.count <= maximumBytes else { throw ManagementError.invalidPayload }
         var scanner = UniqueJSON(bytes: Array(data))
         try scanner.value(depth: 0)

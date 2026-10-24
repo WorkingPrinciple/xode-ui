@@ -107,6 +107,9 @@ Local installed registry loading precedes the remote
 collection wait. Empty Discover entry starts immediately; typed queries retain
 the 250 ms debounce. Same-scope/query public refresh keeps useful products while
 loading; explicitly failed IDs may retain prior descriptors with failure state.
+Same-scope Retry also retains the cursor and revision until a validated
+replacement page is admitted. A failure without page details leaves prior
+products and continuation usable rather than stranding later pages.
 Changing scope/query clears wrong-key content.
 
 Discover entry and post-login preparation request one page of at most 16 public

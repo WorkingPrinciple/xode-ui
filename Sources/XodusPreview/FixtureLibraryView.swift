@@ -105,11 +105,6 @@ struct FixtureLibraryView: View {
                                         Label("Installed fixture", systemImage: "internaldrive")
                                     }
                                     Text("\(game.compatibility.label) - fixture").font(.caption)
-                                } actions: {
-                                    Button(state.installed.contains(game.id) ? "Simulate play" : "Review fixture") {
-                                        if state.installed.contains(game.id) { state.simulateLaunch(game) }
-                                        else { state.selectedGame = game }
-                                    }.modifier(LibraryActionStyle(primary: false))
                                 }
                                 .contextMenu { Button("View fixture details") { state.selectedGame = game } }
                             }

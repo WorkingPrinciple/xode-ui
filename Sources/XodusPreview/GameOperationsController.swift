@@ -123,6 +123,19 @@ final class GameOperationsController: ObservableObject {
         (!usesUnifiedAccount || nativeAccount != nil) && !isBusy && !recoveryRequired && !installed.mutationActive && !serviceBusy && !preparingConsent && installed.loaded
             && !installed.editing && !installed.choosing && !installed.accountDisconnecting && !terminating
     }
+    var installUnavailableReason: String? {
+        guard !canStartMutation else { return nil }
+        if installed.accountDisconnecting || terminating { return "Account access is closing. Installation is unavailable." }
+        if usesUnifiedAccount && nativeAccount == nil {
+            return "Installation access for this account hasn't been confirmed. Review Account settings."
+        }
+        if recoveryRequired { return "Check the last operation in Downloads before starting another installation." }
+        if !installed.loaded { return "Wait for installed games to finish loading." }
+        if installed.editing || installed.choosing { return "Finish choosing or editing the game location before installing." }
+        if gamePassBusy { return "Wait for the Game Pass access check to finish." }
+        if checkingCompatibility { return "Wait for the compatibility check to finish." }
+        return "Wait for the current game operation to finish before installing."
+    }
     var canQuit: Bool {
         !installingDirectly && !preparingConsent
             && mutationTask == nil && compatibilityTask == nil && gamePassTask == nil && stopTask == nil

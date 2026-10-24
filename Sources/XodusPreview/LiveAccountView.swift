@@ -190,8 +190,7 @@ struct LiveSettingsView: View {
     var body: some View {
         Form {
             Section("Game runtime") {
-                RuntimeDependencyStatus(settings: state.runtimeSettings)
-                RuntimeInstallationPicker(settings: state.runtimeSettings)
+                RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
             }
             Section("Account") {
                 LabeledContent("Status", value: session.accountJourneyTitle)

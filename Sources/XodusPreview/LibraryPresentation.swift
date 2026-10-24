@@ -28,16 +28,8 @@ struct ContinuePlayingScrollView<Content: View>: View {
             content().background(ContinuePlayingScrollerIntegration())
         }
             .fixedSize(horizontal: false, vertical: true)
-            .scrollIndicators(.automatic)
+            .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
-    }
-}
-
-final class ContinuePlayingScroller: NSScroller {
-    override class var isCompatibleWithOverlayScrollers: Bool { true }
-
-    override func drawKnobSlot(in slotRect: NSRect, highlight flag: Bool) {
-        // The shelf supplies the material; AppKit still draws and operates the native knob.
     }
 }
 
@@ -58,17 +50,7 @@ private struct ContinuePlayingScrollerIntegration: NSViewRepresentable {
             integrate()
         }
         func integrate() {
-            guard let scroll = enclosingScrollView,
-                  let incumbent = scroll.horizontalScroller,
-                  !(incumbent is ContinuePlayingScroller) else { return }
-            let scroller = ContinuePlayingScroller(frame: incumbent.frame)
-            scroller.controlSize = incumbent.controlSize
-            scroller.knobStyle = incumbent.knobStyle
-            scroller.doubleValue = incumbent.doubleValue
-            scroller.knobProportion = incumbent.knobProportion
-            scroller.target = incumbent.target
-            scroller.action = incumbent.action
-            scroll.horizontalScroller = scroller
+            enclosingScrollView?.hasHorizontalScroller = false
         }
     }
 }
@@ -240,11 +222,6 @@ final class LibrarySelection: ObservableObject {
     @Published var heroHovered = false
     @Published var heroPlaying = false
     var requestedGamePassScope: String?
-}
-
-@MainActor
-final class LibraryCoverInteraction: ObservableObject {
-    @Published var hovered = false
 }
 
 struct LibraryGame: Identifiable {
@@ -970,51 +947,37 @@ struct LibraryScrollEdge: ViewModifier {
     }
 }
 
-struct GameCard<Artwork: View, Actions: View, Status: View>: View {
+struct GameCard<Artwork: View, Status: View>: View {
     let title: String
     var gameFacts = GameFacts()
     var openLabel = "Open"
     var searchFocus: (FocusState<String?>.Binding, String)? = nil
     var focusReturn: (FocusState<String?>.Binding, String)? = nil
-    var alwaysShowsActions = false
     let open: () -> Void
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let status: () -> Status
-    @ViewBuilder let actions: () -> Actions
-    @StateObject private var interaction = LibraryCoverInteraction()
-    @FocusState private var focused: Bool
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    private var showsActions: Bool { alwaysShowsActions || interaction.hovered || focused || voiceOver }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let (binding, id) = searchFocus {
                 artworkButton
-                    .focusable()
                     .focused(binding, equals: id)
                     .focusEffectDisabled()
-                    .onKeyPress(.return, action: openFromKeyboard)
                     .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
             } else if let (binding, id) = focusReturn {
                 artworkButton
                     .focused(binding, equals: id)
-                    .onKeyPress(.return, action: openFromKeyboard)
+                    .focusEffectDisabled()
+                    .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
             } else {
-                ZStack(alignment: .bottomTrailing) {
-                    artworkButton
-                }
-                .focused($focused)
+                artworkButton
             }
             Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
             status().font(.subheadline).foregroundStyle(.primary)
-            actions().controlSize(.small).buttonBorderShape(.capsule)
-                .fixedSize(horizontal: false, vertical: true)
-                .opacity(showsActions ? 1 : 0)
-                .allowsHitTesting(showsActions)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .onHover { interaction.hovered = $0 }
         .accessibilityElement(children: .contain)
+        .contextMenu { Button("View details", action: open) }
     }
 
     func openFromKeyboard() -> KeyPress.Result {
@@ -1035,6 +998,9 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
         }
         .buttonStyle(.plain).accessibilityLabel(artworkAccessibilityLabel)
         .accessibilityValue(gameFacts.badgeLabels().joined(separator: ", "))
+        .accessibilityHint("Open game details for play, installation and compatibility")
+        .focusable()
+        .onKeyPress(.return, action: openFromKeyboard)
     }
 }
 

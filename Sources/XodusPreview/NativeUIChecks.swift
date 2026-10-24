@@ -7,8 +7,24 @@ import XodusCore
 enum NativeUIChecks {
     static func run(check: (Bool, String) -> Void) {
         checkContinuePlayingScroller(check: check)
+        checkDetailFirstCards(check: check)
         checkLoadingPresentation(check: check)
         checkActionExtentObservation(check: check)
+        let blockedGame = PCGame(id: "FIXTURE00001", title: "Unavailable details", artwork: nil)
+        let blockedOperations = GameOperationsController(installed: InstalledGamesController())
+        let blockedReason = "PC game details for this title couldn't be loaded. Refresh your library to try again."
+        let blockedInstall = GameInstallAction(game: blockedGame, operations: blockedOperations,
+            enabled: false, disabledReason: blockedReason)
+        check(!blockedInstall.canInstall && blockedInstall.unavailableReason == blockedReason,
+              "REQ88: Disabled Install retains a visible, title-specific reason rather than tooltip-only help")
+        for width in [CGFloat(220), 320, 650] {
+            let content = blockedInstall.frame(width: width, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            let renderer = ImageRenderer(content: content)
+            let image = renderer.cgImage
+            check(image.map { $0.width == Int(width) && $0.height >= 39 } == true,
+                  "REQ88: Disabled Install and wrapping recovery text render offscreen at \(Int(width)) points (\(image?.width ?? 0)x\(image?.height ?? 0))")
+        }
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))
@@ -61,6 +77,31 @@ enum NativeUIChecks {
               "Minecraft information lays out without a window, launcher scan or test journal")
         let application = NSApplication.shared
         let windows = application.windows.count
+        for (picture, loading, failed, expected) in [
+            (true, false, false, "Profile picture"),
+            (false, true, false, "Profile picture is loading"),
+            (false, false, true, "Profile picture couldn't be loaded"),
+            (false, false, false, "No profile picture available")
+        ] {
+            check(ToolbarAccountButton.pictureStatus(hasPicture: picture, loading: loading, failed: failed) == expected,
+                  "REQ90: Profile fallback explicitly labels picture/loading/error/absence without inferring membership")
+        }
+        for width in [CGFloat(650), 1200] {
+            for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                let actions = NativeToolbarAccountActions(accountLabel: "Microsoft account", accountSymbol: "person.crop.circle",
+                    libraryContrast: true, importGame: {}, openAccount: {})
+                    .environment(\.catalogPresentationActive, false)
+                let host = NSHostingView(rootView: actions)
+                host.sizingOptions = [.intrinsicContentSize]
+                host.appearance = NSAppearance(named: appearance)
+                host.frame = CGRect(x: 0, y: 0, width: width, height: 64)
+                host.layoutSubtreeIfNeeded()
+                let fitting = host.intrinsicContentSize
+                check(host.window == nil && fitting.width > 80 && fitting.width < 180
+                      && fitting.height <= 64,
+                      "REQ90: Native account/import group fits \(Int(width))pt \(appearance.rawValue) with trailing inset, without artwork fetch or window (\(fitting))")
+            }
+        }
         var hasHero = LibraryHeroPresenceKey.defaultValue
         LibraryHeroPresenceKey.reduce(value: &hasHero) { false }
         check(!hasHero, "A plain Library has no artwork underlap preference")
@@ -83,6 +124,7 @@ enum NativeUIChecks {
                                          pageWidth: width, contentWidth: width * 5) == width * 4,
                   "Hero paging clamps the first and last pages at \(Int(width)) points")
         }
+
         for size in [CGFloat(16), 48, 112, 1024] {
             let rect = CGRect(x: 7, y: 11, width: size, height: size)
             let mark = XOdeMark.path(in: rect)
@@ -141,7 +183,7 @@ enum NativeUIChecks {
                     colours[index]
                 } status: {
                     Text(Array(repeating: "Metadata", count: index + 1).joined(separator: "\n"))
-                } actions: { EmptyView() }
+                }
             }
         }
         .frame(width: 558, height: 520, alignment: .topLeading).background(.white)
@@ -724,8 +766,6 @@ enum NativeUIChecks {
     }
 
     private static func checkContinuePlayingScroller(check: (Bool, String) -> Void) {
-        check(ContinuePlayingScroller.isCompatibleWithOverlayScrollers,
-              "REQ-76: Material scrollers retain native overlay compatibility rather than forcing persistent tracks")
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let host = NSHostingView(rootView: ContinuePlayingScrollView {
                 HStack(spacing: 20) {
@@ -752,27 +792,12 @@ enum NativeUIChecks {
             host.layoutSubtreeIfNeeded()
             check(!scroll.drawsBackground && !scroll.contentView.drawsBackground,
                   "REQ-76: The actual shelf has no opaque native scroll/clip background in \(appearance.rawValue)")
-            check(scroll.hasHorizontalScroller && scroll.horizontalScroller != nil
-                  && scroll.horizontalScroller?.isHidden == false && scroll.scrollerStyle == .legacy,
-                  "REQ-76: Instance-local Always-style scroller remains native and visible in \(appearance.rawValue)")
-            check(scroll.horizontalScroller is ContinuePlayingScroller,
-                  "REQ-76: Material integration reaches only the actual shelf's native scroller in \(appearance.rawValue)")
-            if let scroller = scroll.horizontalScroller {
-                let image = NSImage(size: NSSize(width: 200, height: 16))
-                image.lockFocus()
-                NSColor.systemBlue.setFill()
-                NSRect(x: 0, y: 0, width: 200, height: 16).fill()
-                scroller.drawKnobSlot(in: NSRect(x: 0, y: 0, width: 200, height: 16), highlight: false)
-                image.unlockFocus()
-                let pixel = image.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0) }?
-                    .colorAt(x: 190, y: 8)?.usingColorSpace(.deviceRGB)
-                check(pixel.map { $0.blueComponent > $0.redComponent + 0.2 } == true,
-                      "REQ-76: The actual native knob slot preserves the shelf material instead of painting an opaque track in \(appearance.rawValue)")
-            }
+            check(!scroll.hasHorizontalScroller || scroll.horizontalScroller?.isHidden == true,
+                  "COR-64: Only the shelf indicator stays hidden even with instance-local legacy style in \(appearance.rawValue)")
             let native = NSScrollView(frame: host.bounds)
             native.hasHorizontalScroller = true
             native.scrollerStyle = .legacy
-            native.horizontalScroller = ContinuePlayingScroller()
+            native.hasHorizontalScroller = false
             let document = NSView(frame: NSRect(x: 0, y: 0, width: 7 * 280 - 20, height: 150))
             native.documentView = document
             native.tile()
@@ -780,9 +805,8 @@ enum NativeUIChecks {
             native.contentView.scroll(to: NSPoint(x: maxX, y: 0))
             native.reflectScrolledClipView(native.contentView)
             check(maxX > 0 && native.contentView.bounds.maxX >= document.bounds.maxX - 1
-                  && native.horizontalScroller?.target === native
-                  && native.horizontalScroller?.action != nil,
-                  "REQ-76: The material scroller retains AppKit target/action and native seven-card document reachability in \(appearance.rawValue)")
+                  && !native.hasHorizontalScroller,
+                  "COR-64: Native seven-card document remains scrollable without a visible indicator in \(appearance.rawValue)")
             check(host.window == nil, "REQ-76: Shelf regression never opens a window or changes global preferences")
         }
     }
@@ -874,6 +898,22 @@ enum NativeUIChecks {
                     changed()
                 })
         }
+    }
+
+    private static func checkDetailFirstCards(check: (Bool, String) -> Void) {
+        var opened = 0
+        let card = GameCard(title: "A game with a longer two-line title", openLabel: "View",
+                            open: { opened += 1 }) {
+            Color.blue
+        } status: { EmptyView() }
+        check(card.openFromKeyboard() == .handled && opened == 1
+              && card.artworkAccessibilityLabel == "View A game with a longer two-line title",
+              "REQ-85: A named poster Return opens details once without starting play or installation")
+        let host = NSHostingView(rootView: card.frame(width: 196))
+        host.layoutSubtreeIfNeeded()
+        let height = host.fittingSize.height
+        check(height >= 196 * 1.5 + 36 && height < 196 * 1.5 + 70 && host.window == nil,
+              "REQ-85: A 196-point poster reserves its art/title but no hidden or persistent action-row height: \(height)")
     }
 
     private static func descendants(of view: NSView) -> [NSView] {

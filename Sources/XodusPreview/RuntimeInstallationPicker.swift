@@ -5,21 +5,49 @@ import XodusCore
 
 struct RuntimeInstallationPicker: View {
     @ObservedObject var settings: RuntimeProviderSettings
-    @State private var provider: RuntimeProviderKind? = EngineDefaults.defaultEngine()
+    var backendPath = ""
+    @AppStorage(EngineDefaults.defaultEngineKey) private var defaultProvider = ""
+    @AppStorage("Xodus.lifecycle.engine.standaloneWine") private var wineRecord = ""
+    @AppStorage("Xodus.lifecycle.engine.crossover") private var crossOverRecord = ""
+    @StateObject private var registryObservation: EngineRegistryObservation
     @State private var paths = EngineDefaults.runnerPaths()
     @State private var crossOver = EngineDefaults.crossOverApplication()
     @State private var prefixes: [RuntimeProviderKind: String] = [:]
     @State private var error: String?
 
+    init(settings: RuntimeProviderSettings, backendPath: String = "") {
+        self.settings = settings
+        self.backendPath = backendPath
+        _registryObservation = StateObject(wrappedValue: EngineRegistryObservation(inspector: settings.providerInspector))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            EngineProviderOverview(settings: settings, inspections: registryObservation.inspections)
+            Divider()
             Picker("Default game engine", selection: Binding(
-                get: { provider }, set: { provider = $0; EngineDefaults.setDefaultEngine($0) })) {
-                Text("Automatic").tag(Optional<RuntimeProviderKind>.none)
+                get: { RuntimeProviderKind(rawValue: defaultProvider) },
+                set: { defaultProvider = $0?.rawValue ?? "" })) {
+                Text("Use title recipe / automatic").tag(Optional<RuntimeProviderKind>.none)
                 ForEach(RuntimeProviderSettings.providerChoices, id: \.self) { kind in
                     Text(RuntimeProviderSettings.providerLabel(kind)).tag(Optional(kind))
                 }
             }
+            if let kind = RuntimeProviderKind(rawValue: defaultProvider) {
+                if kind == .standaloneWine || kind == .crossover {
+                    let name = kind == .standaloneWine ? wineRecord : crossOverRecord
+                    Text(name.isEmpty ? "No exact registry engine selected for this default."
+                         : "Configured registry engine: \(name)")
+                        .font(.callout).foregroundStyle(.secondary)
+                } else {
+                    Text("This toolkit preference applies to legacy imported-game routing only. Account-bound native launches require an exact Wine engine or a pinned title recipe; a graphics toolkit is not a registered provider.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+            }
+            Text(EngineManagementPolicy.selectionExplanation)
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            NativeEngineSettings(allowsFileReads: !settings.applicationTerminating,
+                                 backendPath: backendPath, observation: registryObservation)
             HStack {
                 Text(crossOver.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "CrossOver: automatic detection")
                     .lineLimit(1).truncationMode(.middle)
@@ -72,7 +100,7 @@ struct RuntimeInstallationPicker: View {
                          destination: URL(string: "https://developer.apple.com/games/game-porting-toolkit/")!)
                 }.padding(.top, 10)
             }
-            Text("Selections are saved for launch routing. This development build's game-launch integration is still unavailable; selecting a runtime or bottle does not enable Play.")
+            Text("Registry engine selections are used for account-bound launches without a pinned title recipe. Executable and existing-bottle choices below apply only to legacy imported-game routing; they do not register an engine or override a title recipe.")
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
         }

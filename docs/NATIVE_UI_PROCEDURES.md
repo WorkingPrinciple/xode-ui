@@ -71,13 +71,132 @@ Do not launch a real game or change accounts merely to manufacture this evidence
 without the corresponding authorization. Offscreen checks are source evidence,
 not installed visual acceptance.
 
-For Continue Playing, include the macOS persistent-scroller case as well as
-overlay scrolling. Its shelf-specific native scroller leaves the material visible
-behind the knob slot; it must still expose the native knob, track paging and AX
-scrollbar actions. Verify first-to-last cards by supported wheel/trackpad, keyboard
-and accessibility routes. Do not change the owner's scrollbar preference without
-authorization or substitute globally hidden indicators. Instance-local legacy
-scroller checks are source evidence, not proof of the user's system preference.
+For Continue Playing, COR-64 intentionally hides only the shelf's horizontal
+indicator, including when macOS uses persistent scrollers. Preserve real native
+scrolling and verify first-to-last cards by wheel/trackpad, keyboard and
+accessibility routes; a hidden knob is not itself an available AX control.
+The title/count and adjacent disclosure are one accessible navigation button
+using the former See All destination (installed games, recently played sort).
+The separate next-game arrow remains a scrolling action, not duplicate navigation.
+Do not change the owner's scrollbar preference or hide indicators globally.
+Instance-local legacy checks are source evidence, not installed acceptance.
+
+### Detail-first shelf benchmark (REQ-84/85)
+
+Compare the actual Apple TV sidebar destination (not an empty purchased Movies
+library) with Ode's populated Library and Discover. Record exact PIDs, window
+IDs/bounds and bundle versions before scoped captures or input. Inspect neutral
+genre shelves and recorded Continue Playing groups; never infer a popularity
+ranking from their position. Posters have one named detail action and no action
+row, even on hover. Play/Install and native launcher recovery remain in details;
+compatibility, operation failures and account-access restrictions remain honest.
+Verify Return, context-menu View details, sheet dismissal and return focus,
+including Continue Playing's separate disclosure/next-card controls.
+
+For timing, use a finite sample (three warm tab/card transitions and a down/up
+scroll pair per app) during a coordinated quiet interval. Start a monotonic
+timer immediately before input and poll the smallest destination-specific AX
+marker that was absent before the action. For an Ode detail sheet, query only
+the window's immediate children for `AXSheet`; do not time a whole-library AX
+traversal. Record dispatch and marker times separately. Acknowledged scrollbar
+values are not painted-frame latency or sustained scrolling FPS. Likewise, AX
+availability is not compositor completion: retain scoped before/after captures
+and identify any transition/layout-shift observation separately. Discard stale
+markers, wrong-focus samples and uncertain geometry, not just slow samples.
+
+Already-running apps provide first-visit/warm observations, not cold launch or
+cold network/cache proof. Do not clear the owner's caches or restart apps just
+to manufacture a cold sample. Record overlapping builds or probes as confounders.
+Targets such as 2.5 seconds cold or 200 milliseconds warm remain unproven until
+the corresponding end-to-end native measurement exists.
+
+An installed `outputOverflow` is not evidence of another running copy or an
+AuthHost failure. The management OSLog category records a count-only overflow
+origin: `diagnosticLifetime`, `stdoutQueue`, `stderrQueue`, `eventQueue` or
+`requestBudget`. Preserve the first origin and its interval before choosing a
+fix; the owned management child's exit can be a consequence of transport
+retirement. The existing 1MiB diagnostic lifetime, 128-chunk/event queues and
+64-pending-request limits remain unchanged. Source-only reproductions run with
+`swift run XodusManagementChecks --overflow-checks`; they distinguish candidate
+paths but do not identify the origin of a prior uninstrumented installed failure.
+
+Descriptor measurement is disabled unless the app process has the exact
+`XODUS_DESCRIPTOR_METRICS=1` opt-in. Its owned launcher forwards only that exact
+value in addition to the existing operational environment allowlist. It does not
+forward arbitrary environment variables or change the fixed Rust log level.
+The management stderr reader accepts only ASCII LF-terminated lines of at most
+256 bytes, under a separate 65,536-byte metrics lifetime budget:
+
+```text
+Ode descriptor metrics v1 enabled seq=1 budget=65536
+Ode descriptor metrics v1 lookup seq=N hit=B forced=B coalesced=B
+Ode descriptor metrics v1 attempt seq=N fetch=F
+Ode descriptor metrics v1 terminal seq=N fetch=F ok=B
+Ode descriptor metrics v1 checkpoint seq=N
+Ode descriptor metrics v1 exhausted seq=N
+```
+
+Fields are ordered canonical unsigned decimals; `B` is zero or one. Sequence and
+fetch numbers increase by one; each terminal names one active fetch exactly once.
+A hit cannot also be forced or coalesced. A successful terminal describes the
+raw upstream result, not cache persistence, account access or API success.
+Only validated count-only lines reach the existing management OSLog sink.
+Unknown versions, malformed/extra fields, gaps, missing enabled markers, byte
+exhaustion and unfinished fetches cannot become zero-request proof.
+
+`ManagementClient.descriptorMetricsCheckpoint()` uses the existing redacted
+`diagnostics.export` request, without logging or saving its payload or requiring
+the UI's diagnostic-file export. Its opt-in-only admission boundary waits for
+already admitted requests within the existing diagnostics timeout and briefly
+queues later requests while continuing to consume results. Queued requests keep
+their original timeout budget and cancellation/disconnect behavior; admitted
+and queued requests share the unchanged 64-request cap. It refuses concurrent
+checkpoint requests, sends exactly one diagnostics export without implicit retry,
+and requires both a successful result and a fresh drained
+checkpoint marker across the independent stdout/stderr pipes. Missing markers
+invalidate further measurement rather than reusing an old checkpoint. Compare
+two such snapshots for one serialized interval; live events alone are
+provisional. Ordinary app shutdown still cancels diagnostic reading and cannot
+certify a missing checkpoint. This seam does not itself establish cold/warm
+installed tab, login readiness or painted-frame performance acceptance.
+
+For an installed measurement, the exclusive runtime owner launches the exact
+paired app with that process-only opt-in, without changing global settings.
+Wait for the previous Library/Discover work to settle, then use Account's
+existing **Preview redacted diagnostic summary** action once for a baseline.
+Navigate the bounded Library/Discover workflow, await its outstanding requests,
+and use the same preview action again within 180 seconds. No Save action or
+diagnostic file is needed. Both calls use the existing app-owned management
+process; they never launch a neutral probe child. The app's `descriptor-metrics`
+OSLog category emits only a checkpoint baseline and a complete aggregate delta
+with monotonic elapsed milliseconds, or an explicit incomplete result. These
+session-wide counts are not per-command attribution. A boundary drain timeout, a failed
+export, a missing/late prior marker, an expired interval or a disconnected
+session cannot certify the interval. Each diagnostic export is ordinally
+accounted, including ordinary exports, so a delayed marker from an earlier
+export cannot stand in for a newer missing marker. Disabled previews retain
+their existing result and redaction behavior.
+An incomplete count fence preserves a successful diagnostic preview and the
+existing account/error state; only the count proof is discarded and logged as
+incomplete. A real diagnostics API failure retains its existing error behavior.
+Fixed `Descriptor boundary` reason/count logs distinguish admission drain,
+drain timeout and missing/invalid marker from a completed fence. The first
+091f39 installed preview produced no checkpoint despite a contiguous startup
+stream; its exact missing-marker branch was not retained. The successor
+boundary corrects the independently reproduced busy-entry/admission race,
+not a proved cause of that observation or the earlier management overflow.
+
+For keyboard acceptance, read the current keyboard-navigation setting without
+changing it. Poster focus participation is explicit, including browse Library,
+Continue Playing and Discover, not only search. Under `AppleKeyboardUIMode=0`,
+verify a title-specific focus ring after detail dismissal, then dispatch actual
+Return and confirm exactly one detail destination with no Play/Install action.
+Calling the Swift Return handler directly is only synthetic coverage. An AX
+focus setter returning success without an independently focused poster is not
+permission to dispatch Return, nor is an AX menu action success proof of a
+visible context menu. Apple's `focusable(_:interactions:)` documentation explains
+the distinction between native button keyboard-navigation policy and explicit
+custom focus participation on macOS 14 and later.
 
 Playable heroes show account acquisition separately from public subscription
 catalog membership; the latter is not an active plan or satisfying entitlement.
@@ -176,6 +295,47 @@ installing/progress/cancel, installed, update, repair, failure and unsupported
 states only when real evidence exists. Preserve expiry/account/launch guards.
 Separate removing a list entry from uninstalling files; installation never
 implies an unrequested launch.
+
+For per-title installation readiness, keep whole-library completeness separate
+from the current account's resolved title. Unrelated missing details must not
+disable a resolved held title; retained metadata for the unresolved title itself
+must not authorize it. Check refresh-in-flight, failed refresh, account replacement,
+credential approval, subscription alternatives and operation-busy states.
+Disabled Install must show a visible reason, with only supported recovery
+(for example, Refresh library); public PC metadata is not entitlement proof.
+Populated Library content must not show or reserve space for routine background
+access-check progress. Initial empty loading remains separate; background
+readers and account/Play guards continue unchanged. Partial-detail notices
+describe settled failures, not work in flight. Game Pass probe blockers must
+describe account recovery first, then aggregate-library refresh, never infer
+ownership loss from unrelated missing metadata.
+The existing public descriptor cache already persists scoped metadata for five
+minutes; do not create account ownership records from that cache.
+Synthetic source checks use `swift run XodusPreview --library-access-check`
+and `swift run XodusPreview --game-operation-check`; these do not establish
+the disabled branch or successful installation of any title in a running app.
+
+The recurring Discover Halloween shelf uses a provisional local Gregorian
+October 1 through Sunday on or immediately after October 31 window, ending
+at Monday midnight. It refreshes its date on appearance, activation, local
+day change and timezone change, without a scheduled job or additional fetch.
+Selection is limited to twelve deduplicated loaded PC catalogue products whose
+existing Microsoft DisplayCatalog category metadata explicitly contains the
+English words horror, spooky or Halloween. Broad categories, untranslated
+categories without those words and missing metadata do not qualify by guesswork.
+An empty selection omits the shelf. Ordinary cards/details and installation
+guards are reused; shelf presence implies no discount, account access or Mac
+compatibility. No complete seasonal catalogue is claimed.
+
+Toolbar account/import actions share a native group with twelve points of
+trailing clearance. The account button reuses the existing validated Xbox
+profile avatar only when its cache matches the current account binding;
+sign-out/account replacement removes that identity immediately. Missing,
+loading and failed pictures retain a labeled account fallback, not a generic
+game-art placeholder. The profile contract has no authoritative membership
+tier: omit a tier ring/badge rather than infer Ultimate from title access or
+a PC Game Pass probe. Offscreen source layout does not establish actual
+window-corner clearance; capture minimum/wide native evidence under a lease.
 
 **Outcome:** labels, filters/counts and actions agree with their actual authorities.
 **Limits/stop:** unavailable entitled titles or unsafe lifecycle scenarios remain

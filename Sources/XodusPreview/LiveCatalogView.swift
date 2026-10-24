@@ -93,6 +93,33 @@ enum SubscriberBenefits {
     static let officialURL = URL(string: "https://www.xbox.com/xbox-game-pass/in-game-benefits")!
 }
 
+enum HalloweenShelf {
+    static func isActive(on date: Date, timeZone: TimeZone = .autoupdatingCurrent) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let year = calendar.component(.year, from: date)
+        guard let start = calendar.date(from: DateComponents(year: year, month: 10, day: 1)),
+              let halloween = calendar.date(from: DateComponents(year: year, month: 10, day: 31)),
+              let end = calendar.date(byAdding: .day,
+                value: (8 - calendar.component(.weekday, from: halloween)) % 7 + 1,
+                to: halloween) else { return false }
+        return date >= start && date < end
+    }
+
+    static func products(_ loaded: [CatalogProduct], facts: [String: LibraryCatalogFacts],
+                         on date: Date, timeZone: TimeZone = .autoupdatingCurrent) -> [CatalogProduct] {
+        guard isActive(on: date, timeZone: timeZone) else { return [] }
+        var seen = Set<String>()
+        return Array(loaded.filter { product in
+            guard product.pcCatalogCandidate, facts[product.id]?.genres.contains(where: { genre in
+                let words = genre.lowercased().split { !$0.isLetter }
+                return words.contains("horror") || words.contains("spooky") || words.contains("halloween")
+            }) == true else { return false }
+            return seen.insert(product.id).inserted
+        }.prefix(12))
+    }
+}
+
 #if !XODUS_SHIPPING
 struct CatalogReviewSnapshot: Decodable {
     let products: [CatalogProduct]
@@ -132,6 +159,7 @@ struct LiveCatalogView: View {
     @FocusState private var focusedResult: String?
     @State private var showsCoverage = false
     @State private var detailFocusReturnID: String?
+    @State private var seasonalDate = Date()
 
     private var projection: CatalogProjection { selection.projection.current }
     private var results: CatalogSearchResults { projection.index.results }
@@ -208,6 +236,18 @@ struct LiveCatalogView: View {
                         }
                     }
                     if !genres.isEmpty { browseGenres }
+                    if selection.genre == nil {
+                        let halloween = HalloweenShelf.products(visible, facts: facts, on: seasonalDate)
+                        if !halloween.isEmpty {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Halloween games").font(.title2.weight(.semibold))
+                                Text("Horror and spooky categories from the games loaded here.")
+                                    .font(.callout).foregroundStyle(.secondary)
+                                browseShelf(halloween, demandLoads: false, shelfID: "Halloween")
+                            }
+                            .accessibilityIdentifier("xodus.catalog.halloween")
+                        }
+                    }
                 } else {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Results for \"\(query)\"").font(.title2.bold())
@@ -363,6 +403,19 @@ struct LiveCatalogView: View {
             selection.genre = nil
             if value.isEmpty { selection.scope = .allGames }
         }
+        .onAppear { seasonalDate = Date() }
+        .onChange(of: presentationActive) { _, active in
+            if active { seasonalDate = Date() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            seasonalDate = Date()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            seasonalDate = Date()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
+            seasonalDate = Date()
+        }
         .onChange(of: session.selectedProduct) { previous, current in
             guard previous != nil, current == nil else { return }
             restoreDetailFocus()
@@ -480,15 +533,14 @@ struct LiveCatalogView: View {
 
     private func open(_ game: LibraryGame) {
         detailFocusReturnID = nil
+        focusedResult = nil
         do {
             let product = try game.product ?? art.images[game.id]?.product ??
                 LibraryGame.details(id: game.id, title: game.title,
                     market: session.market, language: session.language,
                     source: "AccountPCLibrary:identityOnly", pcCandidate: false)
-            if !query.isEmpty {
-                detailFocusReturnID = game.id
-                if allowsStartupTasks { selection.recordSearch(query) }
-            }
+            detailFocusReturnID = game.id
+            if !query.isEmpty, allowsStartupTasks { selection.recordSearch(query) }
             session.selectedProduct = product
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
     }
@@ -512,7 +564,7 @@ struct LiveCatalogView: View {
     }
 
     private func canReviewInstall(_ game: LibraryGame) -> Bool {
-        DiscoverBrowse.canReviewInstall(owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent,
+        DiscoverBrowse.canReviewInstall(owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
             gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
             pcCandidate: game.pc != nil || game.product?.pcCatalogCandidate == true)
     }
@@ -637,7 +689,8 @@ struct LiveCatalogView: View {
         let cover = art.images[game.id]?.cover ?? game.cover
         return GameCard(title: game.title, gameFacts: game.facts, openLabel: "View",
                             searchFocus: query.isEmpty ? nil : ($focusedResult, game.id),
-                            alwaysShowsActions: true, open: { open(game) }) {
+                            focusReturn: query.isEmpty ? ($focusedResult, game.id) : nil,
+                            open: { open(game) }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
@@ -647,25 +700,6 @@ struct LiveCatalogView: View {
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
             if query.isEmpty, let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
-            }
-        } actions: {
-            VStack(alignment: .leading, spacing: 8) {
-            LibraryGlassCluster {
-                if !query.isEmpty, !unsupportedIssues(game).isEmpty {
-                    Button("View details") { open(game) }
-                        .help("Open compatibility details")
-                        .accessibilityLabel(GameSearchPresentation.compatibilityDetailsActionLabel(for: game.title))
-                } else {
-                    actions(game, primary: false)
-                }
-                if let match = game.installed {
-                    InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
-                } else if query.isEmpty || unsupportedIssues(game).isEmpty {
-                    Button("View game", systemImage: "ellipsis") { open(game) }
-                        .modifier(LibraryActionStyle(primary: false)).labelStyle(.iconOnly)
-                        .buttonBorderShape(.circle)
-                }
-            }
             }
         }
     }
@@ -687,7 +721,11 @@ struct LiveCatalogView: View {
                                 usesGlass: true, prominent: primary)
         } else if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
             GameInstallAction(game: pc, operations: operations,
-                              enabled: allowsStartupTasks && canReviewInstall(game), primary: primary)
+                              enabled: allowsStartupTasks && canReviewInstall(game), primary: primary,
+                              disabledReason: !allowsStartupTasks ? "Wait for Ode to X to finish starting."
+                                : game.pc == nil && game.product?.pcCatalogCandidate != true
+                                    ? "PC availability for this title hasn't been confirmed. Installation is unavailable."
+                                    : library.installAccessNotice(for: game.id))
         }
     }
 

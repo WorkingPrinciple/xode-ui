@@ -368,7 +368,14 @@ enum GameOperationChecks {
             check(publicRow.facts.badgeLabels() == ["Game Pass"] && publicRow.eligibility == nil
                   && !publicRow.owned && action.canInstall == subscription && !operations.canConfirmInstall,
                   "REQ-50: Public-only Game Pass stays membership-only; active probe permits review, never confirmation")
+            let retainedOwnedAction = GameInstallAction(game: game, operations: operations,
+                enabled: DiscoverBrowse.canReviewInstall(owned: true, accessIsCurrent: false,
+                    gamePass: true, subscriptionActive: subscription, pcCandidate: true))
+            check(retainedOwnedAction.canInstall == subscription && !operations.canConfirmInstall,
+                  "REQ88: Owned-but-stale representation does not shadow independently verified subscription review")
         }
+        check(operations.installUnavailableReason == nil,
+              "REQ88: Ready operation has no invented installation blocker")
         let unknownOperations = GameOperationsController(installed: installed, paths: paths,
                                                           compatibilityCatalogue: nil)
         let unknownAction = GameInstallAction(game: game, operations: unknownOperations,
@@ -526,6 +533,9 @@ enum GameOperationChecks {
         check(operations.gamePassBusy && installed.mutationActive && !operations.canQuit
               && !operations.canStartMutation && !operations.canSignIn && !operations.canCancel,
               "B5 explicit probe reserves the existing fence and cannot be cancelled as an installation")
+        let busyInstall = GameInstallAction(game: game, operations: operations, enabled: true)
+        check(!busyInstall.canInstall && busyInstall.unavailableReason?.contains("Game Pass") == true,
+              "REQ88: Current title access cannot bypass operation-busy fences; the blocking check is explained")
         check(operations.isBusy && !operations.hasDownloadStatus,
               "Downloads keeps its empty action during unrelated Game Pass work")
         operations.checkGamePass(discoveryProducts: discoveryProducts, ownedGames: [game])

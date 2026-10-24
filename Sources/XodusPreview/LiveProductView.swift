@@ -84,12 +84,19 @@ struct LiveProductView: View {
                                        candidate: product.pcCatalogCandidate)
     }
     private var gameFacts: GameFacts {
-        GameFacts(pc: owned, gamePass: gamePass, installed: installed, accessIsCurrent: library.accessIsCurrent)
+        GameFacts(pc: owned, gamePass: gamePass, installed: installed, accessIsCurrent: library.accessIsCurrent(for: product.id))
     }
     private var canReviewGamePass: Bool {
-        DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent,
+        DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent(for: product.id),
             gamePass: gamePass, subscriptionActive: operations.gamePassActive,
             pcCandidate: owned != nil || product.pcCatalogCandidate)
+    }
+    private var installAccessReason: String? {
+        if !allowsStartupTasks { return "Wait for Ode to X to finish starting." }
+        if owned == nil && !product.pcCatalogCandidate {
+            return "PC availability for this title hasn't been confirmed. Installation is unavailable."
+        }
+        return library.installAccessNotice(for: product.id)
     }
     private var landscape: [CatalogArtworkReference] {
         art?.landscape ?? product.artwork.filter { $0.role == .hero }
@@ -110,6 +117,11 @@ struct LiveProductView: View {
                     VStack(alignment: .leading, spacing: 28) {
                         header
                         VStack(alignment: .leading, spacing: 28) {
+                        if installed == nil, unsupportedIssues.isEmpty, !canReviewGamePass,
+                           library.hasSavedSignIn, !library.needsSignIn {
+                            Button("Refresh library") { library.refresh() }
+                                .disabled(!allowsStartupTasks || library.busy || library.restoringPresence)
+                        }
                         GameOperationProgressView(operations: operations, productID: product.id)
                         if let status = GameDetailFacetCopy.precheckStatus(
                             productID: product.id, installed: installed != nil,
@@ -118,7 +130,7 @@ struct LiveProductView: View {
                         }
                         if let installed {
                             InstalledGameAttentionView(installed: installedLibrary, operations: operations,
-                                game: installed, repairGame: library.accessIsCurrent ? owned : nil,
+                                game: installed, repairGame: library.accessIsCurrent(for: product.id) ? owned : nil,
                                 close: dismiss.callAsFunction)
                         }
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
@@ -239,20 +251,24 @@ struct LiveProductView: View {
                                     Label("Download full game", systemImage: "icloud.and.arrow.down")
                                 }
                                 .modifier(LibraryActionStyle())
-                                .disabled(!allowsStartupTasks || !library.accessIsCurrent
+                                .disabled(!allowsStartupTasks || !library.accessIsCurrent(for: product.id)
                                           || !operations.canStartMutation)
+                                if !library.accessIsCurrent(for: product.id) || !operations.canStartMutation {
+                                    Text(library.installAccessNotice(for: product.id)
+                                         ?? operations.installUnavailableReason ?? "Installation is not available yet.")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             } else {
                                 InstalledPlayButton(library: installedLibrary, operations: operations,
                                                     game: installed, usesGlass: true, prominent: true)
                             }
                             InstalledGameActions(library: installedLibrary, operations: operations,
                                                  game: installed, usesGlass: true)
-                        } else if let owned {
-                            GameInstallAction(game: owned, operations: operations,
-                                              enabled: allowsStartupTasks && library.accessIsCurrent)
                         } else if canReviewGamePass {
-                            GameInstallAction(game: PCGame(product: product), operations: operations,
-                                              enabled: allowsStartupTasks && canReviewGamePass)
+                            GameInstallAction(game: owned ?? PCGame(product: product), operations: operations,
+                                              enabled: allowsStartupTasks,
+                                              disabledReason: installAccessReason)
                         } else if gamePass, !operations.usesUnifiedAccount {
                             Button {
                                 operations.checkGamePass(
@@ -267,13 +283,14 @@ struct LiveProductView: View {
                             .help(library.accessIsCurrent
                                   ? "Verify this account's current PC Game Pass download access."
                                   : "Refresh your PC library before checking Game Pass access.")
-                        } else {
-                            Button("Install", systemImage: "icloud.and.arrow.down") {
-                                Task { await operations.install(PCGame(product: product)) }
+                            if let status = library.gamePassCheckNotice {
+                                Text(status)
+                                    .font(.caption).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
-                            .modifier(LibraryActionStyle())
-                            .disabled(true)
-                            .help("Current ownership or Game Pass access is required to install this game.")
+                        } else {
+                            GameInstallAction(game: owned ?? PCGame(product: product), operations: operations,
+                                              enabled: false, disabledReason: installAccessReason)
                         }
                     }.controlSize(.large)
                     if let installed {

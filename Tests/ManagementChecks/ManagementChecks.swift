@@ -21,6 +21,16 @@ enum ManagementChecks {
                     discover: CommandLine.arguments.contains("--probe-discovery"),
                     query: CommandLine.arguments.contains("--probe-query"),
                     inspect: CommandLine.arguments.contains("--probe-inspect"))
+            } else if CommandLine.arguments.contains("--descriptor-metrics-checks") {
+                try await checks.descriptorMetricsChecks()
+            } else if CommandLine.arguments.contains("--overflow-checks") {
+                try await checks.overflowChecks()
+            } else if let index = CommandLine.arguments.firstIndex(of: "--contract-schema-checks") {
+                guard CommandLine.arguments.indices.contains(index + 1) else {
+                    throw ManagementError.invalidPayload
+                }
+                try await checks.contractSchemaChecks(canonicalURL:
+                    URL(fileURLWithPath: CommandLine.arguments[index + 1]))
             } else if CommandLine.arguments.contains("--install-plan-development-checks") {
                 try await checks.registryDevelopmentChecks()
                 try await checks.installPlanDevelopmentChecks()
@@ -63,7 +73,422 @@ actor Checks {
         return failures == 0
     }
 
+    func overflowChecks() async throws {
+        let diagnostics = try ManagementClient()
+        for _ in 0..<256 {
+            try await diagnostics.consumeDiagnostics(Data(repeating: 10, count: 4096))
+        }
+        check(await diagnostics.lastOverflow == nil,
+              "Cumulative diagnostics admit exactly the unchanged 1MiB lifetime boundary")
+        do {
+            try await diagnostics.consumeDiagnostics(Data([10]))
+            check(false, "Cumulative stderr overflow is distinguished")
+        } catch {
+            let failure = await diagnostics.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .diagnosticLifetime
+                  && failure?.count == JSONLineFramer.maximumBytes + 1,
+                  "Cumulative stderr overflow is distinguished without logging payload")
+        }
+        do {
+            try await diagnostics.consumeDiagnostics(Data([10, 10]))
+            check(false, "First overflow origin/count is retained once")
+        } catch {
+            check(await diagnostics.lastOverflow?.count == JSONLineFramer.maximumBytes + 1,
+                  "First overflow origin/count is retained once")
+        }
+        check(await diagnostics.close(), "Isolated diagnostic client closes")
+        let stderrClient = try ManagementClient()
+        _ = try await stderrClient.connect(mockConfiguration("diagnosticlifetime"))
+        do {
+            _ = try await stderrClient.request(.jobs)
+            check(false, "Actual fixture stderr lifetime overflow retires the owned transport")
+        } catch {
+            let failure = await stderrClient.lastOverflow
+            check(error as? ManagementError == .outputOverflow && failure?.origin == .diagnosticLifetime,
+                  "Actual fixture stderr lifetime overflow retires the owned transport")
+        }
+        check(await stderrClient.close(), "Owned cumulative-stderr fixture joins")
+
+        guard let eventValue = try fixture("positive").array?.first(where: { $0["kind"]?.string == "event" }) else {
+            throw ManagementError.invalidPayload
+        }
+        let event = try eventValue.decode(ManagementEvent.self)
+        let events = try ManagementClient()
+        for _ in 0..<128 { try await events.enqueueEvent(event) }
+        do {
+            try await events.enqueueEvent(event)
+            check(false, "Unread events retain their unchanged bounded queue")
+        } catch {
+            let failure = await events.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .eventQueue,
+                  "Unread events retain their unchanged bounded queue")
+        }
+        check(await events.close(), "Isolated event client closes")
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ManagementOverflowChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Owned overflow fixtures cleaned") }
+        }
+        for origin in [ManagementClient.OverflowOrigin.stdoutQueue, .stderrQueue] {
+            let file = root.appendingPathComponent(origin.rawValue)
+            try Data(repeating: 32, count: 2 * JSONLineFramer.maximumBytes).write(to: file)
+            let handle = try FileHandle(forReadingFrom: file)
+            let stream = ManagementClient.chunks(handle, origin: origin)
+            let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while (try? handle.offset()) != nil, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            do {
+                for try await _ in stream {}
+                check(false, "Burst \(origin.rawValue) queue overflow is distinguished")
+            } catch let failure as ManagementClient.OverflowFailure {
+                check(failure.origin == origin && failure.count == 129,
+                      "Burst \(origin.rawValue) queue overflow is distinguished")
+            }
+        }
+
+        try await requestPressureChecks()
+    }
+
+    func descriptorMetricsChecks() async throws {
+            let prefix = "Ode descriptor metrics v1 "
+            let enabled = prefix + "enabled seq=1 budget=65536\n"
+            let valid = enabled + prefix + "checkpoint seq=2\n"
+                + prefix + "lookup seq=3 hit=0 forced=1 coalesced=1\n"
+                + prefix + "attempt seq=4 fetch=1\n"
+                + prefix + "terminal seq=5 fetch=1 ok=1\n"
+                + prefix + "lookup seq=6 hit=1 forced=0 coalesced=0\n"
+                + prefix + "checkpoint seq=7\n"
+            let bytes = Data(valid.utf8)
+            for split in 0...bytes.count {
+                var framer = ManagementClient.DescriptorMetricsFramer()
+                let first = framer.append(bytes.prefix(split))
+                let second = framer.append(bytes.dropFirst(split))
+                check(first.count + second.count == 7 && framer.status == .provisional
+                      && framer.checkpoint == 7 && framer.lookups == 2 && framer.hits == 1
+                      && framer.attempts == 1 && framer.terminals == 1 && framer.successes == 1
+                      && framer.active.isEmpty,
+                      "Count-only metrics preserve arbitrary cross-pipe chunk split \(split)")
+            }
+            for invalid in [
+                prefix + "lookup seq=1 hit=1 forced=0 coalesced=0\n",
+                enabled + prefix + "checkpoint seq=3\n",
+                enabled + prefix + "checkpoint seq=02\n",
+                enabled + prefix + "terminal seq=2 fetch=1 ok=1\n",
+                enabled + prefix + "attempt seq=2 fetch=2\n",
+                enabled + prefix + "lookup seq=2 hit=1 forced=1 coalesced=0\n",
+                enabled + prefix + "lookup seq=2 hit=1 forced=0 coalesced=1\n",
+                enabled + prefix + "attempt seq=2 fetch=1\n" + prefix + "checkpoint seq=3\n",
+                enabled + prefix + "enabled seq=2 budget=65536\n",
+                enabled + prefix + "checkpoint seq=2 extra=private\n",
+                enabled + prefix + "checkpoint seq=18446744073709551616\n",
+                enabled + "Ode descriptor metrics v2 checkpoint seq=2\n",
+                enabled + prefix + "checkpoint seq=2\r\n",
+                enabled + prefix + String(repeating: "x", count: 256) + "\n",
+                enabled + prefix + "attempt seq=2 fetch=1\n"
+                    + prefix + "terminal seq=3 fetch=1 ok=0\n"
+                    + prefix + "terminal seq=4 fetch=1 ok=0\n"
+            ] {
+                var framer = ManagementClient.DescriptorMetricsFramer()
+                _ = framer.append(Data(invalid.utf8))
+                check(framer.status == .invalid, "Malformed/uncorrelated metrics invalidate proof without retaining payload")
+            }
+            var absent = ManagementClient.DescriptorMetricsFramer()
+            check(absent.append(Data("untrusted arbitrary stderr\n".utf8)).isEmpty && absent.status == .unavailable,
+                  "Missing enabled marker is unavailable, never zero")
+            _ = absent.append(Data(enabled.utf8))
+            _ = absent.append(Data((prefix + "attempt seq=2 fetch=1\n").utf8))
+            absent.finish()
+            check(absent.status == .invalid, "Unfinished upstream fetch cannot complete count proof")
+            var exhausted = ManagementClient.DescriptorMetricsFramer()
+            _ = exhausted.append(Data((enabled + prefix + "exhausted seq=2\n").utf8))
+            check(exhausted.status == .exhausted, "Explicit exhausted marker invalidates measurement completeness")
+            var bounded = ManagementClient.DescriptorMetricsFramer()
+            _ = bounded.append(Data(enabled.utf8))
+            for sequence in 2...3000 {
+                _ = bounded.append(Data((prefix + "lookup seq=\(sequence) hit=1 forced=0 coalesced=0\n").utf8))
+            }
+            check(bounded.status == .invalid, "Metrics enforce the independent 64KiB lifetime budget")
+            for value in [nil, "", "0", "true", "01", "1 ", "1"] as [String?] {
+                var environment = ["HOME": "/neutral", "SECRET": "never-forward", "RUST_LOG": "trace"]
+                environment["XODUS_DESCRIPTOR_METRICS"] = value
+                let selected = ManagementClient.operationalEnvironment(environment)
+                check(selected["HOME"] == "/neutral" && selected["SECRET"] == nil && selected["RUST_LOG"] == "error"
+                      && selected["XODUS_DESCRIPTOR_METRICS"] == (value == "1" ? "1" : nil),
+                      "Owned launcher permits only exact metrics opt-in and preserves environment restrictions")
+            }
+            let savedOptIn = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+            setenv("XODUS_DESCRIPTOR_METRICS", "true", 1)
+            let disabled = try ManagementClient()
+            do { _ = try await disabled.connect(mockConfiguration("metricsearly")) }
+            catch {
+                if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                throw error
+            }
+            if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
+            else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+            do {
+                _ = try await disabled.descriptorMetricsCheckpoint()
+                check(false, "Nonexact opt-in keeps actual owned transport measurement disabled")
+            } catch {
+                check(error as? ManagementError == .invalidRequest,
+                      "Nonexact opt-in keeps actual owned transport measurement disabled")
+            }
+            _ = try await disabled.request(.jobs)
+            check(await disabled.close(), "Disabled measurement preserves ordinary owned transport")
+            for scenario in ["metricsearly", "metricslate", "metricsmissing", "metricsstale", "metricsdrainfail",
+                             "metricsbusy", "metricsbusytimeout", "metricsbusycap", "metricsbarrier"] {
+                let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+                setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
+                let client = try ManagementClient()
+                do { _ = try await client.connect(mockConfiguration(scenario)) }
+                catch {
+                    if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                    else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                    throw error
+                }
+                if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                if scenario == "metricsbarrier" {
+                    let prior = Task { try await client.request(.jobs) }
+                    while await client.pendingRequestCount == 0 { await Task.yield() }
+                    let fence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending, !fence.isCancelled {
+                        if await client.pendingRequestCount == 0 { break }
+                        await Task.yield()
+                    }
+                    let later = Task { try await client.request(.jobs) }
+                    do {
+                        let counts = try await fence.value
+                        check(counts.checkpoint == 2,
+                              "Checkpoint drains prior work and fences later request admission")
+                    } catch {
+                        check(false, "Checkpoint drains prior work and fences later request admission")
+                    }
+                    _ = try await prior.value
+                    _ = try await later.value
+                    check(await client.close(), "Owned admission boundary fixture closes")
+                    continue
+                } else if scenario.hasPrefix("metricsbusy") {
+                    let held = Task { try await client.request(.jobs) }
+                    let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                    while await client.pendingRequestCount == 0, ContinuousClock.now < deadline {
+                        try await Task.sleep(for: .milliseconds(10))
+                    }
+                    let fence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending { await Task.yield() }
+                    if scenario == "metricsbusytimeout" {
+                        do {
+                            _ = try await client.request(.jobs, timeout: .milliseconds(20))
+                            check(false, "Queued request retains its original timeout budget")
+                        } catch {
+                            check(error as? ManagementError == .requestTimedOut,
+                                  "Queued request retains its original timeout budget")
+                        }
+                        _ = try? await fence.value
+                        _ = try? await held.value
+                        check(await client.close(), "Timed-out boundary transport closes")
+                        continue
+                    }
+                    if scenario == "metricsbusycap" {
+                        let queued = (0..<63).map { _ in Task { try await client.request(.jobs) } }
+                        while await client.descriptorQueuedRequestCount < 63 { await Task.yield() }
+                        do {
+                            _ = try await client.request(.jobs)
+                            check(false, "Boundary waiters share the unchanged 64-request limit")
+                        } catch {
+                            check(error as? ManagementError == .outputOverflow,
+                                  "Boundary waiters share the unchanged 64-request limit")
+                        }
+                        for task in queued { task.cancel() }
+                        for task in queued { _ = try? await task.value }
+                        fence.cancel()
+                        _ = try? await fence.value
+                        check(await client.close(), "Capped boundary fixture closes")
+                        _ = try? await held.value
+                        continue
+                    }
+                    let cancelled = Task { try await client.request(.jobs) }
+                    cancelled.cancel()
+                    do { _ = try await cancelled.value; check(false, "Queued boundary request preserves cancellation") }
+                    catch { check(error is CancellationError, "Queued boundary request preserves cancellation") }
+                    fence.cancel()
+                    do { _ = try await fence.value; check(false, "Cancelled boundary cannot certify pending work") }
+                    catch { check(error is CancellationError, "Cancelled boundary cannot certify pending work") }
+                    let disconnectFence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending { await Task.yield() }
+                    let queued = Task { try await client.request(.jobs) }
+                    check(await client.close(), "Owned busy metrics fixture closes")
+                    do { _ = try await queued.value; check(false, "Disconnect releases queued boundary requests") }
+                    catch { check(error as? ManagementError == .disconnected, "Disconnect releases queued boundary requests") }
+                    _ = try? await disconnectFence.value
+                    _ = try? await held.value
+                    continue
+                }
+                if scenario == "metricsstale" {
+                    _ = try await client.request(.diagnostics)
+                    do {
+                        _ = try await client.descriptorMetricsCheckpoint()
+                        check(false, "Delayed prior export marker cannot certify a new missing checkpoint")
+                    } catch {
+                        check(error as? ManagementError == .invalidPayload,
+                              "Delayed prior export marker cannot certify a new missing checkpoint")
+                    }
+                } else if scenario == "metricsdrainfail" {
+                    do {
+                        _ = try await client.descriptorMetricsCheckpoint()
+                        check(false, "Drain failure cannot certify a checkpoint")
+                    } catch {
+                        check(error as? ManagementError == .backendError("NETWORK_UNAVAILABLE", retryable: false),
+                              "Drain failure cannot certify a checkpoint")
+                    }
+                } else {
+                    let first = try await client.descriptorMetricsCheckpoint()
+                    check(first.checkpoint == 2 && first.lookups == 0 && first.attempts == 0,
+                          "Actual owned fixture correlates checkpoint and result across \(scenario) pipes")
+                    if scenario == "metricsmissing" {
+                        do {
+                            _ = try await client.descriptorMetricsCheckpoint()
+                            check(false, "An earlier checkpoint cannot certify a later export with a missing marker")
+                        } catch {
+                            check(error as? ManagementError == .invalidPayload,
+                                  "An earlier checkpoint cannot certify a later export with a missing marker")
+                        }
+                    } else if scenario == "metricslate" {
+                        let second = Task { try await client.descriptorMetricsCheckpoint() }
+                        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                        while await !client.descriptorCheckpointPending, ContinuousClock.now < deadline {
+                            try await Task.sleep(for: .milliseconds(1))
+                        }
+                        do {
+                            _ = try await client.descriptorMetricsCheckpoint()
+                            check(false, "Concurrent exports cannot share one fresh checkpoint")
+                        } catch {
+                            check(error as? ManagementError == .invalidRequest,
+                                  "Concurrent exports cannot share one fresh checkpoint")
+                        }
+                        check(try await second.value.checkpoint == 3,
+                              "Late stderr marker still certifies only its own completed export")
+                    } else {
+                        let second = try await client.descriptorMetricsCheckpoint()
+                        check(second.checkpoint == 3, "Multiple exports require fresh monotonic checkpoints")
+                    }
+                }
+                check(await client.close(), "Owned count-only metrics fixture closes")
+            }
+        }
+
+    func requestPressureChecks() async throws {
+        let requests = try ManagementClient()
+        _ = try await requests.connect(mockConfiguration("requestpressure"))
+        let held = (0..<64).map { _ in Task {
+            do { _ = try await requests.request(.jobs); return false }
+            catch { return error as? ManagementError == .disconnected }
+        } }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while await requests.pendingRequestCount < 64, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(await requests.pendingRequestCount == 64, "Fixture holds sixty-four actual requests")
+        do {
+            _ = try await requests.request(.jobs)
+            check(false, "Request pressure is distinguished before dispatch")
+        } catch {
+            let failure = await requests.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .requestBudget,
+                  "Request pressure is distinguished before dispatch")
+        }
+        check(await requests.close(), "Owned request-pressure fixture closes")
+        for task in held { check(await task.value, "Held read terminates on owned close") }
+    }
+
+    func contractSchemaChecks(canonicalURL: URL) throws {
+        let bundledURL = try ContractValidator.bundledSchemaURL()
+        let canonical = try Data(contentsOf: canonicalURL)
+        let bundled = try Data(contentsOf: bundledURL)
+        check(bundled == canonical, "App contract bytes exactly match the frozen canonical producer schema")
+        let validator = try ContractValidator()
+        let producer = try ContractValidator(schemaURL: canonicalURL, schemaIdentifier: "urn:xodus:management:1.0")
+        let positive = try fixture("positive").array ?? []
+        for frame in positive {
+            try validator.validate(frame)
+            try producer.validate(frame)
+        }
+        check(positive.count == 102, "App and canonical validators preserve all 102 supported producer frames")
+        for definition in ["queryData", "failedQueryData"] {
+            guard var page = positive.first(where: {
+                let value = definition == "queryData" ? $0["data"] : $0["error"]?["details"]
+                return value?["corpus"]?.string == "publicMicrosoftStoreSearch"
+            }).flatMap({ definition == "queryData" ? $0["data"]?.object : $0["error"]?["details"]?.object }) else {
+                throw ManagementError.invalidPayload
+            }
+            for source in ["MicrosoftStoreEdge:v9.0/searchResults",
+                           "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"] {
+                page["source"] = .string(source)
+                try validator.validate(.object(page), definition: definition)
+                try producer.validate(.object(page), definition: definition)
+                check(true, "Both contracts accept actual producer \(definition) source \(source)")
+                if definition == "queryData", var product = page["products"]?.array?.first?.object {
+                    let originalProducts = page["products"]
+                    product["freshness"] = .string("cached")
+                    page["products"] = .array([.object(product)])
+                    try validator.validate(.object(page), definition: definition)
+                    try producer.validate(.object(page), definition: definition)
+                    check(true, "Both contracts preserve cached product descriptors under live query source \(source)")
+                    for invalid in ["pageFreshness", "pcCandidate"] {
+                        var rejected = page
+                        if invalid == "pageFreshness" { rejected["freshness"] = .string("cached") }
+                        else {
+                            var nonPC = product
+                            nonPC["pcCatalogCandidate"] = .bool(false)
+                            rejected["products"] = .array([.object(nonPC)])
+                        }
+                        for contract in [validator, producer] {
+                            do {
+                                try contract.validate(.object(rejected), definition: definition)
+                                check(false, "Query contract rejects \(invalid) despite cached descriptor compatibility")
+                            } catch ManagementError.invalidPayload {
+                                check(true, "Query contract rejects \(invalid) despite cached descriptor compatibility")
+                            }
+                        }
+                    }
+                    page["products"] = originalProducts
+                }
+            }
+            page["source"] = .string("untrustedSource")
+            for contract in [validator, producer] {
+                do {
+                    try contract.validate(.object(page), definition: definition)
+                    check(false, "Contract rejects unknown query source in \(definition)")
+                } catch ManagementError.invalidPayload {
+                    check(true, "Contract rejects unknown query source in \(definition)")
+                }
+            }
+        }
+        for item in try fixture("negative").array ?? [] {
+            guard let frame = item["frame"] else { throw ManagementError.invalidPayload }
+            for contract in [validator, producer] {
+                do {
+                    try contract.validate(frame)
+                    check(false, "Contract retains negative fixture rejection")
+                } catch ManagementError.invalidFrame {
+                    check(true, "Contract retains negative fixture rejection")
+                }
+            }
+        }
+    }
+
     func run() async throws {
+        try await descriptorMetricsChecks()
+        try await overflowChecks()
         try odeAccountChecks()
         try accountTierChecks()
         try registryDevelopmentChecks()
@@ -1057,10 +1482,10 @@ enum MockBackend {
             if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
-            if scenario == "diagnostics" { supported.insert(.diagnostics) }
+            if scenario == "diagnostics" || scenario.hasPrefix("metrics") { supported.insert(.diagnostics) }
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
                 "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded",
-                "discoverypartialretry"].contains(scenario) { supported.insert(.discover) }
+                "discoverypartialretry", "discoveryretryfailure"].contains(scenario) { supported.insert(.discover) }
             if ["queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
                 "querynulldetails", "querycoalesce", "querypagination", "queryrefreshfailure",
                 "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
@@ -1080,6 +1505,7 @@ enum MockBackend {
             var flowReads = 0, discoveryReads = 0, profileReads = 0
             var activityReads = 0, registryReads = 0
             var recentReads = 0, accountLibraryReads = 0
+            var metricSequence = 1
             var gatedAttempts = 0
             hello["capabilities"] = .array(ManagementCommand.allCases.map { command in .object([
                 "command": .string(command.rawValue), "supported": .bool(supported.contains(command)),
@@ -1090,6 +1516,10 @@ enum MockBackend {
                 let request = try JSONDecoder().decode(JSONValue.self, from: Data(line.utf8))
                 let command = request["command"]?.string ?? ""
                 if command == "hello" {
+                    if scenario.hasPrefix("metrics"), ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"] == "1" {
+                        try FileHandle.standardError.write(contentsOf:
+                            Data("Ode descriptor metrics v1 enabled seq=1 budget=65536\n".utf8))
+                    }
                     if scenario == "welcomeretry" {
                         let marker = lifecycleDirectory.appendingPathComponent("hello-rejected")
                         if !FileManager.default.fileExists(atPath: marker.path) {
@@ -1113,6 +1543,38 @@ enum MockBackend {
                     if scenario == "mismatch" { result["protocol"] = .object(["major": .integer(2), "minor": .integer(0)]) }
                     try emit(.object(result))
                 } else {
+                    if scenario == "metricsbarrier", command == ManagementCommand.jobs.rawValue {
+                        activityReads += 1
+                        usleep(100_000)
+                    }
+                    if scenario.hasPrefix("metricsbusy"), command == ManagementCommand.jobs.rawValue { continue }
+                    if scenario.hasPrefix("metrics"), command == ManagementCommand.diagnostics.rawValue {
+                        if scenario == "metricsdrainfail" {
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE")
+                            continue
+                        }
+                        let marker = Data("Ode descriptor metrics v1 checkpoint seq=\(metricSequence + 1)\n".utf8)
+                        if scenario == "metricsearly" { try FileHandle.standardError.write(contentsOf: marker) }
+                        guard let diagnostic = frames.first(where: { $0["data"]?["reportVersion"] != nil })?["data"] else {
+                            throw ManagementError.invalidPayload
+                        }
+                        try emit(.object(result(request, data: diagnostic)))
+                        if scenario == "metricslate" || scenario == "metricsstale" { usleep(100_000) }
+                        if scenario != "metricsearly",
+                           scenario != "metricsbarrier" || activityReads == 1,
+                           !["metricsmissing", "metricsstale"].contains(scenario) || metricSequence == 1 {
+                            try FileHandle.standardError.write(contentsOf: marker)
+                        }
+                        metricSequence += 1
+                        continue
+                    }
+                    if scenario == "requestpressure", command == ManagementCommand.jobs.rawValue { continue }
+                    if scenario == "diagnosticlifetime", command == ManagementCommand.jobs.rawValue {
+                        for _ in 0..<257 {
+                            try FileHandle.standardError.write(contentsOf: Data(repeating: 10, count: 4096))
+                            usleep(2_000)
+                        }
+                    }
                     if scenario.hasPrefix("ode") {
                         try trace(command)
                         if command == "auth.status" {
@@ -1641,8 +2103,15 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario),
+                    if ["discoveryhundreds", "discoveryrepeatedpage", "discoverybounded", "discoveryretryfailure"].contains(scenario),
                        command == "catalog.discover" {
+                        discoveryReads += 1
+                        if scenario == "discoveryretryfailure", discoveryReads == 3 {
+                            guard request["params"]?["cursor"] == .null else { exit(3) }
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE",
+                                message: "Synthetic retry failure without page details")
+                            continue
+                        }
                         guard request["params"]?["limit"]?.uint64 == 16,
                               var page = frames.first(where: {
                                   $0["data"]?["corpus"]?.string == "pcGamePassDiscovery"

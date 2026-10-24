@@ -210,6 +210,10 @@ enum PreviewChecks {
             check(companion.confirmsAccount(hash) && !companion.confirmsAccount(nil)
                   && !companion.confirmsAccount(String(repeating: "b", count: 64)),
                   "Profile admission still requires the returned identity to match the independently bound account")
+            check(companion.toolbarProfile(for: hash)?.avatarURL == companion.profile.value?.avatarURL
+                  && companion.toolbarProfile(for: nil) == nil
+                  && companion.toolbarProfile(for: String(repeating: "b", count: 64)) == nil,
+                  "REQ90: Toolbar reuses real profile artwork only for the exact current account, clearing on sign-out or replacement")
             let unavailableProfile = try XboxCompanionCache.decode(
                 JSONSerialization.data(withJSONObject: [
                     "ok": true, "accountHash": hash, "checkedAt": "2026-10-09T00:00:00Z",
@@ -220,6 +224,8 @@ enum PreviewChecks {
                 ]))
             check(!unavailableProfile.confirmsAccount(hash),
                   "A matching cache identity without an available profile does not admit account content or games")
+            check(unavailableProfile.toolbarProfile(for: hash) == nil,
+                  "REQ90: Unavailable profile never exposes stale toolbar identity or fabricates a subscription tier")
             check(companion.profile.value?.gamertag == "OriginalGamer" &&
                   companion.friends.value?.count == 1 && companion.consoles.value?.count == 1 &&
                   companion.recentGames.value?.first?.titleId == "1693340366",

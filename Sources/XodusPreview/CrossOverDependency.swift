@@ -26,7 +26,7 @@ enum CrossOverDependencyState: Equatable, Sendable {
         switch self {
         case .notChecked: "CrossOver installation not checked"
         case .checking: "Checking the CrossOver app"
-        case .absent: "CrossOver is required for the first release"
+        case .absent: "CrossOver is not installed"
         case .unverified: "CrossOver installation could not be verified"
         case .installed(let app): "Official CrossOver \(app.version) detected"
         }
@@ -37,7 +37,7 @@ enum CrossOverDependencyState: Equatable, Sendable {
         case .notChecked, .checking:
             "Only approved app locations and signed bundle metadata are checked. No license, bottle, game or save is inspected."
         case .absent:
-            "Install official CrossOver separately from CodeWeavers. This app check does not establish a license. Public browsing and Microsoft sign-in remain available; first-release gameplay setup requires CrossOver."
+            "CrossOver is needed only for games configured to use it. Get the official app from CodeWeavers, then check again. Other engine routes remain separate; this check does not establish a license or game compatibility."
         case .unverified:
             "The app location, bounded metadata or approved publisher signature could not be verified. Install the official app and check again; this does not say whether you own a license."
         case .installed(let app):
@@ -168,7 +168,7 @@ struct RuntimeDependencyStatus: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(settings.crossOverDependency.explanation)
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    Text("CrossOver is the first-release dependency. Wine/GPTK and custom graphics are Experimental, not release-supported alternatives.")
+                    Text("Use the engine required by the game's launch recipe. Detecting an engine does not qualify it for every game; graphics toolkits are separate.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.top, 8)

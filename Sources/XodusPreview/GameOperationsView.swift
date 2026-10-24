@@ -331,6 +331,7 @@ struct GameInstallAction: View {
     @ObservedObject var operations: GameOperationsController
     var enabled = true
     var primary = true
+    var disabledReason: String? = nil
     var preparing: Bool {
         operations.installingDirectly && operations.directInstallProductID == game.id
     }
@@ -346,6 +347,11 @@ struct GameInstallAction: View {
     }
     var actionTitle: String { failed ? "Retry installation" : "Install" }
     var canInstall: Bool { enabled && operations.canStartMutation }
+    var unavailableReason: String? {
+        guard !canInstall else { return nil }
+        return !enabled ? (disabledReason ?? "Installation is not available yet.")
+            : (operations.installUnavailableReason ?? "Installation is not available yet.")
+    }
     var showsCancel: Bool { preparing || (active && operations.canCancel) }
 
     var body: some View {
@@ -388,6 +394,12 @@ struct GameInstallAction: View {
                 .help("Install \(game.title)")
                 .accessibilityLabel("\(failed ? "Retry installation of" : "Install") \(game.title)")
                 .accessibilityIdentifier("xodus.pcGames.download")
+                if let unavailableReason {
+                    Text(unavailableReason)
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.pcGames.installUnavailableReason")
+                }
                 if failed {
                     Label("Installation needs attention", systemImage: "exclamationmark.circle")
                         .font(.caption)

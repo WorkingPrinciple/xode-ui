@@ -56,6 +56,13 @@ struct LiveRootView: View {
         if unifiedAccountMode { return boundAccountHash }
         return session.accountBusy || state.gameOperations.serviceBusy ? nil : boundAccountHash
     }
+    private var toolbarProfile: XboxProfile? {
+        companion.cache?.toolbarProfile(for: boundAccountHash)
+    }
+    private var canImportGame: Bool {
+        state.installedGames.loaded && !state.installedGames.editing
+            && !state.installedGames.choosing && !state.installedGames.mutationActive
+    }
     private var unifiedAccountVerified: Bool {
         if unifiedAccountMode {
             return boundAccountHash != nil && session.nativeLifecycleConfiguration != nil
@@ -141,6 +148,13 @@ struct LiveRootView: View {
                          searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,
                          accountLabel: session.accountLabel,
                          accountSymbol: session.accountSymbol,
+                         accountArtwork: XboxCompanionArtwork.reference(toolbarProfile?.avatarURL),
+                         accountBinding: boundAccountHash,
+                         profileLoading: companion.refreshing,
+                         profileFailed: companion.error != nil,
+                         importGame: state.destination == .library && !state.showsRecentActivity
+                            ? { Task { await state.installedGames.chooseGame() } } : nil,
+                         importEnabled: canImportGame,
                          libraryContrast: toolbarOverArtwork, openSearch: {
                              state.navigate(.discover)
                          }, showSearchResults: {
@@ -149,18 +163,6 @@ struct LiveRootView: View {
                              state.discoverSelection.focusRequest += 1
                          }) {
                 state.openAccount()
-            }
-            if state.destination == .library && !state.showsRecentActivity {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Import installed Xbox game", systemImage: "plus") {
-                        Task { await state.installedGames.chooseGame() }
-                    }
-                    .labelStyle(.iconOnly).help("Import installed game")
-                    .modifier(NativeToolbarIconStyle())
-                    .disabled(!state.installedGames.loaded || state.installedGames.editing ||
-                              state.installedGames.choosing || state.installedGames.mutationActive)
-                    .accessibilityIdentifier("xodus.installed.import")
-                }
             }
             if state.destination == .discover {
                 ToolbarItem(placement: .primaryAction) {
@@ -171,6 +173,7 @@ struct LiveRootView: View {
                     .modifier(NativeToolbarIconStyle())
                     .disabled(!startupAllowed || !session.isReady || session.searching)
                     .accessibilityIdentifier("xodus.catalog.refresh")
+                    .padding(.trailing, 12)
                 }
             }
             }

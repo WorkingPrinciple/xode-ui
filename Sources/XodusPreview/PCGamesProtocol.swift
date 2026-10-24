@@ -236,6 +236,9 @@ struct PCGamesSnapshot: Sendable {
     let unresolvedCount: Int
     let unresolvedKinds: [String: PCGameAcquisitionKind]
     var isComplete: Bool { unresolvedCount == 0 }
+    func hasResolvedGame(_ productID: String) -> Bool {
+        !unresolvedIDs.contains(productID) && games.contains { $0.id == productID }
+    }
 
     init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
          boundAccountHash: String? = nil, unresolvedIDs: Set<String> = [], unresolvedCount: Int = 0,

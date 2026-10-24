@@ -79,6 +79,11 @@ struct XboxCompanionCache: Decodable, Sendable {
         binding == accountHash && profile.available && profile.value != nil
     }
 
+    func toolbarProfile(for binding: String?) -> XboxProfile? {
+        guard let binding, XboxAccountBinding.valid(binding), confirmsAccount(binding) else { return nil }
+        return profile.value
+    }
+
     static func decode(_ data: Data) throws -> Self {
         let value = try JSONDecoder().decode(Self.self, from: data)
         let validProfile = value.profile.value.map(XboxCompanionValidation.profile) ?? true

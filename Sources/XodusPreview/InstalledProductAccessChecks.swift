@@ -203,6 +203,15 @@ enum InstalledProductAccessChecks {
             gamePass: [], active: true,
             permittedInstalledIDs: switched.permits(product, account: other, now: now) ? [product] : [])
         let pendingDisplay = LibraryGame.displayCollection(installed: [game], account: pendingCollection)
+        check(switched.checking && releaseNew != nil && !pendingDisplay.isEmpty
+              && !LibraryLoadingPresentation.showsAccessProgress(
+                checking: switched.checking, hasUsableContent: !pendingDisplay.isEmpty)
+              && !switched.permits(product, account: other, now: now),
+              "COR83: Populated Library omits access-progress row while real background reader continues and admission stays fenced")
+        check(LibraryLoadingPresentation.showsAccessProgress(checking: true, hasUsableContent: false)
+              && !LibraryLoadingPresentation.showsAccessProgress(checking: false, hasUsableContent: false)
+              && !LibraryLoadingPresentation.showsAccessProgress(checking: false, hasUsableContent: true),
+              "COR83: Empty initial access loading remains distinct; idle Library reserves no access-status row")
         check(retired && newStarted && switched.checking && switched.facts.isEmpty
               && !switched.permits(product, account: account, now: now)
               && !switched.permits(product, account: other, now: now)

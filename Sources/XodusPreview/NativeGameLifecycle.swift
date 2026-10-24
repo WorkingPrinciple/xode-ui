@@ -4,7 +4,7 @@ import Foundation
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "3121df540f1ef9bb6d161f02f3c6ac958d74aa1559502304147542ad735da5b6"
+    static let cliSHA256 = "7aa38b13d87947bd6f97c0a70a98d49c05519fb9e4a5d891e04309278e8a61b8"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
@@ -193,6 +193,13 @@ final class NativeGameLifecycle {
             _ = try await Task.detached { try identity.validatedArguments() }.value
         }
         guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+        if launchArguments.contains("--expected-registry-sha256") {
+            let selection = try UserDefaults.standard.data(forKey: AdmittedEngineSelection.preferenceKey)
+                .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+            try await EngineInspectionClient().validateLaunch(configuration: configuration,
+                arguments: launchArguments, selection: selection)
+            guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+        }
         try GameScriptFiles.checkPath(gameDirectory, allowMissing: operation == "install")
         let state = stateRoot ?? Self.directory(runID: runID)
         try GameScriptFiles.checkPath(state, allowMissing: true)

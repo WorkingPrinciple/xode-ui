@@ -16,6 +16,7 @@ final class RuntimeProviderSettings: ObservableObject {
     private var explicitSelection: Bool
     private let detectCrossOver: @Sendable () async -> CrossOverDependencyState
     private let client = RuntimePlanClient()
+    let providerInspector = EngineInspectionClient()
     private var task: Task<Void, Never>?
     private var revision = UUID()
 
@@ -173,7 +174,9 @@ final class RuntimeProviderSettings: ObservableObject {
         }
         do {
             try await client.closeOwnedProcess()
+            try await providerInspector.closeOwnedProcess()
             guard !(await client.hasOwnedProcess) else { throw RuntimePlanningError.shutdownFailed }
+            guard !(await providerInspector.hasOwnedProcess) else { throw RuntimePlanningError.shutdownFailed }
             return true
         } catch {
             errorMessage = RuntimePlanningError.shutdownFailed.localizedDescription
@@ -192,9 +195,6 @@ struct RuntimeProviderSection: View {
     var body: some View {
         Section("Runtime configuration") {
             RuntimeDependencyStatus(settings: settings, allowsCheck: allowsInstallationCheck)
-            DisclosureGroup("Account-bound game engines") {
-                NativeEngineSettings(allowsFileReads: allowsInstallationCheck)
-            }
             Picker("Runtime provider", selection: Binding(
                 get: { settings.configuration?.provider }, set: { settings.select($0) })) {
                 Text("Choose a provider").tag(Optional<RuntimeProviderKind>.none)
