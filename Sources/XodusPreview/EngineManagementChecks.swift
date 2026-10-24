@@ -316,6 +316,11 @@ enum EngineManagementChecks {
             }
         }
         let settings = RuntimeProviderSettings(detectCrossOver: { .absent })
+        settings.select(.calimocho)
+        check(RuntimeProviderSettings.providerChoices == [.calimocho]
+              && settings.planningBlocker?.contains("verified registry selection") == true,
+              "REQ95 current choices are Calimocho-only and do not invent a backend runtime-plan capability")
+        try await selectionPersistenceChecks(root: root, check: check)
         await settings.refreshCrossOverDependency()
         for width in [CGFloat(440), CGFloat(560)] {
             for appearance in [NSAppearance.Name.aqua, .darkAqua] {
@@ -341,7 +346,169 @@ enum EngineManagementChecks {
                     }
                     try png.write(to: output)
                 }
+
             }
         }
+    }
+
+    private static func selectionPersistenceChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let suite = "REQ95-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let wine = root.appendingPathComponent("selected-wine")
+        let server = root.appendingPathComponent("selected-wineserver")
+        let registry = root.appendingPathComponent("selected-registry.json")
+        let prefix = root.appendingPathComponent("selected-prefix")
+        for file in [wine, server] {
+            try Data("#!/bin/sh\nexit 91\n".utf8).write(to: file)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: file.path)
+        }
+        func hash(_ data: Data) -> String {
+            SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        }
+        let wineHash = hash(try Data(contentsOf: wine)), serverHash = hash(try Data(contentsOf: server))
+        let record: [String: Any] = [
+            "engines": [
+                [
+                    "name": "exact-calimocho", "kind": "free", "wine": wine.path, "wineserver": server.path,
+                    "sha256": wineHash, "wineserver_sha256": serverHash, "smoke_test": ["status": "pass"],
+                ]
+            ]
+        ]
+        let bytes = try JSONSerialization.data(withJSONObject: record, options: [.sortedKeys])
+        try bytes.write(to: registry)
+        let inspection = EngineInspection(
+            schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: hash(bytes), engineName: "exact-calimocho", declaredProvider: "calimocho",
+            admittedProvider: "calimocho", admission: "admitted", ready: true, qualified: false,
+            wineSha256: wineHash, wineserverSha256: serverHash, error: nil)
+        let selection = AdmittedEngineSelection(registryPath: registry.path, inspection: inspection)
+        defaults.set(try JSONEncoder().encode(selection), forKey: AdmittedEngineSelection.preferenceKey)
+        EngineDefaults.setDefaultEngine(.calimocho, defaults)
+        guard let reloadedDefaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
+        check(try AdmittedEngineSelection.read(defaults: reloadedDefaults) == selection
+              && EngineDefaults.defaultEngine(reloadedDefaults) == .calimocho,
+              "REQ95 global default and its exact admission survive a fresh defaults reader")
+        let storeURL = root.appendingPathComponent("selected-games.json")
+        let store = InstalledGameStore(file: storeURL)
+        var game = InstalledGame(
+            id: UUID(), title: "Synthetic", identityName: "Synthetic", version: "1",
+            storeId: "FIXTURE00001", folder: root.path, launcher: "", importedAt: Date(), usesNativeLifecycle: true)
+        _ = try await store.upsert(game)
+        _ = try await store.setEngineOverride(id: game.id, override: .calimocho, selection: selection)
+        guard let reloaded = try await InstalledGameStore(file: storeURL).load().first else {
+            throw InstalledGameError.invalidRegistry
+        }
+        game = reloaded
+        check(
+            game.engineOverride == .calimocho && game.engineSelection == selection,
+            "REQ95 exact Calimocho registry/engine/Wine/server admission survives per-game save and fresh-store reload")
+        EngineDefaults.setDefaultEngine(.crossover, defaults)
+        defaults.set("missing-default-registry", forKey: "Xodus.lifecycle.registry")
+        defaults.removeObject(forKey: AdmittedEngineSelection.preferenceKey)
+        let primary = root.appendingPathComponent("selected-runtime/xgameruntime.dll")
+        try FileManager.default.createDirectory(
+            at: primary.deletingLastPathComponent(), withIntermediateDirectories: false)
+        try Data("synthetic runtime".utf8).write(to: primary)
+        try Data("synthetic legacy".utf8).write(
+            to: primary.deletingLastPathComponent().appendingPathComponent("xgameruntime_legacy.dll"))
+        let runtime = try NativeRuntimeReference.capture(primary)
+        let resolved = try NativeLaunchConfiguration.resolve(
+            game: game, provider: .calimocho,
+            defaults: defaults, runtime: runtime)
+        let actual = try NativeEngineRegistry.read(resolved.registry).engines[0]
+        check(
+            resolved.engine == "exact-calimocho" && resolved.registry == registry
+                && resolved.admittedSelection == selection && actual.wine == wine.path
+                && actual.wineserver == server.path && actual.sha256 == wineHash
+                && actual.wineserver_sha256 == serverHash && EngineDefaults.defaultEngine(defaults) == .crossover,
+            "REQ95 reloaded per-game identity wins over independently changed global default/registry/admission, resolving exact Wine and server"
+        )
+        for field in ["ready", "admission", "qualified"] {
+            var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(inspection)) as? [String: Any] ?? [:]
+            if field == "admission" { object[field] = "unadmitted" }
+            else { object[field] = field == "qualified" }
+            let invalid = try JSONDecoder().decode(EngineInspection.self,
+                from: JSONSerialization.data(withJSONObject: object))
+            do {
+                try AdmittedEngineSelection(registryPath: registry.path, inspection: invalid)
+                    .validate(registryPath: registry.path, engineName: resolved.engine, registryDigest: hash(bytes))
+                check(false, "REQ95 invalid \(field) cannot qualify a saved selection")
+            } catch NativeLaunchError.providerNotAdmitted {
+                check(true, "REQ95 invalid \(field) refuses artifact admission rather than granting gameplay qualification")
+            }
+        }
+        do {
+            _ = try await store.setEngineOverride(id: game.id, override: .calimocho)
+            check(false, "REQ95 an enum alone cannot persist a Calimocho configuration")
+        } catch NativeLaunchError.engineNotSelected {
+            check(true, "REQ95 an enum alone cannot persist a Calimocho configuration")
+        }
+        let shimFolder = root.appendingPathComponent("selected-shims")
+        try FileManager.default.createDirectory(at: shimFolder, withIntermediateDirectories: false)
+        var shimHashes: [String: String] = [:]
+        for name in ["windows.web.dll", "XCurl.dll", "cacert.pem"] {
+            let data = Data("synthetic \(name)".utf8)
+            try data.write(to: shimFolder.appendingPathComponent(name))
+            shimHashes[name] = hash(data)
+        }
+        let launch = NativeLaunchConfiguration(
+            engine: resolved.engine, registry: registry, prefix: prefix,
+            runtime: runtime, profile: nil, shims: .init(directory: shimFolder, hashes: shimHashes),
+            admittedSelection: selection)
+        let arguments = try await launch.arguments()
+        check(arguments == ["--engine", resolved.engine, "--registry", registry.path,
+                            "--expected-registry-sha256", hash(bytes), "--prefix", prefix.path,
+                            "--runtime-dll", primary.path, "--shim-dir", shimFolder.path],
+              "REQ95 actual launch arguments carry the reloaded exact registry digest/engine/prefix/runtime, not an enum selector")
+        check(
+            try await launch.prefixNotice() == nil && !FileManager.default.fileExists(atPath: prefix.path),
+            "REQ95 fresh-prefix preflight is read-only and does not claim or create a prefix")
+        try FileManager.default.createDirectory(at: prefix, withIntermediateDirectories: false)
+        try Data("preserved".utf8).write(to: prefix.appendingPathComponent("save-fixture"))
+        check(
+            try await launch.prefixNotice()?.contains("legacy-unclaimed") == true,
+            "REQ95 a nonempty unmarked prefix is explicitly legacy-unclaimed, not silently adopted")
+        let marker = root.appendingPathComponent(".selected-prefix.xodus-engine-owner.json")
+        try JSONSerialization.data(withJSONObject: ["version": 1, "engine": "another-engine", "wine_sha256": wineHash])
+            .write(to: marker)
+        do {
+            _ = try await launch.prefixNotice()
+            check(false, "REQ95 conflicting prefix ownership must refuse")
+        } catch NativeLaunchError.prefixConflict {
+            check(true, "REQ95 conflicting prefix ownership refuses before spawn without changing prefix or saves")
+        }
+        try JSONSerialization.data(withJSONObject: ["version": 1, "engine": resolved.engine, "wine_sha256": wineHash])
+            .write(to: marker)
+        check(
+            try await launch.prefixNotice() == nil
+                && Data(contentsOf: prefix.appendingPathComponent("save-fixture")) == Data("preserved".utf8),
+            "REQ95 matching prefix ownership preserves the existing prefix and synthetic save bytes")
+        try Data((String(decoding: bytes, as: UTF8.self) + "\n").utf8).write(to: registry)
+        do {
+            _ = try NativeLaunchConfiguration.resolve(
+                game: game, provider: .calimocho, defaults: defaults, runtime: runtime)
+            check(false, "REQ95 drifted registry must refuse")
+        } catch NativeLaunchError.selectionChanged {
+            check(
+                true,
+                "REQ95 even semantically equivalent changed registry bytes refuse rather than substitute a global engine"
+            )
+        }
+        try bytes.write(to: registry)
+        try FileManager.default.removeItem(at: wine)
+        do {
+            _ = try NativeLaunchConfiguration.resolve(
+                game: game, provider: .calimocho, defaults: defaults, runtime: runtime)
+            check(false, "REQ95 missing selected Wine must refuse")
+        } catch NativeLaunchError.engineUnavailable {
+            check(true, "REQ95 missing selected Wine refuses before any launch or fallback")
+        }
+        _ = try await store.setEngineOverride(id: game.id, override: nil)
+        let cleared = try await InstalledGameStore(file: storeURL).load().first
+        check(
+            cleared?.engineOverride == nil && cleared?.engineSelection == nil
+                && EngineDefaults.defaultEngine(defaults) == .crossover,
+            "REQ95 clearing a per-game choice clears its exact binding without changing the global default")
     }
 }

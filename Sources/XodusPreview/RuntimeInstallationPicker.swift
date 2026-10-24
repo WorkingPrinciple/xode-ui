@@ -9,6 +9,7 @@ struct RuntimeInstallationPicker: View {
     @AppStorage(EngineDefaults.defaultEngineKey) private var defaultProvider = ""
     @AppStorage("Xodus.lifecycle.engine.standaloneWine") private var wineRecord = ""
     @AppStorage("Xodus.lifecycle.engine.crossover") private var crossOverRecord = ""
+    @AppStorage("Xodus.lifecycle.engine.calimocho") private var calimochoRecord = ""
     @StateObject private var registryObservation: EngineRegistryObservation
     @State private var paths = EngineDefaults.runnerPaths()
     @State private var crossOver = EngineDefaults.crossOverApplication()
@@ -28,19 +29,22 @@ struct RuntimeInstallationPicker: View {
             Picker("Default game engine", selection: Binding(
                 get: { RuntimeProviderKind(rawValue: defaultProvider) },
                 set: { defaultProvider = $0?.rawValue ?? "" })) {
-                Text("Use title recipe / automatic").tag(Optional<RuntimeProviderKind>.none)
+                Text("No default selected").tag(Optional<RuntimeProviderKind>.none)
+                if let saved = RuntimeProviderKind(rawValue: defaultProvider), saved != .calimocho {
+                    Text("\(saved.label) (historical, cannot launch)").tag(Optional(saved))
+                }
                 ForEach(RuntimeProviderSettings.providerChoices, id: \.self) { kind in
                     Text(RuntimeProviderSettings.providerLabel(kind)).tag(Optional(kind))
                 }
             }
             if let kind = RuntimeProviderKind(rawValue: defaultProvider) {
-                if kind == .standaloneWine || kind == .crossover {
-                    let name = kind == .standaloneWine ? wineRecord : crossOverRecord
+                if kind == .calimocho {
+                    let name = calimochoRecord
                     Text(name.isEmpty ? "No exact registry engine selected for this default."
                          : "Configured registry engine: \(name)")
                         .font(.callout).foregroundStyle(.secondary)
                 } else {
-                    Text("This toolkit preference applies to legacy imported-game routing only. Account-bound native launches require an exact Wine engine or a pinned title recipe; a graphics toolkit is not a registered provider.")
+                    Text("This historical default is retained for reference, but current launches require verified Calimocho. No old prefix is adopted or migrated.")
                         .font(.callout).foregroundStyle(.secondary)
                 }
             }
@@ -63,7 +67,7 @@ struct RuntimeInstallationPicker: View {
             }
             DisclosureGroup("Wine, GPTK and existing bottles") {
                 VStack(alignment: .leading, spacing: 16) {
-                    ForEach(RuntimeProviderSettings.providerChoices, id: \.self) { kind in
+                    ForEach(RuntimeProviderKind.allCases.filter { $0 != .calimocho }, id: \.self) { kind in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(kind.label).font(.headline)
                             if kind != .crossover {
@@ -94,13 +98,13 @@ struct RuntimeInstallationPicker: View {
                             }
                         }
                     }
-                    Text("Select your installed Wine/GPTK executable or its containing folder. Bottles are identified by their existing layout; nothing is created, migrated or deleted. Versions and licenses of custom engines are not inferred from their filename.")
+                    Text("Historical engine and bottle locations are retained separately. They do not admit a Calimocho build or enable legacy execution. Nothing is created, migrated or deleted.")
                         .font(.callout).foregroundStyle(.secondary)
                     Link("About Apple's Game Porting Toolkit",
                          destination: URL(string: "https://developer.apple.com/games/game-porting-toolkit/")!)
                 }.padding(.top, 10)
             }
-            Text("Registry engine selections are used for account-bound launches without a pinned title recipe. Executable and existing-bottle choices below apply only to legacy imported-game routing; they do not register an engine or override a title recipe.")
+            Text("Calimocho launches use the exact admitted registry configuration. A per-game selection keeps its own saved identity independently of the default. A conflicting title recipe refuses launch instead of substituting an engine or prefix.")
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
         }

@@ -260,7 +260,7 @@ enum GameOperationChecks {
                     antiCheat: "none", technologyReferences: [], referencePlatforms: []))
             }))
         let installed = InstalledGamesController(store: store, launchingDuration: .milliseconds(50),
-            defaultEngine: { nil }, detectAvailability: { RunnerAvailability([.crossover]) },
+            defaultEngine: { .crossover }, detectAvailability: { RunnerAvailability([.crossover]) },
             compatibilityCatalogue: catalogue)
         let operations = GameOperationsController(installed: installed, paths: paths,
                                                   compatibilityCatalogue: catalogue)
@@ -1111,7 +1111,25 @@ enum GameOperationChecks {
             check(blocked.operation == nil && blocked.error?.contains(technology) == true,
                   "UI-5: Direct installed repair cannot bypass attention-panel admission")
         }
-        await installed.play(imported)
+        for provider in [RuntimeProviderKind.crossover, .gptk3, .gptk4, .standaloneWine] {
+            await installed.setEngineOverride(provider, for: imported)
+            guard let historical = installed.games.first(where: { $0.id == imported.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            await installed.play(historical)
+            check(installed.runningGameID == nil
+                  && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription,
+                  "REQ95 current per-game \(provider.rawValue) choice refuses before spawning a legacy launcher")
+        }
+        await installed.setEngineOverride(nil, for: imported)
+        guard let policyGame = installed.games.first(where: { $0.id == imported.id }) else {
+            throw GameScriptError.invalidReceipt
+        }
+        await installed.play(policyGame)
+        check(installed.runningGameID == nil
+              && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription,
+              "REQ95 current Play refuses historical CrossOver execution before spawning its legacy script")
+        await installed.playHistoricalFixture(policyGame)
         check(installed.runningGameID == imported.id && !operations.canSignIn,
               "S3 game-service restart is disabled while a game is running")
         check(!operations.canRepairSetup, "B8 environment recreation is disabled for every tracked running game")
@@ -1138,7 +1156,7 @@ enum GameOperationChecks {
         try writeMode("setupslow")
         operations.repairSetup()
         guard let launchDuringRepair = installed.games.first else { throw GameScriptError.invalidReceipt }
-        await installed.play(launchDuringRepair)
+        await installed.playHistoricalFixture(launchDuringRepair)
         check(installed.runningGameID == nil && installed.runtimeRepairActive,
               "B8 no game can start while the shared environment is being rebuilt")
         await operations.waitForSetup()
@@ -1157,7 +1175,7 @@ enum GameOperationChecks {
         for mode in ["stopbefore", "stopafter", "stop21", "stopwrongid", "stopfalse", "stopmissing", "stopmismatch"] {
             try writeMode(mode)
             guard let candidate = installed.games.first else { throw GameScriptError.invalidReceipt }
-            await installed.play(candidate)
+            await installed.playHistoricalFixture(candidate)
             try await wait { FileManager.default.fileExists(atPath: root.appendingPathComponent("launcher-pid").path) }
             check(installed.canStop(candidate) && operations.canQuit,
                   "B9 only a live Xodus-launched session can Stop; ordinary gameplay Quit is unchanged")

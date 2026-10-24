@@ -22,6 +22,7 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
     /// the configured default; a missing selected engine refuses launch, never
     /// silently substitutes another runner.
     var engineOverride: RuntimeProviderKind? = nil
+    var engineSelection: AdmittedEngineSelection? = nil
     var usesNativeLifecycle: Bool? = nil
 }
 
@@ -259,6 +260,7 @@ actor InstalledGameStore {
             updated.lastSessionSeconds = previous.lastSessionSeconds
             updated.packageType = game.packageType ?? previous.packageType
             updated.engineOverride = game.engineOverride ?? previous.engineOverride
+            updated.engineSelection = game.engineSelection ?? previous.engineSelection
         }
         games.removeAll { $0.folder == game.folder }
         games.append(updated)
@@ -296,10 +298,17 @@ actor InstalledGameStore {
     }
 
     /// Persist a per-game engine override (or clear it with `nil`).
-    func setEngineOverride(id: UUID, override: RuntimeProviderKind?) throws -> [InstalledGame] {
+    func setEngineOverride(id: UUID, override: RuntimeProviderKind?,
+                           selection: AdmittedEngineSelection? = nil) throws -> [InstalledGame] {
         var games = try load()
         guard let index = games.firstIndex(where: { $0.id == id }) else { return games }
+        if override == .calimocho {
+            guard let selection, let engine = selection.inspection.engineName,
+                  let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineNotSelected }
+            try selection.validate(registryPath: selection.registryPath, engineName: engine, registryDigest: digest)
+        }
         games[index].engineOverride = override
+        games[index].engineSelection = override == .calimocho ? selection : nil
         try save(games)
         return games
     }

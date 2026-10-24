@@ -246,11 +246,16 @@ enum NativeLifecycleChecks {
             shimHashes[name] = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
         }
         let shims = NativeShimReference(directory: shimDirectory, hashes: shimHashes)
-        let automatic = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults)
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults)
+            check(false, "Unconfigured Play cannot silently choose generic Wine")
+        } catch NativeLaunchError.engineNotSelected {
+            check(true, "REQ95 unconfigured Play refuses generic Wine/CrossOver/GPTK substitution")
+        }
         let proven = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
                                                             provenEngine: "synthetic")
-        check(automatic.engine == "synthetic" && proven.engine == "synthetic",
-              "Play automatically selects an available Free Wine engine or the game's proven engine without manual setup")
+        check(proven.engine == "synthetic",
+              "Historical exact recipe data remains inspectable without admitting it for current execution")
         let orderedRegistry = try JSONDecoder().decode(NativeEngineRegistry.self,
             from: JSONSerialization.data(withJSONObject: ["engines": [
                 ["name": "failed-presentation", "kind": "free", "engine_label": "Free Wine",
@@ -261,13 +266,18 @@ enum NativeLifecycleChecks {
                 ["name": "synthetic", "kind": "free", "engine_label": "Free Wine",
                  "wine": executable.path, "smoke_test": ["status": "pass"]]
             ]]))
+        do {
+            _ = try NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
+                defaults: defaults, provenEngine: nil)
+            check(false, "Unspecified selection cannot use an ordered legacy runner")
+        } catch NativeLaunchError.engineNotSelected {
+            check(true, "REQ95 installed legacy runner order cannot admit an unspecified Calimocho configuration")
+        }
         check(try NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
-                defaults: defaults, provenEngine: nil).name == "synthetic"
-              && NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
                 defaults: defaults, provenEngine: "paid").name == "paid"
               && NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: .standaloneWine,
                 defaults: defaults, provenEngine: "paid").name == "synthetic",
-              "Unconfigured Play prefers available Free Wine, excludes failed presentation, and preserves proven/explicit precedence")
+              "Historical explicit recipe resolution stays separate from current execution policy")
         do {
             _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
                                                        provenEngine: "unavailable-proven-engine")
@@ -666,11 +676,12 @@ enum NativeLifecycleChecks {
               && nms.requiredFiles?.first?.sha256 == "c2b53b24c9f4a29df60bffc73e3da6ec1b4d0d88ebcf40e81acc32ad6ff9b8cc"
               && nms.prefixRegistryImports?.first?.sha256 == "4b91e27c5ae34a0237e2e60678d74117c8f110e261105128ea269058c1962eac",
               "NMS tile data preserves S3's exact engine, frozen runtime pair, c2b driver and native-JSON import")
-        check(freeNMS.engine == "nms-free-gptk3-d3dshared"
-              && freeNMS.runtime?.legacySHA256 == "de6f1c47f3cfb087655a4852c185cf89c3d64ca5e2327146d424426d3b7944a5"
-              && freeNMS.environment["CX_APPLEGPTK_LIBD3DSHARED_PATH"]?.hasSuffix("/libd3dshared.dylib") == true
-              && freeNMS.requiredFiles?.contains(where: { $0.sha256 == "5131e631eee8b542eadf48f4df9fd662d9aeeb59139137e0e6e14047dc434995" }) == true,
-              "Preferred free NMS keeps its original NMS legacy DLL and pinned GPTK3 support library, separate from CrossOver fallback")
+        check(freeNMS.engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private"
+              && freeNMS.runtime?.primaryPath == "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll"
+              && freeNMS.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+              && freeNMS.environment == ["XODUS_PRIVATE_LOCAL_SAVES": "1", "XODUS_XBL_ONLINE": "1"]
+              && freeNMS.arguments == ["--exe", "Binaries/NMS.exe", "--no-auto-dismiss"],
+              "Free NMS binds the observed port11b runtime, executable, local saves and online environment without old GPTK3 overrides")
         let suite = "io.github.xodus.recipe-check.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -680,8 +691,8 @@ enum NativeLifecycleChecks {
         try JSONEncoder().encode(obsolete).write(to: root.appendingPathComponent(nms.productID + ".json"))
         let defaultNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults)
         let fallbackNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults, provider: .crossover)
-        check(defaultNMS?.engine == "nms-free-gptk3-d3dshared" && fallbackNMS?.engine == "crossover-26.3",
-              "Automatic NMS uses the qualified free binding; explicit CrossOver selects its exact separate fallback recipe")
+        check(defaultNMS?.engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private" && fallbackNMS?.engine == "crossover-26.3",
+              "Automatic NMS uses the observed port11b binding; explicit CrossOver selects its unchanged separate recipe")
         let brotatoRegistry = root.appendingPathComponent("brotato-route-registry.json")
         try JSONSerialization.data(withJSONObject: ["engines": [
             ["name": "wine-stable", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]],

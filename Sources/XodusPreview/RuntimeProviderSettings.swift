@@ -42,20 +42,16 @@ final class RuntimeProviderSettings: ObservableObject {
         }
         if observed != previous { invalidate() }
         crossOverDependency = observed
-        if configuration == nil, !explicitSelection, case .installed(let app) = observed {
-            var value = RuntimeProviderConfiguration.preset(.crossover)
-            value.providerVersion = app.version
-            configuration = value
-        } else if configuration?.provider == .crossover, case .installed(let app) = observed {
+        if configuration?.provider == .crossover, case .installed(let app) = observed {
             configuration?.providerVersion = app.version
         } else if configuration?.provider == .crossover, !observed.isVerified {
             configuration?.providerVersion = nil
         }
     }
 
-    static let providerChoices: [RuntimeProviderKind] = [.crossover, .gptk4, .gptk3, .standaloneWine]
+    static let providerChoices: [RuntimeProviderKind] = [.calimocho]
     static func providerLabel(_ provider: RuntimeProviderKind) -> String {
-        provider == .crossover ? "Official CrossOver (first release)" : "\(provider.label) (Experimental)"
+        provider == .calimocho ? "Calimocho (verified local build)" : "\(provider.label) (Experimental)"
     }
 
     var requiresExperimentalAcknowledgement: Bool {
@@ -65,6 +61,9 @@ final class RuntimeProviderSettings: ObservableObject {
 
     var planningBlocker: String? {
         guard let configuration else { return "Choose a runtime configuration first." }
+        if configuration.provider == .calimocho {
+            return "Calimocho uses the verified registry selection above. The legacy configuration-only planner does not support this provider."
+        }
         if checkingDependency { return "Wait for the CrossOver app check before requesting a plan." }
         if configuration.provider == .crossover && !crossOverDependency.isVerified {
             return "Verify a separately installed official CrossOver app before planning this first-release configuration."

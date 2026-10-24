@@ -256,7 +256,7 @@ final class InstalledGamesController: ObservableObject {
         case .defaultNotInstalled(let kind):
             "The default engine (\(kind.label)) isn't installed or its runner isn't configured. Check its executable path in Engines, or choose a different default."
         case .noRunnerInstalled:
-            "No supported engine is installed. Set up CrossOver in Engines before launching."
+            "No verified Calimocho configuration is selected. Choose one in Engines; no CrossOver or GPTK engine was substituted."
         }
     }
 
@@ -309,6 +309,16 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func play(_ game: InstalledGame) async {
+        await play(game, historicalFixture: false)
+    }
+
+#if !XODUS_SHIPPING
+    func playHistoricalFixture(_ game: InstalledGame) async {
+        await play(game, historicalFixture: true)
+    }
+#endif
+
+    private func play(_ game: InstalledGame, historicalFixture: Bool) async {
         Self.launchLog.notice("Play requested: \(game.storeId, privacy: .public)")
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
@@ -333,6 +343,10 @@ final class InstalledGamesController: ObservableObject {
             evidence: MacGameEvidenceStore.shared.games[game.storeId]) {
             playErrors[game.id] = InstalledGameActionCopy.launchUnavailable
             Self.launchLog.error("Candidate launch unavailable: \(game.storeId, privacy: .public): \(issue, privacy: .public)")
+            return
+        }
+        guard historicalFixture || (game.engineOverride ?? defaultEngine()) == .calimocho else {
+            playErrors[game.id] = NativeLaunchError.providerPolicy.localizedDescription
             return
         }
         if usesUnifiedAccount {
@@ -377,6 +391,11 @@ final class InstalledGamesController: ObservableObject {
             if case .unavailable(let reason) = outcome {
                 playErrors[game.id] = Self.engineUnavailableMessage(reason)
             }
+            return
+        }
+        guard runner != .calimocho else {
+            finished(token: token, gameID: game.id, status: 0)
+            playErrors[game.id] = NativeLaunchError.legacyLauncher.localizedDescription
             return
         }
         do {
@@ -547,7 +566,9 @@ final class InstalledGamesController: ObservableObject {
                 provider: game.engineOverride ?? defaultEngine(),
                 provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine,
                 evidence: MacGameEvidenceStore.shared.games[game.storeId])
+            guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
             let arguments = try await launch.arguments()
+            let prefixNotice = try await launch.prefixNotice()
             let executables = try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder)).executables
             let existingWindows = NativeGameForeground.windowIDs()
             guard canRequestPlay(game.storeId), session.accountHash == account,
@@ -556,7 +577,7 @@ final class InstalledGamesController: ObservableObject {
                   games.contains(game) else { throw GameScriptError.busy }
             playErrors[game.id] = nil
             playLogs[game.id] = nil
-            playNotices[game.id] = nil
+            playNotices[game.id] = prefixNotice
             let runID = Self.runID()
             runIDs[game.id] = runID
             nativeLaunchTask = Task {
@@ -566,7 +587,8 @@ final class InstalledGamesController: ObservableObject {
                         operation: "launch", product: game.storeId,
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
                         launchArguments: arguments, launchEnvironment: launch.profile?.launchEnvironment ?? [:],
-                        unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [], onStarted: {
+                        unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [],
+                        engineSelection: launch.admittedSelection, onStarted: {
                             Self.launchLog.notice("Launcher started: \(game.storeId, privacy: .public), engine \(launch.engine, privacy: .public)")
                             launchStarted = true
                             playState = .playing
@@ -785,9 +807,11 @@ final class InstalledGamesController: ObservableObject {
         inspectionGeneration = UUID()
         defer { editing = false }
         do {
-            applySavedGames(try await store.setEngineOverride(id: game.id, override: override))
+            let selection = override == .calimocho ? try AdmittedEngineSelection.read(defaults: .standard) : nil
+            applySavedGames(try await store.setEngineOverride(id: game.id, override: override, selection: selection))
             error = nil
-        } catch { self.error = InstalledGameError.storage.localizedDescription }
+        } catch let failure as NativeLaunchError { self.error = failure.localizedDescription }
+        catch { self.error = InstalledGameError.storage.localizedDescription }
     }
 
     func registerInstallation(folder: URL, launcher: URL, expectedStoreID: String) async throws {

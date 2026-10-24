@@ -195,7 +195,7 @@ enum InstalledGameChecks {
         let store = InstalledGameStore(file: file)
         let library = InstalledGamesController(store: store, launchingDuration: .milliseconds(100),
                                                logDirectory: root.appendingPathComponent("logs"),
-                                               defaultEngine: { nil },
+                                               defaultEngine: { .crossover },
                                                detectAvailability: { RunnerAvailability([.crossover]) },
                                                compatibilityCatalogue: catalogue)
         await library.load()
@@ -277,7 +277,7 @@ enum InstalledGameChecks {
               "Reimport updates one local folder entry rather than duplicating it")
         guard let failedGame = library.games.first else { throw InstalledGameError.invalidRegistry }
         library.setAccountAccessAllowed(false, message: "Xbox services are reconnecting automatically.")
-        await library.play(failedGame)
+        await library.playHistoricalFixture(failedGame)
         check(library.runningGameID == nil
               && library.playErrors[failedGame.id] == "Xbox services are reconnecting automatically.",
               "Unavailable Xbox services block an installed game before its launcher starts")
@@ -289,7 +289,7 @@ enum InstalledGameChecks {
                 try await Task.sleep(for: .milliseconds(10))
             }
         }
-        await library.play(failedGame)
+        await library.playHistoricalFixture(failedGame)
         try await wait { library.runningGameID == nil }
         await library.waitForSessionPersistence()
         let failedSession = try await store.load().first
@@ -308,7 +308,7 @@ enum InstalledGameChecks {
             "printf 'neutral launch error\\n' > '\(logs.path)/'\"$1\"'.stderr.log'\nexit 3")
         await library.importGame(folder: folder, launcher: loggedFailure)
         guard let loggedGame = library.games.first else { throw InstalledGameError.invalidRegistry }
-        await library.play(loggedGame)
+        await library.playHistoricalFixture(loggedGame)
         try await wait { library.playLogs[game.id] != nil }
         check(library.playLogs[game.id]?.deletingLastPathComponent().path == logs.path
               && library.playErrors[game.id] == "The game launcher reported an error (code 3).",
@@ -316,21 +316,21 @@ enum InstalledGameChecks {
         await library.waitForSessionPersistence()
         await library.importGame(folder: folder, launcher: zero)
         guard let zeroGame = library.games.first else { throw InstalledGameError.invalidRegistry }
-        await library.play(zeroGame)
+        await library.playHistoricalFixture(zeroGame)
         try await wait { library.runningGameID == nil }
         check(library.playErrors[game.id] == nil && library.playState == nil,
               "Retry's exit zero returns silently to Play without stale failure")
         check(library.playLogs[game.id] == nil, "AC2.3: Retry clears the previous session log action")
         await library.importGame(folder: folder, launcher: slow)
         guard let slowGame = library.games.first else { throw InstalledGameError.invalidRegistry }
-        await library.play(slowGame)
+        await library.playHistoricalFixture(slowGame)
         check(library.playState == .launching && library.runningGameID == slowGame.id,
               "A live fake launcher first publishes Launching")
         let launchingButton = InstalledPlayButton(library: library,
             operations: GameOperationsController(installed: library), game: slowGame)
         check(launchingButton.loadingTitle == "Opening \(slowGame.title)" && library.launchStarted,
               "REQ-75: A started synthetic launcher presents title-specific opening status, not game readiness")
-        await library.play(slowGame)
+        await library.playHistoricalFixture(slowGame)
         try await wait { library.playState == .playing }
         check(launchingButton.loadingTitle == nil && launchingButton.title == "Stop",
               "REQ-75: Actual launch transition retires loading and keeps the supported Stop action")
@@ -374,7 +374,7 @@ enum InstalledGameChecks {
         try Data(config.utf8).write(to: otherFolder.appendingPathComponent("MicrosoftGame.config"))
         await library.importGame(folder: otherFolder, launcher: failure)
         guard let other = library.games.last else { throw InstalledGameError.invalidRegistry }
-        await library.play(other)
+        await library.playHistoricalFixture(other)
         check(library.runningGameID == slowGame.id
               && (other.id == slowGame.id || library.playErrors[other.id]?.contains("Quit the running game") == true),
               "A second game's Play cannot overlap the running session and explains its busy state")
@@ -390,7 +390,7 @@ enum InstalledGameChecks {
         check(library.playErrors[game.id] == nil, "The fake game finishes naturally after app termination begins")
         library.applicationTerminating = false
         try FileManager.default.removeItem(at: failure)
-        await library.play(other)
+        await library.playHistoricalFixture(other)
         check(library.runningGameID == nil && library.playErrors[other.id] == InstalledGameError.missingLauncher.localizedDescription,
               "Missing launcher fails before execution with actionable per-game error")
         await library.remove(other)
@@ -433,14 +433,14 @@ enum InstalledGameChecks {
         try await store.save([older])
         let resilient = InstalledGamesController(store: store, launchingDuration: .milliseconds(100),
                                                 logDirectory: root.appendingPathComponent("logs"),
-                                                defaultEngine: { nil },
+                                                defaultEngine: { .crossover },
                                                 detectAvailability: { RunnerAvailability([.crossover]) },
                                                 compatibilityCatalogue: catalogue)
         await resilient.load()
         resilient.setAccountAccessAllowed(true)
         await resilient.importGame(folder: folder, launcher: slow)
         guard let resilientGame = resilient.games.first else { throw InstalledGameError.invalidRegistry }
-        await resilient.play(resilientGame)
+        await resilient.playHistoricalFixture(resilientGame)
         await resilient.waitForSessionPersistence()
         let beforeCorruption = try Data(contentsOf: file)
         try Data("corrupt".utf8).write(to: file)
@@ -560,7 +560,7 @@ enum InstalledGameChecks {
         check(try await InstalledGameStore(file: routingFile).load().first?.engineOverride == .gptk4,
               "M3: A per-game engine override persists across relaunch")
         guard let overridden = routing.games.first else { throw InstalledGameError.invalidRegistry }
-        await routing.play(overridden)
+        await routing.playHistoricalFixture(overridden)
         try await wait { routing.runningGameID == nil }
         check(routing.playErrors[overridden.id]?.contains("isn't installed") == true,
               "M3: An override whose engine is not installed refuses launch, never substituting another runner")
@@ -568,8 +568,8 @@ enum InstalledGameChecks {
         guard let cleared = routing.games.first else { throw InstalledGameError.invalidRegistry }
         await routing.play(cleared)
         try await wait { routing.runningGameID == nil }
-        check(routing.playErrors[cleared.id] == nil,
-              "M3: Clearing the override falls back to an installed runner and launches")
+        check(routing.playErrors[cleared.id]?.contains("Calimocho") == true,
+              "REQ95 clearing an override without a configured default refuses instead of silently launching CrossOver")
         await routing.waitForSessionPersistence()
         await routing.setEngineOverride(.gptk4, for: cleared)
         try FileManager.default.removeItem(at: container)
@@ -612,7 +612,7 @@ enum InstalledGameChecks {
         nonDefault.setAccountAccessAllowed(true)
         await nonDefault.importGame(folder: routingFolder, launcher: selectorLauncher)
         guard let selected = nonDefault.games.first else { throw InstalledGameError.invalidRegistry }
-        await nonDefault.play(selected)
+        await nonDefault.playHistoricalFixture(selected)
         try await wait { nonDefault.runningGameID == nil }
         await nonDefault.waitForSessionPersistence()
         let recordedSelector = try String(contentsOf: selectorRecord, encoding: .utf8)

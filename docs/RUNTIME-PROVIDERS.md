@@ -103,14 +103,60 @@ render evidence, installed delivery and product acceptance are separate gates.
 
 ## Persisted launch selection (M3)
 
-The following M3 description covers legacy imported-game routing. The
-account-bound registry path and source-only admission extension above supersede
-any implication that all current games use this legacy selector handoff.
+### Current Calimocho execution policy (REQ95 / COR110)
+
+Current Play accepts only an explicitly selected, admitted Calimocho configuration.
+CrossOver, GPTK and generic Wine records remain historical data; detecting them or
+retaining an old preference does not permit execution or automatic substitution.
+No default is invented by CrossOver detection.
+
+Selecting Calimocho for a game persists the complete `engineSelection` alongside
+`engineOverride` in the private installed-game list: registry path and byte digest,
+engine name, admission result, Wine digest and wineserver digest. Reload uses that
+game's saved tuple, not the current global registry or default admission.
+Clearing an override clears its tuple without changing the independent default.
+An enum-only Calimocho choice cannot be saved or launched.
+
+The resolver reads that exact registry, matches the actual Wine/server fields,
+and refuses changed bytes, missing/unusable artifacts, unadmitted selections,
+conflicting title recipes and sibling fallbacks. The resolved tuple travels into
+the launch service's fresh, identity-bound `engine-inspect` check immediately
+before launch; it is not replaced by a second global preference read.
+Artifact admission remains distinct from gameplay qualification.
+The legacy bash argument-two/`XODUS_ENGINE` handoff cannot establish identity and
+does not execute under current policy. Historical script/session regressions use
+an explicit diagnostic entry point compiled out of shipping builds; normal Play
+never calls that entry point.
+
+Prefix preflight runs off-main, reads the CLI's existing sibling ownership record,
+and refuses a conflicting or malformed record without writing it. A nonempty
+unmarked prefix is explicitly displayed as `legacy-unclaimed`; it is used as-is,
+not claimed, migrated or moved. The CLI repeats its own ownership checks.
+No prefix or save is inspected during source checks except synthetic fixtures.
+
+The owner-directed NMS free recipe binds only product `BQVQTL3PCH05` at the
+confirmed `~/Games/Xodus/NoMansSky-Xbox` folder: exact PERF registry digest
+`170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609`,
+engine `calimocho-wine11.20-gptk4b3-tls-vulkan-private`, runtime candidate
+`7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b`,
+existing `req71-nms-calimocho-port11b-v1` prefix, `Binaries/NMS.exe`,
+local saves, online environment and no auto-dismiss. It requires explicit matching
+admission; it does not silently select the latest engine. No new HUD/fullscreen
+setting, prefix import, reseed or registry rewrite is applied. The historical
+CrossOver recipe is retained as evidence, not admitted for current Play.
+Account-bound CLI launch already uses the isolated management/Ode profile;
+the historical `--account-profile launch` flag adds no distinct authentication
+semantics to that lifecycle route.
+
+### Historical selector handoff
+
+The following M3 description documents the old imported-game contract, not
+current execution admission.
 
 Launch selection is separate from the configuration-only planning contract below.
 `Xodus.defaultEngine` persists the optional default. The private installed-game
 list persists each game's optional `engineOverride`; override, default, then
-first available runner is the selection order. A missing selected runner is an
+first available runner was the selection order. A missing selected runner was an
 explicit refusal, never a substitution.
 
 Availability does not read `Xodus.developerBackendPath`: that preference names a

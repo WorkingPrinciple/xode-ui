@@ -70,7 +70,7 @@ struct NativeEngineSettings: View {
                                 : "Provider not admitted. This record cannot be selected as Calimocho.")
                         if inspection.ready, inspection.admittedProvider == "calimocho" {
                             Button("Use this Calimocho build as default") {
-                                if saveAdmission(inspection) { EngineDefaults.setDefaultEngine(.standaloneWine) }
+                                if saveAdmission(inspection) { EngineDefaults.setDefaultEngine(.calimocho) }
                             }
                             .disabled(!allowsFileReads || observation.status == .loading)
                         }
@@ -80,9 +80,7 @@ struct NativeEngineSettings: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
             NativeEnginePicker(
-                provider: .crossover, entries: observation.entries, allowsSelection: allowsFileReads)
-            NativeEnginePicker(
-                provider: .standaloneWine, entries: observation.entries, allowsSelection: allowsFileReads,
+                provider: .calimocho, entries: observation.entries, allowsSelection: allowsFileReads,
                 admittedNames: Set(
                     observation.inspections.values.filter {
                         $0.ready && $0.admittedProvider == "calimocho"
@@ -204,7 +202,7 @@ struct NativeEngineSettings: View {
             guard inspection.ready, let name = inspection.engineName else { throw EngineInspectionError.failed }
             admittedSelection = try JSONEncoder().encode(AdmittedEngineSelection(
                 registryPath: registryPath, inspection: inspection))
-            UserDefaults.standard.set(name, forKey: "Xodus.lifecycle.engine.standaloneWine")
+            UserDefaults.standard.set(name, forKey: "Xodus.lifecycle.engine.calimocho")
             errorMessage = nil
             return true
         } catch {
@@ -253,7 +251,8 @@ private struct NativeEnginePicker: View {
     private var available: [NativeEngineRegistry.Entry] {
         entries.filter {
             (EngineManagementPolicy.matches($0, provider: provider)
-                || (provider == .standaloneWine && admittedNames.contains($0.name))) && $0.isAvailable
+                || (provider == .calimocho && admittedNames.contains($0.name))) && $0.isAvailable
+                && (provider != .calimocho || admittedNames.contains($0.name))
         }
     }
 }

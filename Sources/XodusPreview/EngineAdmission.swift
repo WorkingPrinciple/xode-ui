@@ -109,17 +109,37 @@ struct EngineInspection: Codable, Equatable, Sendable {
     }
 }
 
-struct AdmittedEngineSelection: Codable, Equatable {
+struct AdmittedEngineSelection: Codable, Equatable, Sendable {
     let registryPath: String
     let inspection: EngineInspection
 
     static let preferenceKey = "Xodus.lifecycle.admittedEngine.standaloneWine"
 
+    static func read(defaults: UserDefaults) throws -> Self {
+        guard let bytes = defaults.data(forKey: preferenceKey) else {
+            throw NativeLaunchError.engineNotSelected
+        }
+        let selection = try JSONDecoder().decode(Self.self, from: bytes)
+        guard let engine = selection.inspection.engineName,
+              let digest = selection.inspection.registrySha256 else {
+            throw NativeLaunchError.engineUnavailable
+        }
+        try selection.validate(registryPath: selection.registryPath, engineName: engine, registryDigest: digest)
+        return selection
+    }
+
     func validate(registryPath: String, engineName: String, registryDigest: String) throws {
-        guard self.registryPath == registryPath, inspection.ready, inspection.error == nil,
+        guard self.registryPath == registryPath, inspection.engineName == engineName,
+              inspection.registrySha256 == registryDigest else {
+            throw NativeLaunchError.selectionChanged
+        }
+        guard inspection.ready, inspection.error == nil,
+              inspection.schemaVersion == 1, inspection.capability == "engineAdmissionV1", !inspection.qualified,
               inspection.admission == "admitted", inspection.admittedProvider == "calimocho",
-              inspection.declaredProvider == "calimocho", inspection.engineName == engineName,
-              inspection.registrySha256 == registryDigest,
+              inspection.declaredProvider == "calimocho" else {
+            throw NativeLaunchError.providerNotAdmitted
+        }
+        guard
               EngineInspection.validDigest(inspection.wineSha256),
               EngineInspection.validDigest(inspection.wineserverSha256) else {
             throw NativeLaunchError.engineUnavailable

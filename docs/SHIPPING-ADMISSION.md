@@ -2,6 +2,33 @@
 
 ## Purpose and authorization
 
+### REQ95 source candidate: settings producer, not yet stage eligible
+
+The consumer source pins producer `9f385203b9a38605beedd83d57e77253014c2190`,
+tree `4c5e06fa2863d82512df2aea19b540c2b51d455e`, signed CLI
+`d761d8514375fad4aa83362c98a607542e8cf3c676b997e9dd286d30004c702e`
+(28,674,576 bytes), unchanged helper
+`42560b3e33a258c8af43146034d6f5140d939f855d682739bc82ea1d8962ff65`
+(20,480 bytes), and manifest
+`45c2ea46bb1609880d046dab41a4a9541f0057655564df5b91c8853f619e98ea`
+(7,512 bytes). Actual hashes and strict signature were independently read.
+Its unsigned provenance is
+`771aa1b1a9448034a00713b171de4febe066db8df2c76353b785a377698b18b0`.
+Historical recipe evidence CLI identities are unchanged.
+
+This tuple is accepted for standalone/source integration only:
+`buildAppExactCommandCompatible:false`. It is not permission to bypass the sealed
+input validator through the selected-signed refresh. The canonical predicate in
+`shipping_pair.verify_input` requires the actual command
+`cargo build --release --offline --locked -q -p xodus-cli --bin xodus-cli --target aarch64-apple-darwin --no-default-features --message-format=json`,
+matching native feature/profile metadata before and after build, and
+`metadataPlatformFilter:aarch64-apple-darwin`, plus its existing ownership,
+mode, seal, source/tree, hash and byte-count checks. A genuinely compliant new
+producer artifact and provenance are required before this source is staged.
+No validator or command predicate is weakened. Signed UI stage `3c0648b` remains
+immutable and does not contain this source work. Source verification does not
+claim installed engine parity, game acceptance or permission to deploy.
+
 ### Current paired schema reconciliation
 
 The app resource now uses the exact canonical management contract from producer

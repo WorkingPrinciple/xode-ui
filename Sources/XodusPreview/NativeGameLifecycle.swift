@@ -4,7 +4,7 @@ import Foundation
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "fd6c7a6427a7317e92ebfcd5d49a5f6b5ff75e3b7330ff2bcad887262ca06dd8"
+    static let cliSHA256 = "d761d8514375fad4aa83362c98a607542e8cf3c676b997e9dd286d30004c702e"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
@@ -176,6 +176,7 @@ final class NativeGameLifecycle {
              stateRoot: URL? = nil, launchArguments: [String] = [],
              launchEnvironment: [String: String] = [:],
              unsetLaunchEnvironment: [String] = [],
+             engineSelection: AdmittedEngineSelection? = nil,
              onStarted: () -> Void = {},
              onProgress: (GameScriptProgress) -> Void = { _ in }) async throws -> NativeGameResult {
         guard !active, ["install", "repair", "uninstall", "launch"].contains(operation),
@@ -194,10 +195,8 @@ final class NativeGameLifecycle {
         }
         guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
         if launchArguments.contains("--expected-registry-sha256") {
-            let selection = try UserDefaults.standard.data(forKey: AdmittedEngineSelection.preferenceKey)
-                .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
             try await EngineInspectionClient().validateLaunch(configuration: configuration,
-                arguments: launchArguments, selection: selection)
+                arguments: launchArguments, selection: engineSelection)
             guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
         }
         try GameScriptFiles.checkPath(gameDirectory, allowMissing: operation == "install")
