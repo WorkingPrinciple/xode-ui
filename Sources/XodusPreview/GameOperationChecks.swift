@@ -905,6 +905,26 @@ enum GameOperationChecks {
         check(!operations.checkingCompatibility && !installed.mutationActive && operations.canQuit
               && operations.installConsent == nil && installed.games.isEmpty,
               "B3: Consent cancellation joins its check and releases the fence without registration or game files")
+        try writeMode("0")
+        let installAction = GameInstallAction(game: game, operations: operations)
+        await installAction.requestInstall()
+        check(operations.presentedInstallConsent?.game.id == game.id
+              && operations.canConfirmInstall && !operations.installingDirectly
+              && operations.operation == nil && !installed.mutationActive
+              && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
+              && !FileManager.default.fileExists(atPath: paths.journal.path),
+              "COR89 actual Install button presents a fresh visible review without automatically starting installation")
+        await operations.cancelInstallConsent()
+        check(operations.presentedInstallConsent == nil && operations.operation == nil
+              && installed.games.isEmpty && !installed.mutationActive
+              && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
+              && !FileManager.default.fileExists(atPath: paths.journal.path),
+              "COR89 cancelling actual Install review performs no installation, registration or journal write")
+        let blockedInstallAction = GameInstallAction(game: game, operations: operations, enabled: false)
+        await blockedInstallAction.requestInstall()
+        check(operations.installConsent == nil && operations.operation == nil,
+              "COR89 actual Install action retains its access gate before presenting review")
+        try writeMode("checkslow")
         let directCheck = Task { await operations.install(game) }
         try await wait { operations.checkingCompatibility }
         check(operations.installingDirectly && operations.presentedInstallConsent == nil

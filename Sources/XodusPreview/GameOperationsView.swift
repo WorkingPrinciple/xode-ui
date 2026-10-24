@@ -381,6 +381,11 @@ struct GameInstallAction: View {
     }
     var showsCancel: Bool { preparing || (active && operations.canCancel) }
 
+    func requestInstall() async {
+        guard canInstall else { return }
+        await operations.prepareInstall(game)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if active, operations.recoveryRequired {
@@ -412,7 +417,7 @@ struct GameInstallAction: View {
                 }
             } else {
                 Button {
-                    Task { await operations.install(game) }
+                    Task { await requestInstall() }
                 } label: {
                     Label(actionTitle, systemImage: "icloud.and.arrow.down")
                 }

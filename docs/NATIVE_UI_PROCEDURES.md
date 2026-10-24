@@ -341,8 +341,15 @@ Unified game details use a separate detail-owned `InstalledProductAccess`
 instance to read the selected uninstalled PC product ID through the existing
 `ode.account.read.v1` license section. This does not depend on unrelated
 library completeness and does not replace the installed-inventory reader.
-The current-account, exact-ID, unexpired permitted response admits only
-installation review/consent, not a download entitlement or ownership badge.
+The current-account, exact-ID, unexpired permitted response enables the Install
+control, not a download entitlement or ownership badge. In frozen `e8650d7`
+the pre-existing actual button called the direct-install API, which created
+and automatically confirmed an internal consent while hiding its sheet.
+That build did not provide visible review; an enabled Install click could
+start a download. The successor button calls `prepareInstall` instead and
+shows the existing review sheet. Only its explicit Install confirmation
+starts the operation; Cancel performs no installation or registry write.
+The direct-install API remains separate from this interactive button path.
 Denied/unknown/error/expired results remain explicit beside Install, with
 an exact-ID retry; account replacement/sign-out revoke the response.
 The actual native `install <ID>` path remains authoritative for Windows
