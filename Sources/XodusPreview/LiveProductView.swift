@@ -12,8 +12,8 @@ enum GameDetailFacetCopy {
         return "Checking installation requirements"
     }
 
-    static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String {
-        guard let acquisition else { return "Access not verified" }
+    static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String? {
+        guard let acquisition else { return nil }
         let label: String
         switch acquisition {
         case .purchased: label = "Owned"

@@ -550,8 +550,8 @@ enum LibraryAccessChecks {
                 qualified: stale, query: "", sort: .title).isEmpty,
               "Same-account saved games stay visible while refreshing without current install or Play admission")
         check(GameDetailFacetCopy.access(acquisition: .subscription, current: true) == "Subscription (plan unknown)"
-              && GameDetailFacetCopy.access(acquisition: .purchased, current: false).contains("refresh required")
-              && GameDetailFacetCopy.access(acquisition: nil, current: true) == "Access not verified",
+              && GameDetailFacetCopy.access(acquisition: .purchased, current: false)?.contains("refresh required") == true
+              && GameDetailFacetCopy.access(acquisition: nil, current: true) == nil,
               "M10: detail facets never relabel subscription, stale or absent access as current Owned")
         let heroPurchase = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
             acquisitionKind: .purchased), gamePass: false, installed: installedHeld, accessIsCurrent: true)
@@ -569,9 +569,9 @@ enum LibraryAccessChecks {
         let heroUnknown = GameFacts(pc: nil, gamePass: false, installed: installedHeld, accessIsCurrent: false)
         let heroStale = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
             acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: false)
-        check(heroCatalogOnly.heroAccessLabels() == ["Access not verified", "In PC Game Pass catalog"]
-              && heroUnknown.heroAccessLabels() == ["Access not verified"]
-              && heroStale.heroAccessLabels() == ["Access not verified", "In PC Game Pass catalog"],
+        check(heroCatalogOnly.heroAccessLabels() == ["In PC Game Pass catalog"]
+              && heroUnknown.heroAccessLabels().isEmpty
+              && heroStale.heroAccessLabels() == ["In PC Game Pass catalog"],
               "REQ-77: Public membership, stale subscription and installed/launchable files cannot invent current account provenance")
         check([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale]
             .allSatisfy { !$0.heroAccessLabels().contains("Installed on this Mac") },

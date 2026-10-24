@@ -99,7 +99,6 @@ struct GameFacts: Equatable {
             }
             if subscriptionAcquisition { labels.append("Subscription (plan unknown)") }
         }
-        if labels.isEmpty { labels.append("Access not verified") }
         for plan in Plan.allCases where memberships.contains(where: { $0.plan == plan }) {
             labels.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
         }
@@ -111,12 +110,14 @@ struct GameHeroAccess: View {
     let facts: GameFacts
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) { labels }
-            VStack(alignment: .leading, spacing: 4) { labels }
+        if !facts.heroAccessLabels().isEmpty {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) { labels }
+                VStack(alignment: .leading, spacing: 4) { labels }
+            }
+            .font(.callout.weight(.medium))
+            .accessibilityIdentifier("xodus.game.heroAccess")
         }
-        .font(.callout.weight(.medium))
-        .accessibilityIdentifier("xodus.game.heroAccess")
     }
 
     private var labels: some View {

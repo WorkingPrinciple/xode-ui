@@ -84,6 +84,8 @@ catalog membership; the latter is not an active plan or satisfying entitlement.
 Installation/Play must never be used to infer either. Verify purchase,
 subscription, overlapping facts and unknown/stale cases without commerce or
 account mutation; use clearly labeled fixtures for unavailable account cases.
+Unknown access contributes no hero subtitle; it must not be replaced with a
+generic verification warning or guessed purchase/subscription status.
 The prominent hero no longer repeats installation beside Play; installation
 attention, checks, errors and launch controls remain elsewhere in the detail.
 
