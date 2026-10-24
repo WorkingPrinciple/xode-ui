@@ -279,7 +279,8 @@ struct LiveLibraryView: View {
             selection.measureAncestor("root", frame: $0)
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
-        .gameDetailSheet(item: $selection.localDetail, operations: operations, allowed: allowsStartupTasks, onDismiss: {
+        .gameDetailSheet(item: $selection.localDetail, operations: operations, allowed: allowsStartupTasks,
+                         accountHash: session.accountHash, onDismiss: {
             restoreDetailFocus()
         }) { entry, reviewInstall in
             if let product = entry.product {

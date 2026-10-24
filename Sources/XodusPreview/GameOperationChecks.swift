@@ -924,6 +924,11 @@ enum GameOperationChecks {
         await blockedInstallAction.requestInstall()
         check(operations.installConsent == nil && operations.operation == nil,
               "COR89 actual Install action retains its access gate before presenting review")
+        let pendingReview = GameDetailInstallRequest(game: game, accountHash: String(repeating: "a", count: 64))
+        check(pendingReview.resolve(accountHash: String(repeating: "a", count: 64))?.id == game.id
+              && pendingReview.resolve(accountHash: String(repeating: "b", count: 64)) == nil
+              && pendingReview.resolve(accountHash: nil) == nil,
+              "COR89 pending detail review retains its exact account and rejects account-switch/sign-out handoff")
         if ProcessInfo.processInfo.environment["XODUS_NATIVE_CONSENT_PRESENTATION_CHECK"] == "1" {
             try await NativeUIChecks.checkInstallSheetPresentation(operations: operations, game: game, check: check)
             check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)

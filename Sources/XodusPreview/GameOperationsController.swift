@@ -747,9 +747,14 @@ final class GameOperationsController: ObservableObject {
         await task.value
     }
 
-    func prepareInstall(_ game: PCGame, repairing: InstalledGame? = nil) async {
+    func prepareInstall(_ game: PCGame, repairing: InstalledGame? = nil, expectedAccountHash: String? = nil) async {
         await cancelPrecheck()
         guard canStartMutation, PCGamesClient.validProductID(game.id) else { return }
+        let reviewAccount = usesUnifiedAccount ? nativeAccount : nil
+        guard !usesUnifiedAccount || expectedAccountHash == nil || expectedAccountHash == reviewAccount else {
+            error = "Your Xbox account changed. Choose the game again before reviewing installation."
+            return
+        }
         if let repairing {
             guard repairing.storeId == game.id, installed.games.contains(repairing),
                   installed.runningGameID != repairing.id else { return }
@@ -764,6 +769,10 @@ final class GameOperationsController: ObservableObject {
                 ?? paths.destination(title: game.title, productID: game.id)
             let free = try await Task.detached { try GameScriptFiles.availableSpace(for: destination) }.value
             guard !terminating, !isBusy, !(installingDirectly && directInstallCancelled) else { return }
+            guard reviewAccount == (usesUnifiedAccount ? nativeAccount : nil) else {
+                error = "Your Xbox account changed. Choose the game again before reviewing installation."
+                return
+            }
             if repairing == nil, installed.games.contains(where: { $0.folder == destination.path }) {
                 throw GameScriptError.invalidDestination
             }

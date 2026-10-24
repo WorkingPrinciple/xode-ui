@@ -354,6 +354,10 @@ Root Store/Discover detail and Library local-detail sheets both use
 `gameDetailSheet`: the selected detail is dismissed first; only its observed
 `onDismiss` starts preparation. Repeated or stale detail callbacks cannot
 replace the pending review. Repair/resume direct APIs are unchanged.
+The pending request retains the account hash at selection and refuses a
+different or signed-out account on dismissal. Preparation rechecks that
+binding before publishing consent rather than stamping a new account onto
+an old title-access decision.
 
 The default `--game-operation-check` remains window-free. The explicit
 `XODUS_NATIVE_CONSENT_PRESENTATION_CHECK=1 swift run XodusPreview --game-operation-check`

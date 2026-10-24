@@ -537,26 +537,36 @@ private struct InstallFormPresentation: ViewModifier {
     }
 }
 
+struct GameDetailInstallRequest: Sendable {
+    let game: PCGame
+    let accountHash: String?
+
+    func resolve(accountHash: String?) -> PCGame? {
+        self.accountHash == accountHash ? game : nil
+    }
+}
+
 private struct GameDetailSheet<Item: Identifiable, Detail: View>: ViewModifier {
     @Binding var item: Item?
     @ObservedObject var operations: GameOperationsController
     let allowed: Bool
+    let accountHash: String?
     let onDismiss: () -> Void
     let detail: (Item, @escaping (PCGame) -> Void) -> Detail
-    @State private var pendingInstall: PCGame?
+    @State private var pendingInstall: GameDetailInstallRequest?
 
     func body(content: Content) -> some View {
         content.sheet(item: $item, onDismiss: {
-            let game = pendingInstall
+            let request = pendingInstall
             pendingInstall = nil
             onDismiss()
-            guard allowed, let game else { return }
-            Task { await operations.prepareInstall(game) }
+            guard allowed, let request, let game = request.resolve(accountHash: accountHash) else { return }
+            Task { await operations.prepareInstall(game, expectedAccountHash: request.accountHash) }
         }) { item in
             detail(item) { game in
                 guard self.item?.id == item.id, allowed, pendingInstall == nil, operations.canStartMutation,
                       operations.installConsent == nil else { return }
-                pendingInstall = game
+                pendingInstall = GameDetailInstallRequest(game: game, accountHash: accountHash)
                 self.item = nil
             }
         }
@@ -565,11 +575,11 @@ private struct GameDetailSheet<Item: Identifiable, Detail: View>: ViewModifier {
 
 extension View {
     func gameDetailSheet<Item: Identifiable, Detail: View>(
-        item: Binding<Item?>, operations: GameOperationsController, allowed: Bool,
+        item: Binding<Item?>, operations: GameOperationsController, allowed: Bool, accountHash: String? = nil,
         onDismiss: @escaping () -> Void = {},
         @ViewBuilder detail: @escaping (Item, @escaping (PCGame) -> Void) -> Detail
     ) -> some View {
-        modifier(GameDetailSheet(item: item, operations: operations, allowed: allowed,
+        modifier(GameDetailSheet(item: item, operations: operations, allowed: allowed, accountHash: accountHash,
                                  onDismiss: onDismiss, detail: detail))
     }
 }

@@ -380,7 +380,7 @@ struct LiveRootView: View {
             }
         }
         .gameDetailSheet(item: $session.selectedProduct, operations: state.gameOperations,
-                         allowed: startupAllowed) { product, reviewInstall in
+                         allowed: startupAllowed, accountHash: session.accountHash) { product, reviewInstall in
             LiveProductView(product: product, library: state.pcGames,
                             installedLibrary: state.installedGames, operations: state.gameOperations,
                             allowsStartupTasks: startupAllowed, allowsArtworkLoading: libraryArtworkAllowed,
