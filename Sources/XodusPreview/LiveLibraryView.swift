@@ -489,7 +489,7 @@ struct LiveLibraryView: View {
                 .help("Scroll to the next recently played game")
             }
 
-            ScrollView(.horizontal) {
+            ContinuePlayingScrollView {
                 LazyHStack(alignment: .top, spacing: 20) {
                     ForEach(continuing) { game in
                         VStack(alignment: .leading, spacing: 10) {
@@ -513,8 +513,6 @@ struct LiveLibraryView: View {
                 }
                 .scrollTargetLayout()
             }
-            .fixedSize(horizontal: false, vertical: true)
-            .scrollIndicators(.hidden).scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $selection.recentGameID, anchor: .leading)
             .onChange(of: continuing.map(\.id), initial: true) { _, ids in
                 if selection.recentGameID.map({ !ids.contains($0) }) ?? true {

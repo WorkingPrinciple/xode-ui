@@ -71,6 +71,14 @@ Do not launch a real game or change accounts merely to manufacture this evidence
 without the corresponding authorization. Offscreen checks are source evidence,
 not installed visual acceptance.
 
+For Continue Playing, include the macOS persistent-scroller case as well as
+overlay scrolling. Its shelf-specific native scroller leaves the material visible
+behind the knob slot; it must still expose the native knob, track paging and AX
+scrollbar actions. Verify first-to-last cards by supported wheel/trackpad, keyboard
+and accessibility routes. Do not change the owner's scrollbar preference without
+authorization or substitute globally hidden indicators. Instance-local legacy
+scroller checks are source evidence, not proof of the user's system preference.
+
 ## Continuity
 
 **Trigger:** navigation, selection, filtering or retained-host changes.
