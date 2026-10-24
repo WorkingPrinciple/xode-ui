@@ -144,6 +144,22 @@ enum NativeChecks {
             check(position.actionExtent == nil, "Deliberate user scroll to native top releases filter extent")
             position.prepareScopeExtent()
             check(position.actionExtent == nil, "Native top never reserves extra document extent")
+            let filteredHistory = LibrarySelection()
+            filteredHistory.scrollID = "library-card-filtered-out"
+            filteredHistory.collectionViewportFrame = CGRect(x: 0, y: 100, width: 1000, height: 700)
+            filteredHistory.collectionHeaderFrame = CGRect(x: 0, y: 300, width: 1000, height: 40)
+            filteredHistory.measureScroll(LibraryScrollMeasurement(offsetY: 789.5, contentHeight: 3729.5,
+                containerHeight: 700, containerWidth: 1000, insetTop: 24, insetBottom: 12,
+                visibleY: 789.5, visibleMaxY: 1489.5, visibleHeight: 700))
+            filteredHistory.beginScopeMeasurement(filter: .owned, target: nil)
+            filteredHistory.prepareScopeExtent()
+            check(filteredHistory.collectionTarget(remaining: []) == nil
+                  && filteredHistory.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 700)) == 1477.5
+                  && filteredHistory.actionExtent?.minimumHeight(viewport: CGSize(width: 1000, height: 897)) == 1674.5,
+                  "REQ-4: Filtering away the scrolled-to title clears its target but reserves the measured history at current height")
+            filteredHistory.measureScroll(resizeMeasurement(width: 1500))
+            check(filteredHistory.scopeMinimumHeight(viewport: CGSize(width: 1500, height: 897)) == nil,
+                  "REQ-4: A real width reflow retires the filtered-history reservation")
             let playbackArguments = (true, true, false, false, true, true, true)
             check(HeroMotionPolicy.permitsPlayback(allowed: playbackArguments.0, enabled: playbackArguments.1,
                     reduceMotion: playbackArguments.2, lowPower: playbackArguments.3,
@@ -1048,6 +1064,39 @@ enum NativeChecks {
                   && stopped.catalogEmptyExplanation(query: "Stopped", canRefresh: true).contains("new search"),
                   "Cancelled catalog UI remains distinct from a confirmed empty result")
             await stopped.disconnect()
+
+            let staleScope = session("queryslow")
+            await staleScope.connect()
+            let staleRequest = Task { await staleScope.refreshCatalog("Old market query") }
+            try await wait { staleScope.searching }
+            staleScope.market = "FR"
+            check(staleScope.products.isEmpty && !staleScope.searching
+                  && staleScope.catalogCorpus == "observedPublicProducts"
+                  && staleScope.catalogError == nil,
+                  "REQ-9: Changing market immediately retires the old query, cursor and loading state")
+            await staleRequest.value
+            check(staleScope.products.isEmpty && staleScope.catalogCorpus == "observedPublicProducts"
+                  && staleScope.catalogError == nil && !staleScope.searching,
+                  "REQ-9: A late old-market completion cannot repopulate the retired catalogue scope")
+            await staleScope.disconnect()
+
+            let refreshRecovery = session("queryrefreshfailure")
+            await refreshRecovery.connect()
+            await refreshRecovery.refreshCatalog("Recovery title")
+            let retainedProducts = refreshRecovery.products
+            check(!retainedProducts.isEmpty && refreshRecovery.catalogError == nil,
+                  "REQ-12: A successful same-scope query establishes truthful content before refresh")
+            await refreshRecovery.refreshCatalog("Recovery title")
+            check(refreshRecovery.products == retainedProducts && refreshRecovery.catalogError != nil
+                  && !refreshRecovery.searching
+                  && refreshRecovery.catalogNotice == "Games couldn't be loaded. Choose Refresh to try again."
+                  && refreshRecovery.catalogEmptyTitle != "No Store matches",
+                  "REQ-12: Same-scope transport failure retains prior results with explicit actionable error")
+            await refreshRecovery.refreshCatalog("Recovery title")
+            check(refreshRecovery.products.map(\.id) == retainedProducts.map(\.id)
+                  && refreshRecovery.catalogError == nil && !refreshRecovery.searching,
+                  "REQ-12: Explicit retry clears only the recovered catalog error and restores current results")
+            await refreshRecovery.disconnect()
 
             let startupConfiguration = configuration("startupquery")
             let startup = LiveSession(configuration: startupConfiguration)

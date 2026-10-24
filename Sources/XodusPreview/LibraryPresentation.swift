@@ -921,6 +921,7 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
     var gameFacts = GameFacts()
     var openLabel = "Open"
     var searchFocus: (FocusState<String?>.Binding, String)? = nil
+    var focusReturn: (FocusState<String?>.Binding, String)? = nil
     var alwaysShowsActions = false
     let open: () -> Void
     @ViewBuilder let artwork: () -> Artwork
@@ -940,6 +941,10 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
                     .focusEffectDisabled()
                     .onKeyPress(.return, action: openFromKeyboard)
                     .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
+            } else if let (binding, id) = focusReturn {
+                artworkButton
+                    .focused(binding, equals: id)
+                    .onKeyPress(.return, action: openFromKeyboard)
             } else {
                 ZStack(alignment: .bottomTrailing) {
                     artworkButton

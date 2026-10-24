@@ -1059,7 +1059,8 @@ enum MockBackend {
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
                 "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario) { supported.insert(.discover) }
             if ["queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
-                "querynulldetails", "querycoalesce", "querypagination", "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
+                "querynulldetails", "querycoalesce", "querypagination", "queryrefreshfailure",
+                "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
             if scenario == "startupquery" { supported.insert(.search) }
             if ["publiccapture", "registryempty", "registryunavailable", "uifailures"].contains(scenario) {
                 supported.insert(.installed)
@@ -1072,6 +1073,7 @@ enum MockBackend {
                 supported.formUnion([.authBegin, .authCancel])
             }
             var loggedOut = false, flowStarted = false, cancelledLate = false
+            var catalogQueryReads = 0
             var flowReads = 0, discoveryReads = 0, profileReads = 0
             var activityReads = 0, registryReads = 0
             var recentReads = 0, accountLibraryReads = 0
@@ -1435,6 +1437,28 @@ enum MockBackend {
                     }
                     if scenario == "querynodetails", command == "catalog.query" {
                         try emitFailure(request, code: "PACKAGE_UNAVAILABLE")
+                        continue
+                    }
+                    if scenario == "queryrefreshfailure", command == "catalog.query" {
+                        catalogQueryReads += 1
+                        if catalogQueryReads == 2 {
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE")
+                            continue
+                        }
+                        guard var page = frames.first(where: {
+                            $0["data"]?["corpus"]?.string == "publicMicrosoftStoreSearch"
+                                && $0["data"]?["products"]?.array?.isEmpty == false
+                        })?["data"]?.object, var product = page["products"]?.array?.first?.object else { exit(3) }
+                        let params = request["params"] ?? .null
+                        product["source"] = .string("syntheticPublicSource")
+                        product["market"] = params["market"]
+                        product["language"] = params["language"]
+                        product["resolvedLanguage"] = params["language"]
+                        page["query"] = params["query"]
+                        page["products"] = .array([.object(product)])
+                        page["failures"] = .array([])
+                        page["nextCursor"] = .null
+                        try emit(.object(result(request, data: .object(page))))
                         continue
                     }
                     if scenario == "querynulldetails", command == "catalog.query" {

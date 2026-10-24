@@ -37,6 +37,8 @@ struct LiveLibraryView: View {
     @FocusedValue(\.libraryHeroInteraction) private var heroInteraction
     @State private var heroVisible = false
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+    @State private var detailFocusReturnID: String?
+    @FocusState private var focusedGameID: String?
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
@@ -261,7 +263,9 @@ struct LiveLibraryView: View {
             selection.measureAncestor("root", frame: $0)
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
-        .sheet(item: $selection.localDetail) { entry in
+        .sheet(item: $selection.localDetail, onDismiss: {
+            restoreDetailFocus()
+        }) { entry in
             if let product = entry.product {
                 LiveProductView(product: product, library: library, installedLibrary: installed,
                     operations: operations, installationID: entry.game.id,
@@ -269,6 +273,10 @@ struct LiveLibraryView: View {
             } else {
                 LocalInstalledGameView(game: entry.game, installed: installed, operations: operations)
             }
+        }
+        .onChange(of: session.selectedProduct) { previous, current in
+            guard previous != nil, current == nil else { return }
+            restoreDetailFocus()
         }
         .onDisappear {
             selection.heroHovered = false
@@ -516,10 +524,14 @@ struct LiveLibraryView: View {
     }
 
     private func open(_ game: LibraryGame) {
+        detailFocusReturnID = nil
         do {
             let productID = game.installed?.storeId ?? game.id
             guard PCGamesClient.validProductID(productID) else {
-                if let local = game.installed { selection.localDetail = InstalledGameDetailSelection(game: local, product: nil) }
+                if let local = game.installed {
+                    detailFocusReturnID = game.id
+                    selection.localDetail = InstalledGameDetailSelection(game: local, product: nil)
+                }
                 else { session.errorMessage = "Game details couldn't be opened." }
                 return
             }
@@ -529,9 +541,21 @@ struct LiveLibraryView: View {
                                     source: game.owned ? "AccountPCLibrary:identityOnly" : "LocalInstalledRegistry:identityOnly",
                                     pcCandidate: false)
             if let local = game.installed {
+                detailFocusReturnID = game.id
                 selection.localDetail = InstalledGameDetailSelection(game: local, product: product)
-            } else { session.selectedProduct = product }
+            } else {
+                detailFocusReturnID = game.id
+                session.selectedProduct = product
+            }
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
+    }
+
+    private func restoreDetailFocus() {
+        guard let detailFocusReturnID else { return }
+        let available = Set((visible + visibleLocalRecords).map(\.id))
+        focusedGameID = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
+                                                                  available: available)
+        self.detailFocusReturnID = nil
     }
 
     private func information(id: String, compact: Bool = false) -> some View {
@@ -548,6 +572,7 @@ struct LiveLibraryView: View {
         let artworkID = game.installed?.storeId ?? game.id
         return GameCard(title: game.title, gameFacts: game.facts,
                      openLabel: "View",
+                     focusReturn: ($focusedGameID, game.id),
                      alwaysShowsActions: true,
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,

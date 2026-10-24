@@ -363,6 +363,11 @@ enum NativeUIChecks {
               && coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:)))
               && resultRequests == 2,
               "REQ-59: Down and Return in native search hand focus to results")
+        check(GameSearchPresentation.focusReturnTarget(preferred: "known-title",
+                available: ["other-title", "known-title"]) == "known-title"
+              && GameSearchPresentation.focusReturnTarget(preferred: "removed-title",
+                available: ["other-title"]) == nil,
+              "REQ-11: Detail focus returns to its named title button only while that result remains available")
         text = "mortis"
         check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:)))
               && text.isEmpty,

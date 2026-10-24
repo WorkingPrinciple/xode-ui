@@ -36,6 +36,11 @@ enum GameSearchPresentation {
         local.first ?? publicResults.first { !retainedPublic.contains($0) }
     }
 
+    static func focusReturnTarget(preferred: String?, available: Set<String>) -> String? {
+        guard let preferred, available.contains(preferred) else { return nil }
+        return preferred
+    }
+
     static func retainedPublicIDs(pending: Bool, searching: Bool, matchesQuery: Bool,
                                   products: [CatalogProduct]) -> Set<String> {
         pending && searching && matchesQuery ? Set(products.map(\.id)) : []

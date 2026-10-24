@@ -120,6 +120,7 @@ struct LiveCatalogView: View {
     var returnToSearch: () -> Void = {}
     @FocusState private var focusedResult: String?
     @State private var showsCoverage = false
+    @State private var detailFocusReturnID: String?
 
     private var projection: CatalogProjection { selection.projection.current }
     private var results: CatalogSearchResults { projection.index.results }
@@ -316,6 +317,10 @@ struct LiveCatalogView: View {
             selection.genre = nil
             if value.isEmpty { selection.scope = .allGames }
         }
+        .onChange(of: session.selectedProduct) { previous, current in
+            guard previous != nil, current == nil else { return }
+            restoreDetailFocus()
+        }
         .onChange(of: selection.focusRequest) { _, _ in
             selection.recordSearch(query)
             focusedResult = GameSearchPresentation.firstFocusableID(local: ownedMatches.map(\.id),
@@ -392,13 +397,30 @@ struct LiveCatalogView: View {
     }
 
     private func open(_ game: LibraryGame) {
-        if !query.isEmpty, allowsStartupTasks { selection.recordSearch(query) }
+        detailFocusReturnID = nil
         do {
-            session.selectedProduct = try game.product ?? art.images[game.id]?.product ??
+            let product = try game.product ?? art.images[game.id]?.product ??
                 LibraryGame.details(id: game.id, title: game.title,
                     market: session.market, language: session.language,
                     source: "AccountPCLibrary:identityOnly", pcCandidate: false)
+            if !query.isEmpty {
+                detailFocusReturnID = game.id
+                if allowsStartupTasks { selection.recordSearch(query) }
+            }
+            session.selectedProduct = product
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
+    }
+
+    private func restoreDetailFocus() {
+        guard let detailFocusReturnID else { return }
+        let available = Set(ownedMatches.map(\.id) + visible.map(\.id)).subtracting(retainedPublicIDs)
+        if let target = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
+                                                                  available: available) {
+            focusedResult = target
+        } else {
+            returnToSearch()
+        }
+        self.detailFocusReturnID = nil
     }
 
     private func landscape(_ game: LibraryGame) -> [CatalogArtworkReference] {
