@@ -64,6 +64,7 @@ enum NativeChecks {
             navigation.librarySelection.heroID = "library-hero"
             navigation.librarySelection.scrollID = "library-card-fixture"
             navigation.discoverSelection.genre = "Adventure"
+            navigation.discoverSelection.scope = .installed
             navigation.discoverSelection.featuredID = "discover-hero"
             navigation.discoverSelection.scrollID = "discover-card-fixture"
             navigation.navigate(.library)
@@ -73,9 +74,10 @@ enum NativeChecks {
                   && navigation.librarySelection.heroID == "library-hero"
                   && navigation.librarySelection.scrollID == "library-card-fixture"
                   && navigation.discoverSelection.genre == "Adventure"
+                  && navigation.discoverSelection.scope == .installed
                   && navigation.discoverSelection.featuredID == "discover-hero"
                   && navigation.discoverSelection.scrollID == "discover-card-fixture",
-                  "Tab owners retain independent filter/sort/hero/scroll values without retaining hidden views")
+                  "REQ-8: Warm tab navigation retains filter/sort/query/genre/search scope/hero/position without retaining hidden views")
             let position = LibrarySelection()
             position.scrollID = "library-card-fixture"
             position.collectionViewportFrame = CGRect(x: 0, y: 100, width: 1000, height: 700)
