@@ -253,6 +253,7 @@ final class NativeGameLifecycle {
         while try readProgress(state: state, onProgress: onProgress) {}
         guard pending.isEmpty else { throw GameScriptError.invalidProgress }
         try output.synchronize()
+        guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
         return try Self.readResult(state: state, operation: operation, product: product,
                                    gameDirectory: gameDirectory, exitCode: child.terminationStatus)
     }

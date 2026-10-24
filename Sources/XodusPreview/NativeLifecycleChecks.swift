@@ -115,10 +115,10 @@ enum NativeLifecycleChecks {
             deadline = time.monotonic() + 5
             while not cancelled and time.monotonic() < deadline:
                 time.sleep(0.01)
-        code = 1 if operation == "repair" or cancelled else 0
+        code = 0 if os.environ.get("S5_SUCCESS_AFTER_CANCEL") == "1" else 1 if operation == "repair" or cancelled else 0
         result = dict(version=1, run_id=run_id, operation=operation, product=product,
             success=code == 0, exit_code=code,
-            error_code="CANCELLED" if cancelled else "OPERATION_FAILED" if code else None,
+            error_code="CANCELLED" if cancelled and code else "OPERATION_FAILED" if code else None,
             game_dir=game, log_dir=str(log), result_path=str(log / "result.json"), progress_path=str(progress))
         result["warnings"] = [dict(code="POPUP_MONITOR_FAILED", message="Synthetic monitor timeout")]
         result["popup_monitor_error"] = "Synthetic monitor timeout"
@@ -197,14 +197,23 @@ enum NativeLifecycleChecks {
             runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("repair"))
         check(!repair.success && repair.errorCode == "OPERATION_FAILED",
               "Native lifecycle: stream completed before a failed repair cannot register success")
-        let cancelled = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
-            operation: "launch", product: "FIXTURE00001", gameDirectory: game,
-            runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("cancel"),
-            launchEnvironment: ["S5_SYNTHETIC_ENV": "owned-fixture"],
-            unsetLaunchEnvironment: ["HOME"],
-            onProgress: { _ in runner.cancel() })
-        check(cancelled.errorCode == "CANCELLED" && !runner.isRunning,
-              "Native lifecycle: cancellation signals the exact live child and joins its terminal receipt")
+        for succeeds in [false, true] {
+            let cancelledState = root.appendingPathComponent("cancel-\(succeeds)")
+            do {
+                _ = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+                    operation: "launch", product: "FIXTURE00001", gameDirectory: game,
+                    runID: InstalledGamesController.runID(), stateRoot: cancelledState,
+                    launchEnvironment: ["S5_SYNTHETIC_ENV": "owned-fixture",
+                                        "S5_SUCCESS_AFTER_CANCEL": succeeds ? "1" : "0"],
+                    unsetLaunchEnvironment: ["HOME"], onProgress: { _ in runner.cancel() })
+                check(false, "REQ95 requested cancellation cannot return success or terminal result")
+            } catch GameScriptError.failed(14) {
+                let persisted = try NativeGameLifecycle.readResult(state: cancelledState, operation: "launch",
+                    product: "FIXTURE00001", gameDirectory: game)
+                check(!runner.isRunning && persisted.success == succeeds,
+                      "REQ95 cancellation joins child, refuses success-after-cancel and preserves truthful persisted result")
+            }
+        }
         do {
             _ = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
                 operation: "uninstall", product: "FIXTURE00001", gameDirectory: game,
