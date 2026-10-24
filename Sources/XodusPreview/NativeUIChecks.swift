@@ -7,6 +7,7 @@ import XodusCore
 enum NativeUIChecks {
     static func run(check: (Bool, String) -> Void) {
         checkContinuePlayingScroller(check: check)
+        checkDetailFirstCards(check: check)
         checkLoadingPresentation(check: check)
         checkActionExtentObservation(check: check)
         do { try RecentLibraryChecks.imageChecks(check: check) }
@@ -83,6 +84,7 @@ enum NativeUIChecks {
                                          pageWidth: width, contentWidth: width * 5) == width * 4,
                   "Hero paging clamps the first and last pages at \(Int(width)) points")
         }
+
         for size in [CGFloat(16), 48, 112, 1024] {
             let rect = CGRect(x: 7, y: 11, width: size, height: size)
             let mark = XOdeMark.path(in: rect)
@@ -141,7 +143,7 @@ enum NativeUIChecks {
                     colours[index]
                 } status: {
                     Text(Array(repeating: "Metadata", count: index + 1).joined(separator: "\n"))
-                } actions: { EmptyView() }
+                }
             }
         }
         .frame(width: 558, height: 520, alignment: .topLeading).background(.white)
@@ -856,6 +858,22 @@ enum NativeUIChecks {
                     changed()
                 })
         }
+    }
+
+    private static func checkDetailFirstCards(check: (Bool, String) -> Void) {
+        var opened = 0
+        let card = GameCard(title: "A game with a longer two-line title", openLabel: "View",
+                            open: { opened += 1 }) {
+            Color.blue
+        } status: { EmptyView() }
+        check(card.openFromKeyboard() == .handled && opened == 1
+              && card.artworkAccessibilityLabel == "View A game with a longer two-line title",
+              "REQ-85: A named poster Return opens details once without starting play or installation")
+        let host = NSHostingView(rootView: card.frame(width: 196))
+        host.layoutSubtreeIfNeeded()
+        let height = host.fittingSize.height
+        check(height >= 196 * 1.5 + 36 && height < 196 * 1.5 + 70 && host.window == nil,
+              "REQ-85: A 196-point poster reserves its art/title but no hidden or persistent action-row height: \(height)")
     }
 
     private static func descendants(of view: NSView) -> [NSView] {

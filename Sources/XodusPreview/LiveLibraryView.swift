@@ -420,11 +420,6 @@ struct LiveLibraryView: View {
         }
     }
 
-    private func unsupportedReason(_ game: LibraryGame) -> String? {
-        let issues = unsupportedIssues(game)
-        return issues.isEmpty ? nil : issues.map(\.detail).joined(separator: " ")
-    }
-
     private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
         operations.supportIssues(
             productID: game.installed?.storeId ?? game.id,
@@ -501,15 +496,21 @@ struct LiveLibraryView: View {
                 LazyHStack(alignment: .top, spacing: 20) {
                     ForEach(continuing) { game in
                         VStack(alignment: .leading, spacing: 10) {
-                            LibraryLandscapeView(references: art.images[game.storeId]?.landscape ?? [],
-                                                 installed: game, allowsLoading: artworkAllowed)
-                                .frame(width: 260, height: 110).clipped()
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(alignment: .bottomTrailing) {
-                                    InstalledPlayButton(library: installed, operations: operations, game: game,
-                                                        usesGlass: true, prominent: false)
-                                        .padding(12)
-                                }
+                            Button {
+                                open(recentGame(game), focusID: "recent-\(game.id)")
+                            } label: {
+                                LibraryLandscapeView(references: art.images[game.storeId]?.landscape ?? [],
+                                                     installed: game, allowsLoading: artworkAllowed)
+                                    .frame(width: 260, height: 110).clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .focused($focusedGameID, equals: "recent-\(game.id)")
+                            .accessibilityLabel("View \(game.title)")
+                            .accessibilityHint("Open game details to play")
+                            .contextMenu {
+                                Button("View details") { open(recentGame(game), focusID: "recent-\(game.id)") }
+                            }
                             Text(game.title).font(.headline).lineLimit(1)
                             if let facts = projection.byID[game.storeId]?.facts { AccessBadges(facts: facts) }
                             if let date = game.lastPlayedAt {
@@ -539,13 +540,19 @@ struct LiveLibraryView: View {
         }
     }
 
-    private func open(_ game: LibraryGame) {
+    private func recentGame(_ game: InstalledGame) -> LibraryGame {
+        (collection + localRecords).first { $0.installed?.id == game.id }
+            ?? LibraryGame(id: game.id.uuidString, title: game.title, installed: game,
+                           pc: nil, product: nil, owned: false, gamePass: false, accessIsCurrent: false)
+    }
+
+    private func open(_ game: LibraryGame, focusID: String? = nil) {
         detailFocusReturnID = nil
         do {
             let productID = game.installed?.storeId ?? game.id
             guard PCGamesClient.validProductID(productID) else {
                 if let local = game.installed {
-                    detailFocusReturnID = game.id
+                    detailFocusReturnID = focusID ?? game.id
                     selection.localDetail = InstalledGameDetailSelection(game: local, product: nil)
                 }
                 else { session.errorMessage = "Game details couldn't be opened." }
@@ -557,10 +564,10 @@ struct LiveLibraryView: View {
                                     source: game.owned ? "AccountPCLibrary:identityOnly" : "LocalInstalledRegistry:identityOnly",
                                     pcCandidate: false)
             if let local = game.installed {
-                detailFocusReturnID = game.id
+                detailFocusReturnID = focusID ?? game.id
                 selection.localDetail = InstalledGameDetailSelection(game: local, product: product)
             } else {
-                detailFocusReturnID = game.id
+                detailFocusReturnID = focusID ?? game.id
                 session.selectedProduct = product
             }
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
@@ -568,7 +575,7 @@ struct LiveLibraryView: View {
 
     private func restoreDetailFocus() {
         guard let detailFocusReturnID else { return }
-        let available = Set((visible + visibleLocalRecords).map(\.id))
+        let available = Set((visible + visibleLocalRecords).map(\.id) + continuing.map { "recent-\($0.id)" })
         focusedGameID = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
                                                                   available: available)
         self.detailFocusReturnID = nil
@@ -590,7 +597,6 @@ struct LiveLibraryView: View {
         return GameCard(title: game.title, gameFacts: game.facts,
                      openLabel: "View",
                      focusReturn: ($focusedGameID, game.id),
-                     alwaysShowsActions: true,
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
@@ -601,39 +607,14 @@ struct LiveLibraryView: View {
             if let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
             }
-        } actions: {
-            LibraryGlassCluster {
-                if let match = game.installed {
-                    if unsupportedIssues(game).isEmpty {
-                        InstalledPlayButton(library: installed, operations: operations, game: match,
-                                            usesGlass: true, prominent: false)
-                    }
-                    InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true,
-                                         details: { open(game) })
-                } else if unsupportedReason(game) != nil {
-                    EmptyView()
-                } else if let pc = game.pc {
-                    GameInstallAction(game: pc, operations: operations,
-                        enabled: allowsStartupTasks && library.accessIsCurrent, primary: false)
-                } else if game.gamePass, let product = game.product {
-                    GameInstallAction(game: PCGame(product: product), operations: operations,
-                        enabled: allowsStartupTasks &&
-                        DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
-                            gamePass: true, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: product.pcCatalogCandidate), primary: false)
-                } else {
-                    GameInstallAction(game: PCGame(id: game.id, title: game.title, artwork: game.cover),
-                        operations: operations, enabled: allowsStartupTasks && library.accessIsCurrent,
-                        primary: false)
-                }
-            }
         }
         .contextMenu {
+            Button("View details") { open(game) }
             if let match = game.installed {
                 InstalledEngineOverride(library: installed, game: match)
                 InstalledGameManagement(library: installed, operations: operations, game: match)
                 Button("Show in Finder") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: match.folder) }
-            } else { Button("View game") { open(game) } }
+            }
         }
     }
 }

@@ -637,7 +637,7 @@ struct LiveCatalogView: View {
         let cover = art.images[game.id]?.cover ?? game.cover
         return GameCard(title: game.title, gameFacts: game.facts, openLabel: "View",
                             searchFocus: query.isEmpty ? nil : ($focusedResult, game.id),
-                            alwaysShowsActions: true, open: { open(game) }) {
+                            open: { open(game) }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
@@ -647,25 +647,6 @@ struct LiveCatalogView: View {
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
             if query.isEmpty, let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
-            }
-        } actions: {
-            VStack(alignment: .leading, spacing: 8) {
-            LibraryGlassCluster {
-                if !query.isEmpty, !unsupportedIssues(game).isEmpty {
-                    Button("View details") { open(game) }
-                        .help("Open compatibility details")
-                        .accessibilityLabel(GameSearchPresentation.compatibilityDetailsActionLabel(for: game.title))
-                } else {
-                    actions(game, primary: false)
-                }
-                if let match = game.installed {
-                    InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
-                } else if query.isEmpty || unsupportedIssues(game).isEmpty {
-                    Button("View game", systemImage: "ellipsis") { open(game) }
-                        .modifier(LibraryActionStyle(primary: false)).labelStyle(.iconOnly)
-                        .buttonBorderShape(.circle)
-                }
-            }
             }
         }
     }
