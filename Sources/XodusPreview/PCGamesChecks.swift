@@ -887,6 +887,19 @@ enum PCGamesChecks {
         check(signing.hasSavedSignIn && !signing.sheetPresented && signing.snapshot?.games.count == 1
               && newRotations == ["neutral-refresh-rotated"] && signInRequestCount == 7,
               "S4: One sign-in operation publishes an account-correct complete shelf and ignores duplicate starts")
+        for count in [1, 6] {
+            let searchIDs = (1...count).map { String(format: "FIXTURE01%03d", $0) }
+            let searchTransport = PCGamesMockTransport([tokenResponse] + (try authResponses()) + [
+                try page(searchIDs.map { item($0) }),
+                try response(["Products": searchIDs.enumerated().map {
+                    catalogProduct($0.element, title: "Neutral Game \($0.offset + 1)")
+                }])
+            ])
+            let searchLibrary = PCGamesController(store: PCGamesMockStore("neutral-refresh"),
+                client: PCGamesClient(transport: searchTransport))
+            await searchLibrary.loadOnAppear()
+            try await SearchPresentationChecks.run(library: searchLibrary, check: check)
+        }
         let cancelStore = PCGamesMockStore()
         let cancelledTransport = PCGamesMockTransport([deviceResponse, tokenResponse])
         let cancelled = PCGamesController(store: cancelStore,

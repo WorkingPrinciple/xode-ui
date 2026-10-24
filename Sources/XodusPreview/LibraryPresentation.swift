@@ -920,6 +920,7 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
     let title: String
     var gameFacts = GameFacts()
     var openLabel = "Open"
+    var searchFocus: (FocusState<String?>.Binding, String)? = nil
     var alwaysShowsActions = false
     let open: () -> Void
     @ViewBuilder let artwork: () -> Artwork
@@ -932,19 +933,19 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ZStack(alignment: .bottomTrailing) {
-                Button(action: open) {
-                    artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(alignment: .bottomLeading) {
-                            AccessBadges(facts: gameFacts).padding(10)
-                        }
-                        .contentShape(RoundedRectangle(cornerRadius: 12))
+            if let (binding, id) = searchFocus {
+                artworkButton
+                    .focusable()
+                    .focused(binding, equals: id)
+                    .focusEffectDisabled()
+                    .onKeyPress(.return, action: openFromKeyboard)
+                    .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
+            } else {
+                ZStack(alignment: .bottomTrailing) {
+                    artworkButton
                 }
-                .buttonStyle(.plain).accessibilityLabel("\(openLabel) \(title)")
-                .accessibilityValue(gameFacts.badgeLabels().joined(separator: ", "))
+                .focused($focused)
             }
-            .focused($focused)
             Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
             status().font(.subheadline).foregroundStyle(.primary)
             actions().controlSize(.small).buttonBorderShape(.capsule)
@@ -955,5 +956,38 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .onHover { interaction.hovered = $0 }
         .accessibilityElement(children: .contain)
+    }
+
+    func openFromKeyboard() -> KeyPress.Result {
+        open()
+        return .handled
+    }
+
+    var artworkAccessibilityLabel: String { "\(openLabel) \(title)" }
+
+    private var artworkButton: some View {
+        Button(action: open) {
+            artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(alignment: .bottomLeading) {
+                    AccessBadges(facts: gameFacts).padding(10)
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain).accessibilityLabel(artworkAccessibilityLabel)
+        .accessibilityValue(gameFacts.badgeLabels().joined(separator: ", "))
+    }
+}
+
+struct SearchResultFocusRing: ViewModifier {
+    let focused: Bool
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.accentColor, lineWidth: focused ? 3 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 }

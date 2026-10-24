@@ -105,7 +105,7 @@ struct LiveCatalogView: View {
     @ObservedObject var operations: GameOperationsController
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openSettings) private var openSettings
-    @ObservedObject private var art = LibraryCatalogArtwork.shared
+    @ObservedObject var art = LibraryCatalogArtwork.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
     let query: String
@@ -132,6 +132,10 @@ struct LiveCatalogView: View {
         projection.owned.filter { selection.scope.includes(game($0)) }
     }
     private var hiddenUnsupportedCount: Int { projection.hiddenCount }
+    private var retainedPublicIDs: Set<String> {
+        GameSearchPresentation.retainedPublicIDs(pending: pending, searching: session.searching,
+            matchesQuery: session.catalogMatches(query: query), products: session.products)
+    }
     private var canRefresh: Bool {
         allowsStartupTasks && session.isReady && (session.supports(.search)
             || (query.isEmpty ? session.supports(.discover) : session.supports(.query)))
@@ -192,11 +196,17 @@ struct LiveCatalogView: View {
                     }
                     if !genres.isEmpty { browseGenres }
                 } else {
-                    Text("Results for \"\(query)\"").font(.largeTitle.bold())
-                    Picker("Search scope", selection: $selection.scope) {
-                        ForEach(GameSearchScope.allCases) { scope in Text(scope.rawValue).tag(scope) }
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Results for \"\(query)\"").font(.title2.bold())
+                            .textSelection(.enabled)
+                        Spacer(minLength: 24)
+                        Picker("Search scope", selection: $selection.scope) {
+                            ForEach(GameSearchScope.allCases) { scope in Text(scope.rawValue).tag(scope) }
+                        }
+                        .pickerStyle(.menu).labelsHidden().fixedSize()
+                        .accessibilityLabel("Search scope")
+                        .accessibilityIdentifier("xodus.catalog.scope")
                     }
-                    .pickerStyle(.segmented).fixedSize()
                     if !ownedMatches.isEmpty {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("In your library (\(ownedMatches.count))").font(.title2.weight(.semibold))
@@ -227,8 +237,10 @@ struct LiveCatalogView: View {
                     HStack {
                         Text("Games (\(visible.count))").font(.title2.weight(.semibold))
                         Spacer()
-                        LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount,
-                                           showsUnsupportedGames: $showsUnsupportedGames)
+                        if query.isEmpty {
+                            LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount,
+                                               showsUnsupportedGames: $showsUnsupportedGames)
+                        }
                         if pending || session.searching {
                             ProgressView().controlSize(.small).accessibilityLabel("Searching for games")
                             Button("Stop search") { session.stopCatalogSearch() }
@@ -255,8 +267,10 @@ struct LiveCatalogView: View {
                         LazyVGrid(columns: columns, spacing: 28) {
                             ForEach(visible) { product in
                                 card(game(product)).id("discover-card-\(product.id)")
-                                    .focusable().focused($focusedResult, equals: product.id)
-                                    .onKeyPress(.return) { open(game(product)); return .handled }
+                                    .opacity(retainedPublicIDs.contains(product.id) ? 0.45 : 1)
+                                    .disabled(retainedPublicIDs.contains(product.id))
+                                    .allowsHitTesting(!retainedPublicIDs.contains(product.id))
+                                    .accessibilityHidden(retainedPublicIDs.contains(product.id))
                             }
                         }
                         .scrollTargetLayout()
@@ -297,7 +311,7 @@ struct LiveCatalogView: View {
                 catalogInfo
             }
             .padding(.horizontal, 56).padding(.bottom, 32)
-            .padding(.top, query.isEmpty && !visible.isEmpty ? 0 : 86)
+            .padding(.top, query.isEmpty ? (visible.isEmpty ? 86 : 0) : 32)
         }
         .onChange(of: query) { _, value in
             selection.genre = nil
@@ -305,19 +319,23 @@ struct LiveCatalogView: View {
         }
         .onChange(of: selection.focusRequest) { _, _ in
             selection.recordSearch(query)
-            focusedResult = ownedMatches.first?.id ?? visible.first?.id
+            focusedResult = GameSearchPresentation.firstFocusableID(local: ownedMatches.map(\.id),
+                publicResults: visible.map(\.id), retainedPublic: retainedPublicIDs)
             if focusedResult == nil { returnToSearch() }
         }
-        .onExitCommand {
-            focusedResult = nil
-            returnToSearch()
-        }
+        .onExitCommand(perform: exitSearchResults)
         .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
                                        ids: presentationActive ? projection.artworkIDs : [])) {
             guard allowsArtworkLoading, presentationActive else { return }
             await art.load(ids: results.storeProducts.map(\.id) + (library.snapshot?.games.map(\.id) ?? []),
                            market: session.market, language: session.language)
         }
+    }
+
+    func exitSearchResults() {
+        focusedResult = nil
+        clearSearch()
+        returnToSearch()
     }
 
     private func retry() {
@@ -514,11 +532,12 @@ struct LiveCatalogView: View {
     private func card(_ game: LibraryGame) -> some View {
         let cover = art.images[game.id]?.cover ?? game.cover
         return GameCard(title: game.title, gameFacts: game.facts, openLabel: "View",
+                            searchFocus: query.isEmpty ? nil : ($focusedResult, game.id),
                             alwaysShowsActions: true, open: { open(game) }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
-            if !unsupportedIssues(game).isEmpty {
+            if query.isEmpty, !unsupportedIssues(game).isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
             }
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
@@ -526,10 +545,15 @@ struct LiveCatalogView: View {
         } actions: {
             VStack(alignment: .leading, spacing: 8) {
             LibraryGlassCluster {
-                actions(game, primary: false)
+                if !query.isEmpty, !unsupportedIssues(game).isEmpty {
+                    Button("View details") { open(game) }
+                        .help("Open compatibility details")
+                } else {
+                    actions(game, primary: false)
+                }
                 if let match = game.installed {
                     InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true)
-                } else {
+                } else if query.isEmpty || unsupportedIssues(game).isEmpty {
                     Button("View game", systemImage: "ellipsis") { open(game) }
                         .modifier(LibraryActionStyle(primary: false)).labelStyle(.iconOnly)
                         .buttonBorderShape(.circle)

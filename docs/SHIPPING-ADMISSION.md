@@ -101,6 +101,18 @@ semantic text after a lossless installed light-mode sample exposed insufficient
 secondary-text contrast. The fixture does not replace installed-build appearance
 and accessibility acceptance or change any global appearance preferences.
 
+Search uses a compact title/scope-menu header and keeps compact Library matches
+separate from the shared poster grid. Result Escape clears the query; poster
+focus targets its named artwork button, with an explicit ring and handled Return.
+Only retained public results dim while their refresh is pending; valid local
+Library matches remain usable. Search routes blocked poster actions to details
+without repeating browse diagnostics or changing installation admission.
+The Library access check renders one-match and six-match synthetic compositions
+offscreen at 1440x874 and 1619x1231, including overflow and a package-blocked public
+result. Optional `XODUS_SEARCH_CAPTURE_DIRECTORY` saves these fixture PNGs and OCR
+text in an existing directory. These are source regressions, not installed native
+keyboard, VoiceOver or provider-response acceptance.
+
 Optional DisplayCatalog details accept the explicit `neutral` language tag as
 unlocalized product metadata, alongside exact/same-language responses.
 Unrelated language tags are still rejected; requested-market ratings and release

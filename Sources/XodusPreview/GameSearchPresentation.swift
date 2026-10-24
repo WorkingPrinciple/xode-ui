@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import XodusManagement
 
 enum GameSearchScope: String, CaseIterable, Identifiable {
     case allGames = "All games", gamePass = "Game Pass", installed = "Installed"
@@ -21,5 +22,18 @@ enum GameSearchHistory {
         return Array(([query] + previous.filter {
             $0.compare(query, options: .caseInsensitive) != .orderedSame
         }).prefix(8))
+    }
+
+}
+
+enum GameSearchPresentation {
+    static func firstFocusableID(local: [String], publicResults: [String],
+                                 retainedPublic: Set<String>) -> String? {
+        local.first ?? publicResults.first { !retainedPublic.contains($0) }
+    }
+
+    static func retainedPublicIDs(pending: Bool, searching: Bool, matchesQuery: Bool,
+                                  products: [CatalogProduct]) -> Set<String> {
+        pending && searching && matchesQuery ? Set(products.map(\.id)) : []
     }
 }
