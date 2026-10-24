@@ -164,22 +164,53 @@ enum InstalledProductAccessChecks {
               "Installed-product grant cannot fan out into uninstalled catalogue entitlement")
         let switched = InstalledProductAccess()
         defer { switched.retire() }
+        func waitForSwitch(_ predicate: () -> Bool) async throws -> Bool {
+            for _ in 0..<200 {
+                if predicate() { return true }
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            return predicate()
+        }
         var releaseOld: CheckedContinuation<OdeAccountRead, Never>?
+        var releaseNew: CheckedContinuation<OdeAccountRead, Never>?
         let oldRead = Task {
             await switched.refresh(account: account, installedIDs: [product], now: now) { _ in
                 await withCheckedContinuation { releaseOld = $0 }
             }
         }
-        for _ in 0..<100 where releaseOld == nil { await Task.yield() }
+        let oldStarted = try await waitForSwitch { releaseOld != nil }
+        check(oldStarted, "REQ-50: Old-account allowed reader explicitly starts before switching")
         guard let oldCompletion = releaseOld else { throw ManagementError.requestTimedOut }
         let newRead = Task {
-            await switched.refresh(account: other, installedIDs: [product], now: now) { id in
-                try response(id, accountHash: other, access: "denied", reason: "providerDenied")
+            await switched.refresh(account: other, installedIDs: [product], now: now) { _ in
+                await withCheckedContinuation { releaseNew = $0 }
             }
         }
-        for _ in 0..<100 where switched.accountHash != nil { await Task.yield() }
+        let retired = try await waitForSwitch { switched.accountHash == nil }
+        check(retired && switched.facts.isEmpty && releaseNew == nil,
+              "REQ-50: Account switch explicitly retires old facts and joins old reader before starting the new reader")
         oldCompletion.resume(returning: try response(product))
         await oldRead.value
+        let newStarted = try await waitForSwitch { releaseNew != nil }
+        check(newStarted && switched.accountHash == other,
+              "REQ-50: New-account reader explicitly starts and holds its response after old completion joins")
+        guard let newCompletion = releaseNew else {
+            newRead.cancel()
+            await newRead.value
+            throw ManagementError.requestTimedOut
+        }
+        let pendingCollection = LibraryGame.collection(installed: [game], owned: [], products: [],
+            gamePass: [], active: true,
+            permittedInstalledIDs: switched.permits(product, account: other, now: now) ? [product] : [])
+        let pendingDisplay = LibraryGame.displayCollection(installed: [game], account: pendingCollection)
+        check(retired && newStarted && switched.checking && switched.facts.isEmpty
+              && !switched.permits(product, account: account, now: now)
+              && !switched.permits(product, account: other, now: now)
+              && pendingCollection.isEmpty && pendingDisplay.first?.facts.badgeLabels().isEmpty == true
+              && pendingDisplay.first?.facts.installation == .installed(game.folder),
+              "REQ-50: Joined old allowed completion cannot transiently restore permission or shared qualification while new denial is still held")
+        newCompletion.resume(returning: try response(product, accountHash: other,
+                                                      access: "denied", reason: "providerDenied"))
         await newRead.value
         let switchedCollection = LibraryGame.collection(installed: [game], owned: [], products: [],
             gamePass: [], active: true,
