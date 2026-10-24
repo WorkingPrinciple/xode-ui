@@ -5,8 +5,8 @@
 ### Current paired schema reconciliation
 
 The app resource now uses the exact canonical management contract from producer
-`3f65a162d4b4ab417c3ccd60e61694c9b78b3415`, tree
-`c22cda9dd1216642eb9a8afe6b5be2fe607dfa7c`, SHA256
+`7f53243c083f74e6c6524e56e550044d70abceb2`, tree
+`217854d3083479557249e64afd643d53f8c43557`, SHA256
 `23df3f6eb0d09c035b0575c02dd314bdb876208f1f3cc404473c2340975fb164`.
 This corrects the generator's rejection of the producer's actual combined
 Xbox/Store Edge query source and cached product descriptors. Both legacy
@@ -31,11 +31,11 @@ only in its isolated stage. App-only refresh retaining CLI3121 cannot claim
 delivery of the shared descriptor backend.
 
 The COR-71/72 selected-signed-CLI refresh tuple is now observed, not predicted:
-CLI SHA256 `5bd7e2920ba23e6f84768e78ac1335b6d6daf0a0b5df7e4bd5494df056164b2b`
-(28,525,232 bytes), actual release embedded Windows helper SHA256
+CLI SHA256 `7aa38b13d87947bd6f97c0a70a98d49c05519fb9e4a5d891e04309278e8a61b8`
+(28,535,616 bytes), actual release embedded Windows helper SHA256
 `42560b3e33a258c8af43146034d6f5140d939f855d682739bc82ea1d8962ff65`
 (20,480 bytes), and sibling producer manifest SHA256
-`70477335659b365d2c3769ba9337d688da15132e86dc360ff33ed1544d1f5c14`.
+`142901ebea46ee11c08446cf78fe0c4162e4e26607cb4aa22c86591a139dc252`.
 The signed CLI passed strict fixed-leaf verification with the existing approved
 identity. Its actual producer command was
 `CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo build --offline --locked --release -p xodus-cli`;
@@ -47,15 +47,24 @@ and gameplay remain distinct evidence. Calimocho's production admission is empty
 
 The runtime catalogue's `cliSha256` also binds the selected signed CLI above.
 Its bundled SHA256 is
-`636b66174e052053dd5b1ae96600df7db848e38cab5c225c5401342c6f457824`;
+`b129a1127b830dc79186e5fdb8a10fc64e0acf1a2938ab6019fe6c9f307a3292`;
 both the byte digest and lifecycle equality checks remain mandatory. This
 packaging binding does not rewrite `evidenceCliSha256` or any title's observed
 recipe/evidence, and does not establish gameplay qualification with the new CLI.
-Current CLI5bd7 title/runtime qualification remains pending. Its retained launch
+Current CLI7aa3 title/runtime qualification remains pending. Its retained launch
 arguments do not prove equivalent behavior: provider admission, prefix ownership,
 staging and the popup monitor changed since the historical CLIadf8 title runs.
 Leaving the catalogue bound to CLI3121 while updating the lifecycle pin rejects
 all profile resolution, including otherwise unrelated titles.
+
+The new pair adds exact-opt-in descriptor count telemetry and the existing
+diagnostics-export checkpoint fence. It is not a fix for the historical
+management overflow: that incident remains unresolved/non-reproduced with the
+diagnostic-only d0c7019/5bd7 pair installed until separately replaced by the
+exclusive deployment owner. The new signed producer does not imply installed
+measurement acceptance; see `NATIVE_UI_PROCEDURES.md` for the bounded same-session
+count collection path. The schema, helper and historical CLIadf8 gameplay proof
+remain unchanged.
 
 ### Header search regression (#40)
 

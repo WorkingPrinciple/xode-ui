@@ -82,6 +82,10 @@ final class LiveSession: ObservableObject {
     @Published private(set) var diagnosticSaving = false
     @Published private(set) var diagnosticSaved = false
     @Published private(set) var diagnosticExportError: String?
+    private var descriptorMetricBaseline: (counts: ManagementClient.DescriptorMetricCounts, instant: ContinuousClock.Instant)?
+    private(set) var descriptorMetricCounts: ManagementClient.DescriptorMetricCounts?
+    private(set) var descriptorMetricIntervalCompleted = false
+    private let descriptorMetricLogger = Logger(subsystem: "io.github.dragoshont.xodus", category: "descriptor-metrics")
     private var client: ManagementClient?
     private var descriptorsOwner: UUID?
     private var connectedConfiguration: BackendConfiguration?
@@ -997,6 +1001,9 @@ final class LiveSession: ObservableObject {
     }
 
     private func retireClient() async -> Bool {
+        descriptorMetricBaseline = nil
+        descriptorMetricCounts = nil
+        descriptorMetricIntervalCompleted = false
         guard await stopUnifiedRuntime() else {
             errorMessage = ManagementError.shutdownFailed.localizedDescription
             return false
@@ -1871,15 +1878,68 @@ final class LiveSession: ObservableObject {
         let token = generation
         defer { if token == generation { diagnosticPreviewing = false } }
         do {
-            let value = try await client.request(.diagnostics)
+            let value: JSONValue
+            if await client.descriptorMetricsOptedIn {
+                let checkpoint = try await client.descriptorMetricsDiagnosticCheckpoint()
+                guard token == generation else { return }
+                value = checkpoint.data
+                if let counts = checkpoint.counts {
+                    recordDescriptorMetrics(counts)
+                } else {
+                    incompleteDescriptorMetrics()
+                }
+            } else {
+                value = try await client.request(.diagnostics)
+            }
             guard token == generation else { return }
             guard let jobs = value["jobCount"]?.uint64, let products = value["cachedProductCount"]?.uint64,
                   value["redacted"] == .bool(true) else { throw ManagementError.invalidPayload }
             diagnosticPreview = "Management protocol 1.0\nCatalog checks: \(jobs)\nCached public products: \(products)\nRuntime certified: no\nOwned-PC inventory authorized: no\nNo account identifiers, tokens, URLs or raw engine logs included."
         } catch {
             guard token == generation else { return }
+            if await client.descriptorMetricsOptedIn {
+                incompleteDescriptorMetrics()
+            }
             errorMessage = Self.describe(error)
         }
+    }
+
+    private func incompleteDescriptorMetrics() {
+        descriptorMetricBaseline = nil
+        descriptorMetricCounts = nil
+        descriptorMetricIntervalCompleted = false
+        descriptorMetricLogger.notice("Descriptor interval incomplete.")
+    }
+
+    private func recordDescriptorMetrics(_ counts: ManagementClient.DescriptorMetricCounts) {
+        let now = ContinuousClock.now
+        descriptorMetricCounts = counts
+        descriptorMetricIntervalCompleted = false
+        guard let baseline = descriptorMetricBaseline else {
+            descriptorMetricBaseline = (counts, now)
+            descriptorMetricLogger.notice("Descriptor interval baseline checkpoint=\(counts.checkpoint, privacy: .public).")
+            return
+        }
+        descriptorMetricBaseline = nil
+        let elapsed = baseline.instant.duration(to: now)
+        guard elapsed <= .seconds(180) else {
+            descriptorMetricLogger.notice("Descriptor interval incomplete: boundary exceeds 180 seconds.")
+            return
+        }
+        let milliseconds = elapsed.components.seconds * 1_000
+            + elapsed.components.attoseconds / 1_000_000_000_000_000
+        descriptorMetricIntervalCompleted = true
+        descriptorMetricLogger.notice("""
+            Descriptor interval complete start=\(baseline.counts.checkpoint, privacy: .public) \
+            end=\(counts.checkpoint, privacy: .public) elapsedMilliseconds=\(milliseconds, privacy: .public) \
+            lookups=\(counts.lookups - baseline.counts.lookups, privacy: .public) \
+            hits=\(counts.hits - baseline.counts.hits, privacy: .public) \
+            forced=\(counts.forced - baseline.counts.forced, privacy: .public) \
+            coalesced=\(counts.coalesced - baseline.counts.coalesced, privacy: .public) \
+            attempts=\(counts.attempts - baseline.counts.attempts, privacy: .public) \
+            terminals=\(counts.terminals - baseline.counts.terminals, privacy: .public) \
+            successes=\(counts.successes - baseline.counts.successes, privacy: .public).
+            """)
     }
 
     func chooseDiagnosticDestination() {

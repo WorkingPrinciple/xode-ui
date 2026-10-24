@@ -21,6 +21,8 @@ enum ManagementChecks {
                     discover: CommandLine.arguments.contains("--probe-discovery"),
                     query: CommandLine.arguments.contains("--probe-query"),
                     inspect: CommandLine.arguments.contains("--probe-inspect"))
+            } else if CommandLine.arguments.contains("--descriptor-metrics-checks") {
+                try await checks.descriptorMetricsChecks()
             } else if CommandLine.arguments.contains("--overflow-checks") {
                 try await checks.overflowChecks()
             } else if let index = CommandLine.arguments.firstIndex(of: "--contract-schema-checks") {
@@ -151,6 +153,179 @@ actor Checks {
             }
         }
 
+        try await requestPressureChecks()
+    }
+
+    func descriptorMetricsChecks() async throws {
+            let prefix = "Ode descriptor metrics v1 "
+            let enabled = prefix + "enabled seq=1 budget=65536\n"
+            let valid = enabled + prefix + "checkpoint seq=2\n"
+                + prefix + "lookup seq=3 hit=0 forced=1 coalesced=1\n"
+                + prefix + "attempt seq=4 fetch=1\n"
+                + prefix + "terminal seq=5 fetch=1 ok=1\n"
+                + prefix + "lookup seq=6 hit=1 forced=0 coalesced=0\n"
+                + prefix + "checkpoint seq=7\n"
+            let bytes = Data(valid.utf8)
+            for split in 0...bytes.count {
+                var framer = ManagementClient.DescriptorMetricsFramer()
+                let first = framer.append(bytes.prefix(split))
+                let second = framer.append(bytes.dropFirst(split))
+                check(first.count + second.count == 7 && framer.status == .provisional
+                      && framer.checkpoint == 7 && framer.lookups == 2 && framer.hits == 1
+                      && framer.attempts == 1 && framer.terminals == 1 && framer.successes == 1
+                      && framer.active.isEmpty,
+                      "Count-only metrics preserve arbitrary cross-pipe chunk split \(split)")
+            }
+            for invalid in [
+                prefix + "lookup seq=1 hit=1 forced=0 coalesced=0\n",
+                enabled + prefix + "checkpoint seq=3\n",
+                enabled + prefix + "checkpoint seq=02\n",
+                enabled + prefix + "terminal seq=2 fetch=1 ok=1\n",
+                enabled + prefix + "attempt seq=2 fetch=2\n",
+                enabled + prefix + "lookup seq=2 hit=1 forced=1 coalesced=0\n",
+                enabled + prefix + "lookup seq=2 hit=1 forced=0 coalesced=1\n",
+                enabled + prefix + "attempt seq=2 fetch=1\n" + prefix + "checkpoint seq=3\n",
+                enabled + prefix + "enabled seq=2 budget=65536\n",
+                enabled + prefix + "checkpoint seq=2 extra=private\n",
+                enabled + prefix + "checkpoint seq=18446744073709551616\n",
+                enabled + "Ode descriptor metrics v2 checkpoint seq=2\n",
+                enabled + prefix + "checkpoint seq=2\r\n",
+                enabled + prefix + String(repeating: "x", count: 256) + "\n",
+                enabled + prefix + "attempt seq=2 fetch=1\n"
+                    + prefix + "terminal seq=3 fetch=1 ok=0\n"
+                    + prefix + "terminal seq=4 fetch=1 ok=0\n"
+            ] {
+                var framer = ManagementClient.DescriptorMetricsFramer()
+                _ = framer.append(Data(invalid.utf8))
+                check(framer.status == .invalid, "Malformed/uncorrelated metrics invalidate proof without retaining payload")
+            }
+            var absent = ManagementClient.DescriptorMetricsFramer()
+            check(absent.append(Data("untrusted arbitrary stderr\n".utf8)).isEmpty && absent.status == .unavailable,
+                  "Missing enabled marker is unavailable, never zero")
+            _ = absent.append(Data(enabled.utf8))
+            _ = absent.append(Data((prefix + "attempt seq=2 fetch=1\n").utf8))
+            absent.finish()
+            check(absent.status == .invalid, "Unfinished upstream fetch cannot complete count proof")
+            var exhausted = ManagementClient.DescriptorMetricsFramer()
+            _ = exhausted.append(Data((enabled + prefix + "exhausted seq=2\n").utf8))
+            check(exhausted.status == .exhausted, "Explicit exhausted marker invalidates measurement completeness")
+            var bounded = ManagementClient.DescriptorMetricsFramer()
+            _ = bounded.append(Data(enabled.utf8))
+            for sequence in 2...3000 {
+                _ = bounded.append(Data((prefix + "lookup seq=\(sequence) hit=1 forced=0 coalesced=0\n").utf8))
+            }
+            check(bounded.status == .invalid, "Metrics enforce the independent 64KiB lifetime budget")
+            for value in [nil, "", "0", "true", "01", "1 ", "1"] as [String?] {
+                var environment = ["HOME": "/neutral", "SECRET": "never-forward", "RUST_LOG": "trace"]
+                environment["XODUS_DESCRIPTOR_METRICS"] = value
+                let selected = ManagementClient.operationalEnvironment(environment)
+                check(selected["HOME"] == "/neutral" && selected["SECRET"] == nil && selected["RUST_LOG"] == "error"
+                      && selected["XODUS_DESCRIPTOR_METRICS"] == (value == "1" ? "1" : nil),
+                      "Owned launcher permits only exact metrics opt-in and preserves environment restrictions")
+            }
+            let savedOptIn = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+            setenv("XODUS_DESCRIPTOR_METRICS", "true", 1)
+            let disabled = try ManagementClient()
+            do { _ = try await disabled.connect(mockConfiguration("metricsearly")) }
+            catch {
+                if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                throw error
+            }
+            if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
+            else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+            do {
+                _ = try await disabled.descriptorMetricsCheckpoint()
+                check(false, "Nonexact opt-in keeps actual owned transport measurement disabled")
+            } catch {
+                check(error as? ManagementError == .invalidRequest,
+                      "Nonexact opt-in keeps actual owned transport measurement disabled")
+            }
+            _ = try await disabled.request(.jobs)
+            check(await disabled.close(), "Disabled measurement preserves ordinary owned transport")
+            for scenario in ["metricsearly", "metricslate", "metricsmissing", "metricsstale", "metricsdrainfail", "metricsbusy"] {
+                let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+                setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
+                let client = try ManagementClient()
+                do { _ = try await client.connect(mockConfiguration(scenario)) }
+                catch {
+                    if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                    else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                    throw error
+                }
+                if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                if scenario == "metricsbusy" {
+                    let held = Task { try await client.request(.jobs) }
+                    let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                    while await client.pendingRequestCount == 0, ContinuousClock.now < deadline {
+                        try await Task.sleep(for: .milliseconds(10))
+                    }
+                    do {
+                        _ = try await client.descriptorMetricsCheckpoint()
+                        check(false, "Busy app-owned channel cannot certify a metrics interval")
+                    } catch {
+                        check(error as? ManagementError == .invalidRequest,
+                              "Busy app-owned channel cannot certify a metrics interval")
+                    }
+                    check(await client.close(), "Owned busy metrics fixture closes")
+                    _ = try? await held.value
+                    continue
+                }
+                if scenario == "metricsstale" {
+                    _ = try await client.request(.diagnostics)
+                    do {
+                        _ = try await client.descriptorMetricsCheckpoint()
+                        check(false, "Delayed prior export marker cannot certify a new missing checkpoint")
+                    } catch {
+                        check(error as? ManagementError == .invalidPayload,
+                              "Delayed prior export marker cannot certify a new missing checkpoint")
+                    }
+                } else if scenario == "metricsdrainfail" {
+                    do {
+                        _ = try await client.descriptorMetricsCheckpoint()
+                        check(false, "Drain failure cannot certify a checkpoint")
+                    } catch {
+                        check(error as? ManagementError == .backendError("NETWORK_UNAVAILABLE", retryable: false),
+                              "Drain failure cannot certify a checkpoint")
+                    }
+                } else {
+                    let first = try await client.descriptorMetricsCheckpoint()
+                    check(first.checkpoint == 2 && first.lookups == 0 && first.attempts == 0,
+                          "Actual owned fixture correlates checkpoint and result across \(scenario) pipes")
+                    if scenario == "metricsmissing" {
+                        do {
+                            _ = try await client.descriptorMetricsCheckpoint()
+                            check(false, "An earlier checkpoint cannot certify a later export with a missing marker")
+                        } catch {
+                            check(error as? ManagementError == .invalidPayload,
+                                  "An earlier checkpoint cannot certify a later export with a missing marker")
+                        }
+                    } else if scenario == "metricslate" {
+                        let second = Task { try await client.descriptorMetricsCheckpoint() }
+                        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                        while await !client.descriptorCheckpointPending, ContinuousClock.now < deadline {
+                            try await Task.sleep(for: .milliseconds(1))
+                        }
+                        do {
+                            _ = try await client.descriptorMetricsCheckpoint()
+                            check(false, "Concurrent exports cannot share one fresh checkpoint")
+                        } catch {
+                            check(error as? ManagementError == .invalidRequest,
+                                  "Concurrent exports cannot share one fresh checkpoint")
+                        }
+                        check(try await second.value.checkpoint == 3,
+                              "Late stderr marker still certifies only its own completed export")
+                    } else {
+                        let second = try await client.descriptorMetricsCheckpoint()
+                        check(second.checkpoint == 3, "Multiple exports require fresh monotonic checkpoints")
+                    }
+                }
+                check(await client.close(), "Owned count-only metrics fixture closes")
+            }
+        }
+
+    func requestPressureChecks() async throws {
         let requests = try ManagementClient()
         _ = try await requests.connect(mockConfiguration("requestpressure"))
         let held = (0..<64).map { _ in Task {
@@ -252,6 +427,7 @@ actor Checks {
     }
 
     func run() async throws {
+        try await descriptorMetricsChecks()
         try await overflowChecks()
         try odeAccountChecks()
         try accountTierChecks()
@@ -1246,7 +1422,7 @@ enum MockBackend {
             if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
-            if scenario == "diagnostics" { supported.insert(.diagnostics) }
+            if scenario == "diagnostics" || scenario.hasPrefix("metrics") { supported.insert(.diagnostics) }
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
                 "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded",
                 "discoverypartialretry", "discoveryretryfailure"].contains(scenario) { supported.insert(.discover) }
@@ -1269,6 +1445,7 @@ enum MockBackend {
             var flowReads = 0, discoveryReads = 0, profileReads = 0
             var activityReads = 0, registryReads = 0
             var recentReads = 0, accountLibraryReads = 0
+            var metricSequence = 1
             var gatedAttempts = 0
             hello["capabilities"] = .array(ManagementCommand.allCases.map { command in .object([
                 "command": .string(command.rawValue), "supported": .bool(supported.contains(command)),
@@ -1279,6 +1456,10 @@ enum MockBackend {
                 let request = try JSONDecoder().decode(JSONValue.self, from: Data(line.utf8))
                 let command = request["command"]?.string ?? ""
                 if command == "hello" {
+                    if scenario.hasPrefix("metrics"), ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"] == "1" {
+                        try FileHandle.standardError.write(contentsOf:
+                            Data("Ode descriptor metrics v1 enabled seq=1 budget=65536\n".utf8))
+                    }
                     if scenario == "welcomeretry" {
                         let marker = lifecycleDirectory.appendingPathComponent("hello-rejected")
                         if !FileManager.default.fileExists(atPath: marker.path) {
@@ -1302,6 +1483,26 @@ enum MockBackend {
                     if scenario == "mismatch" { result["protocol"] = .object(["major": .integer(2), "minor": .integer(0)]) }
                     try emit(.object(result))
                 } else {
+                    if scenario == "metricsbusy", command == ManagementCommand.jobs.rawValue { continue }
+                    if scenario.hasPrefix("metrics"), command == ManagementCommand.diagnostics.rawValue {
+                        if scenario == "metricsdrainfail" {
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE")
+                            continue
+                        }
+                        let marker = Data("Ode descriptor metrics v1 checkpoint seq=\(metricSequence + 1)\n".utf8)
+                        if scenario == "metricsearly" { try FileHandle.standardError.write(contentsOf: marker) }
+                        guard let diagnostic = frames.first(where: { $0["data"]?["reportVersion"] != nil })?["data"] else {
+                            throw ManagementError.invalidPayload
+                        }
+                        try emit(.object(result(request, data: diagnostic)))
+                        if scenario == "metricslate" || scenario == "metricsstale" { usleep(100_000) }
+                        if scenario != "metricsearly",
+                           !["metricsmissing", "metricsstale"].contains(scenario) || metricSequence == 1 {
+                            try FileHandle.standardError.write(contentsOf: marker)
+                        }
+                        metricSequence += 1
+                        continue
+                    }
                     if scenario == "requestpressure", command == ManagementCommand.jobs.rawValue { continue }
                     if scenario == "diagnosticlifetime", command == ManagementCommand.jobs.rawValue {
                         for _ in 0..<257 {

@@ -120,6 +120,61 @@ retirement. The existing 1MiB diagnostic lifetime, 128-chunk/event queues and
 `swift run XodusManagementChecks --overflow-checks`; they distinguish candidate
 paths but do not identify the origin of a prior uninstrumented installed failure.
 
+Descriptor measurement is disabled unless the app process has the exact
+`XODUS_DESCRIPTOR_METRICS=1` opt-in. Its owned launcher forwards only that exact
+value in addition to the existing operational environment allowlist. It does not
+forward arbitrary environment variables or change the fixed Rust log level.
+The management stderr reader accepts only ASCII LF-terminated lines of at most
+256 bytes, under a separate 65,536-byte metrics lifetime budget:
+
+```text
+Ode descriptor metrics v1 enabled seq=1 budget=65536
+Ode descriptor metrics v1 lookup seq=N hit=B forced=B coalesced=B
+Ode descriptor metrics v1 attempt seq=N fetch=F
+Ode descriptor metrics v1 terminal seq=N fetch=F ok=B
+Ode descriptor metrics v1 checkpoint seq=N
+Ode descriptor metrics v1 exhausted seq=N
+```
+
+Fields are ordered canonical unsigned decimals; `B` is zero or one. Sequence and
+fetch numbers increase by one; each terminal names one active fetch exactly once.
+A hit cannot also be forced or coalesced. A successful terminal describes the
+raw upstream result, not cache persistence, account access or API success.
+Only validated count-only lines reach the existing management OSLog sink.
+Unknown versions, malformed/extra fields, gaps, missing enabled markers, byte
+exhaustion and unfinished fetches cannot become zero-request proof.
+
+`ManagementClient.descriptorMetricsCheckpoint()` uses the existing redacted
+`diagnostics.export` request, without logging or saving its payload or requiring
+the UI's diagnostic-file export. It refuses an already busy channel or concurrent
+checkpoint requests, and requires both a successful result and a fresh drained
+checkpoint marker across the independent stdout/stderr pipes. Missing markers
+invalidate further measurement rather than reusing an old checkpoint. Compare
+two such snapshots for one serialized interval; live events alone are
+provisional. Ordinary app shutdown still cancels diagnostic reading and cannot
+certify a missing checkpoint. This seam does not itself establish cold/warm
+installed tab, login readiness or painted-frame performance acceptance.
+
+For an installed measurement, the exclusive runtime owner launches the exact
+paired app with that process-only opt-in, without changing global settings.
+Wait for the previous Library/Discover work to settle, then use Account's
+existing **Preview redacted diagnostic summary** action once for a baseline.
+Navigate the bounded Library/Discover workflow, await its outstanding requests,
+and use the same preview action again within 180 seconds. No Save action or
+diagnostic file is needed. Both calls use the existing app-owned management
+process; they never launch a neutral probe child. The app's `descriptor-metrics`
+OSLog category emits only a checkpoint baseline and a complete aggregate delta
+with monotonic elapsed milliseconds, or an explicit incomplete result. These
+session-wide counts are not per-command attribution. Busy requests, a failed
+export, a missing/late prior marker, an expired interval or a disconnected
+session cannot certify the interval. Each diagnostic export is ordinally
+accounted, including ordinary exports, so a delayed marker from an earlier
+export cannot stand in for a newer missing marker. Disabled previews retain
+their existing result and redaction behavior.
+An incomplete count fence preserves a successful diagnostic preview and the
+existing account/error state; only the count proof is discarded and logged as
+incomplete. A real diagnostics API failure retains its existing error behavior.
+
 For keyboard acceptance, read the current keyboard-navigation setting without
 changing it. Poster focus participation is explicit, including browse Library,
 Continue Playing and Discover, not only search. Under `AppleKeyboardUIMode=0`,

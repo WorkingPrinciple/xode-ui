@@ -1381,6 +1381,8 @@ enum NativeChecks {
             check(diagnostics.diagnosticExportError != nil && !FileManager.default.fileExists(atPath: output.path),
                   "Diagnostic export requires a current reviewed preview and creates no unreviewed file")
             await diagnostics.previewDiagnostics()
+            check(diagnostics.descriptorMetricCounts == nil && !diagnostics.descriptorMetricIntervalCompleted,
+                  "Ordinary diagnostic preview keeps opt-in descriptor measurement disabled")
             guard let reviewed = diagnostics.diagnosticPreview else { throw ManagementError.invalidPayload }
             await diagnostics.saveDiagnosticSummary(to: output)
             check(try String(contentsOf: output, encoding: .utf8) == reviewed && diagnostics.diagnosticSaved,
@@ -1393,6 +1395,38 @@ enum NativeChecks {
             await diagnostics.saveDiagnosticSummary(to: remote)
             check(diagnostics.diagnosticExportError != nil && !diagnostics.diagnosticSaved,
                   "Diagnostic export rejects nonlocal destinations without writing")
+
+            for scenario in ["metricsearly", "metricsmissing"] {
+                let measured = session(scenario)
+                let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+                setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
+                await measured.connect()
+                if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                await measured.previewDiagnostics()
+                check(measured.descriptorMetricCounts?.checkpoint == 2
+                      && !measured.descriptorMetricIntervalCompleted
+                      && measured.diagnosticPreview != nil && !measured.diagnosticSaved,
+                      "Existing diagnostic preview captures baseline on the same opted-in app-owned session without file export")
+                let priorPreview = measured.diagnosticPreview
+                let priorAccount = measured.accountHash
+                if scenario == "metricsmissing" { measured.errorMessage = "Retained synthetic status" }
+                await measured.loadCatalogOnEntry("")
+                await measured.previewDiagnostics()
+                if scenario == "metricsmissing" {
+                    check(measured.descriptorMetricCounts == nil && !measured.descriptorMetricIntervalCompleted
+                          && measured.errorMessage == "Retained synthetic status"
+                          && measured.diagnosticPreview == priorPreview && measured.accountHash == priorAccount,
+                          "Missing session end marker reports incomplete proof without corrupting the redacted summary or error state")
+                } else {
+                    check(measured.descriptorMetricCounts?.checkpoint == 3
+                          && measured.descriptorMetricIntervalCompleted && measured.diagnosticPreview != nil,
+                          "Second existing preview certifies a bounded interval on the original Library/Discover manager")
+                }
+                await measured.disconnect()
+                check(measured.descriptorMetricCounts == nil && !measured.descriptorMetricIntervalCompleted,
+                      "Session retirement clears descriptor interval ownership")
+            }
             await diagnostics.disconnect()
             await diagnostics.saveDiagnosticSummary(to: output)
             check(diagnostics.diagnosticExportError != nil && !diagnostics.diagnosticSaved,

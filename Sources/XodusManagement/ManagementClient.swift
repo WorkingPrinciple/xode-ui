@@ -19,6 +19,16 @@ public struct BackendConfiguration: Sendable {
 }
 
 public actor ManagementClient {
+    public struct DescriptorMetricCounts: Sendable, Equatable {
+        public let checkpoint: UInt64
+        public let lookups: UInt64
+        public let hits: UInt64
+        public let forced: UInt64
+        public let coalesced: UInt64
+        public let attempts: UInt64
+        public let terminals: UInt64
+        public let successes: UInt64
+    }
     enum OverflowOrigin: String, Sendable {
         case requestBudget, eventQueue, diagnosticLifetime, stdoutQueue, stderrQueue
     }
@@ -45,6 +55,12 @@ public actor ManagementClient {
     private var framer = JSONLineFramer()
     private var diagnosticBytes = 0
     private var collectionDiagnostics = CollectionDiagnosticFramer()
+    private var descriptorMetrics = DescriptorMetricsFramer()
+    private var descriptorMetricsEnabled = false
+    private var descriptorCheckpointInFlight = false
+    private var descriptorExports: UInt64 = 0
+    var descriptorCheckpointPending: Bool { descriptorCheckpointInFlight }
+    public var descriptorMetricsOptedIn: Bool { descriptorMetricsEnabled }
     private var libraryReadNumber: UInt64 = 0
     private var stopped = false
     private var exitStatus: Int32?
@@ -66,6 +82,48 @@ public actor ManagementClient {
         eventContinuation = channel.continuation
     }
 
+    public func descriptorMetricsCheckpoint() async throws -> DescriptorMetricCounts {
+        guard descriptorMetricsEnabled, pending.isEmpty, !descriptorCheckpointInFlight else {
+            throw ManagementError.invalidRequest
+        }
+        guard let counts = try await descriptorMetricsDiagnosticCheckpoint().counts else {
+            throw ManagementError.invalidPayload
+        }
+        return counts
+    }
+
+    public func descriptorMetricsDiagnosticCheckpoint() async throws -> (data: JSONValue, counts: DescriptorMetricCounts?) {
+        guard descriptorMetricsEnabled, pending.isEmpty, !descriptorCheckpointInFlight else {
+            return (try await request(.diagnostics), nil)
+        }
+        descriptorCheckpointInFlight = true
+        defer { descriptorCheckpointInFlight = false }
+        let expected = descriptorExports + 1
+        let data: JSONValue
+        do { data = try await request(.diagnostics) }
+        catch {
+            descriptorMetrics.invalidate()
+            throw error
+        }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while descriptorMetrics.checkpoints < expected, descriptorMetrics.status != .invalid,
+              descriptorMetrics.status != .exhausted, !stopped, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        guard !stopped, descriptorMetrics.status == .provisional,
+              descriptorMetrics.checkpoints == expected,
+              descriptorMetrics.sequence == descriptorMetrics.checkpoint,
+              descriptorMetrics.active.isEmpty else {
+            descriptorMetrics.invalidate()
+            return (data, nil)
+        }
+        return (data, DescriptorMetricCounts(checkpoint: descriptorMetrics.checkpoint,
+            lookups: descriptorMetrics.lookups, hits: descriptorMetrics.hits,
+            forced: descriptorMetrics.forced, coalesced: descriptorMetrics.coalesced,
+            attempts: descriptorMetrics.attempts, terminals: descriptorMetrics.terminals,
+            successes: descriptorMetrics.successes))
+    }
+
     public func connect(_ configuration: BackendConfiguration) async throws -> ManagementHello {
         guard process == nil, !stopped else { throw ManagementError.alreadyConnected }
         guard configuration.executable.isFileURL,
@@ -84,9 +142,8 @@ public actor ManagementClient {
         child.arguments = ["manage", "--protocol", "1", "--state-dir", configuration.stateDirectory.path]
             + nativeArguments
         // Inherit operational context, not unrelated application tokens or debug/proxy settings.
-        child.environment = ProcessInfo.processInfo.environment.filter {
-            ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "SSL_CERT_FILE", "SSL_CERT_DIR"].contains($0.key)
-        }.merging(["RUST_LOG": "error"]) { _, value in value }
+        child.environment = Self.operationalEnvironment(ProcessInfo.processInfo.environment)
+        descriptorMetricsEnabled = child.environment?["XODUS_DESCRIPTOR_METRICS"] == "1"
         child.standardInput = input
         child.standardOutput = output
         child.standardError = diagnostics
@@ -136,6 +193,7 @@ public actor ManagementClient {
                     guard let self else { return }
                     try await self.consumeDiagnostics(bytes)
                 }
+                await self?.diagnosticsEnded()
             } catch { await self?.transportFailed(error) }
         }
         do {
@@ -147,6 +205,14 @@ public actor ManagementClient {
             fail(Self.safeError(error))
             throw error
         }
+    }
+
+    static func operationalEnvironment(_ environment: [String: String]) -> [String: String] {
+        var selected = environment.filter {
+            ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "SSL_CERT_FILE", "SSL_CERT_DIR"].contains($0.key)
+        }.merging(["RUST_LOG": "error"]) { _, value in value }
+        if environment["XODUS_DESCRIPTOR_METRICS"] == "1" { selected["XODUS_DESCRIPTOR_METRICS"] = "1" }
+        return selected
     }
 
     public func request(_ command: ManagementCommand, params: [String: JSONValue] = [:],
@@ -181,6 +247,7 @@ public actor ManagementClient {
         guard data.count <= JSONLineFramer.maximumBytes else { throw ManagementError.frameTooLarge }
         data.append(10)
         let bytes = data
+        if command == .diagnostics, descriptorMetricsEnabled { descriptorExports += 1 }
         usedIDs.insert(id)
         return try await withCheckedThrowingContinuation { continuation in
             let deadline = Task { [weak self] in
@@ -322,6 +389,15 @@ public actor ManagementClient {
             throw overflow(.diagnosticLifetime, count: diagnosticBytes + bytes.count)
         }
         diagnosticBytes += bytes.count
+        if descriptorMetricsEnabled {
+            let previousStatus = descriptorMetrics.status
+            for line in descriptorMetrics.append(bytes) {
+                logger.notice("Descriptor metrics captured: \(line, privacy: .public)")
+            }
+            if descriptorMetrics.status != previousStatus {
+                logger.notice("Descriptor metrics proof: status=\(self.descriptorMetrics.status.rawValue, privacy: .public)")
+            }
+        }
         for line in collectionDiagnostics.append(bytes) {
             let reads = pending.values.compactMap(\.libraryReadNumber)
             if reads.count == 1, let read = reads.first {
@@ -329,6 +405,119 @@ public actor ManagementClient {
             } else {
                 logger.info("Collection counts captured: uncorrelated; \(line, privacy: .public)")
             }
+        }
+    }
+
+    private func diagnosticsEnded() {
+        guard descriptorMetricsEnabled else { return }
+        descriptorMetrics.finish()
+        logger.notice("Descriptor metrics proof: status=\(self.descriptorMetrics.status.rawValue, privacy: .public)")
+    }
+
+    struct DescriptorMetricsFramer {
+        enum Status: String { case unavailable, provisional, invalid, exhausted }
+        private(set) var status: Status = .unavailable
+        private(set) var sequence: UInt64 = 0
+        private(set) var checkpoint: UInt64 = 0
+        private(set) var checkpoints: UInt64 = 0
+        private(set) var lookups: UInt64 = 0
+        private(set) var hits: UInt64 = 0
+        private(set) var forced: UInt64 = 0
+        private(set) var coalesced: UInt64 = 0
+        private(set) var attempts: UInt64 = 0
+        private(set) var terminals: UInt64 = 0
+        private(set) var successes: UInt64 = 0
+        private(set) var active = Set<UInt64>()
+        private var line = Data()
+        private var discarding = false
+        private var emittedBytes = 0
+        private static let prefix = "Ode descriptor metrics v1 "
+        private static let family = Data("Ode descriptor metrics".utf8)
+
+        mutating func append(_ bytes: Data) -> [String] {
+            var accepted: [String] = []
+            for byte in bytes {
+                if byte == 10 {
+                    if !discarding, line.starts(with: Self.family) {
+                        if let text = String(data: line, encoding: .utf8), accept(text) {
+                            accepted.append(text)
+                        } else { status = .invalid }
+                    }
+                    line.removeAll(keepingCapacity: true)
+                    discarding = false
+                } else if !discarding {
+                    if line.count < 255 { line.append(byte) }
+                    else {
+                        if line.starts(with: Self.family) { status = .invalid }
+                        line.removeAll(keepingCapacity: true)
+                        discarding = true
+                    }
+                }
+            }
+            return accepted
+        }
+
+        mutating func finish() {
+            if line.starts(with: Self.family) || !active.isEmpty { status = .invalid }
+            line.removeAll()
+        }
+
+        mutating func invalidate() { status = .invalid }
+
+        private mutating func accept(_ text: String) -> Bool {
+            guard status != .invalid, status != .exhausted,
+                  text.hasPrefix(Self.prefix), text.utf8.allSatisfy({ $0 >= 32 && $0 <= 126 }),
+                  emittedBytes <= 65_536 - text.utf8.count - 1 else { return false }
+            let fields = text.dropFirst(Self.prefix.count).split(separator: " ", omittingEmptySubsequences: false)
+            func number(_ index: Int, _ key: String) -> UInt64? {
+                guard fields.indices.contains(index), fields[index].hasPrefix(key + "=") else { return nil }
+                let value = fields[index].dropFirst(key.count + 1)
+                guard !value.isEmpty, value == "0" || value.first != "0",
+                      value.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
+                return UInt64(value)
+            }
+            guard let kind = fields.first, let next = number(1, "seq"), sequence < UInt64.max,
+                  next == sequence + 1 else { return false }
+            if kind == "enabled" {
+                guard status == .unavailable, fields.count == 3, next == 1,
+                      number(2, "budget") == 65_536 else { return false }
+                status = .provisional
+            } else {
+                guard status == .provisional else { return false }
+                switch kind {
+                case "lookup":
+                    guard fields.count == 5, let hit = number(2, "hit"), hit <= 1,
+                          let forced = number(3, "forced"), forced <= 1,
+                          let coalesced = number(4, "coalesced"), coalesced <= 1,
+                          hit == 0 || (forced == 0 && coalesced == 0) else { return false }
+                    lookups += 1
+                    hits += hit
+                    self.forced += forced
+                    self.coalesced += coalesced
+                case "attempt":
+                    guard fields.count == 3, let fetch = number(2, "fetch"),
+                          fetch == attempts + 1 else { return false }
+                    attempts += 1
+                    active.insert(fetch)
+                case "terminal":
+                    guard fields.count == 4, let fetch = number(2, "fetch"), active.contains(fetch),
+                          let ok = number(3, "ok"), ok <= 1 else { return false }
+                    active.remove(fetch)
+                    terminals += 1
+                    successes += ok
+                case "checkpoint":
+                    guard fields.count == 2, active.isEmpty else { return false }
+                    checkpoint = next
+                    checkpoints += 1
+                case "exhausted":
+                    guard fields.count == 2 else { return false }
+                    status = .exhausted
+                default: return false
+                }
+            }
+            sequence = next
+            emittedBytes += text.utf8.count + 1
+            return true
         }
     }
 
