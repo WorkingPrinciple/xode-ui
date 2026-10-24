@@ -303,6 +303,12 @@ must not authorize it. Check refresh-in-flight, failed refresh, account replacem
 credential approval, subscription alternatives and operation-busy states.
 Disabled Install must show a visible reason, with only supported recovery
 (for example, Refresh library); public PC metadata is not entitlement proof.
+Populated Library content must not show or reserve space for routine background
+access-check progress. Initial empty loading remains separate; background
+readers and account/Play guards continue unchanged. Partial-detail notices
+describe settled failures, not work in flight. Game Pass probe blockers must
+describe account recovery first, then aggregate-library refresh, never infer
+ownership loss from unrelated missing metadata.
 The existing public descriptor cache already persists scoped metadata for five
 minutes; do not create account ownership records from that cache.
 Synthetic source checks use `swift run XodusPreview --library-access-check`

@@ -73,9 +73,12 @@ struct LiveLibraryView: View {
         LibraryLoadingPresentation.showsPlaceholders(
             library: library, loadingInstalled: installed.loading,
             checkingAccess: installed.productAccess.checking,
-            hasUsableContent: !collection.isEmpty || !localRecords.isEmpty
-                || (showsNativeMinecraft && [.ready, .repair].contains(nativeMinecraft.installation.state)),
+            hasUsableContent: hasUsableLibraryContent,
             query: query) && installed.error == nil
+    }
+    private var hasUsableLibraryContent: Bool {
+        !collection.isEmpty || !localRecords.isEmpty
+            || (showsNativeMinecraft && [.ready, .repair].contains(nativeMinecraft.installation.state))
     }
     private var purchaseNotice: String? {
         guard filter == .owned else { return nil }
@@ -180,7 +183,10 @@ struct LiveLibraryView: View {
                         .accessibilityIdentifier("xodus.library.purchaseProvenance")
                 }
                 if installed.loading { OdeLoadingStatus(title: "Loading installed games") }
-                if installed.productAccess.checking { OdeLoadingStatus(title: "Checking game access") }
+                if LibraryLoadingPresentation.showsAccessProgress(
+                    checking: installed.productAccess.checking, hasUsableContent: hasUsableLibraryContent) {
+                    OdeLoadingStatus(title: "Checking game access")
+                }
                 if showsLoadingPlaceholders {
                     LibraryLoadingPlaceholders()
                 } else if visible.isEmpty && !showsNativeMinecraft && visibleLocalRecords.isEmpty {

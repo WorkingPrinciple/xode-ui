@@ -2,6 +2,10 @@
 import SwiftUI
 
 enum LibraryLoadingPresentation {
+    static func showsAccessProgress(checking: Bool, hasUsableContent: Bool) -> Bool {
+        checking && !hasUsableContent
+    }
+
     @MainActor
     static func showsPlaceholders(library: PCGamesController, loadingInstalled: Bool = false,
                                   checkingAccess: Bool = false, hasUsableContent: Bool,

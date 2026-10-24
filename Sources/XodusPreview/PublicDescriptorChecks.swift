@@ -395,7 +395,7 @@ enum PublicDescriptorChecks {
         controller.useUnifiedAccount(session)
         let loading = Task { await controller.loadOnAppear() }
         try await wait(retiredTransport, count: 1)
-        check(controller.snapshot?.unresolvedCount == 1 && controller.resolutionNotice != nil
+        check(controller.snapshot?.unresolvedCount == 1 && controller.resolutionNotice == nil
               && !controller.accessIsCurrent, "Pending collection details expose partial state without current access")
         let retiring = Task { await controller.retireUnifiedAccount() }
         for _ in 0..<10 { await Task.yield() }

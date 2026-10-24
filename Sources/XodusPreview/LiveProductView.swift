@@ -12,10 +12,6 @@ enum GameDetailFacetCopy {
         return "Checking installation requirements"
     }
 
-    static func gamePassCheckStatus(libraryAccessIsCurrent: Bool) -> String? {
-        libraryAccessIsCurrent ? nil : "Refresh your PC library before checking Game Pass access."
-    }
-
     static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String? {
         guard let acquisition else { return nil }
         let label: String
@@ -287,8 +283,7 @@ struct LiveProductView: View {
                             .help(library.accessIsCurrent
                                   ? "Verify this account's current PC Game Pass download access."
                                   : "Refresh your PC library before checking Game Pass access.")
-                            if let status = GameDetailFacetCopy.gamePassCheckStatus(
-                                libraryAccessIsCurrent: library.accessIsCurrent) {
+                            if let status = library.gamePassCheckNotice {
                                 Text(status)
                                     .font(.caption).foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)

@@ -5,6 +5,26 @@ import OSLog
 import XodusCredentials
 import XodusManagement
 
+enum PCGamesAccountReadiness {
+    case ready, closing, updating, keychainApproval, signIn, unavailable, accountMismatch
+
+    var notice: String? {
+        switch self {
+        case .ready: nil
+        case .closing: "Account access is closing. Installation is unavailable."
+        case .updating: "Wait for your library to finish updating before installing."
+        case .keychainApproval: "Approve Keychain access in Account settings, then refresh your library."
+        case .signIn: "Sign in in Account settings, then refresh your library to check access."
+        case .unavailable: "Your library couldn't be updated. Refresh your library to check access before installing."
+        case .accountMismatch: "Refresh your library for the current account before installing."
+        }
+    }
+
+    func gamePassCheckNotice(libraryIsComplete: Bool) -> String? {
+        notice ?? (libraryIsComplete ? nil : "Refresh your PC library before checking Game Pass access.")
+    }
+}
+
 @MainActor
 final class PCGamesController: ObservableObject {
     @Published private(set) var hasSavedSignIn = false
@@ -51,8 +71,7 @@ final class PCGamesController: ObservableObject {
     }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var resolutionNotice: String? {
-        guard let snapshot, snapshot.unresolvedCount > 0 else { return nil }
-        if busy { return "Loading library details. Available games stay visible." }
+        guard !busy, let snapshot, snapshot.unresolvedCount > 0 else { return nil }
         return "Some library details couldn't be loaded. Refresh your library to try again. Available games remain visible."
     }
     var retainedLibraryNotice: String? {
@@ -64,26 +83,28 @@ final class PCGamesController: ObservableObject {
         snapshot?.isComplete == true && accountAccessIsCurrent
     }
     private var accountAccessIsCurrent: Bool {
-        hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
-            && !presenceUnavailable && error == nil && !needsKeychainApproval
-            && !accountDisconnecting && !terminating
-            && (!usesUnifiedAccount || (unifiedSession?.hasConfirmedSignIn == true
-                && accountHash == unifiedSession?.accountHash))
+        accountReadiness == .ready
+    }
+    private var accountReadiness: PCGamesAccountReadiness {
+        if accountDisconnecting || terminating { return .closing }
+        if busy || restoringPresence { return .updating }
+        if needsKeychainApproval { return .keychainApproval }
+        if presenceUnavailable { return .unavailable }
+        if !hasSavedSignIn || needsSignIn { return .signIn }
+        if error != nil { return .unavailable }
+        if usesUnifiedAccount && (unifiedSession?.hasConfirmedSignIn != true
+            || accountHash != unifiedSession?.accountHash) { return .accountMismatch }
+        return .ready
+    }
+    var gamePassCheckNotice: String? {
+        accountReadiness.gamePassCheckNotice(libraryIsComplete: snapshot?.isComplete == true)
     }
     func accessIsCurrent(for productID: String) -> Bool {
         accountAccessIsCurrent && snapshot?.hasResolvedGame(productID) == true
     }
     func installAccessNotice(for productID: String) -> String? {
         guard !accessIsCurrent(for: productID) else { return nil }
-        if accountDisconnecting || terminating { return "Account access is closing. Installation is unavailable." }
-        if busy || restoringPresence { return "Wait for your library to finish updating before installing." }
-        if needsKeychainApproval { return "Approve Keychain access in Account settings, then refresh your library." }
-        if !hasSavedSignIn || needsSignIn { return "Sign in in Account settings, then refresh your library to check access." }
-        if presenceUnavailable || error != nil { return "Your library couldn't be updated. Refresh your library to check access before installing." }
-        if usesUnifiedAccount && (unifiedSession?.hasConfirmedSignIn != true
-            || accountHash != unifiedSession?.accountHash) {
-            return "Refresh your library for the current account before installing."
-        }
+        if let notice = accountReadiness.notice { return notice }
         if snapshot?.unresolvedIDs.contains(productID) == true {
             return "PC game details for this title couldn't be loaded. Refresh your library to try again."
         }

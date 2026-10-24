@@ -618,15 +618,27 @@ enum PCGamesChecks {
                 owned: partialController.representedGames.contains { $0.id == nonheldID },
                 accessIsCurrent: partialController.accessIsCurrent(for: nonheldID),
                 gamePass: true, subscriptionActive: false, pcCandidate: pcCandidate)
-            let status = GameDetailFacetCopy.gamePassCheckStatus(
-                libraryAccessIsCurrent: partialController.accessIsCurrent)
+            let status = partialController.gamePassCheckNotice
             check(partialController.hasSavedSignIn && !partialController.busy
                   && partialController.error == nil && !canReview
                   && status == "Refresh your PC library before checking Game Pass access.",
                   "REQ88: Nonheld title (PC candidate \(pcCandidate)) explains aggregate library gate, not ownership or PC availability")
         }
-        check(GameDetailFacetCopy.gamePassCheckStatus(libraryAccessIsCurrent: true) == nil,
+        check(PCGamesAccountReadiness.ready.gamePassCheckNotice(libraryIsComplete: true) == nil,
               "REQ88: Current aggregate library does not show a false Game Pass refresh blocker")
+        for (state, expected) in [
+            (PCGamesAccountReadiness.closing, "Account access is closing."),
+            (.updating, "Wait for your library"),
+            (.keychainApproval, "Approve Keychain access"),
+            (.signIn, "Sign in in Account settings"),
+            (.unavailable, "Your library couldn't be updated."),
+            (.accountMismatch, "Refresh your library for the current account")
+        ] {
+            for complete in [false, true] {
+                check(state.gamePassCheckNotice(libraryIsComplete: complete)?.hasPrefix(expected) == true,
+                      "REQ88: \(state) account reason precedes aggregate completeness \(complete) for Game Pass")
+            }
+        }
         for uri in ["//evil.invalid/image/square", "http://store-images.s-microsoft.com/image/square",
                     "//store-images.s-microsoft.com/image/a?token=secret", "//store-images.s-microsoft.com/image/../file",
                     "//store-images.s-microsoft.com@evil.invalid/image/a"] {
@@ -668,6 +680,8 @@ enum PCGamesChecks {
                   "SDD-LIB-06: refresh in flight cannot authorize new installs")
             check(!controller.accessIsCurrent(for: first) && controller.installAccessNotice(for: first) != nil,
                   "REQ88: Per-title access remains blocked with visible status while refresh is busy")
+            check(controller.gamePassCheckNotice?.hasPrefix("Wait for your library") == true,
+                  "REQ88: Rendered Game Pass caption uses actual busy account status instead of an unavailable refresh")
             check(controller.busy && controller.representedGames.map(\.id) == [first]
                   && !LibraryLoadingPresentation.showsPlaceholders(library: controller,
                       hasUsableContent: !controller.representedGames.isEmpty),
@@ -823,6 +837,8 @@ enum PCGamesChecks {
         check(!migrating.accessIsCurrent(for: first)
               && migrating.installAccessNotice(for: first)?.contains("Keychain") == true,
               "REQ88: Per-title review cannot bypass credential approval")
+        check(migrating.gamePassCheckNotice?.hasPrefix("Approve Keychain access") == true,
+              "REQ88: Rendered Game Pass caption preserves Keychain recovery precedence")
         migrating.approveKeychain()
         migrating.approveKeychain()
         await migrating.waitForOperation()
