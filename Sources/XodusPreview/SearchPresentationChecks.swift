@@ -182,6 +182,57 @@ enum SearchPresentationChecks {
             selection.scope = .allGames
         }
         if library.representedGames.count == 1 {
+            let installedStore = InstalledGameStore(file: state.appendingPathComponent("diagnostic/installed-games.json"))
+            let installedFixture = InstalledGame(id: UUID(), title: "Neutral installed fixture",
+                identityName: "Neutral.Identity", version: "1.0.0.0", storeId: session.products[0].id,
+                folder: state.appendingPathComponent("missing-installation").path,
+                launcher: state.appendingPathComponent("missing-installation/launch").path, importedAt: Date())
+            _ = try await installedStore.upsert(installedFixture)
+            let diagnosticInstalled = InstalledGamesController(store: installedStore)
+            await diagnosticInstalled.load()
+            diagnosticInstalled.setAccountAccessAllowed(false)
+            let inlineError = diagnosticInstalled.accountAccessMessage
+            check(diagnosticInstalled.games == [installedFixture]
+                  && diagnosticInstalled.playErrors[installedFixture.id] == inlineError,
+                  "REQ-59: Search fixture has a real installed game with an independently retained access reason")
+            let diagnosticView = LiveCatalogView(library: library, installed: diagnosticInstalled,
+                operations: GameOperationsController(installed: diagnosticInstalled), art: art, query: "Neutral",
+                allowsArtworkLoading: false, allowsStartupTasks: true, allowsHeroAnimation: false,
+                clearSearch: {}, selection: DiscoverSelection())
+            for size in [CGSize(width: 1440, height: 874), CGSize(width: 1619, height: 1231)] {
+                let host = NSHostingView(rootView: ScrollView { diagnosticView }
+                    .environmentObject(session).environment(\.colorScheme, .light)
+                    .background(Color(nsColor: .windowBackgroundColor)))
+                host.sizingOptions = []
+                host.appearance = NSAppearance(named: .aqua)
+                host.frame = CGRect(origin: .zero, size: size)
+                let window = NSWindow(contentRect: host.frame, styleMask: [.borderless],
+                                      backing: .buffered, defer: false)
+                window.contentView = host
+                defer { window.contentView = nil }
+                host.layoutSubtreeIfNeeded()
+                try await Task.sleep(for: .milliseconds(100))
+                guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                    throw PCGamesError.transport
+                }
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                guard let image = bitmap.cgImage else { throw PCGamesError.transport }
+                let request = VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                try VNImageRequestHandler(cgImage: image).perform([request])
+                let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                let renderedText = labels.joined(separator: " ").lowercased()
+                check(labels.contains { $0.localizedCaseInsensitiveContains("Installed") }
+                      && labels.contains { $0.localizedCaseInsensitiveContains("View details") }
+                      && !renderedText.contains(inlineError.lowercased())
+                      && !renderedText.contains("folder is no longer available"),
+                      "REQ-59: Search at \(Int(size.width))x\(Int(size.height)) keeps installed state and a details action visible without per-card diagnostics: \(labels)")
+                check(diagnosticInstalled.playErrors[installedFixture.id] == inlineError
+                      && !window.isVisible && !window.isKeyWindow,
+                      "REQ-59: Search at \(Int(size.width))x\(Int(size.height)) preserves the underlying reason and remains offscreen")
+            }
+        }
+        if library.representedGames.count == 1 {
             let originalIDs = session.products.map(\.id)
             check(session.canLoadMoreCatalog, "REQ-73: Pagination fixture supplies an actual next cursor")
             let pagination = Task { await session.refreshCatalog("Neutral", more: true) }

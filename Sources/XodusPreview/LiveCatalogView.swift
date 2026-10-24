@@ -540,7 +540,9 @@ struct LiveCatalogView: View {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
             }
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
-            if let match = game.installed { InstalledPlayError(library: installed, game: match) }
+            if query.isEmpty, let match = game.installed {
+                InstalledPlayError(library: installed, game: match)
+            }
         } actions: {
             VStack(alignment: .leading, spacing: 8) {
             LibraryGlassCluster {
