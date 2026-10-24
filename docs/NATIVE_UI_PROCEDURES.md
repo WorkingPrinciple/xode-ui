@@ -110,6 +110,18 @@ to manufacture a cold sample. Record overlapping builds or probes as confounders
 Targets such as 2.5 seconds cold or 200 milliseconds warm remain unproven until
 the corresponding end-to-end native measurement exists.
 
+For keyboard acceptance, read the current keyboard-navigation setting without
+changing it. Poster focus participation is explicit, including browse Library,
+Continue Playing and Discover, not only search. Under `AppleKeyboardUIMode=0`,
+verify a title-specific focus ring after detail dismissal, then dispatch actual
+Return and confirm exactly one detail destination with no Play/Install action.
+Calling the Swift Return handler directly is only synthetic coverage. An AX
+focus setter returning success without an independently focused poster is not
+permission to dispatch Return, nor is an AX menu action success proof of a
+visible context menu. Apple's `focusable(_:interactions:)` documentation explains
+the distinction between native button keyboard-navigation policy and explicit
+custom focus participation on macOS 14 and later.
+
 Playable heroes show account acquisition separately from public subscription
 catalog membership; the latter is not an active plan or satisfying entitlement.
 Installation/Play must never be used to infer either. Verify purchase,

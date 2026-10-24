@@ -505,7 +505,14 @@ struct LiveLibraryView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
+                            .focusable()
                             .focused($focusedGameID, equals: "recent-\(game.id)")
+                            .focusEffectDisabled()
+                            .onKeyPress(.return) {
+                                open(recentGame(game), focusID: "recent-\(game.id)")
+                                return .handled
+                            }
+                            .modifier(SearchResultFocusRing(focused: focusedGameID == "recent-\(game.id)"))
                             .accessibilityLabel("View \(game.title)")
                             .accessibilityHint("Open game details to play")
                             .contextMenu {
@@ -548,6 +555,7 @@ struct LiveLibraryView: View {
 
     private func open(_ game: LibraryGame, focusID: String? = nil) {
         detailFocusReturnID = nil
+        focusedGameID = nil
         do {
             let productID = game.installed?.storeId ?? game.id
             guard PCGamesClient.validProductID(productID) else {

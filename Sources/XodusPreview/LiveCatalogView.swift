@@ -480,15 +480,14 @@ struct LiveCatalogView: View {
 
     private func open(_ game: LibraryGame) {
         detailFocusReturnID = nil
+        focusedResult = nil
         do {
             let product = try game.product ?? art.images[game.id]?.product ??
                 LibraryGame.details(id: game.id, title: game.title,
                     market: session.market, language: session.language,
                     source: "AccountPCLibrary:identityOnly", pcCandidate: false)
-            if !query.isEmpty {
-                detailFocusReturnID = game.id
-                if allowsStartupTasks { selection.recordSearch(query) }
-            }
+            detailFocusReturnID = game.id
+            if !query.isEmpty, allowsStartupTasks { selection.recordSearch(query) }
             session.selectedProduct = product
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
     }
@@ -637,6 +636,7 @@ struct LiveCatalogView: View {
         let cover = art.images[game.id]?.cover ?? game.cover
         return GameCard(title: game.title, gameFacts: game.facts, openLabel: "View",
                             searchFocus: query.isEmpty ? nil : ($focusedResult, game.id),
+                            focusReturn: query.isEmpty ? ($focusedResult, game.id) : nil,
                             open: { open(game) }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)

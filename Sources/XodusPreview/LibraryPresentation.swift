@@ -961,15 +961,14 @@ struct GameCard<Artwork: View, Status: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             if let (binding, id) = searchFocus {
                 artworkButton
-                    .focusable()
                     .focused(binding, equals: id)
                     .focusEffectDisabled()
-                    .onKeyPress(.return, action: openFromKeyboard)
                     .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
             } else if let (binding, id) = focusReturn {
                 artworkButton
                     .focused(binding, equals: id)
-                    .onKeyPress(.return, action: openFromKeyboard)
+                    .focusEffectDisabled()
+                    .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
             } else {
                 artworkButton
             }
@@ -1000,6 +999,8 @@ struct GameCard<Artwork: View, Status: View>: View {
         .buttonStyle(.plain).accessibilityLabel(artworkAccessibilityLabel)
         .accessibilityValue(gameFacts.badgeLabels().joined(separator: ", "))
         .accessibilityHint("Open game details for play, installation and compatibility")
+        .focusable()
+        .onKeyPress(.return, action: openFromKeyboard)
     }
 }
 
