@@ -125,3 +125,34 @@ to publish private evidence.** Required public-source prose/publisher summaries
 remain held for rights review. No signed build, app-load acceptance, deployment
 or new reader policy is claimed. S5 must compare its current reader contract
 with the pinned version before any later explicit allowlist integration.
+
+## REQ-39 historical save evidence
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 tools/classification/reconcile_save_evidence.py
+PYTHONDONTWRITEBYTECODE=1 python3 tools/classification/reconcile_save_evidence.py --write
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/classification -p 'test_*evidence.py'
+```
+
+This file-only reconciliation uses the existing owner index's pinned protected
+save-gap audit, historical inventory and session-archive index, plus the frozen
+`path-to-20-v1.json` attempt audit. It does not walk directories or read live save
+roots. It hashes only explicitly referenced proof files (maximum 4096 files,
+128 MiB per file); out-of-scope, missing, changed or oversized references remain
+explicit gaps. `--write` adds only `req39EvidenceReconciliation` to the existing
+owner index, preserving prior verdicts and evidence. It never changes metadata
+classification or whole-requirement admission.
+
+The reconciliation deduplicates historical save hashes without dropping unknown
+sizes, verifies exact archived payload candidates and binds snapshot references
+to indexed title/run *context*, not execution-time identity. Raw save paths,
+account directory components and payload contents are not exported; opaque
+archive references resolve through the protected original indexes. Source
+diagnosis fields are hash-bound references, not inferred failed hypotheses.
+Shared-root screenshots are not silently attributed to individual runs.
+
+The 48-snapshot audit is not all historical saves or newer attempts. Missing
+per-attempt diagnoses, source/runtime/input identity gaps and DREDGE's missing
+original bytes remain unresolved. A hash cannot reconstruct a save, and an
+archived payload is not a restore test. These internal QA records are not
+shipping resources: the existing private staging allowlist excludes them.
