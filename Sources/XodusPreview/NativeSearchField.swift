@@ -26,6 +26,10 @@ struct NativeToolbarSearch: View {
     var openSearch: () -> Void = {}
     var showResults: (() -> Void)?
 
+    static func collapsedAccessibility(for placeholder: String) -> (label: String, help: String) {
+        (label: placeholder, help: "Open catalogue search")
+    }
+
     static func width(text: String, focused: Bool) -> CGFloat {
         focused || !text.isEmpty ? 220 : 32
     }
@@ -37,6 +41,7 @@ struct NativeToolbarSearch: View {
     }
 
     var body: some View {
+        let accessibility = Self.collapsedAccessibility(for: placeholder)
         Group {
             if Self.width(text: text, focused: focused) == 32 {
                 Button(action: expand) {
@@ -44,19 +49,21 @@ struct NativeToolbarSearch: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!enabled)
-                .accessibilityLabel(placeholder)
+                .accessibilityLabel(accessibility.label)
                 .accessibilityIdentifier("xodus.catalog.openSearch")
+                .help(accessibility.help)
             } else {
                 ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled,
                                   showResults: showResults)
             }
         }
         .frame(width: Self.width(text: text, focused: focused))
-        .help(placeholder)
     }
 }
 
 struct NativeSearchField: NSViewRepresentable {
+    static let accessibilityName = "Search games"
+
     @Binding var text: String
     @Binding var focused: Bool
     let placeholder: String
@@ -95,7 +102,7 @@ struct NativeSearchField: NSViewRepresentable {
         view.isEnabled = enabled
         if view.stringValue != text { view.stringValue = text }
         view.placeholderString = placeholder
-        view.setAccessibilityLabel(placeholder)
+        view.setAccessibilityLabel(Self.accessibilityName)
         if view.wantsFocus, view.window != nil, view.currentEditor() == nil {
             DispatchQueue.main.async { [weak view] in
                 guard let view, view.wantsFocus, view.isEnabled else { return }

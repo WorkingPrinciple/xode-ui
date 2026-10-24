@@ -284,6 +284,11 @@ enum NativeUIChecks {
         check(NativeToolbarSearch.width(text: "", focused: false) == 32
               && NativeToolbarSearch.width(text: "", focused: true) == 220,
               "Grouped native toolbar search stays compact until native editing or Command-F focus")
+        let searchAccessibility = NativeToolbarSearch.collapsedAccessibility(for: "Search all games")
+        check(searchAccessibility.label == "Search all games"
+              && searchAccessibility.help == "Open catalogue search"
+              && searchAccessibility.help != searchAccessibility.label,
+              "REQ-19/59: Toolbar search help explains the action without repeating its accessible name")
         check(NativeToolbarSearch.width(text: "scoped query", focused: false) == 220,
               "A nonempty toolbar query retains the editor and native clear control after focus leaves")
         var lensFocus = false
@@ -333,6 +338,9 @@ enum NativeUIChecks {
         check(field.window == nil && field.stringValue == text
               && field.placeholderString == "Search your Library",
               "Shared native search initializes text and scope without a window")
+        check(field.accessibilityLabel() == NativeSearchField.accessibilityName
+              && field.accessibilityLabel() != field.placeholderString,
+              "REQ-19/59: Search editor has a concise accessibility name distinct from its visible placeholder")
         check(field.isBezeled && cell?.searchButtonCell != nil && cell?.cancelButtonCell != nil,
               "Shared search retains the stock bezel and one native search/cancel pair")
         let placeholderColor = field.placeholderAttributedString?

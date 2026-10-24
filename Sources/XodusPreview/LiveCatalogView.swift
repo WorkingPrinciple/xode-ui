@@ -367,6 +367,7 @@ struct LiveCatalogView: View {
             if !unsupportedIssues(game).isEmpty {
                 Button("View details") { open(game) }
                     .help("Open compatibility details")
+                    .accessibilityLabel(GameSearchPresentation.compatibilityDetailsActionLabel(for: game.title))
             } else {
                 actions(game, primary: false)
             }
@@ -549,6 +550,7 @@ struct LiveCatalogView: View {
                 if !query.isEmpty, !unsupportedIssues(game).isEmpty {
                     Button("View details") { open(game) }
                         .help("Open compatibility details")
+                        .accessibilityLabel(GameSearchPresentation.compatibilityDetailsActionLabel(for: game.title))
                 } else {
                     actions(game, primary: false)
                 }

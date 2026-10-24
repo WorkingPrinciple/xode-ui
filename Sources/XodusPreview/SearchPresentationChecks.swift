@@ -68,6 +68,14 @@ enum SearchPresentationChecks {
               "REQ-73: Poster Return invokes its detail action once and consumes the event")
         check(keyboardCard.artworkAccessibilityLabel == "View Neutral keyboard game",
               "REQ-73: The directly focused poster button uses its explicit title-specific action label")
+        let compatibilityLabels = ["Neutral blocked game", "Second blocked game"].map {
+            GameSearchPresentation.compatibilityDetailsActionLabel(for: $0)
+        }
+        check(compatibilityLabels == [
+            "View compatibility details for Neutral blocked game",
+            "View compatibility details for Second blocked game"
+        ] && Set(compatibilityLabels).count == compatibilityLabels.count,
+              "REQ-18/59: Repeated compatibility actions have distinct title-specific accessibility names")
         var ringColors: [NSColor] = []
         for focused in [false, true] {
             let host = NSHostingView(rootView: Color.white.frame(width: 100, height: 150)

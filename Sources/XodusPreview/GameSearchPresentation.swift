@@ -27,6 +27,10 @@ enum GameSearchHistory {
 }
 
 enum GameSearchPresentation {
+    static func compatibilityDetailsActionLabel(for title: String) -> String {
+        "View compatibility details for \(title)"
+    }
+
     static func firstFocusableID(local: [String], publicResults: [String],
                                  retainedPublic: Set<String>) -> String? {
         local.first ?? publicResults.first { !retainedPublic.contains($0) }
