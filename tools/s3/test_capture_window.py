@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import struct
+import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import unittest
@@ -23,6 +24,77 @@ def png():
 
 
 class CaptureTests(unittest.TestCase):
+    def test_identity_guard_stays_fail_closed_and_diagnostics_are_failure_only(self):
+        source = Path(__file__).with_name("capture-window.swift").read_text()
+        guard = source.index("guard matches.count == 1, let window = matches.first else {")
+        diagnostic = source.index("let sckWindows =", guard)
+        refusal = source.index("throw CaptureError.identityMismatch", diagnostic)
+        screenshot = source.index("SCScreenshotManager.captureImage")
+        self.assertLess(guard, diagnostic)
+        self.assertLess(diagnostic, refusal)
+        self.assertLess(refusal, screenshot)
+        self.assertIn("false, onScreenWindowsOnly: true", source)
+        self.assertIn("$0.windowID == windowID && $0.owningApplication?.processID == pid", source)
+        self.assertIn("&& $0.title == args[3] && $0.isOnScreen", source)
+        self.assertEqual(source.count("SCShareableContent.excludingDesktopWindows("), 1)
+        self.assertNotIn(".windowLayer == 0", source)
+
+    def test_swift_diagnostic_shapes_nulls_and_excludes_unrelated_windows(self):
+        source = Path(__file__).with_name("capture-window.swift")
+        with TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            fixture = base / "fixture.swift"
+            fixture.write_text("""
+import Foundation
+@main struct Fixture {
+    static func main() throws {
+        let windows = [
+            CaptureIdentityDiagnostic.Window(window: 456, pid: nil, title: nil, onScreen: nil, layer: nil),
+            CaptureIdentityDiagnostic.Window(window: 789, pid: 123, title: "Changed", onScreen: false, layer: 27),
+            CaptureIdentityDiagnostic.Window(window: 999, pid: 888, title: "UNRELATED-PRIVATE", onScreen: true, layer: 0)
+        ]
+        let values = [
+            CaptureIdentityDiagnostic(expectedPID: 123, expectedWindow: 456,
+                expectedTitle: "Expected", matchCount: 0, frontmostPID: nil,
+                sckWindows: windows, cgWindows: windows),
+            CaptureIdentityDiagnostic(expectedPID: 123, expectedWindow: 456,
+                expectedTitle: "Expected", matchCount: 2, frontmostPID: 123,
+                sckWindows: [], cgWindows: nil)
+        ]
+        FileHandle.standardOutput.write(try JSONEncoder().encode(values))
+    }
+}
+""")
+            binary = base / "fixture"
+            compiled = subprocess.run(
+                ["xcrun", "swiftc", "-parse-as-library", "-D", "CAPTURE_DIAGNOSTIC_TEST",
+                 str(source), str(fixture), "-o", str(binary)],
+                capture_output=True, text=True, timeout=120,
+            )
+            self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
+            result = subprocess.run([str(binary)], check=True, capture_output=True,
+                                    text=True, timeout=10)
+            diagnostic, absent = json.loads(result.stdout)
+            self.assertNotIn("UNRELATED-PRIVATE", result.stdout)
+            self.assertEqual(diagnostic["error"], "identityMismatch")
+            self.assertEqual(diagnostic["matchCount"], 0)
+            self.assertIsNone(diagnostic["frontmostPID"])
+            self.assertEqual(diagnostic["expectedPID"], 123)
+            self.assertEqual(diagnostic["expectedWindow"], 456)
+            self.assertEqual(diagnostic["expectedTitle"], "Expected")
+            for key in ("sckCandidates", "cgCandidates"):
+                self.assertEqual(len(diagnostic[key]), 2)
+                self.assertEqual(diagnostic[key][0], {
+                    "window": 456, "pid": None, "title": None, "onScreen": None, "layer": None,
+                })
+                self.assertEqual(diagnostic[key][1], {
+                    "window": 789, "pid": 123, "title": "Changed", "onScreen": False, "layer": 27,
+                })
+            self.assertEqual(absent["sckCandidates"], [])
+            self.assertIsNone(absent["cgCandidates"])
+            self.assertEqual(absent["frontmostPID"], 123)
+            self.assertEqual(absent["matchCount"], 2)
+
     def fixture(self, base, mode="success"):
         binary = base / "fixture"
         binary.write_text(

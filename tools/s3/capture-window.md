@@ -22,6 +22,16 @@ bytes remain in the named private directory, unpublished. Successful staging
 is removed. The Swift source, compiler, binary and wrapper must be pinned by
 the admitting packet; an idle-app capture is not game certification.
 
+On identity mismatch only, stderr includes a JSON diagnostic with the expected
+PID/window/title, match count, frontmost PID, and ScreenCaptureKit plus same-time
+CoreGraphics candidates restricted to that PID or window ID. Optional metadata
+is encoded as JSON null, including an unavailable CoreGraphics list; an empty
+list means no matching candidate. Each candidate includes title, onscreen state
+and layer. No unrelated window inventory is emitted. The existing wrapper
+preserves this diagnostic privately in `<output>.capture.json`; it does not
+reselect, retry or relax any identity/onscreen guard. Earlier CG observations
+alone cannot establish which predicate failed in the later SCK snapshot.
+
 ## External stop ownership
 
 During `retention-run.py run`, the external observer must atomically publish
