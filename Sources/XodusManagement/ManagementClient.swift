@@ -59,7 +59,9 @@ public actor ManagementClient {
     private var descriptorMetricsEnabled = false
     private var descriptorCheckpointInFlight = false
     private var descriptorExports: UInt64 = 0
+    private var descriptorAdmissionWaiters = 0
     var descriptorCheckpointPending: Bool { descriptorCheckpointInFlight }
+    var descriptorQueuedRequestCount: Int { descriptorAdmissionWaiters }
     public var descriptorMetricsOptedIn: Bool { descriptorMetricsEnabled }
     private var libraryReadNumber: UInt64 = 0
     private var stopped = false
@@ -83,7 +85,7 @@ public actor ManagementClient {
     }
 
     public func descriptorMetricsCheckpoint() async throws -> DescriptorMetricCounts {
-        guard descriptorMetricsEnabled, pending.isEmpty, !descriptorCheckpointInFlight else {
+        guard descriptorMetricsEnabled, !descriptorCheckpointInFlight else {
             throw ManagementError.invalidRequest
         }
         guard let counts = try await descriptorMetricsDiagnosticCheckpoint().counts else {
@@ -93,14 +95,24 @@ public actor ManagementClient {
     }
 
     public func descriptorMetricsDiagnosticCheckpoint() async throws -> (data: JSONValue, counts: DescriptorMetricCounts?) {
-        guard descriptorMetricsEnabled, pending.isEmpty, !descriptorCheckpointInFlight else {
+        guard descriptorMetricsEnabled, !descriptorCheckpointInFlight else {
             return (try await request(.diagnostics), nil)
         }
         descriptorCheckpointInFlight = true
         defer { descriptorCheckpointInFlight = false }
+        let drainDeadline = ContinuousClock.now.advanced(by: ManagementCommand.diagnostics.defaultTimeout)
+        logger.notice("Descriptor boundary: reason=draining pending=\(self.pending.count, privacy: .public)")
+        while !pending.isEmpty, !stopped, ContinuousClock.now < drainDeadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        guard !stopped else { throw ManagementError.disconnected }
+        guard pending.isEmpty else {
+            logger.notice("Descriptor boundary: reason=drainTimeout pending=\(self.pending.count, privacy: .public)")
+            return (try await sendRequest(.diagnostics), nil)
+        }
         let expected = descriptorExports + 1
         let data: JSONValue
-        do { data = try await request(.diagnostics) }
+        do { data = try await sendRequest(.diagnostics) }
         catch {
             descriptorMetrics.invalidate()
             throw error
@@ -115,8 +127,10 @@ public actor ManagementClient {
               descriptorMetrics.sequence == descriptorMetrics.checkpoint,
               descriptorMetrics.active.isEmpty else {
             descriptorMetrics.invalidate()
+            logger.notice("Descriptor boundary: reason=missingOrInvalidMarker pending=\(self.pending.count, privacy: .public)")
             return (data, nil)
         }
+        logger.notice("Descriptor boundary: reason=complete pending=\(self.pending.count, privacy: .public)")
         return (data, DescriptorMetricCounts(checkpoint: descriptorMetrics.checkpoint,
             lookups: descriptorMetrics.lookups, hits: descriptorMetrics.hits,
             forced: descriptorMetrics.forced, coalesced: descriptorMetrics.coalesced,
@@ -219,6 +233,34 @@ public actor ManagementClient {
                         timeout: Duration? = nil) async throws -> JSONValue {
         let budget = timeout ?? command.defaultTimeout
         guard budget > .zero else { throw ManagementError.invalidRequest }
+        if descriptorCheckpointInFlight {
+            guard pending.count + descriptorAdmissionWaiters < 64 else {
+                throw overflow(.requestBudget, count: pending.count + descriptorAdmissionWaiters)
+            }
+            descriptorAdmissionWaiters += 1
+            var waiting = true
+            defer { if waiting { descriptorAdmissionWaiters -= 1 } }
+            let deadline = ContinuousClock.now.advanced(by: budget)
+            while descriptorCheckpointInFlight, !stopped, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            try Task.checkCancellation()
+            guard !stopped else { throw ManagementError.disconnected }
+            guard ContinuousClock.now < deadline else {
+                fail(.requestTimedOut)
+                throw ManagementError.requestTimedOut
+            }
+            descriptorAdmissionWaiters -= 1
+            waiting = false
+            return try await sendRequest(command, params: params, timeout: ContinuousClock.now.duration(to: deadline))
+        }
+        return try await sendRequest(command, params: params, timeout: timeout)
+    }
+
+    private func sendRequest(_ command: ManagementCommand, params: [String: JSONValue] = [:],
+                             timeout: Duration? = nil) async throws -> JSONValue {
+        let budget = timeout ?? command.defaultTimeout
+        guard budget > .zero else { throw ManagementError.invalidRequest }
         guard !stopped, let child = process, child.isRunning, let stdin else {
             throw ManagementError.disconnected
         }
@@ -233,8 +275,9 @@ public actor ManagementClient {
             guard let hello else { throw ManagementError.disconnected }
             guard hello.supports(command) else { throw ManagementError.capabilityMissing(command.rawValue) }
         } else if hello != nil { throw ManagementError.alreadyConnected }
-        guard pending.count < 64, usedIDs.count < 100_000 else {
-            throw overflow(.requestBudget, count: pending.count >= 64 ? pending.count : usedIDs.count)
+        guard pending.count + descriptorAdmissionWaiters < 64, usedIDs.count < 100_000 else {
+            throw overflow(.requestBudget, count: pending.count + descriptorAdmissionWaiters >= 64
+                           ? pending.count + descriptorAdmissionWaiters : usedIDs.count)
         }
         let id = UUID().uuidString
         let frame = JSONValue.object([

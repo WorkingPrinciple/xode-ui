@@ -146,8 +146,13 @@ exhaustion and unfinished fetches cannot become zero-request proof.
 
 `ManagementClient.descriptorMetricsCheckpoint()` uses the existing redacted
 `diagnostics.export` request, without logging or saving its payload or requiring
-the UI's diagnostic-file export. It refuses an already busy channel or concurrent
-checkpoint requests, and requires both a successful result and a fresh drained
+the UI's diagnostic-file export. Its opt-in-only admission boundary waits for
+already admitted requests within the existing diagnostics timeout and briefly
+queues later requests while continuing to consume results. Queued requests keep
+their original timeout budget and cancellation/disconnect behavior; admitted
+and queued requests share the unchanged 64-request cap. It refuses concurrent
+checkpoint requests, sends exactly one diagnostics export without implicit retry,
+and requires both a successful result and a fresh drained
 checkpoint marker across the independent stdout/stderr pipes. Missing markers
 invalidate further measurement rather than reusing an old checkpoint. Compare
 two such snapshots for one serialized interval; live events alone are
@@ -165,7 +170,7 @@ diagnostic file is needed. Both calls use the existing app-owned management
 process; they never launch a neutral probe child. The app's `descriptor-metrics`
 OSLog category emits only a checkpoint baseline and a complete aggregate delta
 with monotonic elapsed milliseconds, or an explicit incomplete result. These
-session-wide counts are not per-command attribution. Busy requests, a failed
+session-wide counts are not per-command attribution. A boundary drain timeout, a failed
 export, a missing/late prior marker, an expired interval or a disconnected
 session cannot certify the interval. Each diagnostic export is ordinally
 accounted, including ordinary exports, so a delayed marker from an earlier
@@ -174,6 +179,12 @@ their existing result and redaction behavior.
 An incomplete count fence preserves a successful diagnostic preview and the
 existing account/error state; only the count proof is discarded and logged as
 incomplete. A real diagnostics API failure retains its existing error behavior.
+Fixed `Descriptor boundary` reason/count logs distinguish admission drain,
+drain timeout and missing/invalid marker from a completed fence. The first
+091f39 installed preview produced no checkpoint despite a contiguous startup
+stream; its exact missing-marker branch was not retained. The successor
+boundary corrects the independently reproduced busy-entry/admission race,
+not a proved cause of that observation or the earlier management overflow.
 
 For keyboard acceptance, read the current keyboard-navigation setting without
 changing it. Poster focus participation is explicit, including browse Library,

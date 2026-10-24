@@ -243,7 +243,8 @@ actor Checks {
             }
             _ = try await disabled.request(.jobs)
             check(await disabled.close(), "Disabled measurement preserves ordinary owned transport")
-            for scenario in ["metricsearly", "metricslate", "metricsmissing", "metricsstale", "metricsdrainfail", "metricsbusy"] {
+            for scenario in ["metricsearly", "metricslate", "metricsmissing", "metricsstale", "metricsdrainfail",
+                             "metricsbusy", "metricsbusytimeout", "metricsbusycap", "metricsbarrier"] {
                 let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
                 setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
                 let client = try ManagementClient()
@@ -255,20 +256,79 @@ actor Checks {
                 }
                 if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
                 else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
-                if scenario == "metricsbusy" {
+                if scenario == "metricsbarrier" {
+                    let prior = Task { try await client.request(.jobs) }
+                    while await client.pendingRequestCount == 0 { await Task.yield() }
+                    let fence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending, !fence.isCancelled {
+                        if await client.pendingRequestCount == 0 { break }
+                        await Task.yield()
+                    }
+                    let later = Task { try await client.request(.jobs) }
+                    do {
+                        let counts = try await fence.value
+                        check(counts.checkpoint == 2,
+                              "Checkpoint drains prior work and fences later request admission")
+                    } catch {
+                        check(false, "Checkpoint drains prior work and fences later request admission")
+                    }
+                    _ = try await prior.value
+                    _ = try await later.value
+                    check(await client.close(), "Owned admission boundary fixture closes")
+                    continue
+                } else if scenario.hasPrefix("metricsbusy") {
                     let held = Task { try await client.request(.jobs) }
                     let deadline = ContinuousClock.now.advanced(by: .seconds(2))
                     while await client.pendingRequestCount == 0, ContinuousClock.now < deadline {
                         try await Task.sleep(for: .milliseconds(10))
                     }
-                    do {
-                        _ = try await client.descriptorMetricsCheckpoint()
-                        check(false, "Busy app-owned channel cannot certify a metrics interval")
-                    } catch {
-                        check(error as? ManagementError == .invalidRequest,
-                              "Busy app-owned channel cannot certify a metrics interval")
+                    let fence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending { await Task.yield() }
+                    if scenario == "metricsbusytimeout" {
+                        do {
+                            _ = try await client.request(.jobs, timeout: .milliseconds(20))
+                            check(false, "Queued request retains its original timeout budget")
+                        } catch {
+                            check(error as? ManagementError == .requestTimedOut,
+                                  "Queued request retains its original timeout budget")
+                        }
+                        _ = try? await fence.value
+                        _ = try? await held.value
+                        check(await client.close(), "Timed-out boundary transport closes")
+                        continue
                     }
+                    if scenario == "metricsbusycap" {
+                        let queued = (0..<63).map { _ in Task { try await client.request(.jobs) } }
+                        while await client.descriptorQueuedRequestCount < 63 { await Task.yield() }
+                        do {
+                            _ = try await client.request(.jobs)
+                            check(false, "Boundary waiters share the unchanged 64-request limit")
+                        } catch {
+                            check(error as? ManagementError == .outputOverflow,
+                                  "Boundary waiters share the unchanged 64-request limit")
+                        }
+                        for task in queued { task.cancel() }
+                        for task in queued { _ = try? await task.value }
+                        fence.cancel()
+                        _ = try? await fence.value
+                        check(await client.close(), "Capped boundary fixture closes")
+                        _ = try? await held.value
+                        continue
+                    }
+                    let cancelled = Task { try await client.request(.jobs) }
+                    cancelled.cancel()
+                    do { _ = try await cancelled.value; check(false, "Queued boundary request preserves cancellation") }
+                    catch { check(error is CancellationError, "Queued boundary request preserves cancellation") }
+                    fence.cancel()
+                    do { _ = try await fence.value; check(false, "Cancelled boundary cannot certify pending work") }
+                    catch { check(error is CancellationError, "Cancelled boundary cannot certify pending work") }
+                    let disconnectFence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending { await Task.yield() }
+                    let queued = Task { try await client.request(.jobs) }
                     check(await client.close(), "Owned busy metrics fixture closes")
+                    do { _ = try await queued.value; check(false, "Disconnect releases queued boundary requests") }
+                    catch { check(error as? ManagementError == .disconnected, "Disconnect releases queued boundary requests") }
+                    _ = try? await disconnectFence.value
                     _ = try? await held.value
                     continue
                 }
@@ -1483,7 +1543,11 @@ enum MockBackend {
                     if scenario == "mismatch" { result["protocol"] = .object(["major": .integer(2), "minor": .integer(0)]) }
                     try emit(.object(result))
                 } else {
-                    if scenario == "metricsbusy", command == ManagementCommand.jobs.rawValue { continue }
+                    if scenario == "metricsbarrier", command == ManagementCommand.jobs.rawValue {
+                        activityReads += 1
+                        usleep(100_000)
+                    }
+                    if scenario.hasPrefix("metricsbusy"), command == ManagementCommand.jobs.rawValue { continue }
                     if scenario.hasPrefix("metrics"), command == ManagementCommand.diagnostics.rawValue {
                         if scenario == "metricsdrainfail" {
                             try emitFailure(request, code: "NETWORK_UNAVAILABLE")
@@ -1497,6 +1561,7 @@ enum MockBackend {
                         try emit(.object(result(request, data: diagnostic)))
                         if scenario == "metricslate" || scenario == "metricsstale" { usleep(100_000) }
                         if scenario != "metricsearly",
+                           scenario != "metricsbarrier" || activityReads == 1,
                            !["metricsmissing", "metricsstale"].contains(scenario) || metricSequence == 1 {
                             try FileHandle.standardError.write(contentsOf: marker)
                         }
