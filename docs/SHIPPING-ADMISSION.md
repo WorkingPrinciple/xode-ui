@@ -30,6 +30,21 @@ reconciled from actual reviewed artifacts before paired packaging. Source
 only in its isolated stage. App-only refresh retaining CLI3121 cannot claim
 delivery of the shared descriptor backend.
 
+The COR-71/72 selected-signed-CLI refresh tuple is now observed, not predicted:
+CLI SHA256 `5bd7e2920ba23e6f84768e78ac1335b6d6daf0a0b5df7e4bd5494df056164b2b`
+(28,525,232 bytes), actual release embedded Windows helper SHA256
+`42560b3e33a258c8af43146034d6f5140d939f855d682739bc82ea1d8962ff65`
+(20,480 bytes), and sibling producer manifest SHA256
+`70477335659b365d2c3769ba9337d688da15132e86dc360ff33ed1544d1f5c14`.
+The signed CLI passed strict fixed-leaf verification with the existing approved
+identity. Its actual producer command was
+`CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo build --offline --locked --release -p xodus-cli`;
+the unsigned provenance truthfully records that command, not the distinct
+sealed-input recipe's command. Use the explicit selected signed CLI refresh
+path with its paired helper and manifest. No integrity check is waived.
+These pins permit exact candidate packaging; installation, observed capabilities
+and gameplay remain distinct evidence. Calimocho's production admission is empty.
+
 ### Header search regression (#40)
 
 The collapsed header lens is an explicit accessible button, not a 32-point
