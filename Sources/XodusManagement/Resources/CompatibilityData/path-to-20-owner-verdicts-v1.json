@@ -579,17 +579,20 @@
       "historicalSnapshotDocuments": 48,
       "historicalUnmatchedSaveHashes": 55,
       "launchResultAttempts": 158,
+      "protectedArchiveCopiesChecked": 97,
       "saveHashesVerifiedAsRawBytes": 2,
       "saveHashesWithoutVerifiedRawBytes": 55,
       "titles": 30,
-      "verifiedFiles": 1423
+      "totalFileChecks": 2350,
+      "verifiedFiles": 1520
     },
     "fileVerificationStatuses": {
       "FILE_BOUND_EXCEEDED": 4,
       "HASH_AND_SIZE_MISMATCH": 1,
       "MISSING": 138,
-      "OUTSIDE_PROOF_SCOPE": 687,
-      "VERIFIED": 1423
+      "OUTSIDE_PROOF_SCOPE": 590,
+      "VERIFIED": 1423,
+      "VERIFIED_FROM_PROTECTED_ARCHIVE": 97
     },
     "gaps": [
       "Historical archive completeness is not established; hashes without raw bytes are not recoverable snapshots.",
@@ -2438,7 +2441,7 @@
       },
       "reconciler": {
         "path": "tools/classification/reconcile_save_evidence.py",
-        "sha256": "0036268d74da5f493b682c7911e8eb6d0b7f7404fe1c8c9fefb0d652bf7c2f73"
+        "sha256": "125db7ccea35f387097c144de57e6b8cf1a678b4442518cd3a1badc21e7051f3"
       },
       "sessionArchive": {
         "bytes": 410017,
@@ -2618,7 +2621,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -3497,7 +3499,6 @@
               "Path-labeled identities are not independent execution-time binary hashes",
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "Shared proof-root files are context only; per-run attribution incomplete",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome"
             ],
             "runId": "465d526c-021d-44de-b0ab-8211addc2656",
@@ -4260,7 +4261,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome"
             ],
             "runId": "01a6bdcf-5025-4b45-9666-ffb0f68e1c47",
@@ -5147,7 +5147,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Per-attempt failed-hypothesis/next-discriminator annotation not retained or not bound",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -5247,7 +5246,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Per-attempt failed-hypothesis/next-discriminator annotation not retained or not bound",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -5400,7 +5398,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Per-attempt failed-hypothesis/next-discriminator annotation not retained or not bound",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -6705,7 +6702,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome"
             ],
             "runId": "fa08c5f8-7cb3-46df-843e-899bed05797d",
@@ -7372,7 +7368,6 @@
               "Historical app identity not bound to this run",
               "Path-labeled identities are not independent execution-time binary hashes",
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Per-attempt failed-hypothesis/next-discriminator annotation not retained or not bound",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -8666,7 +8661,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -8863,7 +8857,6 @@
               "No retained packet artifact found in bounded search",
               "Shared proof-root files are context only; per-run attribution incomplete",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Per-attempt failed-hypothesis/next-discriminator annotation not retained or not bound",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -9065,7 +9058,6 @@
               "No retained packet artifact found in bounded search",
               "Shared proof-root files are context only; per-run attribution incomplete",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Per-attempt failed-hypothesis/next-discriminator annotation not retained or not bound",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -9340,7 +9332,6 @@
               "Historical app identity not bound to this run",
               "Path-labeled identities are not independent execution-time binary hashes",
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -10866,7 +10857,6 @@
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
               "No retained packet artifact found in bounded search",
               "No currently hash-verified run-associated packet; shared files are context only",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome"
             ],
             "runId": "9c31530d-4e5e-4af8-84de-75f56add7b82",
@@ -12735,7 +12725,6 @@
               "Historical app identity not bound to this run",
               "Path-labeled identities are not independent execution-time binary hashes",
               "Historical app version and engine/runtime binary hashes may be absent; do not substitute currently installed binaries or infer prefix contents",
-              "No currently hash-verified run-associated screenshot; shared files are context only",
               "Source diagnosis/limitations are not a normalized per-attempt failed-hypothesis outcome",
               "No historically hash-verified per-attempt next-action/hypothesis field"
             ],
@@ -12913,489 +12902,1362 @@
     },
     "verifiedEvidence": {
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-abiotic-reload-inventory-1000.png": {
+        "archivedCopy": {
+          "bytes": 585042,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/30f1d7622f1a74d717073fdd8b56cc5aeea810ebf5eea2c071800bcd8359e4db",
+          "sha256": "30f1d7622f1a74d717073fdd8b56cc5aeea810ebf5eea2c071800bcd8359e4db",
+          "status": "VERIFIED"
+        },
+        "bytes": 585042,
         "expectedBytes": 585042,
         "expectedSha256": "30f1d7622f1a74d717073fdd8b56cc5aeea810ebf5eea2c071800bcd8359e4db",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "30f1d7622f1a74d717073fdd8b56cc5aeea810ebf5eea2c071800bcd8359e4db",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-abiotic-reload-mainquit-1000.png": {
+        "archivedCopy": {
+          "bytes": 555242,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/a7addc35b2cf3ad6a3173a7f0dcbe079e761b13ae5b28483c05c87fe64e12763",
+          "sha256": "a7addc35b2cf3ad6a3173a7f0dcbe079e761b13ae5b28483c05c87fe64e12763",
+          "status": "VERIFIED"
+        },
+        "bytes": 555242,
         "expectedBytes": 555242,
         "expectedSha256": "a7addc35b2cf3ad6a3173a7f0dcbe079e761b13ae5b28483c05c87fe64e12763",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "a7addc35b2cf3ad6a3173a7f0dcbe079e761b13ae5b28483c05c87fe64e12763",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-abiotic-reload-worlds-1000.png": {
+        "archivedCopy": {
+          "bytes": 671906,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/0ac56331924bbed282ab253047a3d4ba83a2740593a36699415feb0175912823",
+          "sha256": "0ac56331924bbed282ab253047a3d4ba83a2740593a36699415feb0175912823",
+          "status": "VERIFIED"
+        },
+        "bytes": 671906,
         "expectedBytes": 671906,
         "expectedSha256": "0ac56331924bbed282ab253047a3d4ba83a2740593a36699415feb0175912823",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "0ac56331924bbed282ab253047a3d4ba83a2740593a36699415feb0175912823",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-brotato-character-1000.png": {
+        "archivedCopy": {
+          "bytes": 483802,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/7bcd5eb169585cce94ab60b8ec4c8cc7faf9dc11840f0833947476f3c94bdb1b",
+          "sha256": "7bcd5eb169585cce94ab60b8ec4c8cc7faf9dc11840f0833947476f3c94bdb1b",
+          "status": "VERIFIED"
+        },
+        "bytes": 483802,
         "expectedBytes": 483802,
         "expectedSha256": "7bcd5eb169585cce94ab60b8ec4c8cc7faf9dc11840f0833947476f3c94bdb1b",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "7bcd5eb169585cce94ab60b8ec4c8cc7faf9dc11840f0833947476f3c94bdb1b",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-brotato-results-1000.png": {
+        "archivedCopy": {
+          "bytes": 402187,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/e7050e6b037383f7b2ef674081fe3f63fdcb5d41f53b353d0879fdbd4aa3acfc",
+          "sha256": "e7050e6b037383f7b2ef674081fe3f63fdcb5d41f53b353d0879fdbd4aa3acfc",
+          "status": "VERIFIED"
+        },
+        "bytes": 402187,
         "expectedBytes": 402187,
         "expectedSha256": "e7050e6b037383f7b2ef674081fe3f63fdcb5d41f53b353d0879fdbd4aa3acfc",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "e7050e6b037383f7b2ef674081fe3f63fdcb5d41f53b353d0879fdbd4aa3acfc",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-brotato-retained-chunky-1000.png": {
+        "archivedCopy": {
+          "bytes": 452810,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/1a75bd1cc773f31cbb575c4ed4cf51ebe8bc0247f0d8713b149cb0218415d263",
+          "sha256": "1a75bd1cc773f31cbb575c4ed4cf51ebe8bc0247f0d8713b149cb0218415d263",
+          "status": "VERIFIED"
+        },
+        "bytes": 452810,
         "expectedBytes": 452810,
         "expectedSha256": "1a75bd1cc773f31cbb575c4ed4cf51ebe8bc0247f0d8713b149cb0218415d263",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "1a75bd1cc773f31cbb575c4ed4cf51ebe8bc0247f0d8713b149cb0218415d263",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-brotato-retention-select-1000.png": {
+        "archivedCopy": {
+          "bytes": 483443,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/34f9e8f353b1e98aa794514b58ab3ef4c2d1e6e14ac734e30a3752afcea0c464",
+          "sha256": "34f9e8f353b1e98aa794514b58ab3ef4c2d1e6e14ac734e30a3752afcea0c464",
+          "status": "VERIFIED"
+        },
+        "bytes": 483443,
         "expectedBytes": 483443,
         "expectedSha256": "34f9e8f353b1e98aa794514b58ab3ef4c2d1e6e14ac734e30a3752afcea0c464",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "34f9e8f353b1e98aa794514b58ab3ef4c2d1e6e14ac734e30a3752afcea0c464",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-digging-hole-depth-1000.png": {
+        "archivedCopy": {
+          "bytes": 1168825,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/5f929f201dab7441956f9ae065166a17939f7ff28bab6492e495a21f833024cb",
+          "sha256": "5f929f201dab7441956f9ae065166a17939f7ff28bab6492e495a21f833024cb",
+          "status": "VERIFIED"
+        },
+        "bytes": 1168825,
         "expectedBytes": 1168825,
         "expectedSha256": "5f929f201dab7441956f9ae065166a17939f7ff28bab6492e495a21f833024cb",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "5f929f201dab7441956f9ae065166a17939f7ff28bab6492e495a21f833024cb",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-digging-manual-book-1000.png": {
+        "archivedCopy": {
+          "bytes": 812375,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/be07fe59d27ef0b215886553701445553c5e8f1305155fdf07d1d2ef38c522c5",
+          "sha256": "be07fe59d27ef0b215886553701445553c5e8f1305155fdf07d1d2ef38c522c5",
+          "status": "VERIFIED"
+        },
+        "bytes": 812375,
         "expectedBytes": 812375,
         "expectedSha256": "be07fe59d27ef0b215886553701445553c5e8f1305155fdf07d1d2ef38c522c5",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "be07fe59d27ef0b215886553701445553c5e8f1305155fdf07d1d2ef38c522c5",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-digging-settings-1000.png": {
+        "archivedCopy": {
+          "bytes": 533064,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/de3f04ecb8bd81b3dd95f0f738e73700eca22dbf03b1dc4eb426fbe985c3e4ac",
+          "sha256": "de3f04ecb8bd81b3dd95f0f738e73700eca22dbf03b1dc4eb426fbe985c3e4ac",
+          "status": "VERIFIED"
+        },
+        "bytes": 533064,
         "expectedBytes": 533064,
         "expectedSha256": "de3f04ecb8bd81b3dd95f0f738e73700eca22dbf03b1dc4eb426fbe985c3e4ac",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "de3f04ecb8bd81b3dd95f0f738e73700eca22dbf03b1dc4eb426fbe985c3e4ac",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-dredge-before-save-cargo-1000.png": {
+        "archivedCopy": {
+          "bytes": 461877,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/d9f9b9e112ba313df29b0aa35c822a890d1c7586e95d99d519d10bd8d3f91288",
+          "sha256": "d9f9b9e112ba313df29b0aa35c822a890d1c7586e95d99d519d10bd8d3f91288",
+          "status": "VERIFIED"
+        },
+        "bytes": 461877,
         "expectedBytes": 461877,
         "expectedSha256": "d9f9b9e112ba313df29b0aa35c822a890d1c7586e95d99d519d10bd8d3f91288",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "d9f9b9e112ba313df29b0aa35c822a890d1c7586e95d99d519d10bd8d3f91288",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-dredge-reload-main-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 561650,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/b563cffbf825dc4f9a9dd2cc81b18ec77ba07733882033fc3b080b2bf64ccf21",
+          "sha256": "b563cffbf825dc4f9a9dd2cc81b18ec77ba07733882033fc3b080b2bf64ccf21",
+          "status": "VERIFIED"
+        },
+        "bytes": 561650,
         "expectedBytes": 561650,
         "expectedSha256": "b563cffbf825dc4f9a9dd2cc81b18ec77ba07733882033fc3b080b2bf64ccf21",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "b563cffbf825dc4f9a9dd2cc81b18ec77ba07733882033fc3b080b2bf64ccf21",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-dredge-retained-cargo-1000.png": {
+        "archivedCopy": {
+          "bytes": 471669,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/807252dad923be78787b38231949cc5bec53499105cd6649eae6b30a47c43679",
+          "sha256": "807252dad923be78787b38231949cc5bec53499105cd6649eae6b30a47c43679",
+          "status": "VERIFIED"
+        },
+        "bytes": 471669,
         "expectedBytes": 471669,
         "expectedSha256": "807252dad923be78787b38231949cc5bec53499105cd6649eae6b30a47c43679",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "807252dad923be78787b38231949cc5bec53499105cd6649eae6b30a47c43679",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-appearance-1000.png": {
+        "archivedCopy": {
+          "bytes": 717674,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/4b0ea4cb88753b19b9cdcdcf3d1cdc60c81eb2c10810b670932ba7df050d3a7d",
+          "sha256": "4b0ea4cb88753b19b9cdcdcf3d1cdc60c81eb2c10810b670932ba7df050d3a7d",
+          "status": "VERIFIED"
+        },
+        "bytes": 717674,
         "expectedBytes": 717674,
         "expectedSha256": "4b0ea4cb88753b19b9cdcdcf3d1cdc60c81eb2c10810b670932ba7df050d3a7d",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "4b0ea4cb88753b19b9cdcdcf3d1cdc60c81eb2c10810b670932ba7df050d3a7d",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-character-1000.png": {
+        "archivedCopy": {
+          "bytes": 761448,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/6f9aed609a030b146938e8ad9978164b8415d9a645abf12b0b6aa2b9f40a460f",
+          "sha256": "6f9aed609a030b146938e8ad9978164b8415d9a645abf12b0b6aa2b9f40a460f",
+          "status": "VERIFIED"
+        },
+        "bytes": 761448,
         "expectedBytes": 761448,
         "expectedSha256": "6f9aed609a030b146938e8ad9978164b8415d9a645abf12b0b6aa2b9f40a460f",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "6f9aed609a030b146938e8ad9978164b8415d9a645abf12b0b6aa2b9f40a460f",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-exit-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 524636,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/2cee8dad2947de2dd464c226a0d214f7c385edc320dde8637225856b657940af",
+          "sha256": "2cee8dad2947de2dd464c226a0d214f7c385edc320dde8637225856b657940af",
+          "status": "VERIFIED"
+        },
+        "bytes": 524636,
         "expectedBytes": 524636,
         "expectedSha256": "2cee8dad2947de2dd464c226a0d214f7c385edc320dde8637225856b657940af",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "2cee8dad2947de2dd464c226a0d214f7c385edc320dde8637225856b657940af",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-focused-skip-1000.png": {
+        "archivedCopy": {
+          "bytes": 37859,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/1a2ef81ee6397ba5442840862229be4dc34ff477618fda171beab349fff571fe",
+          "sha256": "1a2ef81ee6397ba5442840862229be4dc34ff477618fda171beab349fff571fe",
+          "status": "VERIFIED"
+        },
+        "bytes": 37859,
         "expectedBytes": 37859,
         "expectedSha256": "1a2ef81ee6397ba5442840862229be4dc34ff477618fda171beab349fff571fe",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "1a2ef81ee6397ba5442840862229be4dc34ff477618fda171beab349fff571fe",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-intro-1000.png": {
+        "archivedCopy": {
+          "bytes": 36368,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/a9a2db09b7e3005251e5008446e73f0802d99112d96b726a8b2d2fd081caa0a6",
+          "sha256": "a9a2db09b7e3005251e5008446e73f0802d99112d96b726a8b2d2fd081caa0a6",
+          "status": "VERIFIED"
+        },
+        "bytes": 36368,
         "expectedBytes": 36368,
         "expectedSha256": "a9a2db09b7e3005251e5008446e73f0802d99112d96b726a8b2d2fd081caa0a6",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "a9a2db09b7e3005251e5008446e73f0802d99112d96b726a8b2d2fd081caa0a6",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-keyboard-pause-1000.png": {
+        "archivedCopy": {
+          "bytes": 663603,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/58c52a537c40ef0bfd54671cf68d352452fca4417644e9cdb2925abfa2e95192",
+          "sha256": "58c52a537c40ef0bfd54671cf68d352452fca4417644e9cdb2925abfa2e95192",
+          "status": "VERIFIED"
+        },
+        "bytes": 663603,
         "expectedBytes": 663603,
         "expectedSha256": "58c52a537c40ef0bfd54671cf68d352452fca4417644e9cdb2925abfa2e95192",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "58c52a537c40ef0bfd54671cf68d352452fca4417644e9cdb2925abfa2e95192",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 964030,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/70e8c85c8481a0ec0839ec43c35b6a4d640ba664ba99f03a96fa101261affc23",
+          "sha256": "70e8c85c8481a0ec0839ec43c35b6a4d640ba664ba99f03a96fa101261affc23",
+          "status": "VERIFIED"
+        },
+        "bytes": 964030,
         "expectedBytes": 964030,
         "expectedSha256": "70e8c85c8481a0ec0839ec43c35b6a4d640ba664ba99f03a96fa101261affc23",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "70e8c85c8481a0ec0839ec43c35b6a4d640ba664ba99f03a96fa101261affc23",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-new-confirm-1000.png": {
+        "archivedCopy": {
+          "bytes": 1082408,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/09dc69320922eb76aedf1db588c530f52de88cd3c08d417d034b2954cc3b1849",
+          "sha256": "09dc69320922eb76aedf1db588c530f52de88cd3c08d417d034b2954cc3b1849",
+          "status": "VERIFIED"
+        },
+        "bytes": 1082408,
         "expectedBytes": 1082408,
         "expectedSha256": "09dc69320922eb76aedf1db588c530f52de88cd3c08d417d034b2954cc3b1849",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "09dc69320922eb76aedf1db588c530f52de88cd3c08d417d034b2954cc3b1849",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-newsave-1000.png": {
+        "archivedCopy": {
+          "bytes": 768969,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/b2dbc1c967a3996ae5da349dc8a7f9de9291569157e0deb62e089410603fbaa2",
+          "sha256": "b2dbc1c967a3996ae5da349dc8a7f9de9291569157e0deb62e089410603fbaa2",
+          "status": "VERIFIED"
+        },
+        "bytes": 768969,
         "expectedBytes": 768969,
         "expectedSha256": "b2dbc1c967a3996ae5da349dc8a7f9de9291569157e0deb62e089410603fbaa2",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "b2dbc1c967a3996ae5da349dc8a7f9de9291569157e0deb62e089410603fbaa2",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-quit-confirm-1000.png": {
+        "archivedCopy": {
+          "bytes": 539269,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/044f30b08938557e22096f9dfb3593a0d8e306624ff5acf408702a6740d66c46",
+          "sha256": "044f30b08938557e22096f9dfb3593a0d8e306624ff5acf408702a6740d66c46",
+          "status": "VERIFIED"
+        },
+        "bytes": 539269,
         "expectedBytes": 539269,
         "expectedSha256": "044f30b08938557e22096f9dfb3593a0d8e306624ff5acf408702a6740d66c46",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "044f30b08938557e22096f9dfb3593a0d8e306624ff5acf408702a6740d66c46",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-quit-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 469483,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/7d75a2475df64bd06b3066a739d1ddbb2ef4bdc35fccfb43016b85d9d719a3fb",
+          "sha256": "7d75a2475df64bd06b3066a739d1ddbb2ef4bdc35fccfb43016b85d9d719a3fb",
+          "status": "VERIFIED"
+        },
+        "bytes": 469483,
         "expectedBytes": 469483,
         "expectedSha256": "7d75a2475df64bd06b3066a739d1ddbb2ef4bdc35fccfb43016b85d9d719a3fb",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "7d75a2475df64bd06b3066a739d1ddbb2ef4bdc35fccfb43016b85d9d719a3fb",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-quit-selected-1000.png": {
+        "archivedCopy": {
+          "bytes": 524303,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/76a6471dde8d5cbbd19dc7fecf860416ad94c195e102626076676e58191c0919",
+          "sha256": "76a6471dde8d5cbbd19dc7fecf860416ad94c195e102626076676e58191c0919",
+          "status": "VERIFIED"
+        },
+        "bytes": 524303,
         "expectedBytes": 524303,
         "expectedSha256": "76a6471dde8d5cbbd19dc7fecf860416ad94c195e102626076676e58191c0919",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "76a6471dde8d5cbbd19dc7fecf860416ad94c195e102626076676e58191c0919",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-save-slot-1000.png": {
+        "archivedCopy": {
+          "bytes": 518179,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/72c51a86556264cc7c72dbc28a3ab5314ce1b4fa8ef2d6eb47a142064d4ae1b8",
+          "sha256": "72c51a86556264cc7c72dbc28a3ab5314ce1b4fa8ef2d6eb47a142064d4ae1b8",
+          "status": "VERIFIED"
+        },
+        "bytes": 518179,
         "expectedBytes": 518179,
         "expectedSha256": "72c51a86556264cc7c72dbc28a3ab5314ce1b4fa8ef2d6eb47a142064d4ae1b8",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "72c51a86556264cc7c72dbc28a3ab5314ce1b4fa8ef2d6eb47a142064d4ae1b8",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-signedin-1000.png": {
+        "archivedCopy": {
+          "bytes": 948290,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/4e0a9bb0ee357a46556a8a0c08fb801cdb823ff5b65ee0e268e72ee42de4f011",
+          "sha256": "4e0a9bb0ee357a46556a8a0c08fb801cdb823ff5b65ee0e268e72ee42de4f011",
+          "status": "VERIFIED"
+        },
+        "bytes": 948290,
         "expectedBytes": 948290,
         "expectedSha256": "4e0a9bb0ee357a46556a8a0c08fb801cdb823ff5b65ee0e268e72ee42de4f011",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "4e0a9bb0ee357a46556a8a0c08fb801cdb823ff5b65ee0e268e72ee42de4f011",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-skip-1000.png": {
+        "archivedCopy": {
+          "bytes": 683267,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/7307bcaa6c02543129976dc320b516f4c5db4ced0a5c8d0e339f15a513d5863f",
+          "sha256": "7307bcaa6c02543129976dc320b516f4c5db4ced0a5c8d0e339f15a513d5863f",
+          "status": "VERIFIED"
+        },
+        "bytes": 683267,
         "expectedBytes": 683267,
         "expectedSha256": "7307bcaa6c02543129976dc320b516f4c5db4ced0a5c8d0e339f15a513d5863f",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "7307bcaa6c02543129976dc320b516f4c5db4ced0a5c8d0e339f15a513d5863f",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-skip-held-1000.png": {
+        "archivedCopy": {
+          "bytes": 821070,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/5888955aeaacb364d049be9e3d5db7caa32dbedfebd13a295e5e744d9d2267d2",
+          "sha256": "5888955aeaacb364d049be9e3d5db7caa32dbedfebd13a295e5e744d9d2267d2",
+          "status": "VERIFIED"
+        },
+        "bytes": 821070,
         "expectedBytes": 821070,
         "expectedSha256": "5888955aeaacb364d049be9e3d5db7caa32dbedfebd13a295e5e744d9d2267d2",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "5888955aeaacb364d049be9e3d5db7caa32dbedfebd13a295e5e744d9d2267d2",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-fallout-experiment-title-1000.png": {
+        "archivedCopy": {
+          "bytes": 943425,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/cf913c605d3d67704bf3b5426f9dfdca2644be3da015908af6a49a66e22ad527",
+          "sha256": "cf913c605d3d67704bf3b5426f9dfdca2644be3da015908af6a49a66e22ad527",
+          "status": "VERIFIED"
+        },
+        "bytes": 943425,
         "expectedBytes": 943425,
         "expectedSha256": "cf913c605d3d67704bf3b5426f9dfdca2644be3da015908af6a49a66e22ad527",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "cf913c605d3d67704bf3b5426f9dfdca2644be3da015908af6a49a66e22ad527",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-hades-final-quit-confirm-1000.png": {
+        "archivedCopy": {
+          "bytes": 390022,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/53d9c52bbf3a9596ecf1dca949033c7daff7f5fc763e521cbc003a00be0ca605",
+          "sha256": "53d9c52bbf3a9596ecf1dca949033c7daff7f5fc763e521cbc003a00be0ca605",
+          "status": "VERIFIED"
+        },
+        "bytes": 390022,
         "expectedBytes": 390022,
         "expectedSha256": "53d9c52bbf3a9596ecf1dca949033c7daff7f5fc763e521cbc003a00be0ca605",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "53d9c52bbf3a9596ecf1dca949033c7daff7f5fc763e521cbc003a00be0ca605",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-hades-final-slot-1000.png": {
+        "archivedCopy": {
+          "bytes": 363364,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/593f1d673194a0f41a38e3c64c078e69a9bbb789f631d3997281db200f507165",
+          "sha256": "593f1d673194a0f41a38e3c64c078e69a9bbb789f631d3997281db200f507165",
+          "status": "VERIFIED"
+        },
+        "bytes": 363364,
         "expectedBytes": 363364,
         "expectedSha256": "593f1d673194a0f41a38e3c64c078e69a9bbb789f631d3997281db200f507165",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "593f1d673194a0f41a38e3c64c078e69a9bbb789f631d3997281db200f507165",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-checkpoint-quit-warning-1000.png": {
+        "archivedCopy": {
+          "bytes": 309511,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/5f970963dfd94e782cd463f12d4785a6e1b968f6d7a31714c281da0e6b19ee98",
+          "sha256": "5f970963dfd94e782cd463f12d4785a6e1b968f6d7a31714c281da0e6b19ee98",
+          "status": "VERIFIED"
+        },
+        "bytes": 309511,
         "expectedBytes": 309511,
         "expectedSha256": "5f970963dfd94e782cd463f12d4785a6e1b968f6d7a31714c281da0e6b19ee98",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "5f970963dfd94e782cd463f12d4785a6e1b968f6d7a31714c281da0e6b19ee98",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-extended-chapters-1000.png": {
+        "archivedCopy": {
+          "bytes": 744746,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/d9604dcb4ac39b1e7b8605682eceee0a9cfee9b84436b84c49809807863d5ea0",
+          "sha256": "d9604dcb4ac39b1e7b8605682eceee0a9cfee9b84436b84c49809807863d5ea0",
+          "status": "VERIFIED"
+        },
+        "bytes": 744746,
         "expectedBytes": 744746,
         "expectedSha256": "d9604dcb4ac39b1e7b8605682eceee0a9cfee9b84436b84c49809807863d5ea0",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "d9604dcb4ac39b1e7b8605682eceee0a9cfee9b84436b84c49809807863d5ea0",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-extended-completed-chapter-1000.png": {
+        "archivedCopy": {
+          "bytes": 725757,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/be1cdcd3643a5e5439499bdbd849bffc6066a1d7dcfbef8ebc6594d06db14f27",
+          "sha256": "be1cdcd3643a5e5439499bdbd849bffc6066a1d7dcfbef8ebc6594d06db14f27",
+          "status": "VERIFIED"
+        },
+        "bytes": 725757,
         "expectedBytes": 725757,
         "expectedSha256": "be1cdcd3643a5e5439499bdbd849bffc6066a1d7dcfbef8ebc6594d06db14f27",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "be1cdcd3643a5e5439499bdbd849bffc6066a1d7dcfbef8ebc6594d06db14f27",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-extended-exit-confirm-1000.png": {
+        "archivedCopy": {
+          "bytes": 309245,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/727ba44fe56b100ee283bea56853aa6cf14d3f7f4da69982ccae01239edd847e",
+          "sha256": "727ba44fe56b100ee283bea56853aa6cf14d3f7f4da69982ccae01239edd847e",
+          "status": "VERIFIED"
+        },
+        "bytes": 309245,
         "expectedBytes": 309245,
         "expectedSha256": "727ba44fe56b100ee283bea56853aa6cf14d3f7f4da69982ccae01239edd847e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "727ba44fe56b100ee283bea56853aa6cf14d3f7f4da69982ccae01239edd847e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-retained-chapter-select-1000.png": {
+        "archivedCopy": {
+          "bytes": 706241,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/cb14f45d04cefdda88b538cd1cd43a8a53a6864f07e676bbd691101a1adcd5a1",
+          "sha256": "cb14f45d04cefdda88b538cd1cd43a8a53a6864f07e676bbd691101a1adcd5a1",
+          "status": "VERIFIED"
+        },
+        "bytes": 706241,
         "expectedBytes": 706241,
         "expectedSha256": "cb14f45d04cefdda88b538cd1cd43a8a53a6864f07e676bbd691101a1adcd5a1",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "cb14f45d04cefdda88b538cd1cd43a8a53a6864f07e676bbd691101a1adcd5a1",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-retained-skate-completed-1000.png": {
+        "archivedCopy": {
+          "bytes": 695375,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/ac38fd912b892debfb5d1e8285f7aed8dad65de8ed4d17cbe3e4bd7f4c568b1c",
+          "sha256": "ac38fd912b892debfb5d1e8285f7aed8dad65de8ed4d17cbe3e4bd7f4c568b1c",
+          "status": "VERIFIED"
+        },
+        "bytes": 695375,
         "expectedBytes": 695375,
         "expectedSha256": "ac38fd912b892debfb5d1e8285f7aed8dad65de8ed4d17cbe3e4bd7f4c568b1c",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "ac38fd912b892debfb5d1e8285f7aed8dad65de8ed4d17cbe3e4bd7f4c568b1c",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-route-final-1000.png": {
+        "archivedCopy": {
+          "bytes": 602833,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/44be00dad19e596d2b3bdd86b6ad323bda1545656ae873bde9bbc1d696e22248",
+          "sha256": "44be00dad19e596d2b3bdd86b6ad323bda1545656ae873bde9bbc1d696e22248",
+          "status": "VERIFIED"
+        },
+        "bytes": 602833,
         "expectedBytes": 602833,
         "expectedSha256": "44be00dad19e596d2b3bdd86b6ad323bda1545656ae873bde9bbc1d696e22248",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "44be00dad19e596d2b3bdd86b6ad323bda1545656ae873bde9bbc1d696e22248",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-mixtape-secret-handshake-1000.png": {
+        "archivedCopy": {
+          "bytes": 599635,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/6afb311b9e2d3b5ff9d4504447731ce428a638d21891834b40aee3c4a1605774",
+          "sha256": "6afb311b9e2d3b5ff9d4504447731ce428a638d21891834b40aee3c4a1605774",
+          "status": "VERIFIED"
+        },
+        "bytes": 599635,
         "expectedBytes": 599635,
         "expectedSha256": "6afb311b9e2d3b5ff9d4504447731ce428a638d21891834b40aee3c4a1605774",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "6afb311b9e2d3b5ff9d4504447731ce428a638d21891834b40aee3c4a1605774",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-choose-1000.png": {
+        "archivedCopy": {
+          "bytes": 234194,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/06f2a1a2676b3dfb403cc7d807100889836757a8d02c7bb50f217f9f818b4257",
+          "sha256": "06f2a1a2676b3dfb403cc7d807100889836757a8d02c7bb50f217f9f818b4257",
+          "status": "VERIFIED"
+        },
+        "bytes": 234194,
         "expectedBytes": 234194,
         "expectedSha256": "06f2a1a2676b3dfb403cc7d807100889836757a8d02c7bb50f217f9f818b4257",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "06f2a1a2676b3dfb403cc7d807100889836757a8d02c7bb50f217f9f818b4257",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-claws-1000.png": {
+        "archivedCopy": {
+          "bytes": 411494,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/4ced373b25318480ba727d85e0124c98d447cd36dd7ef7a7500be15811bb1988",
+          "sha256": "4ced373b25318480ba727d85e0124c98d447cd36dd7ef7a7500be15811bb1988",
+          "status": "VERIFIED"
+        },
+        "bytes": 411494,
         "expectedBytes": 411494,
         "expectedSha256": "4ced373b25318480ba727d85e0124c98d447cd36dd7ef7a7500be15811bb1988",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "4ced373b25318480ba727d85e0124c98d447cd36dd7ef7a7500be15811bb1988",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-combat-1000.png": {
+        "archivedCopy": {
+          "bytes": 442587,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/ac9d90a6046505fb905ed424cdb99d98e32bcdec2775ead011e955001971b9f4",
+          "sha256": "ac9d90a6046505fb905ed424cdb99d98e32bcdec2775ead011e955001971b9f4",
+          "status": "VERIFIED"
+        },
+        "bytes": 442587,
         "expectedBytes": 442587,
         "expectedSha256": "ac9d90a6046505fb905ed424cdb99d98e32bcdec2775ead011e955001971b9f4",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "ac9d90a6046505fb905ed424cdb99d98e32bcdec2775ead011e955001971b9f4",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-combat-turn2-1000.png": {
+        "archivedCopy": {
+          "bytes": 402740,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/cc03c09aedac0b669f4e09a34678abfee6279a51cf6ada714421a045ba8e9c4e",
+          "sha256": "cc03c09aedac0b669f4e09a34678abfee6279a51cf6ada714421a045ba8e9c4e",
+          "status": "VERIFIED"
+        },
+        "bytes": 402740,
         "expectedBytes": 402740,
         "expectedSha256": "cc03c09aedac0b669f4e09a34678abfee6279a51cf6ada714421a045ba8e9c4e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "cc03c09aedac0b669f4e09a34678abfee6279a51cf6ada714421a045ba8e9c4e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-control-1000.png": {
+        "archivedCopy": {
+          "bytes": 242286,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/cfdab8041c268a56b5d0daaa6dab1f569dd33b72cda55fdb3be4e98fba9a5cdc",
+          "sha256": "cfdab8041c268a56b5d0daaa6dab1f569dd33b72cda55fdb3be4e98fba9a5cdc",
+          "status": "VERIFIED"
+        },
+        "bytes": 242286,
         "expectedBytes": 242286,
         "expectedSha256": "cfdab8041c268a56b5d0daaa6dab1f569dd33b72cda55fdb3be4e98fba9a5cdc",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "cfdab8041c268a56b5d0daaa6dab1f569dd33b72cda55fdb3be4e98fba9a5cdc",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-explored-1000.png": {
+        "archivedCopy": {
+          "bytes": 220483,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/4621595e02f1b1739882cd8af5c4b92135f81a78b96f79d4e1aba90c6e8c4463",
+          "sha256": "4621595e02f1b1739882cd8af5c4b92135f81a78b96f79d4e1aba90c6e8c4463",
+          "status": "VERIFIED"
+        },
+        "bytes": 220483,
         "expectedBytes": 220483,
         "expectedSha256": "4621595e02f1b1739882cd8af5c4b92135f81a78b96f79d4e1aba90c6e8c4463",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "4621595e02f1b1739882cd8af5c4b92135f81a78b96f79d4e1aba90c6e8c4463",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-first-chest-1000.png": {
+        "archivedCopy": {
+          "bytes": 306007,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/d49d76ce652758ea810fb021b8733e5a124e4257176909652afece31f6e5ca0f",
+          "sha256": "d49d76ce652758ea810fb021b8733e5a124e4257176909652afece31f6e5ca0f",
+          "status": "VERIFIED"
+        },
+        "bytes": 306007,
         "expectedBytes": 306007,
         "expectedSha256": "d49d76ce652758ea810fb021b8733e5a124e4257176909652afece31f6e5ca0f",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "d49d76ce652758ea810fb021b8733e5a124e4257176909652afece31f6e5ca0f",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-intro-1000.png": {
+        "archivedCopy": {
+          "bytes": 434357,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/6341db21ec17bfbb4d4d8832eda49569577117b2fc2ebd24a9a3dc471427712e",
+          "sha256": "6341db21ec17bfbb4d4d8832eda49569577117b2fc2ebd24a9a3dc471427712e",
+          "status": "VERIFIED"
+        },
+        "bytes": 434357,
         "expectedBytes": 434357,
         "expectedSha256": "6341db21ec17bfbb4d4d8832eda49569577117b2fc2ebd24a9a3dc471427712e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "6341db21ec17bfbb4d4d8832eda49569577117b2fc2ebd24a9a3dc471427712e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-intro-skip-1000.png": {
+        "archivedCopy": {
+          "bytes": 73366,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/e6b69abfb5c818999383744bfdac37edb09e7641710d912d41324610cb5986ea",
+          "sha256": "e6b69abfb5c818999383744bfdac37edb09e7641710d912d41324610cb5986ea",
+          "status": "VERIFIED"
+        },
+        "bytes": 73366,
         "expectedBytes": 73366,
         "expectedSha256": "e6b69abfb5c818999383744bfdac37edb09e7641710d912d41324610cb5986ea",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "e6b69abfb5c818999383744bfdac37edb09e7641710d912d41324610cb5986ea",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 496294,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/62b5fb4ceb190eb8a6d128098acfa54b07658c628ee7c7bd6190707d8eea189d",
+          "sha256": "62b5fb4ceb190eb8a6d128098acfa54b07658c628ee7c7bd6190707d8eea189d",
+          "status": "VERIFIED"
+        },
+        "bytes": 496294,
         "expectedBytes": 496294,
         "expectedSha256": "62b5fb4ceb190eb8a6d128098acfa54b07658c628ee7c7bd6190707d8eea189d",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "62b5fb4ceb190eb8a6d128098acfa54b07658c628ee7c7bd6190707d8eea189d",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-mountain-1000.png": {
+        "archivedCopy": {
+          "bytes": 297651,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/64e796da3ee92d6dff6dfb93d97d5f7c647fcb60b6e4f9c73f93d3fc26588963",
+          "sha256": "64e796da3ee92d6dff6dfb93d97d5f7c647fcb60b6e4f9c73f93d3fc26588963",
+          "status": "VERIFIED"
+        },
+        "bytes": 297651,
         "expectedBytes": 297651,
         "expectedSha256": "64e796da3ee92d6dff6dfb93d97d5f7c647fcb60b6e4f9c73f93d3fc26588963",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "64e796da3ee92d6dff6dfb93d97d5f7c647fcb60b6e4f9c73f93d3fc26588963",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-moving-1000.png": {
+        "archivedCopy": {
+          "bytes": 434237,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/c96f1f08dffa04e9f4a0335d0d6027a55ee54a61739319e938ce0e9782d7b13f",
+          "sha256": "c96f1f08dffa04e9f4a0335d0d6027a55ee54a61739319e938ce0e9782d7b13f",
+          "status": "VERIFIED"
+        },
+        "bytes": 434237,
         "expectedBytes": 434237,
         "expectedSha256": "c96f1f08dffa04e9f4a0335d0d6027a55ee54a61739319e938ce0e9782d7b13f",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "c96f1f08dffa04e9f4a0335d0d6027a55ee54a61739319e938ce0e9782d7b13f",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-name-1000.png": {
+        "archivedCopy": {
+          "bytes": 242934,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/85792bca00d37ea44c6d9efcea07fb273060d09cd53a77f55eecd139c07694e3",
+          "sha256": "85792bca00d37ea44c6d9efcea07fb273060d09cd53a77f55eecd139c07694e3",
+          "status": "VERIFIED"
+        },
+        "bytes": 242934,
         "expectedBytes": 242934,
         "expectedSha256": "85792bca00d37ea44c6d9efcea07fb273060d09cd53a77f55eecd139c07694e3",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "85792bca00d37ea44c6d9efcea07fb273060d09cd53a77f55eecd139c07694e3",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-name-done-1000.png": {
+        "archivedCopy": {
+          "bytes": 222465,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/dc0b9004e93958fed2bc00010af22cf4041a096957c985c49c1306c9e7456fba",
+          "sha256": "dc0b9004e93958fed2bc00010af22cf4041a096957c985c49c1306c9e7456fba",
+          "status": "VERIFIED"
+        },
+        "bytes": 222465,
         "expectedBytes": 222465,
         "expectedSha256": "dc0b9004e93958fed2bc00010af22cf4041a096957c985c49c1306c9e7456fba",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "dc0b9004e93958fed2bc00010af22cf4041a096957c985c49c1306c9e7456fba",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-new-1000.png": {
+        "archivedCopy": {
+          "bytes": 267134,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/6ea8d717e3f64583c2af2c14fa8ae742d16700d246d360cdefa568793dd89cbd",
+          "sha256": "6ea8d717e3f64583c2af2c14fa8ae742d16700d246d360cdefa568793dd89cbd",
+          "status": "VERIFIED"
+        },
+        "bytes": 267134,
         "expectedBytes": 267134,
         "expectedSha256": "6ea8d717e3f64583c2af2c14fa8ae742d16700d246d360cdefa568793dd89cbd",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "6ea8d717e3f64583c2af2c14fa8ae742d16700d246d360cdefa568793dd89cbd",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-opening-1000.png": {
+        "archivedCopy": {
+          "bytes": 175889,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/548405706fce187a011cd897a3bce9f21bc8edfccef9bc9a3d97786c78c71b65",
+          "sha256": "548405706fce187a011cd897a3bce9f21bc8edfccef9bc9a3d97786c78c71b65",
+          "status": "VERIFIED"
+        },
+        "bytes": 175889,
         "expectedBytes": 175889,
         "expectedSha256": "548405706fce187a011cd897a3bce9f21bc8edfccef9bc9a3d97786c78c71b65",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "548405706fce187a011cd897a3bce9f21bc8edfccef9bc9a3d97786c78c71b65",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-ready-1000.png": {
+        "archivedCopy": {
+          "bytes": 379098,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/2989e74f71d6c9da0ab731578127448c887ed96fdb16ba4319dfefa3b5df214a",
+          "sha256": "2989e74f71d6c9da0ab731578127448c887ed96fdb16ba4319dfefa3b5df214a",
+          "status": "VERIFIED"
+        },
+        "bytes": 379098,
         "expectedBytes": 379098,
         "expectedSha256": "2989e74f71d6c9da0ab731578127448c887ed96fdb16ba4319dfefa3b5df214a",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "2989e74f71d6c9da0ab731578127448c887ed96fdb16ba4319dfefa3b5df214a",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-retry-inventory-1000.png": {
+        "archivedCopy": {
+          "bytes": 182636,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/fe9b8af1f423aaf41ad41d6899e55d91e301d26ec00453c4dd7c68d7f1a328d8",
+          "sha256": "fe9b8af1f423aaf41ad41d6899e55d91e301d26ec00453c4dd7c68d7f1a328d8",
+          "status": "VERIFIED"
+        },
+        "bytes": 182636,
         "expectedBytes": 182636,
         "expectedSha256": "fe9b8af1f423aaf41ad41d6899e55d91e301d26ec00453c4dd7c68d7f1a328d8",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "fe9b8af1f423aaf41ad41d6899e55d91e301d26ec00453c4dd7c68d7f1a328d8",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-retry-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 453080,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/9f35dbe37d946aa88e303e8f4c3468f89e0279f2616b9e7934048811151ac37d",
+          "sha256": "9f35dbe37d946aa88e303e8f4c3468f89e0279f2616b9e7934048811151ac37d",
+          "status": "VERIFIED"
+        },
+        "bytes": 453080,
         "expectedBytes": 453080,
         "expectedSha256": "9f35dbe37d946aa88e303e8f4c3468f89e0279f2616b9e7934048811151ac37d",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "9f35dbe37d946aa88e303e8f4c3468f89e0279f2616b9e7934048811151ac37d",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-retry-retained-1000.png": {
+        "archivedCopy": {
+          "bytes": 225877,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/a3e68cafbee2b11f0b5bcac6351b9be2a6a6957e7d840b4bc34a036ec7ff79a8",
+          "sha256": "a3e68cafbee2b11f0b5bcac6351b9be2a6a6957e7d840b4bc34a036ec7ff79a8",
+          "status": "VERIFIED"
+        },
+        "bytes": 225877,
         "expectedBytes": 225877,
         "expectedSha256": "a3e68cafbee2b11f0b5bcac6351b9be2a6a6957e7d840b4bc34a036ec7ff79a8",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "a3e68cafbee2b11f0b5bcac6351b9be2a6a6957e7d840b4bc34a036ec7ff79a8",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-retry-savequit-1000.png": {
+        "archivedCopy": {
+          "bytes": 550912,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/600dcb73aafb77edee900a880e19d521387fcb57bc50ba2ef9153349a1680ecd",
+          "sha256": "600dcb73aafb77edee900a880e19d521387fcb57bc50ba2ef9153349a1680ecd",
+          "status": "VERIFIED"
+        },
+        "bytes": 550912,
         "expectedBytes": 550912,
         "expectedSha256": "600dcb73aafb77edee900a880e19d521387fcb57bc50ba2ef9153349a1680ecd",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "600dcb73aafb77edee900a880e19d521387fcb57bc50ba2ef9153349a1680ecd",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-retry-start-1000.png": {
+        "archivedCopy": {
+          "bytes": 494812,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/5cd84fe2b2068bf1de72b504dfb1774d2ce290cb8d66a014db2c803dc669eade",
+          "sha256": "5cd84fe2b2068bf1de72b504dfb1774d2ce290cb8d66a014db2c803dc669eade",
+          "status": "VERIFIED"
+        },
+        "bytes": 494812,
         "expectedBytes": 494812,
         "expectedSha256": "5cd84fe2b2068bf1de72b504dfb1774d2ce290cb8d66a014db2c803dc669eade",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "5cd84fe2b2068bf1de72b504dfb1774d2ce290cb8d66a014db2c803dc669eade",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-retry-title-1000.png": {
+        "archivedCopy": {
+          "bytes": 504820,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/fb47f8912b0a6074bcce9daf09a5578bd2e55227e6a36b20f96d7ec42b9b805e",
+          "sha256": "fb47f8912b0a6074bcce9daf09a5578bd2e55227e6a36b20f96d7ec42b9b805e",
+          "status": "VERIFIED"
+        },
+        "bytes": 504820,
         "expectedBytes": 504820,
         "expectedSha256": "fb47f8912b0a6074bcce9daf09a5578bd2e55227e6a36b20f96d7ec42b9b805e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "fb47f8912b0a6074bcce9daf09a5578bd2e55227e6a36b20f96d7ec42b9b805e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-rewards-1000.png": {
+        "archivedCopy": {
+          "bytes": 269895,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/14b97e65f16126f7972da880004c63f953d88cb76462f98405b899223679f197",
+          "sha256": "14b97e65f16126f7972da880004c63f953d88cb76462f98405b899223679f197",
+          "status": "VERIFIED"
+        },
+        "bytes": 269895,
         "expectedBytes": 269895,
         "expectedSha256": "14b97e65f16126f7972da880004c63f953d88cb76462f98405b899223679f197",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "14b97e65f16126f7972da880004c63f953d88cb76462f98405b899223679f197",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-saved-area-1000.png": {
+        "archivedCopy": {
+          "bytes": 192187,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/cdeb9b20adc36add11eee79fbcd0a4a212e9125417149a2ee5202b6e68621441",
+          "sha256": "cdeb9b20adc36add11eee79fbcd0a4a212e9125417149a2ee5202b6e68621441",
+          "status": "VERIFIED"
+        },
+        "bytes": 192187,
         "expectedBytes": 192187,
         "expectedSha256": "cdeb9b20adc36add11eee79fbcd0a4a212e9125417149a2ee5202b6e68621441",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "cdeb9b20adc36add11eee79fbcd0a4a212e9125417149a2ee5202b6e68621441",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-savequit-confirm-1000.png": {
+        "archivedCopy": {
+          "bytes": 548439,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/08a5d40e61413e56ed2377bbde32cf4e847f07dc9a61c464b549a1127aa5266a",
+          "sha256": "08a5d40e61413e56ed2377bbde32cf4e847f07dc9a61c464b549a1127aa5266a",
+          "status": "VERIFIED"
+        },
+        "bytes": 548439,
         "expectedBytes": 548439,
         "expectedSha256": "08a5d40e61413e56ed2377bbde32cf4e847f07dc9a61c464b549a1127aa5266a",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "08a5d40e61413e56ed2377bbde32cf4e847f07dc9a61c464b549a1127aa5266a",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-start-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 276712,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/0964c4d401c749fda9e06c4e87016e581a78db8ca3db0b9b238deef84a5af37a",
+          "sha256": "0964c4d401c749fda9e06c4e87016e581a78db8ca3db0b9b238deef84a5af37a",
+          "status": "VERIFIED"
+        },
+        "bytes": 276712,
         "expectedBytes": 276712,
         "expectedSha256": "0964c4d401c749fda9e06c4e87016e581a78db8ca3db0b9b238deef84a5af37a",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "0964c4d401c749fda9e06c4e87016e581a78db8ca3db0b9b238deef84a5af37a",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-start-world-1000.png": {
+        "archivedCopy": {
+          "bytes": 77507,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/eac5702f4fa8e5b1a7a838f31d53619912066f36f46e8115135dd50101373b1b",
+          "sha256": "eac5702f4fa8e5b1a7a838f31d53619912066f36f46e8115135dd50101373b1b",
+          "status": "VERIFIED"
+        },
+        "bytes": 77507,
         "expectedBytes": 77507,
         "expectedSha256": "eac5702f4fa8e5b1a7a838f31d53619912066f36f46e8115135dd50101373b1b",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "eac5702f4fa8e5b1a7a838f31d53619912066f36f46e8115135dd50101373b1b",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-starter-1000.png": {
+        "archivedCopy": {
+          "bytes": 387093,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/9a308fb6c58667b72e36dc2fcf8342b8c93b0253730961ac134b5477308378de",
+          "sha256": "9a308fb6c58667b72e36dc2fcf8342b8c93b0253730961ac134b5477308378de",
+          "status": "VERIFIED"
+        },
+        "bytes": 387093,
         "expectedBytes": 387093,
         "expectedSha256": "9a308fb6c58667b72e36dc2fcf8342b8c93b0253730961ac134b5477308378de",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "9a308fb6c58667b72e36dc2fcf8342b8c93b0253730961ac134b5477308378de",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-title-1000.png": {
+        "archivedCopy": {
+          "bytes": 493735,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/00653b596bb2a339e659d145c21df12e1dfa9cd122c9ba96fec6fd8945fd0f00",
+          "sha256": "00653b596bb2a339e659d145c21df12e1dfa9cd122c9ba96fec6fd8945fd0f00",
+          "status": "VERIFIED"
+        },
+        "bytes": 493735,
         "expectedBytes": 493735,
         "expectedSha256": "00653b596bb2a339e659d145c21df12e1dfa9cd122c9ba96fec6fd8945fd0f00",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "00653b596bb2a339e659d145c21df12e1dfa9cd122c9ba96fec6fd8945fd0f00",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-title-after-save-1000.png": {
+        "archivedCopy": {
+          "bytes": 502903,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/64d848bcc3dfaa17f88e72ec4f25a85726615c2ab3abd45c1122b92dc36d9d2f",
+          "sha256": "64d848bcc3dfaa17f88e72ec4f25a85726615c2ab3abd45c1122b92dc36d9d2f",
+          "status": "VERIFIED"
+        },
+        "bytes": 502903,
         "expectedBytes": 502903,
         "expectedSha256": "64d848bcc3dfaa17f88e72ec4f25a85726615c2ab3abd45c1122b92dc36d9d2f",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "64d848bcc3dfaa17f88e72ec4f25a85726615c2ab3abd45c1122b92dc36d9d2f",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-victory-1000.png": {
+        "archivedCopy": {
+          "bytes": 402424,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/9a23f1406824f82147b2744b2e9b3da2373c6ed8ba236522aeecae0cbfa75967",
+          "sha256": "9a23f1406824f82147b2744b2e9b3da2373c6ed8ba236522aeecae0cbfa75967",
+          "status": "VERIFIED"
+        },
+        "bytes": 402424,
         "expectedBytes": 402424,
         "expectedSha256": "9a23f1406824f82147b2744b2e9b3da2373c6ed8ba236522aeecae0cbfa75967",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "9a23f1406824f82147b2744b2e9b3da2373c6ed8ba236522aeecae0cbfa75967",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-wolf-1000.png": {
+        "archivedCopy": {
+          "bytes": 97792,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/3dc9956c5750b47952a303cdb1d0f0411f137d92ea000e6a2d0ade46a80613ba",
+          "sha256": "3dc9956c5750b47952a303cdb1d0f0411f137d92ea000e6a2d0ade46a80613ba",
+          "status": "VERIFIED"
+        },
+        "bytes": 97792,
         "expectedBytes": 97792,
         "expectedSha256": "3dc9956c5750b47952a303cdb1d0f0411f137d92ea000e6a2d0ade46a80613ba",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "3dc9956c5750b47952a303cdb1d0f0411f137d92ea000e6a2d0ade46a80613ba",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-wolf-named-1000.png": {
+        "archivedCopy": {
+          "bytes": 297409,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/4b0a11a748724f3c15ca9a073a66ba9db61c3f07ca493fac0c625275c9a80fc2",
+          "sha256": "4b0a11a748724f3c15ca9a073a66ba9db61c3f07ca493fac0c625275c9a80fc2",
+          "status": "VERIFIED"
+        },
+        "bytes": 297409,
         "expectedBytes": 297409,
         "expectedSha256": "4b0a11a748724f3c15ca9a073a66ba9db61c3f07ca493fac0c625275c9a80fc2",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "4b0a11a748724f3c15ca9a073a66ba9db61c3f07ca493fac0c625275c9a80fc2",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-world-marker-1000.png": {
+        "archivedCopy": {
+          "bytes": 387631,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/c883f33a58d22cbda1441490730c8346f566775030983379bb52b276f47a0cf9",
+          "sha256": "c883f33a58d22cbda1441490730c8346f566775030983379bb52b276f47a0cf9",
+          "status": "VERIFIED"
+        },
+        "bytes": 387631,
         "expectedBytes": 387631,
         "expectedSha256": "c883f33a58d22cbda1441490730c8346f566775030983379bb52b276f47a0cf9",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "c883f33a58d22cbda1441490730c8346f566775030983379bb52b276f47a0cf9",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-monster-xp-1000.png": {
+        "archivedCopy": {
+          "bytes": 240645,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/29cebeb00eff2f742e16cf5b829dbb17c03dc5a7116918ae3d54daba6c69f10d",
+          "sha256": "29cebeb00eff2f742e16cf5b829dbb17c03dc5a7116918ae3d54daba6c69f10d",
+          "status": "VERIFIED"
+        },
+        "bytes": 240645,
         "expectedBytes": 240645,
         "expectedSha256": "29cebeb00eff2f742e16cf5b829dbb17c03dc5a7116918ae3d54daba6c69f10d",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "29cebeb00eff2f742e16cf5b829dbb17c03dc5a7116918ae3d54daba6c69f10d",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-skyrim-launcher-1000.png": {
+        "archivedCopy": {
+          "bytes": 717551,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/3a23f63bcafe0aa678fd1aef7d2e26c0e82dde95bfa3a8d9fa3968eb37c66c6e",
+          "sha256": "3a23f63bcafe0aa678fd1aef7d2e26c0e82dde95bfa3a8d9fa3968eb37c66c6e",
+          "status": "VERIFIED"
+        },
+        "bytes": 717551,
         "expectedBytes": 717551,
         "expectedSha256": "3a23f63bcafe0aa678fd1aef7d2e26c0e82dde95bfa3a8d9fa3968eb37c66c6e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "3a23f63bcafe0aa678fd1aef7d2e26c0e82dde95bfa3a8d9fa3968eb37c66c6e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-bed-1000.png": {
+        "archivedCopy": {
+          "bytes": 193390,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/ce2861dd2848a3c5edd23cf84baaf755b4efbd5b456449f6541c878e841d7c23",
+          "sha256": "ce2861dd2848a3c5edd23cf84baaf755b4efbd5b456449f6541c878e841d7c23",
+          "status": "VERIFIED"
+        },
+        "bytes": 193390,
         "expectedBytes": 193390,
         "expectedSha256": "ce2861dd2848a3c5edd23cf84baaf755b4efbd5b456449f6541c878e841d7c23",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "ce2861dd2848a3c5edd23cf84baaf755b4efbd5b456449f6541c878e841d7c23",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-bed-after-dialog-1000.png": {
+        "archivedCopy": {
+          "bytes": 179102,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/624dbeaa8380dce82a7bc66b5e8d4fce08ebc55ec47e710142edc7e19c08da84",
+          "sha256": "624dbeaa8380dce82a7bc66b5e8d4fce08ebc55ec47e710142edc7e19c08da84",
+          "status": "VERIFIED"
+        },
+        "bytes": 179102,
         "expectedBytes": 179102,
         "expectedSha256": "624dbeaa8380dce82a7bc66b5e8d4fce08ebc55ec47e710142edc7e19c08da84",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "624dbeaa8380dce82a7bc66b5e8d4fce08ebc55ec47e710142edc7e19c08da84",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-controlled-1000.png": {
+        "archivedCopy": {
+          "bytes": 175682,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/1c2647ab91762a4d6b8c97f254bac0abb9ef9f264370bf4aba5fb260a0cba4fa",
+          "sha256": "1c2647ab91762a4d6b8c97f254bac0abb9ef9f264370bf4aba5fb260a0cba4fa",
+          "status": "VERIFIED"
+        },
+        "bytes": 175682,
         "expectedBytes": 175682,
         "expectedSha256": "1c2647ab91762a4d6b8c97f254bac0abb9ef9f264370bf4aba5fb260a0cba4fa",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "1c2647ab91762a4d6b8c97f254bac0abb9ef9f264370bf4aba5fb260a0cba4fa",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-create-fields-1000.png": {
+        "archivedCopy": {
+          "bytes": 186679,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/0e20ce83c9bf13d636effd18a43236c809b100d191fc0ed1e9ef606a358a0ba1",
+          "sha256": "0e20ce83c9bf13d636effd18a43236c809b100d191fc0ed1e9ef606a358a0ba1",
+          "status": "VERIFIED"
+        },
+        "bytes": 186679,
         "expectedBytes": 186679,
         "expectedSha256": "0e20ce83c9bf13d636effd18a43236c809b100d191fc0ed1e9ef606a358a0ba1",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "0e20ce83c9bf13d636effd18a43236c809b100d191fc0ed1e9ef606a358a0ba1",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-day2-1000.png": {
+        "archivedCopy": {
+          "bytes": 174983,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/baebb5e5d8c2a1607ca46ef04cfcad842ce18bb082f668830931b03cf51343e4",
+          "sha256": "baebb5e5d8c2a1607ca46ef04cfcad842ce18bb082f668830931b03cf51343e4",
+          "status": "VERIFIED"
+        },
+        "bytes": 174983,
         "expectedBytes": 174983,
         "expectedSha256": "baebb5e5d8c2a1607ca46ef04cfcad842ce18bb082f668830931b03cf51343e4",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "baebb5e5d8c2a1607ca46ef04cfcad842ce18bb082f668830931b03cf51343e4",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-day2-control-1000.png": {
+        "archivedCopy": {
+          "bytes": 175822,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/5d1a978605aa82dbbc0a1f7621c8fab6dbab7080b792e3279029a1c40915d93b",
+          "sha256": "5d1a978605aa82dbbc0a1f7621c8fab6dbab7080b792e3279029a1c40915d93b",
+          "status": "VERIFIED"
+        },
+        "bytes": 175822,
         "expectedBytes": 175822,
         "expectedSha256": "5d1a978605aa82dbbc0a1f7621c8fab6dbab7080b792e3279029a1c40915d93b",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "5d1a978605aa82dbbc0a1f7621c8fab6dbab7080b792e3279029a1c40915d93b",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-exit-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 119727,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/425d787fe0989b7770dd6cfc98f1c1701ccd4a2274ea3ffe16dd183bcdfd387e",
+          "sha256": "425d787fe0989b7770dd6cfc98f1c1701ccd4a2274ea3ffe16dd183bcdfd387e",
+          "status": "VERIFIED"
+        },
+        "bytes": 119727,
         "expectedBytes": 119727,
         "expectedSha256": "425d787fe0989b7770dd6cfc98f1c1701ccd4a2274ea3ffe16dd183bcdfd387e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "425d787fe0989b7770dd6cfc98f1c1701ccd4a2274ea3ffe16dd183bcdfd387e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-exit-tab-1000.png": {
+        "archivedCopy": {
+          "bytes": 67938,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/2793f8cd351064f04beb9459d939d748f39eb695c221af8bc9f26a5526f117d9",
+          "sha256": "2793f8cd351064f04beb9459d939d748f39eb695c221af8bc9f26a5526f117d9",
+          "status": "VERIFIED"
+        },
+        "bytes": 67938,
         "expectedBytes": 67938,
         "expectedSha256": "2793f8cd351064f04beb9459d939d748f39eb695c221af8bc9f26a5526f117d9",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "2793f8cd351064f04beb9459d939d748f39eb695c221af8bc9f26a5526f117d9",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-exit-title-1000.png": {
+        "archivedCopy": {
+          "bytes": 284732,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/7034e9d8768b7303fa79940fd4cfed3e6c444149dc21ba17d9445531f3dd5847",
+          "sha256": "7034e9d8768b7303fa79940fd4cfed3e6c444149dc21ba17d9445531f3dd5847",
+          "status": "VERIFIED"
+        },
+        "bytes": 284732,
         "expectedBytes": 284732,
         "expectedSha256": "7034e9d8768b7303fa79940fd4cfed3e6c444149dc21ba17d9445531f3dd5847",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "7034e9d8768b7303fa79940fd4cfed3e6c444149dc21ba17d9445531f3dd5847",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 311198,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/8f85dfb995412f59d3c9e979c29749022005871910762af7dd39ebb4b9704575",
+          "sha256": "8f85dfb995412f59d3c9e979c29749022005871910762af7dd39ebb4b9704575",
+          "status": "VERIFIED"
+        },
+        "bytes": 311198,
         "expectedBytes": 311198,
         "expectedSha256": "8f85dfb995412f59d3c9e979c29749022005871910762af7dd39ebb4b9704575",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "8f85dfb995412f59d3c9e979c29749022005871910762af7dd39ebb4b9704575",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-new-1000.png": {
+        "archivedCopy": {
+          "bytes": 161426,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/8433099cd3791f952e232092a2f617d9d35118bf6a1a6991e670dd353637d436",
+          "sha256": "8433099cd3791f952e232092a2f617d9d35118bf6a1a6991e670dd353637d436",
+          "status": "VERIFIED"
+        },
+        "bytes": 161426,
         "expectedBytes": 161426,
         "expectedSha256": "8433099cd3791f952e232092a2f617d9d35118bf6a1a6991e670dd353637d436",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "8433099cd3791f952e232092a2f617d9d35118bf6a1a6991e670dd353637d436",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-parcel-1000.png": {
+        "archivedCopy": {
+          "bytes": 189737,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/a3ba6dea98df938220be5f1bdd17918dafd3ce12c07d2a9432e578c385e6db9e",
+          "sha256": "a3ba6dea98df938220be5f1bdd17918dafd3ce12c07d2a9432e578c385e6db9e",
+          "status": "VERIFIED"
+        },
+        "bytes": 189737,
         "expectedBytes": 189737,
         "expectedSha256": "a3ba6dea98df938220be5f1bdd17918dafd3ce12c07d2a9432e578c385e6db9e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "a3ba6dea98df938220be5f1bdd17918dafd3ce12c07d2a9432e578c385e6db9e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-save-sleep-1000.png": {
+        "archivedCopy": {
+          "bytes": 15967,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/14f58e2d2d67b6f9b65a9a5e49b70de51b50f658d232d362f2f3c9721b70aada",
+          "sha256": "14f58e2d2d67b6f9b65a9a5e49b70de51b50f658d232d362f2f3c9721b70aada",
+          "status": "VERIFIED"
+        },
+        "bytes": 15967,
         "expectedBytes": 15967,
         "expectedSha256": "14f58e2d2d67b6f9b65a9a5e49b70de51b50f658d232d362f2f3c9721b70aada",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "14f58e2d2d67b6f9b65a9a5e49b70de51b50f658d232d362f2f3c9721b70aada",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-sleep-choice-1000.png": {
+        "archivedCopy": {
+          "bytes": 193532,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/30369748f67626d15cf1d8bf4a38915e4cefd5bccb97e724ab2222c7f1513c1e",
+          "sha256": "30369748f67626d15cf1d8bf4a38915e4cefd5bccb97e724ab2222c7f1513c1e",
+          "status": "VERIFIED"
+        },
+        "bytes": 193532,
         "expectedBytes": 193532,
         "expectedSha256": "30369748f67626d15cf1d8bf4a38915e4cefd5bccb97e724ab2222c7f1513c1e",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "30369748f67626d15cf1d8bf4a38915e4cefd5bccb97e724ab2222c7f1513c1e",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-spring1-1000.png": {
+        "archivedCopy": {
+          "bytes": 186631,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/fe479ac73f560109e26a3c34c87ff847a37577554eb4cee0bf197df8c1da5af7",
+          "sha256": "fe479ac73f560109e26a3c34c87ff847a37577554eb4cee0bf197df8c1da5af7",
+          "status": "VERIFIED"
+        },
+        "bytes": 186631,
         "expectedBytes": 186631,
         "expectedSha256": "fe479ac73f560109e26a3c34c87ff847a37577554eb4cee0bf197df8c1da5af7",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "fe479ac73f560109e26a3c34c87ff847a37577554eb4cee0bf197df8c1da5af7",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-start-world-1000.png": {
+        "archivedCopy": {
+          "bytes": 18092,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/a199c0c407424c24ea5ae1ed75b032c138a834cb564d74dbe65d50a0aa0d51dc",
+          "sha256": "a199c0c407424c24ea5ae1ed75b032c138a834cb564d74dbe65d50a0aa0d51dc",
+          "status": "VERIFIED"
+        },
+        "bytes": 18092,
         "expectedBytes": 18092,
         "expectedSha256": "a199c0c407424c24ea5ae1ed75b032c138a834cb564d74dbe65d50a0aa0d51dc",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "a199c0c407424c24ea5ae1ed75b032c138a834cb564d74dbe65d50a0aa0d51dc",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-stardew-title-1000.png": {
+        "archivedCopy": {
+          "bytes": 500548,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/0618228437cf83341a251416a3230ac89b3a607b7b633418b0f8a63ad671e506",
+          "sha256": "0618228437cf83341a251416a3230ac89b3a607b7b633418b0f8a63ad671e506",
+          "status": "VERIFIED"
+        },
+        "bytes": 500548,
         "expectedBytes": 500548,
         "expectedSha256": "0618228437cf83341a251416a3230ac89b3a607b7b633418b0f8a63ad671e506",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "0618228437cf83341a251416a3230ac89b3a607b7b633418b0f8a63ad671e506",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-welldweller-quit-menu-1000.png": {
+        "archivedCopy": {
+          "bytes": 259703,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/38057d1feeff14b2932b790110db7f9fc893e4e1574927504e5d329048e43c32",
+          "sha256": "38057d1feeff14b2932b790110db7f9fc893e4e1574927504e5d329048e43c32",
+          "status": "VERIFIED"
+        },
+        "bytes": 259703,
         "expectedBytes": 259703,
         "expectedSha256": "38057d1feeff14b2932b790110db7f9fc893e4e1574927504e5d329048e43c32",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "38057d1feeff14b2932b790110db7f9fc893e4e1574927504e5d329048e43c32",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-welldweller-save-exit-settled-1000.png": {
+        "archivedCopy": {
+          "bytes": 470686,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/98a3c12677b7bbbad2975bcf3fc08c050610648d48b7af897febc26bc267bc8d",
+          "sha256": "98a3c12677b7bbbad2975bcf3fc08c050610648d48b7af897febc26bc267bc8d",
+          "status": "VERIFIED"
+        },
+        "bytes": 470686,
         "expectedBytes": 470686,
         "expectedSha256": "98a3c12677b7bbbad2975bcf3fc08c050610648d48b7af897febc26bc267bc8d",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "98a3c12677b7bbbad2975bcf3fc08c050610648d48b7af897febc26bc267bc8d",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/.copilot/session-state/9df8acf4-7a95-43ac-84d5-d81fcdd55702/files/s3-welldweller-skull-roof-1000.png": {
+        "archivedCopy": {
+          "bytes": 512389,
+          "path": "/Users/dragoshont/Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads/0f30950786ff229864a44a56fd631f55a7c49636441ef8b206f353d2baeaad96",
+          "sha256": "0f30950786ff229864a44a56fd631f55a7c49636441ef8b206f353d2baeaad96",
+          "status": "VERIFIED"
+        },
+        "bytes": 512389,
         "expectedBytes": 512389,
         "expectedSha256": "0f30950786ff229864a44a56fd631f55a7c49636441ef8b206f353d2baeaad96",
-        "status": "OUTSIDE_PROOF_SCOPE"
+        "originalStatus": "OUTSIDE_PROOF_SCOPE",
+        "sha256": "0f30950786ff229864a44a56fd631f55a7c49636441ef8b206f353d2baeaad96",
+        "status": "VERIFIED_FROM_PROTECTED_ARCHIVE"
       },
       "/Users/dragoshont/Library/Application Support/Ode to X/Engines/evidence/apple-gptk-3.0-quarantine-1792620022765233000.log": {
         "expectedBytes": 649,

@@ -26,6 +26,10 @@ def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def is_verified(record):
+    return record["status"] in {"VERIFIED", "VERIFIED_FROM_PROTECTED_ARCHIVE"}
+
+
 def check_file(path, root, expected=None, expected_size=None):
     """Hash a single referenced file without following links or walking directories."""
     path, root = Path(path), Path(root)
@@ -101,21 +105,53 @@ def reconcile(tracker, gap, inventory, archive, sources, home, verify):
                     if relative:
                         by_root.setdefault(relative.split("/")[0], set()).add((sid, attempt["runId"]))
     archive_hashes = {}
+    archive_sources = {}
     for record in archive["references"]:
         archive_hashes.setdefault(record["sha256"], []).append(record)
+        key = record["sourceRelativeToHome"]
+        if key in archive_sources and archive_sources[key] != record:
+            raise ValueError("Conflicting source-to-archive mappings")
+        archive_sources[key] = record
     inventory_hashes = {}
     for name, record in inventory["files"].items():
         inventory_hashes.setdefault(record["sha256"], []).append(name)
     verified = {}
+    resolved = {}
+    archive_reads = 0
 
     def evidence(path, expected=None, size=None, locator=None):
+        nonlocal archive_reads
         name = str(path) if locator is None else "protected-archive:" + sha(str(path).encode())
         if name not in verified:
-            if len(verified) >= LIMIT:
+            if len(verified) + archive_reads >= LIMIT:
                 raise ValueError("Explicit evidence file limit exceeded")
             verified[name] = verify(path, proofs, expected, size)
             verified[name]["expectedSha256"] = expected
             verified[name]["expectedBytes"] = size
+            resolved[name] = Path(path)
+            if expected is not None and verified[name]["status"] in {"MISSING", "OUTSIDE_PROOF_SCOPE"}:
+                try:
+                    source = Path(path).relative_to(home).as_posix()
+                except ValueError:
+                    source = None
+                archived = archive_sources.get(source)
+                if archived is not None and archived["sha256"] == expected:
+                    if archived["archivedAs"] != "payloads/" + expected:
+                        raise ValueError("Archive payload is not content-addressed by its expected hash")
+                    if size is not None and archived["bytes"] != size:
+                        raise ValueError("Archive and original evidence byte counts conflict")
+                    if len(verified) + archive_reads >= LIMIT:
+                        raise ValueError("Explicit evidence file limit exceeded")
+                    copy_path = proofs / "s3-historical-session-archive-01" / archived["archivedAs"]
+                    copy = verify(copy_path, proofs, expected, archived["bytes"])
+                    archive_reads += 1
+                    verified[name]["originalStatus"] = verified[name]["status"]
+                    verified[name]["archivedCopy"] = {"path": str(copy_path), **copy}
+                    if copy["status"] == "VERIFIED":
+                        verified[name]["status"] = "VERIFIED_FROM_PROTECTED_ARCHIVE"
+                        verified[name]["sha256"] = copy["sha256"]
+                        verified[name]["bytes"] = copy["bytes"]
+                        resolved[name] = copy_path
             if locator is not None:
                 verified[name]["protectedLocator"] = locator
         elif expected is not None and verified[name].get("expectedSha256") not in (None, expected):
@@ -189,7 +225,7 @@ def reconcile(tracker, gap, inventory, archive, sources, home, verify):
     for row in hashes.values():
         row["archiveEvidenceRefs"] = sorted(set(row["archiveEvidenceRefs"]))
         matches = [r for r in row["archiveEvidenceRefs"]
-                   if verified[r]["status"] == "VERIFIED" and verified[r]["sha256"] == row["sha256"]]
+                   if is_verified(verified[r]) and verified[r]["sha256"] == row["sha256"]]
         row["availability"] = "VERIFIED_ARCHIVED_BYTES" if matches else "HASH_ONLY_NO_VERIFIED_ARCHIVED_BYTES"
         row["recoverability"] = "bytes-verified-not-restore-tested" if matches else "not-established-do-not-reconstruct"
 
@@ -226,8 +262,8 @@ def reconcile(tracker, gap, inventory, archive, sources, home, verify):
                 ref = evidence(Path(name), pin.get("sha256"), pin.get("bytes"))
                 note = {"verifiedEvidenceRef": ref, "field": item["field"],
                         "fieldStatus": "SOURCE_NOT_HISTORICALLY_HASH_VERIFIED"}
-                if verified[ref]["status"] == "VERIFIED" and pin.get("sha256"):
-                    raw = Path(name).read_bytes()
+                if is_verified(verified[ref]) and pin.get("sha256"):
+                    raw = resolved[ref].read_bytes()
                     if sha(raw) != pin["sha256"]:
                         raise ValueError("Annotation document changed before field verification")
                     document = json.loads(raw)
@@ -244,7 +280,7 @@ def reconcile(tracker, gap, inventory, archive, sources, home, verify):
             counts["attemptsWithVerifiedNextActionRefs"] += bool(next_notes)
             gaps = list(attempt.get("gaps", []))
             for role, refs in categories.items():
-                if not any(verified[r]["status"] == "VERIFIED" for r in refs):
+                if not any(is_verified(verified[r]) for r in refs):
                     gaps.append(f"No currently hash-verified run-associated {role}; shared files are context only")
             if not bound_notes:
                 gaps.append("Per-attempt failed-hypothesis/next-discriminator annotation not retained or not bound")
@@ -291,7 +327,9 @@ def reconcile(tracker, gap, inventory, archive, sources, home, verify):
     counts["saveHashesVerifiedAsRawBytes"] = sum(v["availability"] == "VERIFIED_ARCHIVED_BYTES" for v in hashes.values())
     counts["saveHashesWithoutVerifiedRawBytes"] = len(hashes) - counts["saveHashesVerifiedAsRawBytes"]
     counts["explicitFilesChecked"] = len(verified)
-    counts["verifiedFiles"] = sum(v["status"] == "VERIFIED" for v in verified.values())
+    counts["protectedArchiveCopiesChecked"] = archive_reads
+    counts["totalFileChecks"] = len(verified) + archive_reads
+    counts["verifiedFiles"] = sum(is_verified(v) for v in verified.values())
     return {
         "schemaVersion": 1, "requirement": "REQ-39",
         "scope": "Pinned historical index reconciliation only. No new directory scan, game, GUI, live-save read, copy or restore.",

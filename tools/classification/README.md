@@ -143,6 +143,12 @@ explicit gaps. `--write` adds only `req39EvidenceReconciliation` to the existing
 owner index, preserving prior verdicts and evidence. It never changes metadata
 classification or whole-requirement admission.
 
+Missing or out-of-scope originals may resolve through the pinned historical
+archive only when both the original reference path and its historical digest
+match. The content-addressed copy is independently checked, and the original
+missing/out-of-scope status is retained. A changed original is not silently
+replaced. Archive availability does not fix execution attribution.
+
 The reconciliation deduplicates historical save hashes without dropping unknown
 sizes, verifies exact archived payload candidates and binds snapshot references
 to indexed title/run *context*, not execution-time identity. Raw save paths,

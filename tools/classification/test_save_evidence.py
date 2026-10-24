@@ -197,6 +197,47 @@ class SaveEvidenceTests(unittest.TestCase):
             refs = result["saveHashes"][digest]["archiveEvidenceRefs"]
             self.assertEqual(len(refs), 2)
 
+    def test_exact_missing_source_resolves_to_verified_protected_archive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = self.fixture(directory)
+            home, tracker, _, _, archive, _, _ = fixture
+            audit = tracker["collectionInputs"]["attemptEvidence"]
+            attempt = audit["titles"]["PRODUCT"]["attempts"][0]
+            original = Path(attempt["hypothesisAndNextTestRefs"][0]["path"])
+            raw = original.read_bytes()
+            digest = sha(raw)
+            copy_path = home / "Library/Application Support/XodusCLI/proofs/s3-historical-session-archive-01/payloads" / digest
+            copy_path.parent.mkdir(parents=True)
+            copy_path.write_bytes(raw)
+            archive["references"].append({
+                "sourceRelativeToHome": original.relative_to(home).as_posix(),
+                "sha256": digest, "bytes": len(raw), "archivedAs": "payloads/" + digest})
+            original.unlink()
+            result = self.run_fixture(fixture)
+            self.assertEqual(result["coverage"]["attemptsWithVerifiedDiagnosisRefs"], 1)
+            record = result["verifiedEvidence"][str(original)]
+            self.assertEqual(record["originalStatus"], "MISSING")
+            self.assertEqual(record["status"], "VERIFIED_FROM_PROTECTED_ARCHIVE")
+            copy_path.write_bytes(b"corrupt")
+            result = self.run_fixture(fixture)
+            self.assertEqual(result["coverage"]["attemptsWithVerifiedDiagnosisRefs"], 0)
+            self.assertEqual(result["verifiedEvidence"][str(original)]["status"], "MISSING")
+
+    def test_archive_with_different_original_hash_cannot_replace_missing_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = self.fixture(directory)
+            home, tracker, _, _, archive, _, _ = fixture
+            audit = tracker["collectionInputs"]["attemptEvidence"]
+            attempt = audit["titles"]["PRODUCT"]["attempts"][0]
+            original = Path(attempt["hypothesisAndNextTestRefs"][0]["path"])
+            archive["references"].append({
+                "sourceRelativeToHome": original.relative_to(home).as_posix(),
+                "sha256": "a" * 64, "bytes": 1, "archivedAs": "payloads/" + "a" * 64})
+            original.unlink()
+            result = self.run_fixture(fixture)
+            self.assertEqual(result["coverage"]["attemptsWithVerifiedDiagnosisRefs"], 0)
+            self.assertEqual(result["verifiedEvidence"][str(original)]["status"], "MISSING")
+
 
 if __name__ == "__main__":
     unittest.main()
