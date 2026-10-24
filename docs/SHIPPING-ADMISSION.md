@@ -2,9 +2,30 @@
 
 ## Purpose and authorization
 
-### REQ95 source candidate: settings producer, not yet stage eligible
+### REQ95 source candidate: compliant settings producer
 
-The consumer source pins producer `9f385203b9a38605beedd83d57e77253014c2190`,
+The reviewed successor uses the same producer source/tree below, genuinely built
+with the canonical sealed-input command. Current signed CLI is
+`3b6f44c6b2cf45a5c554daaae2ddbb5034b79ade0aa6df19c8308ad96c544a39`
+(28,676,640 bytes), helper
+`44b72c0753c0042f1f23f469d4029584af0baa6f42003a33155b54eb198c2027`
+(20,480 bytes), and manifest
+`434d34898e08cd9a1d3cb3df0eef6128a113fe558e528833c0fe162c48637cdc`
+(8,003 bytes). Unsigned input
+`068074f1b65013f1b3eb4d5eac4739df934c9099b232891a3faa04c83cbbbf47`
+(28,825,968 bytes) and provenance
+`c6f2b8a46a1316e5a47166e7d1b2ac72fa5ddcc89fa2882ff14580d4bb0e5d0d`
+(2,210 bytes) pass the unchanged `shipping_pair.verify_input`.
+The complete actual helper differs from the older 42560b3e artifact at only
+offsets 136/137/138 (COFF timestamp) and 216 (PE checksum). This is a new genuine
+compiler output, explicitly accepted by the coordinator, not a rewritten old
+artifact or a claim of historical compiler identity. All three embedded helper
+copies match the new paired helper. Fixed-leaf strict verification passed.
+Source review and coherent staging remain separate from installation/runtime.
+
+The superseded standalone-only tuple is retained below for provenance:
+
+The superseded consumer source pinned producer `9f385203b9a38605beedd83d57e77253014c2190`,
 tree `4c5e06fa2863d82512df2aea19b540c2b51d455e`, signed CLI
 `d761d8514375fad4aa83362c98a607542e8cf3c676b997e9dd286d30004c702e`
 (28,674,576 bytes), unchanged helper
@@ -24,7 +45,8 @@ input validator through the selected-signed refresh. The canonical predicate in
 matching native feature/profile metadata before and after build, and
 `metadataPlatformFilter:aarch64-apple-darwin`, plus its existing ownership,
 mode, seal, source/tree, hash and byte-count checks. A genuinely compliant new
-producer artifact and provenance are required before this source is staged.
+producer artifact and provenance were required before staging; the successor
+documented above satisfies that predicate.
 No validator or command predicate is weakened. Signed UI stage `3c0648b` remains
 immutable and does not contain this source work. Source verification does not
 claim installed engine parity, game acceptance or permission to deploy.

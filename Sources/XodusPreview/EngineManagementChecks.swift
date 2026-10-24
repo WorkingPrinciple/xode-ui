@@ -190,8 +190,47 @@ enum EngineManagementChecks {
                 "--engine", "candidate", "--registry", registryURL.path, "--expected-registry-sha256", digest
             ], selection: selection)
             check(false, "REQ80 changed live Wine identity cannot reuse persisted admission")
-        } catch EngineInspectionError.invalidResponse {
+        } catch NativeLaunchError.selectionChanged {
             check(true, "REQ80 changed live Wine identity cannot reuse persisted admission")
+        }
+        for reason in ["ENGINE_REGISTRY_DIGEST_MISMATCH", "Engine wineserver is missing"] {
+            let failure = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+                registrySha256: nil, engineName: "candidate", declaredProvider: nil,
+                admittedProvider: nil, admission: nil, ready: false, qualified: false,
+                wineSha256: nil, wineserverSha256: nil,
+                error: .init(code: "ENGINE_INSPECTION_FAILED", message: reason))
+            let response = String(decoding: try JSONEncoder().encode(failure), as: UTF8.self)
+            let launched = root.appendingPathComponent("must-not-launch-\(UUID().uuidString)")
+            try Data("""
+            #!/bin/sh
+            if [ "$1" != "engine-inspect" ]; then
+              /usr/bin/touch '\(launched.path)'
+              exit 91
+            fi
+            if [ "$2" = "--contract-version" ]; then
+              printf '%s\\n' '{"schemaVersion":1,"capability":"engineAdmissionV1","supported":true}'
+            else
+              printf '%s\\n' '\(response)'
+              exit 1
+            fi
+
+            """.utf8).write(to: mockCLI)
+            let lifecycle = NativeGameLifecycle()
+            do {
+                _ = try await lifecycle.run(configuration: backend, accountHash: String(repeating: "a", count: 64),
+                    operation: "launch", product: "FIXTURE00001", gameDirectory: root,
+                    runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent(UUID().uuidString),
+                    launchArguments: ["--engine", "candidate", "--registry", registryURL.path,
+                                      "--expected-registry-sha256", digest], engineSelection: selection)
+                check(false, "REQ95 fresh inspection failure must stop lifecycle before launch")
+            } catch {
+                let message = InstalledGamesController.nativeLaunchFailureMessage(error)
+                check(error is EngineInspectionError && message.contains(reason)
+                      && message.contains("Refresh the registry in Engines")
+                      && message.contains("No game was started") && !message.contains("launch script")
+                      && !FileManager.default.fileExists(atPath: launched.path) && lifecycle.stateDirectory == nil,
+                      "REQ95 native lifecycle rejection preserves \(reason) in Play presentation before spawn or state writes")
+            }
         }
         try Data("#!/bin/sh\nexit 2\n".utf8).write(to: mockCLI)
         do {

@@ -5,6 +5,7 @@ import XodusManagement
 
 enum EngineInspectionError: Error, LocalizedError {
     case unsupported, invalidResponse, failed, timedOut, shutdownFailed
+    case rejected(EngineInspection.Failure)
 
     var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum EngineInspectionError: Error, LocalizedError {
         case .failed: "The engine record could not be verified. Refresh or choose a different registry."
         case .timedOut: "Provider inspection timed out. Retry Refresh; no engine was selected."
         case .shutdownFailed: "Provider inspection has not stopped. Quit the app before retrying."
+        case .rejected(let failure):
+            "Calimocho verification failed (\(failure.code)): \(failure.message). Refresh the registry in Engines and explicitly select the verified build again. No game was started or other engine substituted."
         }
     }
 }
@@ -183,7 +186,8 @@ actor EngineInspectionClient {
         let fresh = try await inspect(executable: configuration.executable, registry: URL(fileURLWithPath: registry),
                                       engine: engine, expectedDigest: digest,
                                       executableIdentity: configuration.executableIdentity)
-        guard fresh == selection.inspection else { throw EngineInspectionError.invalidResponse }
+        if !fresh.ready, let failure = fresh.error { throw EngineInspectionError.rejected(failure) }
+        guard fresh == selection.inspection else { throw NativeLaunchError.selectionChanged }
     }
 
     func inspect(executable: URL, registry: URL, engine: String, expectedDigest: String? = nil,

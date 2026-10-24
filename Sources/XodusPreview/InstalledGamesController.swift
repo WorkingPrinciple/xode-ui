@@ -260,6 +260,12 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    nonisolated static func nativeLaunchFailureMessage(_ error: Error) -> String {
+        (error as? EngineInspectionError)?.localizedDescription
+            ?? (error as? NativeLaunchError)?.localizedDescription
+            ?? (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
+    }
+
     nonisolated static func sessionLog(runID: String, directory: URL) -> URL? {
         guard runID.range(of: #"^xodus-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$"#,
                           options: .regularExpression) == runID.startIndex..<runID.endIndex else { return nil }
@@ -629,16 +635,14 @@ final class InstalledGamesController: ObservableObject {
                     if session.accountHash != account { playErrors[game.id] = "Your Xbox account changed during play." }
                 } catch {
                     finished(token: token, gameID: game.id, status: 1)
-                    playErrors[game.id] = (error as? GameScriptError)?.localizedDescription
-                        ?? InstalledGameError.launch.localizedDescription
+                    playErrors[game.id] = Self.nativeLaunchFailureMessage(error)
                     playLogs[game.id] = nativeLauncher.stateDirectory
                 }
                 nativeLaunchTask = nil
             }
         } catch {
             finished(token: token, gameID: game.id, status: 1)
-            playErrors[game.id] = (error as? NativeLaunchError)?.localizedDescription
-                ?? (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
+            playErrors[game.id] = Self.nativeLaunchFailureMessage(error)
             Self.launchLog.error("Play failed before launch: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
