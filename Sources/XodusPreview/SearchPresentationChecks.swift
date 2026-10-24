@@ -273,5 +273,63 @@ enum SearchPresentationChecks {
                   "REQ-73: Replacement completion restores fresh public result admission")
         }
         check(await session.disconnect(), "REQ-73: Search composition releases its neutral mock child")
+
+        let recoveryConfiguration = BackendConfiguration(executable: configuration.executable,
+            stateDirectory: state.appendingPathComponent("queryrefreshfailure"))
+        let recoverySession = LiveSession(configuration: recoveryConfiguration)
+        await recoverySession.connect()
+        await recoverySession.refreshCatalog("Neutral")
+        await recoverySession.refreshCatalog("Neutral")
+        check(recoverySession.catalogError != nil && !recoverySession.products.isEmpty,
+              "REQ-10: A real fixture transport failure follows checked public results")
+        let offlineMatches = CatalogSearchResults(query: "Neutral", ownedGames: library.representedGames,
+            storeProducts: [], gamePassProductIDs: []).ownedMatches
+        let recoveryView = LiveCatalogView(library: library, installed: installed, operations: operations,
+            art: art, query: "Neutral", allowsArtworkLoading: false, allowsStartupTasks: true,
+            allowsHeroAnimation: false, clearSearch: {}, selection: DiscoverSelection())
+        let recoveryHost = NSHostingView(rootView: ScrollView { recoveryView }
+            .environmentObject(recoverySession).environment(\.colorScheme, .light)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        recoveryHost.appearance = NSAppearance(named: .aqua)
+        recoveryHost.sizingOptions = []
+        recoveryHost.frame = CGRect(x: 0, y: 0, width: 1619, height: 1231)
+        let recoveryWindow = NSWindow(contentRect: recoveryHost.frame, styleMask: [.borderless],
+                                      backing: .buffered, defer: false)
+        recoveryWindow.appearance = NSAppearance(named: .aqua)
+        recoveryWindow.contentView = recoveryHost
+        recoveryHost.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        guard let recoveryBitmap = recoveryHost.bitmapImageRepForCachingDisplay(in: recoveryHost.bounds) else {
+            throw PCGamesError.transport
+        }
+        recoveryHost.cacheDisplay(in: recoveryHost.bounds, to: recoveryBitmap)
+        guard let recoveryImage = recoveryBitmap.cgImage else { throw PCGamesError.transport }
+        if let directory = ProcessInfo.processInfo.environment["XODUS_SEARCH_CAPTURE_DIRECTORY"] {
+            let root = URL(fileURLWithPath: directory, isDirectory: true)
+            let values = try root.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            guard directory.hasPrefix("/"), values.isDirectory == true,
+                  values.isSymbolicLink != true,
+                  let png = recoveryBitmap.representation(using: .png, properties: [:]) else {
+                throw PCGamesError.transport
+            }
+            try png.write(to: root.appendingPathComponent(
+                "req10-search-recovery-\(library.representedGames.count)-1619x1231.png"), options: .atomic)
+        }
+        let recoveryText = VNRecognizeTextRequest()
+        recoveryText.recognitionLevel = .accurate
+        try VNImageRequestHandler(cgImage: recoveryImage).perform([recoveryText])
+        let recoveryLabels = (recoveryText.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        check(!offlineMatches.isEmpty && recoveryLabels.contains { $0.contains("In your library") }
+              && recoveryLabels.contains { $0.contains("Neutral Game 1") }
+              && recoveryLabels.contains { $0.localizedCaseInsensitiveContains("Search isn't available") }
+              && recoveryLabels.contains { $0 == "Retry" }
+              && (library.representedGames.count > 5
+                  ? recoveryLabels.contains { $0.contains("Show all \(offlineMatches.count) in Library") }
+                  : true),
+              "REQ-10: Catalog error and Retry keep matching local Library rows visible: \(recoveryLabels)")
+        let recoveryDisconnected = await recoverySession.disconnect()
+        check(!recoveryWindow.isVisible && !recoveryWindow.isKeyWindow
+              && !operations.isBusy && recoveryDisconnected,
+              "REQ-10: Error recovery render is offscreen and releases its neutral fixture child")
     }
 }
