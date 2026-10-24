@@ -264,6 +264,16 @@ enum CatalogDetailLoadingChecks {
         await failure.value
         check(catalogue.images.count == 21 && catalogue.error != nil,
               "Failed public refresh retains useful admitted metadata and reports failure, not empty success")
+        let held = PCGame(id: "FIXTURE00003", title: "Held without metadata", artwork: nil)
+        let fallback = LibraryGame.collection(installed: [], owned: [held], products: [],
+            gamePass: [], active: false)[0]
+        check(catalogue.error != nil && catalogue.images[held.id] == nil
+              && fallback.title == held.title && fallback.cover == nil
+              && fallback.facts.badgeLabels() == ["In your library"] && fallback.facts.support == .unknown
+              && DiscoverBrowse.canReviewInstall(owned: fallback.pc != nil,
+                accessIsCurrent: fallback.accessIsCurrent, gamePass: fallback.gamePass,
+                subscriptionActive: false, pcCandidate: true),
+              "REQ-50: Failed metadata/artwork preserves the shared title/badge fallback and current held review eligibility, not unsupported status")
 
         let queuedTransport = ControlledMetadataTransport()
         let queued = LibraryCatalogArtwork(transport: queuedTransport)

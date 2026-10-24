@@ -365,6 +365,14 @@ enum PCGamesChecks {
             if scenario == "odelibraryfailure" {
                 check(library.representedGames.count == 1 && library.error != nil && !library.accessIsCurrent,
                       "Provider failure retains the same-account complete Library and reports failure, not empty success")
+                let rows = LibraryGame.collection(installed: [], owned: library.representedGames,
+                    products: [], gamePass: [], active: false, accessIsCurrent: library.accessIsCurrent)
+                check(rows.count == 1 && rows[0].title == "Held fixture"
+                      && rows[0].facts.badgeLabels().isEmpty && !rows[0].accessIsCurrent
+                      && !DiscoverBrowse.canReviewInstall(owned: rows[0].pc != nil,
+                        accessIsCurrent: library.accessIsCurrent, gamePass: rows[0].gamePass,
+                        subscriptionActive: false, pcCandidate: true),
+                      "REQ-50: Same-scope refresh failure keeps useful titles but suppresses current badges and install eligibility")
             } else if scenario == "odelibraryempty" {
                 check(library.representedGames.isEmpty && library.error == nil && library.accessIsCurrent,
                       "A complete genuine zero result replaces prior access instead of resurrecting removed games")

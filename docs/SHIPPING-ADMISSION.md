@@ -116,6 +116,18 @@ result. Optional `XODUS_SEARCH_CAPTURE_DIRECTORY` saves these fixture PNGs and O
 text in an existing directory. These are source regressions, not installed native
 keyboard, VoiceOver or provider-response acceptance.
 
+The shared state/action contract is covered by paired deterministic assertions:
+`--library-access-check` covers permit expiry, imported installation,
+account-switch late completion, same-scope refresh failure and metadata failure;
+`--media-check` pairs rejected artwork with retained held-game facts and review
+eligibility; `--game-operation-check` covers unknown held acquisition,
+public-only Game Pass, purchased-uninstalled, unknown/unsupported compatibility,
+list removal versus explicit uninstall, and install completion without
+auto-launch. These use existing synthetic clocks, transports, stores and scripts,
+not real account/provider or native-game evidence. Public membership, purchase,
+installation and compatibility remain independent facts; review eligibility is
+not permission to confirm an unchecked install or to launch a game.
+
 Optional DisplayCatalog details accept the explicit `neutral` language tag as
 unlocalized product metadata, alongside exact/same-language responses.
 Unrelated language tags are still rejected; requested-market ratings and release

@@ -345,6 +345,7 @@ struct GameInstallAction: View {
             : operations.operation?.kind == .repair ? "Repairing" : "Installing"
     }
     var actionTitle: String { failed ? "Retry installation" : "Install" }
+    var canInstall: Bool { enabled && operations.canStartMutation }
     var showsCancel: Bool { preparing || (active && operations.canCancel) }
 
     var body: some View {
@@ -383,7 +384,7 @@ struct GameInstallAction: View {
                     Label(actionTitle, systemImage: "icloud.and.arrow.down")
                 }
                 .modifier(LibraryActionStyle(primary: primary))
-                .disabled(!enabled || !operations.canStartMutation)
+                .disabled(!canInstall)
                 .help("Install \(game.title)")
                 .accessibilityLabel("\(failed ? "Retry installation of" : "Install") \(game.title)")
                 .accessibilityIdentifier("xodus.pcGames.download")
