@@ -379,10 +379,12 @@ struct LiveRootView: View {
 #endif
             }
         }
-        .sheet(item: $session.selectedProduct) { product in
+        .gameDetailSheet(item: $session.selectedProduct, operations: state.gameOperations,
+                         allowed: startupAllowed) { product, reviewInstall in
             LiveProductView(product: product, library: state.pcGames,
                             installedLibrary: state.installedGames, operations: state.gameOperations,
-                            allowsStartupTasks: startupAllowed, allowsArtworkLoading: libraryArtworkAllowed)
+                            allowsStartupTasks: startupAllowed, allowsArtworkLoading: libraryArtworkAllowed,
+                            reviewInstall: reviewInstall)
         }
         .background {
             if !requiresSignIn { GameOperationPresentation(operations: state.gameOperations) }

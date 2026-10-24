@@ -924,6 +924,12 @@ enum GameOperationChecks {
         await blockedInstallAction.requestInstall()
         check(operations.installConsent == nil && operations.operation == nil,
               "COR89 actual Install action retains its access gate before presenting review")
+        if ProcessInfo.processInfo.environment["XODUS_NATIVE_CONSENT_PRESENTATION_CHECK"] == "1" {
+            try await NativeUIChecks.checkInstallSheetPresentation(operations: operations, game: game, check: check)
+            check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
+                  && !FileManager.default.fileExists(atPath: paths.journal.path) && installed.games.isEmpty,
+                  "COR89 native presenter: dismiss/review/cancel runs no installer, journal or registry mutation")
+        }
         try writeMode("checkslow")
         let directCheck = Task { await operations.install(game) }
         try await wait { operations.checkingCompatibility }

@@ -350,6 +350,20 @@ start a download. The successor button calls `prepareInstall` instead and
 shows the existing review sheet. Only its explicit Install confirmation
 starts the operation; Cancel performs no installation or registry write.
 The direct-install API remains separate from this interactive button path.
+Root Store/Discover detail and Library local-detail sheets both use
+`gameDetailSheet`: the selected detail is dismissed first; only its observed
+`onDismiss` starts preparation. Repeated or stale detail callbacks cannot
+replace the pending review. Repair/resume direct APIs are unchanged.
+
+The default `--game-operation-check` remains window-free. The explicit
+`XODUS_NATIVE_CONSENT_PRESENTATION_CHECK=1 swift run XodusPreview --game-operation-check`
+opt-in also creates an offscreen, ordered-back, non-key synthetic host to
+observe the old native detail sheet detach and a distinct consent sheet
+attach, followed by Cancel. It must run only under an allocated native
+observation window; it does not activate the desktop, synthesize input,
+query an account, install or launch a game. A defer ends any attached sheet,
+orders the host out and closes it even on failure. This is synthetic native
+presenter evidence, not actual installed product or gameplay acceptance.
 Denied/unknown/error/expired results remain explicit beside Install, with
 an exact-ID retry; account replacement/sign-out revoke the response.
 The actual native `install <ID>` path remains authoritative for Windows

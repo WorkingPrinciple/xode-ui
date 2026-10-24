@@ -359,6 +359,7 @@ struct GameInstallAction: View {
     var disabledReason: String? = nil
     var recoveryTitle: String? = nil
     var recover: (() -> Void)? = nil
+    var reviewInstall: ((PCGame) -> Void)? = nil
     var preparing: Bool {
         operations.installingDirectly && operations.directInstallProductID == game.id
     }
@@ -383,7 +384,8 @@ struct GameInstallAction: View {
 
     func requestInstall() async {
         guard canInstall else { return }
-        await operations.prepareInstall(game)
+        if let reviewInstall { reviewInstall(game) }
+        else { await operations.prepareInstall(game) }
     }
 
     var body: some View {
@@ -532,6 +534,43 @@ private struct InstallFormPresentation: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+private struct GameDetailSheet<Item: Identifiable, Detail: View>: ViewModifier {
+    @Binding var item: Item?
+    @ObservedObject var operations: GameOperationsController
+    let allowed: Bool
+    let onDismiss: () -> Void
+    let detail: (Item, @escaping (PCGame) -> Void) -> Detail
+    @State private var pendingInstall: PCGame?
+
+    func body(content: Content) -> some View {
+        content.sheet(item: $item, onDismiss: {
+            let game = pendingInstall
+            pendingInstall = nil
+            onDismiss()
+            guard allowed, let game else { return }
+            Task { await operations.prepareInstall(game) }
+        }) { item in
+            detail(item) { game in
+                guard self.item?.id == item.id, allowed, pendingInstall == nil, operations.canStartMutation,
+                      operations.installConsent == nil else { return }
+                pendingInstall = game
+                self.item = nil
+            }
+        }
+    }
+}
+
+extension View {
+    func gameDetailSheet<Item: Identifiable, Detail: View>(
+        item: Binding<Item?>, operations: GameOperationsController, allowed: Bool,
+        onDismiss: @escaping () -> Void = {},
+        @ViewBuilder detail: @escaping (Item, @escaping (PCGame) -> Void) -> Detail
+    ) -> some View {
+        modifier(GameDetailSheet(item: item, operations: operations, allowed: allowed,
+                                 onDismiss: onDismiss, detail: detail))
     }
 }
 

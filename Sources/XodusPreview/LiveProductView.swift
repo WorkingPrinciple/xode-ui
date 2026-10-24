@@ -71,6 +71,7 @@ struct LiveProductView: View {
     var installationID: UUID? = nil
     var allowsStartupTasks = true
     var allowsArtworkLoading = true
+    var reviewInstall: ((PCGame) -> Void)? = nil
     @EnvironmentObject private var session: LiveSession
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openSettings) private var openSettings
@@ -325,7 +326,7 @@ struct LiveProductView: View {
                                               enabled: allowsStartupTasks,
                                               disabledReason: installAccessReason,
                                               recoveryTitle: operations.installAccountUnavailable ? "Account settings" : nil,
-                                              recover: { openSettings() })
+                                              recover: { openSettings() }, reviewInstall: reviewInstall)
                         } else if gamePass, !operations.usesUnifiedAccount {
                             VStack(alignment: .leading, spacing: 8) {
                             Button {

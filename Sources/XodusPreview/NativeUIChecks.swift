@@ -4,7 +4,79 @@ import SwiftUI
 import XodusCore
 
 @MainActor
+private final class OffscreenInstallWindow: NSWindow {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+}
+
+@MainActor
+private final class InstallSheetFixture: ObservableObject {
+    @Published var detail: PCGame?
+    var requestInstall: (@MainActor () async -> Void)?
+    var dismissed = false
+}
+
+private struct InstallSheetFixtureView: View {
+    @ObservedObject var fixture: InstallSheetFixture
+    @ObservedObject var operations: GameOperationsController
+
+    var body: some View {
+        Color.clear.frame(width: 640, height: 480)
+            .gameDetailSheet(item: $fixture.detail, operations: operations, allowed: true,
+                             onDismiss: { fixture.dismissed = true }) { game, reviewInstall in
+                let action = GameInstallAction(game: game, operations: operations, reviewInstall: reviewInstall)
+                action.padding(24).frame(width: 500, height: 400)
+                    .onAppear { fixture.requestInstall = { await action.requestInstall() } }
+            }
+            .background { GameOperationPresentation(operations: operations) }
+    }
+}
+
+@MainActor
 enum NativeUIChecks {
+    static func checkInstallSheetPresentation(operations: GameOperationsController, game: PCGame,
+                                              check: (Bool, String) -> Void) async throws {
+        let fixture = InstallSheetFixture()
+        let window = OffscreenInstallWindow(contentRect: CGRect(x: -10000, y: -10000, width: 640, height: 480),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.sharingType = .none
+        window.contentView = NSHostingView(rootView: InstallSheetFixtureView(fixture: fixture, operations: operations))
+        defer {
+            if let sheet = window.attachedSheet { window.endSheet(sheet) }
+            window.orderOut(nil)
+            window.close()
+        }
+        window.contentView?.layoutSubtreeIfNeeded()
+        window.orderBack(nil)
+        fixture.detail = game
+        func wait(_ predicate: @MainActor () -> Bool) async throws {
+            for _ in 0..<200 {
+                if predicate() { return }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            throw GameScriptError.timeout
+        }
+        try await wait { window.attachedSheet != nil && fixture.requestInstall != nil }
+        let detailSheet = window.attachedSheet
+        await fixture.requestInstall?()
+        await fixture.requestInstall?()
+        try await wait {
+            fixture.dismissed && operations.presentedInstallConsent != nil
+                && window.attachedSheet != nil && window.attachedSheet !== detailSheet
+        }
+        check(fixture.detail == nil && fixture.dismissed && operations.operation == nil
+              && operations.presentedInstallConsent?.game.id == game.id && !window.isKeyWindow,
+              "COR89 native presenter: detail dismisses before a distinct consent sheet attaches without activating a window or starting installation")
+        check(window.attachedSheet?.contentView?.bounds.height ?? 0 >= 400,
+              "COR89 native presenter: the consent renders a full native sheet rather than staying queued behind detail")
+        await operations.cancelInstallConsent()
+        try await wait { window.attachedSheet == nil }
+        check(operations.operation == nil && operations.installConsent == nil && !window.isKeyWindow,
+              "COR89 native presenter: cancelling the attached review closes it without starting installation")
+    }
+
     static func run(check: (Bool, String) -> Void) {
         checkContinuePlayingScroller(check: check)
         checkDetailFirstCards(check: check)

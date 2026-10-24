@@ -279,13 +279,14 @@ struct LiveLibraryView: View {
             selection.measureAncestor("root", frame: $0)
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
-        .sheet(item: $selection.localDetail, onDismiss: {
+        .gameDetailSheet(item: $selection.localDetail, operations: operations, allowed: allowsStartupTasks, onDismiss: {
             restoreDetailFocus()
-        }) { entry in
+        }) { entry, reviewInstall in
             if let product = entry.product {
                 LiveProductView(product: product, library: library, installedLibrary: installed,
                     operations: operations, installationID: entry.game.id,
-                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed)
+                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed,
+                    reviewInstall: reviewInstall)
             } else {
                 LocalInstalledGameView(game: entry.game, installed: installed, operations: operations)
             }
