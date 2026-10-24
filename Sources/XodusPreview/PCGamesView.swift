@@ -111,6 +111,7 @@ struct PCGamesView: View {
                             ForEach(visibleGames) { game in
                                 PCGameTile(game: game, installed: installed, operations: operations,
                                            allowsArtworkLoading: allowsStartupTasks,
+                                           gamePass: session.gamePassBadgeProductIDs.contains(game.id),
                                            viewDetails: { open(game) },
                                            accessIsCurrent: library.accessIsCurrent(for: game.id))
                             }
@@ -200,13 +201,12 @@ struct PCGameTile: View {
     var body: some View {
         GameCard(title: game.title,
                  gameFacts: GameFacts(pc: game, gamePass: gamePass, accessIsCurrent: accessIsCurrent),
+                 compatibilityIssues: unsupportedIssues,
+                 showsGamePassCatalogBadge: gamePass,
                  open: viewDetails) {
             CatalogArtworkView(reference: allowsArtworkLoading ? game.artwork : nil,
                                status: game.artwork == nil ? .absent : .available, contentMode: .fit)
         } status: {
-            if !unsupportedIssues.isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues)
-            }
             if let match = PCGamesController.installedMatch(game, in: installed.games) {
                 InstalledPlayError(library: installed, game: match)
             } else {

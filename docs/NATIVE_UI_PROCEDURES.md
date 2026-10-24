@@ -29,6 +29,22 @@ failure without new evidence.
 
 ## Native interface
 
+COR-97/101/102 use shared cover badges: exact compatibility symbols in the
+upper-right, current PC Game Pass catalogue membership in the lower-left.
+Neither creates a separate input target; hover and the existing cover button's
+accessibility value expose the reason. Details retain full blocker explanations.
+Failed catalogue refreshes and scope invalidation retire cover membership badges
+without deleting retained browse records or inventing account entitlement.
+The welcome introduction is neutral; actual service/account failures remain
+separate from it. CrossOver setup belongs in Settings, not routine welcome copy.
+Library and Discover share an unchecked default for Show unsupported games and
+preserve explicit saved choices.
+
+`swift run XodusPreview --self-check` exercises the detached presentation.
+Optionally set `XODUS_REFINEMENT_EVIDENCE` to an existing private output directory
+to save synthetic light/dark cover and constrained welcome PNGs. No window,
+account read, service connection or installed-product observation is involved.
+
 **Trigger:** layout, controls, appearance or copy changes.
 **Prerequisites:** admitted candidate, foreground window, known system appearance.
 

@@ -278,7 +278,9 @@ enum NativeUIChecks {
                 let runtime = RuntimeProviderSettings()
                 let welcome = NSHostingView(rootView: LiveWelcomeView(session: session, runtime: runtime,
                     operations: GameOperationsController(installed: InstalledGamesController()))
-                    .environmentObject(AppState()))
+                    .environmentObject(AppState())
+                    .environment(\.colorScheme, appearance == .aqua ? .light : .dark)
+                    .background(Color(nsColor: .windowBackgroundColor)))
                 welcome.sizingOptions = []
                 welcome.appearance = NSAppearance(named: appearance)
                 welcome.frame = CGRect(origin: .zero, size: size)
@@ -292,9 +294,42 @@ enum NativeUIChecks {
                 check(!session.hasConfirmedSignIn && !session.accountBusy
                       && !session.canStartWelcomeSignIn && !runtime.checkingDependency,
                       "Detached welcome layout cannot connect, sign in, inspect credentials or install CrossOver")
+                if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+                    saveDetachedEvidence(welcome, directory: directory,
+                        name: "welcome-\(appearance.rawValue)-\(Int(size.width)).png", check: check)
+                }
             }
         }
         let colours: [Color] = [.red, .green, .blue]
+        let coverIssue = LibraryCompatibilityIssue(kind: .antiCheat, title: "Uses Easy Anti-Cheat",
+            detail: "Synthetic title cannot run with this runtime.", source: nil)
+        let statusCard = GameCard(title: "Synthetic title", compatibilityIssues: [coverIssue],
+            showsGamePassCatalogBadge: true, open: {}) {
+                Color.blue
+            } status: { EmptyView() }
+        check(statusCard.coverStatusDescription ==
+              "In PC Game Pass catalog, Uses Easy Anti-Cheat. Synthetic title cannot run with this runtime.",
+              "COR97/101: One existing cover control exposes catalog membership and exact compatibility reason without another keyboard stop")
+        let unknownCard = GameCard(title: "Unknown title", open: {}) {
+            Color.blue
+        } status: { EmptyView() }
+        check(unknownCard.coverStatusDescription.isEmpty,
+              "COR97/101: Unknown title gains neither a compatibility icon nor a membership claim")
+        if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+            for scheme in [ColorScheme.light, .dark] {
+                let cards = HStack(alignment: .top, spacing: 24) { statusCard; unknownCard }
+                    .padding(24).frame(width: 440, height: 400, alignment: .top)
+                    .background(Color(nsColor: .windowBackgroundColor))
+                    .environment(\.colorScheme, scheme)
+                let host = NSHostingView(rootView: cards)
+                host.sizingOptions = []
+                host.appearance = NSAppearance(named: scheme == .light ? .aqua : .darkAqua)
+                host.frame = CGRect(x: 0, y: 0, width: 440, height: 400)
+                host.layoutSubtreeIfNeeded()
+                saveDetachedEvidence(host, directory: directory,
+                    name: "cover-\(scheme == .light ? "light" : "dark").png", check: check)
+            }
+        }
         let covers = LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
             ForEach(0..<3) { index in
                 GameCard(title: index == 1 ? "A longer two-line game title" : "Game \(index)",
@@ -730,6 +765,26 @@ enum NativeUIChecks {
               && state.gameOperations.setupResult == nil && !state.gameOperations.setupBusy
               && session.authentication == nil && !session.accountBusy,
               "Setup-focused Account allocates native controls without unrelated credentials, scripts or windows")
+    }
+
+    private static func saveDetachedEvidence(_ host: NSView, directory: String, name: String,
+                                             check: (Bool, String) -> Void) {
+        do {
+            guard host.window == nil,
+                  let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                check(false, "Detached refinement evidence has a bitmap without a native window")
+                return
+            }
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            guard let data = bitmap.representation(using: .png, properties: [:]) else {
+                check(false, "Detached refinement evidence encodes PNG")
+                return
+            }
+            try data.write(to: URL(fileURLWithPath: directory, isDirectory: true).appendingPathComponent(name))
+            check(true, "Detached refinement evidence saved: \(name)")
+        } catch {
+            check(false, "Detached refinement evidence failed: \(error.localizedDescription)")
+        }
     }
 
     static func checkWelcomePrivacy(installed: InstalledGamesController, check: (Bool, String) -> Void) {

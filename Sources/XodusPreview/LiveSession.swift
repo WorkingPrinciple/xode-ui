@@ -51,6 +51,8 @@ final class LiveSession: ObservableObject {
     @Published private(set) var discoveryFailures: [DiscoveryFailure] = []
     @Published private(set) var discoveryCheckedAt: String?
     @Published private(set) var gamePassProductIDs = Set<String>()
+    // Browse records survive partial refreshes; cover badges require fresh observations.
+    @Published private(set) var gamePassBadgeProductIDs = Set<String>()
     @Published private(set) var gamePassProducts: [CatalogProduct] = []
     @Published private(set) var gamePassCatalogLoading = false
     @Published private(set) var gamePassCatalogError: String?
@@ -288,13 +290,25 @@ final class LiveSession: ObservableObject {
         return "Choose Sign in with Xbox Live to check your saved sign-in or connect your account."
     }
     static let signOutConfirmationMessage = "Remove this Xbox account from Ode to X on this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, Ode to X will tell you which step failed."
+    var welcomeNotice: String? {
+        if signingOut || connectionTransitioning || accountStatusChecking || managementStateLocked
+            || connectionFailedAfterAdmission
+            || !isReady || !nativeSignInHostAdmitted || !supports(.authBegin)
+            || !supports(.authCancel) || !supports(.authStatus) || signInPending
+            || accountError != nil || needsAccountDisconnect
+            || authentication?.flow?.state == .failed || authentication?.flow?.state == .cancelled
+            || (appSignOutComplete && authentication?.state == .signedOut && accountStatusCurrent) {
+            return welcomeMessage
+        }
+        return nil
+    }
     var welcomeMessage: String {
         if signingOut { return "Signing out of Ode to X. Waiting for saved sign-in removal to finish." }
         if failedAccountAction == .signOut, let accountError { return accountError }
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in…" }
         if managementStateLocked { return ManagementError.stateLocked.localizedDescription }
         if connectionFailedAfterAdmission {
-            return "Ode to X couldn't connect to its sign-in service. If another copy of Ode to X is open, close it normally, then sign in again."
+            return "Ode couldn't connect to its sign-in service. Choose Sign in with Xbox Live to reconnect."
         }
         guard isReady, nativeSignInHostAdmitted, supports(.authBegin),
               supports(.authCancel), supports(.authStatus) else {
@@ -1055,6 +1069,7 @@ final class LiveSession: ObservableObject {
         discoveryCheckedAt = nil
         discoveryRevision = nil
         gamePassProductIDs = []
+        gamePassBadgeProductIDs = []
         gamePassProducts = []
         gamePassRevision = nil
         gamePassCatalogLoading = false
@@ -1672,6 +1687,7 @@ final class LiveSession: ObservableObject {
 
     private func browseDiscovery(_ request: CatalogRequest) async {
         guard let client, request.generation == generation else { return }
+        if !request.more { gamePassBadgeProductIDs = [] }
         gamePassCatalogLoading = true
         gamePassCatalogError = nil
         defer {
@@ -1716,6 +1732,9 @@ final class LiveSession: ObservableObject {
                 throw ManagementError.backendError("REVISION_CONFLICT", retryable: true)
             }
         }
+        if gamePassRevision != page.corpusRevision { gamePassBadgeProductIDs = [] }
+        gamePassBadgeProductIDs.subtract(incomingIDs)
+        gamePassBadgeProductIDs.formUnion(pcProducts.filter { $0.freshness == "live" }.map(\.id))
         // A first page cannot revoke successful records from later pages.
         let incoming = Dictionary(uniqueKeysWithValues: page.products.map { ($0.id, $0) })
         let successful = Set(page.products.map(\.id))
@@ -1773,6 +1792,7 @@ final class LiveSession: ObservableObject {
         cacheRevision = nil
         discoveryRevision = nil
         gamePassProductIDs = []
+        gamePassBadgeProductIDs = []
         gamePassProducts = []
         gamePassRevision = nil
         gamePassCatalogLoading = false

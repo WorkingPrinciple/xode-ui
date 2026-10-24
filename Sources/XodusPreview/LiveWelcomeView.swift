@@ -14,15 +14,22 @@ struct LiveWelcomeView: View {
                     VStack(spacing: 16) {
                         XOdeLogo().fill(XboxBrand.green)
                             .frame(width: 112, height: 112).accessibilityHidden(true)
-                        Text("Ode to X").font(.largeTitle.weight(.medium))
-                            .accessibilityLabel("Ode to X")
+                        Text("Ode").font(.largeTitle.weight(.medium))
+                            .accessibilityLabel("Ode")
                             .accessibilityAddTraits(.isHeader)
                     }
-                    Text(session.accountJourneyMessage)
+                    Text("Use your Xbox or Windows Live account.")
                         .foregroundStyle(.secondary).multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: 360)
                         .accessibilityIdentifier("xodus.welcome.status")
+                    if let notice = session.welcomeNotice {
+                        Text(notice)
+                            .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: 360)
+                            .accessibilityIdentifier("xodus.welcome.notice")
+                    }
                     if session.signInPending {
                         Button("Cancel sign-in") { Task { await state.cancelUnifiedSignIn(session: session) } }
                             .keyboardShortcut(.cancelAction)
@@ -54,15 +61,6 @@ struct LiveWelcomeView: View {
                     if operations.hasDownloadStatus {
                         GameOperationProgressView(operations: operations, privacyRestricted: true)
                             .accessibilityIdentifier("xodus.welcome.operation")
-                    }
-                    VStack(spacing: 6) {
-                        Text(runtime.crossOverDependency.title)
-                            .font(.callout).foregroundStyle(.secondary)
-                        if runtime.crossOverDependency.offersTrialDownload {
-                            Link("Get the CrossOver trial", destination: CrossOverDependencyState.trialDownloadURL)
-                            Text("You can sign in and browse before installing it.")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
                     }
                     Spacer(minLength: 24)
                 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import SwiftUI
 import XodusCore
 import XodusManagement
 
@@ -89,6 +90,24 @@ enum PreviewChecks {
               && welcomeSession.welcomeMessage ==
                 "Sign-in is unavailable in this copy of Ode to X. A matching app and sign-in service are required.",
               "Unconfigured welcome is locked and never exposes developer setup details")
+        check(welcomeSession.welcomeNotice == welcomeSession.welcomeMessage,
+              "Welcome keeps actual unavailable-service guidance separate from its neutral account introduction")
+        let preferenceSuite = "Xodus.SupportChecks.\(UUID().uuidString)"
+        if let preferences = UserDefaults(suiteName: preferenceSuite) {
+            defer { preferences.removePersistentDomain(forName: preferenceSuite) }
+            let key = LibrarySupportVisibility.preferenceKey
+            let absent = AppStorage(wrappedValue: LibrarySupportVisibility.defaultShowsUnsupported,
+                                    key, store: preferences)
+            check(!absent.wrappedValue && preferences.object(forKey: key) == nil,
+                  "Library and Discover share an unchecked absent preference without persisting a reset")
+            for saved in [true, false] {
+                preferences.set(saved, forKey: key)
+                let override = AppStorage(wrappedValue: LibrarySupportVisibility.defaultShowsUnsupported,
+                                          key, store: preferences)
+                check(override.wrappedValue == saved && preferences.bool(forKey: key) == saved,
+                      "Shared compatibility preference preserves explicitly saved \(saved)")
+            }
+        } else { check(false, "Isolated compatibility preference suite is available") }
         check(CrossOverDependencyState.absent.offersTrialDownload
               && CrossOverDependencyState.unverified.offersTrialDownload
               && !CrossOverDependencyState.notChecked.offersTrialDownload
@@ -612,6 +631,31 @@ enum PreviewChecks {
                   LibrarySupportVisibility.isVisible(productID: "FIXTURE00003", installed: false, packageFormat: nil,
                     compatibility: antiCheat, showsUnsupportedGames: true),
                   "Unsupported anti-cheat games are hidden by default and restored by the explicit toggle")
+            let supportProducts = try ["FIXTURE00003", "FIXTURE00004"].map(product)
+            let supportOwned = supportProducts.map { PCGame(id: $0.id, title: $0.title, artwork: nil) }
+            for showsUnsupported in [LibrarySupportVisibility.defaultShowsUnsupported, true, false] {
+                let visible: (LibraryGame) -> Bool = { game in
+                    LibrarySupportVisibility.isVisible(productID: game.id, installed: false,
+                        packageFormat: nil, compatibility: game.id == "FIXTURE00003" ? antiCheat : nil,
+                        showsUnsupportedGames: showsUnsupported)
+                }
+                let personal = LibraryProjection(key: LibraryProjectionKey(accountHash: nil,
+                    query: "", owned: supportOwned, products: supportProducts, gamePass: [],
+                    active: false, installed: [], permitted: [], launchable: [], accessIsCurrent: true,
+                    metadataRevision: 0, compatibility: [:], filter: .all, sort: .title,
+                    showsUnsupported: showsUnsupported), isVisible: visible, recommendable: { _ in true })
+                let browse = CatalogProjection(key: CatalogProjectionKey(accountHash: nil,
+                    query: "", owned: [], products: supportProducts, gamePass: [], gamePassIDs: [],
+                    installed: [], accessIsCurrent: false, metadataRevision: 0, compatibility: [:],
+                    genre: nil, showsUnsupported: showsUnsupported),
+                    facts: Dictionary(uniqueKeysWithValues: supportProducts.map {
+                        ($0.id, LibraryCatalogFacts(genres: [], isBaseGame: true))
+                    }), isVisible: visible)
+                check(Set(personal.visible.map(\.id)) == Set(browse.visible.map(\.id))
+                      && browse.visible.count == (showsUnsupported ? 2 : 1)
+                      && browse.visible.count + browse.hiddenCount == personal.candidates.count,
+                      "Compatibility default/override \(showsUnsupported) keeps Library/Discover cards and hidden counts in the same scope")
+            }
             check(!LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: false,
                     packageFormat: "EAppx",
                     compatibility: nil, showsUnsupportedGames: false) &&

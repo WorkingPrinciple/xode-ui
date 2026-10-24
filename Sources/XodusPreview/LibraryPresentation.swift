@@ -451,6 +451,9 @@ struct LibrarySupportMenu: View {
 }
 
 enum LibrarySupportVisibility {
+    static let preferenceKey = "Xodus.showUnsupportedGames"
+    static let defaultShowsUnsupported = false
+
     static func issues(productID: String, installed: Bool, packageFormat: String?,
                        compatibility: GameCompatibilityResult?,
                        catalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) -> [LibraryCompatibilityIssue] {
@@ -950,6 +953,8 @@ struct LibraryScrollEdge: ViewModifier {
 struct GameCard<Artwork: View, Status: View>: View {
     let title: String
     var gameFacts = GameFacts()
+    var compatibilityIssues: [LibraryCompatibilityIssue] = []
+    var showsGamePassCatalogBadge = false
     var openLabel = "Open"
     var searchFocus: (FocusState<String?>.Binding, String)? = nil
     var focusReturn: (FocusState<String?>.Binding, String)? = nil
@@ -992,15 +997,46 @@ struct GameCard<Artwork: View, Status: View>: View {
             artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .bottomLeading) {
-                    AccessBadges(facts: gameFacts).padding(10)
+                    if showsGamePassCatalogBadge {
+                        Text("GAME PASS")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(Color(white: 0.12).opacity(0.9),
+                                        in: RoundedRectangle(cornerRadius: 4))
+                            .padding(8)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .overlay(alignment: .topTrailing) {
+                    HStack(spacing: 4) {
+                        ForEach(compatibilityIssues) { issue in
+                            Image(systemName: issue.kind.symbol)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(6)
+                                .background(Color(white: 0.12).opacity(0.9), in: Circle())
+                        }
+                    }
+                    .padding(8)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 }
                 .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain).accessibilityLabel(artworkAccessibilityLabel)
-        .accessibilityValue(gameFacts.badgeLabels().joined(separator: ", "))
+        .help(coverStatusDescription)
+        .accessibilityValue(coverStatusDescription)
         .accessibilityHint("Open game details for play, installation and compatibility")
         .focusable()
         .onKeyPress(.return, action: openFromKeyboard)
+    }
+
+    var coverStatusDescription: String {
+        ((showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
+            + compatibilityIssues.map { "\($0.title). \($0.detail)" })
+            .joined(separator: ", ")
     }
 }
 

@@ -384,13 +384,14 @@ enum NativeChecks {
             let neutralBinding = NativeAuthHostBinding(executable: neutralHelper,
                 sha256: SHA256.hash(data: helperBytes).map { String(format: "%02x", $0) }.joined())
             let unpairedMessage = "Sign-in is unavailable in this copy of Ode to X. A matching app and sign-in service are required."
-            let serviceMessage = "Ode to X couldn't connect to its sign-in service. If another copy of Ode to X is open, close it normally, then sign in again."
+            let serviceMessage = "Ode couldn't connect to its sign-in service. Choose Sign in with Xbox Live to reconnect."
             let retryBase = configuration("welcomeretry")
             let retryConfiguration = BackendConfiguration(executable: retryBase.executable,
                 stateDirectory: retryBase.stateDirectory, nativeAuthHost: neutralBinding)
             let retryWelcome = LiveSession(configuration: retryConfiguration)
             await retryWelcome.prepareWelcome()
             check(retryWelcome.phase == .failed && retryWelcome.welcomeMessage == serviceMessage
+                  && retryWelcome.welcomeNotice == serviceMessage
                   && retryWelcome.errorMessage == ManagementError.invalidFrame.localizedDescription
                   && !retryWelcome.hasConfirmedSignIn && !retryWelcome.nativeSignInHostAdmitted
                   && !retryWelcome.canStartWelcomeSignIn,
@@ -942,6 +943,8 @@ enum NativeChecks {
             await partialFeed.connect()
             await partialFeed.refreshCatalog("")
             let retainedFeedIDs = partialFeed.gamePassProductIDs
+            check(partialFeed.gamePassBadgeProductIDs == retainedFeedIDs && !retainedFeedIDs.isEmpty,
+                  "COR101: Fresh validated PC catalog membership supplies exact-title cover badges without an account grant")
             let retainedVisibleIDs = Set(partialFeed.products.map(\.id))
             check(!retainedFeedIDs.isEmpty && partialFeed.gamePassCatalogError == nil,
                   "SDD-LIB-06: partial PC discovery records remain metadata, not a personal access grant")
@@ -953,6 +956,11 @@ enum NativeChecks {
                   && partialFeed.gamePassLibraryNotice.contains("retained")
                   && !partialFeed.gamePassCatalogLoading,
                   "SDD-LIB-06: all-failure partial refresh retains bounded catalog records with explicit stale/error state")
+            check(partialFeed.gamePassBadgeProductIDs.isEmpty,
+                  "COR101: Failed refresh retains browse records but removes unconfirmed cover membership badges")
+            partialFeed.market = "GB"
+            check(partialFeed.gamePassBadgeProductIDs.isEmpty,
+                  "COR101: Market invalidation clears cover membership evidence")
             await partialFeed.disconnect()
             check(partialFeed.gamePassProductIDs.isEmpty && partialFeed.gamePassProducts.isEmpty
                   && partialFeed.gamePassCatalogError == nil && !partialFeed.gamePassCatalogLoading,
@@ -1030,6 +1038,8 @@ enum NativeChecks {
             await feed.disconnect()
             check(feed.gamePassProductIDs.isEmpty && feed.gamePassProducts.isEmpty,
                   "B2/B5: Disconnection discards the in-memory feed and shelf evidence")
+            check(feed.gamePassBadgeProductIDs.isEmpty,
+                  "COR101: Unknown/console-only and disconnected catalog cannot advertise PC Game Pass")
 
             let publicCatalog = session("publiccapture")
             await publicCatalog.connect()

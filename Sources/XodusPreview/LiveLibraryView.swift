@@ -39,7 +39,8 @@ struct LiveLibraryView: View {
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var detailFocusReturnID: String?
     @FocusState private var focusedGameID: String?
-    @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
+    @AppStorage(LibrarySupportVisibility.preferenceKey)
+    private var showsUnsupportedGames = LibrarySupportVisibility.defaultShowsUnsupported
     private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
     private var filter: LibraryFilter {
@@ -613,15 +614,14 @@ struct LiveLibraryView: View {
     private func card(_ game: LibraryGame) -> some View {
         let artworkID = game.installed?.storeId ?? game.id
         return GameCard(title: game.title, gameFacts: game.facts,
+                     compatibilityIssues: unsupportedIssues(game),
+                     showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(game.id),
                      openLabel: "View",
                      focusReturn: ($focusedGameID, game.id),
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
         } status: {
-            if !unsupportedIssues(game).isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
-            }
             if let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
             }

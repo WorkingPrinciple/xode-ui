@@ -145,7 +145,8 @@ struct LiveCatalogView: View {
     @Environment(\.openSettings) private var openSettings
     @ObservedObject var art = LibraryCatalogArtwork.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
+    @AppStorage(LibrarySupportVisibility.preferenceKey)
+    private var showsUnsupportedGames = LibrarySupportVisibility.defaultShowsUnsupported
     let query: String
     var allowsArtworkLoading = true
     var allowsStartupTasks = true
@@ -687,16 +688,15 @@ struct LiveCatalogView: View {
 
     private func card(_ game: LibraryGame) -> some View {
         let cover = art.images[game.id]?.cover ?? game.cover
-        return GameCard(title: game.title, gameFacts: game.facts, openLabel: "View",
+        return GameCard(title: game.title, gameFacts: game.facts,
+                            compatibilityIssues: unsupportedIssues(game),
+                            showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(game.id), openLabel: "View",
                             searchFocus: query.isEmpty ? nil : ($focusedResult, game.id),
                             focusReturn: query.isEmpty ? ($focusedResult, game.id) : nil,
                             open: { open(game) }) {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
-            if query.isEmpty, !unsupportedIssues(game).isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
-            }
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
             if query.isEmpty, let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
