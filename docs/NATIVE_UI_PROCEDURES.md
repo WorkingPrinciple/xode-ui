@@ -380,3 +380,44 @@ recovery controls; the hero grows rather than clipping long reasons.
 **Outcome:** labels, filters/counts and actions agree with their actual authorities.
 **Limits/stop:** unavailable entitled titles or unsafe lifecycle scenarios remain
 unverified. Do not create mocks or damage installations to claim acceptance.
+
+## Game storage (REQ-92)
+
+Settings offers a persistent default install folder and a return to the original
+`~/Games/Xodus` default. A new game's actual review shows the resolved full path
+and offers **Choose another folder** for that installation only. Folder selection
+does not install anything. The explicit confirmation remains required; Cancel
+does not register or download a game. Repair and resume retain their recorded
+destination and do not offer a location override. Changing the default never
+relocates games, prefixes or saves.
+
+Selected folders retain their observed mount root. Invalid saved settings and
+unavailable selected drives produce an error, not a substitute destination.
+Installed entries retain their full paths on multiple drives. A recorded mount
+missing from mounted-volume enumeration shows **Drive unavailable**, keeps the
+library entry, suppresses Play/repair and offers read-only **Check again**. A
+deleted folder on a still-mounted drive instead remains a missing-folder issue.
+Old registry entries without volume evidence stay readable; actual folder
+metadata can backfill it, but missing evidence alone does not prove a drive
+is disconnected.
+
+Storage checks run off the main actor with a 15-second waiter deadline and one
+reserved worker per probe. Timeout or cancellation releases the UI waiter, not
+a blocked filesystem syscall; retries cannot spawn another worker until that
+syscall returns. Superseding readiness requests coalesce into a fresh observation
+after the current read; stale results cannot replace the newer registry facts.
+The selected mount is checked again before an install starts. A delayed or
+cancelled folder selection cannot publish a new destination after its owning
+review or Settings selection has gone away.
+
+The default headless `--game-operation-check` covers preferences, the actual
+review destination, override/default separation, stale-consent rejection,
+repair-path preservation, backwards-compatible entries, synthetic multi-root
+disconnect/return/deleted-folder distinctions and timeout worker fencing.
+Its temporary-directory roots are not real external or network drive evidence.
+Under an allocated native observation window, verify the real Settings picker,
+review/Cancel path, long-path layout and keyboard access, then observe a safely
+disconnected and reconnected external drive with an existing entry. Do not
+unmount an active game's drive, install a game, move files or alter accounts to
+manufacture acceptance. Source checks do not establish installed UI or physical
+drive acceptance.

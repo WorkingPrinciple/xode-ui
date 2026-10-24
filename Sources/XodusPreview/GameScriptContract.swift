@@ -300,13 +300,13 @@ struct GameScriptPaths: Sendable {
         return processed.appendingPathComponent(runID + "." + suffix)
     }
 
-    func destination(title: String, productID: String) throws -> URL {
+    func destination(title: String, productID: String, root: URL? = nil) throws -> URL {
         guard PCGamesClient.validProductID(productID) else { throw GameScriptError.invalidDestination }
         let safeTitle = String(title.unicodeScalars.filter {
             (48...57).contains($0.value) || (65...90).contains($0.value) || (97...122).contains($0.value)
         }.prefix(96))
         guard !safeTitle.isEmpty else { throw GameScriptError.invalidDestination }
-        return games.appendingPathComponent(safeTitle + "-Xbox", isDirectory: true)
+        return (root ?? games).appendingPathComponent(safeTitle + "-Xbox", isDirectory: true)
     }
 }
 

@@ -52,7 +52,8 @@ final class AppState: ObservableObject {
     let librarySelection = LibrarySelection()
     let discoverSelection = DiscoverSelection()
     private let gameScriptPaths: GameScriptPaths
-    lazy var gameOperations = GameOperationsController(installed: installedGames, paths: gameScriptPaths)
+    lazy var gameOperations = GameOperationsController(installed: installedGames, paths: gameScriptPaths,
+                                                       installLocationDefaults: .standard)
     lazy var downloadQueue = DownloadQueueController(
         driver: GameOperationsInstallDriver(operations: gameOperations))
 #if !XODUS_SHIPPING
