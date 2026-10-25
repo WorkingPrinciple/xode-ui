@@ -58,6 +58,7 @@ enum NativeChecks {
                 try NativeLifecycleChecks.launchOutcomeChecks(check: check)
                 try await NativeLifecycleChecks.run(check: check)
                 try await EngineManagementChecks.routingOnly(check: check)
+                try EngineConfiguratorChecks.run(check: check)
                 try await InstalledGameChecks.legacyNativeReadiness(check: check)
                 try await InstalledGameChecks.externalDiscoveryChecks(check: check)
                 try await InstalledGameChecks.discoveryIsolationChecks(check: check)

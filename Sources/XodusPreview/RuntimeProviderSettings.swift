@@ -203,8 +203,6 @@ struct RuntimeProviderSection: View {
 
             }
             .disabled(settings.planning || settings.applicationTerminating)
-            Text("Configuration only. This does not inspect, download or license a runtime, create a prefix, or enable Play.")
-                .foregroundStyle(.secondary)
             if let configuration = settings.configuration {
                 if configuration.provider == .crossover {
                     Text("Use your own legitimately installed and licensed CrossOver. Ode to X does not include or copy CrossOver.")
@@ -253,8 +251,6 @@ struct RuntimeProviderSection: View {
                     }
                 }
                 .disabled(settings.planning || settings.applicationTerminating)
-                Text("Versions and hashes are your declarations, not installation or gameplay evidence. Engine and graphics identities are independent; changing either requires a fresh isolated plan.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             if settings.requiresExperimentalAcknowledgement {
                 Toggle("I understand this configuration is Experimental and not first-release supported",
@@ -278,10 +274,6 @@ struct RuntimeProviderSection: View {
             }
             if let plan = settings.plan {
                 LabeledContent("Planned generation", value: plan.generationID)
-                Text("This plan does not change the engine used by installed games. The separate CrossOver app check is not device preflight or game verification.")
-                    .foregroundStyle(.secondary)
-                Text("No existing bottle, prefix or saves were reused, migrated or deleted. This plan creates no files.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             if let error = settings.errorMessage {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import AppKit
 import Darwin
 import Foundation
 import Security
@@ -18,7 +19,7 @@ enum CrossOverDependencyState: Equatable, Sendable {
         if case .installed = self { return true }
         return false
     }
-    static let trialDownloadURL = URL(string: "https://www.codeweavers.com/crossover/download")!
+    static let trialDownloadURL = URL(string: "https://www.codeweavers.com/crossover")!
 
     var offersTrialDownload: Bool { self == .absent || self == .unverified }
 
@@ -61,9 +62,8 @@ enum CrossOverDetector {
         if let path = EngineDefaults.crossOverApplication() {
             return inspect(URL(fileURLWithPath: path))
         }
-        let locations = [URL(fileURLWithPath: "/Applications/CrossOver.app"),
-                         FileManager.default.homeDirectoryForCurrentUser
-                            .appendingPathComponent("Applications/CrossOver.app")]
+        let locations = candidateLocations(
+            registered: NSWorkspace.shared.urlsForApplications(withBundleIdentifier: identifier))
         var sawUnverified = false
         for location in locations {
             let state = inspect(location)
@@ -71,6 +71,17 @@ enum CrossOverDetector {
             if state == .unverified { sawUnverified = true }
         }
         return sawUnverified ? .unverified : .absent
+    }
+
+    /// Registered bundle locations first, so a renamed or moved app is found by identity,
+    /// then the conventional Applications folders. Bounded and deduplicated.
+    static func candidateLocations(registered: [URL],
+                                   home: URL = FileManager.default.homeDirectoryForCurrentUser) -> [URL] {
+        var seen = Set<String>()
+        return (registered.prefix(8).map(\.standardizedFileURL)
+            + [URL(fileURLWithPath: "/Applications/CrossOver.app"),
+               home.appendingPathComponent("Applications/CrossOver.app")])
+            .filter { seen.insert($0.path).inserted }
     }
 
     static func inspect(_ location: URL) -> CrossOverDependencyState {

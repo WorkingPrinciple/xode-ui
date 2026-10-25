@@ -17,12 +17,6 @@ enum EngineObservationStatus: String, CaseIterable {
 
 enum EngineManagementPolicy {
     static let calimochoSource = URL(string: "https://github.com/dragoshont/calimocho")!
-    static let selectionExplanation = """
-        Per-game Calimocho choices keep their exact saved registry and artifact identity independently of the default. A conflicting title recipe or unavailable configuration refuses launch without substituting CrossOver, GPTK or generic Wine. No bottle or save is moved.
-        """
-    static let qualificationExplanation = """
-        Detection observes files. Smoke tested means the local record reports a passed smoke test and its executable is present, not that hashes or a game were verified. The launch service validates registered artifacts again. Game qualification belongs to an exact title recipe, never the whole provider.
-        """
 
     static func matches(_ entry: NativeEngineRegistry.Entry, provider: RuntimeProviderKind) -> Bool {
         switch provider {
@@ -122,12 +116,8 @@ struct EngineProviderOverview: View {
                     $0.ready && $0.admittedProvider == "calimocho"
                 }) ? "Admitted local build" : "Identification unavailable")
                     .font(.headline)
-                Text("Refresh your engine registry to verify a local Calimocho build. A missing or changed selection refuses launch without substituting CrossOver or GPTK. A source checkout alone is not an installed engine.")
-                    .foregroundStyle(.secondary)
                 Link("Calimocho official source", destination: EngineManagementPolicy.calimochoSource)
                     .accessibilityIdentifier("xodus.engines.calimocho.source")
-                Text("Download unavailable. A source checkout does not install an engine.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .contain)
             Divider()
@@ -137,8 +127,6 @@ struct EngineProviderOverview: View {
                 if case .installed(let app) = settings.crossOverDependency {
                     LabeledContent("Version", value: "\(app.version) (build \(app.buildVersion))")
                     Text(app.location.path).font(.caption).textSelection(.enabled)
-                    Text("Approved app signature detected. Licensing, registry admission and game qualification are separate.")
-                        .foregroundStyle(.secondary)
                 } else {
                     Text(settings.crossOverDependency.explanation).foregroundStyle(.secondary)
                 }
@@ -169,8 +157,6 @@ struct EngineProviderOverview: View {
         if !settings.crossOverDependency.isVerified {
             Link("Get CrossOver from CodeWeavers", destination: CrossOverDependencyState.trialDownloadURL)
                 .accessibilityIdentifier("xodus.engines.crossover.get")
-            Text("Opens the vendor website. No download, purchase or licence acceptance happens in Ode.")
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 }

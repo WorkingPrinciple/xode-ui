@@ -116,7 +116,7 @@ enum PreviewChecks {
                 location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
                 version: "26.3", buildVersion: "neutral")).offersTrialDownload
               && CrossOverDependencyState.trialDownloadURL.absoluteString ==
-                "https://www.codeweavers.com/crossover/download",
+                "https://www.codeweavers.com/crossover",
               "Only missing or unverified CrossOver offers the exact official trial URL")
         check(!DevelopmentArguments.accepts(["--check-native"]) &&
               !DevelopmentArguments.accepts(["--live-check", "--unknown"]),
