@@ -2,6 +2,76 @@
 import SwiftUI
 import XodusManagement
 
+struct GameDescriptionParagraphs: Equatable {
+    let first: String
+    let remaining: String
+
+    init(_ description: String) {
+        let text = description.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let lines = text.components(separatedBy: "\n")
+        var hasProse = false
+        var hasList = false
+        var boundary = lines.count
+        for (index, line) in lines.enumerated() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty {
+                if hasProse || hasList {
+                    boundary = index
+                    break
+                }
+                continue
+            }
+            let heading = trimmed.unicodeScalars.contains(where: CharacterSet.letters.contains)
+                && trimmed == trimmed.uppercased() && trimmed != trimmed.lowercased()
+            let bullet = trimmed.range(of: #"^(?:[-*•]\s+|\d+[.)]\s+)"#,
+                                       options: .regularExpression) != nil
+            if (hasProse && (heading || bullet)) || (hasList && heading) {
+                boundary = index
+                break
+            }
+            if bullet { hasList = true }
+            else if !heading { hasProse = true }
+        }
+        first = lines[..<boundary].joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        remaining = lines[boundary...].joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+struct GameDescriptionView: View {
+    let gameID: String
+    let description: String
+
+    var body: some View {
+        GameDescriptionContent(description: description).id(gameID)
+    }
+}
+
+private struct GameDescriptionContent: View {
+    let description: String
+    @State private var expanded = false
+
+    var body: some View {
+        let paragraphs = GameDescriptionParagraphs(description)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("About the game").font(.title2.weight(.semibold))
+            Text(paragraphs.first).textSelection(.enabled)
+            if !paragraphs.remaining.isEmpty {
+                DisclosureGroup("More", isExpanded: $expanded) {
+                    Text(paragraphs.remaining).textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .accessibilityIdentifier("xodus.game.description.expand")
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: 680, alignment: .leading)
+    }
+}
+
 enum GameDetailFacetCopy {
     static func installation(installed: Bool) -> String {
         installed ? "Installed on this Mac" : "Not installed"
@@ -193,12 +263,7 @@ struct LiveProductView: View {
                         }
                         if let details {
                             if let description = details.description ?? details.shortDescription {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    Text("About the game").font(.title2.weight(.semibold))
-                                    Text(description).textSelection(.enabled)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .frame(maxWidth: 680, alignment: .leading)
-                                }
+                                GameDescriptionView(gameID: product.id, description: description)
                                 .id("detail-information")
                             }
                             media(details)

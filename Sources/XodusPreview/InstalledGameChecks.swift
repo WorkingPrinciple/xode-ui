@@ -8,6 +8,36 @@ import XodusCore
 
 @MainActor
 enum InstalledGameChecks {
+    static func descriptionChecks(check: (Bool, String) -> Void) {
+        let fixtures: [(String, String, String)] = [
+            ("First sentence. Still the same paragraph.\n\nSecond paragraph.",
+             "First sentence. Still the same paragraph.", "Second paragraph."),
+            ("First sentence wraps\nonto another line.\nFEATURES\nExplore the world.",
+             "First sentence wraps\nonto another line.", "FEATURES\nExplore the world."),
+            ("Explore Mexico.\n- Race together\n- Collect cars",
+             "Explore Mexico.", "- Race together\n- Collect cars"),
+            ("Explore Mexico.\n• Race together\n• Collect cars",
+             "Explore Mexico.", "• Race together\n• Collect cars"),
+            ("Explore Mexico.\n1. Race together\n2. Collect cars",
+             "Explore Mexico.", "1. Race together\n2. Collect cars"),
+            ("WELCOME\nA complete first paragraph.\n\nMORE\nAnother paragraph.",
+             "WELCOME\nA complete first paragraph.", "MORE\nAnother paragraph."),
+            ("A short description.", "A short description.", ""),
+            ("- First item\n- Second item\n\nA later paragraph.",
+             "- First item\n- Second item", "A later paragraph."),
+            ("", "", ""),
+            (" \r\nFirst complete paragraph.\r\n\r\nSecond paragraph.\r\n ",
+             "First complete paragraph.", "Second paragraph."),
+            ("An abbreviation e.g. a title has no forced character or sentence cutoff.",
+             "An abbreviation e.g. a title has no forced character or sentence cutoff.", "")
+        ]
+        for (index, fixture) in fixtures.enumerated() {
+            let result = GameDescriptionParagraphs(fixture.0)
+            check(result.first == fixture.1 && result.remaining == fixture.2,
+                  "REQ105: First-paragraph fixture \(index) preserves complete text and separates only structural boundaries")
+        }
+    }
+
     static func storageLocationChecks(check: (Bool, String) -> Void) async throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appendingPathComponent(".build/StorageChecks-\(UUID().uuidString)")
