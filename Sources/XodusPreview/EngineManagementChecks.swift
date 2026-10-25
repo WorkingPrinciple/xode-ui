@@ -497,6 +497,11 @@ enum EngineManagementChecks {
             NativeEngineDefaults.Binding(registryPath: registry.path, registrySha256: hash(bytes),
                 engineName: "exact-calimocho", wineSha256: wineHash, wineserverSha256: serverHash)
         ])
+        EngineDefaults.setDefaultEngine(nil, defaults)
+        let initialLaunch = try await NativeLaunchConfiguration.resolveDefault(game: game,
+            configuration: backend, provider: nil, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+        check(initialLaunch.admittedSelection == selection && EngineDefaults.defaultEngine(defaults) == .calimocho,
+              "COR132: An unset Settings provider initializes only the verified configured Calimocho default")
         for legacy in [nil, .crossover, .gptk3, .gptk4, .standaloneWine, .calimocho] as [RuntimeProviderKind?] {
             var savedGame = game
             savedGame.engineOverride = legacy
@@ -522,6 +527,20 @@ enum EngineManagementChecks {
             provider: .calimocho, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
         check(explicitLaunch.admittedSelection == alternate && explicitLaunch.engine == "alternate-calimocho",
               "COR134: Only the explicit versioned override is consumed, with fresh admission before launch")
+        let invalidOverrideData = try JSONEncoder().encode(explicit)
+        var invalidObject = try JSONSerialization.jsonObject(with: invalidOverrideData) as? [String: Any] ?? [:]
+        var invalidOverride = invalidObject["engineOverrideV2"] as? [String: Any] ?? [:]
+        invalidOverride["version"] = 1
+        invalidObject["engineOverrideV2"] = invalidOverride
+        let invalidGame = try JSONDecoder().decode(InstalledGame.self,
+            from: JSONSerialization.data(withJSONObject: invalidObject))
+        do {
+            _ = try await NativeLaunchConfiguration.resolveDefault(game: invalidGame, configuration: backend,
+                provider: .calimocho, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+            check(false, "COR134: An unknown override version never silently becomes Settings default")
+        } catch NativeLaunchError.selectionChanged {
+            check(true, "COR134: An unknown override version never silently becomes Settings default")
+        }
         _ = try await store.setEngineOverrideV2(id: game.id, selection: nil)
         let clearedOverride = try await store.load()[0]
         check(clearedOverride.engineOverrideV2 == nil && clearedOverride.engineSelection == game.engineSelection
