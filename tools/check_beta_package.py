@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import plistlib
+import runpy
 import shutil
 import subprocess
 import tempfile
@@ -16,6 +17,19 @@ from package_beta import (IDENTITY, TEAM_ID,
 
 PRODUCER_NOTICES_SHA256 = "a" * 64
 beta.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
+
+settings = runpy.run_path(str(Path(__file__).with_name("xode_dmg_settings.py")),
+                          init_globals={"defines": {
+                              "app": "/tmp/X Ode.app", "install_note": "/tmp/INSTALL.txt",
+                              "release_notes": "/tmp/RELEASE-NOTES.txt",
+                              "volume_icon": "/tmp/X Ode.icns", "background": "/tmp/background.tiff",
+                          }})
+assert settings["volume_name"] == "X Ode" and settings["filesystem"] == "APFS"
+assert settings["format"] == "ULFO" and settings["window_rect"] == ((100, 100), (660, 400))
+assert settings["icon_size"] == 128 and settings["symlinks"] == {"Applications": "/Applications"}
+assert settings["icon_locations"]["X Ode.app"] == (165, 190)
+assert settings["icon_locations"]["Applications"] == (495, 190)
+assert settings["background"] == "/tmp/background.tiff"
 
 
 def fixture(root):
