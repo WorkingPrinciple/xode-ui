@@ -108,6 +108,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert receipt["notarization"] == "NOT_SUBMITTED"
     assert receipt["installed"] is False and receipt["launched"] is False
     assert receipt["producerNoticesSHA256"] == PRODUCER_NOTICES_SHA256
+    assert "developer-local engine binding" in beta.RELEASE_NOTES
+    assert "does not substitute another engine" in beta.RELEASE_NOTES
     assert receipt["artifacts"]["sha256"] == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
     assert checksum_path.read_text() == receipt["artifacts"]["sha256"] + "  " + artifact_path.name + "\n"
     assert not any(name in " ".join(command) for command in commands

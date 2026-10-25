@@ -41,6 +41,10 @@ The producer's `eappx`, `msixvc`, `msixvc-common`, `xodus`, `xodus-cli`,
 via the producer repository's root `LICENSE`; the corresponding source archive
 includes that file.
 
+Beta release notes disclose the temporary No Man's Sky developer-local engine
+binding: another Mac without the exact tested engine reports it missing, and
+X Ode does not substitute a different engine.
+
 The inventory's own hashes and packaged resource seal do not establish
 completeness. Before approving its digest, independently compare every package
 identity/licence and compiler-artifact membership with the frozen producer

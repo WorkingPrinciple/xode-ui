@@ -37,6 +37,10 @@ The eappx, msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and
 xodus-service workspace crates are licensed under GPL-3.0-only as stated by
 the producer repository's root LICENSE. The corresponding source archive
 includes that LICENSE.
+
+Known beta limitation: No Man's Sky uses an explicitly configured developer-local engine binding.
+On a Mac without that exact tested engine installed, X Ode reports that the engine
+is missing and does not substitute another engine.
 """
 
 
