@@ -10,7 +10,6 @@ struct RuntimeInstallationPicker: View {
     @AppStorage("Xodus.lifecycle.engine.calimocho") private var calimochoRecord = ""
     @AppStorage("Xodus.lifecycle.registry") private var registryPath = ""
     @StateObject private var registryObservation: EngineRegistryObservation
-    @State private var userEngines = UserEngineStore.load()
     @State private var error: String?
 
     init(settings: RuntimeProviderSettings, backendPath: String = "") {
@@ -48,7 +47,7 @@ struct RuntimeInstallationPicker: View {
                     }
                 }
             }
-            UserEngineRows(engines: $userEngines, allowsFileReads: allowsFileReads)
+            UserEngineRows(settings: settings, allowsFileReads: allowsFileReads)
             if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
             Divider()
             CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)

@@ -20,26 +20,74 @@ enum UserEngineStore {
     static let preferenceKey = "Xodus.engines.user.v1"
     static let limit = 32
 
-    static func load(_ defaults: UserDefaults = .standard) -> [UserEngine] {
-        guard let data = defaults.data(forKey: preferenceKey),
-              let engines = try? JSONDecoder().decode([UserEngine].self, from: data) else { return [] }
-        return Array(engines.prefix(limit))
+    enum StoreError: Error, Equatable {
+        case full, unreadable, unwritable
+
+        var message: String {
+            switch self {
+            case .full: "You can add up to \(UserEngineStore.limit) engines. Remove one to add another."
+            case .unreadable: "Saved engines couldn't be read. They are kept unchanged."
+            case .unwritable: "The engine list couldn't be saved. Try again."
+            }
+        }
     }
 
-    static func save(_ engines: [UserEngine], _ defaults: UserDefaults = .standard) {
-        guard let data = try? JSONEncoder().encode(Array(engines.prefix(limit))) else { return }
+    /// Missing data is an empty list; unreadable data is an error so it is never replaced by an empty list.
+    static func load(_ defaults: UserDefaults = .standard) -> Result<[UserEngine], StoreError> {
+        guard let data = defaults.data(forKey: preferenceKey) else {
+            return defaults.object(forKey: preferenceKey) == nil ? .success([]) : .failure(.unreadable)
+        }
+        guard let engines = try? JSONDecoder().decode([UserEngine].self, from: data),
+              engines.count <= limit else { return .failure(.unreadable) }
+        return .success(engines)
+    }
+
+    static func save(_ engines: [UserEngine], _ defaults: UserDefaults = .standard) throws(StoreError) {
+        guard engines.count <= limit, let data = try? JSONEncoder().encode(engines) else { throw .unwritable }
         defaults.set(data, forKey: preferenceKey)
+        guard defaults.data(forKey: preferenceKey) == data else { throw .unwritable }
     }
 
     /// Adds by resolved location; re-adding the same location replaces its record in place.
-    static func adding(_ engine: UserEngine, to engines: [UserEngine]) -> [UserEngine] {
+    static func adding(_ engine: UserEngine, to engines: [UserEngine]) throws(StoreError) -> [UserEngine] {
         if let index = engines.firstIndex(where: { $0.location == engine.location }) {
             var next = engines
             next[index] = UserEngine(id: engines[index].id, name: engine.name, version: engine.version,
                                      location: engine.location, wine: engine.wine, wineserver: engine.wineserver)
             return next
         }
-        return Array((engines + [engine]).prefix(limit))
+        guard engines.count < limit else { throw .full }
+        return engines + [engine]
+    }
+}
+
+/// Admits only the newest inspection, and only while its requested location is still selected.
+struct EngineRequestFence {
+    private(set) var current: UUID?
+    private(set) var path: String?
+
+    var pending: Bool { current != nil }
+
+    mutating func begin(path: String) -> UUID {
+        let id = UUID()
+        current = id
+        self.path = path
+        return id
+    }
+
+    func accepts(_ id: UUID, selected: String, terminating: Bool) -> Bool {
+        id == current && selected == path && !terminating
+    }
+
+    mutating func finish(_ id: UUID) {
+        guard id == current else { return }
+        current = nil
+        path = nil
+    }
+
+    mutating func cancel() {
+        current = nil
+        path = nil
     }
 }
 
@@ -140,11 +188,16 @@ enum EngineLocationDetector {
 }
 
 struct UserEngineRows: View {
-    @Binding var engines: [UserEngine]
+    @ObservedObject var settings: RuntimeProviderSettings
     var allowsFileReads = true
+    @State private var engines: [UserEngine] = []
+    @State private var storeError: UserEngineStore.StoreError?
     @State private var suggestions: [UserEngine] = []
     @State private var location = ""
     @State private var error: String?
+    @State private var fence = EngineRequestFence()
+
+    private var storeReadable: Bool { storeError != .unreadable }
 
     var body: some View {
         ForEach(engines) { engine in
@@ -152,12 +205,15 @@ struct UserEngineRows: View {
                       status: "Not launch-ready") {
                 Button("Set as Default") {}.disabled(true)
                 Button("Remove", role: .destructive) { remove(engine) }
+                    .disabled(!storeReadable)
                     .accessibilityLabel("Remove \(engine.name)")
             }
         }
         ForEach(suggestions) { engine in
             EngineRow(name: engine.name, version: engine.version, location: engine.location, status: "Detected") {
-                Button("Add") { add(engine) }.accessibilityLabel("Add \(engine.name)")
+                Button("Add") { add(engine) }
+                    .disabled(!storeReadable || fence.pending)
+                    .accessibilityLabel("Add \(engine.name)")
             }
         }
         HStack {
@@ -165,11 +221,14 @@ struct UserEngineRows: View {
                 .labelsHidden()
                 .onSubmit(addTypedLocation)
                 .accessibilityIdentifier("xodus.engines.location")
-            Button("Choose…", action: choose).disabled(!allowsFileReads)
+            Button("Choose…", action: choose).disabled(!allowsFileReads || fence.pending)
             Button("Add Engine", action: addTypedLocation)
-                .disabled(!allowsFileReads || location.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(!allowsFileReads || !storeReadable || fence.pending
+                          || location.trimmingCharacters(in: .whitespaces).isEmpty)
                 .accessibilityIdentifier("xodus.engines.add")
+            if fence.pending { ProgressView().controlSize(.small) }
         }
+        .onAppear(perform: reload)
         .task(id: "\(allowsFileReads)|\(engines.map(\.location).joined(separator: "|"))") {
             guard allowsFileReads else { return }
             let current = engines
@@ -178,27 +237,51 @@ struct UserEngineRows: View {
             }.value
             guard !Task.isCancelled else { return }
             suggestions = found
-            if location.isEmpty, let first = found.first { location = first.location }
+            if location.isEmpty, !fence.pending, let first = found.first { location = first.location }
         }
-        if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
+        if let message = error ?? storeError?.message {
+            Label(message, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+        }
     }
 
-    private func add(_ engine: UserEngine) {
-        engines = UserEngineStore.adding(engine, to: engines)
-        UserEngineStore.save(engines)
-        if location == engine.location { location = "" }
-        error = nil
+    private func reload() {
+        switch UserEngineStore.load() {
+        case .success(let loaded): engines = loaded; storeError = nil
+        case .failure(let failure): engines = []; storeError = failure
+        }
+    }
+
+    /// Returns false and leaves the list and the typed location untouched when it can't be stored.
+    @discardableResult
+    private func add(_ engine: UserEngine) -> Bool {
+        guard storeReadable, !settings.applicationTerminating else { return false }
+        do {
+            let next = try UserEngineStore.adding(engine, to: engines)
+            try UserEngineStore.save(next)
+            engines = next
+            if location == engine.location { location = "" }
+            error = nil
+            return true
+        } catch {
+            self.error = error.message
+            return false
+        }
     }
 
     private func remove(_ engine: UserEngine) {
-        engines.removeAll { $0.id == engine.id }
-        UserEngineStore.save(engines)
+        guard storeReadable, !settings.applicationTerminating else { return }
+        let next = engines.filter { $0.id != engine.id }
+        do {
+            try UserEngineStore.save(next)
+            engines = next
+            error = nil
+        } catch { self.error = error.message }
     }
 
     private func addTypedLocation() {
         let path = (location.trimmingCharacters(in: .whitespaces) as NSString).expandingTildeInPath
-        guard !path.isEmpty else { return }
-        inspect(URL(fileURLWithPath: path))
+        guard !path.isEmpty, !fence.pending else { return }
+        inspect(URL(fileURLWithPath: path), selected: location)
     }
 
     private func choose() {
@@ -210,12 +293,15 @@ struct UserEngineRows: View {
         panel.allowedContentTypes = [.application, .folder]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         location = url.path
-        inspect(url)
+        inspect(url, selected: location)
     }
 
-    private func inspect(_ url: URL) {
+    private func inspect(_ url: URL, selected: String) {
+        let id = fence.begin(path: selected)
         Task {
             let result = await Task.detached(priority: .userInitiated) { EngineLayoutInspector.inspect(url) }.value
+            defer { fence.finish(id) }
+            guard fence.accepts(id, selected: location, terminating: settings.applicationTerminating) else { return }
             switch result {
             case .success(let engine): add(engine)
             case .failure(let failure): error = failure.message
@@ -254,6 +340,7 @@ struct CrossOverLocationRow: View {
     var allowsCheck = true
     @State private var location = ""
     @State private var error: String?
+    @State private var fence = EngineRequestFence()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -267,12 +354,16 @@ struct CrossOverLocationRow: View {
                 .labelsHidden()
                     .onSubmit(apply)
                     .accessibilityIdentifier("xodus.engines.crossover.location")
-                Button("Choose App…", action: choose).disabled(!allowsCheck)
+                Button("Choose App…", action: choose).disabled(!allowsCheck || fence.pending)
                 Button("Use", action: apply)
-                    .disabled(!allowsCheck || location.isEmpty || location == EngineDefaults.crossOverApplication())
+                    .disabled(!allowsCheck || fence.pending || location.isEmpty
+                              || location == EngineDefaults.crossOverApplication())
+                if fence.pending { ProgressView().controlSize(.small) }
             }
             if EngineDefaults.crossOverApplication() != nil {
                 Button("Use Detected Location") {
+                    guard !settings.applicationTerminating else { return }
+                    fence.cancel()
                     EngineDefaults.setCrossOverApplication(nil)
                     location = ""
                     Task { await settings.refreshCrossOverDependency() }
@@ -285,6 +376,7 @@ struct CrossOverLocationRow: View {
             if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
         }
         .onChange(of: settings.crossOverDependency, initial: true) { _, state in
+            guard !fence.pending else { return }
             location = CrossOverLocationRow.suggestedLocation(saved: EngineDefaults.crossOverApplication(),
                                                              state: state, current: location)
         }
@@ -326,10 +418,13 @@ struct CrossOverLocationRow: View {
 
     private func apply() {
         let path = (location.trimmingCharacters(in: .whitespaces) as NSString).expandingTildeInPath
-        guard !path.isEmpty else { return }
+        guard !path.isEmpty, !fence.pending else { return }
         let url = URL(fileURLWithPath: path)
+        let id = fence.begin(path: location)
         Task {
             let observed = await Task.detached(priority: .userInitiated) { CrossOverDetector.inspect(url) }.value
+            defer { fence.finish(id) }
+            guard fence.accepts(id, selected: location, terminating: settings.applicationTerminating) else { return }
             guard observed.isVerified else {
                 error = "That app isn't official CrossOver. Choose the CodeWeavers CrossOver app."
                 return
