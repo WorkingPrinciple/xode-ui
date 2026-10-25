@@ -2,6 +2,14 @@
 import Foundation
 import XodusManagement
 
+private actor CountryRequestProbe: PCGamesTransport {
+    private(set) var requests: [URLRequest] = []
+    func send(_ request: URLRequest) throws -> PCGamesHTTPResponse {
+        requests.append(request)
+        throw PCGamesError.transport
+    }
+}
+
 @MainActor
 enum AccountCountryChecks {
     static func run(configuration: (String) -> BackendConfiguration,
@@ -97,6 +105,17 @@ enum AccountCountryChecks {
                 check(!nextSession.accountCountryReady && nextSession.market.isEmpty
                       && nextSession.accountCountryNeedsConfirmation,
                       "COR127 provider-unavailable response without saved confirmation keeps country unknown")
+                let transport = CountryRequestProbe()
+                let artwork = LibraryCatalogArtwork(transport: transport)
+                await LiveActivityView.loadArtwork(productID: "FIXTURE00001", session: nextSession, artwork: artwork)
+                check(await transport.requests.isEmpty && artwork.images.isEmpty,
+                      "REQ101 Downloads with unresolved country issues zero catalogue requests")
+                await artwork.load(ids: ["FIXTURE00001"], market: "", language: "en-US")
+                await artwork.loadDetail(id: "FIXTURE00001", market: "", language: "en-US")
+                let collections = GamePassCollections(transport: transport)
+                await collections.load(market: "", language: "en-US")
+                check(await transport.requests.isEmpty && artwork.error != nil && collections.error != nil,
+                      "REQ101 catalogue consumers explicitly reject missing country instead of silently using US")
                 try NativeUIChecks.checkAccountCountry(session: nextSession, confirmationRequired: true, check: check)
             } else if scenario == "odemismatch" {
                 check(!nextSession.accountCountryReady && !nextSession.accountCountryNeedsConfirmation

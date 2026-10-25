@@ -666,11 +666,11 @@ enum PCGamesChecks {
             check(PCGamesClient.artwork(uri: uri, width: 100, height: 100, role: .boxArt) == nil,
                   "S4: Artwork rejects unapproved host/grammar without broadening the shared loader")
         }
-        check(PCGamesClient.market(nil) == "US" && PCGamesClient.market("GB") == "GB"
-              && PCGamesClient.market("gb&token=x") == "US"
+        check(PCGamesClient.market(nil) == nil && PCGamesClient.market("GB") == "GB"
+              && PCGamesClient.market("gb&token=x") == nil
               && PCGamesClient.language("en-GB") == "en-GB"
               && PCGamesClient.language("en-US&token=x") == "en-US",
-              "S4: Locale query values are bounded; absent region usesUS")
+              "REQ101: Locale query values are bounded; absent country never invents US")
         let deviceResponse = try response(["device_code": "neutral-device", "user_code": "ABCD-EFGH",
             "verification_uri": "https://www.microsoft.com/link", "expires_in": 900, "interval": 5])
         let tokenResponse = try response(["access_token": "neutral-access", "refresh_token": "neutral-refresh-rotated"])

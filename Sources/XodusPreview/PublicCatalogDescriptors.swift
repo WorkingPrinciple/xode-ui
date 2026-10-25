@@ -79,14 +79,17 @@ actor PublicCatalogDescriptors {
     }
 
     func failures(ids: [String], market: String, language: String) -> [String: String] {
-        Dictionary(uniqueKeysWithValues: Set(ids).compactMap { id in
-            errors[Key(id: id, market: PCGamesClient.market(market),
+        guard let market = PCGamesClient.market(market) else {
+            return Dictionary(uniqueKeysWithValues: Set(ids).map { ($0, "Confirm your account country before loading game details.") })
+        }
+        return Dictionary(uniqueKeysWithValues: Set(ids).compactMap { id in
+            errors[Key(id: id, market: market,
                        language: PCGamesClient.language(language).lowercased())].map { (id, $0) }
         })
     }
 
     func expirations(ids: [String], market: String, language: String) -> [String: Date] {
-        let market = PCGamesClient.market(market)
+        guard let market = PCGamesClient.market(market) else { return [:] }
         let language = PCGamesClient.language(language).lowercased()
         return Dictionary(uniqueKeysWithValues: ids.compactMap { id in
             entries[Key(id: id, market: market, language: language)].map { (id, $0.expiresAt) }
@@ -97,7 +100,7 @@ actor PublicCatalogDescriptors {
         try Task.checkCancellation()
         guard !ids.isEmpty, ids.count <= 20, Set(ids).count == ids.count,
               ids.allSatisfy(PCGamesClient.validProductID) else { throw PCGamesError.invalidResponse }
-        let market = PCGamesClient.market(market)
+        guard let market = PCGamesClient.market(market) else { throw PCGamesError.invalidResponse }
         let parts = PCGamesClient.language(language).split(separator: "-")
         let wireLanguage = parts.count == 2 && parts[1].count == 2
             ? parts[0].lowercased() + "-" + parts[1].uppercased()

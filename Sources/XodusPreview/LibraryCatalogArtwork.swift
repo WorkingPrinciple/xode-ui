@@ -58,7 +58,12 @@ final class LibraryCatalogArtwork: ObservableObject {
     }
 
     func loadDetail(id: String, market: String, language: String) async {
-        let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language).lowercased())"
+        guard let market = PCGamesClient.market(market) else {
+            retireScope()
+            error = "Confirm your account country before loading game details."
+            return
+        }
+        let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
         guard PCGamesClient.validProductID(id) else { return }
         let epoch = enterScope(nextScope)
         if images[id]?.detail != nil, let expiry = requested[id], expiry > now() { return }
@@ -80,7 +85,12 @@ final class LibraryCatalogArtwork: ObservableObject {
     }
 
     func load(ids: [String], market: String, language: String, refresh: Bool = false) async {
-        let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language).lowercased())"
+        guard let market = PCGamesClient.market(market) else {
+            retireScope()
+            error = "Confirm your account country before loading game details."
+            return
+        }
+        let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
         let epoch = enterScope(nextScope)
         while let pending {
             await pending.value

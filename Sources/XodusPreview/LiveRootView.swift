@@ -606,6 +606,10 @@ struct LiveRootView: View {
 }
 
 struct LiveActivityView: View {
+    static func loadArtwork(productID: String?, session: LiveSession, artwork: LibraryCatalogArtwork) async {
+        guard session.accountCountryReady, let productID else { return }
+        await artwork.load(ids: [productID], market: session.market, language: session.language)
+    }
     @ObservedObject var operations: GameOperationsController
     @ObservedObject var queue: DownloadQueueController
     var browseGames: () -> Void = {}
@@ -735,9 +739,8 @@ struct LiveActivityView: View {
                 }
             }
             .listStyle(.inset)
-            .task(id: operations.operation?.productID) {
-                guard let id = operations.operation?.productID else { return }
-                await artwork.load(ids: [id], market: session.market, language: session.language)
+            .task(id: "\(session.accountCatalogScope):\(operations.operation?.productID ?? "")") {
+                await Self.loadArtwork(productID: operations.operation?.productID, session: session, artwork: artwork)
             }
         }
     }

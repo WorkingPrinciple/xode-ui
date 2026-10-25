@@ -499,10 +499,10 @@ struct PCGamesClient: Sendable {
         value.utf8.count == 12 && value.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) }
     }
 
-    static func market(_ region: String?) -> String {
+    static func market(_ region: String?) -> String? {
         guard let region, region.utf8.count == 2,
-              region.utf8.allSatisfy({ (65...90).contains($0) }) else { return "US" }
-        return region
+              region.utf8.allSatisfy({ (65...90).contains($0) }) else { return nil }
+        return region == "UK" ? "GB" : region
     }
 
     static func language(_ value: String) -> String {
@@ -655,7 +655,8 @@ struct PCGamesClient: Sendable {
     func library(accessToken: String, market: String, language: String,
                  expectedAccountID: String? = nil,
                  progress: (@MainActor @Sendable (PCGamesSnapshot) -> Void)? = nil) async throws -> PCGamesSnapshot {
-        let market = Self.market(market), language = Self.language(language)
+        guard let market = Self.market(market) else { throw PCGamesError.invalidResponse }
+        let language = Self.language(language)
         let user = try await xbox(post("https://user.auth.xboxlive.com/user/authenticate", json: [
             "RelyingParty": "http://auth.xboxlive.com", "TokenType": "JWT",
             "Properties": ["AuthMethod": "RPS", "SiteName": "user.auth.xboxlive.com", "RpsTicket": "d=" + accessToken]
