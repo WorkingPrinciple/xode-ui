@@ -7,13 +7,14 @@ import XodusManagement
 struct GameInstallConsent: Identifiable, Sendable {
     let id = UUID()
     let game: PCGame
-    let destination: URL
-    let freeBytes: Int64
+    var destination: URL
+    var freeBytes: Int64
     let installedID: UUID?
     var compatibility: GameCompatibilityResult?
     var checkError: String?
     var nativeAccountHash: String?
     var resuming = false
+    var storageVolume: GameStorageVolume?
 }
 
 @MainActor
@@ -38,6 +39,9 @@ final class GameOperationsController: ObservableObject {
     @Published var installConsent: GameInstallConsent?
     @Published var uninstallConsent: InstalledGame?
     @Published private(set) var preparingConsent = false
+    @Published private(set) var preparingInstallProductID: String?
+    @Published private(set) var choosingInstallLocation = false
+    @Published private(set) var installLocationError: String?
     @Published private(set) var checkingCompatibility = false
     @Published private(set) var installingDirectly = false
     @Published private(set) var compatibility: [String: GameCompatibilityResult] = [:]
@@ -58,6 +62,9 @@ final class GameOperationsController: ObservableObject {
     private let signInOwner = UUID()
     private let installed: InstalledGamesController
     private let paths: GameScriptPaths
+    private let installLocationDefaults: UserDefaults?
+    private let storageProbe = GameStorageProbe()
+    private var preparationGeneration = UUID()
     private let mutationRunner: GameScriptRunner
     private let serviceRunner: GameScriptRunner
     private let setupRunner: GameScriptRunner
@@ -138,7 +145,7 @@ final class GameOperationsController: ObservableObject {
     }
     var installAccountUnavailable: Bool { usesUnifiedAccount && nativeAccount == nil }
     var canQuit: Bool {
-        !installingDirectly && !preparingConsent
+        !installingDirectly && !preparingConsent && !choosingInstallLocation
             && mutationTask == nil && compatibilityTask == nil && gamePassTask == nil && stopTask == nil
             && setupTask == nil && !serviceBusy
             && !installed.accountDisconnecting
@@ -191,7 +198,8 @@ final class GameOperationsController: ObservableObject {
         }
     }
     var canConfirmInstall: Bool {
-        guard canStartMutation, let consent = installConsent, consentAdmitted(consent) else { return false }
+        guard !choosingInstallLocation, canStartMutation, let consent = installConsent,
+              consentAdmitted(consent) else { return false }
         let format = consent.installedID.flatMap { id in installed.games.first { $0.id == id }?.packageType?.label }
         return supportIssues(productID: consent.game.id, packageFormat: format, includeRuntime: false).isEmpty
     }
@@ -241,9 +249,11 @@ final class GameOperationsController: ObservableObject {
     }
 
     init(installed: InstalledGamesController, paths: GameScriptPaths = .production,
-         compatibilityCatalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) {
+         compatibilityCatalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot,
+         installLocationDefaults: UserDefaults? = nil) {
         self.installed = installed
         self.paths = paths
+        self.installLocationDefaults = installLocationDefaults
         self.compatibilityCatalogue = compatibilityCatalogue
         mutationRunner = GameScriptRunner(paths: paths)
         serviceRunner = GameScriptRunner(paths: paths)
@@ -263,7 +273,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     func canRepair(_ game: InstalledGame) -> Bool {
-        canStartMutation && installed.runningGameID != game.id
+        canStartMutation && !installed.unavailableDriveIDs.contains(game.id) && installed.runningGameID != game.id
             && supportIssues(productID: game.storeId, packageFormat: game.packageType?.label,
                              includeRuntime: false).isEmpty
     }
@@ -763,12 +773,29 @@ final class GameOperationsController: ObservableObject {
         resetFeedback(productID: game.id)
         if repairing == nil { downloadRetry = game }
         preparingConsent = true
-        defer { preparingConsent = false }
+        preparingInstallProductID = game.id
+        let generation = UUID()
+        preparationGeneration = generation
+        defer {
+            if preparationGeneration == generation {
+                preparingConsent = false
+                preparingInstallProductID = nil
+            }
+        }
         do {
-            let destination = try repairing.map { URL(fileURLWithPath: $0.folder, isDirectory: true) }
-                ?? paths.destination(title: game.title, productID: game.id)
-            let free = try await Task.detached { try GameScriptFiles.availableSpace(for: destination) }.value
-            guard !terminating, !isBusy, !(installingDirectly && directInstallCancelled) else { return }
+            let destination: URL
+            if let repairing { destination = URL(fileURLWithPath: repairing.folder, isDirectory: true) }
+            else { destination = try await installDestination(for: game) }
+            guard preparationGeneration == generation else { return }
+            let storage = try await storageProbe.read {
+                if repairing?.storageVolume?.isUnavailable(mountedRoots: GameStorageVolume.mountedRoots()) == true {
+                    throw GameInstallLocationError.driveUnavailable
+                }
+                return (try GameScriptFiles.availableSpace(for: destination),
+                        repairing?.storageVolume ?? GameStorageVolume.read(at: destination.deletingLastPathComponent()))
+            }
+            guard preparationGeneration == generation, !terminating, !isBusy,
+                  !(installingDirectly && directInstallCancelled) else { return }
             guard reviewAccount == (usesUnifiedAccount ? nativeAccount : nil) else {
                 error = "Your Xbox account changed. Choose the game again before reviewing installation."
                 return
@@ -777,8 +804,10 @@ final class GameOperationsController: ObservableObject {
                 throw GameScriptError.invalidDestination
             }
             installConsent = GameInstallConsent(game: game, destination: destination,
-                                                freeBytes: free, installedID: repairing?.id,
-                                                nativeAccountHash: usesUnifiedAccount ? nativeAccount : nil)
+                                                freeBytes: storage.0, installedID: repairing?.id,
+                                                nativeAccountHash: usesUnifiedAccount ? nativeAccount : nil,
+                                                storageVolume: storage.1)
+            installLocationError = nil
             error = nil
             preparingConsent = false
             if usesUnifiedAccount { return }
@@ -814,11 +843,65 @@ final class GameOperationsController: ObservableObject {
                 }
             }
             await compatibilityTask?.value
-        } catch { self.error = Self.message(error) }
+        } catch {
+            guard preparationGeneration == generation else { return }
+            self.error = Self.message(error)
+        }
+    }
+
+    func installDestination(for game: PCGame, root: URL? = nil) async throws -> URL {
+        let saved = try root == nil ? installLocationDefaults.flatMap { try GameInstallLocation.load($0) } : nil
+        let paths = paths
+        return try await storageProbe.read {
+            if let root {
+                return try GameInstallLocation(folder: root).destination(title: game.title, productID: game.id, paths: paths)
+            }
+            if let saved { return try saved.destination(title: game.title, productID: game.id, paths: paths) }
+            return try paths.destination(title: game.title, productID: game.id)
+        }
+    }
+
+    func chooseInstallLocation(_ consent: GameInstallConsent) async {
+        guard installConsent?.id == consent.id, consent.installedID == nil, !consent.resuming,
+              !choosingInstallLocation, !checkingCompatibility, canStartMutation else { return }
+        choosingInstallLocation = true
+        defer { choosingInstallLocation = false }
+        let panel = NSOpenPanel()
+        panel.title = "Choose where to install this game"
+        panel.prompt = "Choose folder"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = consent.destination.deletingLastPathComponent()
+        guard await panel.begin() == .OK, let root = panel.url else { return }
+        await updateInstallLocation(consent, root: root)
+    }
+
+    func updateInstallLocation(_ consent: GameInstallConsent, root: URL) async {
+        guard installConsent?.id == consent.id, consent.installedID == nil, !consent.resuming,
+              !checkingCompatibility, canStartMutation else { return }
+        do {
+            let destination = try await installDestination(for: consent.game, root: root)
+            guard !installed.games.contains(where: { $0.folder == destination.path }) else {
+                throw GameScriptError.invalidDestination
+            }
+            let storage = try await storageProbe.read {
+                (try GameScriptFiles.availableSpace(for: destination), GameStorageVolume.read(at: root))
+            }
+            guard installConsent?.id == consent.id, canStartMutation else { return }
+            installConsent?.destination = destination
+            installConsent?.freeBytes = storage.0
+            installConsent?.storageVolume = storage.1
+            installLocationError = nil
+        } catch {
+            guard installConsent?.id == consent.id else { return }
+            installLocationError = error.localizedDescription
+        }
     }
 
     func confirmInstall(_ consent: GameInstallConsent) {
-        guard installConsent?.id == consent.id, canStartMutation, !recoveryRequired,
+        guard installConsent?.id == consent.id, installConsent?.destination == consent.destination,
+              !choosingInstallLocation, canStartMutation, !recoveryRequired,
               consentAdmitted(consent) else { return }
         guard admitInstall(productID: consent.game.id, installedID: consent.installedID) else {
             installConsent = nil
@@ -839,11 +922,14 @@ final class GameOperationsController: ObservableObject {
             error = GameScriptError.invalidDestination.localizedDescription
             return
         }
-        begin(record)
+        begin(record, storageVolume: consent.storageVolume)
     }
 
     func cancelInstallConsent() async {
         if installingDirectly { directInstallCancelled = true }
+        preparationGeneration = UUID()
+        preparingConsent = false
+        preparingInstallProductID = nil
         installConsent = nil
         guard let runID = compatibilityRunID else { return }
         await mutationRunner.cancel(runID: runID)
@@ -885,7 +971,7 @@ final class GameOperationsController: ObservableObject {
             nativeAccountHash: usesUnifiedAccount ? nativeAccount : nil))
     }
 
-    private func begin(_ record: GameOperationRecord) {
+    private func begin(_ record: GameOperationRecord, storageVolume: GameStorageVolume? = nil) {
         guard !usesUnifiedAccount || (record.nativeAccountHash != nil && record.nativeAccountHash == nativeAccount) else {
             resetFeedback(productID: record.productID)
             error = "Your Xbox account connection changed. Refresh your library before trying again."
@@ -904,6 +990,21 @@ final class GameOperationsController: ObservableObject {
         log = nil
         failureCode = nil
         mutationTask = Task {
+            if let storageVolume {
+                do {
+                    try await storageProbe.read {
+                        if storageVolume.isUnavailable(mountedRoots: GameStorageVolume.mountedRoots()) {
+                            throw GameInstallLocationError.driveUnavailable
+                        }
+                    }
+                } catch {
+                    self.error = Self.message(error)
+                    operation = nil
+                    installed.releaseMutation()
+                    mutationTask = nil
+                    return
+                }
+            }
             do {
                 try await journal.save(record)
                 await cancelPrecheck()
@@ -1176,6 +1277,8 @@ final class GameOperationsController: ObservableObject {
     }
 
     private static func message(_ error: Error) -> String {
+        if let typed = error as? GameStorageProbeError { return typed.localizedDescription }
+        if let typed = error as? GameInstallLocationError { return typed.localizedDescription }
         if let typed = error as? GameScriptError { return typed.localizedDescription }
         if let typed = error as? InstalledGameError { return typed.localizedDescription }
         return GameScriptError.invalidReceipt.localizedDescription

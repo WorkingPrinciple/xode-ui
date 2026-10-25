@@ -361,7 +361,8 @@ struct GameInstallAction: View {
     var recover: (() -> Void)? = nil
     var reviewInstall: ((PCGame) -> Void)? = nil
     var preparing: Bool {
-        operations.installingDirectly && operations.directInstallProductID == game.id
+        (operations.preparingConsent && operations.preparingInstallProductID == game.id)
+            || (operations.installingDirectly && operations.directInstallProductID == game.id)
     }
     var active: Bool { operations.operation?.productID == game.id }
     var failed: Bool {
@@ -461,6 +462,19 @@ struct GameInstallConsentView: View {
                         Text(consent.destination.path).textSelection(.enabled)
                             .multilineTextAlignment(.trailing)
                     }
+                    if consent.installedID == nil, !consent.resuming {
+                        Button("Choose another folder…") {
+                            Task { await operations.chooseInstallLocation(consent) }
+                        }
+                        .disabled(operations.checkingCompatibility || operations.choosingInstallLocation)
+                        .accessibilityIdentifier("xodus.install.chooseLocation")
+                        Text("Only this installation changes. Your default folder and existing games stay where they are.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                    if let error = operations.installLocationError {
+                        Label(error, systemImage: "exclamationmark.circle")
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     LabeledContent("Free space now",
                                    value: GameOperationProgressView.bytes(consent.freeBytes))
                     if operations.checkingCompatibility,
@@ -515,7 +529,7 @@ struct GameInstallConsentView: View {
                 Button(consent.resuming ? "Resume" : consent.installedID == nil ? "Install" : "Check and repair") {
                     operations.confirmInstall(consent)
                 }
-                    .disabled(!operations.canConfirmInstall).keyboardShortcut(.defaultAction)
+                    .disabled(!operations.canConfirmInstall || operations.choosingInstallLocation).keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("xodus.install.confirm")
             }

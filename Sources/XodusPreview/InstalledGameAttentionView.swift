@@ -28,19 +28,21 @@ struct InstalledGameAttentionView: View {
 
     private var incomplete: Bool { installed.placeholderIDs.contains(game.id) }
     private var localIssue: Bool {
-        incomplete || installed.packageErrors[game.id] != nil
+        driveUnavailable || incomplete || installed.packageErrors[game.id] != nil
             || (installed.accountAccessAllowed && installed.playErrors[game.id] != nil)
     }
     private var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
-    var offersRepair: Bool { repairGame != nil && operations.canRepair(game) }
+    private var driveUnavailable: Bool { installed.unavailableDriveIDs.contains(game.id) }
+    var offersRepair: Bool { !driveUnavailable && repairGame != nil && operations.canRepair(game) }
 
     var body: some View {
         if needsAttention {
             VStack(alignment: .leading, spacing: 12) {
-                Label(localIssue ? "Installation needs attention" : "Game launching unavailable",
+                Label(driveUnavailable ? "Drive unavailable" : localIssue ? "Installation needs attention" : "Game launching unavailable",
                       systemImage: localIssue ? "exclamationmark.circle" : "info.circle")
                     .font(.headline)
-                Text(incomplete ? "This game isn't fully installed."
+                Text(driveUnavailable ? InstalledGamesController.driveUnavailableMessage
+                     : incomplete ? "This game isn't fully installed."
                      : localIssue ? "The installation or launch files need to be checked."
                      : installed.accountAccessMessage)
                     .fixedSize(horizontal: false, vertical: true)
@@ -53,7 +55,7 @@ struct InstalledGameAttentionView: View {
                     ProgressView("Checking installation").controlSize(.small)
                 } else {
                     HStack {
-                        Button("Check installation") { Task { await installed.checkInstallation(game) } }
+                        Button(driveUnavailable ? "Check again" : "Check installation") { Task { await installed.checkInstallation(game) } }
                             .disabled(installed.editing || installed.mutationActive)
                             .help("Checks the game folder and launch files without downloading or starting the game.")
                         if offersRepair, let repairGame {
@@ -63,6 +65,10 @@ struct InstalledGameAttentionView: View {
                             }
                         }
                     }
+                }
+                LabeledContent("Installed location") {
+                    Text(game.folder).textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Button("Remove from library", role: .destructive) { confirmingRemoval = true }
                     .disabled(installed.editing || installed.mutationActive || installed.runningGameID == game.id)
