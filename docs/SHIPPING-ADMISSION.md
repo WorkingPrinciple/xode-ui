@@ -93,6 +93,11 @@ For an approved beta package that must not be submitted or installed, use
 /absolute/clean/main-or-release-checkout --output-root /absolute/existing/output
 --format zip` (or `dmg`) and the pinned
 `--producer-notices-sha256 84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e`.
+For `--format dmg`, also supply `--dmg-background` with the reviewed X Ode
+installer PNG. The builder creates a writable staging image, adds an
+Applications drop link and Finder layout/background, converts it to a
+compressed read-only DMG, then signs and verifies the final image. Finder
+automation can require the current user's macOS Automation authorization.
 It derives app version/channel from Info.plist, requires the source checkout to
 be clean and on `main` or `release/*`, and verifies that its commit/tree match
 the app receipt and its `rev-list --count HEAD` matches CFBundleVersion. It

@@ -74,7 +74,13 @@ def fake_runner(calls):
             assert (payload / "X Ode.app").is_dir()
             Path(arguments[-1]).write_bytes(b"Neutral beta archive")
         elif arguments[0] == "/usr/bin/hdiutil":
-            Path(arguments[-1]).write_bytes(b"Neutral signed disk image")
+            if arguments[1] == "create":
+                Path(arguments[-1]).write_bytes(b"Neutral writable disk image")
+            elif arguments[1] == "convert":
+                Path(arguments[-1]).write_bytes(b"Neutral signed disk image")
+        elif arguments[0] == "/usr/bin/osascript":
+            assert "background picture" in arguments[2]
+            assert 'set position of item "Applications"' in arguments[2]
         return ""
     return run
 
@@ -112,30 +118,41 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert "does not substitute another engine" in beta.RELEASE_NOTES
     assert receipt["artifacts"]["sha256"] == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
     assert checksum_path.read_text() == receipt["artifacts"]["sha256"] + "  " + artifact_path.name + "\n"
-    assert not any(name in " ".join(command) for command in commands
-                   for name in ("notarytool", "stapler", "open", "launchctl"))
+    assert not any(any(name in command[0] for name in ("notarytool", "stapler", "launchctl"))
+                   or command[0] == "/usr/bin/open" for command in commands)
     assert (receipt_path.parent / "package-receipt.json").exists()
 
     commands.clear()
+    background = root / "installer.png"
+    background.write_bytes(b"\x89PNG\r\n\x1a\nNeutral background fixture")
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()), \
             patch.object(beta, "verify_developer_id_component",
                          return_value={"certificateSha1": IDENTITY, "secureTimestamp": True}):
         dmg_receipt_path = create_beta_package(app, output, "dmg", source,
                                                producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                               run_command=fake_runner(commands))
+                                               run_command=fake_runner(commands),
+                                               dmg_background=background)
     dmg_receipt = json.loads(dmg_receipt_path.read_text())
     assert dmg_receipt["format"] == "dmg"
     assert (output / "X-Ode-0.2.0-beta.dmg").is_file()
+    assert dmg_receipt["artifacts"]["background"]["sha256"] == hashlib.sha256(
+        background.read_bytes()).hexdigest()
+    assert any(command[0] == "/usr/bin/hdiutil" and command[1] == "attach" for command in commands)
+    assert any(command[0] == "/usr/bin/hdiutil" and command[1] == "convert" for command in commands)
     assert any(command[0] == "/usr/bin/codesign" and "--timestamp" in command for command in commands)
-    assert not any(name in " ".join(command) for command in commands
-                   for name in ("notarytool", "stapler", "open", "launchctl"))
+    assert not any(any(name in command[0] for name in ("notarytool", "stapler", "launchctl"))
+                   or command[0] == "/usr/bin/open" for command in commands)
 
     with patch.object(beta, "distribution_blockers", return_value=["Unresolved rights"]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         rejected(lambda: create_beta_package(app, output, "zip", source,
                                              producer_notices_sha256=PRODUCER_NOTICES_SHA256,
                                              run_command=fake_runner([])))
+
+    rejected(lambda: create_beta_package(app, output, "dmg", source,
+                                         producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                         run_command=fake_runner([])))
 
     with (app / "Contents/Info.plist").open("wb") as output_file:
         plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",

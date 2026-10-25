@@ -88,8 +88,66 @@ def release_identity(source, expected_source):
     return {"commit": commit, "tree": tree, "buildNumber": int(build_number)}
 
 
+def create_installer_dmg(payload, staging, artifact, product_name, identity,
+                         background_image, run_command):
+    background_record, background_data = owned_bytes(background_image, bounded=20 * 1024 * 1024)
+    require(Path(background_image).suffix.lower() == ".png"
+            and background_data.startswith(b"\x89PNG\r\n\x1a\n"),
+            "DMG background must be a PNG image")
+    background_directory = payload / ".background"
+    background_directory.mkdir()
+    (background_directory / "X-Ode-Installer.png").write_bytes(background_data)
+    (payload / "Applications").symlink_to("/Applications")
+
+    writable_image = staging / "X-Ode-writable.dmg"
+    mountpoint = staging / "mounted"
+    mountpoint.mkdir()
+    run_command(["/usr/bin/hdiutil", "create", "-srcfolder", str(payload),
+                 "-volname", product_name, "-format", "UDRW", "-fs", "HFS+",
+                 str(writable_image)])
+    run_command(["/usr/bin/hdiutil", "attach", "-nobrowse", "-readwrite", "-noverify",
+                 "-mountpoint", str(mountpoint), str(writable_image)])
+    layout_script = """on run argv
+    set mountPath to item 1 of argv
+    set volumeName to item 2 of argv
+    set imagePath to POSIX file (mountPath & "/.background/X-Ode-Installer.png") as alias
+    tell application "Finder"
+        tell disk volumeName
+            open
+            set installerWindow to container window
+            set current view of installerWindow to icon view
+            set toolbar visible of installerWindow to false
+            set statusbar visible of installerWindow to false
+            set bounds of installerWindow to {100, 100, 820, 620}
+            set viewOptions to icon view options of installerWindow
+            set arrangement of viewOptions to not arranged
+            set icon size of viewOptions to 112
+            set background picture of viewOptions to imagePath
+            set position of item "X Ode.app" of installerWindow to {205, 235}
+            set position of item "Applications" of installerWindow to {515, 235}
+            set position of item "INSTALL.txt" of installerWindow to {205, 385}
+            set position of item "RELEASE-NOTES.txt" of installerWindow to {515, 385}
+            update without registering applications
+        end tell
+    end tell
+end run
+"""
+    try:
+        run_command(["/usr/bin/osascript", "-e", layout_script, str(mountpoint), product_name])
+    finally:
+        run_command(["/usr/bin/hdiutil", "detach", str(mountpoint)])
+    run_command(["/usr/bin/hdiutil", "convert", str(writable_image),
+                 "-format", "UDZO", "-imagekey", "zlib-level=9", "-o", str(artifact)])
+    run_command(["/usr/bin/codesign", "--force", "--sign", identity.upper(),
+                 "--timestamp", "--identifier", APP_IDENTIFIER + ".beta.0.2.0", str(artifact)])
+    run_command(["/usr/bin/codesign", "--verify", "--strict", str(artifact)])
+    verify_developer_id_component(artifact, identity, TEAM_ID, run_command,
+                                  hardened_runtime=False)
+    return background_record
+
+
 def package_beta(app, output_root, package_format, source, identity=IDENTITY,
-                 producer_notices_sha256=None, run_command=run):
+                 producer_notices_sha256=None, run_command=run, dmg_background=None):
     app = Path(app)
     output_root = Path(output_root)
     require(app.is_absolute() and app.resolve(strict=True) == app and app.is_dir()
@@ -102,6 +160,8 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     require(output_stat.st_uid == os.getuid() and output_stat.st_mode & 0o022 == 0,
             "Output root must be owned by the current user and not writable by others")
     require(package_format in ("zip", "dmg"), "Package format must be zip or dmg")
+    require(package_format != "dmg" or dmg_background is not None,
+            "A reviewed DMG background PNG is required for the installer image")
     require(isinstance(identity, str) and identity.upper() == IDENTITY,
             "Use the approved Developer ID certificate leaf")
 
@@ -178,14 +238,8 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
                 run_command(["/usr/bin/ditto", "-c", "-k", "--sequesterRsrc",
                              "--keepParent", str(payload), str(artifact)])
             else:
-                run_command(["/usr/bin/hdiutil", "create", "-volname", product_name,
-                             "-srcfolder", str(payload), "-format", "UDZO", str(artifact)])
-                run_command(["/usr/bin/codesign", "--force", "--sign", identity.upper(),
-                             "--timestamp", "--identifier", APP_IDENTIFIER + "." + channel_slug + "." + version,
-                             str(artifact)])
-                run_command(["/usr/bin/codesign", "--verify", "--strict", str(artifact)])
-                verify_developer_id_component(artifact, identity, TEAM_ID, run_command,
-                                              hardened_runtime=False)
+                background_record = create_installer_dmg(
+                    payload, staging, artifact, product_name, identity, dmg_background, run_command)
 
             artifact_identity = identify_file(artifact)
             digest = artifact_identity["sha256"]
@@ -198,6 +252,8 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
                 "checksumFile": checksum_path.name,
                 "installNote": "INSTALL.txt (included in package)",
             }
+            if package_format == "dmg":
+                receipt["artifacts"]["background"] = background_record
             receipt["state"] = "prepared_not_submitted"
             write_receipt(receipt_path, receipt)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
@@ -251,10 +307,12 @@ def main():
     parser.add_argument("--identity", default=IDENTITY)
     parser.add_argument("--producer-notices-sha256", required=True,
                         help="Independently reviewed exact producer inventory digest")
+    parser.add_argument("--dmg-background", type=Path,
+                        help="Approved PNG background art required when --format dmg")
     arguments = parser.parse_args()
     receipt = package_beta(arguments.app, arguments.output_root, arguments.format, arguments.source,
                            arguments.identity,
-                           arguments.producer_notices_sha256)
+                           arguments.producer_notices_sha256, dmg_background=arguments.dmg_background)
     print(receipt)
 
 
