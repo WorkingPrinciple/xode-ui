@@ -11,6 +11,7 @@ python3 tools/check_release_candidate.py
 python3 tools/check_package_resources.py
 python3 tools/check_distribution_manifest.py
 python3 tools/check_producer_notices.py
+python3 tools/check_game_root_migration.py
 swift build
 python3 tools/check_shipping_pair.py
 python3 tools/check_python_runtime.py
