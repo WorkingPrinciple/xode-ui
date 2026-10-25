@@ -1391,7 +1391,8 @@ enum InstalledGameChecks {
         guard let cleared = routing.games.first else { throw InstalledGameError.invalidRegistry }
         await routing.play(cleared)
         try await wait { routing.runningGameID == nil }
-        check(routing.playErrors[cleared.id] == InstalledGameActionCopy.launchUnavailable,
+        // REQ114 B2: the refusal keeps its specific cause rather than the generic launch copy.
+        check(routing.playErrors[cleared.id] == NativeLaunchError.providerPolicy.localizedDescription,
               "REQ95 clearing an override without a configured default refuses instead of silently launching CrossOver")
         await routing.waitForSessionPersistence()
         await routing.setEngineOverride(.gptk4, for: cleared)
