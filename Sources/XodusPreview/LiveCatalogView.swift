@@ -275,8 +275,8 @@ struct LiveCatalogView: View {
     }
     private var columns: [GridItem] { LibraryGridLayout.columns }
 
-    var body: some View {
-        let key = CatalogProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
+    private var projectionKey: CatalogProjectionKey {
+        CatalogProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
             products: session.catalogMatches(query: query)
                 ? Array(session.products.prefix(query.isEmpty ? selection.browseLimit : 512)) : [],
             gamePass: Array(session.gamePassProducts.prefix(query.isEmpty ? selection.browseLimit : 512)),
@@ -284,6 +284,10 @@ struct LiveCatalogView: View {
             installed: installed.games, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
             genre: selection.genre, showsUnsupported: showsUnsupportedGames)
+    }
+
+    var body: some View {
+        let key = projectionKey
         selection.prepare(key, accountScope: "\(session.accountHash ?? ""):\(session.market):\(session.language)") {
             CatalogProjection(key: key, facts: art.images.mapValues(\.facts), isVisible: isVisible)
         }
@@ -567,10 +571,13 @@ struct LiveCatalogView: View {
                 await session.refreshCatalog(query, more: true)
             } else {
                 await selection.loadMoreSearch(session: session, query: query) {
-                    await art.load(ids: session.products.map(\.id), market: session.market, language: session.language)
-                    guard session.products.allSatisfy({ art.images[$0.id]?.facts.isBaseGame != nil }) else { return nil }
-                    return Set(session.products.filter {
-                        art.images[$0.id]?.facts.isBaseGame == true && selection.scope.includes(game($0))
+                    var current = CatalogProjection(key: projectionKey, facts: art.images.mapValues(\.facts), isVisible: isVisible)
+                    await art.load(ids: current.index.results.storeProducts.map(\.id),
+                                   market: session.market, language: session.language)
+                    current = CatalogProjection(key: projectionKey, facts: art.images.mapValues(\.facts), isVisible: isVisible)
+                    guard current.unresolvedClassificationCount == 0 else { return nil }
+                    return Set(current.visible.filter {
+                        current.index.games[$0.id].map(selection.scope.includes) == true
                     }.map(\.id))
                 }
             }

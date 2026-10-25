@@ -253,6 +253,19 @@ enum NativeChecks {
                     check(progress.products.count == 9 && progress.discoveryFailures.count == 24
                           && progressSelection.continuationNotice(session: progress, query: "Forza") == nil,
                           "REQ100 paging stops after one page when that active scope gains real results")
+                    if let alreadyOwned = progress.products.last {
+                        let key = CatalogProjectionKey(accountHash: progress.accountHash, query: "Forza",
+                            owned: [PCGame(id: alreadyOwned.id, title: alreadyOwned.title, artwork: nil)],
+                            products: progress.products, gamePass: [], gamePassIDs: [],
+                            installed: [], accessIsCurrent: false, metadataRevision: 0,
+                            compatibility: [:], genre: nil, showsUnsupported: false)
+                        let facts = Dictionary(uniqueKeysWithValues: progress.products.map {
+                            ($0.id, LibraryCatalogFacts(genres: [], isBaseGame: true))
+                        })
+                        let current = CatalogProjection(key: key, facts: facts, isVisible: { _ in true })
+                        check(current.visible.count == 8 && !current.visible.contains { $0.id == alreadyOwned.id },
+                              "REQ100 exact paging projection does not count an already-visible Library identity as a new public game")
+                    }
                     let version = progress.catalogRequestVersion
                     await progressSelection.loadMoreSearch(session: progress, query: "Forza") { nil }
                     check(progress.catalogRequestVersion == version
