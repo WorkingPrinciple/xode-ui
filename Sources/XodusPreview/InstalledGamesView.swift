@@ -256,6 +256,15 @@ struct InstalledPlayButton: View {
         }
     }
 
+    var ownsInstallationCheck: Bool {
+        guard !canStop, !launching, operations.operation?.productID != game.storeId,
+              !(operations.installingDirectly && operations.directInstallProductID == game.storeId) else { return false }
+        if library.unavailableDriveIDs.contains(game.id) { return true }
+        return NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+            evidence: evidenceStore.games[game.storeId]) == nil && unsupportedIssues.isEmpty
+            && library.requiresNativeInstallationStatus(game) && nativeAction == .check
+    }
+
     @ViewBuilder private var nativeInstallationButton: some View {
         Button {
             let action = nativeAction

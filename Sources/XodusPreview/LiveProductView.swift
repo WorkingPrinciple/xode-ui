@@ -250,6 +250,10 @@ struct LiveProductView: View {
                         if let installed {
                             InstalledGameAttentionView(installed: installedLibrary, operations: operations,
                                 game: installed, repairGame: library.accessIsCurrent(for: product.id) ? owned : nil,
+                                installationCheckInHeader: unsupportedIssues.isEmpty
+                                   && !(installedLibrary.placeholderIDs.contains(installed.id) && owned != nil)
+                                   && InstalledPlayButton(library: installedLibrary, operations: operations,
+                                       game: installed).ownsInstallationCheck,
                                 close: dismiss.callAsFunction)
                         }
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {

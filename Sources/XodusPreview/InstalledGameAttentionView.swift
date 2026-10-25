@@ -22,6 +22,7 @@ struct InstalledGameAttentionView: View {
     @ObservedObject var operations: GameOperationsController
     let game: InstalledGame
     var repairGame: PCGame?
+    var installationCheckInHeader = false
     let close: () -> Void
     @State private var confirmingRemoval = false
     @Environment(\.openSettings) private var openSettings
@@ -37,6 +38,7 @@ struct InstalledGameAttentionView: View {
     }
     private var driveUnavailable: Bool { installed.unavailableDriveIDs.contains(game.id) }
     var offersRepair: Bool { localIssue && !driveUnavailable && repairGame != nil && operations.canRepair(game) }
+    var offersInstallationCheck: Bool { localIssue && !installationCheckInHeader }
 
     var body: some View {
         if needsAttention {
@@ -48,14 +50,18 @@ struct InstalledGameAttentionView: View {
                 if !localIssue {
                     Button("Open settings", action: openSettings.callAsFunction)
                 }
-                if localIssue && installed.checkingInstallations.contains(game.id) {
+                if offersInstallationCheck && installed.checkingInstallations.contains(game.id) {
                     ProgressView("Checking installation").controlSize(.small)
                     Button("Cancel") { installed.cancelInstallationCheck(game) }
                 } else if localIssue {
                     HStack {
-                        Button(driveUnavailable ? "Check again" : "Check installation") { Task { await installed.checkInstallation(game) } }
+                        if offersInstallationCheck {
+                            Button(driveUnavailable ? "Check again" : "Check installation") {
+                                Task { await installed.checkInstallation(game) }
+                            }
                             .disabled(installed.editing || installed.mutationActive)
                             .help("Checks the game folder and launch files without downloading or starting the game.")
+                        }
                         if offersRepair, let repairGame {
                             Button(incomplete ? "Install full game" : "Repair installation") {
                                 close()

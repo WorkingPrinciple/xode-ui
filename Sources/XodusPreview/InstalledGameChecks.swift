@@ -177,6 +177,16 @@ enum InstalledGameChecks {
               && InstalledGameAttentionView(installed: mounted, operations: GameOperationsController(installed: mounted),
                   game: mountedGame, close: {}).needsAttention,
               "Detail: A registered unavailable folder keeps recovery instead of contradictory Install in the header")
+        let recoveryOperations = GameOperationsController(installed: mounted)
+        let header = InstalledPlayButton(library: mounted, operations: recoveryOperations, game: mountedGame)
+        let attention = InstalledGameAttentionView(installed: mounted, operations: recoveryOperations,
+            game: mountedGame, installationCheckInHeader: header.ownsInstallationCheck, close: {})
+        check((header.ownsInstallationCheck ? 1 : 0) + (attention.offersInstallationCheck ? 1 : 0) == 1
+              && attention.needsAttention && !attention.offersInstallationCheck,
+              "Detail: Header-owned recovery renders exactly one installation check while keeping the body warning and location")
+        check(InstalledGameAttentionView(installed: mounted, operations: recoveryOperations,
+            game: mountedGame, close: {}).offersInstallationCheck,
+              "Detail: A standalone attention panel retains its check when no header owns recovery")
     }
 
     static func descriptionChecks(check: (Bool, String) -> Void) {

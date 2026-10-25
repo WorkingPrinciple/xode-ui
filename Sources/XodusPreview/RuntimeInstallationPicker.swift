@@ -60,7 +60,7 @@ struct RuntimeInstallationPicker: View {
                 }
             }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } }) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
-                                 observation: registryObservation, showsEntries: true)
+                                 observation: registryObservation, showsEntries: false)
         }
     }
 
