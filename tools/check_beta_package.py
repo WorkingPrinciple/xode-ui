@@ -73,6 +73,10 @@ def fake_runner(calls):
         calls.append(arguments)
         if arguments[0] == "/usr/bin/ditto" and len(arguments) == 3:
             shutil.copytree(arguments[1], arguments[2])
+            if arguments[1].endswith(".app"):
+                with (Path(arguments[2]) / "Contents/Info.plist").open("rb") as info_file:
+                    packaged_info = plistlib.load(info_file)
+                assert packaged_info["CFBundleIdentifier"] == beta.APP_BUNDLE_IDENTIFIER
         elif arguments[0] == "/usr/bin/ditto" and "-c" in arguments:
             payload = Path(arguments[-2])
             assert (payload / "INSTALL.txt").is_file()
