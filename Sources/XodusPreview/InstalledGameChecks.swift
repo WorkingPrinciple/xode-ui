@@ -199,6 +199,11 @@ enum InstalledGameChecks {
               && InstalledPlayButton(library: cancelled, operations: GameOperationsController(installed: cancelled),
                   game: cancelledEntry).nativeActionTitle == "Retry",
               "COR171 H1: Cancelled mounted view re-entry retains an explained Retry, never an idle Checking spinner")
+        try cancelled.reserveMutation(gameID: nil)
+        check(InstalledPlayButton(library: cancelled, operations: GameOperationsController(installed: cancelled),
+            game: cancelledEntry).nativeReadinessUnavailableReason?.contains("operation") == true,
+              "COR171: A mutation-blocked readiness Retry is explicitly disabled with an operation-wait reason, not a no-op")
+        cancelled.releaseMutation()
         try FileManager.default.removeItem(at: local)
         await isolated.checkInstallation(game)
         check(isolated.packageErrors[game.id] == InstalledGameError.missingFolder.localizedDescription

@@ -265,6 +265,12 @@ struct InstalledPlayButton: View {
             && library.requiresNativeInstallationStatus(game) && nativeAction == .check
     }
 
+    var nativeReadinessUnavailableReason: String? {
+        if library.mutationActive { return "Wait for the current installation operation to finish before verifying this game." }
+        if library.accountDisconnecting { return "Wait for account disconnection to finish before verifying this game." }
+        return nil
+    }
+
     @ViewBuilder private var nativeInstallationButton: some View {
         if nativeActionTitle == "Checking…" {
             ProgressView("Checking…").controlSize(.small)
@@ -290,8 +296,9 @@ struct InstalledPlayButton: View {
         .modifier(LibraryActionStyle(primary: prominent, usesGlass: usesGlass))
         .modifier(LibraryHeroControlSize(enabled: heroStyle))
         .disabled(library.checkingInstallations.contains(game.id) || library.editing || library.choosing
-                  || library.applicationTerminating
+                  || library.applicationTerminating || nativeReadinessUnavailableReason != nil
                   || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
+        .help(nativeReadinessUnavailableReason ?? "\(nativeActionTitle) for \(game.title)")
         .accessibilityLabel("\(nativeActionTitle) for \(game.title)")
         .accessibilityIdentifier("xodus.installed.readinessAction")
         }
