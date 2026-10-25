@@ -29,6 +29,21 @@ failure without new evidence.
 
 ## Native interface
 
+REQ109 / COR152-154: Settings → Engines and the Engines account page share one
+configurator. It names the current default engine, lists admitted Calimocho
+builds with **Set as Default**, and lists user-added engines with **Remove**.
+User engines are configuration only and cannot become the default until a
+reviewed launch route exists. **Choose…** or a typed path adds a Wine app or
+folder after static layout checks (bin/wine*, bin/wineserver, lib/wine; Mach-O
+or script headers), with no code executed. Fixed conventional app locations are
+suggested; nothing is scanned recursively. CrossOver is found by registered
+bundle identity, then /Applications and ~/Applications, and is signature-checked.
+A saved CrossOver location always wins over detection; **Get CrossOver** links to
+https://www.codeweavers.com/crossover when it is absent. Routine explanatory
+paragraphs are removed. `--engine-selection-check` covers absent, present,
+renamed, invalid and saved-choice cases; `XODUS_ENGINE_RENDER_DIRECTORY` saves
+detached configurator PNGs.
+
 REQ95 / COR132-134 launch routing uses the Settings default admission unless
 the user explicitly chooses an optional override in the existing game Actions
 menu. Only `engineOverrideV2` records that choice; historical `engineOverride`

@@ -8,6 +8,7 @@ struct NativeEngineSettings: View {
     let allowsFileReads: Bool
     let backendPath: String
     @ObservedObject var observation: EngineRegistryObservation
+    var showsEntries = true
     @AppStorage("Xodus.lifecycle.registry") private var registryPath = ""
     @AppStorage("Xodus.lifecycle.runtime") private var runtimeData = Data()
     @AppStorage("Xodus.lifecycle.profileDirectory") private var profileDirectory = ""
@@ -20,7 +21,7 @@ struct NativeEngineSettings: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Registered engines").font(.headline)
+                Text("Engine registry").font(.headline)
                 Spacer()
                 Button("Refresh") { refreshID = UUID() }
                     .disabled(!allowsFileReads || observation.status == .loading)
@@ -45,7 +46,7 @@ struct NativeEngineSettings: View {
             }
             if registryPath.isEmpty {
                 Text(
-                    "Choose the local engine registry to detect registered versions and locations. Refresh reads it again without installing or changing engines."
+                    "Choose the engine registry to detect installed engines."
                 )
                 .foregroundStyle(.secondary)
             } else if observation.entries.isEmpty, observation.status == .missing {
@@ -54,6 +55,7 @@ struct NativeEngineSettings: View {
                 )
                 .foregroundStyle(.secondary)
             }
+            if showsEntries {
             ForEach(observation.entries) { entry in
                 VStack(alignment: .leading, spacing: 4) {
                     LabeledContent(entry.name, value: observation.inspections[entry.name]?.ready == true
@@ -90,12 +92,7 @@ struct NativeEngineSettings: View {
                     else { return true }
                     return saveAdmission(inspection)
                 })
-            Text(EngineManagementPolicy.qualificationExplanation)
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            Text(
-                "Apple toolkit and graphics payloads are not interchangeable with registered Wine providers. Generic Wine records keep their exact names; they are not identified as Calimocho."
-            )
-            .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
             if let message = observation.errorMessage {
                 Label(message, systemImage: "exclamationmark.circle")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -198,18 +195,23 @@ struct NativeEngineSettings: View {
     }
 
     private func saveAdmission(_ inspection: EngineInspection) -> Bool {
-        do {
-            guard inspection.ready, let name = inspection.engineName else { throw EngineInspectionError.failed }
-            admittedSelection = try JSONEncoder().encode(AdmittedEngineSelection(
-                registryPath: registryPath, inspection: inspection))
-            UserDefaults.standard.set(admittedSelection, forKey: NativeEngineDefaults.preferenceKey)
-            UserDefaults.standard.set(name, forKey: "Xodus.lifecycle.engine.calimocho")
-            errorMessage = nil
-            return true
-        } catch {
+        guard Self.persistAdmission(inspection, registryPath: registryPath) else {
             errorMessage = "The verified engine selection couldn't be saved. Retry Refresh."
             return false
         }
+        errorMessage = nil
+        return true
+    }
+
+    static func persistAdmission(_ inspection: EngineInspection, registryPath: String,
+                                 defaults: UserDefaults = .standard) -> Bool {
+        guard inspection.ready, let name = inspection.engineName,
+              let data = try? JSONEncoder().encode(AdmittedEngineSelection(
+                registryPath: registryPath, inspection: inspection)) else { return false }
+        defaults.set(data, forKey: AdmittedEngineSelection.preferenceKey)
+        defaults.set(data, forKey: NativeEngineDefaults.preferenceKey)
+        defaults.set(name, forKey: "Xodus.lifecycle.engine.calimocho")
+        return true
     }
 }
 

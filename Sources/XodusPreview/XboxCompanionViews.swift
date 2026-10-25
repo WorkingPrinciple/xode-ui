@@ -599,18 +599,14 @@ struct EnginesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Engines").font(.title2.bold())
-            Text("CrossOver readiness is observed independently from declared Wine, GPTK and graphics components. Experimental configurations remain explicitly labelled.")
-                .font(.callout).foregroundStyle(.secondary)
             Form {
-                RuntimeProviderSection(settings: state.runtimeSettings, backendPath: session.backendPath)
-                Section("Launch routing") {
+                Section {
                     RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
                 }
             }
             .formStyle(.grouped)
             .frame(minHeight: 440)
         }
-        .task { await state.runtimeSettings.refreshCrossOverDependency() }
     }
 }
 

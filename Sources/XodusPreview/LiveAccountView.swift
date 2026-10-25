@@ -198,7 +198,7 @@ struct LiveSettingsView: View {
             Section("Game storage") {
                 GameInstallLocationSettings()
             }
-            Section("Game runtime") {
+            Section("Engines") {
                 RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
             }
 
@@ -278,18 +278,12 @@ struct LiveSettingsView: View {
                 }
             }
             Section("Engines") {
-                Text("Review CrossOver readiness and declared GPTK, Wine and graphics components on the dedicated Engines page.")
-                    .foregroundStyle(.secondary)
                 Button("Open Engines") { state.openAccount(.engines) }
             }
             Section("Game access") {
                 GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
             }
             Section("Advanced public catalog") {
-                Text(session.supports(.query)
-                     ? "Discover browses PC Game Pass titles or searches the public Microsoft Store. Neither source is an owned library."
-                     : "Discover checks a bounded public PC Game Pass page. This engine searches checked products only, not the whole Store or an owned library.")
-                    .foregroundStyle(.secondary)
                 if session.hasConfirmedSignIn {
                     LabeledContent("Market", value: session.accountCountryLabel)
                 } else {
@@ -307,8 +301,6 @@ struct LiveSettingsView: View {
                         ProgressView().controlSize(.small).accessibilityLabel("Looking up game details")
                     }
                 }
-                Text("Checks public metadata only. It does not buy, authorize, download or install a game.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Diagnostics") {
                 DisclosureGroup("Sign-in and game connection") {
