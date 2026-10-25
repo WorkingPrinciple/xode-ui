@@ -2,7 +2,29 @@
 
 ## Purpose and authorization
 
-### REQ95 source candidate: compliant settings producer
+### REQ100 source candidate: accepted query producer
+
+The accepted backend source is `a31f63df2bf265db46a8d28ed2e8ac1e60181beb`,
+tree `1eb7713816f4748fa821bf9d14faff3d8498bbfa`. The sealed-input source/tree
+predicate targets that exact revision; command, feature/profile, ownership and
+seal validation are unchanged. The observed signed tuple is CLI
+`f59ba1be087356efa6757ab38002de1cb884ab60420c15185e1a4c1a8f0fecc9`
+(28,703,504 bytes), Windows helper
+`3e2e8b8ce7bad9f1f283bdf01d79ef7b7dda568a585fe6958e9fd263e4ebc39a`
+(20,480 bytes), and manifest
+`f37bbaaa8b294e6e48010327fbe5bc7c2019665f7091737df182890e4c6df258`
+(12,169 bytes). Unsigned input
+`47e36b37625dec4c41cb22f14a3916362da58f31d0e0c311fdf95a9697f4b641`
+(28,852,992 bytes) and provenance
+`cfbb2baeb8e5a46569effa378929ca2dc525246c2b3c8b8eb416cd35d5526f6f`
+(2,199 bytes) pass the unchanged sealed-input verifier. Signed artifact hashes,
+all three exact helper embeddings and strict fixed-leaf signature were checked
+independently before binding these pins. The runtime catalogue changes only its
+current CLI hash; historical gameplay evidence identities remain unchanged.
+This is source/artifact binding, not installed acceptance or a relabel of the
+immutable REQ95 signed candidate.
+
+### Frozen REQ95 candidate: compliant settings producer
 
 The reviewed successor uses the same producer source/tree below, genuinely built
 with the canonical sealed-input command. Current signed CLI is
@@ -15,7 +37,7 @@ with the canonical sealed-input command. Current signed CLI is
 `068074f1b65013f1b3eb4d5eac4739df934c9099b232891a3faa04c83cbbbf47`
 (28,825,968 bytes) and provenance
 `c6f2b8a46a1316e5a47166e7d1b2ac72fa5ddcc89fa2882ff14580d4bb0e5d0d`
-(2,210 bytes) pass the unchanged `shipping_pair.verify_input`.
+(2,210 bytes) passed the unchanged `shipping_pair.verify_input` at that freeze.
 The complete actual helper differs from the older 42560b3e artifact at only
 offsets 136/137/138 (COFF timestamp) and 216 (PE checksum). This is a new genuine
 compiler output, explicitly accepted by the coordinator, not a rewritten old
@@ -53,16 +75,18 @@ claim installed engine parity, game acceptance or permission to deploy.
 
 ### Current paired schema reconciliation
 
-The app resource now uses the exact canonical management contract from producer
-`f86a31d55301308c0c5938279c627dabf5bc9877`, tree
-`16e71c85466333475c2468d54242080e4cf47363`, SHA256
-`23df3f6eb0d09c035b0575c02dd314bdb876208f1f3cc404473c2340975fb164`.
-This corrects the generator's rejection of the producer's actual combined
-Xbox/Store Edge query source and cached product descriptors. Both legacy
-Store Edge and combined query sources remain valid for successful and failed
-pages; page freshness is still live and products remain PC candidates.
-Descriptor request branch order, references and formatting now match the
-producer bytes rather than a separately maintained app variant.
+Both app contract copies now use the exact canonical management contract from
+producer `a31f63df2bf265db46a8d28ed2e8ac1e60181beb`, tree
+`1eb7713816f4748fa821bf9d14faff3d8498bbfa`, SHA256
+`8b35109843a37023491add7e385f51c795300df5a838194c484dd7d6b9b3d1bd`.
+Relative to the previous bundled contract, only the optional `sourceFailure`
+object was added to successful and failed query pages. No bundled app-only
+content was dropped; the stale docs copy gains the existing descriptor and
+combined Xbox/Store contract as well. Both legacy Store Edge and combined
+sources remain valid; page freshness is live and products remain PC candidates.
+`tools/sync_contract.py` now verifies equality without copying. Its focused
+regression proves matching, mismatched `check.sh`, and missing-file paths leave
+files unchanged.
 
 Focused source verification compares the bundled resource byte-for-byte and
 validates supported producer fixtures through both contracts:

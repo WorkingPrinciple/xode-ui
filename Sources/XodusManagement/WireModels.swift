@@ -354,6 +354,15 @@ public struct CatalogDiscovery: Codable, Equatable, Sendable {
 }
 
 public struct CatalogQuery: Codable, Equatable, Sendable {
+    public struct SourceFailure: Codable, Equatable, Sendable {
+        public enum Code: String, Codable, Sendable {
+            case packageUnavailable = "PACKAGE_UNAVAILABLE"
+            case networkUnavailable = "NETWORK_UNAVAILABLE"
+        }
+        public let code: Code
+        public let message: String
+        public let retryable: Bool
+    }
     public let corpus: String
     public let completeness: String
     public let source: String
@@ -363,15 +372,21 @@ public struct CatalogQuery: Codable, Equatable, Sendable {
     public let products: [CatalogProduct]
     public let failures: [DiscoveryFailure]
     public let nextCursor: String?
+    public let sourceFailure: SourceFailure?
 
     public func validatePublicScope(query: String, market: String, language: String, limit: Int) throws {
         let ids = products.map(\.id) + failures.map(\.id)
         guard corpus == "publicMicrosoftStoreSearch", completeness == "partial",
               ["MicrosoftStoreEdge:v9.0/searchResults",
                "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"].contains(source), freshness == "live",
-              self.query == query, ids.count <= limit, Set(ids).count == ids.count,
+              self.query == query, products.count <= limit, failures.count <= 16, Set(ids).count == ids.count,
               !ids.isEmpty || nextCursor == nil else {
             throw ManagementError.invalidPayload
+        }
+        if let sourceFailure {
+            guard !sourceFailure.message.isEmpty, sourceFailure.message.count <= 1_024 else {
+                throw ManagementError.invalidPayload
+            }
         }
         let allowsGamePassListing = source == "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"
         for product in products {

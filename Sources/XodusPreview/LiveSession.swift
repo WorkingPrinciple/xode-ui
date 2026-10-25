@@ -75,6 +75,7 @@ final class LiveSession: ObservableObject {
     @Published var selectedProduct: CatalogProduct?
     @Published var errorMessage: String?
     @Published var catalogError: String?
+    @Published private(set) var catalogSourceFailure: CatalogQuery.SourceFailure?
     @Published private(set) var backendPath: String
     @Published var market = "US" { didSet { if market != oldValue { invalidateCatalogScope() } } }
     @Published var language = "en-US" { didSet { if language != oldValue { invalidateCatalogScope() } } }
@@ -564,7 +565,9 @@ final class LiveSession: ObservableObject {
         if !isReady { return "Reconnect in Settings to browse games." }
         if !canRefresh { return "This catalog isn't available in this build." }
         if catalogStopped { return "Start a new search when you're ready." }
-        if catalogError != nil || !discoveryFailures.isEmpty { return "Try another search or refresh the results." }
+        if catalogError != nil || !discoveryFailures.isEmpty || catalogSourceFailure != nil {
+            return "Try another search or refresh the results."
+        }
         if query.isEmpty { return "Find your next game with Discover or search." }
         return "Try a different title or a shorter search."
     }
@@ -582,7 +585,7 @@ final class LiveSession: ObservableObject {
         if searching { return "Finding games" }
         if catalogStopped { return "Search stopped" }
         if catalogCorpus == "publicMicrosoftStoreSearch", catalogError == nil,
-           discoveryFailures.isEmpty, discoveryCheckedAt != nil { return "No Store matches" }
+           discoveryFailures.isEmpty, catalogSourceFailure == nil, discoveryCheckedAt != nil { return "No Store matches" }
         return "No games to show"
     }
     func catalogEmptyExplanation(query: String, canRefresh: Bool) -> String {
@@ -590,7 +593,7 @@ final class LiveSession: ObservableObject {
         if !isReady { return "Connect Ode to X in Settings to load public product metadata." }
         if !canRefresh { return "This engine does not provide this catalog operation. Update the paired app build." }
         if catalogStopped { return "Run a new search or refresh this scope when you are ready." }
-        if catalogError != nil || !discoveryFailures.isEmpty {
+        if catalogError != nil || !discoveryFailures.isEmpty || catalogSourceFailure != nil {
             return "The public catalog could not be fully checked. Refresh to try again; no empty owned library is inferred."
         }
         if query.isEmpty { return "Request public catalog data in this scope. Catalog results do not establish ownership or installation access." }
@@ -1065,6 +1068,7 @@ final class LiveSession: ObservableObject {
         nextCursor = nil
         cacheRevision = nil
         catalogCorpus = "observedPublicProducts"
+        catalogSourceFailure = nil
         discoveryFailures = []
         discoveryCheckedAt = nil
         discoveryRevision = nil
@@ -1484,6 +1488,7 @@ final class LiveSession: ObservableObject {
         currentQuery = query
         catalogRequestScope = "\(market):\(language)"
         if !more && !retainsProducts {
+            catalogSourceFailure = nil
             products = []
             nextCursor = nil
             cacheRevision = nil
@@ -1653,6 +1658,10 @@ final class LiveSession: ObservableObject {
             if case let ManagementError.queryFailed(page) = error {
                 do { try applyQueryPage(page, request: request) }
                 catch { catalogError = Self.describe(error); return }
+                if !products.isEmpty || page.nextCursor != nil {
+                    catalogError = nil
+                    return
+                }
             }
             catalogError = Self.describe(error)
         }
@@ -1674,6 +1683,7 @@ final class LiveSession: ObservableObject {
             discoveryFailures = page.failures
         }
         nextCursor = page.nextCursor
+        catalogSourceFailure = request.more ? (page.sourceFailure ?? catalogSourceFailure) : page.sourceFailure
         discoveryCheckedAt = page.checkedAt
         catalogCorpus = page.corpus
     }
@@ -1687,6 +1697,7 @@ final class LiveSession: ObservableObject {
 
     private func browseDiscovery(_ request: CatalogRequest) async {
         guard let client, request.generation == generation else { return }
+        catalogSourceFailure = nil
         if !request.more { gamePassBadgeProductIDs = [] }
         gamePassCatalogLoading = true
         gamePassCatalogError = nil
@@ -1784,6 +1795,7 @@ final class LiveSession: ObservableObject {
 #endif
 
     private func invalidateCatalogScope() {
+        catalogSourceFailure = nil
         queryGeneration += 1
         queuedCatalog = nil
         products = []

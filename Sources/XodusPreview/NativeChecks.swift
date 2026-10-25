@@ -197,6 +197,42 @@ enum NativeChecks {
             try await PublicDescriptorChecks.run(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
+                for scenario in ["querybudget", "querysourcewarning", "querysourcefailed"] {
+                    let config = configuration(scenario)
+                    try FileManager.default.createDirectory(at: config.stateDirectory, withIntermediateDirectories: true)
+                    let consumer = LiveSession(configuration: config)
+                    await consumer.connect()
+                    await consumer.refreshCatalog("Forza")
+                    if scenario == "querybudget" {
+                        check(consumer.discoveryFailures.count == 16 && consumer.nextCursor == "q1-aa"
+                              && consumer.canLoadMoreCatalog && consumer.catalogError == nil && consumer.products.isEmpty,
+                              "REQ100 16 rejected candidates preserve real More continuation, not global search unavailable")
+                        await consumer.refreshCatalog("Forza", more: true)
+                        check(consumer.products.count == 1 && consumer.nextCursor == nil
+                              && consumer.discoveryFailures.count == 16 && consumer.catalogError == nil,
+                              "REQ100 More resumes exact cursor and appends useful PC results without restarting")
+                    } else {
+                        check(consumer.catalogSourceFailure?.code == .packageUnavailable
+                              && consumer.catalogEmptyTitle != "No Store matches"
+                              && (scenario == "querysourcewarning"
+                                  ? consumer.products.count == 1 && consumer.catalogError == nil
+                                  : consumer.products.isEmpty && consumer.discoveryFailures.count == 1),
+                              "REQ100 optional source warning survives actual \(scenario) decode and consumer presentation")
+                        if scenario == "querysourcewarning" {
+                            await consumer.refreshCatalog("Halo")
+                            check(consumer.catalogSourceFailure == nil && consumer.products.count == 1,
+                                  "REQ100 a new complete query retires the earlier source warning")
+                            await consumer.refreshCatalog("Forza")
+                            check(consumer.catalogSourceFailure != nil, "REQ100 source warning binds to its new query")
+                        }
+                        consumer.market = "GB"
+                        check(consumer.catalogSourceFailure == nil,
+                              "REQ100 source warning retires with its query scope")
+                    }
+                    check(await consumer.disconnect(), "REQ100 synthetic query consumer closes owned backend")
+                    check(consumer.catalogSourceFailure == nil, "REQ100 disconnected account retains no query source warning")
+                    try cleanLifecycle(config)
+                }
                 try await CatalogDetailLoadingChecks.run(check: check)
                 try await InstalledProductAccessChecks.run(check: check)
                 try await PCGamesChecks.run(check: check)

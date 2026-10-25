@@ -535,6 +535,18 @@ actor Checks {
             try producer.validate(frame)
         }
         check(positive.count == 102, "App and canonical validators preserve all 102 supported producer frames")
+        let sourceWarnings = try fixture("query-source-failure").array ?? []
+        check(sourceWarnings.count == 2, "REQ100 retains both exact a31f63df producer source-warning fixtures")
+        for frame in sourceWarnings {
+            try validator.validate(frame)
+            try producer.validate(frame)
+            guard let payload = frame["data"] ?? frame["error"]?["details"] else {
+                throw ManagementError.invalidPayload
+            }
+            let query = try payload.decode(CatalogQuery.self)
+            check(query.sourceFailure?.code == .packageUnavailable && query.nextCursor != nil,
+                  "REQ100 canonical \(frame["requestID"]?.string ?? "") retains warning and opaque cursor")
+        }
         for definition in ["queryData", "failedQueryData"] {
             guard var page = positive.first(where: {
                 let value = definition == "queryData" ? $0["data"] : $0["error"]?["details"]
@@ -573,6 +585,72 @@ actor Checks {
                         }
                     }
                     page["products"] = originalProducts
+                }
+            }
+            for code in ["PACKAGE_UNAVAILABLE", "NETWORK_UNAVAILABLE"] {
+                let warning: [String: JSONValue] = [
+                    "code": .string(code), "message": .string(String(repeating: "x", count: 1_024)),
+                    "retryable": .bool(code == "NETWORK_UNAVAILABLE")
+                ]
+                page["sourceFailure"] = .object(warning)
+                for contract in [validator, producer] {
+                    try contract.validate(.object(page), definition: definition)
+                }
+                let decoded = try JSONValue.object(page).decode(CatalogQuery.self)
+                check(decoded.sourceFailure?.code.rawValue == code && decoded.sourceFailure?.message.count == 1_024,
+                      "REQ100 \(definition) decodes bounded \(code) source warning")
+                for invalid in ["null", "unknownCode", "emptyMessage", "longMessage", "extraField", "missingRetryable"] {
+                    var rejected = page
+                    var badWarning = warning
+                    switch invalid {
+                    case "unknownCode": badWarning["code"] = .string("AUTH_INVALID")
+                    case "emptyMessage": badWarning["message"] = .string("")
+                    case "longMessage": badWarning["message"] = .string(String(repeating: "x", count: 1_025))
+                    case "extraField": badWarning["details"] = .object([:])
+                    case "missingRetryable": badWarning.removeValue(forKey: "retryable")
+                    default: break
+                    }
+                    rejected["sourceFailure"] = invalid == "null" ? .null : .object(badWarning)
+                    for contract in [validator, producer] {
+                        do {
+                            try contract.validate(.object(rejected), definition: definition)
+                            check(false, "REQ100 \(definition) refuses \(invalid) source warning")
+                        } catch ManagementError.invalidPayload {
+                            check(true, "REQ100 \(definition) refuses \(invalid) source warning")
+                        }
+                    }
+                }
+            }
+            page.removeValue(forKey: "sourceFailure")
+            if definition == "queryData", var product = page["products"]?.array?.first?.object {
+                product["source"] = .string("syntheticPublicSource")
+                var budgetPage = page
+                budgetPage["products"] = .array([.object(product)])
+                let failures: [JSONValue] = (0..<16).map { index in
+                    .object(["productID": .string(String(format: "9REJ%08d", index)),
+                        "error": .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                            "message": .string("Synthetic rejected candidate."), "retryable": .bool(false)])])
+                }
+                budgetPage["failures"] = .array(failures)
+                for contract in [validator, producer] {
+                    try contract.validate(.object(budgetPage), definition: definition)
+                }
+                let decoded = try JSONValue.object(budgetPage).decode(CatalogQuery.self)
+                guard let product = decoded.products.first else { throw ManagementError.invalidPayload }
+                try decoded.validatePublicScope(query: decoded.query, market: product.market,
+                                                language: product.language, limit: 1)
+                check(true, "REQ100 product page limit is independent of its sixteen rejected candidates")
+                budgetPage["failures"] = .array(failures + [
+                    .object(["productID": .string("9REJ00000016"),
+                        "error": .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                            "message": .string("Synthetic overflow candidate."), "retryable": .bool(false)])])
+                ])
+                do {
+                    try JSONValue.object(budgetPage).decode(CatalogQuery.self).validatePublicScope(
+                        query: decoded.query, market: product.market, language: product.language, limit: 1)
+                    check(false, "REQ100 rejects seventeen candidate failures")
+                } catch ManagementError.invalidPayload {
+                    check(true, "REQ100 rejects seventeen candidate failures")
                 }
             }
             page["source"] = .string("untrustedSource")
@@ -1598,7 +1676,7 @@ enum MockBackend {
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
                 "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded",
                 "discoverypartialretry", "discoveryretryfailure"].contains(scenario) { supported.insert(.discover) }
-            if ["queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
+            if ["querybudget", "querysourcewarning", "querysourcefailed", "queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
                 "querynulldetails", "querycoalesce", "querypagination", "queryrefreshfailure",
                 "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
             if scenario == "startupquery" { supported.insert(.search) }
@@ -2091,6 +2169,55 @@ enum MockBackend {
                         try emit(.object(result(request, data: .object([
                             "descriptors": .array(records), "failures": .array(failures)
                         ]))))
+                        continue
+                    }
+                    if ["querybudget", "querysourcewarning", "querysourcefailed"].contains(scenario),
+                       command == "catalog.query" {
+                        catalogQueryReads += 1
+                        let params = request["params"] ?? .null
+                        guard var page = frames.first(where: {
+                            $0["data"]?["corpus"]?.string == "publicMicrosoftStoreSearch"
+                                && $0["data"]?["products"]?.array?.isEmpty == false
+                        })?["data"]?.object else { exit(3) }
+                        page["query"] = params["query"]
+                        page["source"] = .string("XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults")
+                        page["failures"] = .array([])
+                        page["nextCursor"] = .null
+                        page["products"] = .array((page["products"]?.array ?? []).prefix(1).map {
+                            var value = $0.object ?? [:]
+                            value["market"] = params["market"]
+                            value["language"] = params["language"]
+                            value["resolvedLanguage"] = .string("neutral")
+                            value["source"] = .string("syntheticPublicSource")
+                            return .object(value)
+                        })
+                        if scenario != "querybudget", params["query"] == .string("Forza") {
+                            page["sourceFailure"] = .object([
+                                "code": .string("PACKAGE_UNAVAILABLE"),
+                                "message": .string("One public source returned a non-search page."),
+                                "retryable": .bool(false)
+                            ])
+                        }
+                        if scenario == "querysourcefailed" || (scenario == "querybudget" && catalogQueryReads == 1) {
+                            page["products"] = .array([])
+                            page["failures"] = .array((0..<(scenario == "querybudget" ? 16 : 1)).map { index in
+                                .object(["productID": .string(String(format: "9REJ%08d", index)),
+                                    "error": .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                                        "message": .string("Synthetic non-PC candidate."),
+                                        "retryable": .bool(false)])])
+                            })
+                            if scenario == "querybudget" { page["nextCursor"] = .string("q1-aa") }
+                            var response = result(request, data: .null)
+                            response.removeValue(forKey: "data")
+                            response["ok"] = .bool(false)
+                            response["error"] = .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                                "message": .string("No PC games in this candidate page."),
+                                "retryable": .bool(false), "details": .object(page)])
+                            try emit(.object(response))
+                        } else {
+                            if scenario == "querybudget", params["cursor"] != .string("q1-aa") { exit(3) }
+                            try emit(.object(result(request, data: .object(page))))
+                        }
                         continue
                     }
                     if scenario == "querynodetails", command == "catalog.query" {

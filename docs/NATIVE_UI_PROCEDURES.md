@@ -60,6 +60,18 @@ still govern that explicit reload. `--library-access-check` exercises synthetic
 read recovery and cancellation; `--self-check` renders native recovery layouts.
 These are source checks, not installed network-failure acceptance.
 
+REQ100 search consumes the accepted `a31f63df` backend contract: up to eight
+products and sixteen rejected candidates are independent page budgets. A failed
+candidate page with a continuation keeps **More** available and resumes that
+exact cursor; useful results are not replaced by a generic unavailable state.
+Optional bounded `sourceFailure` warnings survive successful and failed query
+payloads, remain distinct from per-product failures, and retire with their
+query/account scope. They do not imply ownership or complete Store coverage.
+`--library-access-check` exercises these consumer paths with synthetic wire
+responses. The matching producer/package remains a separate delivery boundary.
+Both app management-schema copies match the accepted backend byte-for-byte;
+`tools/sync_contract.py` checks agreement and fails without changing either file.
+
 `swift run XodusPreview --self-check` exercises the detached presentation.
 Optionally set `XODUS_REFINEMENT_EVIDENCE` to an existing private output directory
 to save synthetic light/dark cover and constrained welcome PNGs. No window,

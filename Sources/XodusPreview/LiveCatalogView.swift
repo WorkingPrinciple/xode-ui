@@ -189,11 +189,12 @@ struct LiveCatalogView: View {
     }
     private var partial: Bool {
         !session.discoveryFailures.isEmpty || projection.unresolvedClassificationCount > 0
-            || session.gamePassCatalogError != nil
+            || session.gamePassCatalogError != nil || session.catalogSourceFailure != nil
     }
     private var validEmptySearch: Bool {
         !query.isEmpty && session.catalogMatches(query: query) && !session.searching &&
-            !session.catalogStopped && session.catalogError == nil && session.discoveryFailures.isEmpty &&
+            !session.catalogStopped && session.catalogError == nil && session.discoveryFailures.isEmpty
+            && session.catalogSourceFailure == nil &&
             (!allowsStartupTasks || (session.isReady && canRefresh))
     }
     private var columns: [GridItem] { LibraryGridLayout.columns }
@@ -307,9 +308,14 @@ struct LiveCatalogView: View {
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     if searchUnavailable {
-                        HStack {
-                            Label(DiscoverCopy.unavailable, systemImage: "exclamationmark.circle")
-                            Button("Retry") { retry() }.disabled(!canRefresh)
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Label(DiscoverCopy.unavailable, systemImage: "exclamationmark.circle")
+                                Button("Retry") { retry() }.disabled(!canRefresh)
+                            }
+                            if session.catalogSourceFailure != nil {
+                                Text("Some search sources couldn't be checked. Results may be incomplete.")
+                            }
                         }.foregroundStyle(.secondary)
                     } else if session.catalogStopped {
                         HStack {
@@ -318,7 +324,8 @@ struct LiveCatalogView: View {
                         }
                     } else if partial {
                         HStack {
-                            Text(DiscoverCopy.partial)
+                            Text(session.catalogSourceFailure == nil ? DiscoverCopy.partial
+                                 : "Some search sources couldn't be checked. Results may be incomplete.")
                             Button("Retry") { retry() }.disabled(!canRefresh)
                         }
                     }
