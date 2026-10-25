@@ -63,18 +63,56 @@ enum EngineConfiguratorChecks {
         let suggestions = EngineLocationDetector.suggestions(excluding: [plain], locations: [folder, app, fake, app])
         check(suggestions.map(\.location) == [app.path],
               "COR154: Detection suggests valid unadded locations once, skipping added and invalid ones")
-        var engines = UserEngineStore.adding(plain, to: [])
-        engines = UserEngineStore.adding(UserEngine(id: UUID(), name: "Renamed", version: "2", location: plain.location,
-                                                    wine: plain.wine, wineserver: plain.wineserver), to: engines)
+        var engines = try UserEngineStore.adding(plain, to: [])
+        engines = try UserEngineStore.adding(UserEngine(id: UUID(), name: "Renamed", version: "2", location: plain.location,
+                                                        wine: plain.wine, wineserver: plain.wineserver), to: engines)
         check(engines.count == 1 && engines[0].id == plain.id && engines[0].name == "Renamed",
               "REQ109: Re-adding a location updates its record instead of duplicating it")
+        let full = (0..<UserEngineStore.limit).map {
+            UserEngine(id: UUID(), name: "E\($0)", version: nil, location: "/e/\($0)", wine: "w", wineserver: "s")
+        }
+        let overflow = UserEngine(id: UUID(), name: "Extra", version: nil, location: "/e/extra", wine: "w", wineserver: "s")
+        var rejected = false
+        do { _ = try UserEngineStore.adding(overflow, to: full) } catch { rejected = error == .full }
+        let replaced = try? UserEngineStore.adding(UserEngine(id: UUID(), name: "Same", version: nil,
+            location: "/e/0", wine: "w", wineserver: "s"), to: full)
+        check(rejected && replaced?.count == UserEngineStore.limit && replaced?.first?.name == "Same",
+              "REQ109: A full engine list rejects a new engine with a capacity error instead of silently dropping it")
         let suite = "XodusEngineConfigurator-\(UUID().uuidString)"
         if let defaults = UserDefaults(suiteName: suite) {
             defer { defaults.removePersistentDomain(forName: suite) }
-            UserEngineStore.save(engines, defaults)
-            check(UserEngineStore.load(defaults) == engines && EngineDefaults.defaultEngine(defaults) == nil,
+            try UserEngineStore.save(engines, defaults)
+            check(UserEngineStore.load(defaults) == .success(engines) && EngineDefaults.defaultEngine(defaults) == nil,
                   "REQ109: Added engines persist without becoming the launch default")
+            var overSave = false
+            do { try UserEngineStore.save(full + [overflow], defaults) } catch { overSave = error == .unwritable }
+            check(overSave && UserEngineStore.load(defaults) == .success(engines),
+                  "REQ109: An over-limit save is refused and leaves the stored list unchanged")
+            let corrupt = Data("not json".utf8)
+            defaults.set(corrupt, forKey: UserEngineStore.preferenceKey)
+            check(UserEngineStore.load(defaults) == .failure(.unreadable)
+                  && defaults.data(forKey: UserEngineStore.preferenceKey) == corrupt,
+                  "REQ109: Unreadable saved engines surface an error and are never replaced by an empty list")
+            defaults.set("wrong type", forKey: UserEngineStore.preferenceKey)
+            check(UserEngineStore.load(defaults) == .failure(.unreadable),
+                  "REQ109: A wrong-typed saved engine list is unreadable, not empty")
         }
+        var fence = EngineRequestFence()
+        let first = fence.begin(path: "/Applications/Old.app")
+        let second = fence.begin(path: "/Applications/New.app")
+        check(!fence.accepts(first, selected: "/Applications/Old.app", terminating: false)
+              && fence.accepts(second, selected: "/Applications/New.app", terminating: false),
+              "REQ109/COR154: An older inspection completing out of order cannot overwrite the newer choice")
+        check(!fence.accepts(second, selected: "/edited/path", terminating: false)
+              && !fence.accepts(second, selected: "/Applications/New.app", terminating: true),
+              "REQ109/COR154: Editing the location or quitting while inspecting discards that result")
+        fence.finish(first)
+        check(fence.pending, "An out-of-date completion doesn't release the newer pending request")
+        fence.finish(second)
+        let afterReset = fence.begin(path: "/a")
+        fence.cancel()
+        check(!fence.pending && !fence.accepts(afterReset, selected: "/a", terminating: false),
+              "COR154: Use Detected Location cancels a pending CrossOver choice")
         let installed = CrossOverDependencyState.installed(.init(location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
                                                                  version: "25.0", buildVersion: "1"))
         check(CrossOverLocationRow.suggestedLocation(saved: "/Volumes/Apps/CrossOver.app", state: installed, current: "")
