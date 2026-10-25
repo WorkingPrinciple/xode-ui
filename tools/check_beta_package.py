@@ -119,6 +119,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert receipt["producerNoticesSHA256"] == PRODUCER_NOTICES_SHA256
     assert "developer-local engine binding" in beta.RELEASE_NOTES
     assert "does not substitute another engine" in beta.RELEASE_NOTES
+    assert "In-game voice chat and microphone input aren't supported in this beta." in beta.RELEASE_NOTES
     assert receipt["artifacts"]["sha256"] == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
     assert checksum_path.read_text() == receipt["artifacts"]["sha256"] + "  " + artifact_path.name + "\n"
     assert not any(any(name in command[0] for name in ("notarytool", "stapler", "launchctl"))
