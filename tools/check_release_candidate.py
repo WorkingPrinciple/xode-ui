@@ -114,7 +114,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                       candidate=root, approve_unnotarized_cli=None,
                                       producer_notices=root / "notices",
                                       producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                      dmg_background=root / "background.png")
+                                      dmg_background=root / "background.tiff")
             with patch.object(release, "source_identity", return_value=source), \
                     patch.object(release, "release_branch", return_value="feature/package"):
                 with self.assertRaisesRegex(ValueError, "only from main or a release/\\* branch"):
@@ -134,7 +134,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                       candidate=root, approve_unnotarized_cli=None,
                                       producer_notices=root / "notices",
                                       producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                      dmg_background=root / "background.png")
+                                      dmg_background=root / "background.tiff")
             with patch.object(release, "CLI_SHA256", cli_hash), \
                     patch.object(release, "HELPER_SHA256", helper_hash), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash), \
@@ -237,8 +237,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 root = Path(temporary).resolve()
                 receipt = {"commands": [], "artifacts": {}, "notarized": False}
                 app = self.neutral_app(root)
-                background = root / "background.png"
-                background.write_bytes(b"\x89PNG\r\n\x1a\nneutral background")
+                background = root / "background.tiff"
+                background.write_bytes(b"II*\x00neutral background")
                 asset_identity = {"sha256": "a" * 64, "bytes": 1}
                 receipt["dmgBackground"] = asset_identity
                 receipt["engineNotice"] = asset_identity
@@ -252,7 +252,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     return {"id": "neutral-" + label, "status": "Accepted"}
                 def read_asset(path, *args, **kwargs):
                     if Path(path) == background:
-                        return asset_identity, b"\x89PNG\r\n\x1a\nneutral background"
+                        return asset_identity, b"II*\x00neutral background"
                     if Path(path).name == "Xodus.icns":
                         return asset_identity, b"icns neutral icon"
                     if Path(path).name == "NOTICE.txt":
@@ -308,7 +308,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 producer_source=root, notary_profile="notary", dry_run=True, approve_unnotarized_cli=None,
                 producer_notices=root / "ReviewedNotices",
                 producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                dmg_background=root / "background.png", engine_notice=root / "Calimocho-NOTICE.txt")
+                dmg_background=root / "background.tiff", engine_notice=root / "Calimocho-NOTICE.txt")
 
             def refresh(installed, output, *unused):
                 app = output / "candidate/Neutral.app"
@@ -412,10 +412,10 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "refresh") as refresh:
                 release.resume(root / "release-receipt.json", "notary",
                                producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                               dmg_background=root / "background.png")
+                               dmg_background=root / "background.tiff")
                 self.assertEqual(distribute.call_args.args[0], app)
                 self.assertEqual(distribute.call_args.args[-2], PRODUCER_NOTICES_SHA256)
-                self.assertEqual(distribute.call_args.args[-1], root / "background.png")
+                self.assertEqual(distribute.call_args.args[-1], root / "background.tiff")
                 refresh.assert_not_called()
                 receipt["state"] = "failed"
                 with self.assertRaises(ValueError):

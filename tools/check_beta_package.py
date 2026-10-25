@@ -126,8 +126,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert (receipt_path.parent / "package-receipt.json").exists()
 
     commands.clear()
-    background = root / "installer.png"
-    background.write_bytes(b"\x89PNG\r\n\x1a\nNeutral background fixture")
+    background = root / "installer.tiff"
+    background.write_bytes(b"II*\x00Neutral background fixture")
     (app / "Contents/Resources/Xodus.icns").write_bytes(b"icnsNeutral icon fixture")
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()), \

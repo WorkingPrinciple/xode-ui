@@ -95,14 +95,15 @@ For an approved beta package that must not be submitted or installed, use
 --format zip` (or `dmg`) and the new independently approved
 `--producer-notices-sha256` value. Final packaging is currently blocked until
 the `-02` producer and its matching inventory are admitted and pinned.
-For `--format dmg`, install the pinned packaging helper from
-`tools/requirements-release.txt` in a dedicated Python environment and supply
-`--dmg-background` with the reviewed X Ode installer PNG when that asset is
-provided by the branding lane. The builder uses
+For `--format dmg`, combine the reviewed 660x400 and 1320x800 artwork from the
+branding lane with `tiffutil -cathidpicheck dmg-background.png
+dmg-background@2x.png -out background.tiff`, install the pinned packaging
+helper from `tools/requirements-release.txt` in a dedicated Python environment,
+and supply the resulting TIFF as `--dmg-background`. The builder uses
 headless `dmgbuild` to create an APFS/ULFO image with a volume icon,
-Applications drop link, Finder layout and background, then signs and verifies
-the final image. The image builder writes the layout metadata without opening
-Finder or triggering Apple Events.
+Applications drop link, the 660x400 Finder layout, 128-pixel icons and artwork,
+then signs and verifies the final image. The image builder writes the layout
+metadata without opening Finder or triggering Apple Events.
 The local-candidate builders accept `--engine-notice` for the plain-text
 Calimocho `-02` NOTICE and place it at
 `Contents/Resources/EngineNotices/NOTICE.txt`; final beta packaging refuses to

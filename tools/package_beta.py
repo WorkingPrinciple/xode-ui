@@ -88,9 +88,9 @@ def release_identity(source, expected_source):
 
 def validate_dmg_background(background_image):
     background_record, background_data = owned_bytes(background_image, bounded=20 * 1024 * 1024)
-    require(Path(background_image).suffix.lower() == ".png"
-            and background_data.startswith(b"\x89PNG\r\n\x1a\n"),
-            "DMG background must be a PNG image")
+    require(Path(background_image).suffix.lower() in (".tif", ".tiff")
+            and background_data[:4] in (b"II*\x00", b"MM\x00*"),
+            "DMG background must be a combined HiDPI TIFF image")
     return background_record
 
 
@@ -134,7 +134,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
             "Output root must be owned by the current user and not writable by others")
     require(package_format in ("zip", "dmg"), "Package format must be zip or dmg")
     require(package_format != "dmg" or dmg_background is not None,
-            "A reviewed DMG background PNG is required for the installer image")
+            "A reviewed combined HiDPI TIFF background is required for the installer image")
     if dmg_background is not None:
         validate_dmg_background(dmg_background)
     require(isinstance(identity, str) and identity.upper() == IDENTITY,
