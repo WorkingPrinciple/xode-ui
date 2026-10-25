@@ -171,7 +171,7 @@ final class CatalogArtworkStore {
     }
 
     nonisolated private static func defaultDiskCache() -> CatalogMediaDiskCache? {
-        let isolated = ["--library-preview", "--export-preview", "--export-live", "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--presentation-performance-check"]
+        let isolated = ["--library-preview", "--export-preview", "--export-live", "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--presentation-performance-check", "--search-performance-check"]
         return CommandLine.arguments.contains(where: isolated.contains) ? nil : .production()
     }
 

@@ -132,6 +132,7 @@ final class LiveSession: ObservableObject {
     private var catalogTask: Task<Void, Never>?
     private var catalogWorkerID: UUID?
     private var queuedCatalog: CatalogRequest?
+    private var queryResults = CatalogQueryResultCache()
 
     struct SignInFailureSnapshot: Equatable {
         enum Code: String {
@@ -167,6 +168,48 @@ final class LiveSession: ObservableObject {
         let more: Bool
         let generation: Int
         let queryGeneration: Int
+    }
+
+    struct CatalogQuerySnapshot {
+        let products: [CatalogProduct]
+        let failures: [DiscoveryFailure]
+        let nextCursor: String?
+        let sourceFailure: CatalogQuery.SourceFailure?
+        let checkedAt: String?
+        let corpus: String
+        let storedAt: ContinuousClock.Instant
+    }
+
+    /// Bounded, scope-keyed results of completed public store queries so a repeated query
+    /// publishes immediately instead of waiting behind the single producer slot again.
+    struct CatalogQueryResultCache {
+        static let capacity = 24
+        static let lifetime = Duration.seconds(600)
+        private var entries: [String: CatalogQuerySnapshot] = [:]
+        private var order: [String] = []
+
+        static func key(account: String?, market: String, language: String, query: String) -> String {
+            "\(account ?? ""):\(market):\(language):\(query)"
+        }
+
+        func fresh(_ key: String, now: ContinuousClock.Instant = .now) -> CatalogQuerySnapshot? {
+            guard let entry = entries[key], now - entry.storedAt < Self.lifetime else { return nil }
+            return entry
+        }
+
+        mutating func store(_ snapshot: CatalogQuerySnapshot, for key: String) {
+            entries[key] = snapshot
+            order.removeAll { $0 == key }
+            order.append(key)
+            while order.count > Self.capacity { entries[order.removeFirst()] = nil }
+        }
+
+        mutating func removeAll() {
+            entries = [:]
+            order = []
+        }
+
+        var count: Int { entries.count }
     }
 
     private struct ClosingOperation {
@@ -1136,6 +1179,7 @@ final class LiveSession: ObservableObject {
         catalogTask = nil
         catalogWorkerID = nil
         queuedCatalog = nil
+        queryResults.removeAll()
         eventTask = nil
         authTask = nil
         hello = nil
@@ -1664,6 +1708,64 @@ final class LiveSession: ObservableObject {
         }
     }
 
+    private func queryResultKey(_ query: String, market: String, language: String) -> String {
+        CatalogQueryResultCache.key(account: accountHash, market: market, language: language, query: query)
+    }
+
+    private func rememberQueryResult(_ request: CatalogRequest) {
+        guard catalogError == nil, currentQuery == request.query,
+              catalogRequestScope == "\(request.market):\(request.language)" else { return }
+        queryResults.store(CatalogQuerySnapshot(products: products, failures: discoveryFailures,
+            nextCursor: nextCursor, sourceFailure: catalogSourceFailure, checkedAt: discoveryCheckedAt,
+            corpus: catalogCorpus, storedAt: .now),
+            for: queryResultKey(request.query, market: request.market, language: request.language))
+    }
+
+    func hasRecentQueryResult(_ query: String) -> Bool {
+        let scopedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !scopedQuery.isEmpty, supports(.query) else { return false }
+        return queryResults.fresh(queryResultKey(scopedQuery, market: market, language: language)) != nil
+    }
+
+    var recentQueryResultCount: Int { queryResults.count }
+
+    /// Publishes a remembered query page set in the current scope. Any in-flight read is
+    /// fenced from publication and a queued older read is dropped; the producer slot itself
+    /// is released when its bounded read returns.
+    private func publishRecentQueryResult(_ query: String) -> Bool {
+        guard isReady, validScope, supports(.query), !query.isEmpty,
+              let snapshot = queryResults.fresh(queryResultKey(query, market: market, language: language))
+        else { return false }
+        queryGeneration += 1
+        queuedCatalog = nil
+        currentQuery = query
+        catalogRequestScope = "\(market):\(language)"
+        catalogCorpus = snapshot.corpus
+        catalogRequestAppends = false
+        products = snapshot.products
+        discoveryFailures = snapshot.failures
+        nextCursor = snapshot.nextCursor
+        catalogSourceFailure = snapshot.sourceFailure
+        discoveryCheckedAt = snapshot.checkedAt
+        cacheRevision = nil
+        catalogError = nil
+        catalogStopped = false
+        searching = false
+        return true
+    }
+
+    /// Typed-input entry point: debounces edits unless the query already has a remembered
+    /// result, then loads it. Cancelling the caller (a newer edit) skips the stale read.
+    func loadCatalogAfterInput(_ query: String) async {
+        let scopedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !scopedQuery.isEmpty, !hasRecentQueryResult(scopedQuery) {
+            do { try await Task.sleep(for: CatalogSearchTiming.debounce) }
+            catch { return }
+        }
+        guard !Task.isCancelled else { return }
+        await loadCatalogOnEntry(scopedQuery)
+    }
+
     func loadCatalogOnEntry(_ query: String) async {
         let scopedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let corpus = scopedQuery.isEmpty && supports(.discover) ? "pcGamePassDiscovery"
@@ -1672,6 +1774,7 @@ final class LiveSession: ObservableObject {
            catalogRequestScope == "\(market):\(language)",
            !catalogStopped, catalogError == nil,
            searching || discoveryCheckedAt != nil || cacheRevision != nil { return }
+        if corpus == "publicMicrosoftStoreSearch", publishRecentQueryResult(scopedQuery) { return }
         await refreshCatalog(scopedQuery)
     }
 
@@ -1753,6 +1856,7 @@ final class LiveSession: ObservableObject {
             ], timeout: .seconds(45)).decode(CatalogQuery.self)
             guard isCurrent(request) else { return }
             try applyQueryPage(page, request: request)
+            rememberQueryResult(request)
         } catch {
             guard isCurrent(request) else { return }
             if case let ManagementError.queryFailed(page) = error {
@@ -1901,6 +2005,7 @@ final class LiveSession: ObservableObject {
         catalogSourceFailure = nil
         queryGeneration += 1
         queuedCatalog = nil
+        queryResults.removeAll()
         products = []
         selectedProduct = nil
         nextCursor = nil

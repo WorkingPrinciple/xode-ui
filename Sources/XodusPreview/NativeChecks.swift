@@ -207,6 +207,7 @@ enum NativeChecks {
             try await PublicDescriptorChecks.run(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
+                try await SearchPerformanceChecks.queryCache(configuration: configuration, check: check)
                 do {
                     let config = configuration("queryforzareal")
                     try FileManager.default.createDirectory(at: config.stateDirectory, withIntermediateDirectories: true)
@@ -1414,6 +1415,7 @@ enum NativeChecks {
                   "Latest queued query retains its captured market/language instead of old request scope")
             await coalesced.disconnect()
 
+            try await SearchPerformanceChecks.queryCache(configuration: configuration, check: check)
             let dropped = session("querycoalesce")
             await dropped.connect()
             let active = Task { await dropped.refreshCatalog("Active original query") }

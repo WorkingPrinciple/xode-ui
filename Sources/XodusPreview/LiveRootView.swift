@@ -308,11 +308,7 @@ struct LiveRootView: View {
         }
         .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
             guard accountContentAllowed, session.accountCountryReady, state.destination == .discover else { return }
-            if !state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                do { try await Task.sleep(for: .milliseconds(250)) }
-                catch { return }
-            }
-            await session.loadCatalogOnEntry(state.query)
+            await session.loadCatalogAfterInput(state.query)
         }
         .task(id: "\(accountContentAllowed):\(session.isReady):\(session.market):\(session.language)") {
             guard accountContentAllowed, session.accountCountryReady, session.isReady, state.destination == .library,
@@ -449,6 +445,10 @@ struct LiveRootView: View {
 
     private func showToolbarSearchResults() {
         state.navigate(.discover)
+        if accountContentAllowed, session.accountCountryReady, !scopedQuery.isEmpty {
+            let query = scopedQuery
+            Task { await session.loadCatalogOnEntry(query) }
+        }
         searchFocused = false
         if let focus = DiscoverSearchOverlayLayout.keyboardFocus(
             query: state.query, searches: state.discoverSelection.recentSearches) {

@@ -36,6 +36,8 @@ struct NativeToolbarSearch: View {
         focused || !text.isEmpty ? 220 : 32
     }
 
+    static let collapsedHitSize = CGSize(width: 32, height: 28)
+
     func expand() {
         guard enabled else { return }
         openSearch()
@@ -49,7 +51,9 @@ struct NativeToolbarSearch: View {
         Group {
             if Self.width(text: text, focused: expanded) == 32 {
                 Button(action: expand) {
-                    Image(systemName: "magnifyingglass").frame(width: 24, height: 24)
+                    Image(systemName: "magnifyingglass")
+                        .frame(width: Self.collapsedHitSize.width, height: Self.collapsedHitSize.height)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(!enabled)
@@ -104,8 +108,18 @@ struct NativeSearchField: NSViewRepresentable {
         updateField(view, coordinator: context.coordinator)
     }
 
+    static func endEditingClearsFocus(retired: Bool, attached: Bool, editing: Bool) -> Bool {
+        !retired && attached && !editing
+    }
+
+    static func dismantleNSView(_ view: FocusedSearchField, coordinator: Coordinator) {
+        coordinator.retired = true
+        view.wantsFocus = false
+    }
+
     func updateField(_ view: FocusedSearchField, coordinator: Coordinator) {
         coordinator.parent = self
+        coordinator.retired = false
         view.wantsFocus = focused && enabled
         view.isEnabled = enabled
         if view.stringValue != text { view.stringValue = text }
@@ -122,6 +136,7 @@ struct NativeSearchField: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, NSSearchFieldDelegate {
         var parent: NativeSearchField
+        var retired = false
         init(_ parent: NativeSearchField) { self.parent = parent }
         func controlTextDidChange(_ notification: Notification) {
             guard let field = notification.object as? NSSearchField else { return }
@@ -131,8 +146,24 @@ struct NativeSearchField: NSViewRepresentable {
             guard field.isEnabled, parent.text != field.stringValue else { return }
             parent.text = field.stringValue
         }
-        func controlTextDidBeginEditing(_ notification: Notification) { parent.focused = true }
-        func controlTextDidEndEditing(_ notification: Notification) { parent.focused = false }
+        func controlTextDidBeginEditing(_ notification: Notification) {
+            guard !retired else { return }
+            parent.focused = true
+        }
+        func controlTextDidEndEditing(_ notification: Notification) {
+            guard let field = notification.object as? NSSearchField else { return }
+            // Toolbar rebuilds remove and re-add the editor; settle after the current event
+            // so a replaced or re-focused field doesn't collapse the search the user opened.
+            DispatchQueue.main.async { [weak self, weak field] in
+                guard let self, let field else { return }
+                self.settleEndEditing(field)
+            }
+        }
+        func settleEndEditing(_ field: NSSearchField) {
+            guard NativeSearchField.endEditingClearsFocus(retired: retired, attached: field.window != nil,
+                                                         editing: field.currentEditor() != nil) else { return }
+            parent.focused = false
+        }
         func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             if commandSelector == #selector(NSResponder.moveDown(_:))
                 || commandSelector == #selector(NSResponder.insertNewline(_:)) {

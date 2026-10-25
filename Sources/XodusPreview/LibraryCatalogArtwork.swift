@@ -21,6 +21,9 @@ final class LibraryCatalogArtwork: ObservableObject {
     private(set) var revision: UInt64 = 0
     @Published private(set) var error: String?
     @Published private(set) var detailErrors: [String: String] = [:]
+    /// Product IDs whose public details are requested but not yet settled in this scope.
+    @Published private(set) var pendingIDs: Set<String> = []
+    private var pendingCounts: [String: Int] = [:]
     private var requested: [String: Date] = [:]
     private var pending: Task<Void, Never>?
     private var scope: String?
@@ -49,8 +52,27 @@ final class LibraryCatalogArtwork: ObservableObject {
             if !detailErrors.isEmpty { detailErrors = [:] }
             if error != nil { error = nil }
             requested = [:]
+            pendingCounts = [:]
+            if !pendingIDs.isEmpty { pendingIDs = [] }
         }
         return generation
+    }
+
+    private func markPending(_ ids: Set<String>) {
+        guard !ids.isEmpty else { return }
+        for id in ids { pendingCounts[id, default: 0] += 1 }
+        let next = Set(pendingCounts.keys)
+        if next != pendingIDs { pendingIDs = next }
+    }
+
+    private func settlePending(_ ids: Set<String>) {
+        guard !ids.isEmpty else { return }
+        for id in ids {
+            guard let count = pendingCounts[id] else { continue }
+            pendingCounts[id] = count > 1 ? count - 1 : nil
+        }
+        let next = Set(pendingCounts.keys)
+        if next != pendingIDs { pendingIDs = next }
     }
 
     func retireScope() {
@@ -92,6 +114,9 @@ final class LibraryCatalogArtwork: ObservableObject {
         }
         let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
         let epoch = enterScope(nextScope)
+        let marked = Set(ids.filter { PCGamesClient.validProductID($0) && (refresh || images[$0] == nil) })
+        markPending(marked)
+        defer { if generation == epoch { settlePending(marked) } }
         while let pending {
             await pending.value
             guard !Task.isCancelled, generation == epoch else { return }

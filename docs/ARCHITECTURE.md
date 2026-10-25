@@ -105,7 +105,13 @@ replacement; a new context starts with a dark hero backing, never old-account
 artwork. Foreground landscape images remain keyed to their requested game.
 Local installed registry loading precedes the remote
 collection wait. Empty Discover entry starts immediately; typed queries retain
-the 250 ms debounce. Same-scope/query public refresh keeps useful products while
+the 250 ms debounce, and Return/Down submits without waiting for it. Completed
+public queries are remembered per account, market, language and exact query
+(24 entries, 10 minutes); a repeated query publishes immediately and fences any
+older in-flight read. Retry/Refresh bypass the memory; scope change, sign-out and
+disconnect retire it. The producer exposes no query cancel and one query slot,
+so a superseded read still finishes before the newest one starts; its result is
+never published. Same-scope/query public refresh keeps useful products while
 loading; explicitly failed IDs may retain prior descriptors with failure state.
 Same-scope Retry also retains the cursor and revision until a validated
 replacement page is admitted. A failure without page details leaves prior

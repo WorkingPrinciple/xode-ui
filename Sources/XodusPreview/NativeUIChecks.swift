@@ -677,9 +677,53 @@ enum NativeUIChecks {
         search.updateField(field, coordinator: coordinator)
         check(field.wantsFocus && field.window == nil && field.stringValue == text,
               "Command-F focus intent survives re-enabling without creating or activating a window")
-        coordinator.controlTextDidEndEditing(Notification(name: NSControl.textDidEndEditingNotification, object: field))
+        check(NativeSearchField.endEditingClearsFocus(retired: false, attached: true, editing: false)
+              && !NativeSearchField.endEditingClearsFocus(retired: false, attached: true, editing: true)
+              && !NativeSearchField.endEditingClearsFocus(retired: false, attached: false, editing: false)
+              && !NativeSearchField.endEditingClearsFocus(retired: true, attached: true, editing: false),
+              "REQ-107: Only a settled, attached, current editor losing focus collapses search")
+        focused = true
         search.updateField(field, coordinator: coordinator)
-        check(!focused && !field.wantsFocus, "Ending native editing clears the shared focus intent")
+        coordinator.controlTextDidEndEditing(Notification(name: NSControl.textDidEndEditingNotification, object: field))
+        coordinator.settleEndEditing(field)
+        check(focused && field.wantsFocus,
+              "REQ-107: A toolbar rebuild that detaches the editor keeps the search the user opened")
+        NativeSearchField.dismantleNSView(field, coordinator: coordinator)
+        coordinator.controlTextDidBeginEditing(Notification(name: NSControl.textDidBeginEditingNotification, object: field))
+        check(focused && coordinator.retired && !field.wantsFocus,
+              "REQ-107: A replaced editor's late notifications cannot change the new search")
+        focused = false
+        coordinator.controlTextDidBeginEditing(Notification(name: NSControl.textDidBeginEditingNotification, object: field))
+        check(!focused, "A retired editor cannot request focus for the replacement")
+        search.updateField(field, coordinator: coordinator)
+        check(!coordinator.retired && !field.wantsFocus, "A refreshed editor coordinator resumes ordinary focus tracking")
+
+        var pressFocus = false, pressNavigations = 0
+        let pressed = NativeToolbarSearch(text: .constant(""),
+            focused: Binding(get: { pressFocus }, set: { pressFocus = $0 }),
+            placeholder: "Search all games", openSearch: { pressNavigations += 1 })
+        for _ in 0..<12 { pressed.expand() }
+        check(pressFocus && pressNavigations == 12
+              && NativeToolbarSearch.width(text: "", focused: pressFocus) == 220,
+              "REQ-107: Repeated magnifier presses each reach the action and leave one expanded, focused editor")
+        pressFocus = false
+        for _ in 0..<12 {
+            pressed.expand()
+            pressFocus = false
+        }
+        pressed.expand()
+        check(pressFocus && pressNavigations == 25,
+              "REQ-107: Alternating press/dismiss cycles never leave the magnifier unresponsive")
+        check(DiscoverLayout.contentTopInset(query: "forza", hasFeatured: true) == DiscoverLayout.toolbarClearance
+              && DiscoverLayout.contentTopInset(query: "forza", hasFeatured: false) == DiscoverLayout.toolbarClearance
+              && DiscoverLayout.contentTopInset(query: "", hasFeatured: false) == DiscoverLayout.toolbarClearance
+              && DiscoverLayout.contentTopInset(query: "", hasFeatured: true) == 0
+              && DiscoverLayout.toolbarClearance >= 80,
+              "REQ-107: Search results start below the transparent toolbar, traffic lights and account button")
+        // Detached hosting views don't hit-test; real click acceptance stays a native observation.
+        check(NativeToolbarSearch.collapsedHitSize.width == NativeToolbarSearch.width(text: "", focused: false)
+              && NativeToolbarSearch.collapsedHitSize.height >= 28,
+              "REQ-107: The collapsed magnifier's rectangular hit shape spans its whole toolbar slot")
 
         let layout = AccountActionsLayout()
         let horizontalBounds = CGRect(x: 0, y: 0, width: 610, height: 28)

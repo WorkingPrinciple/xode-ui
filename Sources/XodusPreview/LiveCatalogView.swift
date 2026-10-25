@@ -166,6 +166,35 @@ enum DiscoverCopy {
     static let unavailable = "Search isn't available right now."
 }
 
+struct SearchResultPlaceholderCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.quaternary)
+                .aspectRatio(2.0 / 3.0, contentMode: .fit)
+                .overlay {
+                    Image(systemName: "gamecontroller").font(.largeTitle).foregroundStyle(.tertiary)
+                }
+            RoundedRectangle(cornerRadius: 4).fill(.quaternary)
+                .frame(height: 14).padding(.trailing, 32)
+            RoundedRectangle(cornerRadius: 4).fill(.quaternary)
+                .frame(width: 80, height: 10)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+enum DiscoverLayout {
+    /// Clears the transparent toolbar, traffic lights and account button when no hero sits under them.
+    static let toolbarClearance: CGFloat = 86
+    static let backdropMinimumHeight: CGFloat = 1_100
+
+    static func contentTopInset(query: String, hasFeatured: Bool) -> CGFloat {
+        query.isEmpty && hasFeatured ? 0 : toolbarClearance
+    }
+}
+
 enum SubscriberBenefits {
     static let officialURL = URL(string: "https://www.xbox.com/xbox-game-pass/in-game-benefits")!
 }
@@ -348,6 +377,12 @@ struct LiveCatalogView: View {
             (!allowsStartupTasks || (session.isReady && canRefresh))
     }
     private var columns: [GridItem] { LibraryGridLayout.columns }
+    /// Current results still waiting for public details; they appear as cards once classified.
+    private var classifyingCount: Int {
+        guard !query.isEmpty, allowsArtworkLoading, session.catalogMatches(query: query) else { return 0 }
+        return GameSearchPresentation.classifyingCount(storeIDs: results.storeProducts.map(\.id),
+            classified: Set(facts.keys), pending: art.pendingIDs)
+    }
 
     private var projectionKey: CatalogProjectionKey {
         CatalogProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
@@ -403,16 +438,16 @@ struct LiveCatalogView: View {
                         }
                     }
                 } else {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("Results for \"\(query)\"").font(.title2.bold())
-                            .textSelection(.enabled)
-                        Spacer(minLength: 24)
-                        Picker("Search scope", selection: $selection.scope) {
-                            ForEach(GameSearchScope.allCases) { scope in Text(scope.rawValue).tag(scope) }
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .firstTextBaseline, spacing: 24) {
+                            resultsTitle
+                            Spacer(minLength: 0)
+                            scopePicker
                         }
-                        .pickerStyle(.menu).labelsHidden().fixedSize()
-                        .accessibilityLabel("Search scope")
-                        .accessibilityIdentifier("xodus.catalog.scope")
+                        VStack(alignment: .leading, spacing: 12) {
+                            resultsTitle
+                            scopePicker
+                        }
                     }
                     if !ownedMatches.isEmpty {
                         VStack(alignment: .leading, spacing: 16) {
@@ -504,14 +539,31 @@ struct LiveCatalogView: View {
                                         .allowsHitTesting(!retainedPublicIDs.contains(product.id))
                                         .accessibilityHidden(retainedPublicIDs.contains(product.id))
                                 }
+                                ForEach(0..<min(classifyingCount, GameSearchPresentation.placeholderLimit),
+                                        id: \.self) { _ in
+                                    SearchResultPlaceholderCard()
+                                }
                             }
                             .scrollTargetLayout()
                         }
+                    } else if classifyingCount > 0 {
+                        LazyVGrid(columns: columns, spacing: 28) {
+                            ForEach(0..<min(classifyingCount, GameSearchPresentation.placeholderLimit),
+                                    id: \.self) { _ in
+                                SearchResultPlaceholderCard()
+                            }
+                        }
+                        .accessibilityIdentifier("xodus.catalog.searchPlaceholders")
                     } else if pending {
                         let previous = selection.previousResults.visible.filter {
                             selection.previousResults.index.games[$0.id].map(selection.scope.includes) == true
                         }
-                        if !previous.isEmpty {
+                        if previous.isEmpty {
+                            LazyVGrid(columns: columns, spacing: 28) {
+                                ForEach(0..<6, id: \.self) { _ in SearchResultPlaceholderCard() }
+                            }
+                            .accessibilityIdentifier("xodus.catalog.searchPlaceholders")
+                        } else {
                             Text("Previous results · Updating…").font(.callout).foregroundStyle(.secondary)
                             LazyVGrid(columns: columns, spacing: 28) {
                                 ForEach(previous) { product in
@@ -560,7 +612,7 @@ struct LiveCatalogView: View {
                 }
             }
             .padding(.horizontal, 56).padding(.bottom, 32)
-            .padding(.top, query.isEmpty ? (visible.isEmpty ? 86 : 0) : 32)
+            .padding(.top, DiscoverLayout.contentTopInset(query: query, hasFeatured: !visible.isEmpty))
         }
         .onChange(of: query) { _, value in
             selection.genre = nil
@@ -597,7 +649,24 @@ struct LiveCatalogView: View {
             await art.load(ids: metadataIDs,
                            market: session.market, language: session.language)
         }
-        .background { ambientBackdrop }
+        .background(alignment: .top) {
+            ambientBackdrop.frame(minHeight: DiscoverLayout.backdropMinimumHeight, alignment: .top)
+        }
+    }
+
+    private var resultsTitle: some View {
+        Text("Results for \"\(query)\"").font(.title2.bold())
+            .lineLimit(2).truncationMode(.tail)
+            .textSelection(.enabled)
+    }
+
+    private var scopePicker: some View {
+        Picker("Search scope", selection: $selection.scope) {
+            ForEach(GameSearchScope.allCases) { scope in Text(scope.rawValue).tag(scope) }
+        }
+        .pickerStyle(.menu).labelsHidden().fixedSize()
+        .accessibilityLabel("Search scope")
+        .accessibilityIdentifier("xodus.catalog.scope")
     }
 
     private var halloweenScope: String? {
@@ -617,18 +686,19 @@ struct LiveCatalogView: View {
     }
 
     private var ambientGame: LibraryGame? {
+        if !query.isEmpty, visible.isEmpty, let previous = selection.previousResults.visible.first {
+            return selection.previousResults.index.games[previous.id]
+        }
         let product = visible.first { $0.id == selection.featuredID } ?? visible.first
         return product.map(game)
     }
 
-    @ViewBuilder private var ambientBackdrop: some View {
-        if query.isEmpty, let game = ambientGame {
-            LibraryAmbientBackdrop(references: landscape(game), installed: game.installed,
-                                   allowsLoading: allowsArtworkLoading)
-                .opacity(0.22)
-        } else {
-            Color(nsColor: .windowBackgroundColor).frame(height: 820)
-        }
+    // One backdrop identity for browse and search keeps the last artwork while results change.
+    private var ambientBackdrop: some View {
+        let game = ambientGame
+        return LibraryAmbientBackdrop(references: game.map(landscape) ?? [], installed: game?.installed,
+                                      allowsLoading: allowsArtworkLoading)
+            .opacity(0.22)
     }
 
     private func browseShelf(_ products: [CatalogProduct], demandLoads: Bool, shelfID: String? = nil) -> some View {

@@ -77,6 +77,10 @@ enum CatalogDetailLoadingChecks {
             try await Task.sleep(for: .milliseconds(10))
         }
         guard await transport.started else { throw PCGamesError.transport }
+        check(catalogue.pendingIDs == ["FIXTURE00001"]
+              && GameSearchPresentation.classifyingCount(storeIDs: ["FIXTURE00001", "FIXTURE00003"],
+                  classified: [], pending: catalogue.pendingIDs) == 1,
+              "REQ-107: A result awaiting public details is a placeholder, not an empty search")
         await catalogue.loadDetail(id: "FIXTURE00002", market: "US", language: "en-US")
         let bulkFinished = await transport.finished
         check(!bulkFinished && catalogue.images["FIXTURE00002"]?.detail?.description == "Synthetic description.",
@@ -86,6 +90,10 @@ enum CatalogDetailLoadingChecks {
         check(detailRequests == 1, "Reopening cached selected details does not fetch them again")
         await transport.release()
         await bulk.value
+        check(catalogue.pendingIDs.isEmpty
+              && GameSearchPresentation.classifyingCount(storeIDs: ["FIXTURE00001"],
+                  classified: [], pending: catalogue.pendingIDs) == 0,
+              "REQ-107: Settled detail reads retire placeholders even when a result stays unclassified")
         check(catalogue.images["FIXTURE00001"] != nil && catalogue.images["FIXTURE00002"] != nil,
               "Bulk artwork completion preserves independently loaded selected details")
         let changedTransport = DetailPriorityTransport()
@@ -98,6 +106,8 @@ enum CatalogDetailLoadingChecks {
             try await Task.sleep(for: .milliseconds(10))
         }
         await changedCatalogue.loadDetail(id: "FIXTURE00002", market: "GB", language: "en-GB")
+        check(changedCatalogue.pendingIDs.isEmpty,
+              "REQ-101/107: A region change retires placeholders owned by the old scope")
         await changedTransport.release()
         await oldScope.value
         check(changedCatalogue.images["FIXTURE00001"] == nil &&

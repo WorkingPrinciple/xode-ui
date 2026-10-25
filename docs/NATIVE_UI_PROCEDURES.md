@@ -583,8 +583,19 @@ history. Escape, focus exit and selection dismiss the presentation. Keep the
 search control expanded while suggestion focus is active. Verify native focus
 transfer and placement at minimum/wide sizes separately from detached checks.
 
-Discover reuses Library's ambient backdrop for browsing, with a neutral search
-surface. Horizontal shelves and its main scroll view hide indicators without
+Discover reuses Library's ambient backdrop for browsing and search results
+(REQ-107): one backdrop identity keeps the last artwork while results change,
+then follows the first result. Results start below the transparent toolbar;
+the scope menu stacks under the heading when the width can't hold both.
+Pending queries and results still waiting for public details show static,
+noninteractive placeholder cards; classified cards appear as each detail batch
+lands. The collapsed toolbar magnifier hit-tests its whole slot, and a toolbar
+rebuild that replaces the editor keeps the open search focused.
+`--search-performance-check` drives the real session against the single-slot
+fixture producer (2 s synthetic latency) and reports time-to-first-result,
+repeated-query and superseded-query timing plus main run-loop gaps; set
+`XODUS_SEARCH_EVIDENCE` to a private directory for detached loading-state PNGs.
+These are synthetic measurements, not installed input latency. Horizontal shelves and its main scroll view hide indicators without
 changing native scrolling or accessibility routes. Genre shelves are bounded
 cached projections keyed by search scope and metadata revision; selection
 changes cannot reuse cards from another scope. The
