@@ -47,6 +47,15 @@ routing/persistence/readiness checks without opening windows or launching games.
 Installed Play, menu interaction and title variants still require separately
 authorized native acceptance; do not run them while desktop control is paused.
 
+COR137 keeps lifecycle cancellation operation-specific: user Stop of a launch
+returns to Play without installation/download recovery text. Install cancellation
+retains its existing partial-file guidance. A clean Wine exit followed only by
+the exact broker-teardown error remains in diagnostics, not on the game page;
+other failed launches use the existing generic launch-failure surface. Launch
+logs remain available in the game's existing Actions menu, not below Play.
+The isolated engine-selection check also exercises synthetic lifecycle cancellation
+and the old NMS broker-teardown receipt shape without launching a real game.
+
 COR-97/101/102 use shared cover badges: exact compatibility symbols in the
 upper-right, current PC Game Pass catalogue membership in the lower-left.
 Neither creates a separate input target; hover and the existing cover button's

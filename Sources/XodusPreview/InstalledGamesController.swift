@@ -326,7 +326,7 @@ final class InstalledGamesController: ObservableObject {
             if case .installationNotReady = failure { return failure.localizedDescription }
             return InstalledGameActionCopy.launchUnavailable
         }
-        return (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
+        return InstalledGameActionCopy.launchUnavailable
     }
 
     nonisolated static func sessionLog(runID: String, directory: URL) -> URL? {
@@ -704,23 +704,25 @@ final class InstalledGamesController: ObservableObject {
                     nativeForegroundTask?.cancel()
                     nativeForegroundTask = nil
                     let duration = clock.duration(to: .now).components
-                    let playerMessage: String?
-                    do {
-                        playerMessage = try await result.playerMessage()
-                    } catch {
-                        playerMessage = "The launch log couldn't be read. Open its folder to review the error."
-                        Self.launchLog.error("Player log read failed: \(error.localizedDescription, privacy: .public)")
-                    }
                     guard runToken == token else { return }
                     recordSession(gameID: game.id, startedAt: startedAt,
                         seconds: Double(duration.seconds) + Double(duration.attoseconds) / 1e18)
+                    let stoppedByUser = stopToken == token
                     finished(token: token, gameID: game.id, status: result.exitCode)
                     playLogs[game.id] = URL(fileURLWithPath: result.logDirectory)
-                    if let playerMessage { playErrors[game.id] = playerMessage }
-                    if !result.success && result.errorCode != "CANCELLED" {
-                        playErrors[game.id] = playerMessage ?? result.failureMessage
+                    playErrors[game.id] = result.launchFailureMessage(stoppedByUser: stoppedByUser)
+                    if !result.success {
+                        Self.launchLog.error("Launch terminal result: \(game.storeId, privacy: .public); code=\(result.errorCode ?? "unknown", privacy: .public); error=\(result.error ?? "none", privacy: .public)")
                     }
                     if session.accountHash != account { playErrors[game.id] = "Your Xbox account changed during play." }
+                } catch NativeLifecycleCancellation.launchStopped {
+                    let stoppedByUser = stopToken == token
+                    finished(token: token, gameID: game.id, status: 0)
+                    playErrors[game.id] = stoppedByUser ? nil : InstalledGameActionCopy.launchUnavailable
+                    playLogs[game.id] = nativeLauncher.stateDirectory
+                    if let result = nativeLauncher.completedResult, !result.success {
+                        Self.launchLog.notice("Stopped launch: \(game.storeId, privacy: .public); code=\(result.errorCode ?? "unknown", privacy: .public); error=\(result.error ?? "none", privacy: .public)")
+                    }
                 } catch {
                     finished(token: token, gameID: game.id, status: 1)
                     playErrors[game.id] = Self.nativeLaunchFailureMessage(error)

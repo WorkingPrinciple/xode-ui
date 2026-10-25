@@ -6,6 +6,58 @@ import XodusManagement
 
 @MainActor
 enum NativeLifecycleChecks {
+    static func launchOutcomeChecks(check: (Bool, String) -> Void) throws {
+        let json = """
+            {"version":1,"run_id":"2b9218c5-1251-4d57-9c3c-e0097a607dc9",
+             "operation":"launch","product":"BQVQTL3PCH05","success":false,"exit_code":1,
+             "error_code":"OPERATION_FAILED","error":"Account broker did not shut down cleanly",
+             "wine_exit_code":0,"wine_termination_signal":null,
+             "game_dir":"/fixture/game","log_dir":"/fixture/run",
+             "result_path":"/fixture/run/result.json","progress_path":"/fixture/run/progress.jsonl"}
+            """
+        let old = try JSONDecoder().decode(NativeGameResult.self, from: Data(json.utf8))
+        check(old.launchFailureMessage(stoppedByUser: true) == nil,
+              "COR137: Owner Stop with the exact old NMS broker-failure receipt returns to Play without a message")
+        check(old.launchFailureMessage(stoppedByUser: false) == nil,
+              "COR137: Clean Wine exit with only broker teardown failure is diagnostic-only")
+        let cancelled = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "OPERATION_FAILED", with: "CANCELLED").utf8))
+        check(cancelled.launchFailureMessage(stoppedByUser: true) == nil,
+              "COR137: New launch CANCELLED plus known Stop intent returns to Play without installer copy")
+        check(cancelled.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
+              "COR137: Cancellation without owner Stop intent remains a generic launch failure")
+        let crashed = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "\"wine_exit_code\":0", with: "\"wine_exit_code\":1").utf8))
+        check(crashed.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
+              "COR137: Genuine failed game exit stays visible through the existing generic launch surface")
+        let install = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "\"launch\"", with: "\"install\"")
+                .replacingOccurrences(of: "OPERATION_FAILED", with: "CANCELLED").utf8))
+        check(install.failureMessage.contains("Partial files") && install.failureMessage.contains("installation"),
+              "COR137: Real install cancellation keeps installation recovery copy")
+        let normal = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "\"success\":false", with: "\"success\":true")
+                .replacingOccurrences(of: "\"exit_code\":1", with: "\"exit_code\":0")
+                .replacingOccurrences(of: "\"error_code\":\"OPERATION_FAILED\"", with: "\"error_code\":null").utf8))
+        check(normal.launchFailureMessage(stoppedByUser: false) == nil,
+              "COR137: Normal launch exit returns to Play without a message")
+        check(InstalledGamesController.nativeLaunchFailureMessage(GameScriptError.failed(14))
+              == InstalledGameActionCopy.launchUnavailable,
+              "COR137: Launch error mapping never presents installer cancellation copy")
+        do {
+            try NativeLifecycleCancellation.check(operation: "launch", cancelled: true)
+            check(false, "COR137: Lifecycle cancellation retains launch operation identity")
+        } catch NativeLifecycleCancellation.launchStopped {
+            check(true, "COR137: Lifecycle cancellation retains launch operation identity")
+        }
+        do {
+            try NativeLifecycleCancellation.check(operation: "install", cancelled: true)
+            check(false, "COR137: Lifecycle install cancellation keeps the existing installation contract")
+        } catch GameScriptError.failed(14) {
+            check(true, "COR137: Lifecycle install cancellation keeps the existing installation contract")
+        }
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         check(NativePlayerFailure.message(errorCode: "TIMEOUT", error: nil, diagnostic: "",
             windowRecorded: nil, monitorReliable: false, success: false)?.contains("Open the launch log") == true,
@@ -222,7 +274,7 @@ enum NativeLifecycleChecks {
                                         "S5_SUCCESS_AFTER_CANCEL": succeeds ? "1" : "0"],
                     unsetLaunchEnvironment: ["HOME"], onProgress: { _ in runner.cancel() })
                 check(false, "REQ95 requested cancellation cannot return success or terminal result")
-            } catch GameScriptError.failed(14) {
+            } catch NativeLifecycleCancellation.launchStopped {
                 let persisted = try NativeGameLifecycle.readResult(state: cancelledState, operation: "launch",
                     product: "FIXTURE00001", gameDirectory: game)
                 check(!runner.isRunning && persisted.success == succeeds && runner.completedResult == persisted,

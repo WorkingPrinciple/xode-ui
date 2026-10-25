@@ -55,6 +55,8 @@ enum NativeChecks {
         }
         do {
             if engineSelectionOnly {
+                try NativeLifecycleChecks.launchOutcomeChecks(check: check)
+                try await NativeLifecycleChecks.run(check: check)
                 try await EngineManagementChecks.routingOnly(check: check)
                 try await InstalledGameChecks.legacyNativeReadiness(check: check)
                 print("\(count) non-UI engine selection checks, \(failures) failures. No windows, account or game launches.")

@@ -26,10 +26,13 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     var error: String? = nil
     var popupMonitorError: String? = nil
     var warnings: [Warning]? = nil
+    var wineExitCode: Int32? = nil
+    var wineTerminationSignal: Int32? = nil
 
     private enum CodingKeys: String, CodingKey {
         case version, operation, product, success, error, warnings
         case popupMonitorError = "popup_monitor_error"
+        case wineExitCode = "wine_exit_code", wineTerminationSignal = "wine_termination_signal"
         case runID = "run_id", exitCode = "exit_code", errorCode = "error_code"
         case gameDirectory = "game_dir", logDirectory = "log_dir"
         case resultPath = "result_path", progressPath = "progress_path"
@@ -55,6 +58,11 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     ]
 
     var failureMessage: String {
+        if operation == "launch" { return InstalledGameActionCopy.launchUnavailable }
+        return operationFailureMessage
+    }
+
+    private var operationFailureMessage: String {
         switch errorCode {
         case "ACCOUNT_UNAVAILABLE": "Your Xbox sign-in couldn't be read. Check Account and approve any macOS Keychain prompt."
         case "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED": "Your Xbox account changed. Refresh your library before trying again."
@@ -68,6 +76,14 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "DISK_SPACE_FLOOR_INVALID": "The free-space limit is invalid. Check the operation log before retrying."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
+    }
+
+    func launchFailureMessage(stoppedByUser: Bool) -> String? {
+        guard operation == "launch" else { return success ? nil : failureMessage }
+        if stoppedByUser, errorCode == "CANCELLED" || errorCode == "OPERATION_FAILED" { return nil }
+        if errorCode == "OPERATION_FAILED", error == "Account broker did not shut down cleanly",
+           wineExitCode == 0, wineTerminationSignal == nil { return nil }
+        return success ? nil : InstalledGameActionCopy.launchUnavailable
     }
 
     func playerMessage() async throws -> String? {
@@ -96,6 +112,16 @@ struct NativeGameResult: Codable, Equatable, Sendable {
             diagnostic: observations.0, windowRecorded: observations.1,
             monitorReliable: popupMonitorError == nil && (warnings ?? []).isEmpty,
             success: success)
+    }
+}
+
+enum NativeLifecycleCancellation: Error {
+    case launchStopped
+
+    static func check(operation: String, cancelled: Bool) throws {
+        guard cancelled else { return }
+        if operation == "launch" { throw Self.launchStopped }
+        throw GameScriptError.failed(14)
     }
 }
 
@@ -201,11 +227,13 @@ final class NativeGameLifecycle {
             guard identity.executable == configuration.executable else { throw GameScriptError.runtimeUnavailable }
             _ = try await Task.detached { try identity.validatedArguments() }.value
         }
-        guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+        try NativeLifecycleCancellation.check(operation: operation,
+            cancelled: cancellationRequested || Task.isCancelled)
         if launchArguments.contains("--expected-registry-sha256") {
             try await EngineInspectionClient().validateLaunch(configuration: configuration,
                 arguments: launchArguments, selection: engineSelection)
-            guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+            try NativeLifecycleCancellation.check(operation: operation,
+                cancelled: cancellationRequested || Task.isCancelled)
         }
         try GameScriptFiles.checkPath(gameDirectory, allowMissing: operation == "install")
         let state = stateRoot ?? Self.directory(runID: runID)
@@ -264,7 +292,8 @@ final class NativeGameLifecycle {
         let result = try Self.readResult(state: state, operation: operation, product: product,
                                         gameDirectory: gameDirectory, exitCode: child.terminationStatus)
         completedResult = result
-        guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+        try NativeLifecycleCancellation.check(operation: operation,
+            cancelled: cancellationRequested || Task.isCancelled)
         return result
     }
 

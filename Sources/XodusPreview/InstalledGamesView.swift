@@ -143,11 +143,6 @@ struct InstalledPlayError: View {
             Text(error).font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("xodus.installed.playError")
-            if library.playLogs[game.id] != nil {
-                Button("Show launch log") { library.showLog(for: game) }
-                    .accessibilityLabel("Show \(game.title) launch log in Finder")
-                    .accessibilityIdentifier("xodus.installed.showLog")
-            }
         } else if let notice = library.playNotices[game.id] {
             Text(notice).font(.callout).foregroundStyle(.secondary)
                 .accessibilityIdentifier("xodus.installed.playResult")

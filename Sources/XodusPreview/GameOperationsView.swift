@@ -639,6 +639,11 @@ struct InstalledGameActions: View {
     var body: some View {
         Menu {
             if let details { Button("Details", action: details) }
+            if library.playLogs[game.id] != nil {
+                Button("Show launch log") { library.showLog(for: game) }
+                    .accessibilityLabel("Show \(game.title) launch log in Finder")
+                    .accessibilityIdentifier("xodus.installed.showLog")
+            }
             Menu("Engine") {
                 Button("Use default", systemImage: game.engineOverrideV2 == nil ? "checkmark" : "circle") {
                     Task { await library.setEngineOverrideV2(nil, for: game) }
