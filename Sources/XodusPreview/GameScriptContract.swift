@@ -284,7 +284,7 @@ struct GameScriptPaths: Sendable {
         return Self(scripts: home.appendingPathComponent("Library/Application Support/Xodus/Runtime/scripts/macos"),
                     processed: home.appendingPathComponent("Library/Application Support/XodusRemote/processed"),
                     logs: home.appendingPathComponent("Library/Logs/XodusRemote"),
-                    games: home.appendingPathComponent("Games/Xodus"),
+                    games: home.appendingPathComponent("Games/Xode"),
                     journal: home.appendingPathComponent("Library/Application Support/Xodus/game-operation.json"))
     }
 

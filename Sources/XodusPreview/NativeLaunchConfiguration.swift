@@ -634,7 +634,7 @@ struct NativeLaunchConfiguration {
             throw NativeLaunchError.engineUnavailable
         }
         if profile?.preservedPrefixPath != nil {
-            guard game.folder == NSHomeDirectory() + "/Games/Xodus/NoMansSky-Xbox" else {
+            guard permitsPreservedNMSInstallation(game) else {
                 throw NativeLaunchError.configurationConflict
             }
         }
@@ -657,6 +657,13 @@ struct NativeLaunchConfiguration {
         }
         return Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
                         profile: profile, shims: shims, admittedSelection: admitted)
+    }
+
+    static func permitsPreservedNMSInstallation(_ game: InstalledGame, home: String = NSHomeDirectory()) -> Bool {
+        game.storeId == "BQVQTL3PCH05" && game.identityName == "HelloGames.NoMansSky"
+            && GameInstallationDiscovery.defaultLibraryRoots(home: home).contains {
+                game.folder == $0.appendingPathComponent("NoMansSky-Xbox").path
+            }
     }
 
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,

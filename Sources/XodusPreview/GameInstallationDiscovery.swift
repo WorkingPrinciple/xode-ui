@@ -17,6 +17,10 @@ enum GameInstallationDiscoveryError: Error, LocalizedError {
 }
 
 enum GameInstallationDiscovery {
+    static func defaultLibraryRoots(home: String = NSHomeDirectory()) -> [URL] {
+        ["Xode", "Xodus"].map { URL(fileURLWithPath: home).appendingPathComponent("Games/\($0)") }
+    }
+
     static func mountedLibraryRoots(_ volumes: [String]?, home: String = NSHomeDirectory()) -> [URL] {
         let prefixes = ["/Volumes/", home + "/Mounts/"]
         return Array(Set((volumes ?? []).filter { path in
@@ -24,7 +28,9 @@ enum GameInstallationDiscovery {
                 path.hasPrefix(prefix) && !path.dropFirst(prefix.count).isEmpty
                     && !path.dropFirst(prefix.count).contains("/")
             } && URL(fileURLWithPath: path).standardizedFileURL.path == path
-        })).sorted().map { URL(fileURLWithPath: $0).appendingPathComponent("Xodus") }
+        })).sorted().flatMap { volume in
+            ["Xode", "Xodus"].map { URL(fileURLWithPath: volume).appendingPathComponent($0) }
+        }
     }
 
     struct Candidate: Sendable {
@@ -48,6 +54,10 @@ enum GameInstallationDiscovery {
                      maximumChildren: Int = 512,
                      inspectPackage: @Sendable (URL) throws -> PackageType) throws -> Observation {
         var roots: [(URL, GameStorageVolume?, Bool)] = [(originalRoot, nil, false)]
+        let defaults = defaultLibraryRoots()
+        if originalRoot == defaults[0] {
+            roots.append((defaults[1], nil, false))
+        }
         if let location {
             roots.append((URL(fileURLWithPath: location.folder), location.volume, true))
         }
