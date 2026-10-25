@@ -41,6 +41,8 @@ includes that LICENSE.
 Known beta limitation: No Man's Sky uses an explicitly configured developer-local engine binding.
 On a Mac without that exact tested engine installed, X Ode reports that the engine
 is missing and does not substitute another engine.
+
+In-game voice chat and microphone input aren't supported in this beta.
 """
 def run(arguments, timeout=1800):
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)
