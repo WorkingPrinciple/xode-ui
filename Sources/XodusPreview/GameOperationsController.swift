@@ -1243,7 +1243,7 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
-    private func completeNative(_ record: GameOperationRecord, result: NativeGameResult?) async throws {
+    func completeNative(_ record: GameOperationRecord, result: NativeGameResult?) async throws {
         guard operation?.id == record.id else { throw GameScriptError.invalidReceipt }
         if let result, result.success {
             if record.kind == .uninstall {
@@ -1268,7 +1268,7 @@ final class GameOperationsController: ObservableObject {
                     ? "Uninstall cancelled. Check the installation before trying again."
                     : "\(record.kind == .repair ? "Repair" : "Installation") cancelled. Partial files are kept; you can resume when ready."
             } else {
-                error = result?.failureMessage
+                error = await result?.installationFailureMessage()
             }
         }
         try await updateResumableInstallation(record, completed: result?.success == true)

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
 import Foundation
+import OSLog
 import XodusManagement
 
 enum NativeLifecyclePins {
@@ -62,6 +63,23 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         return operationFailureMessage
     }
 
+    func installationFailureMessage() async -> String {
+        guard !success, operation != "launch", errorCode == "OPERATION_FAILED" else { return failureMessage }
+        let diagnosticURL = URL(fileURLWithPath: logDirectory).appendingPathComponent("stderr.log")
+        do {
+            let diagnostic = try await Task.detached {
+                try GameScriptFiles.checkPath(diagnosticURL)
+                let data = try InstalledGameFiles.readRegular(diagnosticURL, maximumBytes: 4_194_304)
+                return String(decoding: data, as: UTF8.self)
+            }.value
+            return NativeDiskSpaceFailure.parse(diagnostic)?.message ?? failureMessage
+        } catch {
+            Logger(subsystem: "io.github.dragoshont.xodus", category: "GameOperation")
+                .error("Optional installation diagnostic unavailable or rejected for run \(runID, privacy: .public); retaining backend failure")
+            return failureMessage
+        }
+    }
+
     private var operationFailureMessage: String {
         switch errorCode {
         case "ACCOUNT_UNAVAILABLE": "Your Xbox sign-in couldn't be read. Check Account and approve any macOS Keychain prompt."
@@ -75,6 +93,32 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "DISK_SPACE_FLOOR": "There isn't enough free space to continue safely. Free space on the installation drive before retrying."
         case "DISK_SPACE_FLOOR_INVALID": "The free-space limit is invalid. Check the operation log before retrying."
         default: "The game operation failed. Open its log to review the cause before retrying."
+        }
+    }
+
+    struct NativeDiskSpaceFailure: Equatable, Sendable {
+        let requiredBytes: Int64
+        let availableBytes: Int64
+        var code: String { "DISK_SPACE" }
+        var message: String {
+            let required = ByteCountFormatter.string(fromByteCount: requiredBytes, countStyle: .file)
+            let available = ByteCountFormatter.string(fromByteCount: availableBytes, countStyle: .file)
+            return "Not enough space. This installation needs \(required); \(available) is available. Free space on the installation drive, then resume. Partial files are kept."
+        }
+
+        static func parse(_ diagnostic: String) -> Self? {
+            for line in diagnostic.split(whereSeparator: \.isNewline) {
+                let prefix = "Streaming failed: not enough free disk space: need "
+                guard line.hasPrefix(prefix), line.hasSuffix(" bytes") else { continue }
+                let counts = line.dropFirst(prefix.count).dropLast(" bytes".count)
+                    .components(separatedBy: " bytes, have ")
+                guard counts.count == 2,
+                      counts.allSatisfy({ !$0.isEmpty && $0.utf8.allSatisfy { (48...57).contains($0) } }),
+                      let required = Int64(counts[0]), let available = Int64(counts[1]),
+                      required > available else { continue }
+                return Self(requiredBytes: required, availableBytes: available)
+            }
+            return nil
         }
     }
 
@@ -155,6 +199,7 @@ struct NativeGameProgress {
     private(set) var bytesDone: Int64 = 0
     private(set) var bytesTotal: Int64?
     private(set) var phase: GameScriptProgress.Phase = .preparing
+    private var readingPackage = false
 
     mutating func consume(_ line: Data) throws {
         let event = try JSONDecoder().decode(Event.self, from: line)
@@ -162,8 +207,12 @@ struct NativeGameProgress {
         case "bytes":
             guard event.id != nil, let delta = event.delta_bytes, delta >= 0,
                   bytesDone <= Int64.max - delta else { throw GameScriptError.invalidProgress }
-            if event.id != UInt64.max { bytesDone += delta }
-            phase = .downloading
+            if event.id == UInt64.max {
+                readingPackage = true
+            } else {
+                bytesDone += delta
+                phase = .downloading
+            }
             if let total = bytesTotal, bytesDone > total { bytesTotal = nil }
         case "remaining":
             guard let remaining = event.remaining_bytes, remaining >= 0,
@@ -171,8 +220,11 @@ struct NativeGameProgress {
             bytesTotal = bytesDone + remaining
         case "phase":
             guard let text = event.phase, !text.isEmpty else { throw GameScriptError.invalidProgress }
-            phase = text.localizedCaseInsensitiveContains("verif") ? .verifying : .downloading
-        case "file_started", "file_finished", "completed":
+            if text.localizedCaseInsensitiveContains("verif") { phase = .verifying }
+            else if bytesDone > 0 { phase = .downloading }
+        case "file_started":
+            if let id = event.id, id != UInt64.max { phase = .downloading }
+        case "file_finished", "completed":
             break
         default:
             throw GameScriptError.invalidProgress
@@ -180,7 +232,8 @@ struct NativeGameProgress {
     }
 
     var value: GameScriptProgress {
-        GameScriptProgress(phase: phase, bytesDone: bytesDone, bytesTotal: bytesTotal, message: nil)
+        GameScriptProgress(phase: phase, bytesDone: bytesDone, bytesTotal: bytesTotal,
+                           message: phase == .preparing && readingPackage ? "Reading package" : nil)
     }
 }
 

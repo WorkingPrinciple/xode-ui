@@ -283,7 +283,7 @@ struct GameOperationProgressView: View {
                 } else {
                     Text(operations.cancelling ? "Stopping installation"
                          : operation.kind == .uninstall ? "Uninstalling"
-                         : operations.progress?.phase.title ?? "Preparing download")
+                         : operations.progress?.message ?? operations.progress?.phase.title ?? "Preparing download")
                         .foregroundStyle(.secondary)
                     if let value = operations.progress, let total = value.bytesTotal, total > 0 {
                         ProgressView(value: Double(value.bytesDone), total: Double(total))
@@ -293,7 +293,7 @@ struct GameOperationProgressView: View {
                             .font(.callout).foregroundStyle(.secondary)
                     } else {
                         ProgressView().controlSize(.small).accessibilityLabel("Download progress")
-                        if let value = operations.progress {
+                        if let value = operations.progress, value.phase == .downloading {
                             Text("\(Self.bytes(value.bytesDone)) downloaded").font(.callout).foregroundStyle(.secondary)
                         }
                     }
@@ -382,7 +382,8 @@ struct GameInstallAction: View {
         operations.cancelling || operations.directInstallCancelled ? "Stopping"
             : preparing ? "Preparing installation"
             : operations.operation?.kind == .uninstall ? "Uninstalling"
-            : operations.operation?.kind == .repair ? "Repairing" : "Installing"
+            : operations.operation?.kind == .repair ? "Repairing"
+            : operations.progress?.message ?? operations.progress?.phase.title ?? "Preparing installation"
     }
     var actionTitle: String {
         operations.resumableInstallations[game.id] != nil ? "Resume"
@@ -400,6 +401,12 @@ struct GameInstallAction: View {
             : (operations.installUnavailableReason ?? "Installation is not available yet.")
     }
     var showsCancel: Bool { preparing || (active && operations.canCancel) }
+
+    func registrationStatusTitle(installed: Bool) -> String? {
+        guard !active, !preparing else { return nil }
+        if !installed, operations.resumableInstallations[game.id] != nil { return "Partially installed" }
+        return installed ? "Installed" : "Not installed"
+    }
 
     func requestInstall() async {
         guard canInstall else { return }

@@ -49,7 +49,8 @@ struct InstalledGameAttentionView: View {
                      : incomplete ? "This game isn't fully installed."
                      : localIssue ? installed.packageErrors[game.id] ?? installed.installationErrors[game.id]
                         ?? installed.installationStatuses[game.id]?.explanation ?? "Installation verification is incomplete. Retry to verify this game."
-                     : installed.accountAccessAllowed ? "Game access needs verification." : installed.accountAccessMessage)
+                     : installed.accountAccessAllowed ? "Game access needs verification." : installed.accountAccessMessage,
+                     showsMessage: true)
                 if !localIssue {
                     if installed.accountAccessAllowed, let notice = installed.productAccessNotice(for: game) {
                         Text(notice).font(.callout).fixedSize(horizontal: false, vertical: true)

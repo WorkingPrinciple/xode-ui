@@ -4,6 +4,7 @@ import Darwin
 import Foundation
 import ImageIO
 import SwiftUI
+import Vision
 import XodusCore
 
 @MainActor
@@ -228,6 +229,28 @@ enum InstalledGameChecks {
         try await mountedStore.save([mountedGame])
         let mounted = InstalledGamesController(store: mountedStore, mountedStorageRoots: { [] })
         await mounted.load()
+        let offline = InstalledGamesController(store: mountedStore, mountedStorageRoots: { [] })
+        await offline.load()
+        await offline.checkInstallation(mountedGame)
+        let offlinePanel = InstalledGameAttentionView(installed: offline,
+            operations: GameOperationsController(installed: offline), game: mountedGame, close: {})
+        let offlineHost = NSHostingView(rootView: offlinePanel.padding(20).frame(width: 560, height: 420)
+            .background(Color.white).environment(\.colorScheme, .light))
+        offlineHost.frame = CGRect(x: 0, y: 0, width: 560, height: 420)
+        offlineHost.layoutSubtreeIfNeeded()
+        if let bitmap = offlineHost.bitmapImageRepForCachingDisplay(in: offlineHost.bounds) {
+            offlineHost.cacheDisplay(in: offlineHost.bounds, to: bitmap)
+            if let image = bitmap.cgImage {
+                let request = VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                try VNImageRequestHandler(cgImage: image).perform([request])
+                let text = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                    .joined(separator: " ")
+                check(text.contains("drive is unavailable") && text.contains("Reconnect the drive")
+                      && text.contains("Retry") && text.contains(mountedGame.folder),
+                      "COR177: Mounted attention visibly explains the disconnected drive with recovery and the retained location, without hover: \(text)")
+            } else { check(false, "COR177: Attention panel capture contains rendered pixels") }
+        } else { check(false, "COR177: Attention panel supports a mounted render capture") }
         let status = NativeInstallationStatus(version: 1, operation: "install-status", product: mountedGame.storeId,
             runID: UUID().uuidString, gameDirectory: mountedGame.folder, logDirectory: "/fixture",
             resultPath: "/fixture/result.json", success: true, exitCode: 0, errorCode: nil, status: .complete,

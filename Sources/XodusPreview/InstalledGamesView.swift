@@ -137,9 +137,18 @@ struct InstalledPlayError: View {
 
 struct InstallationWarning: View {
     let message: String
+    var showsMessage = false
 
     var body: some View {
-        Image(systemName: "exclamationmark.triangle")
+        Group {
+            if showsMessage {
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Image(systemName: "exclamationmark.triangle")
+            }
+        }
             .foregroundStyle(.secondary)
             .help(message)
             .focusable()

@@ -350,6 +350,17 @@ struct LiveCatalogView: View {
     private var ownedMatches: [PCGame] {
         projection.owned
     }
+    private var operationHasInlineControls: Bool {
+        guard !query.isEmpty,
+              let owner = operations.operation?.productID ?? operations.directInstallProductID else { return false }
+        return ownedMatches.prefix(5).contains {
+            $0.id == owner && unsupportedIssues(game($0)).isEmpty
+        }
+    }
+    var showsOperationFeedback: Bool {
+        operations.hasDownloadStatus
+            && (!operationHasInlineControls || operations.error != nil || operations.notice != nil)
+    }
     private var hiddenUnsupportedCount: Int { projection.hiddenCount }
     private var retainedPublicIDs: Set<String> {
         session.retainedPublicIDs(query: query, pending: pending)
@@ -405,7 +416,7 @@ struct LiveCatalogView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 28) {
-            if operations.hasDownloadStatus {
+            if showsOperationFeedback {
                 GameOperationProgressView(operations: operations)
                     .padding(.horizontal, 56).padding(.top, 24)
                     .accessibilityIdentifier("xodus.catalog.installStatus")
@@ -776,8 +787,11 @@ struct LiveCatalogView: View {
             .focusable()
             .focused($focusedResult, equals: game.id)
             .onKeyPress(.return) { open(game); return .handled }
-            Text(game.installed == nil ? "Not installed" : "Installed")
-                .font(.callout).foregroundStyle(.secondary)
+            if let status = GameInstallAction(game: PCGame(id: game.id, title: game.title, artwork: nil),
+                                              operations: operations)
+                .registrationStatusTitle(installed: game.installed != nil) {
+                Text(status).font(.callout).foregroundStyle(.secondary)
+            }
             if !unsupportedIssues(game).isEmpty {
                 Button("View details") { open(game) }
                     .help("Open compatibility details")

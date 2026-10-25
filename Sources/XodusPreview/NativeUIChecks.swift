@@ -1215,6 +1215,10 @@ enum NativeUIChecks {
         catalog.layoutSubtreeIfNeeded()
         let feedback = GameOperationProgressView(operations: operations)
         let installAction = GameInstallAction(game: game, operations: operations)
+        check((installAction.preparing || installAction.active)
+                ? installAction.registrationStatusTitle(installed: false) == nil
+                : installAction.registrationStatusTitle(installed: false) != nil,
+              "COR178: Active preparation/installation never renders a contradictory Not installed row status")
         let actionHost = NSHostingView(rootView: installAction)
         actionHost.sizingOptions = []
         actionHost.frame = CGRect(x: 0, y: 0, width: 230, height: 180)

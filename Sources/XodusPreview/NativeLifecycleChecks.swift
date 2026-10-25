@@ -83,6 +83,11 @@ enum NativeLifecycleChecks {
                 windowRecorded: true, monitorReliable: true, success: true) == nil,
               "Missing/broken monitor evidence and an observed window cannot fabricate a no-window failure")
         var progress = NativeGameProgress()
+        try progress.consume(Data(#"{"event":"bytes","id":18446744073709551615,"delta_bytes":590354826}"#.utf8))
+        try progress.consume(Data(#"{"event":"phase","phase":"Downloading ntfs..."}"#.utf8))
+        check(progress.bytesDone == 0 && progress.bytesTotal == nil && progress.phase == .preparing
+              && progress.value.message == "Reading package",
+              "COR178: Source-container reads remain package preparation, not zero-byte payload downloading")
         for line in [
             #"{"event":"file_started","id":18446744073709551615,"name":"metadata","total_bytes":50}"#,
             #"{"event":"bytes","id":18446744073709551615,"delta_bytes":50}"#,
@@ -110,11 +115,74 @@ enum NativeLifecycleChecks {
         }
         let failureLog = root.appendingPathComponent("player-evidence")
         try FileManager.default.createDirectory(at: failureLog, withIntermediateDirectories: false)
+        let diskDiagnostic = "Streaming failed: not enough free disk space: need 93820089418 bytes, have 29631885312 bytes\n"
+        let diskFailure = NativeGameResult.NativeDiskSpaceFailure.parse(diskDiagnostic)
+        check(diskFailure?.requiredBytes == 93_820_089_418
+              && diskFailure?.availableBytes == 29_631_885_312
+              && diskFailure?.code == "DISK_SPACE"
+              && diskFailure?.message.contains("Not enough space") == true
+              && diskFailure?.message.contains("Partial files are kept") == true,
+              "COR178: Exact streaming need/have becomes a typed actionable disk-space failure")
+        check(NativeGameResult.NativeDiskSpaceFailure.parse("arbitrary disk space text") == nil
+              && NativeGameResult.NativeDiskSpaceFailure.parse("Streaming failed: not enough free disk space: need 1 bytes, have 2 bytes") == nil
+              && NativeGameResult.NativeDiskSpaceFailure.parse("Streaming failed: not enough free disk space: need -1 bytes, have 0 bytes") == nil,
+              "COR178: Disk-space classification rejects ambiguous, contradictory and malformed diagnostics")
         let resultFixture = NativeGameResult(version: 1, runID: UUID().uuidString, operation: "launch",
             product: "FIXTURE00001", success: true, exitCode: 0, errorCode: nil,
             gameDirectory: root.path, logDirectory: failureLog.path,
             resultPath: failureLog.appendingPathComponent("result.json").path,
             progressPath: failureLog.appendingPathComponent("progress.jsonl").path)
+        let failedInstall = NativeGameResult(version: 1, runID: resultFixture.runID, operation: "install",
+            product: resultFixture.product, success: false, exitCode: 1, errorCode: "OPERATION_FAILED",
+            gameDirectory: resultFixture.gameDirectory, logDirectory: resultFixture.logDirectory,
+            resultPath: resultFixture.resultPath, progressPath: resultFixture.progressPath)
+        try Data(diskDiagnostic.utf8).write(to: failureLog.appendingPathComponent("stderr.log"))
+        check(await failedInstall.installationFailureMessage() == diskFailure?.message,
+              "COR178: Bounded exact-run diagnostic reader surfaces disk-space recovery without exposing raw log text")
+        try Data("Unknown failure; sensitive details remain in the log".utf8)
+            .write(to: failureLog.appendingPathComponent("stderr.log"))
+        check(await failedInstall.installationFailureMessage() == failedInstall.failureMessage,
+              "COR178: Unrecognized diagnostics retain redacted failure and never fabricate a disk-space cause")
+        try Data().write(to: failureLog.appendingPathComponent("stderr.log"))
+        for mode in ["missing", "empty", "oversized", "symlink"] {
+            let fixture = root.appendingPathComponent("optional-diagnostic-\(mode)")
+            let destination = fixture.appendingPathComponent("game")
+            let logs = fixture.appendingPathComponent("logs")
+            try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: false)
+            let diagnostic = logs.appendingPathComponent("stderr.log")
+            if mode == "empty" { try Data().write(to: diagnostic) }
+            if mode == "oversized" { try Data(repeating: 65, count: 4_194_305).write(to: diagnostic) }
+            if mode == "symlink" {
+                try FileManager.default.createSymbolicLink(at: diagnostic,
+                    withDestinationURL: failureLog.appendingPathComponent("stderr.log"))
+            }
+            let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+                processed: fixture.appendingPathComponent("processed"), logs: logs, games: destination,
+                journal: fixture.appendingPathComponent("state/operation.json"))
+            let journal = GameOperationJournal(file: paths.journal)
+            let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+                productID: "FIXTURE00001", title: "Partial fixture", destination: destination.path,
+                installedID: nil, nativeAccountHash: String(repeating: "a", count: 64))
+            try await journal.save(record)
+            let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+            await library.load()
+            let controller = GameOperationsController(installed: library, paths: paths)
+            await controller.restore()
+            let failed = NativeGameResult(version: 1, runID: UUID().uuidString, operation: "install",
+                product: record.productID, success: false, exitCode: 1, errorCode: "OPERATION_FAILED",
+                gameDirectory: destination.path, logDirectory: logs.path,
+                resultPath: logs.appendingPathComponent("result.json").path,
+                progressPath: logs.appendingPathComponent("progress.jsonl").path)
+            try await controller.completeNative(record, result: failed)
+            let pending = try await journal.load()
+            let resumable = try await journal.loadResumable()
+            check(controller.error == failed.failureMessage && controller.operation == nil
+                  && !controller.recoveryRequired && !library.mutationActive && controller.canQuit
+                  && pending == nil && resumable[record.productID]?.destination == destination.path
+                  && controller.resumableInstallations[record.productID]?.destination == destination.path,
+                  "COR179 review: \(mode) optional stderr preserves backend failure, partial Resume and terminal journal/mutation release")
+        }
         for (code, expected) in [
             ("CANCELLED", "cancelled"), ("TIMEOUT", "install operation took too long"),
             ("RESOURCE_BUSY", "in use"), ("ACCOUNT_UNAVAILABLE", "Keychain"),

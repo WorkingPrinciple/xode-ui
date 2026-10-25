@@ -1078,6 +1078,9 @@ enum GameOperationChecks {
               && resumedOperations.resumableInstallations[game.id]?.destination == partialDestination.path
               && partialLibrary.games.isEmpty,
               "M2: Cancelling a config-bearing partial install preserves a durable exact-product/destination resume without registering or globally locking")
+        check(GameInstallAction(game: game, operations: resumedOperations)
+                .registrationStatusTitle(installed: false) == "Partially installed",
+              "COR178: Retained partial data is labeled Partially installed beside Resume, never Not installed")
         try writeMode("success")
         await resumedOperations.prepareInstall(game)
         guard let resumedConsent = resumedOperations.installConsent else { throw GameScriptError.invalidDestination }

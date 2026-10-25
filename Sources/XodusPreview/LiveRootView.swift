@@ -517,7 +517,8 @@ struct LiveRootView: View {
 
             .modifier(LibraryScrollEdge(enabled: immersive))
             .modifier(LibraryImmersion(enabled: immersive,
-                                      underlapsToolbar: destination == .discover || libraryHasHero))
+                                      underlapsToolbar: destination == .discover
+                                        ? !state.gameOperations.hasDownloadStatus : libraryHasHero))
             .background(Color(nsColor: .windowBackgroundColor))
         .modifier(LibraryActionExtentObserver(selection: state.librarySelection) {
             if destination == .library { libraryScrollCommand += 1 }
