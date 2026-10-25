@@ -135,6 +135,13 @@ enum EngineConfiguratorChecks {
               && RuntimeInstallationPicker.defaultEngineName(provider: "", calimocho: "port11b", entries: []) == "None"
               && RuntimeInstallationPicker.defaultEngineName(provider: "crossover", calimocho: "", entries: []) == "None",
               "REQ109: The configurator names the current default engine, or None")
+        check(EnginePanelLocation.start(for: app.path).path == root.path
+              && EnginePanelLocation.start(for: "/Volumes/Missing Disk/Wine.app").path == "/Applications"
+              && EnginePanelLocation.start(for: "  ").path == "/Applications",
+              "COR161: Choosers open beside the current valid selection, otherwise in Applications")
+        check(CrossOverLocationRow.suggestedLocation(saved: "/Volumes/Apps/CrossOver.app", state: installed, current: "")
+                == "/Volumes/Apps/CrossOver.app",
+              "COR161: Escape on an edited CrossOver path restores the saved selection")
         let settings = RuntimeProviderSettings(detectCrossOver: { .absent })
         for width in [CGFloat(560), CGFloat(820)] {
             for appearance in [NSAppearance.Name.aqua, .darkAqua] {
