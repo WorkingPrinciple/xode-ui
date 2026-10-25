@@ -61,6 +61,21 @@ enum UserEngineStore {
     }
 }
 
+enum EnginePanelLocation {
+    /// The chooser opens beside the current valid selection, else in Applications.
+    static func start(for selection: String, fileManager: FileManager = .default) -> URL {
+        let path = (selection.trimmingCharacters(in: .whitespaces) as NSString).expandingTildeInPath
+        if !path.isEmpty {
+            let parent = URL(fileURLWithPath: path).deletingLastPathComponent()
+            var directory: ObjCBool = false
+            if fileManager.fileExists(atPath: parent.path, isDirectory: &directory), directory.boolValue {
+                return parent
+            }
+        }
+        return URL(fileURLWithPath: "/Applications")
+    }
+}
+
 /// Admits only the newest inspection, and only while its requested location is still selected.
 struct EngineRequestFence {
     private(set) var current: UUID?
@@ -220,8 +235,11 @@ struct UserEngineRows: View {
             TextField("Engine app or folder", text: $location, prompt: Text("Engine app or folder"))
                 .labelsHidden()
                 .onSubmit(addTypedLocation)
+                .onExitCommand(perform: discardDraft)
+                .accessibilityLabel("Engine app or folder")
                 .accessibilityIdentifier("xodus.engines.location")
             Button("Choose…", action: choose).disabled(!allowsFileReads || fence.pending)
+                .accessibilityLabel("Choose engine app or folder")
             Button("Add Engine", action: addTypedLocation)
                 .disabled(!allowsFileReads || !storeReadable || fence.pending
                           || location.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -278,6 +296,12 @@ struct UserEngineRows: View {
         } catch { self.error = error.message }
     }
 
+    private func discardDraft() {
+        fence.cancel()
+        location = suggestions.first?.location ?? ""
+        error = nil
+    }
+
     private func addTypedLocation() {
         let path = (location.trimmingCharacters(in: .whitespaces) as NSString).expandingTildeInPath
         guard !path.isEmpty, !fence.pending else { return }
@@ -291,6 +315,7 @@ struct UserEngineRows: View {
         panel.allowsMultipleSelection = false
         panel.treatsFilePackagesAsDirectories = false
         panel.allowedContentTypes = [.application, .folder]
+        panel.directoryURL = EnginePanelLocation.start(for: location)
         guard panel.runModal() == .OK, let url = panel.url else { return }
         location = url.path
         inspect(url, selected: location)
@@ -347,15 +372,20 @@ struct CrossOverLocationRow: View {
             EngineRow(name: "CrossOver", version: installedVersion, location: nil, status: status) {
                 Button("Refresh") { Task { await settings.refreshCrossOverDependency() } }
                     .disabled(!allowsCheck || settings.checkingDependency || settings.applicationTerminating)
+                    .accessibilityLabel("Refresh CrossOver detection")
                     .accessibilityIdentifier("xodus.engines.refresh")
             }
             HStack {
                 TextField("CrossOver app", text: $location, prompt: Text("CrossOver app"))
                 .labelsHidden()
                     .onSubmit(apply)
+                    .onExitCommand(perform: discardDraft)
+                    .accessibilityLabel("CrossOver app")
                     .accessibilityIdentifier("xodus.engines.crossover.location")
                 Button("Choose App…", action: choose).disabled(!allowsCheck || fence.pending)
+                    .accessibilityLabel("Choose CrossOver app")
                 Button("Use", action: apply)
+                    .accessibilityLabel("Use this CrossOver app")
                     .disabled(!allowsCheck || fence.pending || location.isEmpty
                               || location == EngineDefaults.crossOverApplication())
                 if fence.pending { ProgressView().controlSize(.small) }
@@ -389,6 +419,14 @@ struct CrossOverLocationRow: View {
         return current
     }
 
+    /// Escape discards an unapplied edit and shows the saved or detected location again.
+    private func discardDraft() {
+        fence.cancel()
+        location = Self.suggestedLocation(saved: EngineDefaults.crossOverApplication(),
+                                          state: settings.crossOverDependency, current: "")
+        error = nil
+    }
+
     private var installedVersion: String? {
         if case .installed(let app) = settings.crossOverDependency { return app.version }
         return nil
@@ -410,7 +448,7 @@ struct CrossOverLocationRow: View {
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [.application]
-        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.directoryURL = EnginePanelLocation.start(for: location)
         guard panel.runModal() == .OK, let url = panel.url else { return }
         location = url.path
         apply()
