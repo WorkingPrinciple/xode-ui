@@ -71,6 +71,35 @@ class DistributionChecks(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "source/rights"):
                 require_distribution_ready(app)
 
+    def test_engine_notice_is_optional_but_bound_when_present(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            app, _ = self.fixture(root)
+            resources = app / "Contents/Resources"
+            receipt = resources / "distribution-components.json"
+            receipt.unlink()
+            notice = resources / "EngineNotices/NOTICE.txt"
+            notice.parent.mkdir()
+            notice.write_text("Calimocho release notice\n", encoding="utf-8")
+            source = {"commit": "a" * 40, "tree": "b" * 40}
+            write_manifest(app, source, source, root / "source.tar")
+            metadata = json.loads(receipt.read_text())
+            self.assertEqual(metadata["engineNotice"]["path"],
+                             "Contents/Resources/EngineNotices/NOTICE.txt")
+            self.assertEqual(metadata["engineNotice"]["bytes"], notice.stat().st_size)
+            notice.write_text("Calimocho release Notice\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "hash|digest"):
+                self.blockers(app)
+
+    def test_unrecorded_engine_notice_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            notice = app / "Contents/Resources/EngineNotices/NOTICE.txt"
+            notice.parent.mkdir()
+            notice.write_text("Unrecorded notice\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Unrecorded Calimocho NOTICE"):
+                self.blockers(app)
+
     def test_development_runtime_paths_block_production_without_disclosing_values(self):
         for private in ("/Users/neutral/runtime", "${HOME}/src/copilot-worktrees/engine", ".copilot/session-state/private"):
             with self.subTest(private=private), tempfile.TemporaryDirectory() as tmp:

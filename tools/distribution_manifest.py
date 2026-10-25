@@ -207,6 +207,17 @@ def distribution_blockers(app, approved_producer_notices_sha256=None):
         missing = "Exact producer dependency inventory/notices not supplied"
         if missing not in blockers:
             blockers.append(missing)
+    engine_notice = resources / "EngineNotices/NOTICE.txt"
+    engine_notice_record = metadata.get("engineNotice")
+    if engine_notice_record is None:
+        require(not engine_notice.exists() and not engine_notice.is_symlink(),
+                "Unrecorded Calimocho NOTICE resource")
+    else:
+        require(type(engine_notice_record) is dict
+                and set(engine_notice_record) == {"path", "sha256", "bytes"}
+                and engine_notice_record["path"] == "Contents/Resources/EngineNotices/NOTICE.txt",
+                "Invalid Calimocho NOTICE receipt")
+        owned_bytes(engine_notice, engine_notice_record["sha256"], engine_notice_record["bytes"])
     for name, relative in COMPONENT_PATHS.items():
         component = metadata["components"][name]
         require(component["path"] == relative, "Unexpected component path")

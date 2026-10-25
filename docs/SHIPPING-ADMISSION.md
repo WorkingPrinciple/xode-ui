@@ -104,14 +104,18 @@ headless `dmgbuild` to create an APFS/ULFO image with a volume icon,
 Applications drop link, the 660x400 Finder layout, 128-pixel icons and artwork,
 then signs and verifies the final image. The image builder writes the layout
 metadata without opening Finder or triggering Apple Events.
-The local-candidate builders accept `--engine-notice` for the plain-text
-Calimocho `-02` NOTICE and place it at
+Both local-candidate builders and `build_app.sh` accept the plain-text
+Calimocho `-02` NOTICE (`--engine-notice`) and place it at
 `Contents/Resources/EngineNotices/NOTICE.txt`; final beta packaging refuses to
 proceed without that resource. The complete engine binaries and full licence
 tree remain a separate download and are never put in the app notarization
 payload. `release_candidate.py --dry-run` also requires `--engine-notice` and
 `--dmg-background`; the exact NOTICE digest is carried into the dry-run receipt
 and checked again before submission.
+`build_app.sh` copies the app's `LICENSE`, `NOTICE` and `TRADEMARKS.md` into
+their `Contents/Resources` acknowledgment paths; bundled Python runtime
+admission independently verifies its `lib/python3.14/LICENSE.txt`, and the
+management bundle retains the AWACY notice.
 It derives app version/channel from Info.plist, requires the source checkout to
 be clean and on `main` or `release/*`, and verifies that its commit/tree match
 the app receipt and its `rev-list --count HEAD` matches CFBundleVersion. It
