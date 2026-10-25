@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import plistlib
 import subprocess
 import tempfile
 import unittest
@@ -16,6 +17,16 @@ import shipping_pair as pins
 
 
 class ReleaseCandidateChecks(unittest.TestCase):
+    def neutral_app(self, root):
+        app = root / "Neutral.app"
+        contents = app / "Contents"
+        contents.mkdir(parents=True, exist_ok=True)
+        with (contents / "Info.plist").open("wb") as output:
+            plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
+                           "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "441",
+                           "XodeReleaseChannel": "Beta"}, output)
+        return app
+
     def pin_fixture_manifest(self, path):
         patcher = patch.object(release, "PRODUCER_MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
         patcher.start()
@@ -84,17 +95,33 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "owner approval"):
                     release.frozen_payloads(root, "0" * 64)
 
+    def test_release_requires_main_or_release_branch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = {"commit": "a" * 40, "tree": "b" * 40}
+            args = argparse.Namespace(app_commit=source["commit"], output_root=root,
+                                      candidate=root, approve_unnotarized_cli=None,
+                                      producer_notices=root / "notices",
+                                      producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
+            with patch.object(release, "source_identity", return_value=source), \
+                    patch.object(release, "release_branch", return_value="feature/package"):
+                with self.assertRaisesRegex(ValueError, "only from main or a release/\\* branch"):
+                    release.build(args)
+
     def test_missing_approval_stops_before_build_or_signing(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
             source = {"commit": "a" * 40, "tree": "b" * 40}
             args = argparse.Namespace(app_commit=source["commit"], output_root=root,
-                                      candidate=root, approve_unnotarized_cli=None)
+                                      candidate=root, approve_unnotarized_cli=None,
+                                      producer_notices=root / "notices",
+                                      producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
             with patch.object(release, "CLI_SHA256", cli_hash), \
                     patch.object(release, "HELPER_SHA256", helper_hash), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash), \
                     patch.object(release, "source_identity", return_value=source), \
+                    patch.object(release, "release_branch", return_value="main"), \
                     patch.object(release, "refresh") as refresh, \
                     patch.object(release, "notarize") as notarize:
                 with self.assertRaisesRegex(ValueError, "owner approval"):
@@ -190,6 +217,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
                 receipt = {"commands": [], "artifacts": {}, "notarized": False}
+                app = self.neutral_app(root)
                 def execute(arguments, stage, receipt, path, label):
                     if label == failure:
                         raise ValueError("Required check failed")
@@ -204,10 +232,12 @@ class ReleaseCandidateChecks(unittest.TestCase):
                         patch.object(release, "owned_bytes", return_value=({"sha256": "a" * 64}, b"")):
                     if failure:
                         with self.assertRaises(ValueError):
-                            release.distribute(root / "Neutral.app", root, receipt, root / "receipt.json", "c" * 40, "notary")
+                            release.distribute(app, root, receipt, root / "receipt.json", "c" * 40, "notary",
+                                               release.PRODUCER_NOTICES_SHA256)
                         self.assertFalse(receipt["notarized"])
                     else:
-                        release.distribute(root / "Neutral.app", root, receipt, root / "receipt.json", "c" * 40, "notary")
+                        release.distribute(app, root, receipt, root / "receipt.json", "c" * 40, "notary",
+                                           release.PRODUCER_NOTICES_SHA256)
                         self.assertTrue(receipt["notarized"])
                         self.assertEqual([call.args[4] for call in notary.call_args_list], ["app", "dmg"])
                         self.assertTrue(set(labels).issubset({record["label"] for record in receipt["commands"]}))
@@ -236,18 +266,24 @@ class ReleaseCandidateChecks(unittest.TestCase):
             args = argparse.Namespace(app_commit=source["commit"], output_root=root,
                 candidate=root, installed_app=root / "ReadOnly.app", identity="c" * 40,
                 producer_source=root, notary_profile="notary", dry_run=True, approve_unnotarized_cli=None,
-                producer_notices=root / "ReviewedNotices", producer_notices_sha256="e" * 64)
+                producer_notices=root / "ReviewedNotices",
+                producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
 
             def refresh(installed, output, *unused):
                 app = output / "candidate/Neutral.app"
                 resources = app / "Contents/Resources"
                 resources.mkdir(parents=True)
+                with (app / "Contents/Info.plist").open("wb") as bundle:
+                    plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
+                                   "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "441",
+                                   "XodeReleaseChannel": "Beta"}, bundle)
                 (resources / "local-candidate-receipt.json").write_text("{}")
                 receipt = app.parent / "candidate-receipt.json"
                 receipt.write_text("{}")
                 return app, receipt
 
             with patch.object(release, "source_identity", return_value=source), \
+                    patch.object(release, "release_branch", return_value="main"), \
                     patch.object(release, "distribution_blockers", return_value=["Neutral unresolved rights"]) as blockers, \
                     patch.object(release, "frozen_payloads", return_value=(root / "cli", root / "helper", {})), \
                     patch.object(release, "refresh", side_effect=refresh) as refresh_mock, \
@@ -325,9 +361,10 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "verify_designated_requirement"), \
                     patch.object(release, "execute"), patch.object(release, "distribute") as distribute, \
                     patch.object(release, "refresh") as refresh:
-                release.resume(root / "release-receipt.json", "notary", producer_notices_sha256="e" * 64)
+                release.resume(root / "release-receipt.json", "notary",
+                               producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
                 self.assertEqual(distribute.call_args.args[0], app)
-                self.assertEqual(distribute.call_args.args[-1], "e" * 64)
+                self.assertEqual(distribute.call_args.args[-1], release.PRODUCER_NOTICES_SHA256)
                 refresh.assert_not_called()
                 receipt["state"] = "failed"
                 with self.assertRaises(ValueError):

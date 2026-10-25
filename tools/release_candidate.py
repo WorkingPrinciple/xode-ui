@@ -9,6 +9,8 @@ import argparse
 import json
 import os
 from pathlib import Path
+import plistlib
+import re
 import subprocess
 import tempfile
 
@@ -19,6 +21,7 @@ from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
                            hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
 from distribution_manifest import require_distribution_ready, distribution_blockers
+from package_beta import PRODUCER_NOTICES_SHA256
 
 
 def read_json(path):
@@ -86,6 +89,11 @@ def write_receipt(path, receipt):
     temporary.replace(path)
 
 
+def release_branch(project):
+    return subprocess.check_output(["git", "-C", str(project), "branch", "--show-current"],
+                                   text=True).strip()
+
+
 def execute(arguments, stage, receipt, receipt_path, label, timeout=1800):
     log = stage / (label + ".log")
     record = {"command": list(map(str, arguments)), "log": str(log), "exitCode": None}
@@ -126,8 +134,27 @@ def notarize(path, stage, receipt, receipt_path, label, profile):
 
 
 def distribute(app, stage, receipt, receipt_path, identity, profile, producer_notices_sha256=None):
+    require(producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
+            "Supply the independently pinned 0.2.0 producer-notice inventory digest")
     require_distribution_ready(app, producer_notices_sha256)
-    archive = stage / "Ode-to-X-submission.zip"
+    with (app / "Contents/Info.plist").open("rb") as source:
+        info = plistlib.load(source)
+    version, channel = info.get("CFBundleShortVersionString"), info.get("XodeReleaseChannel")
+    require(isinstance(version, str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version)
+            and isinstance(channel, str) and re.fullmatch(r"[A-Za-z]+", channel),
+            "App release version or channel is invalid")
+    channel_slug = channel.lower()
+    product_name = info.get("CFBundleDisplayName")
+    require(product_name == "X Ode" and info.get("CFBundleName") == product_name,
+            "App display name differs from the product identity")
+    build_number = info.get("CFBundleVersion")
+    require(isinstance(build_number, str) and build_number.isdecimal(),
+            "App build number is invalid")
+    receipt.update({"appVersion": version, "buildNumber": int(build_number),
+                    "releaseChannel": channel,
+                    "releaseTag": f"v{version}-{channel_slug}.1"})
+    write_receipt(receipt_path, receipt)
+    archive = stage / f"X-Ode-{version}-{channel_slug}-submission.zip"
     execute(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)],
             stage, receipt, receipt_path, "app-archive")
     receipt["artifacts"]["appSubmissionArchive"] = {"path": str(archive), **owned_bytes(archive)[0]}
@@ -146,8 +173,8 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
             stage, receipt, receipt_path, "distribution-app-copy")
     execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(distribution / app.name)],
             stage, receipt, receipt_path, "distribution-app-signature")
-    dmg = stage / "Ode-to-X.dmg"
-    execute(["/usr/bin/hdiutil", "create", "-volname", "Ode to X", "-srcfolder", str(distribution),
+    dmg = stage / f"X-Ode-{version}-{channel_slug}.dmg"
+    execute(["/usr/bin/hdiutil", "create", "-volname", product_name, "-srcfolder", str(distribution),
              "-format", "UDZO", str(dmg)], stage, receipt, receipt_path, "dmg-create")
     execute(["/usr/bin/codesign", "--sign", identity, "--timestamp", str(dmg)],
             stage, receipt, receipt_path, "dmg-sign")
@@ -169,6 +196,8 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
 
 
 def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notices_sha256=None):
+    require(producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
+            "Supply the independently pinned 0.2.0 producer-notice inventory digest")
     receipt = read_json(receipt_path)
     stage = receipt_path.parent
     require(receipt["version"] == 1 and receipt["state"] == "signed_dry_run_complete"
@@ -219,6 +248,12 @@ def build(args):
     project = Path(__file__).resolve().parent.parent
     source = source_identity(project)
     require(source["commit"] == hex_value(args.app_commit, 40), "Current clean HEAD must equal --app-commit")
+    branch = release_branch(project)
+    require(branch == "main" or branch.startswith("release/"),
+            "Package releases only from main or a release/* branch")
+    require(args.producer_notices is not None
+            and args.producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
+            "Supply the pinned 0.2.0 producer-notice inventory and digest")
     root = args.output_root.resolve(strict=True)
     info = root.stat()
     require(root == args.output_root and info.st_uid == os.getuid() and info.st_mode & 0o022 == 0,
@@ -244,6 +279,18 @@ def build(args):
         write_receipt(receipt_path, receipt)
         app, build_receipt = refresh(args.installed_app, stage, args.identity, cli,
                                      args.producer_source, PRODUCER_COMMIT, helper, notices, notices_sha)
+        with (app / "Contents/Info.plist").open("rb") as bundle:
+            app_info = plistlib.load(bundle)
+        app_version = app_info.get("CFBundleShortVersionString")
+        release_channel = app_info.get("XodeReleaseChannel")
+        app_build = app_info.get("CFBundleVersion")
+        require(isinstance(app_version, str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", app_version)
+                and isinstance(release_channel, str) and re.fullmatch(r"[A-Za-z]+", release_channel)
+                and isinstance(app_build, str) and app_build.isdecimal(),
+                "Built app release metadata is invalid")
+        receipt.update({"appVersion": app_version, "buildNumber": int(app_build),
+                        "releaseChannel": release_channel,
+                        "releaseTag": f"v{app_version}-{release_channel.lower()}.1"})
         receipt["producerNoticesSHA256"] = notices_sha
         receipt["buildInvocation"]["completed"] = True
         receipt["candidateBuildReceipt"] = {"path": str(build_receipt), **owned_bytes(build_receipt)[0]}

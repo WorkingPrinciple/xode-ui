@@ -85,11 +85,15 @@ was read/exported and no Keychain settings were changed. Actual profile
 authentication remains unverified; do not claim readiness from installed tools.
 
 For an approved beta package that must not be submitted or installed, use
-`tools/package_beta.py --app "/absolute/path/to/X Ode.app" --output-root
-/absolute/existing/output --format zip` (or `dmg`); when a producer inventory is
-present, also pass its independently reviewed
-`--producer-notices-sha256 APPROVED_DIGEST`. It accepts only version 0.2.0
-after the distribution manifest and portable-resource checks pass, and audits
+`tools/package_beta.py --app "/absolute/path/to/X Ode.app" --source
+/absolute/clean/main-or-release-checkout --output-root /absolute/existing/output
+--format zip` (or `dmg`) and the pinned
+`--producer-notices-sha256 84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e`.
+It derives app version/channel from Info.plist, requires the source checkout to
+be clean and on `main` or `release/*`, and verifies that its commit/tree match
+the app receipt and its `rev-list --count HEAD` matches CFBundleVersion. It
+emits `X-Ode-<version>-<channel>-submission.zip` or
+`X-Ode-<version>-<channel>.dmg`, plus an adjacent checksum. It audits
 the app plus every nested Mach-O for the exact Developer ID leaf, team,
 hardened runtime and secure timestamp. A DMG is also Developer ID signed and
 timestamped. The tool emits an archive, SHA-256 sidecar, install note and local

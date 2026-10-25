@@ -62,7 +62,8 @@ def verify_payload_coverage(app, optional):
     management = app / "Contents/Resources/XodusAppFoundation_XodusManagement.bundle"
     verify_resources(management)
     allowed = set(COMPONENT_PATHS.values()) | {
-        "Contents/Info.plist", "Contents/Resources/LICENSE.txt", "Contents/Resources/Xodus.icns",
+        "Contents/Info.plist", "Contents/Resources/LICENSE.txt", "Contents/Resources/NOTICE.txt",
+        "Contents/Resources/TRADEMARKS.md", "Contents/Resources/Xodus.icns",
         "Contents/Resources/XodusAuthHost.json", "Contents/Resources/local-candidate-receipt.json",
         "Contents/Resources/XodusEngine/build-manifest.json",
         "Contents/Resources/distribution-components.json",

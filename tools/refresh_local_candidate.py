@@ -11,12 +11,14 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
 
-from build_local_candidate import run, source_identity, validate_host
+from build_local_candidate import (copy_release_notices, run, source_build_number,
+                                   source_identity, validate_host)
 from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
                            owned_bytes, require, swift_pins)
 from signing_identity import command, preflight, sign, verify_designated_requirement
@@ -93,7 +95,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         source, log, environment)
     binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"],
                          source, log, environment).decode().strip())
-    app = stage / "Ode to X Local Candidate.app"
+    app = stage / "X Ode.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
     macos.mkdir(parents=True)
     (resources / "XodusEngine").mkdir(parents=True)
@@ -122,10 +124,15 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
     (macos / "Xodus").chmod(0o755)
     bundle_info = plistlib.loads((source / "tools/Info.plist").read_bytes())
-    bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "Ode to X Local Candidate"
+    require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",
+                         bundle_info.get("CFBundleShortVersionString", "")) is not None,
+            "App version must use exactly x.y.z")
+    bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "X Ode"
+    bundle_info["CFBundleVersion"] = str(source_build_number(project))
+    bundle_info["XodeReleaseChannel"] = "Beta"
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump(bundle_info, output)
-    shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    copy_release_notices(source, resources)
     shutil.copyfile(installed / "Contents/Resources/Xodus.icns", resources / "Xodus.icns")
     copy_resources(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
                    resources / "XodusAppFoundation_XodusManagement.bundle")

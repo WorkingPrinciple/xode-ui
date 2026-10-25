@@ -59,6 +59,8 @@ def main():
     for target, original in [
         (app / "Contents/Info.plist", source_root / "tools/Info.plist"),
         (app / "Contents/Resources/LICENSE.txt", source_root / "LICENSE"),
+        (app / "Contents/Resources/NOTICE.txt", source_root / "NOTICE"),
+        (app / "Contents/Resources/TRADEMARKS.md", source_root / "TRADEMARKS.md"),
     ]:
         original_identity, _ = owned_bytes(original)
         owned_bytes(target, original_identity["sha256"], original_identity["bytes"])

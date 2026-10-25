@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import platform
 import plistlib
+import re
 import shutil
 import subprocess
 import tarfile
@@ -38,6 +39,23 @@ def source_identity(root):
             "Commit the selected source changes before building a reproducible candidate")
     return {"commit": hex_value(git("rev-parse", "HEAD"), 40),
             "tree": hex_value(git("rev-parse", "HEAD^{tree}"), 40)}
+
+
+def source_build_number(root):
+    build = int(subprocess.check_output(
+        ["git", "-C", str(root), "rev-list", "--count", "HEAD"], text=True).strip())
+    require(build > 2, "CFBundleVersion must exceed the installed candidate's build 2")
+    return build
+
+
+def copy_release_notices(source, resources):
+    for source_name, bundle_name in (("LICENSE", "LICENSE.txt"),
+                                     ("NOTICE", "NOTICE.txt"),
+                                     ("TRADEMARKS.md", "TRADEMARKS.md")):
+        path = source / source_name
+        require(path.is_file() and not path.is_symlink(),
+                "Missing required release notice: " + source_name)
+        shutil.copyfile(path, resources / bundle_name)
 
 
 def build_evidence(messages):
@@ -99,7 +117,7 @@ def build(engine_root, output_root, identity):
     executable = Path(artifact["executable"]).resolve(strict=True)
     require(executable.is_relative_to(stage / "engine-target"), "CLI artifact is outside this build target")
     unsigned, _ = owned_bytes(executable)
-    app = stage / "Ode to X Local Candidate.app"
+    app = stage / "X Ode.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
     macos.mkdir(parents=True)
     (resources / "XodusEngine").mkdir(parents=True)
@@ -133,10 +151,15 @@ def build(engine_root, output_root, identity):
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
     (macos / "Xodus").chmod(0o755)
     info = plistlib.loads((source / "tools/Info.plist").read_bytes())
-    info["CFBundleName"] = info["CFBundleDisplayName"] = "Ode to X Local Candidate"
+    require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",
+                         info.get("CFBundleShortVersionString", "")) is not None,
+            "App version must use exactly x.y.z")
+    info["CFBundleName"] = info["CFBundleDisplayName"] = "X Ode"
+    info["CFBundleVersion"] = str(source_build_number(project))
+    info["XodeReleaseChannel"] = "Beta"
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump(info, output)
-    shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    copy_release_notices(source, resources)
     run(["swiftc", "Sources/XodusCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
          "-o", str(stage / "RenderAppIcon")], source, log)
     run([str(stage / "RenderAppIcon"), str(resources / "Xodus.iconset")], source, log)

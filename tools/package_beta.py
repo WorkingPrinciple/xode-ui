@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import stat
 import subprocess
 import tempfile
@@ -15,14 +16,12 @@ from distribution_manifest import distribution_blockers
 from shipping_pair import hex_value, owned_bytes, require, unique_object
 from signing_identity import verify_developer_id_bundle, verify_developer_id_component
 
-VERSION = "0.2.0"
-DISPLAY_VERSION = VERSION + " (Beta)"
 MINIMUM_UPDATE_BUILD = 2
 IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_IDENTIFIER = "io.github.dragoshont.xodus"
-ARTIFACT_STEM = "X-Ode-" + VERSION + "-beta"
-INSTALL_NOTE = """X Ode beta 0.2.0
+PRODUCER_NOTICES_SHA256 = "84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e"
+INSTALL_NOTE = """X Ode beta
 
 Verify the adjacent SHA-256 file before opening this archive. The app is signed
 with Developer ID, but this package has not been submitted to Apple for
@@ -32,7 +31,7 @@ notarization and Gatekeeper checks are completed.
 After notarization is completed, move "X Ode.app" into Applications and
 launch it from there. Keep this archive and its checksum with the beta record.
 """
-RELEASE_NOTES = """X Ode 0.2.0 (Beta) release notes
+RELEASE_NOTES = """X Ode beta release notes
 
 The eappx, msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and
 xodus-service workspace crates are licensed under GPL-3.0-only as stated by
@@ -61,7 +60,31 @@ def app_source(app):
     return {"commit": commit, "tree": tree}
 
 
-def package_beta(app, output_root, package_format, identity=IDENTITY,
+def release_identity(source, expected_source):
+    source = Path(source)
+    require(source.is_absolute() and source.resolve(strict=True) == source and source.is_dir(),
+            "Source must be a canonical existing Git checkout")
+
+    def git(*arguments):
+        return subprocess.check_output(
+            ["git", "-C", str(source), *arguments], text=True, stderr=subprocess.PIPE).strip()
+
+    branch = git("branch", "--show-current")
+    require(branch == "main" or branch.startswith("release/"),
+            "Package releases only from main or a release/* branch")
+    require(not git("status", "--porcelain", "--untracked-files=normal"),
+            "Package source checkout must be clean")
+    commit = hex_value(git("rev-parse", "HEAD"), 40)
+    tree = hex_value(git("rev-parse", "HEAD^{tree}"), 40)
+    require(commit == expected_source["commit"] and tree == expected_source["tree"],
+            "Package source checkout differs from the app receipt")
+    build_number = git("rev-list", "--count", "HEAD")
+    require(build_number.isdecimal() and int(build_number) > MINIMUM_UPDATE_BUILD,
+            "CFBundleVersion must exceed the installed candidate's build 2")
+    return {"commit": commit, "tree": tree, "buildNumber": int(build_number)}
+
+
+def package_beta(app, output_root, package_format, source, identity=IDENTITY,
                  producer_notices_sha256=None, run_command=run):
     app = Path(app)
     output_root = Path(output_root)
@@ -80,30 +103,48 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
 
     _, info_bytes = owned_bytes(app / "Contents/Info.plist", bounded=1_048_576)
     info = plistlib.loads(info_bytes)
-    require(info.get("CFBundleShortVersionString") == VERSION,
-            "App bundle is not version " + VERSION)
+    version = info.get("CFBundleShortVersionString")
+    require(isinstance(version, str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version),
+            "App version must use exactly x.y.z")
+    channel = info.get("XodeReleaseChannel")
+    require(isinstance(channel, str) and re.fullmatch(r"[A-Za-z]+", channel),
+            "App release channel is missing or invalid")
+    channel_slug = channel.lower()
+    product_name = info.get("CFBundleDisplayName")
+    require(product_name == "X Ode" and info.get("CFBundleName") == product_name,
+            "App bundle display names differ from the product identity")
     require(info.get("CFBundleIdentifier") == APP_IDENTIFIER,
             "App bundle identifier differs from the product identity")
+    require(producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
+            "Supply the independently pinned 0.2.0 producer-notice inventory digest")
     build_number = info.get("CFBundleVersion")
-    require(isinstance(build_number, str) and build_number.isdecimal()
-            and int(build_number) > MINIMUM_UPDATE_BUILD,
-            "App build number must be greater than the installed build "
-            + str(MINIMUM_UPDATE_BUILD))
     source_identity = app_source(app)
+    release_source = release_identity(source, source_identity)
+    require(build_number == str(release_source["buildNumber"]),
+            "CFBundleVersion does not match the source commit count")
+    notices = app / "Contents/Resources/ProducerNotices"
+    require(notices.is_dir() and not notices.is_symlink()
+            and (notices / "inventory.json").is_file()
+            and not (notices / "inventory.json").is_symlink(),
+            "Pinned producer notice inventory is required in the app bundle")
     blockers = distribution_blockers(app, producer_notices_sha256)
     require(not blockers, "Distribution preflight blocked: " + "; ".join(blockers))
     signatures = verify_developer_id_bundle(app, identity, TEAM_ID, run_command)
 
-    package_dir = output_root / (ARTIFACT_STEM + "." + package_format)
+    artifact_name = (f"{product_name.replace(' ', '-')}-{version}-{channel_slug}"
+                     + ("-submission.zip" if package_format == "zip" else ".dmg"))
+    artifact_stem = artifact_name.removesuffix("." + package_format)
+    package_dir = output_root / (artifact_stem + "-package")
     package_dir.mkdir(mode=0o700, exist_ok=False)
     package_dir.chmod(0o700)
     receipt_path = package_dir / "package-receipt.json"
     receipt = {
         "schemaVersion": 1,
         "state": "packaging",
-        "version": VERSION,
-        "displayVersion": DISPLAY_VERSION,
-        "buildNumber": int(build_number),
+        "appVersion": version,
+        "buildNumber": release_source["buildNumber"],
+        "releaseChannel": channel,
+        "releaseTag": f"v{version}-{channel_slug}.1",
         "appSource": source_identity,
         "producerNoticesSHA256": producer_notices_sha256,
         "certificateSha1": identity.upper(),
@@ -119,24 +160,24 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
     try:
         with tempfile.TemporaryDirectory(prefix="xodus-beta-", dir=package_dir) as temporary:
             staging = Path(temporary)
-            payload = staging / ARTIFACT_STEM
+            payload = staging / artifact_stem
             payload.mkdir(mode=0o700)
-            packaged_app = payload / "X Ode.app"
+            packaged_app = payload / (product_name + ".app")
             run_command(["/usr/bin/ditto", str(app), str(packaged_app)])
             run_command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(packaged_app)])
             signatures = verify_developer_id_bundle(packaged_app, identity, TEAM_ID, run_command)
             (payload / "INSTALL.txt").write_text(INSTALL_NOTE, encoding="utf-8")
             (payload / "RELEASE-NOTES.txt").write_text(RELEASE_NOTES, encoding="utf-8")
 
-            artifact = package_dir / (ARTIFACT_STEM + "." + package_format)
+            artifact = output_root / artifact_name
             if package_format == "zip":
                 run_command(["/usr/bin/ditto", "-c", "-k", "--sequesterRsrc",
                              "--keepParent", str(payload), str(artifact)])
             else:
-                run_command(["/usr/bin/hdiutil", "create", "-volname", "X Ode " + DISPLAY_VERSION,
+                run_command(["/usr/bin/hdiutil", "create", "-volname", product_name,
                              "-srcfolder", str(payload), "-format", "UDZO", str(artifact)])
                 run_command(["/usr/bin/codesign", "--force", "--sign", identity.upper(),
-                             "--timestamp", "--identifier", APP_IDENTIFIER + ".beta." + VERSION,
+                             "--timestamp", "--identifier", APP_IDENTIFIER + "." + channel_slug + "." + version,
                              str(artifact)])
                 run_command(["/usr/bin/codesign", "--verify", "--strict", str(artifact)])
                 verify_developer_id_component(artifact, identity, TEAM_ID, run_command,
@@ -144,7 +185,7 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
 
             artifact_identity = identify_file(artifact)
             digest = artifact_identity["sha256"]
-            checksum_path = package_dir / (artifact.name + ".sha256")
+            checksum_path = output_root / (artifact.name + ".sha256")
             checksum_path.write_text(digest + "  " + artifact.name + "\n", encoding="ascii")
             receipt["signatures"] = signatures
             receipt["artifacts"] = {
@@ -199,13 +240,16 @@ def identify_file(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, required=True)
+    parser.add_argument("--source", type=Path, required=True,
+                        help="Clean main or release/* checkout matching the app receipt")
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--format", choices=("zip", "dmg"), required=True)
     parser.add_argument("--identity", default=IDENTITY)
-    parser.add_argument("--producer-notices-sha256",
+    parser.add_argument("--producer-notices-sha256", required=True,
                         help="Independently reviewed exact producer inventory digest")
     arguments = parser.parse_args()
-    receipt = package_beta(arguments.app, arguments.output_root, arguments.format, arguments.identity,
+    receipt = package_beta(arguments.app, arguments.output_root, arguments.format, arguments.source,
+                           arguments.identity,
                            arguments.producer_notices_sha256)
     print(receipt)
 

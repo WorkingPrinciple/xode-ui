@@ -109,8 +109,12 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     project = Path(__file__).resolve().parent.parent
     shutil.copyfile(project / "tools/Info.plist", source / "tools/Info.plist")
     shutil.copyfile(project / "LICENSE", source / "LICENSE")
+    (source / "NOTICE").write_text("Neutral notice fixture", encoding="utf-8")
+    (source / "TRADEMARKS.md").write_text("Neutral trademark fixture", encoding="utf-8")
     shutil.copyfile(source / "tools/Info.plist", app / "Contents/Info.plist")
     shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    shutil.copyfile(source / "NOTICE", resources / "NOTICE.txt")
+    shutil.copyfile(source / "TRADEMARKS.md", resources / "TRADEMARKS.md")
     neutral = struct.pack("<II", 0xFEEDFACF, 0x0100000C) + b"Never executed neutral package bytes."
     for target in (pair, helper, macos / "Xodus"):
         target.write_bytes(neutral)

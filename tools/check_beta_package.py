@@ -6,28 +6,49 @@ import json
 from pathlib import Path
 import plistlib
 import shutil
+import subprocess
 import tempfile
 from unittest.mock import patch
 
 import package_beta as beta
-from package_beta import (ARTIFACT_STEM, DISPLAY_VERSION, IDENTITY, TEAM_ID, VERSION,
+from package_beta import (IDENTITY, PRODUCER_NOTICES_SHA256, TEAM_ID,
                          package_beta as create_beta_package)
 
 
 def fixture(root):
     app = root / "X Ode Local Candidate.app"
     (app / "Contents/Resources").mkdir(parents=True)
+    source = root / "source"
+    source.mkdir()
+    subprocess.run(["git", "init", "--initial-branch=main", str(source)], check=True,
+                   stdout=subprocess.DEVNULL)
+    subprocess.run(["git", "-C", str(source), "config", "user.name", "Beta Check"], check=True)
+    subprocess.run(["git", "-C", str(source), "config", "user.email",
+                    "beta-check@example.invalid"], check=True)
+    for index in range(3):
+        (source / "source.txt").write_text(str(index), encoding="utf-8")
+        subprocess.run(["git", "-C", str(source), "add", "source.txt"], check=True)
+        subprocess.run(["git", "-C", str(source), "commit", "-m", f"source {index}"], check=True,
+                       stdout=subprocess.DEVNULL)
+    commit = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"],
+                                     text=True).strip()
+    tree = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD^{tree}"],
+                                   text=True).strip()
     with (app / "Contents/Info.plist").open("wb") as output:
-        plistlib.dump({"CFBundleShortVersionString": VERSION,
-                       "CFBundleVersion": "3",
+        plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
+                       "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "3",
+                       "XodeReleaseChannel": "Beta",
                        "CFBundleIdentifier": beta.APP_IDENTIFIER}, output)
     (app / "Contents/Resources/local-candidate-receipt.json").write_text(json.dumps({
-        "appSource": {"commit": "a" * 40, "tree": "b" * 40},
+        "appSource": {"commit": commit, "tree": tree},
     }))
+    notices = app / "Contents/Resources/ProducerNotices"
+    notices.mkdir()
+    (notices / "inventory.json").write_text("Neutral fixture inventory")
     output = root / "output"
     output.mkdir(mode=0o700)
     output.chmod(0o700)
-    return app, output
+    return app, output, source
 
 
 def signatures():
@@ -68,24 +89,25 @@ def rejected(operation):
 
 with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     root = Path(temporary).resolve()
-    assert ARTIFACT_STEM == "X-Ode-0.2.0-beta"
-    app, output = fixture(root)
+    app, output, source = fixture(root)
     commands = []
     with patch.object(beta, "distribution_blockers", return_value=[]) as blockers, \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
-        receipt_path = create_beta_package(app, output, "zip", producer_notices_sha256="c" * 64,
+        receipt_path = create_beta_package(app, output, "zip", source,
+                                           producer_notices_sha256=PRODUCER_NOTICES_SHA256,
                                            run_command=fake_runner(commands))
-        assert blockers.call_args.args == (app, "c" * 64)
+        assert blockers.call_args.args == (app, PRODUCER_NOTICES_SHA256)
     receipt = json.loads(receipt_path.read_text())
-    artifact_path = receipt_path.parent / (ARTIFACT_STEM + ".zip")
-    checksum_path = receipt_path.parent / (artifact_path.name + ".sha256")
+    artifact_path = output / "X-Ode-0.2.0-beta-submission.zip"
+    checksum_path = output / (artifact_path.name + ".sha256")
     assert receipt["state"] == "prepared_not_submitted"
-    assert receipt["version"] == "0.2.0"
-    assert receipt["displayVersion"] == DISPLAY_VERSION == "0.2.0 (Beta)"
+    assert receipt["appVersion"] == "0.2.0"
+    assert receipt["releaseChannel"] == "Beta"
+    assert receipt["releaseTag"] == "v0.2.0-beta.1"
     assert receipt["buildNumber"] == 3
     assert receipt["notarization"] == "NOT_SUBMITTED"
     assert receipt["installed"] is False and receipt["launched"] is False
-    assert receipt["producerNoticesSHA256"] == "c" * 64
+    assert receipt["producerNoticesSHA256"] == PRODUCER_NOTICES_SHA256
     assert receipt["artifacts"]["sha256"] == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
     assert checksum_path.read_text() == receipt["artifacts"]["sha256"] + "  " + artifact_path.name + "\n"
     assert not any(name in " ".join(command) for command in commands
@@ -97,25 +119,33 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()), \
             patch.object(beta, "verify_developer_id_component",
                          return_value={"certificateSha1": IDENTITY, "secureTimestamp": True}):
-        dmg_receipt_path = create_beta_package(app, output, "dmg", run_command=fake_runner(commands))
+        dmg_receipt_path = create_beta_package(app, output, "dmg", source,
+                                               producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                               run_command=fake_runner(commands))
     dmg_receipt = json.loads(dmg_receipt_path.read_text())
     assert dmg_receipt["format"] == "dmg"
+    assert (output / "X-Ode-0.2.0-beta.dmg").is_file()
     assert any(command[0] == "/usr/bin/codesign" and "--timestamp" in command for command in commands)
     assert not any(name in " ".join(command) for command in commands
                    for name in ("notarytool", "stapler", "open", "launchctl"))
 
     with patch.object(beta, "distribution_blockers", return_value=["Unresolved rights"]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
-        rejected(lambda: create_beta_package(app, output, "zip", run_command=fake_runner([])))
+        rejected(lambda: create_beta_package(app, output, "zip", source,
+                                             producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                             run_command=fake_runner([])))
 
     with (app / "Contents/Info.plist").open("wb") as output_file:
-        plistlib.dump({"CFBundleShortVersionString": "0.2.0",
-                       "CFBundleVersion": "2",
+        plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
+                       "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "2",
+                       "XodeReleaseChannel": "Beta",
                        "CFBundleIdentifier": beta.APP_IDENTIFIER}, output_file)
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
-        rejected(lambda: create_beta_package(app, output, "zip", run_command=fake_runner([])))
+        rejected(lambda: create_beta_package(app, output, "zip", source,
+                                             producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                             run_command=fake_runner([])))
 
-print("PASS 0.2.0 beta archive/checksum, update-build gate, optional timestamped DMG, rights blocker, "
-      "and no-submit/no-install behavior. "
+print("PASS plist-derived beta archive names, source-bound build number/update gate, optional timestamped DMG, "
+      "rights blocker, and no-submit/no-install behavior. "
       "Neutral fixture bytes and mocked platform commands only.")
