@@ -1832,7 +1832,13 @@ enum GameOperationChecks {
               && linkedOperations.resumableInstallations[linkedGame.id] != nil && linkedOperations.error != nil,
               "REQ114 M6: a symlinked partial folder is refused and nothing outside it is touched")
 
-        let unmounted = root.appendingPathComponent("DetachedVolume/Unmounted-Xbox")
+        let unmounted = URL(fileURLWithPath: "/Volumes/XodusReq114Detached-\(UUID().uuidString)/Unmounted-Xbox")
+        check(GameStorageVolume.unmountedVolumeRoot(for: unmounted.path, mountedRoots: ["/", "/Volumes/Games"])
+                == unmounted.deletingLastPathComponent().path
+              && GameStorageVolume.unmountedVolumeRoot(for: "/Volumes/Games/X-Xbox", mountedRoots: ["/", "/Volumes/Games"]) == nil
+              && GameStorageVolume.unmountedVolumeRoot(for: "/Users/a/Games/X-Xbox", mountedRoots: ["/"]) == nil
+              && GameStorageVolume.unmountedVolumeRoot(for: unmounted.path, mountedRoots: nil) == nil,
+              "REQ114 L2: only an unmounted /Volumes drive counts as disconnected")
         let unmountedGame = PCGame(id: "9P3J32CTXLRZ", title: "Unmounted", artwork: nil)
         try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
             productID: unmountedGame.id, title: unmountedGame.title, destination: unmounted.path, installedID: nil))
@@ -1855,6 +1861,17 @@ enum GameOperationChecks {
               && goneOperations.notice?.contains("No downloaded files were found for Gone") == true
               && goneOperations.notice?.contains("deleted") == false && goneOperations.error == nil,
               "REQ114 L1: when only the folder is gone, Discard removes the record and says no files were found")
+        let orphanedParent = PCGame(id: "9NBR2VXT87SJ", title: "Moved", artwork: nil)
+        try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: orphanedParent.id, title: orphanedParent.title,
+            destination: root.appendingPathComponent("RemovedFolder/Moved-Xbox").path, installedID: nil))
+        let movedOperations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await movedOperations.restore()
+        await movedOperations.discardPartialDownload(productID: orphanedParent.id)
+        check(movedOperations.resumableInstallations[orphanedParent.id] == nil
+              && movedOperations.notice?.contains("No downloaded files were found for Moved") == true
+              && movedOperations.error == nil && !library.mutationActive,
+              "REQ114 L2: a missing parent folder on a connected drive is not treated as unplugged; the record is removed")
 
         try await recoveryOwnershipChecks(root: root, paths: paths, check: check)
 
@@ -1915,6 +1932,8 @@ extension GameOperationChecks {
         let readable = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
         await readable.restore()
         let restoredError = readable.error
+        check(readable.downloadIndicator == nil,
+              "REQ114 UX-M2: a restored, not-running record shows no toolbar or card download progress")
         await readable.reconcile()
         await readable.dismissRecovery()
         let kept = try await journal.load()
@@ -1923,17 +1942,21 @@ extension GameOperationChecks {
               && !readable.recoveryMutationOwned && readable.error?.contains("Other game activity") == true
               && kept?.id == record.id && library.mutationActive,
               "REQ114 M1: a readable record stays readable when stopped downloads can't load or the fence is busy; check waits and keeps it")
-        library.releaseMutation()
-        let readableClaimed = await owned(readable)
-        check(readableClaimed && library.mutationActive && readable.operation?.id == record.id,
-              "REQ114 M1: the waiting recovery reserves the fence after the other work ends, keeping the record for checking")
-
         readable.beginTermination()
         let fencedWhileQuitting = readable.terminating
         readable.resumeAfterTerminationRefusal()
         check(fencedWhileQuitting && !readable.terminating && !readable.orphanReconcilePending
               && readable.recoveryRequired && library.mutationActive,
               "REQ114 M2: a refused quit clears the quit state without leaving recovery stuck or releasing the fence")
+        library.releaseMutation()
+        var settled = false
+        for _ in 0..<50 {
+            try? await Task.sleep(for: .milliseconds(100))
+            if readable.recoveryMutationOwned || !readable.recoveryRequired,
+               readable.error?.contains("Other game activity") != true, !readable.checkingRecovery { settled = true; break }
+        }
+        check(settled && readable.error?.contains("Other game activity") != true,
+              "REQ114 M1/L1: once the waiting recovery gets the fence, the requested check runs instead of waiting forever")
 
         check(!PreviewDelegate.showsWaitBeforeQuitting(closed: false, systemQuit: true, canQuit: false)
               && PreviewDelegate.showsWaitBeforeQuitting(closed: false, systemQuit: false, canQuit: false)

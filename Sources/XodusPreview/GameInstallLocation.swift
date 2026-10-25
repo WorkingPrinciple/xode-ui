@@ -32,6 +32,15 @@ struct GameStorageVolume: Codable, Equatable, Sendable {
             .map { $0.map { $0.standardizedFileURL.path } }
     }
 
+    /// The `/Volumes/<name>` root of `path` when that drive isn't mounted; nil for the startup disk or unknown mounts.
+    static func unmountedVolumeRoot(for path: String, mountedRoots: [String]?) -> String? {
+        guard let mountedRoots else { return nil }
+        let parts = URL(fileURLWithPath: path).standardizedFileURL.pathComponents
+        guard parts.count >= 3, parts[0] == "/", parts[1] == "Volumes" else { return nil }
+        let root = "/Volumes/" + parts[2]
+        return mountedRoots.contains(root) ? nil : root
+    }
+
     func isUnavailable(mountedRoots: [String]?) -> Bool {
         guard let mountedRoots else { return false }
         return path != "/" && !mountedRoots.contains(path)

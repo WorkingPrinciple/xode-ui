@@ -487,6 +487,7 @@ final class GameOperationsController: ObservableObject {
     /// True only while this controller holds the mutation fence for a restored recovery.
     private(set) var recoveryMutationOwned = false
     private var recoveryReservationTask: Task<Void, Never>?
+    private var recoveryCheckRequested = false
 
     /// Reserves the mutation fence for a restored record; when other work holds it, retries
     /// instead of treating the saved operation as unreadable.
@@ -495,6 +496,7 @@ final class GameOperationsController: ObservableObject {
             recoveryMutationOwned = true
             return
         }
+        recoveryCheckRequested = false
         recoveryReservationTask?.cancel()
         recoveryReservationTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -503,6 +505,11 @@ final class GameOperationsController: ObservableObject {
                 if (try? self.installed.reserveMutation(gameID: gameID)) != nil {
                     self.recoveryMutationOwned = true
                     self.recoveryReservationTask = nil
+                    // The waiting check promised to run once other work ended.
+                    if self.recoveryCheckRequested {
+                        self.recoveryCheckRequested = false
+                        await self.reconcile()
+                    }
                     return
                 }
             }
@@ -513,6 +520,7 @@ final class GameOperationsController: ObservableObject {
     private func settleRecoveryMutation() {
         recoveryReservationTask?.cancel()
         recoveryReservationTask = nil
+        recoveryCheckRequested = false
         recoveryMutationOwned = false
     }
 
@@ -896,8 +904,11 @@ final class GameOperationsController: ObservableObject {
     /// Set by the app to post a "ready to play" notification; nil in synthetic checks.
     var announceReady: (@MainActor (GameReadyAnnouncement) -> Void)?
 
+    /// Live only while this app runs the operation or follows a verified backend run; a restored or failed
+    /// record awaiting a check shows no download progress.
     var downloadIndicator: GameDownloadIndicator? {
-        GameDownloadIndicator(record: operation, progress: progress, preparing: preparingConsent)
+        guard orphanRunning || (!recoveryRequired && mutationTask != nil) else { return nil }
+        return GameDownloadIndicator(record: operation, progress: progress, preparing: preparingConsent)
     }
 
     func resume(_ game: PCGame, installed installedGame: InstalledGame) async {
@@ -1552,11 +1563,13 @@ final class GameOperationsController: ObservableObject {
         }
         do {
             let found = try await storageProbe.read { () -> Bool in
-                // L1: an unmounted drive or missing parent keeps the record; nothing is claimed deleted.
-                var parent = stat()
-                guard lstat(destination.deletingLastPathComponent().path, &parent) == 0 else {
+                // L1: only an unmounted /Volumes drive keeps the record; otherwise a missing folder means no files.
+                if GameStorageVolume.unmountedVolumeRoot(for: destination.path,
+                                                         mountedRoots: GameStorageVolume.mountedRoots()) != nil {
                     throw GameInstallLocationError.driveUnavailable
                 }
+                var parent = stat()
+                guard lstat(destination.deletingLastPathComponent().path, &parent) == 0 else { return false }
                 try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
                 guard FileManager.default.fileExists(atPath: destination.path) else { return false }
                 try FileManager.default.removeItem(at: destination)
@@ -1749,6 +1762,7 @@ final class GameOperationsController: ObservableObject {
         guard recoveryRequired, let record = operation, !checkingRecovery, mutationTask == nil else { return }
         // Completing a record releases the mutation fence, so only check once this controller holds it.
         guard recoveryMutationOwned else {
+            recoveryCheckRequested = true
             error = "Other game activity is still finishing. The last operation will be checked after it ends."
             return
         }
