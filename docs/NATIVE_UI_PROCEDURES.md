@@ -56,6 +56,18 @@ logs remain available in the game's existing Actions menu, not below Play.
 The isolated engine-selection check also exercises synthetic lifecycle cancellation
 and the old NMS broker-teardown receipt shape without launching a real game.
 
+REQ106 adds only the top-level `Xodus` folder on currently mounted volumes directly
+under `/Volumes` or `~/Mounts` to existing saved/registered discovery roots.
+Mounted reads have a three-second deadline and retain their worker reservation
+until a blocked syscall returns; discovery shares the existing 512-child budget.
+Configuration filenames match case-insensitively only when exactly one variant
+exists. A known matching but unverified package uses **Check installation** and
+cannot start a second default-root download. Only a successful authoritative
+`install-status` completeness result permits registration at the original path,
+with symlink-safe volume identity; discovery does not finalize, copy, auto-mount,
+or grant launch/account readiness. Native acceptance must separately confirm FH6
+shows Play from its NFS location after verification passes.
+
 COR-97/101/102 use shared cover badges: exact compatibility symbols in the
 upper-right, current PC Game Pass catalogue membership in the lower-left.
 Neither creates a separate input target; hover and the existing cover button's

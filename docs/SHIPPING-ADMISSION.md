@@ -2,9 +2,28 @@
 
 ## Purpose and authorization
 
-### REQ102 r5 source candidate: sibling-region descriptor localization
+### REQ103 r7 source candidate: Stop lifecycle and orphan safety
 
-The current accepted backend source is
+The current reviewed producer source is
+`01d4cfd625764c2a8ec4d60824ef4f277b30b9e9`, tree
+`97a18c1f2c680cd4bce32a9bc2f0818b48977e64`. It includes the separate broker
+process group, owner Stop classification, bounded parent-death pipe regression,
+and the r6 fourth engine admission. It does not include REQ104/108 admissions.
+
+The sealed signed CLI is
+`358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9`
+(28,758,848 bytes), paired Windows helper
+`847ad6f535cc5a32cd33cdc687c330aa66cad45d4c2577fd4c035033b029c78d`
+(20,480 bytes), and producer manifest
+`4945099d043aed748d25e5908f7c6be26136ad67be18de8cd97c01161deac1fe`
+(19,730 bytes). The app source and current runtime-recipe CLI binding use this
+exact producer; historical gameplay identities remain unchanged. The management
+schema is unchanged. Artifact verification and source checks are not installation,
+native Stop acceptance, notarization, or title qualification.
+
+### Retained REQ102 r5 source candidate: sibling-region descriptor localization
+
+The previously accepted backend source is
 `ad31a91e60306811aa0c9649cf70b06f592ee412`, tree
 `ea434803e638599006b9bf2146f6f4ff9e87cebd`. Descriptor localization selects
 exact locale, base language, lowest same-base regional tag, then neutral;

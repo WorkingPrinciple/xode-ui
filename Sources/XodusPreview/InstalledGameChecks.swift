@@ -8,6 +8,85 @@ import XodusCore
 
 @MainActor
 enum InstalledGameChecks {
+    static func externalDiscoveryChecks(check: (Bool, String) -> Void) async throws {
+        let home = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/ExternalDiscovery-\(UUID().uuidString)")
+        let volume = home.appendingPathComponent("Mounts/homelab")
+        let library = volume.appendingPathComponent("Xodus")
+        let folder = library.appendingPathComponent("ForzaHorizon6-Xbox")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: home) }
+            catch { check(false, "REQ106: Synthetic external library is cleaned") }
+        }
+        try Data("""
+            <Game><Identity Name="Microsoft.ForteBaseGame" Version="3.461.691.0"/>
+            <StoreId>9NR1R1XWLCNB</StoreId></Game>
+            """.utf8).write(to: folder.appendingPathComponent("MicrosoftGame.Config"))
+        let roots = GameInstallationDiscovery.mountedLibraryRoots(
+            [volume.path, volume.path, "/", home.appendingPathComponent("Mounts/deep/nested").path],
+            home: home.path)
+        check(roots.map(\.path) == [library.path],
+              "REQ106: Mounted library discovery is deduplicated, depth-one Xodus only, without recursive root scanning")
+        check(GameInstallationDiscovery.mountedLibraryRoots([], home: home.path).isEmpty,
+              "REQ106: Unmounted volumes are never guessed or auto-mounted for discovery")
+        let observed = try await GameStorageProbe().read {
+            try GameInstallationDiscovery.scan(originalRoot: roots[0], location: nil, entries: [],
+                mountedRoots: [volume.path], inspectPackage: { _ in .msixvc })
+        }
+        check(observed.candidates.count == 1 && observed.candidates.first?.config.storeId == "9NR1R1XWLCNB",
+              "REQ106: NFS-style MicrosoftGame.Config casing reaches exact product identity discovery")
+        let refused = try await GameStorageProbe().read {
+            try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: [],
+                mountedRoots: [volume.path], inspectPackage: { _ in throw InstalledGameError.invalidConfig })
+        }
+        check(refused.candidates.isEmpty && refused.identifiedInstallations[folder.path] == "9NR1R1XWLCNB"
+              && !refused.errors.isEmpty,
+              "REQ106: Package-inspection failure retains a known matching identity for duplicate-download protection")
+        do {
+            _ = try MicrosoftGameConfig.configurationFile(in: [
+                folder.appendingPathComponent("MicrosoftGame.Config"),
+                folder.appendingPathComponent("MicrosoftGame.config")])
+            check(false, "REQ106: Ambiguous case variants refuse instead of choosing an arbitrary config")
+        } catch InstalledGameError.invalidConfig {
+            check(true, "REQ106: Ambiguous case variants refuse instead of choosing an arbitrary config")
+        }
+        var complete = false
+        let store = InstalledGameStore(file: home.appendingPathComponent("registry/games.json"))
+        let controller = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
+            mountedStorageRoots: { [] }, discoveryRoot: library, installLocation: { nil },
+            discoveryCompleteness: { _, _ in complete })
+        await controller.load()
+        let session = LiveSession()
+        controller.useUnifiedAccount(session)
+        await controller.discoverNativeInstallations(root: library)
+        check(controller.games.isEmpty && controller.hasUnverifiedInstallation(productID: "9NR1R1XWLCNB")
+              && !controller.canCreateInstallation(productID: "9NR1R1XWLCNB"),
+              "REQ106: Failed completeness neither imports an external payload nor allows a duplicate default-root download")
+        let operations = GameOperationsController(installed: controller)
+        let game = PCGame(id: "9NR1R1XWLCNB", title: "Forza Horizon 6", artwork: nil)
+        check(GameInstallAction(game: game, operations: operations).actionTitle == "Check installation",
+              "REQ106: Unverified matching package uses existing Check installation action, not blind Install")
+        await GameInstallAction(game: game, operations: operations).requestInstall()
+        check(operations.installConsent == nil && operations.operation == nil && operations.error != nil,
+              "REQ106: Check installation retries discovery only and surfaces its failure without a download or consent")
+        complete = true
+        await controller.discoverNativeInstallations(root: library)
+        check(controller.games.count == 1 && controller.games[0].folder == folder.path
+              && controller.games[0].usesNativeLifecycle == true
+              && controller.games[0].storageVolume != nil && controller.launchableIDs.isEmpty
+              && !controller.hasUnverifiedInstallation(productID: game.id)
+              && !controller.canCreateInstallation(productID: game.id),
+              "REQ106: Verified external package is registered at its original path without copying or bypassing launch account checks")
+        await controller.discoverNativeInstallations(root: library)
+        check(controller.games.count == 1,
+              "REQ106: Repeated external discovery never creates duplicate installed records")
+        try FileManager.default.removeItem(at: folder)
+        await controller.discoverNativeInstallations(root: library)
+        check(controller.games.count == 1,
+              "REQ106: Losing an external folder never prunes or relocates an already registered installation")
+    }
+
     static func storageLocationChecks(check: (Bool, String) -> Void) async throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appendingPathComponent(".build/StorageChecks-\(UUID().uuidString)")
@@ -191,7 +270,7 @@ enum InstalledGameChecks {
         let controller = InstalledGamesController(store: store, inspectPackage: { _ in
             guard !Thread.isMainThread else { throw InstalledGameError.invalidConfig }
             return .msixvc
-        }, mountedStorageRoots: { (GameStorageVolume.mountedRoots() ?? []) + [recorded.path] },
+        }, mountedStorageRoots: { ["/", recorded.path] },
             discoveryRoot: original, installLocation: { savedLocation }, discoveryCompleteness: { product, folder in
                 inspections.append(product)
                 return product != "FIXTURE00005" && expectedFolders[product]?.path == folder.path
@@ -211,7 +290,8 @@ enum InstalledGameChecks {
               "COR105: Repeated discovery deduplicates roots and preserves the registered identity")
 
         let offline = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
-            discoveryRoot: original, installLocation: { savedLocation }, discoveryCompleteness: { _, _ in false })
+            mountedStorageRoots: { [] }, discoveryRoot: original, installLocation: { savedLocation },
+            discoveryCompleteness: { _, _ in false })
         await offline.load()
         offline.useUnifiedAccount(session)
         await offline.discoverNativeInstallations()
@@ -219,7 +299,8 @@ enum InstalledGameChecks {
               && offline.discoveryError?.contains("unavailable") == true,
               "COR105: Offline recorded root reports unavailable without pruning or relocating its entries")
         let invalid = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
-            discoveryRoot: original, installLocation: { throw GameScriptError.invalidDestination },
+            mountedStorageRoots: { [] }, discoveryRoot: original,
+            installLocation: { throw GameScriptError.invalidDestination },
             discoveryCompleteness: { _, _ in true })
         await invalid.load()
         invalid.useUnifiedAccount(session)
@@ -236,7 +317,7 @@ enum InstalledGameChecks {
         try Data(before.utf8).write(to: changingConfig)
         let changingStore = InstalledGameStore(file: root.appendingPathComponent("changing-registry/games.json"))
         let changing = InstalledGamesController(store: changingStore, inspectPackage: { _ in .msixvc },
-            discoveryRoot: changingRoot, installLocation: { nil }, discoveryCompleteness: { _, _ in
+            mountedStorageRoots: { [] }, discoveryRoot: changingRoot, installLocation: { nil }, discoveryCompleteness: { _, _ in
                 try await Task.detached {
                     try Data(before.replacingOccurrences(of: "Before", with: "After").utf8).write(to: changingConfig)
                 }.value

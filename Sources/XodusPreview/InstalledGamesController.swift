@@ -40,6 +40,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var availableEngineOverrides: [AdmittedEngineSelection] = []
     @Published private(set) var checkingEngineOverrides = false
     private var engineOverridesChecked = false
+    @Published private(set) var undiscoveredInstallations: [String: String] = [:]
+    private var mountedDiscoveryProbes: [String: GameStorageProbe] = [:]
     @Published private(set) var mutationGameID: UUID?
     @Published private(set) var mutationActive = false
     /// Per-game update availability, recomputed from installed versions vs. `availableVersions`.
@@ -206,13 +208,59 @@ final class InstalledGamesController: ObservableObject {
         let inspectPackage = inspectPackage
         let account = unifiedSession?.accountHash
         do {
-            let observation = try await readinessProbe.read {
+            let volumes = mountedStorageRoots()
+            var observation = try await readinessProbe.read {
                 try GameInstallationDiscovery.scan(originalRoot: directory,
                     location: root == nil ? installLocation() : nil, entries: entries,
-                    mountedRoots: mountedStorageRoots(), inspectPackage: inspectPackage)
+                    mountedRoots: volumes, inspectPackage: inspectPackage)
             }
+            if root == nil {
+                for library in GameInstallationDiscovery.mountedLibraryRoots(volumes) {
+                    try Task.checkCancellation()
+                    guard !accountDisconnecting, !applicationTerminating,
+                          unifiedSession?.accountHash == account else { return }
+                    guard !observation.scannedRoots.contains(library.path) else { continue }
+                    let remaining = 512 - observation.childrenRead
+                    guard remaining > 0 else {
+                        observation.errors.append(InstalledGameError.invalidRegistry.localizedDescription)
+                        break
+                    }
+                    let probe: GameStorageProbe
+                    if let existing = mountedDiscoveryProbes[library.path] { probe = existing }
+                    else {
+                        guard mountedDiscoveryProbes.count < 32 else {
+                            observation.errors.append(GameStorageProbeError.pending.localizedDescription)
+                            continue
+                        }
+                        probe = GameStorageProbe()
+                        mountedDiscoveryProbes[library.path] = probe
+                    }
+                    do {
+                        let mounted = try await probe.read(timeout: .seconds(3)) {
+                            try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: entries,
+                                mountedRoots: volumes, includeRecordedRoots: false,
+                                maximumChildren: remaining, inspectPackage: inspectPackage)
+                        }
+                        observation.candidates += mounted.candidates
+                        observation.errors += mounted.errors
+                        observation.scannedRoots.formUnion(mounted.scannedRoots)
+                        observation.childrenRead += mounted.childrenRead
+                        observation.identifiedInstallations.merge(mounted.identifiedInstallations) { _, current in current }
+                    } catch is CancellationError { throw CancellationError() }
+                    catch { observation.errors.append("\(library.path): \(error.localizedDescription)") }
+                }
+            }
+            try Task.checkCancellation()
+            guard !accountDisconnecting, !applicationTerminating,
+                  unifiedSession?.accountHash == account else { return }
+            undiscoveredInstallations = undiscoveredInstallations.filter { folder, _ in
+                !observation.scannedRoots.contains(URL(fileURLWithPath: folder).deletingLastPathComponent().path)
+                    || observation.errors.contains(where: { $0.hasPrefix(folder + ": ") })
+            }
+            undiscoveredInstallations.merge(observation.identifiedInstallations) { _, current in current }
             var failures = observation.errors
-            for candidate in observation.candidates {
+            var seenCandidates = Set<String>()
+            for candidate in observation.candidates where seenCandidates.insert(candidate.folder.path).inserted {
                 try Task.checkCancellation()
                 guard !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating,
                       unifiedSession?.accountHash == account else { return }
@@ -253,6 +301,7 @@ final class InstalledGamesController: ObservableObject {
                         launcher: "", importedAt: Date(), publisher: config.publisher, packageType: candidate.package,
                         usesNativeLifecycle: true, storageVolume: candidate.volume)
                     applySavedGames(try await store.upsert(game))
+                    undiscoveredInstallations[candidate.folder.path] = nil
                 } catch is CancellationError { throw CancellationError() }
                 catch { failures.append("\(candidate.folder.path): \(error.localizedDescription)") }
             }
@@ -263,6 +312,14 @@ final class InstalledGamesController: ObservableObject {
         } catch {
             discoveryError = "Installed folders couldn't be read. \(error.localizedDescription)"
         }
+    }
+
+    func hasUnverifiedInstallation(productID: String) -> Bool {
+        undiscoveredInstallations.values.contains(productID)
+    }
+
+    func canCreateInstallation(productID: String) -> Bool {
+        !hasUnverifiedInstallation(productID: productID) && !games.contains { $0.storeId == productID }
     }
 
     func remove(_ game: InstalledGame) async {

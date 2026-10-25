@@ -374,7 +374,10 @@ struct GameInstallAction: View {
             : operations.operation?.kind == .uninstall ? "Uninstalling"
             : operations.operation?.kind == .repair ? "Repairing" : "Installing"
     }
-    var actionTitle: String { failed ? "Retry installation" : "Install" }
+    var actionTitle: String {
+        operations.installationCheckRequired(productID: game.id) ? "Check installation"
+            : failed ? "Retry installation" : "Install"
+    }
     var canInstall: Bool { enabled && operations.canStartMutation }
     var unavailableReason: String? {
         guard !canInstall else { return nil }
@@ -385,6 +388,10 @@ struct GameInstallAction: View {
 
     func requestInstall() async {
         guard canInstall else { return }
+        if operations.installationCheckRequired(productID: game.id) {
+            await operations.checkExistingInstallations()
+            return
+        }
         if let reviewInstall { reviewInstall(game) }
         else { await operations.prepareInstall(game) }
     }
@@ -422,12 +429,13 @@ struct GameInstallAction: View {
                 Button {
                     Task { await requestInstall() }
                 } label: {
-                    Label(actionTitle, systemImage: "icloud.and.arrow.down")
+                    Label(actionTitle, systemImage: operations.installationCheckRequired(productID: game.id)
+                          ? "arrow.clockwise" : "icloud.and.arrow.down")
                 }
                 .modifier(LibraryActionStyle(primary: primary))
                 .disabled(!canInstall)
-                .help("Install \(game.title)")
-                .accessibilityLabel("\(failed ? "Retry installation of" : "Install") \(game.title)")
+                .help("\(actionTitle) \(game.title)")
+                .accessibilityLabel("\(actionTitle) \(game.title)")
                 .accessibilityIdentifier("xodus.pcGames.download")
                 if let unavailableReason {
                     InstallUnavailableNotice(message: unavailableReason,

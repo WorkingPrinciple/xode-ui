@@ -73,16 +73,25 @@ struct MicrosoftGameConfig: Equatable, Sendable {
 
     static func read(folder: URL) throws -> Self {
         try InstalledGameFiles.checkFolder(folder)
+        guard let file = try configurationFile(in: folder) else { throw InstalledGameError.invalidConfig }
+        let data: Data
+        do { data = try InstalledGameFiles.readRegular(file, maximumBytes: 1_048_576) }
+        catch { throw InstalledGameError.invalidConfig }
+        return try parse(data)
+    }
+
+    static func configurationFile(in folder: URL) throws -> URL? {
         let matches: [URL]
         do {
             matches = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-                .filter { $0.lastPathComponent.lowercased() == "microsoftgame.config" }
         } catch { throw InstalledGameError.invalidConfig }
-        guard matches.count == 1 else { throw InstalledGameError.invalidConfig }
-        let data: Data
-        do { data = try InstalledGameFiles.readRegular(matches[0], maximumBytes: 1_048_576) }
-        catch { throw InstalledGameError.invalidConfig }
-        return try parse(data)
+        return try configurationFile(in: matches)
+    }
+
+    static func configurationFile(in entries: [URL]) throws -> URL? {
+        let matches = entries.filter { $0.lastPathComponent.lowercased() == "microsoftgame.config" }
+        guard matches.count <= 1 else { throw InstalledGameError.invalidConfig }
+        return matches.first
     }
 
     static func parse(_ data: Data) throws -> Self {

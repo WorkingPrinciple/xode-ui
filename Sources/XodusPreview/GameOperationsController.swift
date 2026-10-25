@@ -279,6 +279,13 @@ final class GameOperationsController: ObservableObject {
     }
 
     private func admitInstall(productID: String, installedID: UUID? = nil) -> Bool {
+        guard installedID != nil || installed.canCreateInstallation(productID: productID) else {
+            if operation == nil && !checkingCompatibility { resetFeedback(productID: productID) }
+            error = installed.hasUnverifiedInstallation(productID: productID)
+                ? "The installation couldn't be checked. Try again or open its log."
+                : GameScriptError.invalidDestination.localizedDescription
+            return false
+        }
         let format = installedID.flatMap { id in installed.games.first { $0.id == id }?.packageType?.label }
         let issues = supportIssues(productID: productID, packageFormat: format, includeRuntime: false)
         guard issues.isEmpty else {
@@ -765,6 +772,9 @@ final class GameOperationsController: ObservableObject {
             error = "Your Xbox account changed. Choose the game again before reviewing installation."
             return
         }
+        if usesUnifiedAccount, repairing == nil { await installed.discoverNativeInstallations() }
+        guard !Task.isCancelled, canStartMutation,
+              reviewAccount == (usesUnifiedAccount ? nativeAccount : nil) else { return }
         if let repairing {
             guard repairing.storeId == game.id, installed.games.contains(repairing),
                   installed.runningGameID != repairing.id else { return }
@@ -847,6 +857,15 @@ final class GameOperationsController: ObservableObject {
             guard preparationGeneration == generation else { return }
             self.error = Self.message(error)
         }
+    }
+
+    func installationCheckRequired(productID: String) -> Bool {
+        installed.hasUnverifiedInstallation(productID: productID)
+    }
+
+    func checkExistingInstallations() async {
+        await installed.discoverNativeInstallations()
+        error = installed.discoveryError
     }
 
     func installDestination(for game: PCGame, root: URL? = nil) async throws -> URL {
@@ -1201,6 +1220,10 @@ final class GameOperationsController: ObservableObject {
         }
         // A stop/cancel may have landed during the final wait iteration.
         if abandonedQueuedRuns.remove(record.id) != nil { return .cancel }
+        if usesUnifiedAccount { await installed.discoverNativeInstallations() }
+        if Task.isCancelled || abandonedQueuedRuns.remove(record.id) != nil { return .cancel }
+        guard !terminating, canStartMutation,
+              admitInstall(productID: record.productID) else { return .fail(code: 12) }
         queueProgressObserver = onProgress
         defer { queueProgressObserver = nil }
         begin(record)
