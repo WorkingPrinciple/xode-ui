@@ -68,6 +68,19 @@ prove the absence of credentials under another service/keychain. No credential
 was read/exported and no Keychain settings were changed. Actual profile
 authentication remains unverified; do not claim readiness from installed tools.
 
+For an approved beta package that must not be submitted or installed, use
+`tools/package_beta.py --app /absolute/path/to/Ode.app --output-root
+/absolute/existing/output --format zip` (or `dmg`); when a producer inventory is
+present, also pass its independently reviewed
+`--producer-notices-sha256 APPROVED_DIGEST`. It accepts only version 0.11.4
+after the distribution manifest and portable-resource checks pass, and audits
+the app plus every nested Mach-O for the exact Developer ID leaf, team,
+hardened runtime and secure timestamp. A DMG is also Developer ID signed and
+timestamped. The tool emits an archive, SHA-256 sidecar, install note and local
+receipt; it never invokes `notarytool`, `stapler`, install, or launch operations.
+The receipt deliberately says `NOT_SUBMITTED`: archive creation is not
+notarization, Gatekeeper acceptance, installation or runtime acceptance.
+
 Final blockers are the exact component/notices/corresponding-source rights
 review (see [licensing](LICENSING.md)), private worktree bindings in retained
 launch policies, final custom-engine successor integration, and final
