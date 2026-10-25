@@ -84,8 +84,7 @@ struct LibraryLoadingPlaceholders: View {
 struct OdeStartupBackdrop: View {
     var body: some View {
         VStack(spacing: 16) {
-            XOdeLogo().fill(XboxBrand.green).frame(width: 80, height: 80)
-            Text("\(AppBrand.displayName)").font(.largeTitle.weight(.medium))
+            XOdeLockup(markSize: 80)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .windowBackgroundColor))

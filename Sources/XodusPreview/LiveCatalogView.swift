@@ -1007,11 +1007,11 @@ struct LiveCatalogView: View {
         showsUnsupportedGames || unsupportedIssues(game).isEmpty
     }
 
-    /// The reason the hero's Download would be disabled, or nil when it would work or isn't shown.
+    /// The reason the hero swaps Download for View Details, or nil to keep the install control.
     private func heroDownloadUnavailableReason(_ game: LibraryGame) -> String? {
         guard unsupportedIssues(game).isEmpty, game.installed == nil,
               let pc = game.pc ?? game.product.map(PCGame.init(product:)) else { return nil }
-        return installAction(game, pc: pc, primary: true).unavailableReason
+        return installAction(game, pc: pc, primary: true).heroReplacementReason
     }
 
     private func installAction(_ game: LibraryGame, pc: PCGame, primary: Bool) -> GameInstallAction {
@@ -1086,5 +1086,27 @@ struct DiscoverHeroScrim: View {
         }, startPoint: .top, endPoint: .bottom)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+/// When a hero may swap its install control for View Details plus a reason. Only a static
+/// "can't install" qualifies: while this game is preparing, installing, checking an existing
+/// installation or prechecking, the control keeps its in-place progress and Cancel.
+enum HeroInstallReplacement {
+    static func reason(unavailable: String?, active: Bool, preparing: Bool, checking: Bool,
+                       prechecking: Bool) -> String? {
+        guard let unavailable, !active, !preparing, !checking, !prechecking else { return nil }
+        return unavailable
+    }
+}
+
+extension GameInstallAction {
+    /// Mirrors the in-place states GameInstallAction renders for this game.
+    var heroReplacementReason: String? {
+        HeroInstallReplacement.reason(unavailable: unavailableReason, active: active, preparing: preparing,
+            checking: operations.checkingExistingInstallation(productID: game.id)
+                || (operations.installationCheckRequired(for: game)
+                    && operations.existingInstallationError(productID: game.id) == nil),
+            prechecking: operations.precheckingProductID == game.id)
     }
 }

@@ -15,27 +15,26 @@ enum EngineObservationStatus: String, CaseIterable {
     case error = "Check failed"
 }
 
-/// The released Calimocho engine Xode points users to. Presence is a read-only file check;
-/// verification and admission belong to the engine-inspection path.
+/// The released Calimocho engine X Ode points users to. Verification lives in
+/// CalimochoReleaseEngine.swift; launch admission belongs to backend engine inspection.
 enum CalimochoRelease {
-    static let engineID = "calimocho-11.20-4.0b3-01"
+    /// The one constant for the released engine: Wine 11.20, Apple GPTK 4.0 beta 3, patch build 02.
+    /// Its display name and release-tag URL derive from it.
+    static let engineID = "calimocho-11.20-4.0b3-02"
+    static var displayName: String { EngineDisplayName.name(engineID) }
     static let getTitle = "Get Calimocho (beta)"
-    /// Release tag page. The asset isn't published yet (owner decision); the one place to change it.
-    static let downloadURL = URL(string: "https://github.com/dragoshont/calimocho/releases/tag/engine-11.20-4.0b3-01")!
-
-    static func manifest(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
-        home.appendingPathComponent("Library/Application Support/Xode/Engines", isDirectory: true)
-            .appendingPathComponent(engineID, isDirectory: true)
-            .appendingPathComponent("calimocho-engine.json")
+    /// Release tag page. Its asset isn't published yet (owner decision), so no download control is
+    /// shown until `downloadPublished` is true.
+    static var downloadURL: URL {
+        URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-"
+            + engineID.dropFirst("calimocho-".count))!
     }
-
-    static func isPresent(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
-        FileManager.default.fileExists(atPath: manifest(home: home).path)
-    }
+    static let downloadPublished = false
+    static let unpublishedNotice = "Calimocho isn't available for download yet — ask the person who invited you to the beta."
 }
 
 enum EngineManagementPolicy {
-    static let calimochoSource = URL(string: "https://github.com/dragoshont/calimocho")!
+    static let calimochoSource = URL(string: "https://github.com/WorkingPrinciple/calimocho")!
 
     static func matches(_ entry: NativeEngineRegistry.Entry, provider: RuntimeProviderKind) -> Bool {
         switch provider {

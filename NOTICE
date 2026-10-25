@@ -1,8 +1,7 @@
-Xode
+X Ode
 Copyright © Working Principle
-https://xode.win
 
-Xode is free software, licensed under the GNU General Public License,
+X Ode is free software, licensed under the GNU General Public License,
 version 3 only (GPL-3.0-only). See LICENSE for the full text. The licence
 applies to the original source, documentation and artwork in this repository.
 Third-party components keep their own licences and notices.
@@ -15,7 +14,7 @@ Credits and third-party notices
 -------------------------------
 
 Xodus
-  Xode manages games through a fork of the Xodus game-management project
+  X Ode manages games through a fork of the Xodus game-management project
   (xodus-gaming/xodus), licensed under GPL-3.0. Thank you to its contributors.
 
 Wine and Calimocho
@@ -26,17 +25,17 @@ Wine and Calimocho
   downloaded separately and is not included in this app.
 
 CrossOver
-  CrossOver is a trademark of CodeWeavers, Inc. Xode does not include or copy
+  CrossOver is a trademark of CodeWeavers, Inc. X Ode does not include or copy
   CrossOver; you install and license it yourself.
 
 Microsoft and Xbox
   Microsoft, Xbox, Xbox Live, PC Game Pass and related names and logos are
-  trademarks of the Microsoft group of companies. Xode is not affiliated with,
+  trademarks of the Microsoft group of companies. X Ode is not affiliated with,
   sponsored by or endorsed by Microsoft.
 
 Game artwork and descriptions
   Game names, artwork, trailers and descriptions belong to their publishers.
-  Xode shows them from Microsoft Store catalogue metadata and does not
+  X Ode shows them from Microsoft Store catalogue metadata and does not
   redistribute them.
 
 AreWeAntiCheatYet

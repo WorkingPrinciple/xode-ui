@@ -1,6 +1,6 @@
-# Xode
+# X Ode
 
-By Working Principle · xode.win · Beta 0.11.4
+By Working Principle · Beta
 
 A native macOS interface for legitimately entitled Xbox PC games, powered by
 the Xodus backend and separately installed runtimes.
@@ -37,7 +37,7 @@ performance review.
 
 ```mermaid
 flowchart LR
-    UI["Xode: Discover / Account / Library"] --> Catalog["Public catalog: discovery only"]
+    UI["X Ode: Discover / Account / Library"] --> Catalog["Public catalog: discovery only"]
     UI --> Access["Account-bound access checks"]
     Access --> Consent["Support check + explicit Install"]
     Consent --> Backend["Paired Xodus backend + reviewed runtime"]
@@ -54,7 +54,7 @@ flowchart LR
 uses fictional titles and original illustrations; its access labels are invented.
 It retains the earlier Xodus name. It was inspected for account names, emails and
 tokens; none were visible. No live account capture or copyrighted game art is
-republished. [Artwork provenance](https://github.com/dragoshont/xodus-macos-app/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/XodusPreview/Resources/Artwork/PROVENANCE.json).
+republished. [Artwork provenance](https://github.com/WorkingPrinciple/xode-ui/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/XodusPreview/Resources/Artwork/PROVENANCE.json).
 
 ## Before you try it
 
@@ -82,7 +82,7 @@ replace the credential helper silently. See the [release checklist](docs/LAUNCH-
 The Swift app source is included on `main`:
 
 ```sh
-git clone https://github.com/dragoshont/xodus-macos-app.git x-ode-source
+git clone https://github.com/WorkingPrinciple/xode-ui.git x-ode-source
 cd x-ode-source
 swift build --product XodusPreview
 sh tools/check.sh
@@ -114,21 +114,21 @@ claims. Documentation does not hide or disable existing controls.
 
 ## Scope and credits
 
-Xode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the
-[macOS backend fork](https://github.com/dragoshont/xodus-macos).
+X Ode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the
+[macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos).
 Original app source, documentation and mockups are GPL-3.0-only; preserve
 [the source license](LICENSE), [NOTICE](NOTICE), [licensing boundaries](docs/LICENSING.md),
 upstream notices and corresponding-source obligations when distributing. The
-Xode and Working Principle names and logos aren't licensed by the GPL; see
+X Ode and Working Principle names and logos aren't licensed by the GPL; see
 [TRADEMARKS](TRADEMARKS.md).
 CrossOver, games and other third-party components retain their own terms; GPL
 does not authorize redistribution of proprietary packages or credentials.
 
 This is an independent project, not affiliated with or endorsed by Microsoft,
-Xbox, Apple, CodeWeavers or game publishers. Xode is the product name shown in
+Xbox, Apple, CodeWeavers or game publishers. X Ode is the product name shown in
 the app (one source: `AppBrand` in `Sources/XodusCore/AppBrand.swift`); bundle
 identifiers, executables, module names, preference keys, Keychain identities,
 signer requirements and existing Xodus paths are unchanged.
 
-Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
-and [publication precautions](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).
+Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
+and [publication precautions](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).

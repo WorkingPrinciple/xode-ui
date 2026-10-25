@@ -256,12 +256,7 @@ struct XodusPreviewApp: App {
                 Button("Quit \(AppBrand.displayName)") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
-            // Replaces the text-editing group so ⌘F always means game search, never a text-view Find submenu.
-            CommandGroup(replacing: .textEditing) {
-                Button("Find…") { state.requestSearchFocus() }
-                    .keyboardShortcut("f")
-                    .disabled(!navigationAllowed)
-            }
+            GameSearchCommands(navigationAllowed: navigationAllowed)
             CommandGroup(before: .toolbar) {
                 Button("Refresh") { Task { await state.refreshCurrentDestination(session: session) } }
                     .keyboardShortcut("r")
@@ -346,8 +341,8 @@ struct XodusPreviewApp: App {
         }
         Window("Licenses", id: "licenses") { AppLicensesView() }
             .defaultSize(width: 560, height: 420)
-        Window("Acknowledgments", id: "acknowledgments") { AppAcknowledgmentsView() }
-            .defaultSize(width: 560, height: 420)
+        Window("Acknowledgments", id: AppAcknowledgmentsView.windowID) { AppAcknowledgmentsView() }
+            .defaultSize(width: 860, height: 600)
         Window(AppBrand.supportTitle, id: AppBrandPresentation.supportWindowID) {
             BetaSupportView { openSettingsPane(.advanced) }
         }

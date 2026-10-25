@@ -24,4 +24,9 @@ public enum CompatibilityResources {
         }
         return url
     }
+
+    /// The AreWeAntiCheatYet MIT notice shipped with the compatibility data.
+    public static func antiCheatReferenceLicenseURL() -> URL? {
+        Bundle.module.url(forResource: "AWACY-LICENSE", withExtension: "txt", subdirectory: "CompatibilityData")
+    }
 }

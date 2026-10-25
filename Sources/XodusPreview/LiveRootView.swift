@@ -386,6 +386,7 @@ struct LiveRootView: View {
             guard searchEnabled else { return }
             searchFocused = true
         }
+        .focusedSceneValue(\.gameSearchFocus, GameSearchFocus { state.requestSearchFocus() })
         }
     }
 

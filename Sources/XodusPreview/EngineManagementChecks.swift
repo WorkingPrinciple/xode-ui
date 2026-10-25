@@ -217,7 +217,7 @@ enum EngineManagementChecks {
         check(EngineManagementPolicy.status(try entry("calimocho-impostor")) != .qualified,
               "REQ79 a provider-looking filename never proves identity or game qualification")
         check(wine.version == "11.20" && wine.source_url == "https://www.winehq.org/"
-              && EngineManagementPolicy.calimochoSource.absoluteString == "https://github.com/dragoshont/calimocho"
+              && EngineManagementPolicy.calimochoSource.absoluteString == "https://github.com/WorkingPrinciple/calimocho"
               && CrossOverDependencyState.trialDownloadURL.absoluteString == "https://www.codeweavers.com/crossover",
               "REQ79 retains declared metadata separately and uses only verified official acquisition destinations")
         let suite = "EngineManagementChecks-\(UUID().uuidString)"

@@ -15,6 +15,8 @@ struct RuntimeInstallationPicker: View {
     @ObservedObject private var registryObservation: EngineRegistryObservation
     @State private var error: String?
     @State private var settingDefault = false
+    @State private var releaseStatus: CalimochoAvailability?
+    @State private var releaseCheck = 0
 
     init(settings: RuntimeProviderSettings, backendPath: String = "",
          installed: InstalledGamesController? = nil, embeddedInSettings: Bool = false,
@@ -63,10 +65,13 @@ struct RuntimeInstallationPicker: View {
                         self.error = "This engine couldn't be set as default. Refresh engines and try again."
                     }
                 }
-            }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } },
+            }, refresh: {
+                releaseCheck += 1
+                Task { await installed.refreshEngineOverrides(force: true) }
+            },
             showsAdvanced: showsAdvanced,
             calimochoStatus: .from(choices: choices, checking: installed.checkingEngineOverrides || settingDefault,
-                                   installed: allowsFileReads ? CalimochoRelease.isPresent() : nil)) {
+                                   release: releaseStatus)) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)
         }
@@ -81,6 +86,13 @@ struct RuntimeInstallationPicker: View {
         .task {
             await installed.refreshEngineOverrides(force: false)
             await settings.refreshCrossOverDependency()
+        }
+        .task(id: "\(allowsFileReads):\(releaseCheck)") {
+            guard allowsFileReads else { return }
+            releaseStatus = .checking
+            let status = await CalimochoAvailability.verifyReleaseInBackground()
+            guard !Task.isCancelled else { return }
+            releaseStatus = status
         }
         .onChange(of: savedAdmission) { _, _ in error = nil }
     }

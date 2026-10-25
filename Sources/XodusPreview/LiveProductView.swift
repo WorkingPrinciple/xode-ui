@@ -169,8 +169,7 @@ struct LiveProductView: View {
     }
     /// The complete, error-free public PC Game Pass list doesn't include this game and it isn't owned.
     private var publicGamePassExcludes: Bool {
-        owned == nil && session.gamePassCatalogExhausted && session.gamePassCatalogError == nil
-            && session.gamePassCatalogCheckedAt != nil && !session.gamePassProductIDs.contains(product.id)
+        owned == nil && session.gamePassCatalogComplete() && !session.gamePassProductIDs.contains(product.id)
     }
     private var notIncluded: Bool {
         checksTitleAccess && titleAccess.notIncluded(product.id, account: session.accountHash,

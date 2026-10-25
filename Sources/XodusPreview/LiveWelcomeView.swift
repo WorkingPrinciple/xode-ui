@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import SwiftUI
 
+/// The login screen is the X Ode lockup, Sign in with Microsoft and one line about the technology.
 enum WelcomeCopy {
-    static var title: String { "Welcome to \(AppBrand.displayName)" }
-    static let tagline = "Play your Xbox PC games on Mac."
-    static let account = "Sign in with your Microsoft account to see PC games you own or play with PC Game Pass."
     static let signIn = "Sign in with Microsoft"
+    static var technology: String {
+        "\(AppBrand.displayName) runs Windows games with Wine and other open-source libraries."
+    }
+    static let acknowledgments = "Acknowledgments"
+    static let acknowledgmentsAccessibility = "Open-source acknowledgments"
     static let checking = "Checking your Microsoft account"
+    /// Shown only while a check runs, when macOS may ask for Keychain access.
     static var keychain: String {
         "If macOS asks about Keychain access, it's \(AppBrand.displayName) checking or saving your sign-in on this Mac."
     }
@@ -17,26 +21,23 @@ struct LiveWelcomeView: View {
     @ObservedObject var session: LiveSession
     @ObservedObject var runtime: RuntimeProviderSettings
     @ObservedObject var operations: GameOperationsController
+    /// Overrides opening the Acknowledgments window (checks); nil uses the app's window.
+    var openAcknowledgments: (() -> Void)? = nil
+    @Environment(\.openWindow) private var openWindow
+
+    func openAcknowledgmentsAction() {
+        if let openAcknowledgments { openAcknowledgments() }
+        else { openWindow(id: AppAcknowledgmentsView.windowID) }
+    }
+
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 24) {
                     Spacer(minLength: 24)
-                    VStack(spacing: 12) {
-                        XOdeLogo().fill(XboxBrand.green)
-                            .frame(width: 112, height: 112).accessibilityHidden(true)
-                        Text(WelcomeCopy.title).font(.largeTitle.weight(.medium))
-                            .multilineTextAlignment(.center)
-                            .accessibilityAddTraits(.isHeader)
-                            .accessibilityIdentifier("xodus.welcome.title")
-                        Text(WelcomeCopy.tagline).font(.title3)
-                            .multilineTextAlignment(.center)
-                    }
-                    Text(WelcomeCopy.account)
-                        .foregroundStyle(.secondary).multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: 360)
-                        .accessibilityIdentifier("xodus.welcome.status")
+                    XOdeLockup()
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("xodus.welcome.title")
                     if let notice = session.welcomeNotice {
                         Text(notice)
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -74,20 +75,23 @@ struct LiveWelcomeView: View {
                     if session.connectionTransitioning || session.accountBusy {
                         OdeLoadingStatus(title: WelcomeCopy.checking, message: WelcomeCopy.keychain)
                             .frame(maxWidth: 360)
-                    } else {
-                        Text(WelcomeCopy.keychain)
-                            .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: 360)
-                            .accessibilityIdentifier("xodus.welcome.keychain")
                     }
                     if operations.hasDownloadStatus {
                         GameOperationProgressView(operations: operations, privacyRestricted: true)
                             .accessibilityIdentifier("xodus.welcome.operation")
                     }
-                    Text(AppBrand.nameWithChannel + " " + AppBrand.version)
-                        .font(.footnote).foregroundStyle(.tertiary)
-                        .accessibilityIdentifier("xodus.welcome.version")
+                    VStack(spacing: 4) {
+                        Text(WelcomeCopy.technology)
+                            .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("xodus.welcome.technology")
+                        // Works signed out and offline: the notices ship with the app.
+                        Button(WelcomeCopy.acknowledgments, action: openAcknowledgmentsAction)
+                            .buttonStyle(.link).font(.footnote)
+                            .accessibilityLabel(WelcomeCopy.acknowledgmentsAccessibility)
+                            .accessibilityIdentifier("xodus.welcome.acknowledgments")
+                    }
+                    .frame(maxWidth: 360)
                     Spacer(minLength: 24)
                 }
                 .frame(maxWidth: .infinity, minHeight: max(0, geometry.size.height - 80))
@@ -162,20 +166,21 @@ struct ReadinessChecklistView: View {
     var done: () -> Void = {}
     @State private var space: GamesFolderSpace?
     @State private var probe = GameStorageProbe()
+    @State private var releaseStatus: CalimochoAvailability?
 
     private var engine: CalimochoAvailability {
         CalimochoAvailability.from(
             choices: installed.availableEngineOverrides.compactMap { $0.inspection.engineName }
                 .map { EngineChoice.named($0, ready: true) }
                 + installed.failedEngineOverrides.map { EngineChoice.named($0, ready: false) },
-            checking: installed.checkingEngineOverrides,
-            installed: allowsStatusReads ? CalimochoRelease.isPresent() : nil)
+            checking: installed.checkingEngineOverrides, release: releaseStatus)
     }
 
     static func engineStatus(_ availability: CalimochoAvailability) -> (Status, String) {
         switch availability {
         case .ready: (.done, "Calimocho is ready to play games")
         case .checking, .notChecked: (.waiting, "Checking for Calimocho…")
+        case .pendingVerification: (.waiting, "Calimocho is installed and waiting to be verified")
         case .missing: (.attention, "Calimocho isn't installed")
         case .invalid: (.attention, "Calimocho couldn't be verified")
         }
@@ -196,11 +201,8 @@ struct ReadinessChecklistView: View {
                 row(engineState, title: engineTitle,
                     detail: engine.needsDownload ? engine.message : nil) {
                     if engine.needsDownload {
-                        HStack(spacing: 12) {
-                            Link(CalimochoRelease.getTitle, destination: CalimochoRelease.downloadURL)
-                                .accessibilityIdentifier("xodus.readiness.getCalimocho")
-                            Button("Open Engines Settings") { openSettingsPane(.engines) }
-                        }
+                        CalimochoDownloadAction()
+                        Button("Open Engines Settings") { openSettingsPane(.engines) }
                     }
                 }
                 .accessibilityIdentifier("xodus.readiness.engine")
@@ -227,6 +229,13 @@ struct ReadinessChecklistView: View {
         .task(id: allowsStatusReads && session.nativeLifecycleConfiguration != nil) {
             guard allowsStatusReads else { return }
             await installed.refreshEngineOverrides(force: false)
+        }
+        .task(id: allowsStatusReads) {
+            guard allowsStatusReads else { return }
+            releaseStatus = .checking
+            let status = await CalimochoAvailability.verifyReleaseInBackground()
+            guard !Task.isCancelled else { return }
+            releaseStatus = status
         }
         .task(id: allowsStatusReads) {
             guard allowsStatusReads else { return }

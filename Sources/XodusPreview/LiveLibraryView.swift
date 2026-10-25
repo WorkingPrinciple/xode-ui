@@ -444,7 +444,7 @@ struct LiveLibraryView: View {
                         disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
                             : "Wait for \(AppBrand.displayName) to finish starting.")
                 }
-                let blockedReason = install?.unavailableReason
+                let blockedReason = install?.heroReplacementReason
                 if let install, blockedReason == nil { install }
                 Button(blockedReason == nil ? "View game" : "View Details") { open(game) }
                     .modifier(LibraryActionStyle(primary: install != nil && blockedReason != nil))

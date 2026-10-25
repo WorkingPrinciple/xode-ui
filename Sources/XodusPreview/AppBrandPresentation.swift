@@ -5,27 +5,55 @@ import XodusCore
 
 /// Module-wide name so every XodusPreview file can use the brand without importing XodusCore.
 typealias AppBrand = XodusCore.AppBrand
+typealias AppVersion = XodusCore.AppVersion
+
+/// The logo lockup: the X mark with the "Ode" wordmark beneath it, announced once as "X Ode".
+struct XOdeLockup: View {
+    static var accessibilityName: String { AppBrand.displayName }
+    var markSize: CGFloat = 112
+    var markStyle: AnyShapeStyle = AnyShapeStyle(XboxBrand.green)
+    var wordmarkFont: Font = .largeTitle.weight(.medium)
+    var markBackground: AnyShapeStyle? = nil
+
+    var body: some View {
+        VStack(spacing: markSize >= 80 ? 12 : 8) {
+            Group {
+                if let markBackground {
+                    XOdeLogo().fill(markStyle)
+                        .frame(width: markSize, height: markSize).padding(markSize * 0.3)
+                        .background(markBackground, in: RoundedRectangle(cornerRadius: markSize * 0.375))
+                } else {
+                    XOdeLogo().fill(markStyle).frame(width: markSize, height: markSize)
+                }
+            }
+            Text(AppBrand.wordmark).font(wordmarkFont)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Self.accessibilityName)
+    }
+}
 
 enum AppBrandPresentation {
     static let supportWindowID = "support"
 
-    /// Options for the standard About panel; the version comes from AppBrand, not a stale bundle value.
-    static var aboutPanelOptions: [NSApplication.AboutPanelOptionKey: Any] {
+    /// Options for the standard About panel: "X Ode", "Version 0.2.0 Beta (412)", "© Working Principle".
+    static func aboutPanelOptions(_ version: AppVersion = AppBrand.current) -> [NSApplication.AboutPanelOptionKey: Any] {
         let credits = NSAttributedString(string: AppBrand.copyright, attributes: [
             .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
             .foregroundColor: NSColor.secondaryLabelColor
         ])
         return [.applicationName: AppBrand.displayName,
-                .applicationVersion: AppBrand.versionLabel,
+                .applicationVersion: version.aboutVersion,
+                .version: version.build ?? "",
                 .credits: credits]
     }
 
     static func orderFrontAboutPanel() {
-        NSApp.orderFrontStandardAboutPanel(options: aboutPanelOptions)
+        NSApp.orderFrontStandardAboutPanel(options: aboutPanelOptions())
     }
 }
 
-/// Help ▸ Xode Beta Support and Help ▸ Send Feedback. No external support address is shown
+/// Help ▸ X Ode Beta Support and Help ▸ Send Feedback. No external support address is shown
 /// until one is verified; feedback goes through the redacted diagnostic summary.
 struct BetaSupportView: View {
     var openDiagnostics: () -> Void
@@ -57,5 +85,38 @@ struct BetaSupportView: View {
         .formStyle(.grouped)
         .frame(minWidth: 420, idealWidth: 480, minHeight: 320)
         .accessibilityIdentifier("xodus.support")
+    }
+}
+
+/// The main window's game-search action, published only while that window is the focused scene.
+struct GameSearchFocusKey: FocusedValueKey {
+    typealias Value = GameSearchFocus
+}
+
+struct GameSearchFocus {
+    let focus: () -> Void
+}
+
+extension FocusedValues {
+    var gameSearchFocus: GameSearchFocus? {
+        get { self[GameSearchFocusKey.self] }
+        set { self[GameSearchFocusKey.self] = newValue }
+    }
+}
+
+/// Edit ▸ Find… (⌘F) for game search. It sits before the system text-editing group, which keeps
+/// Find, Spelling, Substitutions, Transformations and Speech, and it is enabled only while the main
+/// window is focused, so it never pulls focus away from Settings, Licenses or Support.
+struct GameSearchCommands: Commands {
+    let navigationAllowed: Bool
+    @FocusedValue(\.gameSearchFocus) private var search
+
+    var body: some Commands {
+        CommandGroup(before: .textEditing) {
+            Button("Find…") { search?.focus() }
+                .keyboardShortcut("f")
+                .disabled(search == nil || !navigationAllowed)
+            Divider()
+        }
     }
 }

@@ -478,10 +478,10 @@ enum NativeUIChecks {
         }
         autoreleasepool { checkWelcomeTerminationPolicy(check: check) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            for width in [CGFloat(480), 560] {
+            for width in [CGFloat(680), 860] {
                 for (name, view) in [
                     ("Licenses", AnyView(AppLicensesView())),
-                    ("Acknowledgments", AnyView(AppAcknowledgmentsView()))
+                    ("Acknowledgments", AnyView(AppAcknowledgmentsView(inventory: AcknowledgmentsInventory())))
                 ] {
                     let host = NSHostingView(rootView: view)
                     host.sizingOptions = []
@@ -496,7 +496,7 @@ enum NativeUIChecks {
         }
         check(AppLegalCopy.license.contains("GPL-3.0-only")
               && AppLegalCopy.acknowledgment.contains("Xodus")
-              && AppLegalCopy.source.absoluteString == "https://github.com/dragoshont/xodus-macos-app",
+              && AppLegalCopy.source.absoluteString == "https://github.com/WorkingPrinciple/xode-ui",
               "Legal destinations retain the app's exact license and existing upstream attribution without an invented organization")
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for size in [CGSize(width: 480, height: 480), CGSize(width: 560, height: 620)] {
@@ -516,7 +516,7 @@ enum NativeUIChecks {
                       && scrollViews.allSatisfy {
                           !$0.hasHorizontalScroller && ($0.documentView?.bounds.width ?? 0) <= size.width + 1
                       },
-                      "Xode welcome fits native \(appearance.rawValue) at \(Int(size.width)) points with a scrolling body")
+                      "X Ode welcome fits native \(appearance.rawValue) at \(Int(size.width)) points with a scrolling body")
                 check(!session.hasConfirmedSignIn && !session.accountBusy
                       && !session.canStartWelcomeSignIn && !runtime.checkingDependency,
                       "Detached welcome layout cannot connect, sign in, inspect credentials or install CrossOver")

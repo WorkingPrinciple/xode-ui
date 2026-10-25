@@ -2,6 +2,7 @@
 #if !XODUS_SHIPPING
 import AppKit
 import SwiftUI
+import CryptoKit
 import Vision
 import XodusManagement
 
@@ -21,28 +22,40 @@ enum BrandUXChecks {
         navigation(check: check)
         engines(check: check)
         heroContrast(check: check)
+        heroInstallControl(check: check)
         toolbarAccessibility(check: check)
         welcome(check: check)
         readiness(check: check)
         support(check: check)
+        acknowledgments(check: check)
         jargon(check: check)
     }
 
     // MARK: Brand
 
     static func brand(check: (Bool, String) -> Void) {
-        check(AppBrand.displayName == "Xode" && AppBrand.company == "Working Principle"
-              && AppBrand.website == "xode.win" && AppBrand.versionLabel == "0.11.4 Beta"
-              && AppBrand.nameWithChannel == "Xode Beta" && AppBrand.supportTitle == "Xode Beta Support"
-              && AppBrand.copyright == "© Working Principle · xode.win",
-              "COR186: One AppBrand defines Xode, Working Principle, xode.win and 0.11.4 Beta")
-        let about = AppBrandPresentation.aboutPanelOptions
-        check(about[.applicationName] as? String == "Xode"
-              && about[.applicationVersion] as? String == "0.11.4 Beta"
-              && (about[.credits] as? NSAttributedString)?.string == "© Working Principle · xode.win",
-              "COR186/COR187: About shows Xode 0.11.4 Beta and © Working Principle · xode.win")
+        check(AppBrand.displayName == "X Ode" && AppBrand.wordmark == "Ode" && AppBrand.company == "Working Principle"
+              && AppBrand.website == "xode.win" && AppBrand.nameWithChannel == "X Ode Beta"
+              && AppBrand.supportTitle == "X Ode Beta Support"
+              && AppBrand.copyright == "© Working Principle" && !AppBrand.copyright.contains(AppBrand.website),
+              "COR186/L1: One AppBrand defines X Ode and Working Principle; the unresolved domain stays out of the copyright line")
+        let packaged = AppVersion(info: ["CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "412",
+                                         "XodeReleaseChannel": "Beta"])
+        check(packaged.label == "0.2.0 (Beta)" && packaged.aboutVersion == "0.2.0 Beta" && packaged.build == "412"
+              && AppVersion(info: ["CFBundleShortVersionString": "0.2.1", "CFBundleVersion": "413"]).label == "0.2.1 (Beta)"
+              && AppVersion(info: nil).label == "Development build"
+              && AppVersion(info: ["CFBundleShortVersionString": "0.2.0-beta.1", "CFBundleVersion": "4b"]).version == nil
+              && AppVersion(info: ["CFBundleShortVersionString": "0.2.0-beta.1", "CFBundleVersion": "4b"]).build == nil,
+              "COR198: The version, build and channel come only from the bundle, as 0.2.0 (Beta); invalid values fall back honestly")
+        let about = AppBrandPresentation.aboutPanelOptions(packaged)
+        check(about[.applicationName] as? String == "X Ode"
+              && about[.applicationVersion] as? String == "0.2.0 Beta" && about[.version] as? String == "412"
+              && (about[.credits] as? NSAttributedString)?.string == "© Working Principle"
+              && AppBrandPresentation.aboutPanelOptions(AppVersion(info: nil))[.applicationVersion] as? String
+                == "Development build",
+              "COR186/COR198/L1: About shows X Ode, Version 0.2.0 Beta (412) and © Working Principle, without xode.win")
         let session = LiveSession()
-        let copy = [WelcomeCopy.title, WelcomeCopy.tagline, WelcomeCopy.account, WelcomeCopy.signIn, WelcomeCopy.keychain,
+        let copy = [WelcomeCopy.technology, WelcomeCopy.signIn, WelcomeCopy.keychain,
                     EnginesCopy.lead, EnginesCopy.crossOver, EnginesCopy.crossOverLicense,
                     session.accountLabel, LiveSession.signOutConfirmationMessage, session.libraryMessage,
                     ManagementError.stateLocked.errorDescription ?? "", ManagementError.startFailed.errorDescription ?? "",
@@ -51,13 +64,13 @@ enum BrandUXChecks {
             + GameSupportPolicy.issues(packageFormat: "EAppx", antiCheat: "BattlEye").map(\.detail)
         let retired = copy.filter { text in
             AppBrand.retiredNames.contains { text.contains($0) }
-                || text.range(of: #"\bOde\b"#, options: .regularExpression) != nil
+                || text.range(of: #"(?<!X )\bOde\b"#, options: .regularExpression) != nil
                 || text.contains("Xodus returned") || text.contains("Xodus engine")
         }
-        check(retired.isEmpty && session.accountLabel == "Connect Xode"
-              && LiveSession.signOutConfirmationMessage.contains("from Xode on this Mac")
+        check(retired.isEmpty && session.accountLabel == "Connect X Ode"
+              && LiveSession.signOutConfirmationMessage.contains("from X Ode on this Mac")
               && AppLegalCopy.acknowledgment.contains("Xodus"),
-              "COR186: User-visible copy names Xode only, keeping the upstream Xodus credit: \(retired)")
+              "COR186: User-visible copy names X Ode only, keeping the upstream Xodus credit: \(retired)")
     }
 
     // MARK: Navigation, Find and Refresh
@@ -123,29 +136,47 @@ enum BrandUXChecks {
               "COR186 U2: Display names never change engine IDs, and unknown engines keep their own names")
         let ready = EngineChoice.named("calimocho-wine11.20-gptk4b3-tls-vulkan-private", ready: true)
         let failed = EngineChoice.named("calimocho-wine11.20-gptk4b3-tls-vulkan-private", ready: false)
-        check(CalimochoAvailability.from(choices: [], checking: false) == .notChecked
-              && CalimochoAvailability.from(choices: [], checking: true) == .checking
-              && CalimochoAvailability.from(choices: [], checking: false, installed: false) == .missing
-              && CalimochoAvailability.from(choices: [failed], checking: false, installed: true)
-                == .invalid(CalimochoAvailability.unverifiedReason)
-              && CalimochoAvailability.from(choices: [failed, ready], checking: true, installed: false) == .ready
-              && CalimochoAvailability.missing.message?.hasPrefix("Calimocho isn't installed.") == true
-              && CalimochoAvailability.missing.message?.contains("Check Again") == true
+        let pendingRelease: CalimochoAvailability? = nil
+        check(CalimochoAvailability.from(choices: [], checking: false, release: pendingRelease) == .notChecked
+              && CalimochoAvailability.from(choices: [failed], checking: false, release: nil) == .notChecked
+              && CalimochoAvailability.from(choices: [failed], checking: false, release: .notChecked) == .notChecked
+              && CalimochoAvailability.from(choices: [], checking: true, release: nil) == .checking
+              && CalimochoAvailability.from(choices: [], checking: false, release: .checking) == .checking,
+              "REVIEW H2c: Until an engine check has actually completed, Calimocho is Not Checked (or Checking), never Missing")
+        check(CalimochoAvailability.from(choices: [failed], checking: false, release: .ready) == .pendingVerification
+              && CalimochoAvailability.from(choices: [], checking: false, release: .ready) == .pendingVerification
+              && !CalimochoAvailability.pendingVerification.needsDownload
+              && CalimochoAvailability.pendingVerification.message?.contains("Reinstall") == false
+              && CalimochoAvailability.pendingVerification.message?.contains("installed") == true,
+              "REVIEW H2b: A present, verified release engine that isn't admitted yet stays neutral, never Invalid or Reinstall")
+        check(CalimochoAvailability.from(choices: [failed], checking: false, release: .missing) == .missing
+              && CalimochoAvailability.from(choices: [], checking: false, release: .invalid("Damaged.")) == .invalid("Damaged.")
+              && CalimochoAvailability.from(choices: [failed, ready], checking: true, release: .missing) == .ready
+              && CalimochoAvailability.missing.message == "Calimocho isn't installed. X Ode needs Calimocho to play games."
               && CalimochoAvailability.invalid("Signature changed.").message == "Calimocho couldn't be verified. Signature changed."
               && CalimochoAvailability.missing.needsDownload && CalimochoAvailability.invalid("x").needsDownload
               && !CalimochoAvailability.ready.needsDownload && CalimochoAvailability.notChecked.message == nil
               && CalimochoAvailability.notChecked.emptyListMessage != nil,
-              "REQ-114(4): Calimocho renders Ready, Missing (Get + Check Again) or Invalid (reason); an unchecked list never claims it's missing")
+              "REQ-114(4): A completed check renders Ready, Missing or Invalid (reason); an admitted engine is Ready")
+        let emptyRoot = FileManager.default.temporaryDirectory.appendingPathComponent("XodusNoEngines-\(UUID().uuidString)")
+        check(CalimochoAvailability.verifiedRelease(root: emptyRoot) == .missing
+              && CalimochoAvailability.from(choices: [failed], checking: false,
+                    release: CalimochoAvailability.verifiedRelease(root: emptyRoot)) == .missing,
+              "REQ-115: The Engines pane maps 135c's release verification of an empty Engines folder to Missing")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
-        check(release.name == "Calimocho 11.20 (GPTK 4.0b3) · 01" && !release.titleSpecific
+        check(CalimochoRelease.engineID == "calimocho-11.20-4.0b3-02"
+              && release.name == "Calimocho 0.1120.4.2" && release.detail == "Wine 11.20 · GPTK 4.0 beta 3"
+              && !release.titleSpecific
+              && EngineDisplayName.releaseVersion("calimocho-11.21-4.0b4-03")?.version == "0.1121.4.3"
+              && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-00") == nil
+              && CalimochoRelease.displayName == release.name
               && CalimochoRelease.getTitle == "Get Calimocho (beta)"
               && CalimochoRelease.downloadURL.absoluteString
-                == "https://github.com/dragoshont/calimocho/releases/tag/engine-11.20-4.0b3-01"
-              && CalimochoRelease.manifest(home: URL(fileURLWithPath: "/Users/example")).path
-                == "/Users/example/Library/Application Support/Xode/Engines/calimocho-11.20-4.0b3-01/calimocho-engine.json"
-              && !CalimochoRelease.isPresent(home: FileManager.default.temporaryDirectory
-                  .appendingPathComponent("XodusNoEngine-\(UUID().uuidString)")),
-              "REQ-115: The released engine shows its release name and one Get Calimocho (beta) link to the release tag")
+                == "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-11.20-4.0b3-02"
+              && !CalimochoRelease.downloadPublished
+              && CalimochoRelease.unpublishedNotice
+                == "Calimocho isn't available for download yet — ask the person who invited you to the beta.",
+              "REVIEW H2a: The release keeps one URL constant but shows no download control until the asset is published")
         check(AppLegalCopy.d3dMetal.contains("Apple D3DMetal") && AppLegalCopy.d3dMetal.contains("non-commercial")
               && AppLegalCopy.d3dMetal.contains("downloaded separately"),
               "COR187: Licenses state that Calimocho bundles Apple D3DMetal under Apple's non-commercial license, downloaded separately")
@@ -164,8 +195,9 @@ enum BrandUXChecks {
         guard let store = UserDefaults(suiteName: suite) else { return }
         defer { store.removePersistentDomain(forName: suite) }
         let scenarios: [(String, [EngineChoice], CalimochoAvailability?)] = [
-            ("missing", [], .missing),
-            ("invalid", [failed], .invalid(CalimochoAvailability.unverifiedReason)),
+            ("missing", [failed], .missing),
+            ("invalid", [failed], .invalid("The installed Calimocho engine isn't signed by its publisher. Reinstall it from the official release, then check again.")),
+            ("pending", [failed], .pendingVerification),
             ("ready", [EngineChoice.named(CalimochoRelease.engineID, ready: true), ready,
                        EngineChoice.named("calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5", ready: true)], nil)]
         for (scenario, choices, status) in scenarios {
@@ -182,18 +214,22 @@ enum BrandUXChecks {
                       && joined.contains("Play currently uses Calimocho")
                       && !joined.contains("Private") && !joined.contains("Use App"),
                       "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
+                let noDownloadControl = !joined.contains("Get Calimocho")
                 switch scenario {
                 case "missing":
-                    check(joined.contains("Get Calimocho (beta)") && joined.contains("Calimocho isn't installed")
-                          && joined.contains("Check Again") && joined.contains("No engines are installed yet"),
-                          "REQ-114(4): Missing Calimocho shows a plain message, Get Calimocho (beta) and Check Again (\(scheme))")
+                    check(joined.contains("Calimocho isn't installed") && joined.contains("isn't available for download yet")
+                          && joined.contains("Check Again") && noDownloadControl,
+                          "REVIEW H2a: Missing Calimocho says so, explains the download isn't available yet and offers no dead-end button (\(scheme))")
                 case "invalid":
-                    check(joined.contains("Get Calimocho (beta)") && joined.contains("couldn't be verified")
-                          && joined.contains("Not Verified") && !labels.contains("Default"),
-                          "REQ-114(4): Invalid Calimocho gives the reason, marks the engine Not Verified and offers Get (\(scheme))")
+                    check(joined.contains("couldn't be verified") && joined.contains("isn't available for download yet")
+                          && joined.contains("Not Verified") && !labels.contains("Default") && noDownloadControl,
+                          "REQ-114(4): Invalid Calimocho gives the verification reason and marks the engine Not Verified (\(scheme))")
+                case "pending":
+                    check(joined.contains("will be ready once") && !joined.contains("isn't available for download")
+                          && !joined.contains("Reinstall") && noDownloadControl,
+                          "REVIEW H2b: A verified but not yet admitted release is neutral, with no reinstall or download prompt (\(scheme))")
                 default:
-                    check(!joined.contains("Get Calimocho") && joined.contains("Calimocho for DIRT 5")
-                          && joined.contains("GPTK 4.0b3"),
+                    check(noDownloadControl && joined.contains("Calimocho for DIRT 5") && joined.contains("Calimocho 0.1120.4.2"),
                           "COR186 U2: Ready engines show no download prompt and name release and game-specific builds (\(scheme))")
                 }
             }
@@ -285,6 +321,35 @@ enum BrandUXChecks {
               "COR186 M4: The scrim darkens toward the text and Increase Contrast is never lighter")
     }
 
+    // MARK: Hero install control (review H1)
+
+    static func heroInstallControl(check: (Bool, String) -> Void) {
+        let reason = "Installation is not available yet."
+        check(HeroInstallReplacement.reason(unavailable: reason, active: false, preparing: false,
+                                            checking: false, prechecking: false) == reason
+              && HeroInstallReplacement.reason(unavailable: nil, active: false, preparing: false,
+                                               checking: false, prechecking: false) == nil,
+              "REVIEW H1: A statically unavailable Download is replaced by View Details with its reason")
+        let busy = [(true, false, false, false), (false, true, false, false),
+                    (false, false, true, false), (false, false, false, true)]
+        check(busy.allSatisfy { state in
+                  HeroInstallReplacement.reason(unavailable: reason, active: state.0, preparing: state.1,
+                                                checking: state.2, prechecking: state.3) == nil
+              },
+              "REVIEW H1: While this game is installing, preparing, checking or prechecking, the hero keeps its in-place progress and Cancel")
+        let installed = InstalledGamesController()
+        let operations = GameOperationsController(installed: installed)
+        let game = PCGame(id: "FIXTURE00009", title: "Hero fixture", artwork: nil)
+        let disabled = GameInstallAction(game: game, operations: operations, enabled: false,
+                                         showsDiagnostics: false, disabledReason: "Static reason.")
+        let checking = operations.checkingExistingInstallation(productID: game.id)
+            || (operations.installationCheckRequired(for: game) && operations.existingInstallationError(productID: game.id) == nil)
+        check(!disabled.active && !disabled.preparing && operations.precheckingProductID == nil
+              && disabled.heroReplacementReason == (checking ? nil : disabled.unavailableReason)
+              && (checking || disabled.heroReplacementReason != nil),
+              "REVIEW H1: A real idle install control derives the hero replacement from the controller's own state")
+    }
+
     // MARK: Toolbar accessibility
 
     static func accessibilityLabels(_ root: Any, depth: Int = 0) -> [String] {
@@ -305,7 +370,7 @@ enum BrandUXChecks {
               "COR186 M6: Account and Import toolbar items have their own explicit names")
         // Offscreen SwiftUI builds no accessibility tree without an assistive client, so the
         // announced names are checked here by construction and natively by VoiceOver QA.
-        check(ToolbarAccountButton.title("Connect Xode") != NativeToolbarImportButton.title
+        check(ToolbarAccountButton.title("Connect X Ode") != NativeToolbarImportButton.title
               && !ToolbarAccountButton.title("Sign in with Microsoft").localizedCaseInsensitiveContains("Import"),
               "COR186 M6: The account item's name can never be the Import item's name")
         check(DownloadQueueRow.progressLabel("Pentiment") == "Download progress for Pentiment",
@@ -315,11 +380,10 @@ enum BrandUXChecks {
     // MARK: Welcome, readiness and support
 
     static func welcome(check: (Bool, String) -> Void) {
-        check(WelcomeCopy.title == "Welcome to Xode" && WelcomeCopy.tagline == "Play your Xbox PC games on Mac."
-              && WelcomeCopy.account == "Sign in with your Microsoft account to see PC games you own or play with PC Game Pass."
-              && WelcomeCopy.signIn == "Sign in with Microsoft" && WelcomeCopy.keychain.contains("Keychain")
-              && WelcomeCopy.keychain.contains("Xode"),
-              "COR186 M7: Welcome copy uses Xode, Microsoft account and the Keychain explanation")
+        check(WelcomeCopy.signIn == "Sign in with Microsoft"
+              && WelcomeCopy.technology == "X Ode runs Windows games with Wine and other open-source libraries."
+              && WelcomeCopy.keychain.contains("Keychain") && XOdeLockup.accessibilityName == "X Ode",
+              "COR186 M7: The login screen is the X Ode lockup, Sign in with Microsoft and the Wine/open-source line")
         for scheme in [ColorScheme.light, .dark] {
             let view = LiveWelcomeView(session: LiveSession(), runtime: RuntimeProviderSettings(),
                 operations: GameOperationsController(installed: InstalledGamesController()))
@@ -327,16 +391,27 @@ enum BrandUXChecks {
             let labels = render(view, size: CGSize(width: 560, height: 620), scheme: scheme,
                                 name: "welcome-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
-            check(joined.contains("Welcome to Xode") && joined.contains("Sign in with Microsoft")
-                  && joined.contains("Microsoft account") && !joined.contains("Xbox Live")
-                  && !joined.contains("Windows Live") && labels.allSatisfy { $0 != "Ode" },
-                  "COR186 M7: Rendered welcome (\(scheme)) shows the Xode copy and Microsoft sign-in: \(labels)")
+            check(labels.contains("Ode") && joined.contains("Sign in with Microsoft")
+                  && joined.contains("Wine") && joined.contains("Acknowledgments")
+                  && !joined.contains("Keychain") && !joined.contains("PC Game Pass") && !joined.contains("Beta")
+                  && !joined.contains("Xbox Live") && !joined.contains("Xode") && !joined.contains("Welcome"),
+                  "COR186 M7: Rendered login (\(scheme)) keeps only the lockup, Microsoft sign-in, state notices and the Wine line: \(labels)")
+        }
+        for scheme in [ColorScheme.light, .dark] {
+            let lockup = XOdeLockup(markSize: 48, markStyle: AnyShapeStyle(XboxBrand.lightGreen),
+                                    wordmarkFont: .title2.weight(.medium),
+                                    markBackground: AnyShapeStyle(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255)))
+            let labels = render(lockup, size: CGSize(width: 200, height: 160), scheme: scheme,
+                                name: "account-lockup-\(scheme == .dark ? "dark" : "light")")
+            check(labels == ["Ode"],
+                  "COR186: The account popup lockup is the X mark with 'Ode' beneath, with no second X in text (\(scheme)): \(labels)")
         }
     }
 
     static func readiness(check: (Bool, String) -> Void) {
         check(ReadinessChecklistView.engineStatus(.ready).0 == .done
               && ReadinessChecklistView.engineStatus(.notChecked).0 == .waiting
+              && ReadinessChecklistView.engineStatus(.pendingVerification).0 == .waiting
               && ReadinessChecklistView.engineStatus(.missing).0 == .attention
               && ReadinessChecklistView.engineStatus(.invalid("x")).0 == .attention,
               "COR186 M7: Readiness maps Calimocho state to ready, checking or needs attention")
@@ -368,9 +443,122 @@ enum BrandUXChecks {
             let labels = render(BetaSupportView {}, size: CGSize(width: 480, height: 420), scheme: scheme,
                                 name: "support-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
-            check(joined.contains("Xode Beta Support") && joined.contains("0.11.4 Beta")
-                  && joined.contains("Diagnostic Summary") && !joined.contains("http"),
-                  "COR186 menu: Help ▸ Xode Beta Support (\(scheme)) explains feedback without an unverified link: \(labels)")
+            check(joined.contains("X Ode Beta Support") && joined.contains(AppBrand.versionLabel)
+                  && !joined.contains("0.11.4")
+                  && joined.contains("Diagnostic Summary") && !joined.contains("http") && !joined.contains("xode.win"),
+                  "COR186 menu: Help ▸ X Ode Beta Support (\(scheme)) explains feedback without an unverified link: \(labels)")
+        }
+    }
+
+    // MARK: Acknowledgments (REQ-117)
+
+    static func sha256(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func acknowledgments(check: (Bool, String) -> Void) {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent("XodusAcknowledgments-\(UUID().uuidString)")
+        defer { try? fileManager.removeItem(at: root) }
+        let producer = root.appendingPathComponent("ProducerNotices")
+        let engine = root.appendingPathComponent("Engines/\(CalimochoRelease.engineID)")
+        do {
+            try fileManager.createDirectory(at: producer.appendingPathComponent("texts"), withIntermediateDirectories: true)
+            let good = Data("MIT License\nCopyright synthetic".utf8), tampered = Data("tampered".utf8)
+            try good.write(to: producer.appendingPathComponent("texts/\(sha256(good)).txt"))
+            let claimed = sha256(Data("original".utf8))
+            try tampered.write(to: producer.appendingPathComponent("texts/\(claimed).txt"))
+            let inventory: [String: Any] = ["version": 1, "unresolved": ["xodus@0.1.0: no package-level licence declaration"],
+                "packages": [
+                    ["name": "xodus", "version": "0.1.0", "declaredLicense": NSNull(), "notices": []],
+                    ["name": "adler2", "version": "2.0.1", "declaredLicense": "MIT",
+                     "notices": [["originalPath": "adler2-2.0.1/LICENSE-MIT", "path": "texts/\(sha256(good)).txt", "sha256": sha256(good)]]],
+                    ["name": "tampered-crate", "version": "1.0.0", "declaredLicense": "MIT",
+                     "notices": [["originalPath": "x/LICENSE", "path": "texts/\(claimed).txt", "sha256": claimed],
+                                 ["originalPath": "y/LICENSE", "path": "../../etc/passwd", "sha256": claimed]]]]]
+            try JSONSerialization.data(withJSONObject: inventory).write(to: producer.appendingPathComponent("inventory.json"))
+            for (path, text) in [("calimocho-engine.json", "{}"), ("VERSION", CalimochoRelease.engineID), ("NOTICE", "Calimocho notice"),
+                                 ("licenses/wine/LICENSE", "LGPL"), ("licenses/wine/libs/vkd3d/COPYING", "LGPL"),
+                                 ("licenses/moltenvk/LICENSE", "Apache"), ("licenses/apple-gptk/License.rtf", "{\\rtf1 Apple licence}")] {
+                let url = engine.appendingPathComponent(path)
+                try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try Data(text.utf8).write(to: url)
+            }
+        } catch {
+            check(false, "REQ-117: Synthetic acknowledgments fixtures are written")
+            return
+        }
+        let loaded = AcknowledgmentsInventory.load(.init(producer: producer, engine: engine))
+        let service = loaded.components.filter { $0.origin == .gameService }
+        check(service.map(\.name) == ["xodus", "adler2", "tampered-crate"]
+              && ["xodus", "adler2", "tampered-crate"].allSatisfy { name in loaded.filtered(name).contains { $0.name == name } }
+              && service.first { $0.name == "xodus" }?.license == "No package-level licence declared"
+              && loaded.unresolved.count == 1,
+              "REQ-117: Every producer inventory package appears and is searchable, including ones without a declared licence")
+        let tampered = service.first { $0.name == "tampered-crate" }
+        check(tampered?.notices.count == 1
+              && tampered.map { AcknowledgmentsInventory.text(of: $0.notices[0]) } == AcknowledgmentsInventory.checksumMismatch
+              && service.first { $0.name == "adler2" }.map { AcknowledgmentsInventory.text(of: $0.notices[0]) }?
+                .hasPrefix("MIT License") == true,
+              "REQ-117: Notice texts are shown only when they match their recorded SHA-256; paths outside texts/ are dropped")
+        let engineNames = loaded.components.filter { $0.origin == .engine }.map(\.name)
+        let projects = KeyOpenSourceProjects.projects(shipping: loaded.markers).map(\.name)
+        check(engineNames.contains("Calimocho") && engineNames.contains("moltenvk")
+              && engineNames.contains("Apple D3DMetal (Game Porting Toolkit)")
+              && loaded.components.first { $0.name == "Calimocho" }?.version == "0.1120.4.2"
+              && projects == ["Xodus", "Calimocho", "Wine, with CodeWeavers' Wine patches", "vkd3d", "MoltenVK"]
+              && KeyOpenSourceProjects.separate(shipping: loaded.markers)?.license.contains("not open source") == true
+              && !KeyOpenSourceProjects.catalog.contains { $0.project.name == "DXVK" },
+              "REQ-117: Key projects list only what ships (\(projects)); D3DMetal is separate and proprietary; DXVK isn't claimed")
+        let rtf = loaded.components.first { $0.name.hasPrefix("Apple D3DMetal") }?.notices.first
+        check(rtf.map { AcknowledgmentsInventory.text(of: $0).contains("Apple licence") } == true,
+              "REQ-117: RTF licences are shown as plain text")
+        let bundledNotice = root.appendingPathComponent("EngineNotices/NOTICE.txt")
+        try? fileManager.createDirectory(at: bundledNotice.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? Data("Calimocho bundled notice".utf8).write(to: bundledNotice)
+        let noEngine = AcknowledgmentsInventory.load(.init(producer: nil,
+            engine: root.appendingPathComponent("missing"), engineNotice: bundledNotice))
+        check(noEngine.components.contains { $0.origin == .engine && $0.name == "Calimocho" }
+              && noEngine.issues.contains(AcknowledgmentsInventory.engineDownloadNote)
+              && KeyOpenSourceProjects.projects(shipping: noEngine.markers) == [KeyOpenSourceProjects.catalog[1].project]
+              && AcknowledgmentsInventory.load(.init(engine: root.appendingPathComponent("missing")))
+                .issues.contains(AcknowledgmentsInventory.engineDownloadNote),
+              "REQ-117: Without an installed engine, the bundled Calimocho NOTICE shows and full notices point to the download")
+        if let manifest = try? String(contentsOfFile: "Package.swift", encoding: .utf8) {
+            check(!manifest.contains(".package(") && !fileManager.fileExists(atPath: "Package.resolved"),
+                  "REQ-117: The app has no third-party Swift packages, so the 'Apple frameworks only' line stays true")
+        }
+        if let directory = ProcessInfo.processInfo.environment["XODUS_PRODUCER_NOTICES_DIRECTORY"] {
+            let url = URL(fileURLWithPath: directory, isDirectory: true)
+            let data = (try? Data(contentsOf: url.appendingPathComponent("inventory.json"))) ?? Data()
+            let raw = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            let packages = (raw?["packages"] as? [[String: Any]]) ?? []
+            let real = AcknowledgmentsInventory.load(.init(producer: url))
+            let shown = Set(real.components.filter { $0.origin == .gameService }.map { "\($0.name)@\($0.version ?? "")" })
+            let expected = Set(packages.map { "\($0["name"] as? String ?? "")@\($0["version"] as? String ?? "")" })
+            let notices = real.components.flatMap(\.notices).filter { $0.sha256 != nil }
+            check(sha256(data) == AcknowledgmentsInventory.pinnedProducerInventorySHA256 && !packages.isEmpty
+                  && shown == expected
+                  && packages.allSatisfy { package in
+                      real.filtered(package["name"] as? String ?? "").contains { $0.name == package["name"] as? String }
+                  }
+                  && notices.allSatisfy { AcknowledgmentsInventory.text(of: $0) != AcknowledgmentsInventory.checksumMismatch },
+                  "REQ-117: The pinned producer inventory (\(packages.count) packages, \(notices.count) notices) all appear, are searchable and verify")
+        }
+        var opened = false
+        let welcome = LiveWelcomeView(session: LiveSession(), runtime: RuntimeProviderSettings(),
+            operations: GameOperationsController(installed: InstalledGamesController()), openAcknowledgments: { opened = true })
+        welcome.openAcknowledgmentsAction()
+        check(opened && WelcomeCopy.acknowledgmentsAccessibility == "Open-source acknowledgments"
+              && AppAcknowledgmentsView.windowID == "acknowledgments",
+              "REQ-117: The login screen's Acknowledgments link opens the Acknowledgments window")
+        for scheme in [ColorScheme.light, .dark] {
+            let labels = render(AppAcknowledgmentsView(inventory: loaded), size: CGSize(width: 860, height: 600),
+                                scheme: scheme, name: "acknowledgments-\(scheme == .dark ? "dark" : "light")")
+            let joined = labels.joined(separator: " ")
+            check(joined.contains("Built on open source") && joined.contains("Key projects") && joined.contains("MoltenVK")
+                  && joined.contains("Apple D3DMetal") && !joined.contains("DXVK"),
+                  "REQ-117: The Acknowledgments window (\(scheme)) leads with the derived key projects and the separate D3DMetal note: \(labels)")
         }
     }
 
@@ -379,8 +567,8 @@ enum BrandUXChecks {
     static func jargon(check: (Bool, String) -> Void) {
         let package = GameSupportPolicy.issues(packageFormat: "EAppx", antiCheat: nil)
         let antiCheat = GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "BattlEye")
-        check(package.first?.detail == "This game comes as a EAPPX package, which Xode can't install yet."
-              && antiCheat.first?.detail == "Games that use BattlEye can't run in Xode yet."
+        check(package.first?.detail == "This game comes as a EAPPX package, which X Ode can't install yet."
+              && antiCheat.first?.detail == "Games that use BattlEye can't run in X Ode yet."
               && !(package + antiCheat).contains { $0.detail.contains("0.1") },
               "COR186 minor 7: Blocker details are plain and carry no stale version")
         check(LibraryPackageFormatLabel.plainName("MSIXVC") == "Xbox PC game"

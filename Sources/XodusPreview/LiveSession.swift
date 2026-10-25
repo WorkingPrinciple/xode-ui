@@ -60,6 +60,12 @@ final class LiveSession: ObservableObject {
     @Published private(set) var gamePassCatalogPaging = false
     @Published private(set) var gamePassCatalogHasMore = false
     @Published private(set) var gamePassCatalogExhausted = false
+    /// When the whole public PC Game Pass list was last loaded cleanly: every page from a fresh
+    /// first page to the last had no failures and no error, within one revision. Cleared by any
+    /// failure, error, retry of page one, new revision or scope change.
+    @Published private(set) var gamePassCatalogCompletedAt: Date?
+    private var gamePassPagesClean = false
+    static let gamePassCatalogMaximumAge: TimeInterval = 60 * 60
 
     var gamePassLibraryNotice: String {
         if gamePassCatalogError != nil {
@@ -1223,6 +1229,8 @@ final class LiveSession: ObservableObject {
         gamePassPagingID = nil
         gamePassCatalogHasMore = false
         gamePassCatalogExhausted = false
+        gamePassCatalogCompletedAt = nil
+        gamePassPagesClean = false
         diagnosticPreview = nil
         diagnosticPreviewing = false
         diagnosticSaved = false
@@ -1808,6 +1816,8 @@ final class LiveSession: ObservableObject {
         if refresh || catalogCorpus != "pcGamePassDiscovery" || !currentQuery.isEmpty ||
             discoveryCheckedAt == nil {
             gamePassCatalogExhausted = false
+        gamePassCatalogCompletedAt = nil
+        gamePassPagesClean = false
             await refreshCatalog("")
             return
         } else if gamePassCatalogExhausted && nextCursor == nil {
@@ -1822,6 +1832,14 @@ final class LiveSession: ObservableObject {
             return
         }
         await refreshCatalog("", more: true)
+    }
+
+    /// True only for a clean, complete and recent public PC Game Pass list.
+    func gamePassCatalogComplete(now: Date = Date()) -> Bool {
+        guard let completed = gamePassCatalogCompletedAt, gamePassCatalogError == nil, catalogError == nil,
+              discoveryFailures.isEmpty, gamePassCatalogExhausted else { return false }
+        let age = now.timeIntervalSince(completed)
+        return age >= 0 && age < Self.gamePassCatalogMaximumAge
     }
 
     func catalogMatches(query: String) -> Bool {
@@ -1903,6 +1921,7 @@ final class LiveSession: ObservableObject {
         guard let client, request.generation == generation else { return }
         catalogSourceFailure = nil
         if !request.more { gamePassBadgeProductIDs = [] }
+        gamePassCatalogCompletedAt = nil
         gamePassCatalogLoading = true
         gamePassCatalogError = nil
         defer {
@@ -1919,6 +1938,10 @@ final class LiveSession: ObservableObject {
             if !page.failures.isEmpty { gamePassCatalogError = "Partial catalog refresh" }
         } catch {
             guard isCurrent(request) else { return }
+            defer {
+                gamePassPagesClean = false
+                gamePassCatalogCompletedAt = nil
+            }
             if case let ManagementError.discoveryFailed(page) = error {
                 do { try applyDiscoveryPage(page, request: request) }
                 catch {
@@ -1962,6 +1985,11 @@ final class LiveSession: ObservableObject {
         nextCursor = page.nextCursor
         gamePassCatalogHasMore = page.nextCursor != nil
         gamePassCatalogExhausted = page.nextCursor == nil
+        let revisionUnchanged = !request.more || page.corpusRevision == gamePassRevision
+        gamePassPagesClean = (request.more ? gamePassPagesClean : true) && revisionUnchanged
+            && page.failures.isEmpty
+        gamePassCatalogCompletedAt = gamePassPagesClean && page.nextCursor == nil && discoveryFailures.isEmpty
+            && !catalogAtLimit ? Date() : nil
         discoveryRevision = page.corpusRevision
         discoveryCheckedAt = page.checkedAt
         catalogCorpus = page.corpus
@@ -2022,6 +2050,8 @@ final class LiveSession: ObservableObject {
         gamePassCatalogPaging = false
         gamePassCatalogHasMore = false
         gamePassCatalogExhausted = false
+        gamePassCatalogCompletedAt = nil
+        gamePassPagesClean = false
         discoveryFailures = []
         discoveryCheckedAt = nil
         catalogCorpus = "observedPublicProducts"

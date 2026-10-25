@@ -85,7 +85,7 @@ enum RecentLibraryChecks {
             let loaded = try trace(scenario)
             check(title.platform.rawValue == platform && title.productID == nil
                   && value.libraryTitle == "Your PC library isn't available yet"
-                  && value.libraryMessage == "Xode can't yet verify which PC games you own.",
+                  && value.libraryMessage == "X Ode can't yet verify which PC games you own.",
                   "Every reported activity platform, including PC, leaves owned-PC inventory unavailable")
             check(loaded.filter { $0 == "auth.status" }.count == 1
                   && loaded.filter { $0 == "library.recent" }.count == 1,

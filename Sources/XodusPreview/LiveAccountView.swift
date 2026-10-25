@@ -36,16 +36,12 @@ struct LiveAccountView: View {
                 accountDestination
             } else {
                 VStack(spacing: 16) {
-                    if !session.hasConfirmedSignIn { VStack(spacing: 8) {
-                        XOdeLogo().fill(XboxBrand.lightGreen)
-                            .frame(width: 48, height: 48).padding(14)
-                            .background(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255),
-                                        in: RoundedRectangle(cornerRadius: 18))
-                            .accessibilityHidden(true)
-                        Text("\(AppBrand.displayName)").font(.title2.weight(.medium))
-                            .accessibilityLabel("\(AppBrand.displayName)")
+                    if !session.hasConfirmedSignIn {
+                        XOdeLockup(markSize: 48, markStyle: AnyShapeStyle(XboxBrand.lightGreen),
+                                   wordmarkFont: .title2.weight(.medium),
+                                   markBackground: AnyShapeStyle(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255)))
                             .accessibilityAddTraits(.isHeader)
-                    } }
+                    }
                     if session.hasConfirmedSignIn {
                         XboxAccountSummaryView(companion: companion)
                         if !state.pcGames.usesUnifiedAccount { GroupBox("Xbox access") {
@@ -440,6 +436,7 @@ struct LiveSettingsView: View {
             }
             Section("About \(AppBrand.displayName)") {
                 LabeledContent("Version", value: AppBrand.versionLabel)
+                if let build = AppBrand.current.build { LabeledContent("Build", value: build) }
                 Text(AppBrand.copyright).foregroundStyle(.secondary)
                 Button("Licenses") { openWindow(id: "licenses") }
                 Button("Acknowledgments") { openWindow(id: "acknowledgments") }

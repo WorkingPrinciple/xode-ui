@@ -480,8 +480,8 @@ enum EngineDisplayName {
         guard let id else { return Presentation(name: "Calimocho", detail: nil, titleSpecific: false) }
         let lowered = id.lowercased()
         guard lowered.hasPrefix("calimocho") else { return Presentation(name: id, detail: nil, titleSpecific: false) }
-        if let release = releaseName(lowered) {
-            return Presentation(name: release, detail: "Release engine", titleSpecific: false)
+        if let release = releaseName(lowered), let facts = releaseVersion(lowered) {
+            return Presentation(name: release, detail: facts.detail, titleSpecific: false)
         }
         let wine = wineVersion(lowered).map { "Wine \($0)" }
         if let match = titles.first(where: { lowered.contains($0.marker) }) {
@@ -500,14 +500,21 @@ enum EngineDisplayName {
 
     static func name(_ id: String?) -> String { presentation(for: id).name }
 
-    /// "calimocho-11.20-4.0b3-01" → "Calimocho 11.20 (GPTK 4.0b3) · 01"
-    private static func releaseName(_ id: String) -> String? {
-        let parts = id.split(separator: "-").map(String.init)
+    /// Release engine version: 0.<Wine major+minor>.<GPTK major>.<our build>.
+    /// "calimocho-11.20-4.0b3-02" → version "0.1120.4.2", detail "Wine 11.20 · GPTK 4.0 beta 3".
+    static func releaseVersion(_ id: String) -> (version: String, detail: String)? {
+        let parts = id.lowercased().split(separator: "-").map(String.init)
         guard parts.count == 4, parts[0] == "calimocho",
-              parts[1].range(of: #"^[0-9]+\.[0-9]+$"#, options: .regularExpression) != nil,
-              parts[2].range(of: #"^[0-9]+\.[0-9]+[a-z0-9]*$"#, options: .regularExpression) != nil,
-              parts[3].range(of: #"^[0-9]+$"#, options: .regularExpression) != nil else { return nil }
-        return "Calimocho \(parts[1]) (GPTK \(parts[2])) · \(parts[3])"
+              let wine = parts[1].wholeMatch(of: #/([0-9]+)\.([0-9]+)/#),
+              let gptk = parts[2].wholeMatch(of: #/([0-9]+)\.([0-9]+)(?:b([0-9]+))?/#),
+              let build = Int(parts[3]), build > 0 else { return nil }
+        let beta = gptk.output.3.map { " beta \($0)" } ?? ""
+        return ("0.\(wine.output.1)\(wine.output.2).\(gptk.output.1).\(build)",
+                "Wine \(parts[1]) · GPTK \(gptk.output.1).\(gptk.output.2)\(beta)")
+    }
+
+    private static func releaseName(_ id: String) -> String? {
+        releaseVersion(id).map { "Calimocho \($0.version)" }
     }
 
     private static func wineVersion(_ id: String) -> String? {
@@ -516,25 +523,34 @@ enum EngineDisplayName {
     }
 }
 
-/// Whether Play has a launch-ready Calimocho: Ready, Missing (Get + Check Again) or Invalid (reason).
-/// Derived from the admitted choices plus a read-only presence check of the released engine.
-/// Every known engine is inspected on each check, so an empty list means no check has run yet.
-enum CalimochoAvailability: Equatable {
-    case notChecked, checking, ready, missing, invalid(String)
+/// Whether Play has a launch-ready Calimocho. `release` is the local release verification
+/// (`CalimochoAvailability.verifiedRelease()`, run off the main actor; `.checking` while it runs,
+/// nil before it has run). Until a check completes the state is `.notChecked`. A verified release
+/// that backend admission hasn't enabled yet stays neutral, never "invalid".
+enum CalimochoAvailability: Equatable, Sendable {
+    case notChecked, checking, ready, pendingVerification, missing, invalid(String)
 
-    static let unverifiedReason = "\(AppBrand.displayName) found Calimocho but couldn't verify it. Reinstall it, then choose Check Again."
-
-    static func from(choices: [EngineChoice], checking: Bool, installed: Bool? = nil) -> Self {
+    static func from(choices: [EngineChoice], checking: Bool, release: CalimochoAvailability?) -> Self {
         if choices.contains(where: \.ready) { return .ready }
         if checking { return .checking }
-        if installed == false { return .missing }
-        return choices.isEmpty ? .notChecked : .invalid(unverifiedReason)
+        switch release {
+        case .ready?, .pendingVerification?: return .pendingVerification
+        case .missing?: return .missing
+        case .invalid(let reason)?: return .invalid(reason)
+        case .checking?: return .checking
+        case .notChecked?, nil: return .notChecked
+        }
+    }
+
+    /// Runs the release verification off the main actor; it reads and hashes the engine.
+    static func verifyReleaseInBackground() async -> Self {
+        await Task.detached(priority: .utility) { CalimochoAvailability.verifiedRelease() }.value
     }
 
     var needsDownload: Bool {
         switch self {
         case .missing, .invalid: true
-        case .notChecked, .checking, .ready: false
+        case .notChecked, .checking, .ready, .pendingVerification: false
         }
     }
 
@@ -543,17 +559,34 @@ enum CalimochoAvailability: Equatable {
         switch self {
         case .notChecked: "Engines are checked once your account and game connection are ready."
         case .checking: "Checking engines…"
-        case .missing: "No engines are installed yet."
-        case .ready, .invalid: nil
+        case .ready, .pendingVerification, .missing, .invalid: nil
         }
     }
 
     var message: String? {
         switch self {
         case .missing:
-            "Calimocho isn't installed. \(AppBrand.displayName) needs Calimocho to play games. Get it, then choose Check Again."
+            "Calimocho isn't installed. \(AppBrand.displayName) needs Calimocho to play games."
+                + (CalimochoRelease.downloadPublished ? " Get it, then choose Check Again." : "")
         case .invalid(let reason): "Calimocho couldn't be verified. \(reason)"
+        case .pendingVerification:
+            "Calimocho is installed. It will be ready once \(AppBrand.displayName) verifies it."
         case .notChecked, .checking, .ready: nil
+        }
+    }
+}
+
+/// The download control, or a plain notice while no release asset is published.
+struct CalimochoDownloadAction: View {
+    var body: some View {
+        if CalimochoRelease.downloadPublished {
+            Link(CalimochoRelease.getTitle, destination: CalimochoRelease.downloadURL)
+                .accessibilityIdentifier("xodus.engines.calimocho.get")
+        } else {
+            Text(CalimochoRelease.unpublishedNotice)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("xodus.engines.calimocho.unpublished")
         }
     }
 }
@@ -652,7 +685,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     }
 
     private var calimocho: CalimochoAvailability {
-        calimochoStatus ?? .from(choices: choices, checking: checking)
+        calimochoStatus ?? .from(choices: choices, checking: checking, release: nil)
     }
     private var checkingAny: Bool { checking || settings.checkingDependency }
 
@@ -673,11 +706,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 .accessibilityIdentifier("xodus.engines.refresh")
             }
             if let message = calimocho.message {
-                Label(message, systemImage: "exclamationmark.triangle")
+                Label(message, systemImage: calimocho.needsDownload ? "exclamationmark.triangle" : "clock")
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.engines.calimocho.missing")
-                Link(CalimochoRelease.getTitle, destination: CalimochoRelease.downloadURL)
-                    .accessibilityIdentifier("xodus.engines.calimocho.get")
+                    .accessibilityIdentifier("xodus.engines.calimocho.status")
+                if calimocho.needsDownload { CalimochoDownloadAction() }
             }
         }
         Section {

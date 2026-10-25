@@ -601,8 +601,8 @@ enum NativeChecks {
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: neutralHelper.path)
             let neutralBinding = NativeAuthHostBinding(executable: neutralHelper,
                 sha256: SHA256.hash(data: helperBytes).map { String(format: "%02x", $0) }.joined())
-            let unpairedMessage = "Sign-in is unavailable in this copy of Xode. A matching app and sign-in service are required."
-            let serviceMessage = "Xode couldn't connect to its sign-in service. Choose Sign in with Microsoft to reconnect."
+            let unpairedMessage = "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required."
+            let serviceMessage = "X Ode couldn't connect to its sign-in service. Choose Sign in with Microsoft to reconnect."
             let retryBase = configuration("welcomeretry")
             let retryConfiguration = BackendConfiguration(executable: retryBase.executable,
                 stateDirectory: retryBase.stateDirectory, nativeAuthHost: neutralBinding)
@@ -702,7 +702,7 @@ enum NativeChecks {
                   "Welcome completion unlocks navigation without claiming game entitlement")
             check(await saved.disconnect(), "Account presentation regression retires its owned neutral child")
             check(saved.currentCredentialState == nil && saved.accountSymbol == "person.crop.circle"
-                  && saved.accountLabel == "Connect Xode" && saved.accountStatusError == nil,
+                  && saved.accountLabel == "Connect X Ode" && saved.accountStatusError == nil,
                   "Disconnect removes current account presentation evidence")
             let mixedBase = configuration("recentbootstrapsignedout")
             let mixedConfiguration = BackendConfiguration(executable: mixedBase.executable,
@@ -1081,6 +1081,8 @@ enum NativeChecks {
             check(!discovery.products.isEmpty && Set(discovery.discoveryFailures.map(\.id)) == failedIDs
                   && discovery.products.flatMap(\.editions).allSatisfy { $0.entitlement.kind == .unknown },
                   "Successful continuation retains earlier failures without ownership promotion")
+            check(!discovery.gamePassCatalogComplete() && discovery.gamePassCatalogCompletedAt == nil,
+                  "REVIEW M1: A Game Pass list whose first page failed is never complete, even after a clean continuation")
             await discovery.disconnect()
 
             let hundredsConfiguration = configuration("discoveryhundreds")
@@ -1089,6 +1091,8 @@ enum NativeChecks {
             await hundreds.loadGamePassCatalog()
             check(hundreds.products.count == 16 && hundreds.nextCursor != nil,
                   "REQ-81: First useful Discover load resolves one sixteen-game page, not the 300-game catalogue")
+            check(!hundreds.gamePassCatalogComplete(),
+                  "REVIEW M1: One clean page of a longer Game Pass list is not a complete list")
             check(try trace(hundredsConfiguration).filter { $0 == "catalog.discover" }.count == 1,
                   "REQ-81: First view has exactly one catalogue request")
             await hundreds.loadCatalogOnEntry("")
@@ -1101,6 +1105,9 @@ enum NativeChecks {
                   && hundreds.gamePassCatalogExhausted && !hundreds.gamePassCatalogPaging
                   && hundreds.catalogError == nil,
                   "Game Pass selection follows every existing continuation page to hundreds of unique PC games")
+            check(hundreds.gamePassCatalogComplete() && hundreds.discoveryFailures.isEmpty
+                  && !hundreds.gamePassCatalogComplete(now: Date().addingTimeInterval(LiveSession.gamePassCatalogMaximumAge + 1)),
+                  "REVIEW M1: Every clean page to the last makes the list complete, and only for a bounded time")
             let retainedIDs = hundreds.products.map(\.id)
             await hundreds.loadCatalogOnEntry("")
             check(hundreds.products.map(\.id) == retainedIDs && hundreds.products.count == 300,
@@ -1117,13 +1124,16 @@ enum NativeChecks {
             await hundreds.refreshCatalog("")
             check(hundreds.products.count == 300 && Set(hundreds.products.map(\.id)) == Set(retainedIDs),
                   "REQ-81: Retry of page one preserves later-page successes needed by the selected genre")
+            check(!hundreds.gamePassCatalogComplete(),
+                  "REVIEW M1: Refreshing page one clears completeness until the list is followed to the end again")
             await hundreds.refreshCatalog("", more: true)
             check(hundreds.products.count == 300 && hundreds.catalogError == nil,
                   "REQ-81: Continuation after retry deduplicates retained games instead of a false revision error")
             await hundreds.disconnect()
             check(!hundreds.gamePassCatalogPaging && !hundreds.gamePassCatalogHasMore
-                  && !hundreds.gamePassCatalogExhausted && hundreds.gamePassProducts.isEmpty,
-                  "Disconnect retires the full catalogue scope and paging state")
+                  && !hundreds.gamePassCatalogExhausted && hundreds.gamePassProducts.isEmpty
+                  && !hundreds.gamePassCatalogComplete() && hundreds.gamePassCatalogCompletedAt == nil,
+                  "Disconnect retires the full catalogue scope, paging state and completeness")
             try cleanLifecycle(hundredsConfiguration)
 
             let repeatedPage = session("discoveryrepeatedpage")
@@ -1133,6 +1143,8 @@ enum NativeChecks {
             check(repeatedPage.gamePassProducts.count == 16
                   && repeatedPage.gamePassCatalogError != nil && !repeatedPage.gamePassCatalogPaging,
                   "Repeated catalogue cursors stop with explicit partial coverage instead of looping or duplicating games")
+            check(!repeatedPage.gamePassCatalogComplete(),
+                  "REVIEW M1: A Game Pass list that stopped on an error is never complete")
             await repeatedPage.disconnect()
 
             let boundedConfiguration = configuration("discoverybounded")
@@ -1143,8 +1155,8 @@ enum NativeChecks {
                   && boundedCatalogue.nextCursor != nil && !boundedCatalogue.gamePassCatalogHasMore
                   && boundedCatalogue.gamePassCatalogError?.contains("limit") == true,
                   "Catalogue limit preserves partial coverage and stops offering an impossible Load remaining action")
-            check(!boundedCatalogue.canLoadMoreCatalog,
-                  "Discover does not offer More games when the catalogue bound prevents another page")
+            check(!boundedCatalogue.canLoadMoreCatalog && !boundedCatalogue.gamePassCatalogComplete(),
+                  "Discover does not offer More games when the catalogue bound prevents another page, and the bounded list isn't complete")
             let readsAtLimit = try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count
             check(readsAtLimit == 32, "REQ-81: Reaching the 512 bound requires exactly 32 individually demanded pages")
             await boundedCatalogue.refreshCatalog("", more: true)
@@ -1287,7 +1299,7 @@ enum NativeChecks {
             await localEmpty.connect()
             check(localEmpty.installedSnapshot?.installations.isEmpty == true
                   && localEmpty.libraryTitle == "Your PC library isn't available yet"
-                  && localEmpty.libraryMessage == "Xode can't yet verify which PC games you own.",
+                  && localEmpty.libraryMessage == "X Ode can't yet verify which PC games you own.",
                   "A constant-empty registry response never advertises an implemented registry or an empty Mac")
             await localEmpty.disconnect()
             let localUnavailable = session("registryunavailable")
