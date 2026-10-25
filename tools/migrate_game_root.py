@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Prepare and apply an exact, quiescent, reversible game-root migration."""
 import hashlib
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -109,18 +110,50 @@ def save(stage, plan):
     temporary.replace(path)
 
 
-def atomic_write(path, content, mode):
+def atomic_write(path, content, mode, expected):
+    require(path.resolve(strict=True) == path, "Reference ancestry changed")
+    original = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
     descriptor, name = tempfile.mkstemp(prefix=".xode-migrate-", dir=path.parent)
     temporary = Path(name)
+    cleanup = True
+    descriptor_open = True
     try:
+        fcntl.flock(original, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        verify_identity(path, expected)
+        original_info = os.fstat(original)
+        require(path.stat().st_ino == original_info.st_ino, "Reference replaced before lock")
         with os.fdopen(descriptor, "wb") as stream:
+            descriptor_open = False
             stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
         temporary.chmod(mode)
-        temporary.replace(path)
+        replacement = {"sha256": hashlib.sha256(content).hexdigest(), "bytes": len(content)}
+        replacement_inode = temporary.stat().st_ino
+        exchange(temporary, path)
+        cleanup = False
+        try:
+            require(temporary.lstat().st_ino == original_info.st_ino,
+                    "Concurrent reference replacement detected")
+            verify_identity(temporary, expected)
+            verify_identity(path, replacement)
+        except (OSError, ValueError):
+            # Preserve the displaced write. Restore it only while both
+            # endpoints still have the identities just observed.
+            displaced = stamp(temporary)
+            require(path.lstat().st_ino == replacement_inode, "Reference conflict requires reconciliation")
+            verify_identity(path, replacement)
+            require(stamp(temporary) == displaced, "Displaced reference changed")
+            exchange(temporary, path)
+            verify_identity(temporary, replacement)
+            cleanup = True
+            raise
+        cleanup = True
     finally:
-        if temporary.exists():
+        if descriptor_open:
+            os.close(descriptor)
+        os.close(original)
+        if cleanup and temporary.exists():
             temporary.unlink()
 
 
@@ -133,6 +166,14 @@ def check_evidence(stage, record, key):
 
 def verify_identity(path, identity):
     return owned_bytes(path, identity["sha256"], identity["bytes"])
+
+
+def verify_root(path, plan):
+    require(path.resolve(strict=True) == path and path.is_dir() and not path.is_symlink(),
+            "Root ancestry or directory type changed")
+    observed = stamp(path)
+    require(all(observed[key] == plan["rootStamp"][key] for key in ("device", "inode", "mode")),
+            "Moved root ownership changed")
 
 
 def apply(stage, quiescent):
@@ -155,16 +196,22 @@ def apply(stage, quiescent):
     moved = False
     try:
         require(quiescent(), "Managed processes resumed before move")
+        verify_root(old, plan)
+        require(not new.exists() and not new.is_symlink()
+                and new.parent.resolve(strict=True) == new.parent, "Destination ancestry changed")
         # macOS exclusive rename refuses even an empty destination created
         # between the collision check and this operation.
         exclusive_rename(old, new)
         moved = True
+        verify_root(new, plan)
         plan["state"] = "root_moved"
         save(stage, plan)
         for record in plan["files"]:
             path = Path(record["path"])
             verify_identity(path, record["beforeIdentity"])
-            atomic_write(path, check_evidence(stage, record, "after"), record["stamp"]["mode"])
+            verify_root(new, plan)
+            atomic_write(path, check_evidence(stage, record, "after"), record["stamp"]["mode"],
+                         record["beforeIdentity"])
             changed.append(record)
         require(stamp(new / plan["partial"]) == plan["partialStamp"], "Partial identity changed")
         require({path.name: stamp(path) for path in new.iterdir()} == plan["children"],
@@ -176,13 +223,20 @@ def apply(stage, quiescent):
     except (OSError, ValueError) as error:
         plan["error"] = str(error)
         try:
+            if moved:
+                verify_root(new, plan)
+            else:
+                verify_root(old, plan)
             for record in reversed(changed):
                 path = Path(record["path"])
                 verify_identity(path, record["afterIdentity"])
-                atomic_write(path, check_evidence(stage, record, "before"), record["stamp"]["mode"])
+                atomic_write(path, check_evidence(stage, record, "before"), record["stamp"]["mode"],
+                             record["afterIdentity"])
             if moved:
                 require(not old.exists() and not old.is_symlink(), "Rollback source collision")
+                verify_root(new, plan)
                 exclusive_rename(new, old)
+                verify_root(old, plan)
             require(stamp(old / plan["partial"]) == plan["partialStamp"],
                     "Rollback partial identity differs")
             require({path.name: stamp(path) for path in old.iterdir()} == plan["children"],
@@ -199,6 +253,14 @@ def apply(stage, quiescent):
 
 
 def exclusive_rename(source, destination):
+    rename_flags(source, destination, 4)
+
+
+def exchange(source, destination):
+    rename_flags(source, destination, 2)
+
+
+def rename_flags(source, destination, flags):
     import ctypes
     import sys
     require(sys.platform == "darwin", "Live migration requires macOS exclusive rename")
@@ -206,6 +268,6 @@ def exclusive_rename(source, destination):
     function = libc.renamex_np
     function.argtypes = (ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint)
     function.restype = ctypes.c_int
-    if function(os.fsencode(source), os.fsencode(destination), 4) != 0:
+    if function(os.fsencode(source), os.fsencode(destination), flags) != 0:
         error = ctypes.get_errno()
         raise OSError(error, os.strerror(error))

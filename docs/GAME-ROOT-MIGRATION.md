@@ -24,6 +24,23 @@ One same-volume rename includes hidden sibling locks, partials and caches.
 Persisted file updates are atomic and preserve modes. Account binding, UUIDs,
 engine choices and unrelated custom paths are not rewritten.
 
+References are locked by descriptor through replacement, and macOS
+`RENAME_SWAP` retains the displaced file instead of blindly replacing it.
+The displaced inode and bytes must equal the snapshot before an update is
+admitted. A concurrent write is restored from the displaced file only if
+the replacement endpoint is still owned; conflicting artifacts remain for
+reconciliation. The same checks apply to rollback writes. Advisory locks
+do not exclude arbitrary non-cooperating same-user programs; app/manage
+quiescence and the exclusive runtime lane are still execution prerequisites.
+This is interference detection and preservation, not a claim to isolate
+against unlimited malicious filesystem mutation.
+
+The final quiescence callback is followed by fresh canonical-directory and
+device/inode checks. The moved root is checked before reference writes and
+again before any inverse rename. A substituted root or ancestry causes
+reconciliation without moving the replacement directory or restoring metadata
+against an unowned root.
+
 On a handled failure the tool restores only its own changed files after
 checking they still contain its expected output, then reverses its root move
 only if the old root remains absent. It checks original bytes and partial/child

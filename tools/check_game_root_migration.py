@@ -107,6 +107,100 @@ class MigrationChecks(unittest.TestCase):
         self.assertEqual(migration.remap(value, "/old", "/new"),
                          {"/old/key": ["/new", "/new/game", "/old-other", "prefix /old/game"]})
 
+    def test_concurrent_reference_update_at_exchange_is_preserved(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            old, new, partial, files, stage = self.fixture(Path(temporary).resolve())
+            migration.prepare(old, new, files, partial, stage)
+            exchange = migration.exchange
+            injected = False
+            external = b'[{"external": "must survive"}]'
+
+            def interfere(source, destination):
+                nonlocal injected
+                if not injected:
+                    injected = True
+                    destination.write_bytes(external)
+                exchange(source, destination)
+
+            with patch.object(migration, "exchange", side_effect=interfere), self.assertRaises(ValueError):
+                migration.apply(stage, lambda: True)
+            self.assertEqual(files[0][0].read_bytes(), external)
+            self.assertNotEqual(json.loads((stage / "migration.json").read_text())["state"],
+                                "migrated_quiescent")
+
+    def test_final_callback_cannot_substitute_source_symlink(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            old, new, partial, files, stage = self.fixture(root)
+            migration.prepare(old, new, files, partial, stage)
+            calls = 0
+
+            def quiescent():
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    old.rename(root / "displaced")
+                    old.symlink_to(root / "displaced", target_is_directory=True)
+                return True
+
+            with self.assertRaises(ValueError):
+                migration.apply(stage, quiescent)
+            self.assertTrue(old.is_symlink())
+            self.assertFalse(new.exists())
+            self.assertEqual(json.loads((stage / "migration.json").read_text())["state"],
+                             "rollback_requires_reconciliation")
+
+    def test_rollback_does_not_move_substituted_destination(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            old, new, partial, files, stage = self.fixture(root)
+            migration.prepare(old, new, files, partial, stage)
+
+            def substitute(*args):
+                new.rename(root / "owned-displaced")
+                new.mkdir()
+                (new / "external").write_bytes(b"must remain")
+                raise OSError("injected root replacement")
+
+            with patch.object(migration, "atomic_write", side_effect=substitute), self.assertRaises(OSError):
+                migration.apply(stage, lambda: True)
+            self.assertFalse(old.exists())
+            self.assertEqual((new / "external").read_bytes(), b"must remain")
+            self.assertTrue((root / "owned-displaced").exists())
+            self.assertEqual(json.loads((stage / "migration.json").read_text())["state"],
+                             "rollback_requires_reconciliation")
+
+    def test_rollback_reference_interference_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            old, new, partial, files, stage = self.fixture(Path(temporary).resolve())
+            migration.prepare(old, new, files, partial, stage)
+            original_write, original_exchange = migration.atomic_write, migration.exchange
+            writes = 0
+            external = b"external rollback writer"
+
+            def fail_second(*args):
+                nonlocal writes
+                writes += 1
+                if writes == 2:
+                    raise OSError("injected second-file failure")
+                return original_write(*args)
+
+            swaps = 0
+
+            def interfere(source, destination):
+                nonlocal swaps
+                swaps += 1
+                if swaps == 2:
+                    destination.write_bytes(external)
+                original_exchange(source, destination)
+
+            with patch.object(migration, "atomic_write", side_effect=fail_second), \
+                    patch.object(migration, "exchange", side_effect=interfere), self.assertRaises(OSError):
+                migration.apply(stage, lambda: True)
+            self.assertEqual(files[0][0].read_bytes(), external)
+            self.assertEqual(json.loads((stage / "migration.json").read_text())["state"],
+                             "rollback_requires_reconciliation")
+
 
 if __name__ == "__main__":
     unittest.main()
