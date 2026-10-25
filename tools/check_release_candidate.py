@@ -60,7 +60,6 @@ class ReleaseCandidateChecks(unittest.TestCase):
             cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
             with patch.object(release, "CLI_SHA256", cli_hash), \
                     patch.object(release, "HELPER_SHA256", helper_hash), \
-                    patch.object(release, "UNNOTARIZED_PAIR", (cli_hash, helper_hash)), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
                 for approval in (None, "0" * 64):
                     with self.assertRaisesRegex(ValueError, "owner approval"):
@@ -73,15 +72,17 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     release.frozen_payloads(root, cli_hash)
 
-    def test_changing_general_pins_cannot_extend_unnotarized_exception(self):
+    def test_unnotarized_admission_requires_exact_source_manifest_and_approval(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
             with patch.object(release, "CLI_SHA256", cli_hash), \
                     patch.object(release, "HELPER_SHA256", helper_hash), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
-                with self.assertRaisesRegex(ValueError, "exception is limited"):
-                    release.frozen_payloads(root, cli_hash)
+                _, _, admitted = release.frozen_payloads(root, cli_hash)
+                self.assertEqual(admitted["producerCommit"], release.PRODUCER_COMMIT)
+                with self.assertRaisesRegex(ValueError, "owner approval"):
+                    release.frozen_payloads(root, "0" * 64)
 
     def test_missing_approval_stops_before_build_or_signing(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -92,7 +93,6 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                       candidate=root, approve_unnotarized_cli=None)
             with patch.object(release, "CLI_SHA256", cli_hash), \
                     patch.object(release, "HELPER_SHA256", helper_hash), \
-                    patch.object(release, "UNNOTARIZED_PAIR", (cli_hash, helper_hash)), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash), \
                     patch.object(release, "source_identity", return_value=source), \
                     patch.object(release, "refresh") as refresh, \
@@ -127,7 +127,6 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
                 with patch.object(release, "CLI_SHA256", cli_hash), \
                         patch.object(release, "HELPER_SHA256", helper_hash), \
-                        patch.object(release, "UNNOTARIZED_PAIR", (cli_hash, helper_hash)), \
                         patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash):
                     with (root / target).open("ab") as output:
                         output.write(b" ")
@@ -167,10 +166,6 @@ class ReleaseCandidateChecks(unittest.TestCase):
         self.assertEqual(release.PRODUCER_COMMIT, refresh_tool.PRODUCER)
         self.assertEqual(release.PRODUCER_TREE, refresh_tool.PRODUCER_TREE)
         self.assertEqual(release.PRODUCER_MANIFEST_SHA256, refresh_tool.PRODUCER_MANIFEST_SHA256)
-        self.assertEqual(release.UNNOTARIZED_PAIR, (
-            "a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664",
-            "0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7"))
-        self.assertNotEqual(release.UNNOTARIZED_PAIR[0], pins.CLI_SHA256)
 
     def test_refresh_rejects_mismatched_payload_or_producer(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -204,6 +199,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                         raise ValueError("Notary rejection")
                     return {"id": "neutral-" + label, "status": "Accepted"}
                 with patch.object(release, "execute", side_effect=execute), \
+                        patch.object(release, "require_distribution_ready"), \
                         patch.object(release, "notarize", side_effect=notarize) as notary, \
                         patch.object(release, "owned_bytes", return_value=({"sha256": "a" * 64}, b"")):
                     if failure:
@@ -251,6 +247,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 return app, receipt
 
             with patch.object(release, "source_identity", return_value=source), \
+                    patch.object(release, "distribution_blockers", return_value=["Neutral unresolved rights"]), \
                     patch.object(release, "frozen_payloads", return_value=(root / "cli", root / "helper", {})), \
                     patch.object(release, "refresh", side_effect=refresh), \
                     patch.object(release, "owned_bytes", return_value=({"sha256": "d" * 64, "bytes": 2}, b"{}")), \

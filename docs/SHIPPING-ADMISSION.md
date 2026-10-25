@@ -2,6 +2,40 @@
 
 ## Purpose and authorization
 
+### COR176 distribution preparation
+
+The current local 2794e68 package has a source-bound receipt and exact source
+archive; the historical missing-receipt stop below is not evidence that this
+package lacks provenance. It is nevertheless not a production distribution.
+`tools/package_resources.py` copies an explicit runtime resource allowlist in
+both packaging paths, retains the AWACY MIT notice, and rejects unknown,
+missing or linked inputs. Private QA queue/inspection JSON is excluded before
+signing. `verify_shipping_package.py` independently enforces that same list.
+Run `python3 tools/check_package_resources.py` for neutral regressions.
+
+The existing release workflow is `tools/release_candidate.py --dry-run` followed
+by its exact-receipt resume, using the existing Developer ID identity and
+`--notary-profile notary`. A non-dry-run or resume submits private artifact bytes
+to Apple; do not invoke it before the exact distribution target, rights and
+external-submission authority are resolved. It is not an authorization probe.
+`xcrun --find notarytool`, `xcrun --find stapler` and their help/version commands
+need no submission or credential access. A metadata-only local lookup for the
+`notary` profile did not find a matching item on 25 October 2026; this does not
+prove the absence of credentials under another service/keychain. No credential
+was read/exported and no Keychain settings were changed. Actual profile
+authentication remains unverified; do not claim readiness from installed tools.
+
+Final blockers are the exact component/notices/corresponding-source rights
+review (see [licensing](LICENSING.md)), private worktree bindings in retained
+launch policies, final custom-engine successor integration, and final
+notarization/stapling/Gatekeeper plus first-run/update/rollback observations.
+The release tool now derives standalone-unnotarized admission from the exact
+reviewed producer commit/tree, pinned manifest and embedded CLI/helper bytes;
+it still requires an explicit matching `--approve-unnotarized-cli` and never
+claims Apple acceptance. There is no independent stale exception tuple.
+Existing r7 build/source receipts resolve its provenance rather than requiring
+reconstruction of older evidence. Outer app/DMG acceptance remains mandatory.
+
 ### Header search regression (#40)
 
 The collapsed header lens is an explicit accessible button, not a 32-point

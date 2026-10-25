@@ -15,6 +15,7 @@ from shipping_pair import COMMAND, FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, m
 from verify_shipping_package import main as verify_package
 from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_capsule
 from python_runtime import approved_pin, inventory
+from package_resources import RUNTIME_RESOURCES
 
 count = 0
 with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
@@ -150,8 +151,12 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
                                    sort_keys=True) + "\n").encode())
     management = resources / "XodusAppFoundation_XodusManagement.bundle"
     management.mkdir()
-    for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
-        shutil.copyfile(project / "Sources/XodusManagement/Resources" / name, management / name)
+    for name in RUNTIME_RESOURCES:
+        (management / name).parent.mkdir(parents=True, exist_ok=True)
+        if name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
+            shutil.copyfile(schema_source / name, management / name)
+        else:
+            (management / name).write_bytes(b"Neutral allowlisted resource fixture")
     def package_check():
         original = sys.argv
         try:
@@ -197,7 +202,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
             target.write_bytes(original_schema)
     nested = management / "Contents/Resources"
     nested.mkdir(parents=True)
-    for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
+    for name in RUNTIME_RESOURCES:
+        (nested / name).parent.mkdir(parents=True, exist_ok=True)
         (management / name).rename(nested / name)
     package_check()
     final = json.loads((stage / "package-receipt.json").read_bytes())

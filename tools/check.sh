@@ -8,6 +8,8 @@ sh -n tools/build_app.sh
 python3 tools/check_signing_identity.py
 python3 tools/check_local_candidate.py
 python3 tools/check_release_candidate.py
+python3 tools/check_package_resources.py
+python3 tools/check_distribution_manifest.py
 swift build
 python3 tools/check_shipping_pair.py
 python3 tools/check_python_runtime.py

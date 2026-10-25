@@ -20,6 +20,8 @@ from build_local_candidate import run, source_identity, validate_host
 from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
                            owned_bytes, require, swift_pins)
 from signing_identity import command, preflight, sign, verify_designated_requirement
+from package_resources import copy_resources
+from distribution_manifest import write_manifest
 
 
 def validate_payload_pair(cli, helper, producer, tree):
@@ -125,8 +127,8 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         plistlib.dump(bundle_info, output)
     shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
     shutil.copyfile(installed / "Contents/Resources/Xodus.icns", resources / "Xodus.icns")
-    shutil.copytree(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
-                    resources / "XodusAppFoundation_XodusManagement.bundle")
+    copy_resources(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
+                   resources / "XodusAppFoundation_XodusManagement.bundle")
     (resources / "XodusAuthHost.json").write_text(json.dumps({
         "version": 1, "sha256": helper_record["sha256"],
         "sourceCommit": source_identity_before["commit"]}, sort_keys=True) + "\n")
@@ -149,6 +151,8 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
     (resources / "local-candidate-receipt.json").write_text(encoded)
     (stage / "candidate-receipt.json").write_text(encoded)
+    write_manifest(app, source_identity_before,
+                   {"commit": producer, "tree": producer_tree}, archive)
     sign(app, "app", identity, developer_id=True)
     run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
     verify_cli(cli)

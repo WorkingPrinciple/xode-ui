@@ -18,11 +18,7 @@ from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
                            PRODUCER as PRODUCER_COMMIT, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
                            hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
-
-UNNOTARIZED_PAIR = (
-    "a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664",
-    "0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7",
-)
+from distribution_manifest import require_distribution_ready, distribution_blockers
 
 
 def read_json(path):
@@ -46,8 +42,6 @@ def frozen_payloads(candidate, approved_unnotarized_cli=None):
     if not (candidate / "notarization/receipt.json").exists():
         require(manifest.get("notarization", {}).get("status") == "NOT_SUBMITTED",
                 "Missing accepted standalone notarization receipt")
-        require((cli_identity["sha256"], helper_identity["sha256"]) == UNNOTARIZED_PAIR,
-                "Standalone notarization exception is limited to the exact prepared pair")
         require(approved_unnotarized_cli == CLI_SHA256,
                 "Standalone notarization is pending: owner approval of this exact CLI/helper/manifest tuple "
                 "requires --approve-unnotarized-cli " + CLI_SHA256)
@@ -132,6 +126,7 @@ def notarize(path, stage, receipt, receipt_path, label, profile):
 
 
 def distribute(app, stage, receipt, receipt_path, identity, profile):
+    require_distribution_ready(app)
     archive = stage / "Ode-to-X-submission.zip"
     execute(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)],
             stage, receipt, receipt_path, "app-archive")
@@ -257,6 +252,7 @@ def build(args):
         owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli", CLI_SHA256)
         owned_bytes(app / "Contents/Resources/XodusEngine/xodus-window-monitor.exe", HELPER_SHA256)
         if args.dry_run:
+            receipt["distributionBlockers"] = distribution_blockers(app)
             receipt["state"] = "signed_dry_run_complete"
             receipt["unexecutedGates"] = ["app notarization", "app stapling and Gatekeeper",
                                           "DMG creation/signing/notarization/stapling/Gatekeeper",

@@ -158,7 +158,7 @@ XODUS_SHIPPING=1 swift build --jobs 1 -c release --product XodusPreview
 cp "$bin/XodusPreview" "$app/Contents/MacOS/Xodus"
 cp tools/Info.plist "$app/Contents/Info.plist"
 cp LICENSE "$app/Contents/Resources/LICENSE.txt"
-ditto "$bin/XodusAppFoundation_XodusManagement.bundle" \
+python3 tools/package_resources.py "$bin/XodusAppFoundation_XodusManagement.bundle" \
     "$app/Contents/Resources/XodusAppFoundation_XodusManagement.bundle"
 python3 - "$stage/paired-inputs.json" "$app/Contents/Resources/XodusAuthHost.json" <<'PY'
 import json, pathlib, sys
@@ -178,6 +178,14 @@ if [ -n "$python_runtime_archive" ]; then
     python3 tools/python_runtime.py "$python_runtime_archive" \
         "$app/Contents/Resources/XodusPython" "$stage/paired-inputs.json" "$@"
 fi
+python3 - "$app" "$stage/source.tar" "$source" "$tree" <<'PY'
+import pathlib, sys
+sys.path.insert(0, "tools")
+from distribution_manifest import write_manifest
+from shipping_pair import PRODUCER, PRODUCER_TREE
+write_manifest(pathlib.Path(sys.argv[1]), {"commit": sys.argv[3], "tree": sys.argv[4]},
+               {"commit": PRODUCER, "tree": PRODUCER_TREE}, pathlib.Path(sys.argv[2]))
+PY
 python3 tools/signing_identity.py sign --kind app --path "$app" "$@"
 codesign --verify --deep --strict "$app"
 plutil -lint "$app/Contents/Info.plist"
