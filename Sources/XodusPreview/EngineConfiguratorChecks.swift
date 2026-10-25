@@ -6,7 +6,7 @@ import SwiftUI
 
 @MainActor
 enum EngineConfiguratorChecks {
-    static func run(check: (Bool, String) -> Void) throws {
+    static func run(check: (Bool, String) -> Void) async throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appendingPathComponent(".build/EngineConfigurator-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
@@ -130,11 +130,6 @@ enum EngineConfiguratorChecks {
         check(CrossOverDependencyState.absent.offersTrialDownload
               && CrossOverDependencyState.trialDownloadURL.absoluteString == "https://www.codeweavers.com/crossover",
               "COR154: Absent CrossOver links to the official CodeWeavers product page")
-        check(RuntimeInstallationPicker.defaultEngineName(provider: "calimocho", calimocho: "port11b", entries: [])
-                == "port11b"
-              && RuntimeInstallationPicker.defaultEngineName(provider: "", calimocho: "port11b", entries: []) == "None"
-              && RuntimeInstallationPicker.defaultEngineName(provider: "crossover", calimocho: "", entries: []) == "None",
-              "REQ109: The configurator names the current default engine, or None")
         check(EnginePanelLocation.start(for: app.path).path == root.path
               && EnginePanelLocation.start(for: "/Volumes/Missing Disk/Wine.app").path == "/Applications"
               && EnginePanelLocation.start(for: "  ").path == "/Applications",
@@ -142,22 +137,61 @@ enum EngineConfiguratorChecks {
         check(CrossOverLocationRow.suggestedLocation(saved: "/Volumes/Apps/CrossOver.app", state: installed, current: "")
                 == "/Volumes/Apps/CrossOver.app",
               "COR161: Escape on an edited CrossOver path restores the saved selection")
-        let settings = RuntimeProviderSettings(detectCrossOver: { .absent })
-        for width in [CGFloat(560), CGFloat(820)] {
-            for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-                let host = NSHostingView(rootView: Form {
-                    Section { RuntimeInstallationPicker(settings: settings) }
-                }.formStyle(.grouped).frame(width: width, height: 640))
-                host.appearance = NSAppearance(named: appearance)
-                host.sizingOptions = []
-                host.frame = CGRect(x: 0, y: 0, width: width, height: 640)
-                host.layoutSubtreeIfNeeded()
-                check(host.window == nil, "REQ109: Engine configurator lays out detached at \(Int(width)) \(appearance.rawValue)")
-                if let directory = ProcessInfo.processInfo.environment["XODUS_ENGINE_RENDER_DIRECTORY"],
-                   let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
-                    host.cacheDisplay(in: host.bounds, to: bitmap)
-                    try bitmap.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: directory)
-                        .appendingPathComponent("configurator-\(Int(width))-\(appearance.rawValue).png"))
+        try await renderStates(root: root, check: check)
+    }
+}
+
+extension EngineConfiguratorChecks {
+    /// Detached renders of populated synthetic states. These exercise layout, not the installed app.
+    static func renderStates(root: URL, check: (Bool, String) -> Void) async throws {
+        let choices = [
+            EngineChoice(id: "calimocho-wine11.20-gptk4b3-tls-vulkan-private", name: "Calimocho 11.20 (Private)",
+                         version: "11.20", ready: true),
+            EngineChoice(id: "calimocho-wine11.20-gptk4b3-tls-vulkan", name: "Calimocho 11.20", version: "11.20", ready: true),
+            EngineChoice(id: "calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5", name: "Calimocho 11.20 (DIRT 5)",
+                         version: "11.20", ready: false)
+        ]
+        let user = UserEngine(id: UUID(), name: "Wine Staging", version: "10.18",
+                              location: "/Volumes/Games/Engines/Wine Staging.app", wine: "w", wineserver: "s")
+        let detected = UserEngine(id: UUID(), name: "Wine Stable", version: "10.0",
+                                  location: "/Applications/Wine Stable.app", wine: "w", wineserver: "s")
+        let installedCrossOver = CrossOverDependencyState.installed(.init(
+            location: URL(fileURLWithPath: "/Applications/CrossOver.app"), version: "25.1", buildVersion: "25.1.0"))
+        let scenarios: [(String, CrossOverDependencyState, String?, Bool)] = [
+            ("populated", installedCrossOver, nil, false),
+            ("absent-error", .absent, "This engine couldn't be set as default. Check again and retry.", true)
+        ]
+        for (name, crossOver, error, corrupt) in scenarios {
+            let suite = "XodusEngineConfiguratorRender-\(UUID().uuidString)"
+            guard let store = UserDefaults(suiteName: suite) else { continue }
+            defer { store.removePersistentDomain(forName: suite) }
+            if corrupt { store.set(Data("corrupt".utf8), forKey: UserEngineStore.preferenceKey) }
+            else { try UserEngineStore.save([user], store) }
+            let settings = RuntimeProviderSettings(detectCrossOver: { crossOver })
+            await settings.refreshCrossOverDependency()
+            check(settings.crossOverDependency == crossOver, "REQ109: Render fixture CrossOver state is \(name)")
+            for width in [CGFloat(560), CGFloat(820)] {
+                for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                    let form = EngineConfiguratorForm(choices: choices, defaultID: choices[0].id,
+                        defaultName: choices[0].name, checking: false, error: error, settings: settings,
+                        allowsFileReads: true, userEngineStore: store, suggestions: corrupt ? [] : [detected],
+                        setDefault: { _ in }, refresh: {}) {
+                            LabeledContent("Registry", value: "/Users/example/engines/registry.json")
+                        }
+                    let host = NSHostingView(rootView: form.frame(width: width, height: 900)
+                        .background(Color(nsColor: .windowBackgroundColor)))
+                    host.appearance = NSAppearance(named: appearance)
+                    host.sizingOptions = []
+                    host.frame = CGRect(x: 0, y: 0, width: width, height: 900)
+                    host.layoutSubtreeIfNeeded()
+                    check(host.window == nil,
+                          "REQ109/COR167: \(name) configurator lays out detached at \(Int(width)) \(appearance.rawValue)")
+                    if let directory = ProcessInfo.processInfo.environment["XODUS_ENGINE_RENDER_DIRECTORY"],
+                       let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+                        host.cacheDisplay(in: host.bounds, to: bitmap)
+                        try bitmap.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: directory)
+                            .appendingPathComponent("configurator-\(name)-\(Int(width))-\(appearance == .darkAqua ? "dark" : "light").png"))
+                    }
                 }
             }
         }

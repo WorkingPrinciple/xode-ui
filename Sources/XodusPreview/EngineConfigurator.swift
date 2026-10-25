@@ -205,67 +205,89 @@ enum EngineLocationDetector {
 struct UserEngineRows: View {
     @ObservedObject var settings: RuntimeProviderSettings
     var allowsFileReads = true
-    @State private var engines: [UserEngine] = []
+    var store: UserDefaults = .standard
+    @State private var engines: [UserEngine]
     @State private var storeError: UserEngineStore.StoreError?
-    @State private var suggestions: [UserEngine] = []
+    @State private var suggestions: [UserEngine]
     @State private var location = ""
     @State private var error: String?
     @State private var fence = EngineRequestFence()
 
+    init(settings: RuntimeProviderSettings, allowsFileReads: Bool = true, store: UserDefaults = .standard,
+         suggestions: [UserEngine] = []) {
+        self.settings = settings
+        self.allowsFileReads = allowsFileReads
+        self.store = store
+        switch UserEngineStore.load(store) {
+        case .success(let loaded): _engines = State(initialValue: loaded); _storeError = State(initialValue: nil)
+        case .failure(let failure): _engines = State(initialValue: []); _storeError = State(initialValue: failure)
+        }
+        _suggestions = State(initialValue: suggestions)
+    }
+
     private var storeReadable: Bool { storeError != .unreadable }
 
+    /// Rows for the Engines section. Use `addSection` for the separate Add Engine group.
     var body: some View {
         ForEach(engines) { engine in
-            EngineRow(name: engine.name, version: engine.version, location: engine.location,
-                      status: "Not launch-ready") {
-                Button("Set as Default") {}.disabled(true)
+            EngineRow(name: engine.name, detail: engine.version, location: engine.location,
+                      state: .configured) {
                 Button("Remove", role: .destructive) { remove(engine) }
-                    .disabled(!storeReadable)
+                    .disabled(!storeReadable || settings.applicationTerminating)
                     .accessibilityLabel("Remove \(engine.name)")
             }
         }
         ForEach(suggestions) { engine in
-            EngineRow(name: engine.name, version: engine.version, location: engine.location, status: "Detected") {
+            EngineRow(name: engine.name, detail: engine.version, location: engine.location, state: .detected) {
                 Button("Add") { add(engine) }
                     .disabled(!storeReadable || fence.pending)
                     .accessibilityLabel("Add \(engine.name)")
             }
         }
-        HStack {
-            TextField("Engine app or folder", text: $location, prompt: Text("Engine app or folder"))
-                .labelsHidden()
-                .onSubmit(addTypedLocation)
-                .onExitCommand(perform: discardDraft)
-                .accessibilityLabel("Engine app or folder")
-                .accessibilityIdentifier("xodus.engines.location")
-            Button("Choose…", action: choose).disabled(!allowsFileReads || fence.pending)
-                .accessibilityLabel("Choose engine app or folder")
-            Button("Add Engine", action: addTypedLocation)
-                .disabled(!allowsFileReads || !storeReadable || fence.pending
-                          || location.trimmingCharacters(in: .whitespaces).isEmpty)
-                .accessibilityIdentifier("xodus.engines.add")
-            if fence.pending { ProgressView().controlSize(.small) }
+        if let storeError, storeError == .unreadable {
+            Label(storeError.message, systemImage: "exclamationmark.triangle")
+                .foregroundStyle(.secondary)
         }
-        .onAppear(perform: reload)
-        .task(id: "\(allowsFileReads)|\(engines.map(\.location).joined(separator: "|"))") {
-            guard allowsFileReads else { return }
-            let current = engines
-            let found = await Task.detached(priority: .utility) {
-                EngineLocationDetector.suggestions(excluding: current)
-            }.value
-            guard !Task.isCancelled else { return }
-            suggestions = found
-            if location.isEmpty, !fence.pending, let first = found.first { location = first.location }
-        }
-        if let message = error ?? storeError?.message {
-            Label(message, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-        }
+        Group {}
+            .task(id: "\(allowsFileReads)|\(engines.map(\.location).joined(separator: "|"))") {
+                guard allowsFileReads else { return }
+                let current = engines
+                let found = await Task.detached(priority: .utility) {
+                    EngineLocationDetector.suggestions(excluding: current)
+                }.value
+                guard !Task.isCancelled else { return }
+                suggestions = found
+            }
     }
 
-    private func reload() {
-        switch UserEngineStore.load() {
-        case .success(let loaded): engines = loaded; storeError = nil
-        case .failure(let failure): engines = []; storeError = failure
+    /// The Add Engine group: a visible, editable location with Choose… and Add.
+    var addSection: some View {
+        Section("Add Engine") {
+            LabeledContent("Location") {
+                HStack(spacing: 8) {
+                    TextField("Location", text: $location, prompt: Text("Wine app or folder"))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.leading)
+                        .onSubmit(addTypedLocation)
+                        .onExitCommand(perform: discardDraft)
+                        .accessibilityLabel("Engine location")
+                        .accessibilityIdentifier("xodus.engines.location")
+                    Button("Choose…", action: choose)
+                        .disabled(!allowsFileReads || fence.pending)
+                        .accessibilityLabel("Choose engine app or folder")
+                    if fence.pending { ProgressView().controlSize(.small).accessibilityLabel("Checking engine") }
+                    Button("Add", action: addTypedLocation)
+                        .disabled(!allowsFileReads || !storeReadable || fence.pending
+                                  || location.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Add engine")
+                        .accessibilityIdentifier("xodus.engines.add")
+                }
+            }
+            if let message = error ?? (storeError == .full ? storeError?.message : nil) {
+                Label(message, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
@@ -275,7 +297,7 @@ struct UserEngineRows: View {
         guard storeReadable, !settings.applicationTerminating else { return false }
         do {
             let next = try UserEngineStore.adding(engine, to: engines)
-            try UserEngineStore.save(next)
+            try UserEngineStore.save(next, store)
             engines = next
             if location == engine.location { location = "" }
             error = nil
@@ -290,7 +312,7 @@ struct UserEngineRows: View {
         guard storeReadable, !settings.applicationTerminating else { return }
         let next = engines.filter { $0.id != engine.id }
         do {
-            try UserEngineStore.save(next)
+            try UserEngineStore.save(next, store)
             engines = next
             error = nil
         } catch { self.error = error.message }
@@ -298,7 +320,7 @@ struct UserEngineRows: View {
 
     private func discardDraft() {
         fence.cancel()
-        location = suggestions.first?.location ?? ""
+        location = ""
         error = nil
     }
 
@@ -335,27 +357,146 @@ struct UserEngineRows: View {
     }
 }
 
+enum EngineRowState: Equatable {
+    case isDefault, ready, unverified, configured, detected
+
+    var title: String {
+        switch self {
+        case .isDefault: "Default"
+        case .ready: "Ready"
+        case .unverified: "Not Verified"
+        case .configured: "Not Launch-Ready"
+        case .detected: "Detected"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .isDefault: "checkmark.circle.fill"
+        case .ready: "checkmark.circle"
+        case .unverified: "exclamationmark.triangle"
+        case .configured: "slash.circle"
+        case .detected: "magnifyingglass"
+        }
+    }
+}
+
 struct EngineRow<Actions: View>: View {
     let name: String
-    let version: String?
+    var detail: String?
     var location: String?
-    let status: String
+    let state: EngineRowState
     @ViewBuilder let actions: () -> Actions
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(version.map { "\(name) \($0)" } ?? name).font(.headline)
-                if let location {
-                    Text(location).font(.caption).foregroundStyle(.secondary)
-                        .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
-                }
+        LabeledContent {
+            HStack(spacing: 10) {
+                Label(state.title, systemImage: state.symbol)
+                    .labelStyle(.titleAndIcon)
+                    .foregroundStyle(state == .isDefault ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                actions()
             }
-            Spacer(minLength: 12)
-            Text(status).foregroundStyle(.secondary)
-            actions()
+        } label: {
+            Text(name)
+            if let secondary = [detail, location].compactMap({ $0 }).first {
+                Text(secondary).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+            }
         }
         .accessibilityElement(children: .contain)
+        .accessibilityLabel(name)
+        .accessibilityValue(state.title)
+    }
+}
+
+extension EngineRow {
+    /// Transitional signature for the pre-COR-167 picker body until the integrator adopts EngineConfiguratorForm.
+    init(name: String, version: String?, location: String?, status: String,
+         @ViewBuilder actions: @escaping () -> Actions) {
+        let state: EngineRowState = switch status {
+        case "Default": .isDefault
+        case "Ready": .ready
+        default: .unverified
+        }
+        self.init(name: name, detail: version, location: location, state: state, actions: actions)
+    }
+}
+
+/// One engine the configurator can make the launch default.
+struct EngineChoice: Identifiable, Equatable {
+    let id: String
+    let name: String
+    var version: String? = nil
+    let ready: Bool
+}
+
+/// Native Settings-style engine configuration. Callers supply the admitted engines and the
+/// current default; registry details go in `advanced`, outside the primary sections.
+struct EngineConfiguratorForm<Advanced: View>: View {
+    let choices: [EngineChoice]
+    let defaultID: String?
+    let defaultName: String
+    var checking = false
+    var error: String?
+    @ObservedObject var settings: RuntimeProviderSettings
+    var allowsFileReads = true
+    var userEngineStore: UserDefaults = .standard
+    var suggestions: [UserEngine] = []
+    let setDefault: (String) -> Void
+    let refresh: () -> Void
+    @ViewBuilder let advanced: () -> Advanced
+    @State private var advancedExpanded = false
+
+    var body: some View {
+        Form { sections }.formStyle(.grouped)
+    }
+
+    /// The configurator's Section children, for hosts that already own a grouped Form.
+    @ViewBuilder var sections: some View {
+        let users = UserEngineRows(settings: settings, allowsFileReads: allowsFileReads,
+                                   store: userEngineStore, suggestions: suggestions)
+            Section {
+                Picker("Default Engine", selection: Binding(
+                    get: { defaultID ?? "" },
+                    set: { id in if id != defaultID, choices.contains(where: { $0.id == id && $0.ready }) { setDefault(id) } })) {
+                    if defaultID == nil || !choices.contains(where: { $0.id == defaultID }) {
+                        Text(defaultName).tag(defaultID ?? "")
+                    }
+                    ForEach(choices) { choice in
+                        Text(choice.name).tag(choice.id).selectionDisabled(!choice.ready)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(!allowsFileReads || settings.applicationTerminating)
+                .accessibilityIdentifier("xodus.engines.default")
+                if let error {
+                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                }
+            }
+            Section {
+                ForEach(choices) { choice in
+                    EngineRow(name: choice.name,
+                              detail: choice.version.flatMap { choice.name.contains($0) ? nil : $0 },
+                              state: choice.id == defaultID ? .isDefault : choice.ready ? .ready : .unverified) {
+                        EmptyView()
+                    }
+                }
+                users
+            } header: {
+                HStack {
+                    Text("Engines")
+                    Spacer()
+                    if checking { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
+                    Button("Check Again", action: refresh)
+                        .buttonStyle(.borderless)
+                        .disabled(checking || !allowsFileReads || settings.applicationTerminating)
+                        .accessibilityLabel("Check engines again")
+                }
+            }
+            users.addSection
+            CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
+            Section {
+                DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
+            }
     }
 }
 
@@ -368,42 +509,61 @@ struct CrossOverLocationRow: View {
     @State private var fence = EngineRequestFence()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            EngineRow(name: "CrossOver", version: installedVersion, location: nil, status: status) {
-                Button("Refresh") { Task { await settings.refreshCrossOverDependency() } }
-                    .disabled(!allowsCheck || settings.checkingDependency || settings.applicationTerminating)
-                    .accessibilityLabel("Refresh CrossOver detection")
-                    .accessibilityIdentifier("xodus.engines.refresh")
-            }
-            HStack {
-                TextField("CrossOver app", text: $location, prompt: Text("CrossOver app"))
-                .labelsHidden()
-                    .onSubmit(apply)
-                    .onExitCommand(perform: discardDraft)
-                    .accessibilityLabel("CrossOver app")
-                    .accessibilityIdentifier("xodus.engines.crossover.location")
-                Button("Choose App…", action: choose).disabled(!allowsCheck || fence.pending)
-                    .accessibilityLabel("Choose CrossOver app")
-                Button("Use", action: apply)
-                    .accessibilityLabel("Use this CrossOver app")
-                    .disabled(!allowsCheck || fence.pending || location.isEmpty
-                              || location == EngineDefaults.crossOverApplication())
-                if fence.pending { ProgressView().controlSize(.small) }
-            }
-            if EngineDefaults.crossOverApplication() != nil {
-                Button("Use Detected Location") {
-                    guard !settings.applicationTerminating else { return }
-                    fence.cancel()
-                    EngineDefaults.setCrossOverApplication(nil)
-                    location = ""
-                    Task { await settings.refreshCrossOverDependency() }
+        Section {
+            LabeledContent("Status") {
+                HStack(spacing: 10) {
+                    Text(installedVersion.map { "\(status) · \($0)" } ?? status).foregroundStyle(.secondary)
+                    if settings.crossOverDependency.offersTrialDownload {
+                        Link("Get CrossOver", destination: CrossOverDependencyState.trialDownloadURL)
+                            .accessibilityIdentifier("xodus.engines.crossover.get")
+                    }
                 }
             }
-            if settings.crossOverDependency.offersTrialDownload {
-                Link("Get CrossOver", destination: CrossOverDependencyState.trialDownloadURL)
-                    .accessibilityIdentifier("xodus.engines.crossover.get")
+            LabeledContent("Application") {
+                HStack(spacing: 8) {
+                    TextField("Application", text: $location, prompt: Text("/Applications/CrossOver.app"))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.leading)
+                        .onSubmit(apply)
+                        .onExitCommand(perform: discardDraft)
+                        .accessibilityLabel("CrossOver application")
+                        .accessibilityIdentifier("xodus.engines.crossover.location")
+                    Button("Choose…", action: choose).disabled(!allowsCheck || fence.pending)
+                        .accessibilityLabel("Choose CrossOver application")
+                    if fence.pending { ProgressView().controlSize(.small).accessibilityLabel("Checking CrossOver") }
+                    Button("Use App", action: apply)
+                        .disabled(!allowsCheck || fence.pending || location.isEmpty
+                                  || location == EngineDefaults.crossOverApplication())
+                        .accessibilityLabel("Use this CrossOver application")
+                }
             }
-            if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
+            if let error {
+                Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if EngineDefaults.crossOverApplication() != nil {
+                HStack {
+                    Spacer()
+                    Button("Use Detected Location") {
+                        guard !settings.applicationTerminating else { return }
+                        fence.cancel()
+                        EngineDefaults.setCrossOverApplication(nil)
+                        location = ""
+                        Task { await settings.refreshCrossOverDependency() }
+                    }
+                }
+            }
+        } header: {
+            HStack {
+                Text("CrossOver")
+                Spacer()
+                Button("Check Again") { Task { await settings.refreshCrossOverDependency() } }
+                    .buttonStyle(.borderless)
+                    .disabled(!allowsCheck || settings.checkingDependency || settings.applicationTerminating)
+                    .accessibilityLabel("Check for CrossOver again")
+                    .accessibilityIdentifier("xodus.engines.refresh")
+            }
         }
         .onChange(of: settings.crossOverDependency, initial: true) { _, state in
             guard !fence.pending else { return }
@@ -434,10 +594,10 @@ struct CrossOverLocationRow: View {
 
     private var status: String {
         switch settings.crossOverDependency {
-        case .notChecked: "Not checked"
+        case .notChecked: "Not Checked"
         case .checking: "Checking"
-        case .absent: "Not installed"
-        case .unverified: "Couldn't verify"
+        case .absent: "Not Installed"
+        case .unverified: "Couldn't Verify"
         case .installed: EngineDefaults.crossOverApplication() == nil ? "Detected" : "Configured"
         }
     }
