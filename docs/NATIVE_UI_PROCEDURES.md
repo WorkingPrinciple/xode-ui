@@ -576,12 +576,17 @@ This measures CPU work, not native frame or input latency. Routine coverage and
 loading-mechanics prose is absent; real failures, Retry/Stop and title-specific
 access/compatibility reasons remain.
 
-The **Installed games** section is the registry inventory, not the remainder
+The **Installed games** section contains the registry inventory and the visible
+native Minecraft installation, not the remainder
 after license checks. Registry UUIDs keep cards in place as access/readiness
 arrives or expires. The main account grid excludes installed records; filters
 still apply to installed cards, with purchase badges only from actual purchase
 evidence. License changes update card actions without moving games between
 sections. Hero and Continue Playing keep their existing authorization checks.
+The section and Installed-filter total use the same count, including native
+Minecraft exactly once. Cards and their accessibility values use plain-language
+compatibility states; package format appears once in the detail sheet's Details
+facts, not again in Compatibility.
 
 ## Nonzero operation results
 

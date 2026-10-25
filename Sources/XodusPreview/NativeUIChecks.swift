@@ -385,6 +385,15 @@ enum NativeUIChecks {
         check(statusCard.coverStatusDescription ==
               "In PC Game Pass catalog, Uses Easy Anti-Cheat. Synthetic title cannot run with this runtime.",
               "COR97/101: One existing cover control exposes catalog membership and exact compatibility reason without another keyboard stop")
+        let packageCard = GameCard(title: "Unsupported PC title",
+            compatibilityIssues: [LibraryCompatibilityIssue(kind: .packageType, title: "EAPPX",
+                detail: "EAPPX. Ode to X 0.1 supports MSIXVC packages only.", source: nil)], open: {}) {
+                Color.blue
+            } status: { EmptyView() }
+        check(!packageCard.coverStatusDescription.contains("EAPPX")
+              && !packageCard.coverStatusDescription.contains("MSIXVC")
+              && packageCard.coverStatusDescription.contains("Not supported"),
+              "REQ60/62: Card help and AX use plain compatibility state, never package format")
         let unknownCard = GameCard(title: "Unknown title", open: {}) {
             Color.blue
         } status: { EmptyView() }

@@ -199,6 +199,9 @@ enum PresentationPerformanceChecks {
                     check(LibraryGame.displayedCount(qualified: qualified, local: local, native: nativePresent)
                           == qualified.count + local.count + (nativePresent ? 1 : 0),
                           "REQ-64: Displayed total includes qualified=\(qualifiedPresent), local=\(localPresent), native=\(nativePresent)")
+                    check(LibraryGame.installedCount(local: local, native: nativePresent)
+                          == LibraryGame.displayedCount(qualified: [], local: local, native: nativePresent),
+                          "REQ64: Installed filter total and inventory section count the same registry and native cards")
                 }
             }
         }

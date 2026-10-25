@@ -120,15 +120,16 @@ enum CatalogDetailLoadingChecks {
             Text("Details").font(.title2.weight(.semibold))
             DetailGameSizeView(installed: nil, downloadBytes: nil, packageFormat: "MSIXVC",
                                allowsMeasurement: false)
+            GameCompatibilityFacts(productID: "FIXTURE00001", packageFormat: "MSIXVC", compatibility: nil)
         }
         .padding(24)
-        .frame(width: 420, height: 160, alignment: .topLeading)
+        .frame(width: 420, height: 240, alignment: .topLeading)
         .background(Color.white)
         .environment(\.colorScheme, .light)
         let host = NSHostingView(rootView: view)
         host.appearance = NSAppearance(named: .aqua)
         host.sizingOptions = []
-        host.frame = CGRect(x: 0, y: 0, width: 420, height: 160)
+        host.frame = CGRect(x: 0, y: 0, width: 420, height: 240)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless],
                               backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: .aqua)
@@ -146,7 +147,9 @@ enum CatalogDetailLoadingChecks {
         try VNImageRequestHandler(cgImage: image).perform([request])
         let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
         check(labels.contains { $0 == "Details" }
-              && labels.contains { $0.localizedCaseInsensitiveContains("MSIXVC") }
+              && labels.filter { $0.localizedCaseInsensitiveContains("MSIXVC") }.count == 1
+              && labels.contains { $0 == "Compatibility" }
+              && !labels.contains { $0.localizedCaseInsensitiveContains("Windows package") }
               && !labels.contains { $0.localizedCaseInsensitiveContains("download") }
               && !window.isVisible && !window.isKeyWindow,
               "REQ-62: Detail-only package label remains visible without rich catalogue metadata: \(labels)")

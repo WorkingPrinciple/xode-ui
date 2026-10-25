@@ -255,20 +255,21 @@ struct LiveLibraryView: View {
                 if let error = xboxStats.error {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
-                if !visibleLocalRecords.isEmpty {
+                if !visibleLocalRecords.isEmpty || showsNativeMinecraft {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Installed games (\(visibleLocalRecords.count))").font(.title2.weight(.semibold))
+                        Text("Installed games (\(LibraryGame.installedCount(local: visibleLocalRecords, native: showsNativeMinecraft)))")
+                            .font(.title2.weight(.semibold))
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
                             ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
+                            if showsNativeMinecraft {
+                                NativeMinecraftCard {
+                                    CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
+                                        status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
+                                }.id("library-native-minecraft")
+                            }
                         }
                         .scrollTargetLayout()
                     }
-                }
-                if showsNativeMinecraft {
-                    NativeMinecraftCard {
-                        CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
-                            status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
-                    }.frame(maxWidth: 220)
                 }
                 }
                 }

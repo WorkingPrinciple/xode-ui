@@ -234,7 +234,10 @@ struct LibraryGame: Identifiable {
     let gamePass: Bool
     var accessIsCurrent = true
     static func displayedCount(qualified: [Self], local: [Self], native: Bool) -> Int {
-        qualified.count + local.count + (native ? 1 : 0)
+        qualified.count + installedCount(local: local, native: native)
+    }
+    static func installedCount(local: [Self], native: Bool) -> Int {
+        local.count + (native ? 1 : 0)
     }
     var cover: CatalogArtworkReference? {
         if let art = pc?.artwork, [.boxArt, .poster].contains(art.role),
@@ -549,10 +552,6 @@ struct GameCompatibilityFacts: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(GameCompatibilityFactsCopy.heading).font(.headline)
-            if let package = GameSupportPolicy.packageFormat(
-                observed: packageFormat, classified: offline?.packageFormat) {
-                LabeledContent("Windows package", value: package)
-            }
             if let packageListing {
                 LabeledContent("Microsoft Store", value: packageListing ? "PC package listed" : "No PC listing")
             }
@@ -564,7 +563,7 @@ struct GameCompatibilityFacts: View {
                     .font(.callout.weight(.semibold))
             }
             ForEach(issues) { issue in
-                Text(issue.detail).foregroundStyle(.secondary)
+                Text(issue.browseDetail).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let source = issue.source { Link("Learn more", destination: source) }
             }
@@ -1042,7 +1041,7 @@ struct GameCard<Artwork: View, Status: View>: View {
 
     var coverStatusDescription: String {
         ((showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
-            + compatibilityIssues.map { "\($0.title). \($0.detail)" })
+            + compatibilityIssues.map { "\($0.browseTitle). \($0.browseDetail)" })
             .joined(separator: ", ")
     }
 }
