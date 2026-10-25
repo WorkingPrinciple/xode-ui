@@ -1569,7 +1569,11 @@ final class GameOperationsController: ObservableObject {
                     throw GameInstallLocationError.driveUnavailable
                 }
                 var parent = stat()
-                guard lstat(destination.deletingLastPathComponent().path, &parent) == 0 else { return false }
+                guard lstat(destination.deletingLastPathComponent().path, &parent) == 0 else {
+                    // A denied removable volume (EACCES/EPERM) keeps the record and shows the permission message.
+                    if errno == ENOENT || errno == ENOTDIR { return false }
+                    throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)))
+                }
                 try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
                 guard FileManager.default.fileExists(atPath: destination.path) else { return false }
                 try FileManager.default.removeItem(at: destination)
@@ -1584,7 +1588,8 @@ final class GameOperationsController: ObservableObject {
             let cocoa = error as NSError
             if error as? GameInstallLocationError == .driveUnavailable {
                 self.error = "The drive for \(record.title)'s partial download isn't connected, so nothing was deleted. Reconnect the drive, then try again."
-            } else if [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cocoa.code)
+            } else if error as? InstalledGameError == .folderPermission
+                || [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cocoa.code)
                 || InstalledGameFiles.folderReadError(cocoa) == .folderPermission
                 || (cocoa.userInfo[NSUnderlyingErrorKey] as? NSError).map({ InstalledGameFiles.folderReadError($0) == .folderPermission }) == true {
                 self.error = "The partial download couldn't be deleted because \(record.destination) isn't writable. Check its permissions in Finder."

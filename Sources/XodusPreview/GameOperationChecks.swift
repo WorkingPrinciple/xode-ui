@@ -1872,6 +1872,22 @@ enum GameOperationChecks {
               && movedOperations.notice?.contains("No downloaded files were found for Moved") == true
               && movedOperations.error == nil && !library.mutationActive,
               "REQ114 L2: a missing parent folder on a connected drive is not treated as unplugged; the record is removed")
+        let denied = root.appendingPathComponent("Denied")
+        try FileManager.default.createDirectory(at: denied.appendingPathComponent("Sub"), withIntermediateDirectories: true)
+        let lockedGame = PCGame(id: "9NBLGGH537BL", title: "Locked", artwork: nil)
+        try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: lockedGame.id, title: lockedGame.title,
+            destination: denied.appendingPathComponent("Sub/Locked-Xbox").path, installedID: nil))
+        chmod(denied.path, 0o000)
+        let lockedOperations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await lockedOperations.restore()
+        await lockedOperations.discardPartialDownload(productID: lockedGame.id)
+        chmod(denied.path, 0o700)
+        let lockedKept = try await journal.loadResumable()[lockedGame.id]
+        check(lockedKept != nil && lockedOperations.resumableInstallations[lockedGame.id] != nil
+              && lockedOperations.error?.contains("isn't writable") == true && lockedOperations.notice == nil
+              && !library.mutationActive,
+              "REQ114 L2/REQ118: denied access to the partial download's folder keeps the record and shows the permission message")
 
         try await recoveryOwnershipChecks(root: root, paths: paths, check: check)
 
