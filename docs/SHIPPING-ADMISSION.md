@@ -2,9 +2,37 @@
 
 ## Purpose and authorization
 
-### REQ102 COR124 source candidate: NFS finalize recovery producer
+### REQ101 / REQ80 COR126 source candidate: account country and DIRT5 engine
 
 The current accepted backend source is
+`a7c1b7adc3884899f4607fb8eaa8431bee0f3509`, tree
+`8fadec7f4b3140aeafd8f670e9f58d32dc287c14`. It retains the reviewed NFS recovery
+and adds the account-bound `profile.accountCountry` contract and the DIRT5-named
+Calimocho engine admission. That engine's override is engine-scoped, not enforced
+per title. This does not qualify any game.
+
+The genuine separate canonical app producer has signed CLI
+`197769abee55414cfaab3545f10c4d96af46357ea31444a6cc859d204307fcc0`
+(28,699,920 bytes), Windows helper
+`d09c8d5a1c4700acf334e76b2bb9a296602ca099a34fef98c1911c0df07ae7d5`
+(20,480 bytes), and manifest
+`732cd4037ed5dfc8369f3a0c7ac7c27601f962d154b64aaf6a15ffb2e5d9fce6`
+(15,712 bytes). Unsigned input
+`5e71ee04325feabb0ef5a9573ebd6d14fd2828cedcd230b6df461e5ccd069d84`
+(28,849,376 bytes) and provenance
+`339cd53327cb855bd33f8125e7fc33510ad9b3964d8c46e59e0419464843446d`
+(2,203 bytes) pass the unchanged sealed-input verifier using that source/tree.
+Actual owned hashes, sizes, modes, fixed-leaf/team signature and all three exact
+helper embeddings were independently checked before repinning. Both schema
+copies match canonical SHA256
+`1118d0e831baa22d31b803e65e0ee4a5c12d8735fb183cecd24b3f8f25cdd4e9`.
+Only the current recipe CLI binding and its bound resource digest change;
+historical gameplay evidence stays intact. No installation, native acceptance,
+notarization or game qualification follows from this artifact admission.
+
+### Retained REQ102 COR124 candidate: NFS finalize recovery producer
+
+The previously accepted backend source is
 `2cb12a443fc446193282eead6b76cd3b4c73eca5`, tree
 `c558c024854875deacf2f60cbf076dd7171ee8f4`. It retains the query contract and
 adds the reviewed no-overwrite hardlink fallback for NFS finalize recovery.
