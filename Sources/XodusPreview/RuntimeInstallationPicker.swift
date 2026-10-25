@@ -9,18 +9,25 @@ struct RuntimeInstallationPicker: View {
     @ObservedObject private var installed: InstalledGamesController
     var backendPath = ""
     var embeddedInSettings = false
+    var showsAdvanced = true
+    @ObservedObject var userEngineModel: UserEngineModel
     @AppStorage(NativeEngineDefaults.preferenceKey) private var savedAdmission = Data()
-    @StateObject private var registryObservation: EngineRegistryObservation
+    @ObservedObject private var registryObservation: EngineRegistryObservation
     @State private var error: String?
     @State private var settingDefault = false
 
     init(settings: RuntimeProviderSettings, backendPath: String = "",
-         installed: InstalledGamesController? = nil, embeddedInSettings: Bool = false) {
+         installed: InstalledGamesController? = nil, embeddedInSettings: Bool = false,
+         showsAdvanced: Bool = true, registryObservation: EngineRegistryObservation? = nil,
+         userEngineModel: UserEngineModel = UserEngineModel()) {
         self.settings = settings
         self.backendPath = backendPath
         self.installed = installed ?? InstalledGamesController()
         self.embeddedInSettings = embeddedInSettings
-        _registryObservation = StateObject(wrappedValue: EngineRegistryObservation(inspector: settings.providerInspector))
+        self.showsAdvanced = showsAdvanced
+        self.userEngineModel = userEngineModel
+        _registryObservation = ObservedObject(wrappedValue:
+            registryObservation ?? EngineRegistryObservation(inspector: settings.providerInspector))
     }
 
     private var allowsFileReads: Bool { !settings.applicationTerminating }
@@ -37,7 +44,7 @@ struct RuntimeInstallationPicker: View {
             }, defaultID: defaultID, defaultName: defaultID.map { InstalledGamesController.readableEngineName($0) } ?? "Unavailable",
             checking: installed.checkingEngineOverrides || settingDefault,
             error: error ?? (defaultID == nil ? "The default engine selection couldn't be read. Refresh engines and try again." : nil),
-            settings: settings, allowsFileReads: allowsFileReads,
+            settings: settings, allowsFileReads: allowsFileReads, userEngineModel: userEngineModel,
             setDefault: { name in
                 guard !settingDefault, allowsFileReads else { return }
                 settingDefault = true
@@ -58,7 +65,8 @@ struct RuntimeInstallationPicker: View {
                         self.error = "This engine couldn't be set as default. Refresh engines and try again."
                     }
                 }
-            }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } }) {
+            }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } },
+            showsAdvanced: showsAdvanced) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)
         }

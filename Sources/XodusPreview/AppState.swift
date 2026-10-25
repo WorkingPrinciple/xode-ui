@@ -21,6 +21,36 @@ enum AccountDestination: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum SettingsPane: String, CaseIterable, Identifiable {
+    case general
+    case engines
+    case account
+    case advanced
+
+    static let preferenceKey = "Xodus.settings.selectedPane"
+
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    var symbol: String {
+        switch self {
+        case .general: "gearshape"
+        case .engines: "gearshape.2"
+        case .account: "person.crop.circle"
+        case .advanced: "slider.horizontal.3"
+        }
+    }
+}
+
+enum SettingsPaneSelection {
+    static func selected(defaults: UserDefaults = .standard) -> SettingsPane {
+        defaults.string(forKey: SettingsPane.preferenceKey).flatMap(SettingsPane.init(rawValue:)) ?? .general
+    }
+
+    static func select(_ pane: SettingsPane, defaults: UserDefaults = .standard) {
+        defaults.set(pane.rawValue, forKey: SettingsPane.preferenceKey)
+    }
+}
+
 #if !XODUS_SHIPPING
 enum BrowseCategory: String, CaseIterable, Identifiable {
     case all = "All worlds", adventure = "Quiet adventures", space = "Space", puzzles = "Puzzles"
@@ -52,6 +82,7 @@ final class AppState: ObservableObject {
     let librarySelection = LibrarySelection()
     let discoverSelection = DiscoverSelection()
     private let gameScriptPaths: GameScriptPaths
+    private let settingsDefaults: UserDefaults
     lazy var gameOperations = GameOperationsController(installed: installedGames, paths: gameScriptPaths,
                                                        installLocationDefaults: .standard)
     lazy var downloadQueue = DownloadQueueController(
@@ -81,10 +112,12 @@ final class AppState: ObservableObject {
     @Published private(set) var liveLibraryScope: LiveLibraryScope = .games
 
     init(installedGames: InstalledGamesController = InstalledGamesController(),
-         pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production) {
+         pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production,
+         settingsDefaults: UserDefaults = .standard) {
         self.installedGames = installedGames
         self.pcGames = pcGames
         self.gameScriptPaths = gameScriptPaths
+        self.settingsDefaults = settingsDefaults
     }
 
     func canSignOut(session: LiveSession) -> Bool {
@@ -207,9 +240,23 @@ final class AppState: ObservableObject {
     }
 
     func openAccount(_ destination: AccountDestination = .account) {
+        if destination == .engines {
+            SettingsPaneSelection.select(.engines, defaults: settingsDefaults)
+            showingAccount = false
+            return
+        }
         showingSetup = false
         accountDestination = destination
         showingAccount = true
+    }
+
+    @discardableResult
+    func configureUnifiedAccountMode(session: LiveSession) -> Bool {
+        guard session.supports(.odeAccountRead) else { return false }
+        pcGames.useUnifiedAccount(session)
+        gameOperations.useUnifiedAccount(session)
+        installedGames.useUnifiedAccount(session)
+        return true
     }
 
     func loadRecentActivityIfVisible(session: LiveSession) async {

@@ -49,6 +49,7 @@ enum AccountCountryChecks {
         await session.refreshAccount()
         check(session.hasConfirmedSignIn,
               "REQ101 fixture has a confirmed account (status \(session.authentication?.state.rawValue ?? "none"), error \(session.accountError ?? session.errorMessage ?? "none"))")
+        try NativeUIChecks.checkSignedInSettingsAccountPane(session: session, check: check)
         session.market = "RO"
         let before = session.catalogRequestVersion
         await session.refreshAccountCountry()

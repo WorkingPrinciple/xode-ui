@@ -5,6 +5,7 @@ import XodusManagement
 struct GameServiceAccountView: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject var library: PCGamesController
+    var onOpenOdeAccount: (() -> Void)? = nil
 
     var accountStatusText: String {
         if operations.serviceSignOutConfirmed, operations.serviceStatus?.signedIn == false {
@@ -17,22 +18,20 @@ struct GameServiceAccountView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            GroupBox("Your game library") {
-                VStack(alignment: .leading, spacing: 10) {
-                    if library.hasSavedSignIn {
-                        HStack {
-                            Label("Microsoft sign-in saved for your library", systemImage: "checkmark.circle")
-                            Spacer()
-                        }
-                    } else {
-                        Text("Open Library to check your games and saved sign-in.")
-                            .foregroundStyle(.secondary)
-                    }
-                    Text("A game in your library may still need a download access check.")
-                        .font(.callout).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Your game library").font(.headline)
+                if library.hasSavedSignIn {
+                    Label("Microsoft sign-in saved for your library", systemImage: "checkmark.circle")
+                } else {
+                    Text("Open Library to check your games and saved sign-in.")
+                        .foregroundStyle(.secondary)
                 }
+                Text("A game in your library may still need a download access check.")
+                    .font(.callout).foregroundStyle(.secondary)
             }
-            GroupBox("Xbox access") {
+            Divider()
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Xbox access").font(.headline)
                 GameServiceSignInActions(operations: operations, statusText: accountStatusText,
                     statusIdentifier: "xodus.games.accountStatus",
                     checkIdentifier: "xodus.games.checkSignIn",
@@ -40,11 +39,13 @@ struct GameServiceAccountView: View {
                     errorIdentifier: "xodus.games.signInError",
                     logIdentifier: "xodus.games.signInLog",
                     verifyIdentifier: "xodus.games.verifyExplanation",
-                    setupRepairing: operations.setupRepairing)
+                    setupRepairing: operations.setupRepairing,
+                    onOpenOdeAccount: onOpenOdeAccount)
             }
-            GroupBox("PC Game Pass") {
+            Divider()
+            VStack(alignment: .leading, spacing: 10) {
+                Text("PC Game Pass").font(.headline)
                 GamePassAccountView(operations: operations, library: library)
-                    .padding(.top, 2)
             }
             DisclosureGroup("Library and subscription details") {
                 AccountTierView(entitlements: operations.accountEntitlements(library: library))
@@ -67,15 +68,23 @@ struct GameServiceSignInActions: View {
     var logIdentifier: String
     var verifyIdentifier: String
     var setupRepairing = false
+    var onOpenOdeAccount: (() -> Void)? = nil
+
+    func openOdeAccount() { onOpenOdeAccount?() }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if operations.usesUnifiedAccount {
-                Label(operations.serviceLabel, systemImage: "exclamationmark.circle")
+                Label(operations.serviceLabel, systemImage: operations.serviceAccountSymbol)
                     .accessibilityIdentifier(statusIdentifier)
-                Text(operations.serviceError ?? "This runtime isn't connected to your Xbox Live account.")
+                Text(operations.serviceError
+                     ?? "Xbox game access uses the account connected to Ode to X. The status above reflects the current connection.")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let onOpenOdeAccount {
+                    Button("Open Ode account", action: openOdeAccount)
+                        .accessibilityIdentifier("xodus.games.openOdeAccount")
+                }
             } else {
             Label(statusText, systemImage: operations.serviceAccountSymbol)
                 .accessibilityIdentifier(statusIdentifier)

@@ -106,6 +106,7 @@ final class GameOperationsController: ObservableObject {
     private let nativeRunner = NativeGameLifecycle()
 
     func useUnifiedAccount(_ session: LiveSession? = nil) {
+        if usesUnifiedAccount, unifiedSession === session { return }
         usesUnifiedAccount = true
         unifiedSession = session
         serviceStatus = nil
@@ -228,7 +229,10 @@ final class GameOperationsController: ObservableObject {
         return serviceStatus?.signedIn == true ? nil : "Sign in for games"
     }
     var serviceAccountSymbol: String {
-        serviceAccountNeedsVerification ? "person.crop.circle.badge.questionmark"
+        if usesUnifiedAccount {
+            return nativeAccount == nil ? "person.crop.circle.badge.exclamationmark" : "checkmark.circle"
+        }
+        return serviceAccountNeedsVerification ? "person.crop.circle.badge.questionmark"
             : serviceStatus?.signedIn == true ? "checkmark.circle" : "person.crop.circle"
     }
     var gamePassActive: Bool {

@@ -70,6 +70,7 @@ final class PCGamesController: ObservableObject {
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
 
     func useUnifiedAccount(_ session: LiveSession) {
+        if usesUnifiedAccount, unifiedSession === session { return }
         guard !busy, !restoringPresence else { return }
         unifiedSession = session
         usesUnifiedAccount = true

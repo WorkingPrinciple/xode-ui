@@ -35,6 +35,162 @@ private struct InstallSheetFixtureView: View {
 
 @MainActor
 enum NativeUIChecks {
+    static func checkSettingsLayouts(check: (Bool, String) -> Void) throws {
+        let suite = "XodusSettingsLayout-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            check(false, "COR174 Settings layout checks use an isolated preference suite")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let state = AppState(settingsDefaults: defaults)
+        let session = LiveSession()
+        let renderDirectory = ProcessInfo.processInfo.environment["XODUS_SETTINGS_RENDER_DIRECTORY"]
+            .map(URL.init(fileURLWithPath:))
+        if let renderDirectory {
+            try FileManager.default.createDirectory(at: renderDirectory, withIntermediateDirectories: true)
+        }
+
+        for pane in SettingsPane.allCases {
+            SettingsPaneSelection.select(pane, defaults: defaults)
+            check(SettingsPaneSelection.selected(defaults: defaults) == pane,
+                  "COR174 \(pane.title) restores from its selected-pane preference")
+            for width in [CGFloat(560), CGFloat(820)] {
+                for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                    let host = NSHostingView(rootView: LiveSettingsView()
+                        .environmentObject(state)
+                        .environmentObject(session)
+                        .defaultAppStorage(defaults)
+                        .frame(width: width, height: 900)
+                        .background(Color(nsColor: .windowBackgroundColor)))
+                    let window = OffscreenInstallWindow(
+                        contentRect: CGRect(x: -10000, y: -10000, width: width, height: 900),
+                        styleMask: [.titled], backing: .buffered, defer: false)
+                    window.isReleasedWhenClosed = false
+                    window.sharingType = .none
+                    window.contentView = host
+                    defer {
+                        window.orderOut(nil)
+                        window.close()
+                    }
+                    host.sizingOptions = []
+                    host.appearance = NSAppearance(named: appearance)
+                    host.frame = CGRect(x: 0, y: 0, width: width, height: 900)
+                    window.displayIfNeeded()
+                    host.layoutSubtreeIfNeeded()
+                    check(host.window === window && !window.isKeyWindow && !window.isMainWindow
+                          && host.frame.width == width,
+                          "COR174 \(pane.title) renders offscreen at \(Int(width)) in \(appearance.rawValue) without activation")
+                    func descendants(_ view: NSView) -> [NSView] {
+                        [view] + view.subviews.flatMap(descendants)
+                    }
+                    let segmentControls = descendants(host).compactMap { $0 as? NSSegmentedControl }
+                    let segmentLabels = segmentControls.flatMap { control in
+                        (0..<control.segmentCount).compactMap { control.label(forSegment: $0) }
+                    }
+                    let segmentImages = segmentControls.flatMap { control in
+                        (0..<control.segmentCount).map { control.image(forSegment: $0) != nil }
+                    }
+                    check(Set(segmentLabels) == Set(SettingsPane.allCases.map(\.title))
+                          && segmentImages.count == SettingsPane.allCases.count
+                          && segmentImages.allSatisfy { $0 },
+                          "COR174 Native segmented tabs expose all four pane labels and symbols")
+                    if let renderDirectory, let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+                        host.cacheDisplay(in: host.bounds, to: bitmap)
+                        let appearanceName = appearance == .darkAqua ? "dark" : "light"
+                        try bitmap.representation(using: .png, properties: [:])?.write(to: renderDirectory
+                            .appendingPathComponent("\(pane.rawValue)-\(Int(width))-\(appearanceName).png"))
+                    }
+                }
+            }
+        }
+        let operations = state.gameOperations
+        operations.useUnifiedAccount(session)
+        check(operations.serviceLabel == "Check Xbox account connection"
+              && operations.serviceAccountSymbol == "person.crop.circle.badge.exclamationmark",
+              "COR174 Signed-out unified account status is truthful and non-successful")
+        try checkSettingsFullContentRenders(state: state, session: session, defaults: defaults,
+                                            renderDirectory: renderDirectory, check: check)
+    }
+
+    private static func checkSettingsFullContentRenders(state: AppState, session: LiveSession,
+                                                        defaults: UserDefaults, renderDirectory: URL?,
+                                                        check: (Bool, String) -> Void) throws {
+        guard let renderDirectory else { return }
+        for pane in [SettingsPane.account, .advanced] {
+            SettingsPaneSelection.select(pane, defaults: defaults)
+            for width in [CGFloat(560), CGFloat(820)] {
+                for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                    let height: CGFloat = 2600
+                    let host = NSHostingView(rootView: LiveSettingsView()
+                        .environmentObject(state)
+                        .environmentObject(session)
+                        .defaultAppStorage(defaults)
+                        .frame(width: width, height: height)
+                        .background(Color(nsColor: .windowBackgroundColor)))
+                    let window = OffscreenInstallWindow(
+                        contentRect: CGRect(x: -10000, y: -10000, width: width, height: height),
+                        styleMask: [.titled], backing: .buffered, defer: false)
+                    window.isReleasedWhenClosed = false
+                    window.sharingType = .none
+                    window.contentView = host
+                    defer {
+                        window.orderOut(nil)
+                        window.close()
+                    }
+                    host.sizingOptions = []
+                    host.appearance = NSAppearance(named: appearance)
+                    host.frame = CGRect(x: 0, y: 0, width: width, height: height)
+                    window.displayIfNeeded()
+                    host.layoutSubtreeIfNeeded()
+                    check(host.window === window && !window.isKeyWindow && !window.isMainWindow
+                          && host.frame.height == height,
+                          "COR174 \(pane.title) full-content render is offscreen at \(Int(width)) in \(appearance.rawValue)")
+                    guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { continue }
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    guard let png = bitmap.representation(using: .png, properties: [:]) else { continue }
+                    let appearanceName = appearance == .darkAqua ? "dark" : "light"
+                    try png.write(to: renderDirectory
+                        .appendingPathComponent("\(pane.rawValue)-full-\(Int(width))-\(appearanceName).png"))
+                }
+            }
+        }
+    }
+
+    static func checkSignedInSettingsAccountPane(session: LiveSession,
+                                                 check: (Bool, String) -> Void) throws {
+        let suite = "XodusSignedInSettings-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            check(false, "COR174 signed-in Settings uses an isolated preference suite")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let windows = NSApplication.shared.windows.count
+        let state = AppState(settingsDefaults: defaults)
+        state.pcGames.useUnifiedAccount(session)
+        state.gameOperations.useUnifiedAccount(session)
+        SettingsPaneSelection.select(.account, defaults: defaults)
+        let height: CGFloat = 2600
+        let host = NSHostingView(rootView: LiveSettingsView()
+            .environmentObject(state)
+            .environmentObject(session)
+            .defaultAppStorage(defaults)
+            .frame(width: 560, height: height)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: height)
+        host.layoutSubtreeIfNeeded()
+        check(session.hasConfirmedSignIn
+              && SettingsPaneSelection.selected(defaults: defaults) == .account
+              && host.window == nil && NSApplication.shared.windows.count == windows,
+              "COR174 Signed-in Account pane renders from a confirmed synthetic session without a window or auth request")
+        if let directory = ProcessInfo.processInfo.environment["XODUS_SETTINGS_RENDER_DIRECTORY"],
+           let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            try bitmap.representation(using: .png, properties: [:])?.write(
+                to: URL(fileURLWithPath: directory).appendingPathComponent("account-signed-in-full-560-light.png"))
+        }
+    }
+
     static func checkCountryPendingLibrary(session: LiveSession, installed: InstalledGamesController,
                                            check: (Bool, String) -> Void) {
         let windows = NSApplication.shared.windows.count

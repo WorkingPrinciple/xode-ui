@@ -33,6 +33,7 @@ struct XboxProminentButton: ViewModifier {
 
 struct AccountHubDestinations: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
             VStack(alignment: .leading, spacing: 16) {
@@ -49,7 +50,12 @@ struct AccountHubDestinations: View {
 
     private func destination(_ value: AccountDestination, symbol: String, detail: String) -> some View {
         Button {
-            state.accountDestination = value
+            if value == .engines {
+                state.openAccount(.engines)
+                openSettings()
+            } else {
+                state.openAccount(value)
+            }
         } label: {
             HStack {
                 Label(value.rawValue, systemImage: symbol)
@@ -586,20 +592,6 @@ struct XboxConsolesView: View {
                 .padding(.top, 2)
             }
         }
-    }
-}
-
-// Keep property-wrapper state unambiguous with SDKs that also export a State macro.
-private typealias EngineViewState<Value> = SwiftUI.State<Value>
-
-struct EnginesView: View {
-    @EnvironmentObject private var state: AppState
-    @EnvironmentObject private var session: LiveSession
-
-    var body: some View {
-        // RuntimeInstallationPicker hosts the grouped engine Form itself; the account sheet supplies the title.
-        RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath,
-                                  installed: state.installedGames)
     }
 }
 

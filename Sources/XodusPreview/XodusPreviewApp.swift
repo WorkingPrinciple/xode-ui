@@ -27,7 +27,7 @@ enum DevelopmentArguments {
         if GameLaunchArguments.parse(arguments) != nil { return true }
         guard let mode = arguments.first else { return true }
         switch mode {
-        case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check", "--gamepass-collections-check", "--presentation-performance-check", "--search-performance-check", "--account-presentation-check", "--engine-selection-check":
+        case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check", "--gamepass-collections-check", "--presentation-performance-check", "--search-performance-check", "--account-presentation-check", "--engine-selection-check", "--settings-check":
             return arguments.count == 1
         case "--export-preview", "--export-live", "--export-live-data":
             return arguments.count == 2
@@ -92,6 +92,7 @@ struct XodusPreviewApp: App {
     @StateObject private var state = AppState()
     @StateObject private var session = LiveSession()
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     private var navigationAllowed: Bool {
 #if !XODUS_SHIPPING
@@ -131,6 +132,7 @@ struct XodusPreviewApp: App {
         if CommandLine.arguments.contains("--presentation-performance-check") { PresentationPerformanceChecks.launch() }
         if CommandLine.arguments.contains("--search-performance-check") { SearchPerformanceChecks.launch() }
         if CommandLine.arguments.contains("--engine-selection-check") { NativeChecks.launch(engineSelectionOnly: true) }
+        if CommandLine.arguments.contains("--settings-check") { NativeChecks.launch(settingsOnly: true) }
         if CommandLine.arguments.contains("--live-check") { NativeChecks.launch() }
         if CommandLine.arguments.contains("--account-presentation-check") { NativeChecks.launch(accountPresentationOnly: true) }
         if CommandLine.arguments.contains("--library-access-check") { NativeChecks.launch(libraryAccessOnly: true) }
@@ -255,8 +257,11 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") { state.openAccount(.engines) }
-                    .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
+                Button("Engines") {
+                    SettingsPaneSelection.select(.engines)
+                    openSettings()
+                }
+                    .disabled(state.fixtureMode)
                     .keyboardShortcut("e", modifiers: [.command, .shift])
                 Button("Return to live Ode to X") {
                     state.fixtureMode = false
@@ -274,8 +279,10 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") { state.openAccount(.engines) }
-                    .disabled(!session.hasConfirmedSignIn)
+                Button("Engines") {
+                    SettingsPaneSelection.select(.engines)
+                    openSettings()
+                }
                     .keyboardShortcut("e", modifiers: [.command, .shift])
 #endif
             }

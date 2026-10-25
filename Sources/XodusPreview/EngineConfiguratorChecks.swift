@@ -3,6 +3,30 @@
 import AppKit
 import Foundation
 import SwiftUI
+import Vision
+
+private final class DelayedEngineInspection: @unchecked Sendable {
+    private let lock = NSLock()
+    private let started = DispatchSemaphore(value: 0)
+    private let resumed = DispatchSemaphore(value: 0)
+    private var didStart = false
+
+    func inspect() {
+        lock.lock()
+        didStart = true
+        lock.unlock()
+        started.signal()
+        _ = resumed.wait(timeout: .now() + 3)
+    }
+
+    var hasStarted: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return didStart
+    }
+
+    func resume() { resumed.signal() }
+}
 
 @MainActor
 enum EngineConfiguratorChecks {
@@ -139,6 +163,7 @@ enum EngineConfiguratorChecks {
               "COR161: Escape on an edited CrossOver path restores the saved selection")
         try await renderStates(root: root, check: check)
         try await sharedModelChecks(engine: plain, check: check)
+        try await delayedInspectionPaneSwitchCheck(check: check)
     }
 }
 
@@ -188,6 +213,102 @@ extension EngineConfiguratorChecks {
         if let added = model.engines.first { model.remove(added) }
         check(model.engines.isEmpty && UserEngineStore.load(store) == .success([]),
               "COR167: Remove updates the shared list and the saved store")
+    }
+
+    static func delayedInspectionPaneSwitchCheck(check: (Bool, String) -> Void) async throws {
+        let suite = "XodusEnginePaneSwitch-\(UUID().uuidString)"
+        guard let store = UserDefaults(suiteName: suite) else {
+            check(false, "COR174: Delayed engine inspection uses an isolated preference suite")
+            return
+        }
+        defer { store.removePersistentDomain(forName: suite) }
+        let settingsSuite = "XodusEnginePaneSelection-\(UUID().uuidString)"
+        guard let settingsDefaults = UserDefaults(suiteName: settingsSuite) else {
+            check(false, "COR174: Pane selection uses an isolated preference suite")
+            return
+        }
+        defer { settingsDefaults.removePersistentDomain(forName: settingsSuite) }
+        let existing = UserEngine(id: UUID(), name: "Remove me", version: nil,
+                                  location: "/Applications/Remove Me.app", wine: "w", wineserver: "s")
+        try UserEngineStore.save([existing], store)
+        let gate = DelayedEngineInspection()
+        let model = UserEngineModel(store: store, inspector: { url in
+            gate.inspect()
+            return .success(UserEngine(id: UUID(), name: "Late engine", version: nil,
+                                       location: url.path, wine: "w", wineserver: "s"))
+        })
+        let draft = "/Applications/Late Engine.app"
+        model.location = draft
+        let state = AppState(settingsDefaults: settingsDefaults)
+        let session = LiveSession()
+        SettingsPaneSelection.select(.engines, defaults: settingsDefaults)
+        let host = NSHostingView(rootView: LiveSettingsView(engineModel: model)
+            .environmentObject(state)
+            .environmentObject(session)
+            .defaultAppStorage(settingsDefaults)
+            .frame(width: 560, height: 900))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: 900)
+        host.layoutSubtreeIfNeeded()
+        func descendants(_ view: NSView) -> [NSView] {
+            [view] + view.subviews.flatMap(descendants)
+        }
+        func selectedPane() -> SettingsPane? {
+            guard let control = descendants(host).compactMap({ $0 as? NSSegmentedControl }).first,
+                  SettingsPane.allCases.indices.contains(control.selectedSegment) else { return nil }
+            return SettingsPane.allCases[control.selectedSegment]
+        }
+        func renderedText() throws -> [String] {
+            guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                throw EngineLayoutError.unreadable
+            }
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            guard let image = bitmap.cgImage else { throw EngineLayoutError.unreadable }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .fast
+            try VNImageRequestHandler(cgImage: image).perform([request])
+            return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        }
+        check(selectedPane() == .engines,
+              "COR174: The retained engine model is mounted in the selected Engines pane")
+        let task = model.inspect(URL(fileURLWithPath: draft), selected: draft)
+        for _ in 0..<100 where !gate.hasStarted {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(gate.hasStarted, "COR174: Delayed engine inspection reaches its controlled wait point")
+        model.error = "Previous inspection needs attention."
+        try await Task.sleep(for: .milliseconds(50))
+        host.window?.displayIfNeeded()
+        host.layoutSubtreeIfNeeded()
+        let beforeSwitch = try renderedText()
+        check(beforeSwitch.contains { $0.contains("Late Engine.app") }
+              && beforeSwitch.contains { $0.contains("Previous inspection needs attention.") },
+              "COR174: Mounted Engines field and error display the draft and error before switching panes")
+        SettingsPaneSelection.select(.general, defaults: settingsDefaults)
+        await Task.yield()
+        host.layoutSubtreeIfNeeded()
+        check(selectedPane() == .general && model.location == draft
+              && model.error == "Previous inspection needs attention.",
+              "COR174: Leaving Engines preserves its uncommitted path and current error")
+        SettingsPaneSelection.select(.engines, defaults: settingsDefaults)
+        await Task.yield()
+        try await Task.sleep(for: .milliseconds(50))
+        host.window?.displayIfNeeded()
+        host.layoutSubtreeIfNeeded()
+        let afterReturn = try renderedText()
+        check(selectedPane() == .engines && model.location == draft
+              && model.error == "Previous inspection needs attention."
+              && afterReturn.contains { $0.contains("Late Engine.app") }
+              && afterReturn.contains { $0.contains("Previous inspection needs attention.") },
+              "COR174: Returning to Engines restores the same draft and error state")
+        model.remove(existing)
+        model.error = "Keep the current path and retry after correcting it."
+        gate.resume()
+        await task.value
+        check(model.engines.isEmpty && UserEngineStore.load(store) == .success([])
+              && model.location == draft && model.error == "Keep the current path and retry after correcting it."
+              && !model.pending && SettingsPaneSelection.selected(defaults: settingsDefaults) == .engines,
+              "COR174: Pane return preserves the shared engine model, draft and error; remove wins over stale inspection completion")
     }
 
     /// Detached renders of populated synthetic states. These exercise layout, not the installed app.
@@ -241,6 +362,57 @@ extension EngineConfiguratorChecks {
                             .appendingPathComponent("configurator-\(name)-\(Int(width))-\(appearance == .darkAqua ? "dark" : "light").png"))
                     }
                 }
+            }
+        }
+        try await renderAdvancedLayout(check: check)
+    }
+
+    static func renderAdvancedLayout(check: (Bool, String) -> Void) async throws {
+        let suite = "XodusAdvancedSettingsRender-\(UUID().uuidString)"
+        guard let store = UserDefaults(suiteName: suite) else { return }
+        defer { store.removePersistentDomain(forName: suite) }
+        store.set("/Users/example/engines/registry.json", forKey: "Xodus.lifecycle.registry")
+        store.set(Data("fixture".utf8), forKey: "Xodus.lifecycle.runtime")
+        store.set("/Users/example/Profiles", forKey: "Xodus.lifecycle.profileDirectory")
+        store.set("/Users/example/evidence.json", forKey: "Xodus.evidence.triedGames")
+
+        for width in [CGFloat(560), CGFloat(820)] {
+            let view = Form {
+                Section {
+                    DisclosureGroup("Advanced", isExpanded: .constant(true)) {
+                        NativeEngineSettings(
+                            allowsFileReads: false, backendPath: "", observation: EngineRegistryObservation()
+                        )
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .defaultAppStorage(store)
+            .frame(width: width, height: 900)
+            .background(Color(nsColor: .windowBackgroundColor))
+            let host = NSHostingView(rootView: view)
+            host.sizingOptions = []
+            host.frame = CGRect(x: 0, y: 0, width: width, height: 900)
+            host.layoutSubtreeIfNeeded()
+            check(host.window == nil,
+                  "REQ111: Expanded Advanced Settings lays out detached at \(Int(width)) points")
+
+            func descendants(_ view: NSView) -> [NSView] {
+                [view] + view.subviews.flatMap(descendants)
+            }
+            let controls = descendants(host)
+            let buttonHosts = controls.filter {
+                $0.className.contains("SwiftUIAppKitButton") && !$0.className.contains("ContentViewHost")
+            }
+            check(buttonHosts.count == 5,
+                  "REQ111: Expanded Advanced retains the registry, runtime, profile and evidence actions")
+
+            if let directory = ProcessInfo.processInfo.environment["XODUS_ENGINE_RENDER_DIRECTORY"],
+               let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                try bitmap.representation(using: .png, properties: [:])?.write(
+                    to: URL(fileURLWithPath: directory).appendingPathComponent(
+                        "advanced-expanded-\(Int(width)).png"))
             }
         }
     }

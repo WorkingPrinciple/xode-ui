@@ -8,17 +8,17 @@ import XodusManagement
 enum NativeChecks {
     static func launch(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
                        libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false,
-                       engineSelectionOnly: Bool = false) -> Never {
+                       engineSelectionOnly: Bool = false, settingsOnly: Bool = false) -> Never {
         Task { exit(await run(gameOperationsOnly: gameOperationsOnly, mediaOnly: mediaOnly, statsOnly: statsOnly,
                               libraryAccessOnly: libraryAccessOnly, accountPresentationOnly: accountPresentationOnly,
-                              engineSelectionOnly: engineSelectionOnly) ? 0 : 1) }
+                              engineSelectionOnly: engineSelectionOnly, settingsOnly: settingsOnly) ? 0 : 1) }
         CFRunLoopRun()
         fatalError("The native check run loop ended before completion.")
     }
 
     static func run(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
                     libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false,
-                    engineSelectionOnly: Bool = false) async -> Bool {
+                    engineSelectionOnly: Bool = false, settingsOnly: Bool = false) async -> Bool {
         var count = 0, failures = 0
         func check(_ condition: Bool, _ name: String) {
             count += 1
@@ -54,9 +54,51 @@ enum NativeChecks {
             }
         }
         do {
+            if settingsOnly {
+                try NativeUIChecks.checkSettingsLayouts(check: check)
+                print("\(count) Settings layout checks, \(failures) failures. Detached views; isolated preferences; no sign-in or network requests.")
+                return failures == 0
+            }
             if engineSelectionOnly {
                 try NativeLifecycleChecks.launchOutcomeChecks(check: check)
                 try await NativeLifecycleChecks.run(check: check)
+                let signedOutConfiguration = configuration("odeunifiedsignedout")
+                let signedOut = LiveSession(configuration: signedOutConfiguration)
+                await signedOut.connect()
+                let settingsSuite = "XodusUnifiedSignedOut-\(UUID().uuidString)"
+                guard let settingsDefaults = UserDefaults(suiteName: settingsSuite) else {
+                    check(false, "COR174 signed-out unified routing uses isolated preferences")
+                    return failures == 0
+                }
+                defer { settingsDefaults.removePersistentDomain(forName: settingsSuite) }
+                let accountState = AppState(settingsDefaults: settingsDefaults)
+                let configured = accountState.configureUnifiedAccountMode(session: signedOut)
+                let signedOutTraceURL = signedOutConfiguration.stateDirectory.appendingPathComponent("lifecycle.log")
+                let signedOutTrace = FileManager.default.fileExists(atPath: signedOutTraceURL.path)
+                    ? try trace(signedOutConfiguration) : []
+                check(signedOut.isReady && signedOut.supports(.odeAccountRead)
+                      && signedOut.authentication == nil && !signedOut.hasConfirmedSignIn
+                      && signedOutTrace.filter { $0.hasPrefix("auth.") }.isEmpty,
+                      "COR174 signed-out unified backend is identified by capability without auth requests (ready \(signedOut.isReady), capability \(signedOut.supports(.odeAccountRead)), auth \(signedOut.authentication != nil), phase \(signedOut.phase), error \(signedOut.errorMessage ?? "none"))")
+                check(configured && accountState.gameOperations.usesUnifiedAccount
+                      && accountState.pcGames.usesUnifiedAccount
+                      && accountState.gameOperations.serviceSignInActionTitle == nil
+                      && accountState.gameOperations.serviceLabel == "Check Xbox account connection",
+                      "COR174 signed-out unified mode suppresses the legacy Microsoft sign-in and reports the connection honestly (configured \(configured), service sign-in \(accountState.gameOperations.serviceSignInActionTitle ?? "none"), label \(accountState.gameOperations.serviceLabel))")
+                var openedOdeAccount = false
+                let signedOutAccess = GameServiceSignInActions(
+                    operations: accountState.gameOperations, statusText: "",
+                    statusIdentifier: "test.status", checkIdentifier: "test.check",
+                    signInIdentifier: "test.signIn", errorIdentifier: "test.error",
+                    logIdentifier: "test.log", verifyIdentifier: "test.verify",
+                    onOpenOdeAccount: { accountState.openAccount(); openedOdeAccount = true })
+                signedOutAccess.openOdeAccount()
+                check(openedOdeAccount && accountState.showingAccount,
+                      "COR174 unified Xbox access recovery opens the existing Ode account flow")
+                check(await signedOut.disconnect(), "COR174 closes only its signed-out mock backend")
+                if FileManager.default.fileExists(atPath: signedOutTraceURL.path) {
+                    try cleanLifecycle(signedOutConfiguration)
+                }
                 try await EngineManagementChecks.routingOnly(check: check)
                 try await EngineConfiguratorChecks.run(check: check)
                 try await InstalledGameChecks.legacyNativeReadiness(check: check)

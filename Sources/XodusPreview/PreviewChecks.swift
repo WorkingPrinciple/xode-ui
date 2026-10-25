@@ -83,7 +83,13 @@ enum PreviewChecks {
             }
         }
 
-        let state = AppState()
+        let settingsSuite = "XodusSettingsRouting-\(UUID().uuidString)"
+        guard let settingsDefaults = UserDefaults(suiteName: settingsSuite) else {
+            check(false, "COR174 Settings routing has an isolated preference suite")
+            return false
+        }
+        defer { settingsDefaults.removePersistentDomain(forName: settingsSuite) }
+        let state = AppState(settingsDefaults: settingsDefaults)
         let welcomeSession = LiveSession()
         welcomeSession.errorMessage = "Xcode not configured: private developer-path sentinel"
         check(!welcomeSession.hasConfirmedSignIn && !welcomeSession.canStartWelcomeSignIn
@@ -127,8 +133,10 @@ enum PreviewChecks {
         check(state.destination == .library && !state.showsRecentActivity,
               "Live startup opens the PC Library without claiming ownership or selecting activity")
         state.openAccount(.engines)
-        check(state.showingAccount && state.accountDestination == .engines && !state.showingSetup,
-              "P6 Engines opens through the shared Account hub without adding a primary navigation tab")
+        check(!state.showingAccount && state.accountDestination == .account
+              && SettingsPane(rawValue: settingsDefaults.string(forKey: SettingsPane.preferenceKey) ?? "") == .engines,
+              "COR174 Engines routes to the shared Settings pane without an Account sheet")
+        SettingsPaneSelection.select(.general, defaults: settingsDefaults)
         state.showingAccount = false
         state.accountDestination = .account
         state.navigate(.library)

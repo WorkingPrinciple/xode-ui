@@ -45,27 +45,25 @@ struct NativeEngineSettings: View {
     @AppStorage("Xodus.evidence.triedGames") private var evidencePath = ""
     @State private var refreshID = UUID()
     @State private var errorMessage: String?
-    @AppStorage(AdmittedEngineSelection.preferenceKey) private var admittedSelection = Data()
-    @ObservedObject private var localDiscovery = LocalNetworkDiscovery.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Engine registry").font(.headline)
-                Spacer()
-                Button("Refresh") { refreshID = UUID() }
-                    .disabled(!allowsFileReads || observation.status == .loading)
-                    .accessibilityIdentifier("xodus.engines.registry.refresh")
-                Button("Choose registry…") {
-                    let panel = NSOpenPanel()
-                    panel.canChooseDirectories = false
-                    panel.canChooseFiles = true
-                    panel.allowsMultipleSelection = false
-                    panel.allowedContentTypes = [.json]
-                    if panel.runModal() == .OK, let url = panel.url { registryPath = url.path }
+            LabeledContent("Engine registry") {
+                HStack {
+                    Button("Refresh") { refreshID = UUID() }
+                        .disabled(!allowsFileReads || observation.status == .loading)
+                        .accessibilityIdentifier("xodus.engines.registry.refresh")
+                    Button("Choose registry…") {
+                        let panel = NSOpenPanel()
+                        panel.canChooseDirectories = false
+                        panel.canChooseFiles = true
+                        panel.allowsMultipleSelection = false
+                        panel.allowedContentTypes = [.json]
+                        if panel.runModal() == .OK, let url = panel.url { registryPath = url.path }
+                    }
+                    .disabled(!allowsFileReads)
+                    .accessibilityIdentifier("xodus.lifecycle.chooseRegistry")
                 }
-                .disabled(!allowsFileReads)
-                .accessibilityIdentifier("xodus.lifecycle.chooseRegistry")
             }
             if !registryPath.isEmpty {
                 Text(registryPath).font(.caption).foregroundStyle(.secondary)
@@ -84,8 +82,8 @@ struct NativeEngineSettings: View {
                     "No engines are registered in this file. Choose another registry or ask the engine provider for its installation record."
                 )
                 .foregroundStyle(.secondary)
-            }
-            if showsEntries {
+        }
+        if showsEntries {
             ForEach(observation.entries) { entry in
                 VStack(alignment: .leading, spacing: 4) {
                     LabeledContent(entry.name, value: observation.inspections[entry.name]?.ready == true
@@ -100,28 +98,10 @@ struct NativeEngineSettings: View {
                             inspection.ready
                                 ? "Artifact verification passed; not game qualified."
                                 : "Provider not admitted. This record cannot be selected as Calimocho.")
-                        if inspection.ready, inspection.admittedProvider == "calimocho" {
-                            Button("Use this Calimocho build as default") {
-                                if saveAdmission(inspection) { EngineDefaults.setDefaultEngine(.calimocho) }
-                            }
-                            .disabled(!allowsFileReads || observation.status == .loading)
-                        }
                     }
                 }
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            }
-            NativeEnginePicker(
-                provider: .calimocho, entries: observation.entries, allowsSelection: allowsFileReads,
-                admittedNames: Set(
-                    observation.inspections.values.filter {
-                        $0.ready && $0.admittedProvider == "calimocho"
-                    }.compactMap(\.engineName)),
-                selectAdmission: { name in
-                    guard let inspection = observation.inspections[name], inspection.admittedProvider == "calimocho"
-                    else { return true }
-                    return saveAdmission(inspection)
-                })
             }
             if let message = observation.errorMessage {
                 Label(message, systemImage: "exclamationmark.circle")
@@ -135,9 +115,9 @@ struct NativeEngineSettings: View {
                 Label(errorMessage, systemImage: "exclamationmark.circle")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            DisclosureGroup("Advanced game runtime and diagnostics") {
-                if NativeRuntimePins.approved == nil {
-                    Button("Choose local game runtime…") {
+            if NativeRuntimePins.approved == nil {
+                LabeledContent("Local game runtime") {
+                    Button("Choose…") {
                         let panel = NSOpenPanel()
                         panel.canChooseDirectories = false
                         panel.canChooseFiles = true
@@ -157,49 +137,42 @@ struct NativeEngineSettings: View {
                             }
                         }
                     }.disabled(!allowsFileReads)
-                    Text(
-                        runtimeData.isEmpty
-                            ? "No local game runtime selected."
-                            : "Local experimental runtime selected. Its two DLL hashes are checked before each launch; gameplay and release qualification remain separate."
-                    )
-                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
-                HStack {
-                    Text("Title launch profiles")
-                    Spacer()
-                    Button("Choose folder…") {
-                        let panel = NSOpenPanel()
-                        panel.canChooseDirectories = true
-                        panel.canChooseFiles = false
-                        panel.allowsMultipleSelection = false
-                        if panel.runModal() == .OK, let url = panel.url { profileDirectory = url.path }
-                    }.disabled(!allowsFileReads)
-                }
-                if !profileDirectory.isEmpty {
-                    Text(profileDirectory).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                }
-                HStack {
-                    Text("Mac test evidence")
-                    Spacer()
-                    Button("Choose evidence JSON…") {
-                        let panel = NSOpenPanel()
-                        panel.canChooseDirectories = false
-                        panel.canChooseFiles = true
-                        panel.allowsMultipleSelection = false
-                        panel.allowedContentTypes = [.json]
-                        if panel.runModal() == .OK, let url = panel.url { evidencePath = url.path }
-                    }.disabled(!allowsFileReads)
-                }
-                if !evidencePath.isEmpty {
-                    Text(evidencePath).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                }
-                Button("Find consoles on local network") { localDiscovery.search() }
-                    .disabled(!allowsFileReads)
-                    .accessibilityIdentifier("xodus.localNetwork.discover")
-                Text(localDiscovery.status).font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text(
+                    runtimeData.isEmpty
+                        ? "Not selected"
+                        : "Selected · DLL hashes checked before launch"
+                )
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-
+            LabeledContent("Title launch profiles") {
+                Button("Choose folder…") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseDirectories = true
+                    panel.canChooseFiles = false
+                    panel.allowsMultipleSelection = false
+                    if panel.runModal() == .OK, let url = panel.url { profileDirectory = url.path }
+                }.disabled(!allowsFileReads)
+            }
+            if !profileDirectory.isEmpty {
+                Text(profileDirectory).font(.caption).foregroundStyle(.secondary)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+            }
+            LabeledContent("Mac test evidence") {
+                Button("Choose evidence JSON…") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseDirectories = false
+                    panel.canChooseFiles = true
+                    panel.allowsMultipleSelection = false
+                    panel.allowedContentTypes = [.json]
+                    if panel.runModal() == .OK, let url = panel.url { evidencePath = url.path }
+                }.disabled(!allowsFileReads)
+            }
+            if !evidencePath.isEmpty {
+                Text(evidencePath).font(.caption).foregroundStyle(.secondary)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+            }
+        }
         }
         .task(id: "\(registryPath)|\(refreshID)|\(allowsFileReads)|\(backendPath)") {
             let executable = backendPath.isEmpty ? nil : URL(fileURLWithPath: backendPath)
@@ -224,69 +197,4 @@ struct NativeEngineSettings: View {
         }
     }
 
-    private func saveAdmission(_ inspection: EngineInspection) -> Bool {
-        guard Self.persistAdmission(inspection, registryPath: registryPath) else {
-            errorMessage = "The verified engine selection couldn't be saved. Retry Refresh."
-            return false
-        }
-        errorMessage = nil
-        return true
-    }
-
-    static func persistAdmission(_ inspection: EngineInspection, registryPath: String,
-                                 defaults: UserDefaults = .standard) -> Bool {
-        let selection = AdmittedEngineSelection(registryPath: registryPath, inspection: inspection)
-        guard let name = inspection.engineName,
-              let data = try? JSONEncoder().encode(selection) else { return false }
-        do { try persistDefaultAdmission(selection, defaults: defaults) }
-        catch { return false }
-        defaults.set(data, forKey: AdmittedEngineSelection.preferenceKey)
-        defaults.set(name, forKey: "Xodus.lifecycle.engine.calimocho")
-        return true
-    }
-}
-
-private struct NativeEnginePicker: View {
-    let provider: RuntimeProviderKind
-    let entries: [NativeEngineRegistry.Entry]
-    let allowsSelection: Bool
-    let admittedNames: Set<String>
-    let selectAdmission: (String) -> Bool
-    @AppStorage private var selection: String
-
-    init(
-        provider: RuntimeProviderKind, entries: [NativeEngineRegistry.Entry], allowsSelection: Bool,
-        admittedNames: Set<String> = [], selectAdmission: @escaping (String) -> Bool = { _ in true }
-    ) {
-        self.provider = provider
-        self.entries = entries
-        self.allowsSelection = allowsSelection
-        self.admittedNames = admittedNames
-        self.selectAdmission = selectAdmission
-        _selection = AppStorage(wrappedValue: "", "Xodus.lifecycle.engine.\(provider.rawValue)")
-    }
-
-    var body: some View {
-        Picker(provider.label, selection: Binding(get: { selection }, set: { name in
-            if selectAdmission(name) { selection = name }
-        })) {
-            Text("Choose an engine").tag("")
-            if !selection.isEmpty, !available.contains(where: { $0.name == selection }) {
-                Text("\(selection) (unavailable)").tag(selection)
-            }
-            ForEach(available) { entry in
-                Text(entry.name)
-                    .tag(entry.name)
-            }
-        }
-        .disabled(!allowsSelection)
-    }
-
-    private var available: [NativeEngineRegistry.Entry] {
-        entries.filter {
-            (EngineManagementPolicy.matches($0, provider: provider)
-                || (provider == .calimocho && admittedNames.contains($0.name))) && $0.isAvailable
-                && (provider != .calimocho || admittedNames.contains($0.name))
-        }
-    }
 }

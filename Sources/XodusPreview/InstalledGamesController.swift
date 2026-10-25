@@ -828,6 +828,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func useUnifiedAccount(_ session: LiveSession) {
+        if usesUnifiedAccount, unifiedSession === session { return }
         usesUnifiedAccount = true
         productAccessObservation = productAccess.objectWillChange.sink { [weak self] in
             self?.objectWillChange.send()

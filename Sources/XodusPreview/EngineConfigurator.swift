@@ -215,6 +215,7 @@ final class UserEngineModel: ObservableObject {
     let store: UserDefaults
     var terminating: () -> Bool = { false }
     private let inspector: @Sendable (URL) -> Result<UserEngine, EngineLayoutError>
+    private var engineRevision = 0
 
     init(store: UserDefaults = .standard, suggestions: [UserEngine] = [],
          inspector: @escaping @Sendable (URL) -> Result<UserEngine, EngineLayoutError> = EngineLayoutInspector.inspect) {
@@ -238,6 +239,7 @@ final class UserEngineModel: ObservableObject {
             let next = try UserEngineStore.adding(engine, to: engines)
             try UserEngineStore.save(next, store)
             engines = next
+            engineRevision += 1
             if location == engine.location { location = "" }
             error = nil
             return true
@@ -253,6 +255,7 @@ final class UserEngineModel: ObservableObject {
         do {
             try UserEngineStore.save(next, store)
             engines = next
+            engineRevision += 1
             error = nil
         } catch { self.error = error.message }
     }
@@ -286,11 +289,13 @@ final class UserEngineModel: ObservableObject {
     @discardableResult
     func inspect(_ url: URL, selected: String) -> Task<Void, Never> {
         let id = fence.begin(path: selected)
+        let revision = engineRevision
         let inspector = inspector
         return Task {
             let result = await Task.detached(priority: .userInitiated) { inspector(url) }.value
             defer { fence.finish(id) }
-            guard fence.accepts(id, selected: location, terminating: terminating()) else { return }
+            guard fence.accepts(id, selected: location, terminating: terminating()),
+                  revision == engineRevision else { return }
             switch result {
             case .success(let engine): add(engine)
             case .failure(let failure): error = failure.message
@@ -481,8 +486,10 @@ struct EngineConfiguratorForm<Advanced: View>: View {
     var allowsFileReads = true
     var userEngineStore: UserDefaults = .standard
     var suggestions: [UserEngine] = []
+    var userEngineModel: UserEngineModel?
     let setDefault: (String) -> Void
     let refresh: () -> Void
+    var showsAdvanced = true
     @ViewBuilder let advanced: () -> Advanced
 
     var body: some View {
@@ -495,7 +502,7 @@ struct EngineConfiguratorForm<Advanced: View>: View {
         EngineConfiguratorSections(choices: choices, defaultID: defaultID, defaultName: defaultName,
             checking: checking, error: error, settings: settings, allowsFileReads: allowsFileReads,
             userEngineStore: userEngineStore, suggestions: suggestions, setDefault: setDefault,
-            refresh: refresh, advanced: advanced)
+            refresh: refresh, showsAdvanced: showsAdvanced, userEngineModel: userEngineModel, advanced: advanced)
     }
 }
 
@@ -509,13 +516,16 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     let allowsFileReads: Bool
     let setDefault: (String) -> Void
     let refresh: () -> Void
+    let showsAdvanced: Bool
     let advanced: () -> Advanced
-    @StateObject private var users: UserEngineModel
+    @StateObject private var ownedUsers: UserEngineModel
+    private var users: UserEngineModel { ownedUsers }
     @State private var advancedExpanded = false
 
     init(choices: [EngineChoice], defaultID: String?, defaultName: String, checking: Bool, error: String?,
          settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
          suggestions: [UserEngine], setDefault: @escaping (String) -> Void, refresh: @escaping () -> Void,
+         showsAdvanced: Bool = true, userEngineModel: UserEngineModel? = nil,
          advanced: @escaping () -> Advanced) {
         self.choices = choices
         self.defaultID = defaultID
@@ -526,8 +536,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         self.allowsFileReads = allowsFileReads
         self.setDefault = setDefault
         self.refresh = refresh
+        self.showsAdvanced = showsAdvanced
         self.advanced = advanced
-        _users = StateObject(wrappedValue: UserEngineModel(store: userEngineStore, suggestions: suggestions))
+        _ownedUsers = StateObject(wrappedValue:
+            userEngineModel ?? UserEngineModel(store: userEngineStore, suggestions: suggestions))
     }
 
     var body: some View {
@@ -572,8 +584,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
         CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
-        Section {
-            DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
+        if showsAdvanced {
+            Section {
+                DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
+            }
         }
     }
 }

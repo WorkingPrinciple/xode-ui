@@ -174,13 +174,16 @@ struct LiveRootView: View {
                 await state.runtimeSettings.refreshCrossOverDependency()
             }
         }
+        .task(id: "\(startupAllowed):\(session.isReady):\(unifiedAccountMode)") {
+            guard startupAllowed, session.isReady,
+                  state.configureUnifiedAccountMode(session: session) else { return }
+            companion.useUnifiedAccount(session)
+        }
         .task(id: accountRecoveryAllowed) {
             if accountRecoveryAllowed {
                 if unifiedAccountMode {
-                    state.pcGames.useUnifiedAccount(session)
+                    state.configureUnifiedAccountMode(session: session)
                     companion.useUnifiedAccount(session)
-                    state.gameOperations.useUnifiedAccount(session)
-                    state.installedGames.useUnifiedAccount(session)
                 }
                 await state.installedGames.load()
                 async let collectionLoad: Void = state.pcGames.loadOnAppear()
