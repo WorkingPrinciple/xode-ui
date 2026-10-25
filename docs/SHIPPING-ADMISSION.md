@@ -1,5 +1,37 @@
 # Local builds and release verification
 
+## Exact dependency notices and complete component coverage
+
+Prepare producer notices locally before the final integrated build:
+
+```sh
+python3 tools/producer_notices.py \
+  --manifest /absolute/producer/signed/build-manifest.json \
+  --manifest-sha256 APPROVED_MANIFEST_SHA256 \
+  --metadata /absolute/producer/post-build-native-metadata.json \
+  --artifacts /absolute/producer/release-artifacts.jsonl \
+  --producer-source /absolute/producer-source \
+  --cargo-home /absolute/cargo-cache \
+  --output /absolute/new-notice-directory
+```
+
+The manifest hash must be the reviewed exact producer hash, not a newly computed
+substitute for approval. The command reads the frozen source commit and cached
+source archives without checking out, building, downloading or uploading code.
+It writes only the new output directory. Pass that directory as
+`--producer-notices` to `build_app.sh` or `refresh_local_candidate.py`.
+Both copy and bind the inventory/notices before signing, rejecting a different
+producer, CLI or Windows helper. An older signed stage cannot be augmented
+without building/signing a new exact candidate.
+
+Production preflight enumerates optional Python runtime files, the exact
+launch-association capsule and credential-broker reference separately from the
+base app/AuthHost/CLI/helper. Optional source/licence/rights obligations do not
+inherit base clearance. Unmapped payloads fail closed at manifest creation and
+distribution verification, including extra executable/runtime files and code
+disguised as non-code resources. See [Licensing boundaries](LICENSING.md) for the
+r7 evidence, remaining exact notice/source gaps and runtime-path semantics.
+
 ## Purpose and authorization
 
 ### COR176 distribution preparation

@@ -33,7 +33,7 @@ def validate_payload_pair(cli, helper, producer, tree):
 
 
 def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
-            selected_helper=None):
+            selected_helper=None, producer_notices=None):
     validate_host()
     preflight(identity)
     project = Path(__file__).resolve().parent.parent
@@ -152,7 +152,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     (resources / "local-candidate-receipt.json").write_text(encoded)
     (stage / "candidate-receipt.json").write_text(encoded)
     write_manifest(app, source_identity_before,
-                   {"commit": producer, "tree": producer_tree}, archive)
+                   {"commit": producer, "tree": producer_tree}, archive, producer_notices)
     sign(app, "app", identity, developer_id=True)
     run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
     verify_cli(cli)
@@ -174,6 +174,7 @@ if __name__ == "__main__":
     parser.add_argument("--producer-source", type=Path)
     parser.add_argument("--producer-commit")
     parser.add_argument("--windows-helper", type=Path)
+    parser.add_argument("--producer-notices", type=Path)
     args = parser.parse_args()
     refresh(args.installed_app, args.output_root, args.identity, args.cli,
-            args.producer_source, args.producer_commit, args.windows_helper)
+            args.producer_source, args.producer_commit, args.windows_helper, args.producer_notices)

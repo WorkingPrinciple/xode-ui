@@ -38,6 +38,19 @@ class DistributionChecks(unittest.TestCase):
         for component in data["components"].values():
             component["rightsReview"] = "resolved"
             component["correspondingSource"] = "neutral-source-delivery-fixture"
+        if data["producerNotices"] is None:
+            notices = app / "Contents/Resources/ProducerNotices"
+            notices.mkdir()
+            inventory = {
+                "version": 1, "producer": data["components"]["cli"]["source"],
+                "cliSHA256": data["components"]["cli"]["sha256"],
+                "helperSHA256": data["components"]["windowsHelper"]["sha256"],
+                "packages": [], "unresolved": [],
+            }
+            inventory_path = notices / "inventory.json"
+            inventory_path.write_text(json.dumps(inventory))
+            from shipping_pair import owned_bytes
+            data["producerNotices"] = owned_bytes(inventory_path)[0]
         path.write_text(json.dumps(data))
 
     def test_inventory_binds_components_and_leaves_unknowns_explicit(self):
@@ -88,6 +101,113 @@ class DistributionChecks(unittest.TestCase):
             app, _ = self.fixture(Path(tmp).resolve())
             self.resolve_fixture_obligations(app)
             self.assertEqual(distribution_blockers(app), [])
+
+    def test_unmapped_executables_and_runtime_data_fail_closed(self):
+        for relative in ("Contents/MacOS/Unmapped", "Contents/Frameworks/Extra.dylib",
+                         "Contents/_CodeSignature/Unmapped",
+                         "Contents/Resources/UnknownRuntime/data.json"):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                app, _ = self.fixture(Path(tmp).resolve())
+                self.resolve_fixture_obligations(app)
+                extra = app / relative
+                extra.parent.mkdir(parents=True, exist_ok=True)
+                extra.write_bytes(b"unmapped payload")
+                with self.assertRaisesRegex(ValueError, "Unmapped distribution payload"):
+                    distribution_blockers(app)
+                (app / "Contents/Resources/distribution-components.json").unlink()
+                source = {"commit": "a" * 40, "tree": "b" * 40}
+                with self.assertRaisesRegex(ValueError, "Unmapped distribution payload"):
+                    write_manifest(app, source, source, Path(tmp).resolve() / "source.tar")
+
+    def test_code_cannot_hide_in_allowlisted_noncode_resource(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            (app / "Contents/Resources/LICENSE.txt").write_bytes(b"MZdisguised executable")
+            with self.assertRaisesRegex(ValueError, "Executable content in non-code"):
+                distribution_blockers(app)
+
+    def test_missing_inventory_cannot_be_cleared_via_summary_obligations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            path = app / "Contents/Resources/distribution-components.json"
+            data = json.loads(path.read_text())
+            data["unresolved"] = []
+            for component in data["components"].values():
+                component["rightsReview"] = "resolved"
+                component["correspondingSource"] = "neutral-fixture"
+            path.write_text(json.dumps(data))
+            self.assertEqual(distribution_blockers(app),
+                             ["Exact producer dependency inventory/notices not supplied"])
+
+    def test_optional_broker_reference_cannot_inherit_base_clearance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            manifest = app / "Contents/Resources/distribution-components.json"
+            manifest.unlink()
+            broker = app / "Contents/Resources/XodusCredentialBroker.json"
+            broker.write_text(json.dumps({"version": 1, "sha256": "c" * 64, "bytes": 123}))
+            source = {"commit": "a" * 40, "tree": "b" * 40}
+            write_manifest(app, source, source, Path(tmp).resolve() / "source.tar")
+            self.resolve_fixture_obligations(app)
+            blockers = distribution_blockers(app)
+            self.assertEqual(len(blockers), 1)
+            self.assertIn("credentialBroker", blockers[0])
+            broker.write_text(json.dumps({"version": 1, "sha256": "d" * 64, "bytes": 123}))
+            with self.assertRaisesRegex(ValueError, "Optional distribution payload changed"):
+                distribution_blockers(app)
+
+    def test_python_inventory_is_verified_and_keeps_independent_obligations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            app, _ = self.fixture(root)
+            (app / "Contents/Resources/distribution-components.json").unlink()
+            interpreter = app / "Contents/Resources/XodusPython/bin/python3"
+            interpreter.parent.mkdir(parents=True)
+            interpreter.write_bytes(b"neutral interpreter")
+            from shipping_pair import owned_bytes
+            metadata = {"files": {"bin/python3": owned_bytes(interpreter)[0]}}
+            (app / "Contents/Resources/XodusPython.json").write_text(json.dumps(metadata))
+            source = {"commit": "a" * 40, "tree": "b" * 40}
+            with patch("python_runtime.verify_runtime") as verify:
+                write_manifest(app, source, source, root / "source.tar")
+                self.resolve_fixture_obligations(app)
+                blockers = distribution_blockers(app)
+                self.assertEqual(len(blockers), 1)
+                self.assertIn("pythonRuntime", blockers[0])
+                self.assertEqual(verify.call_count, 2)
+
+    def test_new_optional_component_after_inventory_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            self.resolve_fixture_obligations(app)
+            (app / "Contents/Resources/XodusCredentialBroker.json").write_text(
+                json.dumps({"version": 1, "sha256": "c" * 64, "bytes": 123}))
+            with self.assertRaisesRegex(ValueError, "Optional distribution inventory"):
+                distribution_blockers(app)
+
+    def test_producer_notices_are_copied_bound_and_keep_precise_obligations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            app, _ = self.fixture(root)
+            (app / "Contents/Resources/distribution-components.json").unlink()
+            source = {"commit": "a" * 40, "tree": "b" * 40}
+            from shipping_pair import owned_bytes
+            identity = owned_bytes(app / COMPONENT_PATHS["cli"])[0]
+            notices = root / "producer-notices"
+            notices.mkdir()
+            inventory = {
+                "version": 1, "producer": source, "cliSHA256": identity["sha256"],
+                "helperSHA256": identity["sha256"], "packages": [],
+                "unresolved": ["Neutral exact component obligation"],
+            }
+            (notices / "inventory.json").write_text(json.dumps(inventory))
+            write_manifest(app, source, source, root / "source.tar", notices)
+            self.resolve_fixture_obligations(app)
+            self.assertEqual(distribution_blockers(app), ["Neutral exact component obligation"])
+            packaged = app / "Contents/Resources/ProducerNotices/inventory.json"
+            packaged.write_text("{}")
+            with self.assertRaises(ValueError):
+                distribution_blockers(app)
 
 
 if __name__ == "__main__":

@@ -36,3 +36,63 @@ copyright notices, corresponding-source delivery and an explicit rights-review
 outcome. The app GPL text and source archive do not by themselves establish
 complete CLI/helper dependency compliance. No such completed review is claimed
 here.
+
+### Exact producer notices and optional payloads
+
+`tools/producer_notices.py` prepares an offline inventory from the selected
+producer manifest, its hash-bound `post-build-native-metadata.json` and
+`release-artifacts.jsonl`, and that producer commit's `Cargo.lock`. Registry
+notice texts come from cached `.crate` archives verified against lockfile
+checksums; Git dependency notices come from the locked revision, not a mutable
+checkout. No credential access, download, build or external submission occurs.
+The output records the metadata superset and distinguishes compiler-artifact
+packages, including host/build/proc-macro dependencies. It is not a claim that
+every recorded package is linked into the shipping executable.
+
+For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
+and 472 package-level licence declarations. The seven undeclared manifests are
+`eappx` and the six Xodus workspace crates; their repository licence texts are
+included separately rather than inventing a package SPDX grant. `eappx` has an
+MIT root notice, and the workspace has the GNU GPL v3 root text.
+`option-ext@0.2.0` and `webpki-roots@0.25.4` declare MPL-2.0, requiring an
+appropriate source-delivery review. Thirty compiled packages' published archives
+contain no standalone notice text; their exact names/versions remain explicit
+in the generated inventory rather than being replaced with generic templates.
+The helper's `scripts/windows/window-monitor.c` is compiled with MinGW GCC and
+`-luser32`; exact CRT/compiler-support-library provenance and applicable notices
+or exceptions, and Rust standard-library/compiler-runtime obligations, remain
+separate from Cargo package metadata.
+
+Supply the prepared directory with `--producer-notices` to either builder.
+Before app signing, the inventory and content-addressed notice texts are copied
+to `Contents/Resources/ProducerNotices`; producer source and CLI/helper hashes
+must match. The distribution manifest binds the inventory, checks every notice,
+and retains exact unresolved obligations. An inventory is not legal clearance.
+
+Optional Python runtimes, launch-association capsules and separately installed
+credential-broker references have independent source/licence/rights entries.
+Python's exact file manifest and archive pin are revalidated; the broker entry
+identifies a separately installed payload, not a bundled executable. Clearing
+the four base components cannot clear these optional obligations. Unmapped
+files, executables and runtime directories fail package preflight; known
+non-code resources cannot conceal executable headers.
+
+### Runtime paths versus evidence paths
+
+In source `2794e68`, `engine-defaults-v1.json`'s
+`bindings[].registryPath` is consumed by default engine inspection.
+`NativeLaunchConfiguration.resolveDefault` reads this catalogue even before
+saved overrides, so existing runtime discovery alone cannot make the legacy
+default route portable. A reviewed consumer contract is needed; do not rewrite
+the admitted recipes or copy user-installed engines into a release.
+The custom-engine opaque selection ID is a separate user-state route, not
+portability proof for existing registry-bound admissions.
+
+Candidate `profiles[].game_dir` and `installation_evidence` fields are ignored
+by `NativeCandidateLaunchCatalogue.Row`; it validates the actual installed game
+folder. Local paths in `title-runtime-v1.json` evidence/scan fields and
+`mac-game-evidence-v1.json` screenshots are provenance, not engine discovery.
+They still need a privacy/publication review: the current conservative
+distribution gate rejects development-machine references even in provenance.
+Retaining them does not justify calling them runtime lookup failures, and
+editing hash-bound policy merely to satisfy a scanner is not admission.
