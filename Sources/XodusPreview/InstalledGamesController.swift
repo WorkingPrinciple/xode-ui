@@ -42,6 +42,7 @@ final class InstalledGamesController: ObservableObject {
     private var engineOverridesChecked = false
     @Published private(set) var undiscoveredInstallations: [String: String] = [:]
     private var mountedDiscoveryProbes: [String: GameStorageProbe] = [:]
+    @Published private(set) var pendingDiscoveryRoots: Set<String> = []
     @Published private(set) var mutationGameID: UUID?
     @Published private(set) var mutationActive = false
     /// Per-game update availability, recomputed from installed versions vs. `availableVersions`.
@@ -209,11 +210,18 @@ final class InstalledGamesController: ObservableObject {
         let account = unifiedSession?.accountHash
         do {
             let volumes = mountedStorageRoots()
+            if let volumes {
+                let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes).map(\.path))
+                pendingDiscoveryRoots.formIntersection(mounted)
+                if root == nil { pendingDiscoveryRoots.formUnion(mounted) }
+                undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes)
+            }
             var observation = try await readinessProbe.read {
                 try GameInstallationDiscovery.scan(originalRoot: directory,
                     location: root == nil ? installLocation() : nil, entries: entries,
                     mountedRoots: volumes, inspectPackage: inspectPackage)
             }
+            pendingDiscoveryRoots.subtract(observation.scannedRoots)
             if root == nil {
                 for library in GameInstallationDiscovery.mountedLibraryRoots(volumes) {
                     try Task.checkCancellation()
@@ -229,12 +237,14 @@ final class InstalledGamesController: ObservableObject {
                     if let existing = mountedDiscoveryProbes[library.path] { probe = existing }
                     else {
                         guard mountedDiscoveryProbes.count < 32 else {
+                            pendingDiscoveryRoots.insert(library.path)
                             observation.errors.append(GameStorageProbeError.pending.localizedDescription)
                             continue
                         }
                         probe = GameStorageProbe()
                         mountedDiscoveryProbes[library.path] = probe
                     }
+                    pendingDiscoveryRoots.insert(library.path)
                     do {
                         let mounted = try await probe.read(timeout: .seconds(3)) {
                             try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: entries,
@@ -246,6 +256,7 @@ final class InstalledGamesController: ObservableObject {
                         observation.scannedRoots.formUnion(mounted.scannedRoots)
                         observation.childrenRead += mounted.childrenRead
                         observation.identifiedInstallations.merge(mounted.identifiedInstallations) { _, current in current }
+                        pendingDiscoveryRoots.remove(library.path)
                     } catch is CancellationError { throw CancellationError() }
                     catch { observation.errors.append("\(library.path): \(error.localizedDescription)") }
                 }
@@ -318,8 +329,26 @@ final class InstalledGamesController: ObservableObject {
         undiscoveredInstallations.values.contains(productID)
     }
 
-    func canCreateInstallation(productID: String) -> Bool {
-        !hasUnverifiedInstallation(productID: productID) && !games.contains { $0.storeId == productID }
+    func canCreateInstallation(productID: String, destination: String? = nil) -> Bool {
+        Self.permitsInstallation(productID: productID, destination: destination,
+                                 candidates: undiscoveredInstallations, pendingRoots: pendingDiscoveryRoots)
+            && !games.contains { $0.storeId == productID }
+    }
+
+    static func permitsInstallation(productID: String, destination: String?, candidates: [String: String],
+                                    pendingRoots: Set<String>) -> Bool {
+        pendingRoots.isEmpty && !candidates.contains { $0.value == productID && $0.key != destination }
+    }
+
+    static func retainingMountedCandidates(_ candidates: [String: String], volumes: [String],
+                                          home: String = NSHomeDirectory()) -> [String: String] {
+        let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes, home: home).map(\.path))
+        return candidates.filter { folder, _ in
+            let parent = URL(fileURLWithPath: folder).deletingLastPathComponent()
+            let possible = GameInstallationDiscovery.mountedLibraryRoots(
+                [parent.deletingLastPathComponent().path], home: home).map(\.path)
+            return !possible.contains(parent.path) || mounted.contains(parent.path)
+        }
     }
 
     func remove(_ game: InstalledGame) async {
@@ -973,7 +1002,7 @@ final class InstalledGamesController: ObservableObject {
               force || !engineOverridesChecked,
               let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
         checkingEngineOverrides = true
-        engineOverridesChecked = true
+        engineOverridesChecked = false
         availableEngineOverrides = []
         defer { checkingEngineOverrides = false }
         do {
@@ -987,6 +1016,7 @@ final class InstalledGamesController: ObservableObject {
                 guard !applicationTerminating, !Task.isCancelled else { return }
             }
             availableEngineOverrides = choices
+            engineOverridesChecked = choices.count == catalog.bindings.count
         } catch { self.error = Self.nativeLaunchFailureMessage(error) }
     }
 
@@ -999,7 +1029,27 @@ final class InstalledGamesController: ObservableObject {
                 Self.launchLog.debug("Override incompatible: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 return false
             }
+
         }
+    }
+
+    func defaultEngineLabel(for game: InstalledGame) -> String {
+        let titleEngine = try? NativeTitleLaunchProfile.read(productID: game.storeId, defaults: .standard,
+                                                              provider: .calimocho)?.engine
+        let saved = UserDefaults.standard.data(forKey: NativeEngineDefaults.preferenceKey)
+            .flatMap { try? JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+        let name = titleEngine ?? saved?.inspection.engineName
+            ?? (try? NativeEngineDefaults.read().defaultEngine)
+        return Self.readableEngineName(name)
+    }
+
+    static func readableEngineName(_ name: String?) -> String {
+        guard let name else { return "Calimocho" }
+        if name.contains("dirt5") { return "Calimocho 11.20 (DIRT 5)" }
+        if name.contains("witcher") { return "Calimocho 11.20 (Witcher)" }
+        if name.contains("private") { return "Calimocho 11.20 (Private)" }
+        if name.contains("wine11.20") { return "Calimocho 11.20" }
+        return name
     }
 
     func setEngineOverrideV2(_ selection: AdmittedEngineSelection?, for game: InstalledGame) async {

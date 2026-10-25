@@ -653,12 +653,14 @@ struct InstalledGameActions: View {
                     .accessibilityIdentifier("xodus.installed.showLog")
             }
             Menu("Engine") {
-                Button("Use default", systemImage: game.engineOverrideV2 == nil ? "checkmark" : "circle") {
+                Button("Use default (\(library.defaultEngineLabel(for: game)))",
+                       systemImage: game.engineOverrideV2 == nil ? "checkmark" : "circle") {
                     Task { await library.setEngineOverrideV2(nil, for: game) }
                 }
                 ForEach(library.engineOverrides(for: game), id: \.inspection.engineName) { selection in
                     if let name = selection.inspection.engineName {
-                        Button(name, systemImage: game.engineOverrideV2?.selection == selection ? "checkmark" : "circle") {
+                        Button(InstalledGamesController.readableEngineName(name),
+                               systemImage: game.engineOverrideV2?.selection == selection ? "checkmark" : "circle") {
                             Task { await library.setEngineOverrideV2(selection, for: game) }
                         }
                     }
@@ -684,6 +686,12 @@ struct InstalledGameActions: View {
         .accessibilityLabel("Actions for \(game.title)")
         .task {
             await library.refreshEngineOverrides(force: false)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { notification in
+            guard let menu = notification.object as? NSMenu,
+                  menu.items.contains(where: { $0.title == "Use default (\(library.defaultEngineLabel(for: game)))" })
+            else { return }
+            Task { await library.refreshEngineOverrides(force: false) }
         }
     }
 }

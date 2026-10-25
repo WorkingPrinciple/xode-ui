@@ -67,6 +67,13 @@ cannot start a second default-root download. Only a successful authoritative
 with symlink-safe volume identity; discovery does not finalize, copy, auto-mount,
 or grant launch/account readiness. Native acceptance must separately confirm FH6
 shows Play from its NFS location after verification passes.
+An existing partial install may resume only at the exact matching candidate
+destination; a different default-root destination remains refused. Timed-out
+or pending mounted-root scans keep Install gated even before identity returns.
+Unmounted-root candidates retire without changing registered installations.
+The Engine menu names the current default and retries incomplete inspections
+when its native menu begins tracking; per-title recipe compatibility still
+filters alternatives.
 
 COR-97/101/102 use shared cover badges: exact compatibility symbols in the
 upper-right, current PC Game Pass catalogue membership in the lower-left.

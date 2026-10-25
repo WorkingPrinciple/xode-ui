@@ -278,11 +278,11 @@ final class GameOperationsController: ObservableObject {
                              includeRuntime: false).isEmpty
     }
 
-    private func admitInstall(productID: String, installedID: UUID? = nil) -> Bool {
-        guard installedID != nil || installed.canCreateInstallation(productID: productID) else {
+    private func admitInstall(productID: String, installedID: UUID? = nil, destination: String? = nil) -> Bool {
+        guard installedID != nil || installed.canCreateInstallation(productID: productID, destination: destination) else {
             if operation == nil && !checkingCompatibility { resetFeedback(productID: productID) }
             error = installed.hasUnverifiedInstallation(productID: productID)
-                ? "The installation couldn't be checked. Try again or open its log."
+                ? "The installation couldn't be checked. Try again."
                 : GameScriptError.invalidDestination.localizedDescription
             return false
         }
@@ -779,7 +779,13 @@ final class GameOperationsController: ObservableObject {
             guard repairing.storeId == game.id, installed.games.contains(repairing),
                   installed.runningGameID != repairing.id else { return }
         }
-        guard admitInstall(productID: game.id, installedID: repairing?.id) else { return }
+        let proposedDestination: URL
+        do {
+            if let repairing { proposedDestination = URL(fileURLWithPath: repairing.folder) }
+            else { proposedDestination = try await installDestination(for: game) }
+        } catch { self.error = Self.message(error); return }
+        guard admitInstall(productID: game.id, installedID: repairing?.id,
+                           destination: proposedDestination.path) else { return }
         resetFeedback(productID: game.id)
         if repairing == nil { downloadRetry = game }
         preparingConsent = true
@@ -794,8 +800,7 @@ final class GameOperationsController: ObservableObject {
         }
         do {
             let destination: URL
-            if let repairing { destination = URL(fileURLWithPath: repairing.folder, isDirectory: true) }
-            else { destination = try await installDestination(for: game) }
+            destination = proposedDestination
             guard preparationGeneration == generation else { return }
             let storage = try await storageProbe.read {
                 if repairing?.storageVolume?.isUnavailable(mountedRoots: GameStorageVolume.mountedRoots()) == true {
@@ -860,7 +865,10 @@ final class GameOperationsController: ObservableObject {
     }
 
     func installationCheckRequired(productID: String) -> Bool {
-        installed.hasUnverifiedInstallation(productID: productID)
+        !installed.pendingDiscoveryRoots.isEmpty || installed.undiscoveredInstallations.contains {
+            guard $0.value == productID else { return false }
+            return operation?.destination != $0.key && downloadRetry?.id != productID
+        }
     }
 
     func checkExistingInstallations() async {
@@ -922,7 +930,8 @@ final class GameOperationsController: ObservableObject {
         guard installConsent?.id == consent.id, installConsent?.destination == consent.destination,
               !choosingInstallLocation, canStartMutation, !recoveryRequired,
               consentAdmitted(consent) else { return }
-        guard admitInstall(productID: consent.game.id, installedID: consent.installedID) else {
+        guard admitInstall(productID: consent.game.id, installedID: consent.installedID,
+                           destination: consent.destination.path) else {
             installConsent = nil
             return
         }
@@ -996,7 +1005,8 @@ final class GameOperationsController: ObservableObject {
             error = "Your Xbox account connection changed. Refresh your library before trying again."
             return
         }
-        guard record.kind == .uninstall || admitInstall(productID: record.productID, installedID: record.installedID) else {
+        guard record.kind == .uninstall || admitInstall(productID: record.productID, installedID: record.installedID,
+                                                       destination: record.destination) else {
             return
         }
         resetFeedback(productID: record.productID)
@@ -1106,7 +1116,8 @@ final class GameOperationsController: ObservableObject {
                 try await installed.removeUninstalled(id)
                 notice = "\(record.title) was uninstalled."
             } else {
-                guard admitInstall(productID: record.productID, installedID: record.installedID) else {
+                guard admitInstall(productID: record.productID, installedID: record.installedID,
+                                   destination: record.destination) else {
                     throw GameScriptError.invalidReceipt
                 }
                 try await installed.registerNativeInstallation(folder: URL(fileURLWithPath: record.destination),
@@ -1212,7 +1223,7 @@ final class GameOperationsController: ObservableObject {
         var record = record
         if usesUnifiedAccount { record.nativeAccountHash = nativeAccount }
         guard record.kind == .install, (try? record.validate()) != nil else { return .fail(code: -1) }
-        guard admitInstall(productID: record.productID) else { return .fail(code: 12) }
+        guard admitInstall(productID: record.productID, destination: record.destination) else { return .fail(code: 12) }
         while !canStartMutation || operation != nil || mutationTask != nil {
             if terminating { return .fail(code: -1) }
             if abandonedQueuedRuns.remove(record.id) != nil { return .cancel }
@@ -1223,7 +1234,7 @@ final class GameOperationsController: ObservableObject {
         if usesUnifiedAccount { await installed.discoverNativeInstallations() }
         if Task.isCancelled || abandonedQueuedRuns.remove(record.id) != nil { return .cancel }
         guard !terminating, canStartMutation,
-              admitInstall(productID: record.productID) else { return .fail(code: 12) }
+              admitInstall(productID: record.productID, destination: record.destination) else { return .fail(code: 12) }
         queueProgressObserver = onProgress
         defer { queueProgressObserver = nil }
         begin(record)

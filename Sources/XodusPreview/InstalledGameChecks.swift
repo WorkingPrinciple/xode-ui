@@ -28,6 +28,12 @@ enum InstalledGameChecks {
             home: home.path)
         check(roots.map(\.path) == [library.path],
               "REQ106: Mounted library discovery is deduplicated, depth-one Xodus only, without recursive root scanning")
+        check(InstalledGamesController.retainingMountedCandidates([folder.path: "9NR1R1XWLCNB"],
+              volumes: [], home: home.path).isEmpty,
+              "REQ106: Unmounted library candidates retire rather than blocking installation forever")
+        check(!InstalledGamesController.permitsInstallation(productID: "9NR1R1XWLCNB", destination: nil,
+              candidates: [:], pendingRoots: [library.path]),
+              "REQ106: A timed-out or pending mount scan blocks blind Install even before product identity returns")
         check(GameInstallationDiscovery.mountedLibraryRoots([], home: home.path).isEmpty,
               "REQ106: Unmounted volumes are never guessed or auto-mounted for discovery")
         let observed = try await GameStorageProbe().read {
@@ -63,6 +69,20 @@ enum InstalledGameChecks {
         check(controller.games.isEmpty && controller.hasUnverifiedInstallation(productID: "9NR1R1XWLCNB")
               && !controller.canCreateInstallation(productID: "9NR1R1XWLCNB"),
               "REQ106: Failed completeness neither imports an external payload nor allows a duplicate default-root download")
+        check(controller.canCreateInstallation(productID: "9NR1R1XWLCNB", destination: folder.path)
+              && !controller.canCreateInstallation(productID: "9NR1R1XWLCNB",
+                                                    destination: home.appendingPathComponent("default/game").path),
+              "REQ106: A partial installation can resume at its exact candidate destination but never redownload elsewhere")
+        let resume = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: "9NR1R1XWLCNB", title: "Forza Horizon 6", destination: folder.path, installedID: nil)
+        check(controller.canCreateInstallation(productID: resume.productID, destination: resume.destination),
+              "REQ106: A queued partial-install record is admitted at its original destination")
+        check(InstalledGamesController.readableEngineName("calimocho-wine11.20-gptk4b3-tls-vulkan-private")
+              == "Calimocho 11.20 (Private)"
+              && !controller.defaultEngineLabel(for: InstalledGame(id: UUID(), title: "Fixture",
+                  identityName: "Fixture", version: "1", storeId: "FIXTURE00001",
+                  folder: folder.path, launcher: "", importedAt: Date())).isEmpty,
+              "REQ95: Engine menu names the default readably even without alternative inspection rows")
         let operations = GameOperationsController(installed: controller)
         let game = PCGame(id: "9NR1R1XWLCNB", title: "Forza Horizon 6", artwork: nil)
         check(GameInstallAction(game: game, operations: operations).actionTitle == "Check installation",
