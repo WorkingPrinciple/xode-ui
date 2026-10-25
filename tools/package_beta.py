@@ -30,6 +30,13 @@ notarization and Gatekeeper checks are completed.
 After notarization is completed, move "Ode to X.app" into Applications and
 launch it from there. Keep this archive and its checksum with the beta record.
 """
+RELEASE_NOTES = """0.11.4 beta release notes
+
+The eappx, msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and
+xodus-service workspace crates are licensed under GPL-3.0-only as stated by
+the producer repository's root LICENSE. The corresponding source archive
+includes that LICENSE.
+"""
 
 
 def run(arguments, timeout=1800):
@@ -89,6 +96,7 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
         "state": "packaging",
         "version": VERSION,
         "appSource": source_identity,
+        "producerNoticesSHA256": producer_notices_sha256,
         "certificateSha1": identity.upper(),
         "teamIdentifier": TEAM_ID,
         "format": package_format,
@@ -109,6 +117,7 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
             run_command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(packaged_app)])
             signatures = verify_developer_id_bundle(packaged_app, identity, TEAM_ID, run_command)
             (payload / "INSTALL.txt").write_text(INSTALL_NOTE, encoding="utf-8")
+            (payload / "RELEASE-NOTES.txt").write_text(RELEASE_NOTES, encoding="utf-8")
 
             artifact = package_dir / (ARTIFACT_STEM + "." + package_format)
             if package_format == "zip":

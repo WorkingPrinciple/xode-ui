@@ -47,6 +47,7 @@ def fake_runner(calls):
         elif arguments[0] == "/usr/bin/ditto" and "-c" in arguments:
             payload = Path(arguments[-2])
             assert (payload / "INSTALL.txt").is_file()
+            assert (payload / "RELEASE-NOTES.txt").read_text(encoding="utf-8") == beta.RELEASE_NOTES
             assert (payload / "Ode to X.app").is_dir()
             Path(arguments[-1]).write_bytes(b"Neutral beta archive")
         elif arguments[0] == "/usr/bin/hdiutil":
@@ -78,6 +79,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert receipt["state"] == "prepared_not_submitted"
     assert receipt["notarization"] == "NOT_SUBMITTED"
     assert receipt["installed"] is False and receipt["launched"] is False
+    assert receipt["producerNoticesSHA256"] == "c" * 64
     assert receipt["artifacts"]["sha256"] == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
     assert checksum_path.read_text() == receipt["artifacts"]["sha256"] + "  " + artifact_path.name + "\n"
     assert not any(name in " ".join(command) for command in commands

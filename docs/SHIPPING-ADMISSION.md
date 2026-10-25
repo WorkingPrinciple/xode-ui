@@ -25,6 +25,18 @@ Both copy and bind the inventory/notices before signing, rejecting a different
 producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
 
+For the 0.11.4 beta producer commit `1fd1341d57052754bced4244121cf9d48234bc66`,
+the independently pinned inventory SHA-256 is
+`84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e`.
+Pass it as `--producer-notices-sha256` to the final package command. This pins
+the reviewed inventory identity; its 14 explicit unresolved obligations remain
+distribution blockers and are not cleared by the pin.
+
+The producer's `eappx`, `msixvc`, `msixvc-common`, `xodus`, `xodus-cli`,
+`xodus-management`, and `xodus-service` workspace crates are licensed GPL-3.0
+via the producer repository's root `LICENSE`; the corresponding source archive
+includes that file.
+
 The inventory's own hashes and packaged resource seal do not establish
 completeness. Before approving its digest, independently compare every package
 identity/licence and compiler-artifact membership with the frozen producer
