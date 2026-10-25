@@ -56,6 +56,10 @@ republished. [Artwork provenance](https://github.com/dragoshont/xodus-macos-app/
 
 ## Before you try it
 
+New game installations default to `~/Games/Xode`. Saved custom installation
+roots and partial-install destinations are retained; this source change does not
+move existing games. Discovery also recognizes the legacy `Xodus` library roots.
+
 Use an Apple Silicon Mac. The package and app manifests declare macOS 14 minimum;
 that is not fresh-Mac certification across supported operating systems.
 Development evidence uses Xcode/macOS SDK 27 or newer and Swift 6.4.

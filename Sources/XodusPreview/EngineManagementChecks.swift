@@ -603,6 +603,21 @@ enum EngineManagementChecks {
               "COR134: Clearing a different override returns to Settings default without changing that default")
         let nms = InstalledGame(id: UUID(), title: "No Man's Sky", identityName: "HelloGames.NoMansSky",
             version: "7.6.0.0", storeId: "BQVQTL3PCH05", folder: root.path, launcher: "", importedAt: Date())
+        for folder in ["Xode", "Xodus"] {
+            let located = InstalledGame(id: nms.id, title: nms.title, identityName: nms.identityName,
+                version: nms.version, storeId: nms.storeId,
+                folder: root.appendingPathComponent("Games/\(folder)/NoMansSky-Xbox").path,
+                launcher: "", importedAt: nms.importedAt)
+            check(NativeLaunchConfiguration.permitsPreservedNMSInstallation(located, home: root.path),
+                  "COR180: Exact NMS installation under \(folder) retains its existing qualified prefix binding")
+            let wrongProduct = InstalledGame(id: nms.id, title: nms.title, identityName: nms.identityName,
+                version: nms.version, storeId: "FIXTURE00001", folder: located.folder,
+                launcher: "", importedAt: nms.importedAt)
+            check(!NativeLaunchConfiguration.permitsPreservedNMSInstallation(wrongProduct, home: root.path),
+                  "COR180: Root compatibility cannot lend the preserved NMS prefix to another product")
+        }
+        check(!NativeLaunchConfiguration.permitsPreservedNMSInstallation(nms, home: root.path),
+              "COR180: Arbitrary custom paths cannot borrow the preserved-prefix exception")
         do {
             try NativeLaunchConfiguration.validateOverride(alternate, game: nms, defaults: defaults)
             check(false, "COR134: A conflicting override cannot be offered or saved for a pinned title")

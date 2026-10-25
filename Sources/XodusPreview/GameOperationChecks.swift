@@ -53,9 +53,9 @@ enum GameOperationChecks {
         check(production.scripts == home.appendingPathComponent("Library/Application Support/Xodus/Runtime/scripts/macos")
               && production.processed == home.appendingPathComponent("Library/Application Support/XodusRemote/processed")
               && production.logs == home.appendingPathComponent("Library/Logs/XodusRemote")
-              && production.games == home.appendingPathComponent("Games/Xodus")
+              && production.games == home.appendingPathComponent("Games/Xode")
               && production.journal == home.appendingPathComponent("Library/Application Support/Xodus/game-operation.json"),
-              "B7 changes only the fixed script directory; receipts, logs, games and journal stay unchanged")
+              "COR180: New installs default to Games/Xode while internal scripts, receipts, logs and journal retain identity")
         check(GameScriptPaths.validRunID(runID), "S3/S5/S6 run IDs use the existing generated-only contract")
         for value in ["../status", "xodus-20260101T010101Z-AAAAAAAA", runID + "/../other", "custom-run"] {
             do { _ = try paths.receipt(value, suffix: "status"); check(false, "Receipt paths reject nongenerated IDs") }

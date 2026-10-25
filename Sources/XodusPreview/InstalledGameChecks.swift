@@ -380,8 +380,11 @@ enum InstalledGameChecks {
         let roots = GameInstallationDiscovery.mountedLibraryRoots(
             [volume.path, volume.path, "/", home.appendingPathComponent("Mounts/deep/nested").path],
             home: home.path)
-        check(roots.map(\.path) == [library.path],
-              "REQ106: Mounted library discovery is deduplicated, depth-one Xodus only, without recursive root scanning")
+        check(roots.map(\.path) == [volume.appendingPathComponent("Xode").path, library.path],
+              "COR180: Mounted discovery checks new Xode then legacy Xodus, deduplicated/depth-one without guessed absent mounts")
+        check(GameInstallationDiscovery.defaultLibraryRoots(home: home.path).map(\.path)
+                == [home.appendingPathComponent("Games/Xode").path, home.appendingPathComponent("Games/Xodus").path],
+              "COR180: Default local discovery retains the legacy root without moving or recreating it")
         check(InstalledGamesController.retainingMountedCandidates([folder.path: "9NR1R1XWLCNB"],
               volumes: [], home: home.path).isEmpty,
               "REQ106: Unmounted library candidates retire rather than blocking installation forever")
@@ -399,7 +402,7 @@ enum InstalledGameChecks {
               "COR161: Pending external roots gate only their destination while known same-product candidates still prevent duplication")
         check(GameInstallationDiscovery.mountedLibraryRoots([], home: home.path).isEmpty,
               "REQ106: Unmounted volumes are never guessed or auto-mounted for discovery")
-        guard let discoveredRoot = roots.first else { return }
+        guard let discoveredRoot = roots.last else { return }
         let observed = try await GameStorageProbe().read {
             try GameInstallationDiscovery.scan(originalRoot: discoveredRoot, location: nil, entries: [],
                 mountedRoots: [volume.path], inspectPackage: { _ in .msixvc })
