@@ -864,10 +864,15 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
-    func installationCheckRequired(productID: String) -> Bool {
-        !installed.pendingDiscoveryRoots.isEmpty || installed.undiscoveredInstallations.contains {
-            guard $0.value == productID else { return false }
-            return operation?.destination != $0.key && downloadRetry?.id != productID
+    func installationCheckRequired(for game: PCGame) -> Bool {
+        do {
+            let location = try installLocationDefaults.flatMap { try GameInstallLocation.load($0) }
+            let destination = try paths.destination(title: game.title, productID: game.id,
+                root: location.map { URL(fileURLWithPath: $0.folder) })
+            return !InstalledGamesController.permitsInstallation(productID: game.id, destination: destination.path,
+                candidates: installed.undiscoveredInstallations, pendingRoots: installed.pendingDiscoveryRoots)
+        } catch {
+            return true
         }
     }
 

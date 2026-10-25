@@ -85,6 +85,12 @@ enum InstalledGameChecks {
               "REQ95: Engine menu names the default readably even without alternative inspection rows")
         let operations = GameOperationsController(installed: controller)
         let game = PCGame(id: "9NR1R1XWLCNB", title: "Forza Horizon 6", artwork: nil)
+        let resumePaths = GameScriptPaths(scripts: home.appendingPathComponent("scripts"),
+            processed: home.appendingPathComponent("processed"), logs: home.appendingPathComponent("logs"),
+            games: library, journal: home.appendingPathComponent("operation.json"))
+        let resumeOperations = GameOperationsController(installed: controller, paths: resumePaths)
+        check(GameInstallAction(game: game, operations: resumeOperations).actionTitle == "Install",
+              "REQ106: A matching partial default-root destination keeps the resumable install action instead of Check installation")
         check(GameInstallAction(game: game, operations: operations).actionTitle == "Check installation",
               "REQ106: Unverified matching package uses existing Check installation action, not blind Install")
         await GameInstallAction(game: game, operations: operations).requestInstall()

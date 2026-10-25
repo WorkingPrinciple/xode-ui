@@ -375,7 +375,7 @@ struct GameInstallAction: View {
             : operations.operation?.kind == .repair ? "Repairing" : "Installing"
     }
     var actionTitle: String {
-        operations.installationCheckRequired(productID: game.id) ? "Check installation"
+        operations.installationCheckRequired(for: game) ? "Check installation"
             : failed ? "Retry installation" : "Install"
     }
     var canInstall: Bool { enabled && operations.canStartMutation }
@@ -388,7 +388,7 @@ struct GameInstallAction: View {
 
     func requestInstall() async {
         guard canInstall else { return }
-        if operations.installationCheckRequired(productID: game.id) {
+        if operations.installationCheckRequired(for: game) {
             await operations.checkExistingInstallations()
             return
         }
@@ -429,7 +429,7 @@ struct GameInstallAction: View {
                 Button {
                     Task { await requestInstall() }
                 } label: {
-                    Label(actionTitle, systemImage: operations.installationCheckRequired(productID: game.id)
+                    Label(actionTitle, systemImage: operations.installationCheckRequired(for: game)
                           ? "arrow.clockwise" : "icloud.and.arrow.down")
                 }
                 .modifier(LibraryActionStyle(primary: primary))
