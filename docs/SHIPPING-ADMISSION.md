@@ -2,7 +2,33 @@
 
 ## Purpose and authorization
 
-### REQ100 source candidate: accepted query producer
+### REQ102 COR124 source candidate: NFS finalize recovery producer
+
+The current accepted backend source is
+`2cb12a443fc446193282eead6b76cd3b4c73eca5`, tree
+`c558c024854875deacf2f60cbf076dd7171ee8f4`. It retains the query contract and
+adds the reviewed no-overwrite hardlink fallback for NFS finalize recovery.
+The genuine separate canonical app producer has signed CLI
+`8c47a69f6a176a9feed4d98e0ca2c3e686ee6c5f282f5518f2765c1b29da5c82`
+(28,725,824 bytes), Windows helper
+`32414367081e4dda4048c9260965b3a5433bc8ff1ad22e130dbb6549bcc0dd9a`
+(20,480 bytes), and manifest
+`ef77d022a8b3e22310bfd28aee1e33e72e27d1cd43418de8bef3326c346b98f4`
+(14,157 bytes). Unsigned input
+`cdfe154841437245f47dbe80f591de9798797756d726c98e78f9bba5a4d7c617`
+(28,875,440 bytes) and provenance
+`2d02e636fa39efb1af8c923935a4687ceeb96b5b27ea80f5a06e01123e5865d0`
+(2,199 bytes) pass the unchanged sealed-input verifier with that source/tree.
+Actual signed hashes, sizes, ownership/modes, all three exact helper embeddings,
+and strict fixed-leaf signature were independently checked before repinning.
+Both schema copies remain byte-identical to canonical SHA256
+`8b35109843a37023491add7e385f51c795300df5a838194c484dd7d6b9b3d1bd`.
+Only the current runtime catalogue CLI binding changes; historical gameplay
+evidence stays intact. This is source/artifact admission, not proof of actual
+NFS promotion, installation, gameplay or native search acceptance. The stopped
+9139 producer and the separate standalone 2cb producer are not relabelled.
+
+### Retained REQ100 candidate: accepted query producer
 
 The accepted backend source is `a31f63df2bf265db46a8d28ed2e8ac1e60181beb`,
 tree `1eb7713816f4748fa821bf9d14faff3d8498bbfa`. The sealed-input source/tree
