@@ -216,7 +216,8 @@ enum InstalledGameFiles {
     }
 
     static func readRegular(_ url: URL, maximumBytes: Int, privateFile: Bool = false) throws -> Data {
-        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        // O_NONBLOCK keeps a FIFO from blocking open(); fstat below still requires a regular file.
+        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
         guard descriptor >= 0 else { throw InstalledGameError.invalidRegistry }
         let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         defer { handle.closeFile() }

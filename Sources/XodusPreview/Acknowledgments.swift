@@ -74,9 +74,7 @@ struct AcknowledgmentsInventory: Sendable {
 #endif
             return Locations(
                 producer: producer,
-                engine: FileManager.default.homeDirectoryForCurrentUser
-                    .appendingPathComponent("Library/Application Support/Xode/Engines", isDirectory: true)
-                    .appendingPathComponent(CalimochoRelease.engineID, isDirectory: true),
+                engine: installedReleaseEngine(),
                 appLicense: resources?.appendingPathComponent("LICENSE.txt"),
                 python: resources?.appendingPathComponent("XodusPython/lib/python3.14/LICENSE.txt"),
                 antiCheatReference: CompatibilityResources.antiCheatReferenceLicenseURL(),
@@ -84,6 +82,21 @@ struct AcknowledgmentsInventory: Sendable {
                 appNotice: resources?.appendingPathComponent("NOTICE.txt"),
                 appTrademarks: resources?.appendingPathComponent("TRADEMARKS.md"))
         }
+    }
+
+    /// The pinned release engine that's installed, preferring the active pin; nil when none is installed.
+    static func installedReleaseEngine(root: URL = CalimochoReleaseEngines.defaultEnginesRoot) -> URL? {
+        let installed = CalimochoReleaseEngines.installedNames(root: root)
+        let name = installed.contains(CalimochoRelease.engineID) ? CalimochoRelease.engineID : installed.last
+        return name.map { root.appendingPathComponent($0, isDirectory: true) }
+    }
+
+    static let noticeLimit = 4_000_000
+
+    /// A regular, non-symlink file of at most `limit` bytes (no pipes, devices or links).
+    static func isRegularNotice(_ url: URL, limit: Int = noticeLimit) -> Bool {
+        var info = stat()
+        return lstat(url.path, &info) == 0 && info.st_mode & S_IFMT == S_IFREG && info.st_size > 0 && info.st_size <= limit
     }
 
     static func load(_ locations: Locations = .current) -> Self {
@@ -97,7 +110,7 @@ struct AcknowledgmentsInventory: Sendable {
 
     private mutating func loadApp(_ locations: Locations) {
         func existing(_ url: URL?, _ title: String) -> [OpenSourceComponent.Notice] {
-            guard let url, FileManager.default.isReadableFile(atPath: url.path) else { return [] }
+            guard let url, AcknowledgmentsInventory.isRegularNotice(url) else { return [] }
             return [.init(title: title, url: url, sha256: nil)]
         }
         components.append(.init(origin: .app, name: AppBrand.displayName, version: AppBrand.current.version,
@@ -155,7 +168,7 @@ struct AcknowledgmentsInventory: Sendable {
         let fileManager = FileManager.default
         guard let root, fileManager.fileExists(atPath: root.appendingPathComponent("calimocho-engine.json").path) else {
             // Not installed: show the bundled text NOTICE when packaging includes it.
-            if let bundledNotice, fileManager.isReadableFile(atPath: bundledNotice.path) {
+            if let bundledNotice, Self.isRegularNotice(bundledNotice) {
                 components.append(.init(origin: .engine, name: "Calimocho",
                                          version: EngineDisplayName.releaseVersion(CalimochoRelease.engineID)?.version,
                                          license: "LGPL-2.1-or-later",
@@ -166,14 +179,15 @@ struct AcknowledgmentsInventory: Sendable {
             return
         }
         markers.insert("engine")
-        let version = (try? String(contentsOf: root.appendingPathComponent("VERSION"), encoding: .utf8))?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let version = (try? InstalledGameFiles.readRegular(root.appendingPathComponent("VERSION"), maximumBytes: 256))
+            .map { String(decoding: $0, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines) }
+            ?? root.lastPathComponent
         let topLevel = ["NOTICE", "LICENSE", "COPYING.LIB", "TRADEMARKS.md"].compactMap { name -> OpenSourceComponent.Notice? in
             let url = root.appendingPathComponent(name)
-            return fileManager.isReadableFile(atPath: url.path) ? .init(title: name, url: url, sha256: nil) : nil
+            return Self.isRegularNotice(url) ? .init(title: name, url: url, sha256: nil) : nil
         }
         components.append(.init(origin: .engine, name: "Calimocho",
-                                 version: EngineDisplayName.releaseVersion(version ?? CalimochoRelease.engineID)?.version ?? version,
+                                 version: EngineDisplayName.releaseVersion(version)?.version ?? version,
                                  license: "LGPL-2.1-or-later", notices: topLevel))
         let licenses = root.appendingPathComponent("licenses", isDirectory: true)
         let directories = ((try? fileManager.contentsOfDirectory(at: licenses, includingPropertiesForKeys: [.isDirectoryKey]))
@@ -183,7 +197,7 @@ struct AcknowledgmentsInventory: Sendable {
             var notices: [OpenSourceComponent.Notice] = []
             if let walker = fileManager.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey]) {
                 for case let url as URL in walker where notices.count < 64 {
-                    guard (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
+                    guard Self.isRegularNotice(url) else { continue }
                     let relative = url.path.dropFirst(directory.path.count + 1)
                     notices.append(.init(title: String(relative), url: url, sha256: nil))
                 }
@@ -211,7 +225,7 @@ struct AcknowledgmentsInventory: Sendable {
 
     /// Reads one notice, verifying its hash when one is recorded. RTF is shown as plain text.
     static func text(of notice: OpenSourceComponent.Notice) -> String {
-        guard let data = try? Data(contentsOf: notice.url, options: .mappedIfSafe), data.count <= 4_000_000 else {
+        guard let data = try? InstalledGameFiles.readRegular(notice.url, maximumBytes: noticeLimit) else {
             return "This notice couldn't be read."
         }
         if let expected = notice.sha256,

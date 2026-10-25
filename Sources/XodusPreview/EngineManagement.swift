@@ -18,9 +18,9 @@ enum EngineObservationStatus: String, CaseIterable {
 /// The released Calimocho engine X Ode points users to. Verification lives in
 /// CalimochoReleaseEngine.swift; launch admission belongs to backend engine inspection.
 enum CalimochoRelease {
-    /// The one constant for the released engine: Wine 11.20, Apple GPTK 4.0 beta 3, patch build 02.
-    /// Its display name and release-tag URL derive from it.
-    static let engineID = "calimocho-11.20-4.0b3-02"
+    /// The active pinned release (the newest pin 135c admits); everything else derives from it, so the
+    /// Engines pane, readiness, Acknowledgments and Play never point at different engine folders.
+    static var engineID: String { CalimochoReleasePin.all.last!.engineName }
     static var displayName: String { EngineDisplayName.name(engineID) }
     static let getTitle = "Get Calimocho (beta)"
     /// Release tag page. Its asset isn't published yet (owner decision), so no download control is

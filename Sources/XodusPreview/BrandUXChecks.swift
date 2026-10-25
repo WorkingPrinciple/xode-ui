@@ -164,15 +164,17 @@ enum BrandUXChecks {
                     release: CalimochoAvailability.verifiedRelease(root: emptyRoot)) == .missing,
               "REQ-115: The Engines pane maps 135c's release verification of an empty Engines folder to Missing")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
-        check(CalimochoRelease.engineID == "calimocho-11.20-4.0b3-02"
-              && release.name == "Calimocho 0.1120.4.2" && release.detail == "Wine 11.20 · GPTK 4.0 beta 3"
-              && !release.titleSpecific
+        let pinned = CalimochoReleasePin.all.last!.engineName
+        check(CalimochoRelease.engineID == pinned && CalimochoReleasePin.named(CalimochoRelease.engineID) != nil
+              && release.name == "Calimocho \(EngineDisplayName.releaseVersion(pinned)!.version)"
+              && release.detail == "Wine 11.20 · GPTK 4.0 beta 3" && !release.titleSpecific
+              && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-03")?.version == "0.1120.4.3"
               && EngineDisplayName.releaseVersion("calimocho-11.21-4.0b4-03")?.version == "0.1121.4.3"
               && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-00") == nil
               && CalimochoRelease.displayName == release.name
               && CalimochoRelease.getTitle == "Get Calimocho (beta)"
               && CalimochoRelease.downloadURL.absoluteString
-                == "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-11.20-4.0b3-02"
+                == "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-" + pinned.dropFirst("calimocho-".count)
               && !CalimochoRelease.downloadPublished
               && CalimochoRelease.unpublishedNotice
                 == "Calimocho isn't available for download yet — ask the person who invited you to the beta.",
@@ -229,7 +231,8 @@ enum BrandUXChecks {
                           && !joined.contains("Reinstall") && noDownloadControl,
                           "REVIEW H2b: A verified but not yet admitted release is neutral, with no reinstall or download prompt (\(scheme))")
                 default:
-                    check(noDownloadControl && joined.contains("Calimocho for DIRT 5") && joined.contains("Calimocho 0.1120.4.2"),
+                    check(noDownloadControl && joined.contains("Calimocho for DIRT 5")
+                          && joined.contains(EngineDisplayName.name(CalimochoRelease.engineID)),
                           "COR186 U2: Ready engines show no download prompt and name release and game-specific builds (\(scheme))")
                 }
             }
@@ -505,7 +508,8 @@ enum BrandUXChecks {
         let projects = KeyOpenSourceProjects.projects(shipping: loaded.markers).map(\.name)
         check(engineNames.contains("Calimocho") && engineNames.contains("moltenvk")
               && engineNames.contains("Apple D3DMetal (Game Porting Toolkit)")
-              && loaded.components.first { $0.name == "Calimocho" }?.version == "0.1120.4.2"
+              && loaded.components.first { $0.name == "Calimocho" }?.version
+                == EngineDisplayName.releaseVersion(CalimochoRelease.engineID)?.version
               && projects == ["Xodus", "Calimocho", "Wine, with CodeWeavers' Wine patches", "vkd3d", "MoltenVK"]
               && KeyOpenSourceProjects.separate(shipping: loaded.markers)?.license.contains("not open source") == true
               && !KeyOpenSourceProjects.catalog.contains { $0.project.name == "DXVK" },
@@ -513,6 +517,29 @@ enum BrandUXChecks {
         let rtf = loaded.components.first { $0.name.hasPrefix("Apple D3DMetal") }?.notices.first
         check(rtf.map { AcknowledgmentsInventory.text(of: $0).contains("Apple licence") } == true,
               "REQ-117: RTF licences are shown as plain text")
+        // Review L: links, pipes and oversized files are never read as notices.
+        let fifo = engine.appendingPathComponent("licenses/moltenvk/FIFO")
+        mkfifo(fifo.path, 0o600)
+        try? fileManager.createSymbolicLink(at: engine.appendingPathComponent("TRADEMARKS.md"),
+                                            withDestinationURL: URL(fileURLWithPath: "/dev/zero"))
+        let hostile = AcknowledgmentsInventory.load(.init(producer: producer, engine: engine))
+        let calimochoNotices = hostile.components.first { $0.name == "Calimocho" }?.notices.map(\.title) ?? []
+        let moltenNotices = hostile.components.first { $0.name == "moltenvk" }?.notices.map(\.title) ?? []
+        check(calimochoNotices == ["NOTICE"] && moltenNotices == ["LICENSE"]
+              && !AcknowledgmentsInventory.isRegularNotice(fifo)
+              && !AcknowledgmentsInventory.isRegularNotice(URL(fileURLWithPath: "/dev/zero"))
+              && AcknowledgmentsInventory.text(of: .init(title: "fifo", url: fifo, sha256: nil)) == "This notice couldn't be read.",
+              "REVIEW L: Symlinks, FIFOs and devices are skipped and never read; notices use a bounded regular-file read")
+        // installedNames refuses symlinked paths (the temp directory sits under /var → /private/var).
+        let releaseRoot = URL(fileURLWithPath: fileManager.currentDirectoryPath)
+            .appendingPathComponent(".build/XodusReleaseRoot-\(UUID().uuidString)")
+        defer { try? fileManager.removeItem(at: releaseRoot) }
+        for name in [CalimochoRelease.engineID, "calimocho-not-pinned"] {
+            try? fileManager.createDirectory(at: releaseRoot.appendingPathComponent(name), withIntermediateDirectories: true)
+        }
+        check(AcknowledgmentsInventory.installedReleaseEngine(root: releaseRoot)?.lastPathComponent == CalimochoRelease.engineID
+              && AcknowledgmentsInventory.installedReleaseEngine(root: releaseRoot.appendingPathComponent("none")) == nil,
+              "REVIEW M: Acknowledgments reads the installed pinned release, the same engine the Engines pane verifies")
         let bundledNotice = root.appendingPathComponent("EngineNotices/NOTICE.txt")
         try? fileManager.createDirectory(at: bundledNotice.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? Data("Calimocho bundled notice".utf8).write(to: bundledNotice)
