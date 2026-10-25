@@ -24,16 +24,18 @@ private actor DescriptorTransport: PCGamesTransport {
     var blocked = Set<Int>()
     var failures = Set<Int>()
     var omitted = Set<String>()
+    var nonPC = Set<String>()
     var foreign = false
     var failureStatus = 400
     var retryAfter: String?
 
     func configure(blocked: Set<Int> = [], failures: Set<Int> = [], omitted: Set<String> = [], foreign: Bool = false,
-                   failureStatus: Int = 400, retryAfter: String? = nil) {
+                   failureStatus: Int = 400, retryAfter: String? = nil, nonPC: Set<String> = []) {
         self.blocked = blocked; self.failures = failures; self.omitted = omitted
         self.foreign = foreign
         self.failureStatus = failureStatus
         self.retryAfter = retryAfter
+        self.nonPC = nonPC
     }
 
     func release(_ index: Int) { continuations.removeValue(forKey: index)?.resume() }
@@ -52,7 +54,7 @@ private actor DescriptorTransport: PCGamesTransport {
              "LocalizedProperties": [["ProductTitle": "Game \($0)", "Images": [],
                                       "ProductDescription": "Synthetic descriptor"]],
              "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": [
-                ["PlatformDependencies": [["PlatformName": "Windows.Desktop"]]]
+                ["PlatformDependencies": [["PlatformName": nonPC.contains($0) ? "Windows.Xbox" : "Windows.Desktop"]]]
              ]]]]]]
         }
         return PCGamesHTTPResponse(status: 200,
@@ -99,6 +101,48 @@ enum PublicDescriptorChecks {
         let transport = DescriptorTransport()
         let shared = PublicCatalogDescriptors(transport: transport, now: { clock.now() })
         let client = PCGamesClient(transport: transport, descriptors: shared)
+        let seasonalTransport = DescriptorTransport()
+        let seasonalArtwork = LibraryCatalogArtwork(transport: seasonalTransport)
+        let seasonal = HalloweenCatalog(artwork: seasonalArtwork)
+        await seasonal.load(scope: nil, market: "GB", language: "en-US")
+        check(await seasonalTransport.requests.isEmpty,
+              "REQ89: Inactive season or unconfirmed country sends no seasonal requests")
+        await seasonal.load(scope: "account:GB:2026", market: "GB", language: "en-US")
+        let seasonalRequests = await seasonalTransport.requests
+        check(seasonal.products.map(\.id) == HalloweenShelf.editorialIDs
+              && seasonalRequests.count == 1 && HalloweenShelf.editorialIDs.count <= 12,
+              "REQ89: Independent bounded editorial descriptors populate a shelf without loaded Discover pages")
+        await seasonal.load(scope: "account:GB:2026", market: "GB", language: "en-US")
+        check(await seasonalTransport.requests.count == 1,
+              "REQ89: Seasonal scope reentry reuses verified selection without duplicate requests")
+        await seasonal.load(scope: nil, market: "GB", language: "en-US")
+        check(seasonal.products.isEmpty && seasonal.facts.isEmpty && seasonal.error == nil,
+              "REQ89: Season end or account retirement removes cached seasonal presentation")
+        let failedSeasonalTransport = DescriptorTransport()
+        await failedSeasonalTransport.configure(failures: [0])
+        let failedSeasonal = HalloweenCatalog(artwork: LibraryCatalogArtwork(transport: failedSeasonalTransport))
+        await failedSeasonal.load(scope: "GB", market: "GB", language: "en-US")
+        check(failedSeasonal.products.isEmpty && failedSeasonal.error != nil,
+              "REQ89: Failed seasonal reads expose an error instead of a successful empty shelf")
+        await failedSeasonal.load(scope: "GB", market: "GB", language: "en-US", refresh: true)
+        check(failedSeasonal.products.count == HalloweenShelf.editorialIDs.count && failedSeasonal.error == nil,
+              "REQ89: Explicit seasonal retry recovers verified products without replacing Discover results")
+        let emptySeasonalTransport = DescriptorTransport()
+        await emptySeasonalTransport.configure(nonPC: Set(HalloweenShelf.editorialIDs))
+        let emptySeasonal = HalloweenCatalog(artwork: LibraryCatalogArtwork(transport: emptySeasonalTransport))
+        await emptySeasonal.load(scope: "GB", market: "GB", language: "en-US")
+        check(emptySeasonal.products.isEmpty && emptySeasonal.error == nil,
+              "REQ89: A verified console-only selection is omitted, not promoted to PC or treated as a read failure")
+        let delayedSeasonalTransport = DescriptorTransport()
+        await delayedSeasonalTransport.configure(blocked: [0])
+        let delayedSeasonal = HalloweenCatalog(artwork: LibraryCatalogArtwork(transport: delayedSeasonalTransport))
+        let retiredSeasonalRead = Task { await delayedSeasonal.load(scope: "old:GB", market: "GB", language: "en-US") }
+        try await wait(delayedSeasonalTransport, count: 1)
+        await delayedSeasonal.load(scope: nil, market: "GB", language: "en-US")
+        await delayedSeasonalTransport.release(0)
+        await retiredSeasonalRead.value
+        check(delayedSeasonal.products.isEmpty && !delayedSeasonal.loading,
+              "REQ89: Late seasonal completion cannot republish after account or season retirement")
         let sample = ids(3)
         for status in [503, 429] {
             let transient = DescriptorTransport()

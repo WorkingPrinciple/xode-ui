@@ -157,6 +157,13 @@ enum SubscriberBenefits {
 }
 
 enum HalloweenShelf {
+    // Theme provenance only, not current offers, events or subscription membership.
+    // Xbox Wire, 2025-10-14:
+    // https://news.xbox.com/en-us/2025/10/14/shocktober-xbox-2025-sale-deals-halloween-xbox/
+    static let editorialIDs = [
+        "9N9097G0XZMB", "C0N22P73QZ60", "9NXSMCH8RP60", "9MT5NJ5W7B8Z",
+        "9PG0PMB5Q0GT", "BT5P2X999VH2", "C1C4DZJPBC2V", "9MW715J1P29D"
+    ]
     static func isActive(on date: Date, timeZone: TimeZone = .autoupdatingCurrent) -> Bool {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
@@ -174,7 +181,7 @@ enum HalloweenShelf {
         guard isActive(on: date, timeZone: timeZone) else { return [] }
         var seen = Set<String>()
         return Array(loaded.filter { product in
-            guard product.pcCatalogCandidate, facts[product.id]?.genres.contains(where: { genre in
+            guard product.pcCatalogCandidate, editorialIDs.contains(product.id) || facts[product.id]?.genres.contains(where: { genre in
                 let words = genre.lowercased().split { !$0.isLetter }
                 return words.contains("horror") || words.contains("spooky") || words.contains("halloween")
             }) == true else { return false }
@@ -224,6 +231,7 @@ struct LiveCatalogView: View {
     @State private var showsCoverage = false
     @State private var detailFocusReturnID: String?
     @State private var seasonalDate = Date()
+    @StateObject private var halloweenCatalog = HalloweenCatalog()
 
     private var projection: CatalogProjection { selection.projection.current }
     private var results: CatalogSearchResults { projection.index.results }
@@ -307,13 +315,24 @@ struct LiveCatalogView: View {
                     }
                     if !genres.isEmpty { browseGenres }
                     if selection.genre == nil {
-                        let halloween = HalloweenShelf.products(visible, facts: facts, on: seasonalDate)
-                        if !halloween.isEmpty {
+                        let halloween = HalloweenShelf.products(halloweenCatalog.products,
+                            facts: halloweenCatalog.facts, on: seasonalDate).filter { isVisible(game($0)) }
+                        if HalloweenShelf.isActive(on: seasonalDate),
+                           !halloween.isEmpty || halloweenCatalog.loading || halloweenCatalog.error != nil {
                             VStack(alignment: .leading, spacing: 16) {
                                 Text("Halloween games").font(.title2.weight(.semibold))
-                                Text("Horror and spooky categories from the games loaded here.")
-                                    .font(.callout).foregroundStyle(.secondary)
-                                browseShelf(halloween, demandLoads: false, shelfID: "Halloween")
+                                if halloweenCatalog.loading && halloween.isEmpty {
+                                    ProgressView("Loading Halloween games")
+                                }
+                                if let error = halloweenCatalog.error {
+                                    Text(error).foregroundStyle(.secondary)
+                                    Button("Retry Halloween games") {
+                                        Task { await loadHalloween(refresh: true) }
+                                    }.disabled(halloweenCatalog.loading)
+                                }
+                                if !halloween.isEmpty {
+                                    browseShelf(halloween, demandLoads: false, shelfID: "Halloween")
+                                }
                             }
                             .accessibilityIdentifier("xodus.catalog.halloween")
                         }
@@ -372,8 +391,6 @@ struct LiveCatalogView: View {
                         }
                     }
                     if query.isEmpty {
-                        Text("Browsing loaded games, not the full catalogue. Scroll along a row for more; previously loaded games stay visible while refreshing.")
-                            .font(.callout).foregroundStyle(.secondary)
                     }
                     if searchUnavailable {
                         VStack(alignment: .leading) {
@@ -515,12 +532,24 @@ struct LiveCatalogView: View {
             if focusedResult == nil { returnToSearch() }
         }
         .onExitCommand(perform: exitSearchResults)
+        .task(id: halloweenScope) { await loadHalloween() }
         .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
                                        ids: presentationActive ? metadataIDs : [])) {
             guard allowsArtworkLoading, presentationActive else { return }
             await art.load(ids: metadataIDs,
                            market: session.market, language: session.language)
         }
+    }
+
+    private var halloweenScope: String? {
+        guard query.isEmpty, presentationActive, allowsStartupTasks, session.isReady,
+              session.accountCountryReady, HalloweenShelf.isActive(on: seasonalDate) else { return nil }
+        return "\(session.accountCatalogScope):\(Calendar.current.component(.year, from: seasonalDate))"
+    }
+
+    private func loadHalloween(refresh: Bool = false) async {
+        await halloweenCatalog.load(scope: halloweenScope, market: session.market,
+            language: session.language, refresh: refresh)
     }
 
     private var metadataIDs: [String] {
@@ -806,7 +835,8 @@ struct LiveCatalogView: View {
 
     private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
         operations.supportIssues(productID: game.id,
-            packageFormat: game.installed?.packageType?.label ?? facts[game.id]?.packageFormat)
+            packageFormat: game.installed?.packageType?.label ?? facts[game.id]?.packageFormat
+                ?? halloweenCatalog.facts[game.id]?.packageFormat)
     }
 
     private func isVisible(_ game: LibraryGame) -> Bool {

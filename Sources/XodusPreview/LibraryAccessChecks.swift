@@ -488,6 +488,11 @@ enum LibraryAccessChecks {
         let console = try LibraryGame.details(id: "FIXTURE00004", title: "Console candidate",
             market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: false)
         let halloweenDate = seasonalDate(2026, 10, 24)
+        let editorialPC = try LibraryGame.details(id: "9N9097G0XZMB", title: "Editorial PC fixture",
+            market: "GB", language: "en-US", source: "MicrosoftDisplayCatalog:v7", pcCandidate: true)
+        check(HalloweenShelf.products([editorialPC], facts: [:],
+                on: halloweenDate, timeZone: utc).map(\.id) == [editorialPC.id],
+              "REQ89: Verified editorial PC selection does not depend on the first Discover page or English category words")
         let seasonalFacts = [
             publicPC.id: LibraryCatalogFacts(genres: ["Survival Horror"]),
             console.id: LibraryCatalogFacts(genres: ["Horror"])

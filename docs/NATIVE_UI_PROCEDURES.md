@@ -413,11 +413,19 @@ The recurring Discover Halloween shelf uses a provisional local Gregorian
 October 1 through Sunday on or immediately after October 31 window, ending
 at Monday midnight. It refreshes its date on appearance, activation, local
 day change and timezone change, without a scheduled job or additional fetch.
-Selection is limited to twelve deduplicated loaded PC catalogue products whose
-existing Microsoft DisplayCatalog category metadata explicitly contains the
-English words horror, spooky or Halloween. Broad categories, untranslated
-categories without those words and missing metadata do not qualify by guesswork.
-An empty selection omits the shelf. Ordinary cards/details and installation
+Selection independently loads the eight exact Store IDs linked by Xbox Wire's
+14 October 2025 "Shocktober Is Back" article:
+https://news.xbox.com/en-us/2025/10/14/shocktober-xbox-2025-sale-deals-halloween-xbox/
+No newer official 2026 article was found during the 25 October source check.
+The article establishes theme provenance only, not current events, offers or
+subscription membership. Existing managed descriptors verify base-game PC
+package listings in the confirmed account country and independent UI language;
+console-only and ambiguous listings are excluded. The selection does not depend
+on which Discover pages have loaded. The existing compatibility filter applies.
+One bounded descriptor batch is reused through the shared cache and the
+account/country/language/annual-window presentation scope. Errors expose Retry;
+successful empty selections omit the shelf. Account/season retirement fences
+late completion and removes the presentation. Ordinary cards/details and installation
 guards are reused; shelf presence implies no discount, account access or Mac
 compatibility. No complete seasonal catalogue is claimed.
 
