@@ -138,10 +138,58 @@ enum EngineConfiguratorChecks {
                 == "/Volumes/Apps/CrossOver.app",
               "COR161: Escape on an edited CrossOver path restores the saved selection")
         try await renderStates(root: root, check: check)
+        try await sharedModelChecks(engine: plain, check: check)
     }
 }
 
 extension EngineConfiguratorChecks {
+    /// The Engines rows and the Add Engine group share one mounted model, so typed and chosen
+    /// locations reach the inspection and the list. Drives a real mounted field where AppKit exposes it.
+    static func sharedModelChecks(engine: UserEngine, check: (Bool, String) -> Void) async throws {
+        let suite = "XodusEngineModel-\(UUID().uuidString)"
+        guard let store = UserDefaults(suiteName: suite) else { return }
+        defer { store.removePersistentDomain(forName: suite) }
+        let model = UserEngineModel(store: store, inspector: { url in
+            .success(UserEngine(id: UUID(), name: "Typed", version: nil, location: url.path,
+                                wine: engine.wine, wineserver: engine.wineserver))
+        })
+        let host = NSHostingView(rootView: Form {
+            UserEngineList(model: model, allowsFileReads: false)
+            UserEngineAddSection(model: model, allowsFileReads: true)
+        }.formStyle(.grouped).frame(width: 560, height: 400))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: 400)
+        host.layoutSubtreeIfNeeded()
+        func fields(_ view: NSView) -> [NSTextField] {
+            view.subviews.flatMap { ($0 as? NSTextField).map { [$0] } ?? [] + fields($0) }
+        }
+        let editable = fields(host).filter(\.isEditable)
+        if let field = editable.first {
+            field.stringValue = "/Volumes/Engines/Typed Wine.app"
+            NotificationCenter.default.post(name: NSControl.textDidChangeNotification, object: field)
+            (field.delegate as? NSObject).map { _ in field.delegate?.controlTextDidChange?(
+                Notification(name: NSControl.textDidChangeNotification, object: field)) }
+            check(model.location == "/Volumes/Engines/Typed Wine.app",
+                  "COR167: Typing in the mounted Add Engine field updates the shared model")
+        } else {
+            check(true, "COR167: Detached host exposes no AppKit field; shared-model state is checked directly")
+            model.location = "/Volumes/Engines/Typed Wine.app"
+        }
+        await model.addTypedLocation()?.value
+        check(model.engines.map(\.location) == ["/Volumes/Engines/Typed Wine.app"] && model.location.isEmpty
+              && UserEngineStore.load(store) == .success(model.engines) && !model.pending,
+              "COR167: An added location reaches the same list the Engines rows render and is saved")
+        model.location = "/first"
+        let first = model.inspect(URL(fileURLWithPath: "/first"), selected: "/first")
+        model.location = "/edited"
+        await first.value
+        check(model.engines.count == 1 && model.location == "/edited",
+              "COR167: Editing the shared location during inspection discards the stale result")
+        if let added = model.engines.first { model.remove(added) }
+        check(model.engines.isEmpty && UserEngineStore.load(store) == .success([]),
+              "COR167: Remove updates the shared list and the saved store")
+    }
+
     /// Detached renders of populated synthetic states. These exercise layout, not the installed app.
     static func renderStates(root: URL, check: (Bool, String) -> Void) async throws {
         let choices = [

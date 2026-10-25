@@ -202,99 +202,38 @@ enum EngineLocationDetector {
     }
 }
 
-struct UserEngineRows: View {
-    @ObservedObject var settings: RuntimeProviderSettings
-    var allowsFileReads = true
-    var store: UserDefaults = .standard
-    @State private var engines: [UserEngine]
-    @State private var storeError: UserEngineStore.StoreError?
-    @State private var suggestions: [UserEngine]
-    @State private var location = ""
-    @State private var error: String?
-    @State private var fence = EngineRequestFence()
+/// User-engine state shared by the Engines rows and the Add Engine group. Views that render
+/// either part observe one instance owned by a mounted view, never a detached copy.
+@MainActor
+final class UserEngineModel: ObservableObject {
+    @Published private(set) var engines: [UserEngine] = []
+    @Published private(set) var storeError: UserEngineStore.StoreError?
+    @Published var suggestions: [UserEngine]
+    @Published var location = ""
+    @Published var error: String?
+    @Published private(set) var fence = EngineRequestFence()
+    let store: UserDefaults
+    var terminating: () -> Bool = { false }
+    private let inspector: @Sendable (URL) -> Result<UserEngine, EngineLayoutError>
 
-    init(settings: RuntimeProviderSettings, allowsFileReads: Bool = true, store: UserDefaults = .standard,
-         suggestions: [UserEngine] = []) {
-        self.settings = settings
-        self.allowsFileReads = allowsFileReads
+    init(store: UserDefaults = .standard, suggestions: [UserEngine] = [],
+         inspector: @escaping @Sendable (URL) -> Result<UserEngine, EngineLayoutError> = EngineLayoutInspector.inspect) {
         self.store = store
+        self.suggestions = suggestions
+        self.inspector = inspector
         switch UserEngineStore.load(store) {
-        case .success(let loaded): _engines = State(initialValue: loaded); _storeError = State(initialValue: nil)
-        case .failure(let failure): _engines = State(initialValue: []); _storeError = State(initialValue: failure)
-        }
-        _suggestions = State(initialValue: suggestions)
-    }
-
-    private var storeReadable: Bool { storeError != .unreadable }
-
-    /// Rows for the Engines section. Use `addSection` for the separate Add Engine group.
-    var body: some View {
-        ForEach(engines) { engine in
-            EngineRow(name: engine.name, detail: engine.version, location: engine.location,
-                      state: .configured) {
-                Button("Remove", role: .destructive) { remove(engine) }
-                    .disabled(!storeReadable || settings.applicationTerminating)
-                    .accessibilityLabel("Remove \(engine.name)")
-            }
-        }
-        ForEach(suggestions) { engine in
-            EngineRow(name: engine.name, detail: engine.version, location: engine.location, state: .detected) {
-                Button("Add") { add(engine) }
-                    .disabled(!storeReadable || fence.pending)
-                    .accessibilityLabel("Add \(engine.name)")
-            }
-        }
-        if let storeError, storeError == .unreadable {
-            Label(storeError.message, systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.secondary)
-        }
-        Group {}
-            .task(id: "\(allowsFileReads)|\(engines.map(\.location).joined(separator: "|"))") {
-                guard allowsFileReads else { return }
-                let current = engines
-                let found = await Task.detached(priority: .utility) {
-                    EngineLocationDetector.suggestions(excluding: current)
-                }.value
-                guard !Task.isCancelled else { return }
-                suggestions = found
-            }
-    }
-
-    /// The Add Engine group: a visible, editable location with Choose… and Add.
-    var addSection: some View {
-        Section("Add Engine") {
-            LabeledContent("Location") {
-                HStack(spacing: 8) {
-                    TextField("Location", text: $location, prompt: Text("Wine app or folder"))
-                        .labelsHidden()
-                        .textFieldStyle(.roundedBorder)
-                        .multilineTextAlignment(.leading)
-                        .onSubmit(addTypedLocation)
-                        .onExitCommand(perform: discardDraft)
-                        .accessibilityLabel("Engine location")
-                        .accessibilityIdentifier("xodus.engines.location")
-                    Button("Choose…", action: choose)
-                        .disabled(!allowsFileReads || fence.pending)
-                        .accessibilityLabel("Choose engine app or folder")
-                    if fence.pending { ProgressView().controlSize(.small).accessibilityLabel("Checking engine") }
-                    Button("Add", action: addTypedLocation)
-                        .disabled(!allowsFileReads || !storeReadable || fence.pending
-                                  || location.trimmingCharacters(in: .whitespaces).isEmpty)
-                        .accessibilityLabel("Add engine")
-                        .accessibilityIdentifier("xodus.engines.add")
-                }
-            }
-            if let message = error ?? (storeError == .full ? storeError?.message : nil) {
-                Label(message, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        case .success(let loaded): engines = loaded
+        case .failure(let failure): storeError = failure
         }
     }
+
+    var storeReadable: Bool { storeError != .unreadable }
+    var pending: Bool { fence.pending }
 
     /// Returns false and leaves the list and the typed location untouched when it can't be stored.
     @discardableResult
-    private func add(_ engine: UserEngine) -> Bool {
-        guard storeReadable, !settings.applicationTerminating else { return false }
+    func add(_ engine: UserEngine) -> Bool {
+        guard storeReadable, !terminating() else { return false }
         do {
             let next = try UserEngineStore.adding(engine, to: engines)
             try UserEngineStore.save(next, store)
@@ -308,8 +247,8 @@ struct UserEngineRows: View {
         }
     }
 
-    private func remove(_ engine: UserEngine) {
-        guard storeReadable, !settings.applicationTerminating else { return }
+    func remove(_ engine: UserEngine) {
+        guard storeReadable, !terminating() else { return }
         let next = engines.filter { $0.id != engine.id }
         do {
             try UserEngineStore.save(next, store)
@@ -318,19 +257,20 @@ struct UserEngineRows: View {
         } catch { self.error = error.message }
     }
 
-    private func discardDraft() {
+    func discardDraft() {
         fence.cancel()
         location = ""
         error = nil
     }
 
-    private func addTypedLocation() {
+    @discardableResult
+    func addTypedLocation() -> Task<Void, Never>? {
         let path = (location.trimmingCharacters(in: .whitespaces) as NSString).expandingTildeInPath
-        guard !path.isEmpty, !fence.pending else { return }
-        inspect(URL(fileURLWithPath: path), selected: location)
+        guard !path.isEmpty, !fence.pending else { return nil }
+        return inspect(URL(fileURLWithPath: path), selected: location)
     }
 
-    private func choose() {
+    func choose() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
@@ -343,17 +283,117 @@ struct UserEngineRows: View {
         inspect(url, selected: location)
     }
 
-    private func inspect(_ url: URL, selected: String) {
+    @discardableResult
+    func inspect(_ url: URL, selected: String) -> Task<Void, Never> {
         let id = fence.begin(path: selected)
-        Task {
-            let result = await Task.detached(priority: .userInitiated) { EngineLayoutInspector.inspect(url) }.value
+        let inspector = inspector
+        return Task {
+            let result = await Task.detached(priority: .userInitiated) { inspector(url) }.value
             defer { fence.finish(id) }
-            guard fence.accepts(id, selected: location, terminating: settings.applicationTerminating) else { return }
+            guard fence.accepts(id, selected: location, terminating: terminating()) else { return }
             switch result {
             case .success(let engine): add(engine)
             case .failure(let failure): error = failure.message
             }
         }
+    }
+
+    func refreshSuggestions() async {
+        let current = engines
+        let found = await Task.detached(priority: .utility) {
+            EngineLocationDetector.suggestions(excluding: current)
+        }.value
+        guard !Task.isCancelled else { return }
+        suggestions = found
+    }
+}
+
+/// Engines-section rows for user-added and detected engines.
+struct UserEngineList: View {
+    @ObservedObject var model: UserEngineModel
+    var allowsFileReads = true
+
+    var body: some View {
+        ForEach(model.engines) { engine in
+            EngineRow(name: engine.name, detail: engine.version, location: engine.location,
+                      state: .configured) {
+                Button("Remove", role: .destructive) { model.remove(engine) }
+                    .disabled(!model.storeReadable || model.terminating())
+                    .accessibilityLabel("Remove \(engine.name)")
+            }
+        }
+        ForEach(model.suggestions) { engine in
+            EngineRow(name: engine.name, detail: engine.version, location: engine.location, state: .detected) {
+                Button("Add") { model.add(engine) }
+                    .disabled(!model.storeReadable || model.pending)
+                    .accessibilityLabel("Add \(engine.name)")
+            }
+        }
+        if let storeError = model.storeError, storeError == .unreadable {
+            Label(storeError.message, systemImage: "exclamationmark.triangle")
+                .foregroundStyle(.secondary)
+        }
+        Group {}
+            .task(id: "\(allowsFileReads)|\(model.engines.map(\.location).joined(separator: "|"))") {
+                guard allowsFileReads else { return }
+                await model.refreshSuggestions()
+            }
+    }
+}
+
+/// The Add Engine group: a visible, editable location with Choose… and Add.
+struct UserEngineAddSection: View {
+    @ObservedObject var model: UserEngineModel
+    var allowsFileReads = true
+
+    var body: some View {
+        Section("Add Engine") {
+            LabeledContent("Location") {
+                HStack(spacing: 8) {
+                    TextField("Location", text: $model.location, prompt: Text("Wine app or folder"))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.leading)
+                        .onSubmit { model.addTypedLocation() }
+                        .onExitCommand(perform: model.discardDraft)
+                        .accessibilityLabel("Engine location")
+                        .accessibilityIdentifier("xodus.engines.location")
+                    Button("Choose…", action: model.choose)
+                        .disabled(!allowsFileReads || model.pending)
+                        .accessibilityLabel("Choose engine app or folder")
+                    if model.pending { ProgressView().controlSize(.small).accessibilityLabel("Checking engine") }
+                    Button("Add") { model.addTypedLocation() }
+                        .disabled(!allowsFileReads || !model.storeReadable || model.pending
+                                  || model.location.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Add engine")
+                        .accessibilityIdentifier("xodus.engines.add")
+                }
+            }
+            if let message = model.error ?? (model.storeError == .full ? model.storeError?.message : nil) {
+                Label(message, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+/// Standalone user-engine rows and Add Engine group, owning their own model.
+struct UserEngineRows: View {
+    @ObservedObject var settings: RuntimeProviderSettings
+    var allowsFileReads = true
+    @StateObject private var model: UserEngineModel
+
+    init(settings: RuntimeProviderSettings, allowsFileReads: Bool = true, store: UserDefaults = .standard,
+         suggestions: [UserEngine] = []) {
+        self.settings = settings
+        self.allowsFileReads = allowsFileReads
+        _model = StateObject(wrappedValue: UserEngineModel(store: store, suggestions: suggestions))
+    }
+
+    var body: some View {
+        UserEngineList(model: model, allowsFileReads: allowsFileReads)
+        UserEngineAddSection(model: model, allowsFileReads: allowsFileReads)
+            .onAppear { model.terminating = { [settings] in settings.applicationTerminating } }
     }
 }
 
@@ -444,59 +484,97 @@ struct EngineConfiguratorForm<Advanced: View>: View {
     let setDefault: (String) -> Void
     let refresh: () -> Void
     @ViewBuilder let advanced: () -> Advanced
-    @State private var advancedExpanded = false
 
     var body: some View {
         Form { sections }.formStyle(.grouped)
     }
 
     /// The configurator's Section children, for hosts that already own a grouped Form.
-    @ViewBuilder var sections: some View {
-        let users = UserEngineRows(settings: settings, allowsFileReads: allowsFileReads,
-                                   store: userEngineStore, suggestions: suggestions)
-            Section {
-                Picker("Default Engine", selection: Binding(
-                    get: { defaultID ?? "" },
-                    set: { id in if id != defaultID, choices.contains(where: { $0.id == id && $0.ready }) { setDefault(id) } })) {
-                    if defaultID == nil || !choices.contains(where: { $0.id == defaultID }) {
-                        Text(defaultName).tag(defaultID ?? "")
-                    }
-                    ForEach(choices) { choice in
-                        Text(choice.name).tag(choice.id).selectionDisabled(!choice.ready)
-                    }
+    /// This is a mounted view, so its state lives with it wherever it is placed.
+    var sections: EngineConfiguratorSections<Advanced> {
+        EngineConfiguratorSections(choices: choices, defaultID: defaultID, defaultName: defaultName,
+            checking: checking, error: error, settings: settings, allowsFileReads: allowsFileReads,
+            userEngineStore: userEngineStore, suggestions: suggestions, setDefault: setDefault,
+            refresh: refresh, advanced: advanced)
+    }
+}
+
+struct EngineConfiguratorSections<Advanced: View>: View {
+    let choices: [EngineChoice]
+    let defaultID: String?
+    let defaultName: String
+    let checking: Bool
+    let error: String?
+    @ObservedObject var settings: RuntimeProviderSettings
+    let allowsFileReads: Bool
+    let setDefault: (String) -> Void
+    let refresh: () -> Void
+    let advanced: () -> Advanced
+    @StateObject private var users: UserEngineModel
+    @State private var advancedExpanded = false
+
+    init(choices: [EngineChoice], defaultID: String?, defaultName: String, checking: Bool, error: String?,
+         settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
+         suggestions: [UserEngine], setDefault: @escaping (String) -> Void, refresh: @escaping () -> Void,
+         advanced: @escaping () -> Advanced) {
+        self.choices = choices
+        self.defaultID = defaultID
+        self.defaultName = defaultName
+        self.checking = checking
+        self.error = error
+        self.settings = settings
+        self.allowsFileReads = allowsFileReads
+        self.setDefault = setDefault
+        self.refresh = refresh
+        self.advanced = advanced
+        _users = StateObject(wrappedValue: UserEngineModel(store: userEngineStore, suggestions: suggestions))
+    }
+
+    var body: some View {
+        Section {
+            Picker("Default Engine", selection: Binding(
+                get: { defaultID ?? "" },
+                set: { id in if id != defaultID, choices.contains(where: { $0.id == id && $0.ready }) { setDefault(id) } })) {
+                if defaultID == nil || !choices.contains(where: { $0.id == defaultID }) {
+                    Text(defaultName).tag(defaultID ?? "")
                 }
-                .pickerStyle(.menu)
-                .disabled(!allowsFileReads || settings.applicationTerminating)
-                .accessibilityIdentifier("xodus.engines.default")
-                if let error {
-                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                }
-            }
-            Section {
                 ForEach(choices) { choice in
-                    EngineRow(name: choice.name,
-                              detail: choice.version.flatMap { choice.name.contains($0) ? nil : $0 },
-                              state: choice.id == defaultID ? .isDefault : choice.ready ? .ready : .unverified) {
-                        EmptyView()
-                    }
-                }
-                users
-            } header: {
-                HStack {
-                    Text("Engines")
-                    Spacer()
-                    if checking { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
-                    Button("Check Again", action: refresh)
-                        .buttonStyle(.borderless)
-                        .disabled(checking || !allowsFileReads || settings.applicationTerminating)
-                        .accessibilityLabel("Check engines again")
+                    Text(choice.name).tag(choice.id).selectionDisabled(!choice.ready)
                 }
             }
-            users.addSection
-            CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
-            Section {
-                DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
+            .pickerStyle(.menu)
+            .disabled(!allowsFileReads || settings.applicationTerminating)
+            .accessibilityIdentifier("xodus.engines.default")
+            if let error {
+                Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
             }
+        }
+        Section {
+            ForEach(choices) { choice in
+                EngineRow(name: choice.name,
+                          detail: choice.version.flatMap { choice.name.contains($0) ? nil : $0 },
+                          state: choice.id == defaultID ? .isDefault : choice.ready ? .ready : .unverified) {
+                    EmptyView()
+                }
+            }
+            UserEngineList(model: users, allowsFileReads: allowsFileReads)
+        } header: {
+            HStack {
+                Text("Engines")
+                Spacer()
+                if checking { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
+                Button("Check Again", action: refresh)
+                    .buttonStyle(.borderless)
+                    .disabled(checking || !allowsFileReads || settings.applicationTerminating)
+                    .accessibilityLabel("Check engines again")
+            }
+        }
+        UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
+            .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
+        CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
+        Section {
+            DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
+        }
     }
 }
 
