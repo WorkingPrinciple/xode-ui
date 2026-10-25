@@ -10,14 +10,16 @@ import tempfile
 from unittest.mock import patch
 
 import package_beta as beta
-from package_beta import ARTIFACT_STEM, IDENTITY, TEAM_ID, VERSION, package_beta as create_beta_package
+from package_beta import (ARTIFACT_STEM, DISPLAY_VERSION, IDENTITY, TEAM_ID, VERSION,
+                         package_beta as create_beta_package)
 
 
 def fixture(root):
-    app = root / "Ode to X Local Candidate.app"
+    app = root / "X Ode Local Candidate.app"
     (app / "Contents/Resources").mkdir(parents=True)
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump({"CFBundleShortVersionString": VERSION,
+                       "CFBundleVersion": "3",
                        "CFBundleIdentifier": beta.APP_IDENTIFIER}, output)
     (app / "Contents/Resources/local-candidate-receipt.json").write_text(json.dumps({
         "appSource": {"commit": "a" * 40, "tree": "b" * 40},
@@ -48,7 +50,7 @@ def fake_runner(calls):
             payload = Path(arguments[-2])
             assert (payload / "INSTALL.txt").is_file()
             assert (payload / "RELEASE-NOTES.txt").read_text(encoding="utf-8") == beta.RELEASE_NOTES
-            assert (payload / "Ode to X.app").is_dir()
+            assert (payload / "X Ode.app").is_dir()
             Path(arguments[-1]).write_bytes(b"Neutral beta archive")
         elif arguments[0] == "/usr/bin/hdiutil":
             Path(arguments[-1]).write_bytes(b"Neutral signed disk image")
@@ -66,6 +68,7 @@ def rejected(operation):
 
 with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     root = Path(temporary).resolve()
+    assert ARTIFACT_STEM == "X-Ode-0.2.0-beta"
     app, output = fixture(root)
     commands = []
     with patch.object(beta, "distribution_blockers", return_value=[]) as blockers, \
@@ -77,6 +80,9 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     artifact_path = receipt_path.parent / (ARTIFACT_STEM + ".zip")
     checksum_path = receipt_path.parent / (artifact_path.name + ".sha256")
     assert receipt["state"] == "prepared_not_submitted"
+    assert receipt["version"] == "0.2.0"
+    assert receipt["displayVersion"] == DISPLAY_VERSION == "0.2.0 (Beta)"
+    assert receipt["buildNumber"] == 3
     assert receipt["notarization"] == "NOT_SUBMITTED"
     assert receipt["installed"] is False and receipt["launched"] is False
     assert receipt["producerNoticesSHA256"] == "c" * 64
@@ -104,10 +110,12 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
 
     with (app / "Contents/Info.plist").open("wb") as output_file:
         plistlib.dump({"CFBundleShortVersionString": "0.2.0",
+                       "CFBundleVersion": "2",
                        "CFBundleIdentifier": beta.APP_IDENTIFIER}, output_file)
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         rejected(lambda: create_beta_package(app, output, "zip", run_command=fake_runner([])))
 
-print("PASS 0.11.4 archive/checksum, optional timestamped DMG, rights blocker, and no-submit/no-install behavior. "
+print("PASS 0.2.0 beta archive/checksum, update-build gate, optional timestamped DMG, rights blocker, "
+      "and no-submit/no-install behavior. "
       "Neutral fixture bytes and mocked platform commands only.")

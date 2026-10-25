@@ -25,12 +25,16 @@ Both copy and bind the inventory/notices before signing, rejecting a different
 producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
 
-For the 0.11.4 beta producer commit `1fd1341d57052754bced4244121cf9d48234bc66`,
-the independently pinned inventory SHA-256 is
+For the first beta, version 0.2.0, the producer commit is
+`1fd1341d57052754bced4244121cf9d48234bc66` and the independently pinned
+inventory SHA-256 is
 `84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e`.
 Pass it as `--producer-notices-sha256` to the final package command. This pins
 the reviewed inventory identity; its 14 explicit unresolved obligations remain
 distribution blockers and are not cleared by the pin.
+
+The package builder accepts only CFBundleVersion values above the installed
+0.2.0 build 2, so the beta installs as an update rather than a downgrade.
 
 The producer's `eappx`, `msixvc`, `msixvc-common`, `xodus`, `xodus-cli`,
 `xodus-management`, and `xodus-service` workspace crates are licensed GPL-3.0
@@ -81,10 +85,10 @@ was read/exported and no Keychain settings were changed. Actual profile
 authentication remains unverified; do not claim readiness from installed tools.
 
 For an approved beta package that must not be submitted or installed, use
-`tools/package_beta.py --app /absolute/path/to/Ode.app --output-root
+`tools/package_beta.py --app "/absolute/path/to/X Ode.app" --output-root
 /absolute/existing/output --format zip` (or `dmg`); when a producer inventory is
 present, also pass its independently reviewed
-`--producer-notices-sha256 APPROVED_DIGEST`. It accepts only version 0.11.4
+`--producer-notices-sha256 APPROVED_DIGEST`. It accepts only version 0.2.0
 after the distribution manifest and portable-resource checks pass, and audits
 the app plus every nested Mach-O for the exact Developer ID leaf, team,
 hardened runtime and secure timestamp. A DMG is also Developer ID signed and

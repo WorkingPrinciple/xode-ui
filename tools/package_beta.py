@@ -15,22 +15,24 @@ from distribution_manifest import distribution_blockers
 from shipping_pair import hex_value, owned_bytes, require, unique_object
 from signing_identity import verify_developer_id_bundle, verify_developer_id_component
 
-VERSION = "0.11.4"
+VERSION = "0.2.0"
+DISPLAY_VERSION = VERSION + " (Beta)"
+MINIMUM_UPDATE_BUILD = 2
 IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_IDENTIFIER = "io.github.dragoshont.xodus"
-ARTIFACT_STEM = "Ode-to-X-beta-" + VERSION
-INSTALL_NOTE = """Ode to X beta 0.11.4
+ARTIFACT_STEM = "X-Ode-" + VERSION + "-beta"
+INSTALL_NOTE = """X Ode beta 0.2.0
 
 Verify the adjacent SHA-256 file before opening this archive. The app is signed
 with Developer ID, but this package has not been submitted to Apple for
 notarization. Do not distribute it as a public end-user release until the
 notarization and Gatekeeper checks are completed.
 
-After notarization is completed, move "Ode to X.app" into Applications and
+After notarization is completed, move "X Ode.app" into Applications and
 launch it from there. Keep this archive and its checksum with the beta record.
 """
-RELEASE_NOTES = """0.11.4 beta release notes
+RELEASE_NOTES = """X Ode 0.2.0 (Beta) release notes
 
 The eappx, msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and
 xodus-service workspace crates are licensed under GPL-3.0-only as stated by
@@ -82,6 +84,11 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
             "App bundle is not version " + VERSION)
     require(info.get("CFBundleIdentifier") == APP_IDENTIFIER,
             "App bundle identifier differs from the product identity")
+    build_number = info.get("CFBundleVersion")
+    require(isinstance(build_number, str) and build_number.isdecimal()
+            and int(build_number) > MINIMUM_UPDATE_BUILD,
+            "App build number must be greater than the installed build "
+            + str(MINIMUM_UPDATE_BUILD))
     source_identity = app_source(app)
     blockers = distribution_blockers(app, producer_notices_sha256)
     require(not blockers, "Distribution preflight blocked: " + "; ".join(blockers))
@@ -95,6 +102,8 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
         "schemaVersion": 1,
         "state": "packaging",
         "version": VERSION,
+        "displayVersion": DISPLAY_VERSION,
+        "buildNumber": int(build_number),
         "appSource": source_identity,
         "producerNoticesSHA256": producer_notices_sha256,
         "certificateSha1": identity.upper(),
@@ -112,7 +121,7 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
             staging = Path(temporary)
             payload = staging / ARTIFACT_STEM
             payload.mkdir(mode=0o700)
-            packaged_app = payload / "Ode to X.app"
+            packaged_app = payload / "X Ode.app"
             run_command(["/usr/bin/ditto", str(app), str(packaged_app)])
             run_command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(packaged_app)])
             signatures = verify_developer_id_bundle(packaged_app, identity, TEAM_ID, run_command)
@@ -124,7 +133,7 @@ def package_beta(app, output_root, package_format, identity=IDENTITY,
                 run_command(["/usr/bin/ditto", "-c", "-k", "--sequesterRsrc",
                              "--keepParent", str(payload), str(artifact)])
             else:
-                run_command(["/usr/bin/hdiutil", "create", "-volname", "Ode to X beta " + VERSION,
+                run_command(["/usr/bin/hdiutil", "create", "-volname", "X Ode " + DISPLAY_VERSION,
                              "-srcfolder", str(payload), "-format", "UDZO", str(artifact)])
                 run_command(["/usr/bin/codesign", "--force", "--sign", identity.upper(),
                              "--timestamp", "--identifier", APP_IDENTIFIER + ".beta." + VERSION,
