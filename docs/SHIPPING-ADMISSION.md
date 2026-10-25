@@ -19,10 +19,21 @@ The manifest hash must be the reviewed exact producer hash, not a newly computed
 substitute for approval. The command reads the frozen source commit and cached
 source archives without checking out, building, downloading or uploading code.
 It writes only the new output directory. Pass that directory as
-`--producer-notices` to `build_app.sh` or `refresh_local_candidate.py`.
+`--producer-notices` and the independently reviewed
+`--producer-notices-sha256` to either builder or `release_candidate.py`.
 Both copy and bind the inventory/notices before signing, rejecting a different
 producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
+
+The inventory's own hashes and packaged resource seal do not establish
+completeness. Before approving its digest, independently compare every package
+identity/licence and compiler-artifact membership with the frozen producer
+manifest's hash-bound metadata/artifact evidence and exact-commit `Cargo.lock`,
+and retain unresolved notice/source/rights obligations. Do not derive approval
+from an inventory supplied by the same builder. Distribution and dry-run resume
+require that digest again as `--producer-notices-sha256`; they never take
+approval from a receipt or the packaged manifest. Removing packages or
+obligations and resealing the manifest cannot bypass the external expected hash.
 
 Production preflight enumerates optional Python runtime files, the exact
 launch-association capsule and credential-broker reference separately from the

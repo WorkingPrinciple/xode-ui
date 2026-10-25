@@ -235,7 +235,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
             source = {"commit": "a" * 40, "tree": "b" * 40}
             args = argparse.Namespace(app_commit=source["commit"], output_root=root,
                 candidate=root, installed_app=root / "ReadOnly.app", identity="c" * 40,
-                producer_source=root, notary_profile="notary", dry_run=True, approve_unnotarized_cli=None)
+                producer_source=root, notary_profile="notary", dry_run=True, approve_unnotarized_cli=None,
+                producer_notices=root / "ReviewedNotices", producer_notices_sha256="e" * 64)
 
             def refresh(installed, output, *unused):
                 app = output / "candidate/Neutral.app"
@@ -247,9 +248,9 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 return app, receipt
 
             with patch.object(release, "source_identity", return_value=source), \
-                    patch.object(release, "distribution_blockers", return_value=["Neutral unresolved rights"]), \
+                    patch.object(release, "distribution_blockers", return_value=["Neutral unresolved rights"]) as blockers, \
                     patch.object(release, "frozen_payloads", return_value=(root / "cli", root / "helper", {})), \
-                    patch.object(release, "refresh", side_effect=refresh), \
+                    patch.object(release, "refresh", side_effect=refresh) as refresh_mock, \
                     patch.object(release, "owned_bytes", return_value=({"sha256": "d" * 64, "bytes": 2}, b"{}")), \
                     patch.object(release, "execute") as execute, \
                     patch.object(release, "notarize") as notarize:
@@ -260,6 +261,10 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 notarize.assert_not_called()
                 self.assertEqual(execute.call_count, 1)
                 self.assertEqual(execute.call_args.args[0][:2], ["/usr/bin/codesign", "--verify"])
+                self.assertEqual(refresh_mock.call_args.args[-2:],
+                                 (args.producer_notices, args.producer_notices_sha256))
+                self.assertEqual(blockers.call_args.args[-1], args.producer_notices_sha256)
+                self.assertEqual(receipt["producerNoticesSHA256"], args.producer_notices_sha256)
 
     def test_wrong_pinned_source_stops_before_build_or_submission(self):
         args = argparse.Namespace(app_commit="a" * 40)
@@ -320,8 +325,9 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "verify_designated_requirement"), \
                     patch.object(release, "execute"), patch.object(release, "distribute") as distribute, \
                     patch.object(release, "refresh") as refresh:
-                release.resume(root / "release-receipt.json", "notary")
+                release.resume(root / "release-receipt.json", "notary", producer_notices_sha256="e" * 64)
                 self.assertEqual(distribute.call_args.args[0], app)
+                self.assertEqual(distribute.call_args.args[-1], "e" * 64)
                 refresh.assert_not_called()
                 receipt["state"] = "failed"
                 with self.assertRaises(ValueError):

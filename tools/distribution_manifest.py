@@ -100,7 +100,8 @@ def verify_payload_coverage(app, optional):
                     "Executable content in non-code resource: " + relative)
 
 
-def write_manifest(app, source, producer, archive, producer_notices=None):
+def write_manifest(app, source, producer, archive, producer_notices=None,
+                   producer_notices_sha256=None):
     resources = app / "Contents/Resources"
     records = {}
     for name, relative in COMPONENT_PATHS.items():
@@ -122,11 +123,14 @@ def write_manifest(app, source, producer, archive, producer_notices=None):
         component.update({"license": "unresolved", "rightsReview": "unresolved",
                           "correspondingSource": "delivery-unresolved"})
     dependency_inventory = None
+    require((producer_notices is None) == (producer_notices_sha256 is None),
+            "Producer notices need their independently approved inventory digest")
     if producer_notices is not None:
         verify_producer_notices(producer_notices, producer, records["cli"]["sha256"],
-                               records["windowsHelper"]["sha256"])
+                               records["windowsHelper"]["sha256"], producer_notices_sha256)
         shutil.copytree(producer_notices, resources / "ProducerNotices")
-        dependency_inventory = owned_bytes(resources / "ProducerNotices/inventory.json")[0]
+        dependency_inventory = owned_bytes(
+            resources / "ProducerNotices/inventory.json", producer_notices_sha256)[0]
     verify_payload_coverage(app, optional)
     metadata = {
         "version": 1, "components": records,
@@ -148,7 +152,7 @@ def write_manifest(app, source, producer, archive, producer_notices=None):
         stream.write("\n")
 
 
-def distribution_blockers(app):
+def distribution_blockers(app, approved_producer_notices_sha256=None):
     resources = app / "Contents/Resources"
     _, data = owned_bytes(resources / "distribution-components.json", bounded=4 * 1024 * 1024)
     metadata = json.loads(data, object_pairs_hook=unique_object)
@@ -170,10 +174,13 @@ def distribution_blockers(app):
     if metadata.get("producerNotices") is not None:
         identity = metadata["producerNotices"]
         owned_bytes(notices / "inventory.json", identity["sha256"], identity["bytes"])
+        if approved_producer_notices_sha256 is None:
+            blockers.append("Independently approved producer inventory SHA-256 not supplied")
         inventory = verify_producer_notices(
             notices, metadata["components"]["cli"]["source"],
             metadata["components"]["cli"]["sha256"],
-            metadata["components"]["windowsHelper"]["sha256"])
+            metadata["components"]["windowsHelper"]["sha256"],
+            approved_producer_notices_sha256 or identity["sha256"])
         blockers.extend(inventory["unresolved"])
     else:
         require(not notices.exists() and not notices.is_symlink(), "Unmapped producer notices")
@@ -201,6 +208,6 @@ def distribution_blockers(app):
     return blockers
 
 
-def require_distribution_ready(app):
-    blockers = distribution_blockers(app)
+def require_distribution_ready(app, approved_producer_notices_sha256=None):
+    blockers = distribution_blockers(app, approved_producer_notices_sha256)
     require(not blockers, "Distribution preflight blocked: " + "; ".join(blockers))

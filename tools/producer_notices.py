@@ -125,8 +125,11 @@ def prepare(manifest_path, manifest_sha, metadata_path, artifacts_path, source, 
     return inventory
 
 
-def verify(directory, producer, cli_sha, helper_sha):
-    inventory = read_json(directory / "inventory.json")
+def verify(directory, producer, cli_sha, helper_sha, expected_inventory_sha256):
+    require(isinstance(expected_inventory_sha256, str) and len(expected_inventory_sha256) == 64
+            and all(c in "0123456789abcdef" for c in expected_inventory_sha256),
+            "Independently approved producer inventory SHA-256 is required")
+    inventory = read_json(directory / "inventory.json", expected_inventory_sha256)
     require(inventory["version"] == 1 and inventory["producer"] == producer,
             "Dependency inventory producer mismatch")
     require(inventory["cliSHA256"] == cli_sha and inventory["helperSHA256"] == helper_sha,

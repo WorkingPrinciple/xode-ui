@@ -125,8 +125,8 @@ def notarize(path, stage, receipt, receipt_path, label, profile):
     return submission
 
 
-def distribute(app, stage, receipt, receipt_path, identity, profile):
-    require_distribution_ready(app)
+def distribute(app, stage, receipt, receipt_path, identity, profile, producer_notices_sha256=None):
+    require_distribution_ready(app, producer_notices_sha256)
     archive = stage / "Ode-to-X-submission.zip"
     execute(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)],
             stage, receipt, receipt_path, "app-archive")
@@ -168,7 +168,7 @@ def distribute(app, stage, receipt, receipt_path, identity, profile):
     write_receipt(receipt_path, receipt)
 
 
-def resume(receipt_path, profile, approved_unnotarized_cli=None):
+def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notices_sha256=None):
     receipt = read_json(receipt_path)
     stage = receipt_path.parent
     require(receipt["version"] == 1 and receipt["state"] == "signed_dry_run_complete"
@@ -203,7 +203,8 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None):
     try:
         execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
                 stage, receipt, receipt_path, "resume-app-signature")
-        distribute(app, stage, receipt, receipt_path, receipt["certificateSHA1"], profile)
+        distribute(app, stage, receipt, receipt_path, receipt["certificateSHA1"], profile,
+                   producer_notices_sha256)
         frozen_payloads(candidate, approved_unnotarized_cli)
         write_receipt(receipt_path, receipt)
         print(receipt_path, flush=True)
@@ -234,13 +235,16 @@ def build(args):
     write_receipt(receipt_path, receipt)
     print(receipt_path, flush=True)
     try:
+        notices = getattr(args, "producer_notices", None)
+        notices_sha = getattr(args, "producer_notices_sha256", None)
         receipt["buildInvocation"] = {"function": "refresh_local_candidate.refresh", "completed": False,
             "inputs": {"appCommit": source["commit"], "cli": str(cli), "windowsHelper": str(helper),
                        "producerSource": str(args.producer_source), "producerCommit": PRODUCER_COMMIT,
                        "installedAppReadOnly": str(args.installed_app), "certificateSHA1": args.identity.upper()}}
         write_receipt(receipt_path, receipt)
         app, build_receipt = refresh(args.installed_app, stage, args.identity, cli,
-                                     args.producer_source, PRODUCER_COMMIT, helper)
+                                     args.producer_source, PRODUCER_COMMIT, helper, notices, notices_sha)
+        receipt["producerNoticesSHA256"] = notices_sha
         receipt["buildInvocation"]["completed"] = True
         receipt["candidateBuildReceipt"] = {"path": str(build_receipt), **owned_bytes(build_receipt)[0]}
         receipt["candidateBuild"] = read_json(build_receipt)
@@ -252,13 +256,13 @@ def build(args):
         owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli", CLI_SHA256)
         owned_bytes(app / "Contents/Resources/XodusEngine/xodus-window-monitor.exe", HELPER_SHA256)
         if args.dry_run:
-            receipt["distributionBlockers"] = distribution_blockers(app)
+            receipt["distributionBlockers"] = distribution_blockers(app, notices_sha)
             receipt["state"] = "signed_dry_run_complete"
             receipt["unexecutedGates"] = ["app notarization", "app stapling and Gatekeeper",
                                           "DMG creation/signing/notarization/stapling/Gatekeeper",
                                           "install/activation", "app_e2e"]
         else:
-            distribute(app, stage, receipt, receipt_path, args.identity, args.notary_profile)
+            distribute(app, stage, receipt, receipt_path, args.identity, args.notary_profile, notices_sha)
         require(source_identity(project) == source, "Source changed during release build")
         frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
         receipt["artifacts"]["bundledCLI"] = owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli")[0]
@@ -286,6 +290,9 @@ def main():
     parser.add_argument("--identity")
     parser.add_argument("--candidate", type=Path, help="Frozen payload directory with approved producer receipts")
     parser.add_argument("--producer-source", type=Path)
+    parser.add_argument("--producer-notices", type=Path)
+    parser.add_argument("--producer-notices-sha256",
+                        help="Independently reviewed exact inventory digest; required for distribution")
     parser.add_argument("--resume-receipt", type=Path, help="Submit the exact already-signed successful dry-run app")
     parser.add_argument("--notary-profile", default="notary")
     parser.add_argument("--approve-unnotarized-cli",
@@ -294,9 +301,11 @@ def main():
     args = parser.parse_args()
     if args.resume_receipt:
         require(not args.dry_run and not any((args.app_commit, args.installed_app, args.output_root,
-                                             args.identity, args.candidate, args.producer_source)),
+                                             args.identity, args.candidate, args.producer_source,
+                                             args.producer_notices)),
                 "Resume takes only its exact dry-run receipt and notary profile")
-        resume(args.resume_receipt, args.notary_profile, args.approve_unnotarized_cli)
+        resume(args.resume_receipt, args.notary_profile, args.approve_unnotarized_cli,
+               args.producer_notices_sha256)
     else:
         require(all((args.app_commit, args.installed_app, args.output_root,
                      args.identity, args.candidate, args.producer_source)), "Supply all pinned build inputs")

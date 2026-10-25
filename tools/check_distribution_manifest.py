@@ -14,6 +14,12 @@ import release_candidate as release
 
 
 class DistributionChecks(unittest.TestCase):
+    def setUp(self):
+        self.approved_inventory_sha = None
+
+    def blockers(self, app):
+        return distribution_blockers(app, self.approved_inventory_sha)
+
     def fixture(self, root):
         app = root / "Neutral.app"
         for relative in COMPONENT_PATHS.values():
@@ -51,6 +57,7 @@ class DistributionChecks(unittest.TestCase):
             inventory_path.write_text(json.dumps(inventory))
             from shipping_pair import owned_bytes
             data["producerNotices"] = owned_bytes(inventory_path)[0]
+        self.approved_inventory_sha = data["producerNotices"]["sha256"]
         path.write_text(json.dumps(data))
 
     def test_inventory_binds_components_and_leaves_unknowns_explicit(self):
@@ -71,7 +78,7 @@ class DistributionChecks(unittest.TestCase):
                 self.resolve_fixture_obligations(app)
                 resource = management / "LaunchRecipes/engine-defaults-v1.json"
                 resource.write_text(json.dumps({"bindings": [{"registryPath": private}]}))
-                blockers = distribution_blockers(app)
+                blockers = self.blockers(app)
                 self.assertEqual(len(blockers), 1)
                 self.assertIn("engine-defaults-v1.json", blockers[0])
                 self.assertNotIn(private, blockers[0])
@@ -84,7 +91,7 @@ class DistributionChecks(unittest.TestCase):
                 app, _ = self.fixture(Path(tmp).resolve())
                 (app / target).write_bytes(b"Altered")
                 with self.assertRaises(ValueError):
-                    distribution_blockers(app)
+                    self.blockers(app)
 
     def test_unresolved_package_cannot_start_archive_or_external_submission(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -100,7 +107,7 @@ class DistributionChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             app, _ = self.fixture(Path(tmp).resolve())
             self.resolve_fixture_obligations(app)
-            self.assertEqual(distribution_blockers(app), [])
+            self.assertEqual(self.blockers(app), [])
 
     def test_unmapped_executables_and_runtime_data_fail_closed(self):
         for relative in ("Contents/MacOS/Unmapped", "Contents/Frameworks/Extra.dylib",
@@ -113,7 +120,7 @@ class DistributionChecks(unittest.TestCase):
                 extra.parent.mkdir(parents=True, exist_ok=True)
                 extra.write_bytes(b"unmapped payload")
                 with self.assertRaisesRegex(ValueError, "Unmapped distribution payload"):
-                    distribution_blockers(app)
+                    self.blockers(app)
                 (app / "Contents/Resources/distribution-components.json").unlink()
                 source = {"commit": "a" * 40, "tree": "b" * 40}
                 with self.assertRaisesRegex(ValueError, "Unmapped distribution payload"):
@@ -124,7 +131,7 @@ class DistributionChecks(unittest.TestCase):
             app, _ = self.fixture(Path(tmp).resolve())
             (app / "Contents/Resources/LICENSE.txt").write_bytes(b"MZdisguised executable")
             with self.assertRaisesRegex(ValueError, "Executable content in non-code"):
-                distribution_blockers(app)
+                self.blockers(app)
 
     def test_missing_inventory_cannot_be_cleared_via_summary_obligations(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -136,7 +143,7 @@ class DistributionChecks(unittest.TestCase):
                 component["rightsReview"] = "resolved"
                 component["correspondingSource"] = "neutral-fixture"
             path.write_text(json.dumps(data))
-            self.assertEqual(distribution_blockers(app),
+            self.assertEqual(self.blockers(app),
                              ["Exact producer dependency inventory/notices not supplied"])
 
     def test_optional_broker_reference_cannot_inherit_base_clearance(self):
@@ -149,12 +156,12 @@ class DistributionChecks(unittest.TestCase):
             source = {"commit": "a" * 40, "tree": "b" * 40}
             write_manifest(app, source, source, Path(tmp).resolve() / "source.tar")
             self.resolve_fixture_obligations(app)
-            blockers = distribution_blockers(app)
+            blockers = self.blockers(app)
             self.assertEqual(len(blockers), 1)
             self.assertIn("credentialBroker", blockers[0])
             broker.write_text(json.dumps({"version": 1, "sha256": "d" * 64, "bytes": 123}))
             with self.assertRaisesRegex(ValueError, "Optional distribution payload changed"):
-                distribution_blockers(app)
+                self.blockers(app)
 
     def test_python_inventory_is_verified_and_keeps_independent_obligations(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -171,7 +178,7 @@ class DistributionChecks(unittest.TestCase):
             with patch("python_runtime.verify_runtime") as verify:
                 write_manifest(app, source, source, root / "source.tar")
                 self.resolve_fixture_obligations(app)
-                blockers = distribution_blockers(app)
+                blockers = self.blockers(app)
                 self.assertEqual(len(blockers), 1)
                 self.assertIn("pythonRuntime", blockers[0])
                 self.assertEqual(verify.call_count, 2)
@@ -183,7 +190,7 @@ class DistributionChecks(unittest.TestCase):
             (app / "Contents/Resources/XodusCredentialBroker.json").write_text(
                 json.dumps({"version": 1, "sha256": "c" * 64, "bytes": 123}))
             with self.assertRaisesRegex(ValueError, "Optional distribution inventory"):
-                distribution_blockers(app)
+                self.blockers(app)
 
     def test_producer_notices_are_copied_bound_and_keep_precise_obligations(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -201,13 +208,48 @@ class DistributionChecks(unittest.TestCase):
                 "unresolved": ["Neutral exact component obligation"],
             }
             (notices / "inventory.json").write_text(json.dumps(inventory))
-            write_manifest(app, source, source, root / "source.tar", notices)
+            approved = owned_bytes(notices / "inventory.json")[0]["sha256"]
+            write_manifest(app, source, source, root / "source.tar", notices, approved)
             self.resolve_fixture_obligations(app)
-            self.assertEqual(distribution_blockers(app), ["Neutral exact component obligation"])
+            self.assertEqual(self.blockers(app), ["Neutral exact component obligation"])
             packaged = app / "Contents/Resources/ProducerNotices/inventory.json"
             packaged.write_text("{}")
             with self.assertRaises(ValueError):
-                distribution_blockers(app)
+                self.blockers(app)
+
+    def test_resealed_inventory_deletion_does_not_override_external_approval(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            app, _ = self.fixture(root)
+            self.resolve_fixture_obligations(app)
+            inventory_path = app / "Contents/Resources/ProducerNotices/inventory.json"
+            manifest_path = app / "Contents/Resources/distribution-components.json"
+            inventory = json.loads(inventory_path.read_text())
+            inventory["packages"] = [{"name": "tampered"}]
+            inventory["unresolved"] = []
+            inventory_path.write_text(json.dumps(inventory))
+            manifest = json.loads(manifest_path.read_text())
+            from shipping_pair import owned_bytes
+            manifest["producerNotices"] = owned_bytes(inventory_path)[0]
+            manifest["unresolved"] = []
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaises(ValueError):
+                require_distribution_ready(app, self.approved_inventory_sha)
+            with self.assertRaises(ValueError), patch.object(release, "execute") as execute, \
+                    patch.object(release, "notarize") as notarize:
+                release.distribute(app, root, {}, root / "receipt.json", "c" * 40, "notary",
+                                   self.approved_inventory_sha)
+            execute.assert_not_called()
+            notarize.assert_not_called()
+
+    def test_inventory_self_seal_is_not_distribution_approval(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            self.resolve_fixture_obligations(app)
+            self.assertIn("Independently approved producer inventory SHA-256 not supplied",
+                          distribution_blockers(app))
+            with self.assertRaises(ValueError):
+                require_distribution_ready(app)
 
 
 if __name__ == "__main__":

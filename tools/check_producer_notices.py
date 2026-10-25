@@ -58,7 +58,8 @@ class NoticeChecks(unittest.TestCase):
             self.assertEqual(result["packages"][0]["declaredLicense"], "MIT")
             self.assertEqual(len(result["packages"][0]["notices"]), 1)
             self.assertNotIn(str(root), (root / "notices/inventory.json").read_text())
-            verify(root / "notices", result["producer"], manifest["binary_sha256"], manifest["helper_sha256"])
+            verify(root / "notices", result["producer"], manifest["binary_sha256"], manifest["helper_sha256"],
+                   digest((root / "notices/inventory.json").read_bytes()))
             self.assertTrue(result["unresolved"])  # No inferred redistribution/source clearance.
 
     def test_changed_metadata_or_cached_archive_is_rejected(self):
@@ -77,6 +78,7 @@ class NoticeChecks(unittest.TestCase):
                 args, git, manifest = self.fixture(root)
                 with patch("producer_notices.git_bytes", side_effect=git):
                     result = prepare(*args)
+                approved = digest((root / "notices/inventory.json").read_bytes())
                 producer = result["producer"]
                 if mutation == "producer":
                     producer = {"commit": "e" * 40, "tree": "f" * 40}
@@ -85,7 +87,33 @@ class NoticeChecks(unittest.TestCase):
                 else:
                     next((root / "notices/texts").glob("*.txt")).write_bytes(b"changed")
                 with self.assertRaises(ValueError):
-                    verify(root / "notices", producer, manifest["binary_sha256"], manifest["helper_sha256"])
+                    verify(root / "notices", producer, manifest["binary_sha256"], manifest["helper_sha256"],
+                           approved)
+
+    def test_deleted_packages_or_obligations_cannot_self_admit(self):
+        for field in ("packages", "unresolved"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve()
+                args, git, manifest = self.fixture(root)
+                with patch("producer_notices.git_bytes", side_effect=git):
+                    result = prepare(*args)
+                path = root / "notices/inventory.json"
+                approved = digest(path.read_bytes())
+                result[field] = []
+                path.write_text(json.dumps(result))
+                with self.assertRaises(ValueError):
+                    verify(root / "notices", result["producer"], manifest["binary_sha256"],
+                           manifest["helper_sha256"], approved)
+
+    def test_inventory_needs_independent_expected_digest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            args, git, manifest = self.fixture(root)
+            with patch("producer_notices.git_bytes", side_effect=git):
+                result = prepare(*args)
+            with self.assertRaisesRegex(ValueError, "Independently approved"):
+                verify(root / "notices", result["producer"], manifest["binary_sha256"],
+                       manifest["helper_sha256"], None)
 
     def test_missing_cached_notice_is_named_not_fabricated(self):
         with tempfile.TemporaryDirectory() as tmp:

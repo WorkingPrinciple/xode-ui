@@ -58,16 +58,33 @@ MIT root notice, and the workspace has the GNU GPL v3 root text.
 appropriate source-delivery review. Thirty compiled packages' published archives
 contain no standalone notice text; their exact names/versions remain explicit
 in the generated inventory rather than being replaced with generic templates.
+The reviewed r7 supplemental inventory recovers 26 of those packages' texts
+from public upstream licence files at the archives' exact VCS revisions, with
+each file checked against its Git tree blob identity. The remaining four
+standalone-text gaps are `cms@0.2.3`, `system-configuration-sys@0.5.0`,
+`xmlserde@0.7.2` and `xmlserde_derives@0.7.2`. The first and last two exact trees
+have no applicable standalone licence file; the exact
+`system-configuration-sys` revision was unavailable from its public source.
+Declared SPDX expressions remain recorded, not confused with absent grants.
+The independently compared inventory has 479 package identities, 462 compiled
+identities and 329 content-addressed texts; its r7-only SHA-256 is
+`50018d3c4ccd9d37a4b870f5b628607cb6d5f42209aa3e35ad5fa4de05c526b6`.
+That digest is completeness evidence, not rights clearance or a successor
+producer approval.
 The helper's `scripts/windows/window-monitor.c` is compiled with MinGW GCC and
 `-luser32`; exact CRT/compiler-support-library provenance and applicable notices
 or exceptions, and Rust standard-library/compiler-runtime obligations, remain
 separate from Cargo package metadata.
 
-Supply the prepared directory with `--producer-notices` to either builder.
+Supply the prepared directory with `--producer-notices` and an independently
+reviewed `--producer-notices-sha256` to either builder.
 Before app signing, the inventory and content-addressed notice texts are copied
 to `Contents/Resources/ProducerNotices`; producer source and CLI/helper hashes
 must match. The distribution manifest binds the inventory, checks every notice,
 and retains exact unresolved obligations. An inventory is not legal clearance.
+The distribution gate also requires the external approved digest: an inventory
+cannot remove package records or obligations and approve its own replacement
+hash, even if a new app signature seals that reduced inventory.
 
 Optional Python runtimes, launch-association capsules and separately installed
 credential-broker references have independent source/licence/rights entries.

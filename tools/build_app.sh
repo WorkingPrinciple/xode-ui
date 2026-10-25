@@ -4,7 +4,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 if [ "$#" -lt 9 ]; then
-    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path] [--python-runtime-archive path] [--producer-notices path]' >&2
+    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path] [--python-runtime-archive path] [--producer-notices path --producer-notices-sha256 approvedSHA256]' >&2
     exit 2
 fi
 engine=$1
@@ -23,6 +23,7 @@ credential_broker=
 launch_association_capsule=
 python_runtime_archive=
 producer_notices=
+producer_notices_sha256=
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --signing-identity)
@@ -65,6 +66,11 @@ while [ "$#" -gt 0 ]; do
             test "$#" -ge 2
             test -z "$producer_notices"
             producer_notices=$2
+            shift 2 ;;
+        --producer-notices-sha256)
+            test "$#" -ge 2
+            test -z "$producer_notices_sha256"
+            producer_notices_sha256=$2
             shift 2 ;;
         *) printf '%s\n' 'Unknown signing option; no fallback.' >&2; exit 2 ;;
     esac
@@ -184,14 +190,14 @@ if [ -n "$python_runtime_archive" ]; then
     python3 tools/python_runtime.py "$python_runtime_archive" \
         "$app/Contents/Resources/XodusPython" "$stage/paired-inputs.json" "$@"
 fi
-python3 - "$app" "$stage/source.tar" "$source" "$tree" "$producer_notices" <<'PY'
+python3 - "$app" "$stage/source.tar" "$source" "$tree" "$producer_notices" "$producer_notices_sha256" <<'PY'
 import pathlib, sys
 sys.path.insert(0, "tools")
 from distribution_manifest import write_manifest
 from shipping_pair import PRODUCER, PRODUCER_TREE
 write_manifest(pathlib.Path(sys.argv[1]), {"commit": sys.argv[3], "tree": sys.argv[4]},
                {"commit": PRODUCER, "tree": PRODUCER_TREE}, pathlib.Path(sys.argv[2]),
-               pathlib.Path(sys.argv[5]) if sys.argv[5] else None)
+               pathlib.Path(sys.argv[5]) if sys.argv[5] else None, sys.argv[6] or None)
 PY
 python3 tools/signing_identity.py sign --kind app --path "$app" "$@"
 codesign --verify --deep --strict "$app"
