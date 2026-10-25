@@ -612,7 +612,9 @@ resume writes require a matching validated Ode operation product and destination
 Selecting a root and confirming both check the exact derived destination
 off-main. An existing unregistered folder, even empty, is refused rather than
 overwritten; checking or importing it is separate from installation.
-Cancellation retains a private resumable operation alongside the active journal.
+Cancellation or failure after the destination exists retains a private resumable
+operation alongside the active journal; failures before any destination exists
+create no ownership grant.
 Resume is bound to its original product, destination and account; it cannot
 redirect to a newer default or turn an unrelated folder into a managed install.
 The pinned CLI streams files into the destination before its final completeness

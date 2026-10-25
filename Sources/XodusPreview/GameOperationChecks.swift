@@ -249,6 +249,7 @@ enum GameOperationChecks {
             if [ "$mode" = wrongid ]; then resultid=OTHER0000001; else resultid="$product"; fi
             printf '{"folder":"%s","launcher":"%s","storeId":"%s","title":"Ignored result title","bottle":"ignored","contentId":"ignored","bytesOnDisk":42}\\n' "$folder" '\(launcher.path)' "$resultid" | publish "$receipts/$r.result.json"
             if [ "$mode" = resultfailure ]; then printf '13\\n' | publish "$receipts/$r.status"; exit 13; fi
+            if [ "$mode" = networkfailure ]; then printf '11\\n' | publish "$receipts/$r.status"; exit 11; fi
             printf '0\\n' | publish "$receipts/$r.status"
             exit 0
             """)
@@ -1440,7 +1441,26 @@ enum GameOperationChecks {
         check(operations.failureCode == 13 && operations.error == GameScriptError.failed(13).localizedDescription
               && installed.games.isEmpty && !operations.isBusy,
               "Present install result on nonzero exit is decoded without registering a false installed success")
-        try FileManager.default.removeItem(at: URL(fileURLWithPath: repaired.folder))
+        let failedReload = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue)
+        await failedReload.restore()
+        check(failedReload.resumableInstallations[game.id]?.destination == repaired.folder
+              && !failedReload.recoveryRequired && installed.games.isEmpty,
+              "Retry: Integrity failure keeps its exact managed destination across reload without registration")
+        try writeMode("networkfailure")
+        await failedReload.install(game)
+        await failedReload.waitForMutation()
+        check(failedReload.failureCode == 11 && failedReload.error != GameInstallLocationError.destinationExists.localizedDescription
+              && failedReload.resumableInstallations[game.id]?.destination == repaired.folder,
+              "Retry: Reloaded code-13 install reaches its original destination and retains ownership after a midstream network failure")
+        let networkReload = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue)
+        await networkReload.restore()
+        await networkReload.prepareInstall(game)
+        check(networkReload.installConsent?.destination.path == repaired.folder
+              && networkReload.installConsent?.resuming == true && installed.games.isEmpty,
+              "Retry: Midstream failure reload offers same-destination retry instead of treating its own payload as unmanaged")
+        await networkReload.cancelInstallConsent()
         let unsupportedCache = compatibilityData.replacingOccurrences(of: "\"supported\":true", with: "\"supported\":false")
             .replacingOccurrences(of: "\"reason\":null", with: "\"reason\":\"Neutral Xbox feature is not supported.\"")
         try privateFile(cached, unsupportedCache)

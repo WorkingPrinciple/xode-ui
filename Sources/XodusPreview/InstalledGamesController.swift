@@ -657,6 +657,8 @@ final class InstalledGamesController: ObservableObject {
 
         let token = UUID()
         runToken = token
+        stopConfirmed = false
+        stopToken = nil
         runningGameID = game.id
         playState = .launching
         playErrors[game.id] = nil
@@ -918,6 +920,8 @@ final class InstalledGamesController: ObservableObject {
         }
         let token = UUID()
         runToken = token
+        stopConfirmed = false
+        stopToken = nil
         runningGameID = game.id
         playState = .launching
         launchStarted = false

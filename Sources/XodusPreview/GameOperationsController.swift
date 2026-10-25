@@ -1161,6 +1161,7 @@ final class GameOperationsController: ObservableObject {
                 if record.nativeAccountHash == nil, let scriptError = error as? GameScriptError,
                    [.missingStatus, .statusMismatch, .unavailable, .invalidDestination, .invalidProgress].contains(scriptError) {
                     do {
+                        try await updateResumableInstallation(record, completed: false)
                         try await journal.clear()
                         operation = nil
                         installed.releaseMutation()
@@ -1234,8 +1235,7 @@ final class GameOperationsController: ObservableObject {
                 error = result?.failureMessage
             }
         }
-        try await updateResumableInstallation(record, cancelled: result?.errorCode == "CANCELLED" || result == nil,
-                                             completed: result?.success == true)
+        try await updateResumableInstallation(record, completed: result?.success == true)
         try await journal.clear()
         operation = nil
         recoveryRequired = false
@@ -1252,12 +1252,17 @@ final class GameOperationsController: ObservableObject {
         downloadRetry = nil
     }
 
-    private func updateResumableInstallation(_ record: GameOperationRecord, cancelled: Bool,
-                                             completed: Bool) async throws {
-        if cancelled {
-            try await journal.retainResumable(record)
-        } else if completed {
+    private func updateResumableInstallation(_ record: GameOperationRecord, completed: Bool) async throws {
+        if completed {
             try await journal.removeResumable(record)
+        } else if record.kind == .install {
+            let exists = try await storageProbe.read {
+                do {
+                    try InstalledGameFiles.checkFolder(URL(fileURLWithPath: record.destination))
+                    return true
+                } catch InstalledGameError.missingFolder { return false }
+            }
+            if exists { try await journal.retainResumable(record) }
         }
         resumableInstallations = try await journal.loadResumable()
     }
@@ -1311,7 +1316,7 @@ final class GameOperationsController: ObservableObject {
                 notice = GameScriptError.failed(14).localizedDescription
             }
         }
-        try await updateResumableInstallation(record, cancelled: outcome.code == 14, completed: outcome.code == 0)
+        try await updateResumableInstallation(record, completed: outcome.code == 0)
         try await journal.clear()
         operation = nil
         recoveryRequired = false
