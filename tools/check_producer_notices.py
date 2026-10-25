@@ -17,6 +17,8 @@ class NoticeChecks(unittest.TestCase):
         archive = io.BytesIO()
         with tarfile.open(fileobj=archive, mode="w:gz") as stream:
             for name, data in {"neutral-1.0.0/LICENSE": b"Neutral licence fixture",
+                               "neutral-1.0.0/src/copying.rs": b"#![cfg(test)]",
+                               "neutral-1.0.0/src/license.rs": b"not a notice",
                                "neutral-1.0.0/src/lib.rs": b"not a notice"}.items():
                 member = tarfile.TarInfo(name)
                 member.size = len(data)

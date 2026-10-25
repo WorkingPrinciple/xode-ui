@@ -67,8 +67,10 @@ have no applicable standalone licence file; the exact
 `system-configuration-sys` revision was unavailable from its public source.
 Declared SPDX expressions remain recorded, not confused with absent grants.
 The independently compared inventory has 479 package identities, 462 compiled
-identities and 329 content-addressed texts; its r7-only SHA-256 is
-`50018d3c4ccd9d37a4b870f5b628607cb6d5f42209aa3e35ad5fa4de05c526b6`.
+identities. The notice-only successor contains 327 content-addressed texts,
+excluding two `copying.rs` implementation/test files falsely matched by a
+`COPYING` prefix. Its r7-only SHA-256 is
+`f2ae3d1f5f00687d6cefb7d75afb65235cf2b0d04d3e489728a1d49951af5a01`.
 That digest is completeness evidence, not rights clearance or a successor
 producer approval.
 The helper's `scripts/windows/window-monitor.c` is compiled with MinGW GCC and

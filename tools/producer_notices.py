@@ -33,8 +33,11 @@ def notice_members(archive):
             path = PurePosixPath(member.name)
             require(not path.is_absolute() and ".." not in path.parts,
                     "Unsafe dependency archive path")
-            if not member.isfile() or not path.name.upper().startswith(
-                    ("LICENSE", "LICENCE", "COPYING", "NOTICE", "COPYRIGHT")):
+            name = path.name.upper()
+            if not member.isfile() or path.suffix.lower() in (
+                    ".rs", ".c", ".h", ".py", ".sh", ".swift", ".js", ".ts") \
+                    or not any(name == stem or name.startswith((stem + ".", stem + "-"))
+                               for stem in ("LICENSE", "LICENCE", "COPYING", "NOTICE", "COPYRIGHT")):
                 continue
             require(member.size <= 4 * 1024 * 1024, "Oversized dependency notice")
             data = stream.extractfile(member).read()
