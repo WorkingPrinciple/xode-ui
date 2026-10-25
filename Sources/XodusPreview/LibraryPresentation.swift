@@ -239,6 +239,10 @@ struct LibraryGame: Identifiable {
     static func installedCount(local: [Self], native: Bool) -> Int {
         local.count + (native ? 1 : 0)
     }
+    static func collectionTargets(qualified: [Self], local: [Self], native: Bool) -> Set<String> {
+        Set(qualified.map { "library-card-\($0.id)" } + local.map { "library-local-\($0.id)" }
+            + (native ? ["library-native-minecraft"] : []))
+    }
     var cover: CatalogArtworkReference? {
         if let art = pc?.artwork, [.boxArt, .poster].contains(art.role),
            let width = art.width, let height = art.height, height > width { return art }

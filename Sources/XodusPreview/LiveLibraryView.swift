@@ -106,12 +106,10 @@ struct LiveLibraryView: View {
         let key = projectionKey(filter: nextFilter, showsUnsupported: showsUnsupported)
         let next = LibraryProjection(key: key,
             isVisible: { showsUnsupported || unsupportedIssues($0).isEmpty }, recommendable: recommendable)
-        var targets = Set(next.visible.map { "library-card-\($0.id)" })
-        if !next.local.isEmpty {
-            targets.formUnion(LibraryGame.visible(next.local, query: "", filter: nextFilter, sort: sort)
-                .filter { showsUnsupported || unsupportedIssues($0).isEmpty }
-                .map { "library-local-\($0.id)" })
-        }
+        let targets = LibraryGame.collectionTargets(qualified: next.visible,
+            local: LibraryGame.visible(next.local, query: "", filter: nextFilter, sort: sort)
+                .filter { showsUnsupported || unsupportedIssues($0).isEmpty },
+            native: nativeMinecraft.installation.appears(in: nextFilter, query: query))
         let target = selection.collectionTarget(remaining: targets)
         selection.beginScopeMeasurement(filter: nextFilter, target: target)
         withTransaction(Transaction(animation: nil)) {

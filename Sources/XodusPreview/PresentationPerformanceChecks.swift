@@ -202,6 +202,13 @@ enum PresentationPerformanceChecks {
                     check(LibraryGame.installedCount(local: local, native: nativePresent)
                           == LibraryGame.displayedCount(qualified: [], local: local, native: nativePresent),
                           "REQ64: Installed filter total and inventory section count the same registry and native cards")
+                    let position = LibrarySelection()
+                    position.scrollID = "library-native-minecraft"
+                    let targets = LibraryGame.collectionTargets(qualified: qualified, local: local, native: nativePresent)
+                    check(position.collectionTarget(remaining: targets) == (nativePresent ? "library-native-minecraft" : nil),
+                          "REQ64 A02: Retain the native installation scroll target exactly while its card survives filtering")
+                    check(targets.count == qualified.count + local.count + (nativePresent ? 1 : 0),
+                          "REQ64 A02: Scope targets cover every displayed registry, qualified and native card once")
                 }
             }
         }

@@ -587,6 +587,9 @@ The section and Installed-filter total use the same count, including native
 Minecraft exactly once. Cards and their accessibility values use plain-language
 compatibility states; package format appears once in the detail sheet's Details
 facts, not again in Compatibility.
+Filter changes retain the native Minecraft scroll target when that card remains
+visible, just as they retain surviving registry-card targets; filtering it out
+clears the target without forcing a header reveal.
 
 ## Nonzero operation results
 
