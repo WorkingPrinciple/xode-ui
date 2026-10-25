@@ -12,6 +12,11 @@ final class DiscoverSelection: ObservableObject {
     @Published var featuredVisible = false
     @Published var scope: GameSearchScope = .allGames
     @Published var focusRequest = 0
+    @Published private(set) var pagingSearch = false
+    @Published private(set) var pagingNotice: String?
+    private var pagingScope: String?
+    private var pagingCursor: String?
+    private var pagingHasMore = false
     @Published var recentSearches = UserDefaults.standard.stringArray(forKey: "Xodus.recentGameSearches") ?? []
     private(set) var previousResults = CatalogProjection.empty
     private var query: String?
@@ -28,6 +33,7 @@ final class DiscoverSelection: ObservableObject {
     }
 
     func clear() {
+        resetPaging()
         browseLimit = 16
         projection.clear(to: .empty)
         previousResults = .empty
@@ -47,6 +53,75 @@ final class DiscoverSelection: ObservableObject {
         }
         query = key.query
         projection.prepare(key, build: build)
+    }
+
+    func resetPaging() {
+        pagingNotice = nil
+        pagingScope = nil
+        pagingCursor = nil
+        pagingHasMore = false
+    }
+
+    private func searchScope(_ session: LiveSession, query: String) -> String {
+        "\(session.accountHash ?? ""):\(session.market):\(session.language):\(query):\(scope.rawValue)"
+    }
+
+    func continuationNotice(session: LiveSession, query: String) -> String? {
+        pagingScope == searchScope(session, query: query) && pagingCursor == session.nextCursor ? pagingNotice : nil
+    }
+
+    func canSearchFurther(session: LiveSession, query: String) -> Bool {
+        pagingHasMore && session.nextCursor != nil && continuationNotice(session: session, query: query) != nil
+    }
+
+    func loadMoreSearch(session: LiveSession, query: String,
+                        visibleIDs: () async -> Set<String>?) async {
+        guard !pagingSearch, session.canLoadMoreCatalog else { return }
+        pagingSearch = true
+        defer { pagingSearch = false }
+        let scope = searchScope(session, query: query)
+        let initialVersion = session.catalogRequestVersion
+        let original = await visibleIDs()
+        guard !Task.isCancelled, session.catalogRequestVersion == initialVersion,
+              scope == searchScope(session, query: query),
+              session.catalogMatches(query: query) else { return }
+        resetPaging()
+        guard let original else {
+            pagingScope = scope
+            pagingCursor = session.nextCursor
+            pagingNotice = "Additional game details couldn't be checked. Refresh to try again."
+            return
+        }
+        for page in 0..<4 {
+            let version = session.catalogRequestVersion
+            await session.refreshCatalog(query, more: true)
+            guard !Task.isCancelled, session.catalogRequestVersion == version + 1,
+                  scope == searchScope(session, query: query), session.catalogMatches(query: query),
+                  !session.catalogStopped, session.catalogError == nil else { return }
+            let current = await visibleIDs()
+            guard !Task.isCancelled, session.catalogRequestVersion == version + 1,
+                  scope == searchScope(session, query: query) else { return }
+            guard let current else {
+                pagingScope = scope
+                pagingCursor = session.nextCursor
+                pagingNotice = "Additional game details couldn't be checked. Refresh to try again."
+                return
+            }
+            if !current.subtracting(original).isEmpty { return }
+            if session.nextCursor == nil || page == 3 || session.catalogAtLimit {
+                pagingScope = scope
+                pagingCursor = session.nextCursor
+                pagingHasMore = session.nextCursor != nil && !session.catalogAtLimit
+                if session.nextCursor == nil {
+                    pagingNotice = "No more games in this search scope."
+                } else if session.catalogAtLimit {
+                    pagingNotice = "The catalogue reached this build's limit. Some games remain unloaded."
+                } else {
+                    pagingNotice = "No additional games found in the next four result pages."
+                }
+                return
+            }
+        }
     }
 }
 
@@ -188,8 +263,9 @@ struct LiveCatalogView: View {
         session.catalogError != nil || (!query.isEmpty && !canRefresh && !session.searching)
     }
     private var partial: Bool {
-        !session.discoveryFailures.isEmpty || projection.unresolvedClassificationCount > 0
-            || session.gamePassCatalogError != nil || session.catalogSourceFailure != nil
+        !session.searching && session.catalogMatches(query: query) && (query.isEmpty
+            ? (!session.discoveryFailures.isEmpty || session.gamePassCatalogError != nil)
+            : session.catalogHasQueryWarning)
     }
     private var validEmptySearch: Bool {
         !query.isEmpty && session.catalogMatches(query: query) && !session.searching &&
@@ -326,7 +402,9 @@ struct LiveCatalogView: View {
                         HStack {
                             Text(session.catalogSourceFailure == nil ? DiscoverCopy.partial
                                  : "Some search sources couldn't be checked. Results may be incomplete.")
-                            Button("Retry") { retry() }.disabled(!canRefresh)
+                            if query.isEmpty || session.catalogCanRetryQueryWarning {
+                                Button("Retry") { retry() }.disabled(!canRefresh)
+                            }
                         }
                     }
                     if !visible.isEmpty {
@@ -379,7 +457,17 @@ struct LiveCatalogView: View {
                     } else if !session.searching && session.catalogError == nil {
                         Text(DiscoverCopy.noOtherGames(query)).foregroundStyle(.secondary)
                     }
-                    if (session.nextCursor != nil || (query.isEmpty &&
+                    if let notice = selection.continuationNotice(session: session, query: query), !query.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(notice).foregroundStyle(.secondary)
+                                .accessibilityIdentifier("xodus.catalog.continuationEnd")
+                            if selection.canSearchFurther(session: session, query: query) {
+                                Button("Search further") { Task { await loadNextBrowsePage() } }
+                                    .disabled(!canRefresh || session.searching || selection.pagingSearch)
+                                    .accessibilityIdentifier("xodus.catalog.searchFurther")
+                            }
+                        }
+                    } else if (session.nextCursor != nil || (query.isEmpty &&
                         selection.browseLimit < max(session.products.count, session.gamePassProducts.count))),
                        session.catalogMatches(query: query) {
                         if session.catalogAtLimit {
@@ -388,7 +476,7 @@ struct LiveCatalogView: View {
                                 .accessibilityIdentifier("xodus.catalog.limit")
                         } else {
                             Button("More games") { Task { await loadNextBrowsePage() } }
-                                .disabled(!canRefresh || session.searching)
+                                .disabled(!canRefresh || session.searching || selection.pagingSearch)
                                 .accessibilityLabel("Load more catalog results")
                                 .accessibilityIdentifier("xodus.catalog.loadMore")
                         }
@@ -475,7 +563,17 @@ struct LiveCatalogView: View {
             selection.browseLimit = min(512, selection.browseLimit + DiscoverBrowse.pageSize)
         } else if session.canLoadMoreCatalog {
             if query.isEmpty { selection.browseLimit = min(512, selection.browseLimit + DiscoverBrowse.pageSize) }
-            await session.refreshCatalog(query, more: true)
+            if query.isEmpty {
+                await session.refreshCatalog(query, more: true)
+            } else {
+                await selection.loadMoreSearch(session: session, query: query) {
+                    await art.load(ids: session.products.map(\.id), market: session.market, language: session.language)
+                    guard session.products.allSatisfy({ art.images[$0.id]?.facts.isBaseGame != nil }) else { return nil }
+                    return Set(session.products.filter {
+                        art.images[$0.id]?.facts.isBaseGame == true && selection.scope.includes(game($0))
+                    }.map(\.id))
+                }
+            }
         }
     }
 
@@ -486,6 +584,7 @@ struct LiveCatalogView: View {
     }
 
     private func retry() {
+        selection.resetPaging()
         Task { await session.refreshCatalog(query) }
     }
 

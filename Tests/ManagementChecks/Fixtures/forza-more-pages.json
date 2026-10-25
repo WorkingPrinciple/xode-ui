@@ -1,0 +1,2395 @@
+[
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "req100-more-1",
+    "ok": true,
+    "data": {
+      "corpus": "publicMicrosoftStoreSearch",
+      "completeness": "partial",
+      "source": "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults",
+      "checkedAt": "2026-10-25T00:31:31Z",
+      "freshness": "live",
+      "query": "Forza",
+      "products": [
+        {
+          "productID": "9NR1R1XWLCNB",
+          "title": "Forza Horizon 6",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:30Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9NR1R1XWLCNB",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "dc7ea5d7-4ee7-48c6-84da-1bae142ecd7c",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9NR1R1XWLCNB",
+              "editionID": "0011",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "dc7ea5d7-4ee7-48c6-84da-1bae142ecd7c",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9NR1R1XWLCNB",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "dc7ea5d7-4ee7-48c6-84da-1bae142ecd7c",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.47378.13758467164481545.c998f207-34a5-4a78-8843-178e2acdf371.a6be6fee-fc3c-4547-9b9a-478ba3fd0d81",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.29856.13758467164481545.c998f207-34a5-4a78-8843-178e2acdf371.9472937a-30ec-4ce0-8cd4-62f282fd5d28",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.24935.13758467164481545.c998f207-34a5-4a78-8843-178e2acdf371.206793b9-f38b-4616-8029-fdb3c7d0db77",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "known",
+            "plans": [
+              {
+                "id": "CFQ7TTC0K6L8",
+                "name": "Game Pass for Console"
+              },
+              {
+                "id": "CFQ7TTC0KGQ8",
+                "name": "Game Pass for PC"
+              }
+            ],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:29Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9NNX1VVR3KNQ",
+          "title": "Forza Horizon 5",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:30Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9NNX1VVR3KNQ",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "b41e5a9c-6ed9-47e7-8afd-7c6d356fb7aa",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9NNX1VVR3KNQ",
+              "editionID": "0011",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "b41e5a9c-6ed9-47e7-8afd-7c6d356fb7aa",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9NNX1VVR3KNQ",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "b41e5a9c-6ed9-47e7-8afd-7c6d356fb7aa",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.28758.13734397844529069.202e3fc9-37d6-4853-a58b-fabe504b71e8.4335e940-f927-4be4-af08-8e689a17bd7a",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.56329.13734397844529069.202e3fc9-37d6-4853-a58b-fabe504b71e8.b2447b97-7903-48de-8a49-9669d0495c4f",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.33953.13734397844529069.202e3fc9-37d6-4853-a58b-fabe504b71e8.f2095594-0eab-4b96-92fd-f01b9cf9346f",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "known",
+            "plans": [
+              {
+                "id": "CFQ7TTC0K6L8",
+                "name": "Game Pass for Console"
+              },
+              {
+                "id": "CFQ7TTC0KGQ8",
+                "name": "Game Pass for PC"
+              },
+              {
+                "id": "CFQ7TTC0P85B",
+                "name": "Game Pass Premium"
+              }
+            ],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:29Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9P0TRPTHG7VF",
+          "title": "Forza Motorsport",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:30Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9P0TRPTHG7VF",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "7c408c25-b8f7-41a0-bbe2-e47acaa18ae8",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9P0TRPTHG7VF",
+              "editionID": "0011",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "7c408c25-b8f7-41a0-bbe2-e47acaa18ae8",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9P0TRPTHG7VF",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "7c408c25-b8f7-41a0-bbe2-e47acaa18ae8",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.31966.14520062614241202.dce7e4da-1fb9-4f81-b347-74af80631e33.5fc9c294-ff75-4e5c-8566-73c49bbaebd3",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.51644.14520062614241202.dce7e4da-1fb9-4f81-b347-74af80631e33.a1d8bd89-baf5-413b-bf50-f41037beb55e",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.8784.14520062614241202.dce7e4da-1fb9-4f81-b347-74af80631e33.d2658013-30d5-48e7-bf78-02644de6372e",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "known",
+            "plans": [
+              {
+                "id": "CFQ7TTC0K6L8",
+                "name": "Game Pass for Console"
+              },
+              {
+                "id": "CFQ7TTC0KGQ8",
+                "name": "Game Pass for PC"
+              },
+              {
+                "id": "CFQ7TTC0P85B",
+                "name": "Game Pass Premium"
+              }
+            ],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:29Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9PNQKHFLD2WQ",
+          "title": "Forza Horizon 4",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:30Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9PNQKHFLD2WQ",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "c495a9d1-a063-73e3-7a9a-a3c0211b7a71-X64",
+                "packageVersion": "569428696950636546",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9PNQKHFLD2WQ",
+              "editionID": "0011",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "c495a9d1-a063-73e3-7a9a-a3c0211b7a71-X64",
+                "packageVersion": "569428696950636546",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9PNQKHFLD2WQ",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "c495a9d1-a063-73e3-7a9a-a3c0211b7a71-X64",
+                "packageVersion": "569428696950636546",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.1467.14339303838396367.725ab8dd-f8b7-4a29-a351-45ebd5d66edd.388d1fcb-ee68-4e87-b080-c506a1085f94",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.36093.14339303838396367.725ab8dd-f8b7-4a29-a351-45ebd5d66edd.ba2a2523-7f32-4f92-a83d-26097b7b6ca1",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.49179.14339303838396367.725ab8dd-f8b7-4a29-a351-45ebd5d66edd.778dc4d6-df44-4ceb-9dc2-a647969112eb",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "known",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:29Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9N2R1ZMBX1S2",
+          "title": "Forza Street",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:30Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9N2R1ZMBX1S2",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "9b858d21-9fbe-25dd-cd41-8d2a9bbb8174-X64",
+                "packageVersion": "11258999068753922",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9N2R1ZMBX1S2",
+              "editionID": "0011",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "9b858d21-9fbe-25dd-cd41-8d2a9bbb8174-X64",
+                "packageVersion": "11258999068753922",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.63531.13946799520698385.d454f726-3c07-4ccb-be16-f64517b65320.f5b470db-4dee-4d39-8bf2-17116d62d62f",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.51893.13946799520698385.d454f726-3c07-4ccb-be16-f64517b65320.32ad982c-be49-4c49-aa4d-0afebf472aad",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.41545.13946799520698385.d454f726-3c07-4ccb-be16-f64517b65320.19d98c53-4047-4482-a648-d54dcbd78d0e",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "known",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:29Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9NBLGGH1Z7TW",
+          "title": "Forza Horizon 3",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:30Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9NBLGGH1Z7TW",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "78a841ed-36f4-f46d-6b19-5ced5f5f016a-X64",
+                "packageVersion": "281474984902658",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9NBLGGH1Z7TW",
+              "editionID": "0011",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "78a841ed-36f4-f46d-6b19-5ced5f5f016a-X64",
+                "packageVersion": "281474984902658",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9NBLGGH1Z7TW",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "78a841ed-36f4-f46d-6b19-5ced5f5f016a-X64",
+                "packageVersion": "281474984902658",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.15767.13510798886196618.7b563777-0837-4cb2-97f3-546ddb595198.3852efb4-2956-433f-a763-44732ac8338b",
+              "width": 1080,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.58425.13510798886196618.b6116342-bb1b-4855-8304-88c1cb3e6050.cd8962ae-980f-4868-a494-49fd3f2bf104",
+              "width": 720,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.55625.13510798886196618.9c98f0f8-cdcd-4a05-b38b-77dc6ca48ee2.c4cc33f6-394c-49a1-a250-d8881abd00a8",
+              "width": 1920,
+              "height": 1080,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "known",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:29Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9P8CP1L72JXS",
+          "title": "Forza Horizon 4 Demo",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:30Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9P8CP1L72JXS",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "4442d177-dec7-9fcf-7b06-98e0c17b0676-X64",
+                "packageVersion": "568020484438294530",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9P8CP1L72JXS",
+              "editionID": "0011",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "4442d177-dec7-9fcf-7b06-98e0c17b0676-X64",
+                "packageVersion": "568020484438294530",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.10662.14094456225993959.2d017079-463a-4bd6-ac7a-2fb4f65673e9.768c590f-b7d8-4184-adf0-f33f858943ac",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.20615.14094456225993959.2d017079-463a-4bd6-ac7a-2fb4f65673e9.0faeefd3-4ad9-4634-98df-75b9aeb92d48",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.37113.14094456225993959.2d017079-463a-4bd6-ac7a-2fb4f65673e9.a269a6f2-395c-43e5-93e1-d1a78ddce0e4",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "known",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:29Z",
+            "source": "xbox.com-search"
+          }
+        }
+      ],
+      "failures": [
+        {
+          "productID": "BS9FSLK6B1RR",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "BQDSKNRCXKKL",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N3NK5WW05HT",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "BQLK685TM311",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NV34NLCLG81",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NSNSBW1JTJX",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "BQJWJNXJS6D5",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N431PX143P8",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NKX70BBCDRN",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PNJXVCVWD4K",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N4XW3N02MNJ",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PLKVSWR299F",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P8PGC771MLP",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PN4DRJDLZT7",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NBLGGH4RQDW",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9MTLKM2DJMZ2",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        }
+      ],
+      "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2234613535376437646562613734646263323166663763366432646436383237356333333831613866353635356536326439326634613832393038643733396132222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f70616765732f736561726368526573756c74733f6d61726b65743d524f266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466f727a61266d65646961547970653d67616d6573222c226f6666736574223a32332c227265766973696f6e223a2233613563323063376338663964376438613236333864653366663963313162336637633835336339613531633865663064383466653564343062333561663137222c2278626f78223a5b2242533946534c4b3642315252222c22425144534b4e5243584b4b4c222c22394e334e4b35575730354854222c2242514c4b363835544d333131222c22394e5633344e4c434c473831222c22394e534e534257314a544a58222c2242514a574a4e584a53364435222c22394e34333150583134335038222c22394e5231523158574c434e42222c22394e4b58373042424344524e222c22394e4e5831565652334b4e51222c2239504e4a585643565744344b222c22395030545250544847375646222c2239504e514b48464c44325751222c22394e3252315a4d4258315332222c22394e345857334e30324d4e4a222c2239504c4b5653575232393946222c22394e424c474748315a375457222c223950384350314c37324a5853222c223950385047433737314d4c50222c2239504e3444524a444c5a5437222c22394e424c4747483452514457222c22394d544c4b4d32444a4d5a32222c22395035313350344d57433731222c22394e34323343303133423146225d7d"
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "req100-more-2",
+    "ok": true,
+    "data": {
+      "corpus": "publicMicrosoftStoreSearch",
+      "completeness": "partial",
+      "source": "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults",
+      "checkedAt": "2026-10-25T00:31:59Z",
+      "freshness": "live",
+      "query": "Forza",
+      "products": [
+        {
+          "productID": "9MTFZDTHB0ZQ",
+          "title": "Forza Horizon 6 Expansion 1",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:58Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9MTFZDTHB0ZQ",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "7fe3f8eb-1dce-474c-b410-9702f5b27136",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9MTFZDTHB0ZQ",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "7fe3f8eb-1dce-474c-b410-9702f5b27136",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.28110.13813498703608859.cf4a5bd8-0c51-4e5b-82c4-ff393b4afc62.2deddb04-3fff-4617-ab9d-6463d3abbabb",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.35925.13813498703608859.cf4a5bd8-0c51-4e5b-82c4-ff393b4afc62.516e3969-4a02-44b1-ab1c-294383481dea",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.52079.13813498703608859.cf4a5bd8-0c51-4e5b-82c4-ff393b4afc62.f808e30f-48a5-44e2-87a0-ce93e4b0510f",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:59Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9PDGZKBF19BC",
+          "title": "Forza Horizon 6 Expansion 2",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:31:58Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9PDGZKBF19BC",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "33adfd7e-6db7-48e5-bc30-b4ec4f993c4a",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9PDGZKBF19BC",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "33adfd7e-6db7-48e5-bc30-b4ec4f993c4a",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.40979.14149910044181700.d5848063-dfec-4081-a969-79d45aaeb881.0f0a9c78-0fed-4d53-86ac-4e52f51cd8ac",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.57644.14149910044181700.d5848063-dfec-4081-a969-79d45aaeb881.3a57a357-e564-4ce6-b589-dc28f5ee6db5",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.34053.14149910044181700.d5848063-dfec-4081-a969-79d45aaeb881.8e34b213-a66c-43ec-836f-71775ff35fd1",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:31:59Z",
+            "source": "xbox.com-search"
+          }
+        }
+      ],
+      "failures": [
+        {
+          "productID": "9P513P4MWC71",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N423C013B1F",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N03HPMVD65G",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P1HX37NMJLT",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9MSTD1ZC25D7",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NZFTFQFKJJP",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9MZ0SR207MG8",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N5MZM3J3LCQ",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        }
+      ],
+      "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2234613535376437646562613734646263323166663763366432646436383237356333333831613866353635356536326439326634613832393038643733396132222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f7365617263683f6d61726b65743d524f266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466f727a61266d65646961547970653d67616d65732670726f6475637446616d696c6965733d67616d657326637572736f723d627a30774a6d49394f55354c57446377516b4a4452464a4f4c446c4f4e444d78554667784e444e514f437735546a5259567a4e4f4d444a4e546b6f734f5534774d30685154565a454e6a56484c446c4e5645784c54544a45536b31614d69773554565247576b525553454977576c45734f5642455231704c516b59784f554a444c446c514d5568594d7a644f5455704d564377355544685152304d334e7a464e544641734f55315456455178576b4d794e5551334c446c4f576b5a55526c46475330704b554377355545784c566c4e58556a49354f5559734f56424f4e455253536b524d576c51334c446c4e576a4254556a49774e3031484f437735546a564e576b307a536a4e4d5131456d637a3159526e453362567052516973775a585572546a5a30266661636574733d66616c7365222c226f6666736574223a302c227265766973696f6e223a6e756c6c2c2278626f78223a5b2242533946534c4b3642315252222c22425144534b4e5243584b4b4c222c22394e334e4b35575730354854222c2242514c4b363835544d333131222c22394e5633344e4c434c473831222c22394e534e534257314a544a58222c2242514a574a4e584a53364435222c22394e34333150583134335038222c22394e5231523158574c434e42222c22394e4b58373042424344524e222c22394e4e5831565652334b4e51222c2239504e4a585643565744344b222c22395030545250544847375646222c2239504e514b48464c44325751222c22394e3252315a4d4258315332222c22394e345857334e30324d4e4a222c2239504c4b5653575232393946222c22394e424c474748315a375457222c223950384350314c37324a5853222c223950385047433737314d4c50222c2239504e3444524a444c5a5437222c22394e424c4747483452514457222c22394d544c4b4d32444a4d5a32222c22395035313350344d57433731222c22394e34323343303133423146225d7d"
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "req100-more-3",
+    "ok": true,
+    "data": {
+      "corpus": "publicMicrosoftStoreSearch",
+      "completeness": "partial",
+      "source": "MicrosoftStoreEdge:v9.0/searchResults",
+      "checkedAt": "2026-10-25T00:32:01Z",
+      "freshness": "live",
+      "query": "Forza",
+      "products": [
+        {
+          "productID": "9PB6D169L62C",
+          "title": "Forza Horizon 4 VIP",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:32:00Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9PB6D169L62C",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "f1995af5-19f6-931a-3457-276e58d23a39-Neutral",
+                "packageVersion": "281474976907266",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9PB6D169L62C",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "f1995af5-19f6-931a-3457-276e58d23a39-Neutral",
+                "packageVersion": "281474976907266",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.3886.14129247043052216.4d76b6c6-1535-4176-a0ac-2a41840d217b.00188ab1-b8f7-4a26-980c-b15e4116f101",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.6848.14129247043052216.4d76b6c6-1535-4176-a0ac-2a41840d217b.fff50ad6-ee31-4c04-9162-427397e2b794",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.37113.14129247043052216.262ad88e-4242-4ddd-b348-84cd5342dc4c.ed8053c5-8670-49fb-b485-5cf24ff98637",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:32:01Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9NTV1K54GVTT",
+          "title": "Forza Horizon 4 Fortune Island",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:32:00Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9NTV1K54GVTT",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "b95e6377-10f7-dd37-1d91-5ab17acb23ed-Neutral",
+                "packageVersion": "282441355558914",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9NTV1K54GVTT",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "b95e6377-10f7-dd37-1d91-5ab17acb23ed-Neutral",
+                "packageVersion": "282441355558914",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.12507.14411357361204536.e9846b7f-8c8e-45b0-8c7d-07e044ce5b2e.f8201db7-5576-4073-a1de-4dffde1a1f6c",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.11307.14411357361204536.e9846b7f-8c8e-45b0-8c7d-07e044ce5b2e.ad84f92a-159f-4ac7-b0d0-634ecc9da8eb",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.59453.14411357361204536.e9846b7f-8c8e-45b0-8c7d-07e044ce5b2e.fb5a8b49-d139-4d67-8872-d372d7908462",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:32:01Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9NNM9M4T5J5Q",
+          "title": "Forza Horizon 4 1979 Talbot Sunbeam Lotus",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:32:01Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9NNM9M4T5J5Q",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "e3aa740c-4414-c2fa-07ef-cc65c2f62735-Neutral",
+                "packageVersion": "281474976710658",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.2050.13735666822333939.4074872a-eeda-4183-b438-8749f5c28f84.d56f9770-2f7d-4d2a-a477-13c2633b5993",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.36093.13735666822333939.bf0ab603-3138-4343-a56a-742e296ce470.1bbc09ad-70b6-41ce-800b-1446a8c3d3f6",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:32:01Z",
+            "source": "xbox.com-search"
+          }
+        }
+      ],
+      "failures": [
+        {
+          "productID": "9NV7BT16Z472",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P621LBX7XB4",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NWNWB9THLF0",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NGKMPB3S10P",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NK6JJ0WVP41",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PGWB5HP8313",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NRQ97PP2DKK",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P327WP7CNSJ",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N163Z7V1NH0",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NDLDFDGVTPG",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PCHSGWV2GXC",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P8R92XXLVN5",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PP7JMFN6MZB",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PGP2M3TD77B",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NBGVP0CP92W",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PDN96RDGZXP",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        }
+      ],
+      "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2234613535376437646562613734646263323166663763366432646436383237356333333831613866353635356536326439326634613832393038643733396132222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f7365617263683f6d61726b65743d524f266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466f727a61266d65646961547970653d67616d65732670726f6475637446616d696c6965733d67616d657326637572736f723d627a30774a6d49394f55354c57446377516b4a4452464a4f4c446c4f4e444d78554667784e444e514f437735546a5259567a4e4f4d444a4e546b6f734f5534774d30685154565a454e6a56484c446c4e5645784c54544a45536b31614d69773554565247576b525553454977576c45734f5642455231704c516b59784f554a444c446c514d5568594d7a644f5455704d564377355544685152304d334e7a464e544641734f55315456455178576b4d794e5551334c446c4f576b5a55526c46475330704b554377355545784c566c4e58556a49354f5559734f56424f4e455253536b524d576c51334c446c4e576a4254556a49774e3031484f437735546a564e576b307a536a4e4d5131456d637a3159526e453362567052516973775a585572546a5a30266661636574733d66616c7365222c226f6666736574223a31392c227265766973696f6e223a2239663433663164383966343163643237343433613437623337323532333539663539613336616334356464356633613766613037396639663236336662666632222c2278626f78223a5b2242533946534c4b3642315252222c22425144534b4e5243584b4b4c222c22394e334e4b35575730354854222c2242514c4b363835544d333131222c22394e5633344e4c434c473831222c22394e534e534257314a544a58222c2242514a574a4e584a53364435222c22394e34333150583134335038222c22394e5231523158574c434e42222c22394e4b58373042424344524e222c22394e4e5831565652334b4e51222c2239504e4a585643565744344b222c22395030545250544847375646222c2239504e514b48464c44325751222c22394e3252315a4d4258315332222c22394e345857334e30324d4e4a222c2239504c4b5653575232393946222c22394e424c474748315a375457222c223950384350314c37324a5853222c223950385047433737314d4c50222c2239504e3444524a444c5a5437222c22394e424c4747483452514457222c22394d544c4b4d32444a4d5a32222c22395035313350344d57433731222c22394e34323343303133423146225d7d"
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "req100-more-4",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_UNAVAILABLE",
+      "message": "No PC product metadata resolved for this query page. Review per-product failures or continue browsing.",
+      "retryable": false,
+      "details": {
+        "checkedAt": "2026-10-25T00:32:01Z",
+        "completeness": "partial",
+        "corpus": "publicMicrosoftStoreSearch",
+        "failures": [
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9N43S0DJLH8D"
+          }
+        ],
+        "freshness": "live",
+        "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2234613535376437646562613734646263323166663763366432646436383237356333333831613866353635356536326439326634613832393038643733396132222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f7365617263683f6d61726b65743d524f266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466f727a61266d65646961547970653d67616d657326637572736f723d627a30794d435a6950546c4f533167334d454a435130525354697735546a517a4d5642594d54517a554467734f5534305746637a546a41795455354b4c446c4f4d444e495545315752445931527977355456524d533030795245704e576a49734f553155526c7045564568434d4670524c446c515245646153304a474d546c43517977355544464957444d33546b314b544651734f564134554564444e7a6378545578514c446c4e553152454d5670444d6a56454e797735546c704756455a52526b744b536c41734f56424d53315a54563149794f546c474c446c51546a5245556b7045544670554e79773554566f77553149794d44644e527a67734f5534315456704e4d306f7a54454e524a6e4d3957455a784e323161555549724d4756314b3034326441253364253364266661636574733d66616c7365222c226f6666736574223a302c227265766973696f6e223a6e756c6c2c2278626f78223a5b2242533946534c4b3642315252222c22425144534b4e5243584b4b4c222c22394e334e4b35575730354854222c2242514c4b363835544d333131222c22394e5633344e4c434c473831222c22394e534e534257314a544a58222c2242514a574a4e584a53364435222c22394e34333150583134335038222c22394e5231523158574c434e42222c22394e4b58373042424344524e222c22394e4e5831565652334b4e51222c2239504e4a585643565744344b222c22395030545250544847375646222c2239504e514b48464c44325751222c22394e3252315a4d4258315332222c22394e345857334e30324d4e4a222c2239504c4b5653575232393946222c22394e424c474748315a375457222c223950384350314c37324a5853222c223950385047433737314d4c50222c2239504e3444524a444c5a5437222c22394e424c4747483452514457222c22394d544c4b4d32444a4d5a32222c22395035313350344d57433731222c22394e34323343303133423146225d7d",
+        "products": [],
+        "query": "Forza",
+        "source": "MicrosoftStoreEdge:v9.0/searchResults"
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "req100-more-5",
+    "ok": true,
+    "data": {
+      "corpus": "publicMicrosoftStoreSearch",
+      "completeness": "partial",
+      "source": "MicrosoftStoreEdge:v9.0/searchResults",
+      "checkedAt": "2026-10-25T00:32:24Z",
+      "freshness": "live",
+      "query": "Forza",
+      "products": [
+        {
+          "productID": "9PCR7TSM1S96",
+          "title": "Forza Horizon 5 Rally Adventure",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:32:23Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9PCR7TSM1S96",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "2a6e9e0c-8c26-448b-95e4-34d72d49de67",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9PCR7TSM1S96",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "2a6e9e0c-8c26-448b-95e4-34d72d49de67",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.53035.14168801781675451.fa6317b3-9c58-4e4b-93ba-c055a597a346.bf479176-2038-43d2-84e7-a527b6db9d3e",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.55709.14168801781675451.fa6317b3-9c58-4e4b-93ba-c055a597a346.51c77136-8418-42cb-97b4-a54dfdb7c141",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.31640.14168801781675451.fa6317b3-9c58-4e4b-93ba-c055a597a346.b23cf8ac-b850-45c7-bf8c-1234ef880c42",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:32:24Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9PNSZ7GMWCQZ",
+          "title": "Forza Horizon 5: Hot Wheels",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en-us",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:32:23Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9PNSZ7GMWCQZ",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "587176b1-a1c9-47ef-9ade-2b840005afdb",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            },
+            {
+              "productID": "9PNSZ7GMWCQZ",
+              "editionID": "0017",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "587176b1-a1c9-47ef-9ade-2b840005afdb",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.8266.14337700501983954.bd1bedb1-636e-4cb5-9fb9-6bda5bd998e8.cbfcac7c-2f17-4cdb-a1ca-e8e235900f30",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.39564.14337700501983954.bd1bedb1-636e-4cb5-9fb9-6bda5bd998e8.dbc769de-db5a-4dd9-9298-04874b1b40ff",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "hero",
+              "url": "https://store-images.s-microsoft.com/image/apps.37818.14337700501983954.bd1bedb1-636e-4cb5-9fb9-6bda5bd998e8.aeb1ef9c-3829-4416-9f57-b6e36abdde74",
+              "width": 3840,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:32:24Z",
+            "source": "xbox.com-search"
+          }
+        },
+        {
+          "productID": "9N4THFLXN4X3",
+          "title": "Forza Horizon 4 1967 Sunbeam Tiger",
+          "market": "RO",
+          "language": "en-US",
+          "resolvedLanguage": "en",
+          "source": "MicrosoftDisplayCatalog:v7.0",
+          "checkedAt": "2026-10-25T00:32:23Z",
+          "freshness": "live",
+          "editions": [
+            {
+              "productID": "9N4THFLXN4X3",
+              "editionID": "0010",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "packageID": "4a75aa20-66b5-ab85-9894-f8199adec897-Neutral",
+                "packageVersion": "281474976710658",
+                "reason": "Public package identity is not authorization or a verified immutable download version."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "noCertifiedRuntime",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "Consumer PC entitlement enumeration is not established."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [
+            {
+              "role": "boxArt",
+              "url": "https://store-images.s-microsoft.com/image/apps.2050.13980627818013596.19e51112-1f39-41ec-acd8-388915f74e63.0d2049bf-49c6-48f9-9e61-224b01591259",
+              "width": 2160,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            },
+            {
+              "role": "poster",
+              "url": "https://store-images.s-microsoft.com/image/apps.36093.13980627818013596.ac054898-a49a-432e-bcee-c655cdfca297.19fb3713-e53b-4229-bdb0-87c86a94881a",
+              "width": 1440,
+              "height": 2160,
+              "source": "MicrosoftDisplayCatalog:v7.0"
+            }
+          ],
+          "artworkStatus": "available",
+          "gamePass": {
+            "status": "unknown",
+            "plans": [],
+            "completeness": "partial",
+            "market": "RO",
+            "checkedAt": "2026-10-25T00:32:24Z",
+            "source": "xbox.com-search"
+          }
+        }
+      ],
+      "failures": [
+        {
+          "productID": "9NN436P8WSB6",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P6VRW1B7CBW",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NRJD38L901H",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P0511HST8C0",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NB4ZQQ8WD43",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NCM9QM5T8HL",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PC5RBTX2QCZ",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9PGC982B5X72",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NQK8HJ5SR33",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N5JQRGNK4K1",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NG1LJ8P60SC",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9P1VR0KSLZJF",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9MT1H69FDCW0",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9NXK9Z6G8MRD",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N3J4SFZXCNL",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        },
+        {
+          "productID": "9N7WLRF1LLJ9",
+          "error": {
+            "code": "PACKAGE_UNAVAILABLE",
+            "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+            "retryable": false
+          }
+        }
+      ],
+      "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2234613535376437646562613734646263323166663763366432646436383237356333333831613866353635356536326439326634613832393038643733396132222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f7365617263683f6d61726b65743d524f266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466f727a61266d65646961547970653d67616d657326637572736f723d627a30304d435a6950546c4f533167334d454a435130525354697735546a517a4d5642594d54517a554467734f5534305746637a546a41795455354b4c446c4f4d444e495545315752445931527977355456524d533030795245704e576a49734f553155526c7045564568434d4670524c446c515245646153304a474d546c43517977355544464957444d33546b314b544651734f564134554564444e7a6378545578514c446c4e553152454d5670444d6a56454e797735546c704756455a52526b744b536c41734f56424d53315a54563149794f546c474c446c51546a5245556b7045544670554e79773554566f77553149794d44644e527a67734f5534315456704e4d306f7a54454e524a6e4d3957455a784e323161555549724d4756314b3034326441253364253364266661636574733d66616c7365222c226f6666736574223a302c227265766973696f6e223a6e756c6c2c2278626f78223a5b2242533946534c4b3642315252222c22425144534b4e5243584b4b4c222c22394e334e4b35575730354854222c2242514c4b363835544d333131222c22394e5633344e4c434c473831222c22394e534e534257314a544a58222c2242514a574a4e584a53364435222c22394e34333150583134335038222c22394e5231523158574c434e42222c22394e4b58373042424344524e222c22394e4e5831565652334b4e51222c2239504e4a585643565744344b222c22395030545250544847375646222c2239504e514b48464c44325751222c22394e3252315a4d4258315332222c22394e345857334e30324d4e4a222c2239504c4b5653575232393946222c22394e424c474748315a375457222c223950384350314c37324a5853222c223950385047433737314d4c50222c2239504e3444524a444c5a5437222c22394e424c4747483452514457222c22394d544c4b4d32444a4d5a32222c22395035313350344d57433731222c22394e34323343303133423146225d7d"
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "req100-more-6",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_UNAVAILABLE",
+      "message": "No PC product metadata resolved for this query page. Review per-product failures or continue browsing.",
+      "retryable": false,
+      "details": {
+        "checkedAt": "2026-10-25T00:32:25Z",
+        "completeness": "partial",
+        "corpus": "publicMicrosoftStoreSearch",
+        "failures": [
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9NSMXQRGDLZ4"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Public descriptor identity or metadata is invalid.",
+              "retryable": false
+            },
+            "productID": "9NSB7PDLFNFK"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9NVM4H8XCGRC"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9N0S3NMRJ7RM"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9P39F261M2XH"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9PKWSPL4R607"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9NK5BFWD1L13"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9PFFJ5XZ4VB8"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9P4P5VWJWD6S"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9P6JMJ92KSJH"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9N570X8KJKBD"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9NZXPFBLL0GV"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9P7DQM06FNLL"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9N3HP1DD128Z"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9P61JT2W7X8P"
+          },
+          {
+            "error": {
+              "code": "PACKAGE_UNAVAILABLE",
+              "message": "Returned public metadata has no Windows.Desktop package evidence. Store visibility is not a verified PC package.",
+              "retryable": false
+            },
+            "productID": "9PMBS5FFD22S"
+          }
+        ],
+        "freshness": "live",
+        "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2234613535376437646562613734646263323166663763366432646436383237356333333831613866353635356536326439326634613832393038643733396132222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f7365617263683f6d61726b65743d524f266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466f727a61266d65646961547970653d67616d657326637572736f723d627a30304d435a6950546c4f533167334d454a435130525354697735546a517a4d5642594d54517a554467734f5534305746637a546a41795455354b4c446c4f4d444e495545315752445931527977355456524d533030795245704e576a49734f553155526c7045564568434d4670524c446c515245646153304a474d546c43517977355544464957444d33546b314b544651734f564134554564444e7a6378545578514c446c4e553152454d5670444d6a56454e797735546c704756455a52526b744b536c41734f56424d53315a54563149794f546c474c446c51546a5245556b7045544670554e79773554566f77553149794d44644e527a67734f5534315456704e4d306f7a54454e524a6e4d3957455a784e323161555549724d4756314b3034326441253364253364266661636574733d66616c7365222c226f6666736574223a31362c227265766973696f6e223a2239616138336263386261623634626461623665323131393063663238663635393662626337333865326430663866353265646338626136333339306238323866222c2278626f78223a5b2242533946534c4b3642315252222c22425144534b4e5243584b4b4c222c22394e334e4b35575730354854222c2242514c4b363835544d333131222c22394e5633344e4c434c473831222c22394e534e534257314a544a58222c2242514a574a4e584a53364435222c22394e34333150583134335038222c22394e5231523158574c434e42222c22394e4b58373042424344524e222c22394e4e5831565652334b4e51222c2239504e4a585643565744344b222c22395030545250544847375646222c2239504e514b48464c44325751222c22394e3252315a4d4258315332222c22394e345857334e30324d4e4a222c2239504c4b5653575232393946222c22394e424c474748315a375457222c223950384350314c37324a5853222c223950385047433737314d4c50222c2239504e3444524a444c5a5437222c22394e424c4747483452514457222c22394d544c4b4d32444a4d5a32222c22395035313350344d57433731222c22394e34323343303133423146225d7d",
+        "products": [],
+        "query": "Forza",
+        "source": "MicrosoftStoreEdge:v9.0/searchResults"
+      }
+    }
+  }
+]

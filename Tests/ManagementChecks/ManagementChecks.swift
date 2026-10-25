@@ -536,6 +536,28 @@ actor Checks {
         }
         check(positive.count == 102, "App and canonical validators preserve all 102 supported producer frames")
         let sourceWarnings = try fixture("query-source-failure").array ?? []
+        for (index, frame) in (try fixture("forza-more-pages").array ?? []).enumerated() {
+            try validator.validate(frame)
+            check(true, "REQ100 captured public Forza page \(index + 1) passes wire schema")
+            let payload = frame["data"] ?? frame["error"]?["details"] ?? .null
+            let page = try payload.decode(CatalogQuery.self)
+            try page.validatePublicScope(query: "Forza", market: "RO", language: "en-US", limit: 8)
+            check(true, "REQ100 captured public Forza page \(index + 1) validates its exact wire and scope")
+            if index == 2, var data = payload.object,
+               var product = data["products"]?.array?.first?.object,
+               var listing = product["gamePass"]?.object {
+                listing["status"] = .string("known")
+                product["gamePass"] = .object(listing)
+                data["products"] = .array([.object(product)])
+                do {
+                    try JSONValue.object(data).decode(CatalogQuery.self).validatePublicScope(
+                        query: "Forza", market: "RO", language: "en-US", limit: 8)
+                    check(false, "REQ100 Edge-only source cannot claim known Game Pass membership")
+                } catch ManagementError.invalidPayload {
+                    check(true, "REQ100 Edge-only source cannot claim known Game Pass membership")
+                }
+            }
+        }
         check(sourceWarnings.count == 2, "REQ100 retains both exact a31f63df producer source-warning fixtures")
         for frame in sourceWarnings {
             try validator.validate(frame)
@@ -1676,7 +1698,7 @@ enum MockBackend {
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
                 "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded",
                 "discoverypartialretry", "discoveryretryfailure"].contains(scenario) { supported.insert(.discover) }
-            if ["querybudget", "querysourcewarning", "querysourcefailed", "queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
+            if ["queryforzareal", "querybudget", "querysourceretry", "querysourcewarning", "querysourcefailed", "queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
                 "querynulldetails", "querycoalesce", "querypagination", "queryrefreshfailure",
                 "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
             if scenario == "startupquery" { supported.insert(.search) }
@@ -2171,7 +2193,29 @@ enum MockBackend {
                         ]))))
                         continue
                     }
-                    if ["querybudget", "querysourcewarning", "querysourcefailed"].contains(scenario),
+                    if scenario == "queryforzareal", command == "catalog.query" {
+                        let pages = try fixture("forza-more-pages").array ?? []
+                        guard catalogQueryReads <= pages.count else { exit(3) }
+                        let previous = catalogQueryReads == 0 ? JSONValue.null
+                            : (pages[catalogQueryReads - 1]["data"]?["nextCursor"]
+                               ?? pages[catalogQueryReads - 1]["error"]?["details"]?["nextCursor"] ?? .null)
+                        guard request["params"]?["cursor"] == previous else { exit(3) }
+                        if catalogQueryReads == pages.count {
+                            // Synthetic source exhaustion after the six unchanged captured pages.
+                            guard var page = pages.last?["error"]?["details"]?.object else { exit(3) }
+                            page["failures"] = .array([])
+                            page["nextCursor"] = .null
+                            catalogQueryReads += 1
+                            try emit(.object(result(request, data: .object(page))))
+                            continue
+                        }
+                        guard var frame = pages[catalogQueryReads].object else { exit(3) }
+                        catalogQueryReads += 1
+                        frame["requestID"] = request["requestID"]
+                        try emit(.object(frame))
+                        continue
+                    }
+                    if ["querybudget", "querysourceretry", "querysourcewarning", "querysourcefailed"].contains(scenario),
                        command == "catalog.query" {
                         catalogQueryReads += 1
                         let params = request["params"] ?? .null
@@ -2193,9 +2237,9 @@ enum MockBackend {
                         })
                         if scenario != "querybudget", params["query"] == .string("Forza") {
                             page["sourceFailure"] = .object([
-                                "code": .string("PACKAGE_UNAVAILABLE"),
+                                "code": .string(scenario == "querysourceretry" ? "NETWORK_UNAVAILABLE" : "PACKAGE_UNAVAILABLE"),
                                 "message": .string("One public source returned a non-search page."),
-                                "retryable": .bool(false)
+                                "retryable": .bool(scenario == "querysourceretry")
                             ])
                         }
                         if scenario == "querysourcefailed" || (scenario == "querybudget" && catalogQueryReads == 1) {

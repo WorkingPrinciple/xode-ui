@@ -149,6 +149,8 @@ enum SearchPresentationChecks {
                   "REQ-73: Compact title and collapsed scope menu share one header row")
             check(!labels.contains { $0.contains("Compatibility") || $0.contains("Package not supported") },
                   "REQ-73: Search composition excludes browse Compatibility and per-card blocker diagnostics")
+            check(!labels.contains { $0.contains(DiscoverCopy.partial) || $0 == "Retry" },
+                  "REQ100 normal partial public query renders no default missing-results warning or Retry")
             if library.representedGames.count <= 5 || size.height >= 1231 {
                 check(labels.contains { $0.filter { !$0.isWhitespace } == session.products[0].title.filter { !$0.isWhitespace } }
                       && !labels.contains { $0 == "View details" },

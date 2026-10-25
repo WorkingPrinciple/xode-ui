@@ -72,6 +72,27 @@ responses. The matching producer/package remains a separate delivery boundary.
 Both app management-schema copies match the accepted backend byte-for-byte;
 `tools/sync_contract.py` checks agreement and fails without changing either file.
 
+Public-search `completeness:partial` is a coverage boundary, not a failure
+banner. Search warnings require an actual source failure or an unexpected
+product failure; expected permanent non-PC rejections, pending classification,
+and an unrelated browse-catalogue error do not produce the warning. Its Retry
+action appears only for retryable failures. Explicit unknown/empty Game Pass
+metadata on an Edge-only continuation is not a membership claim; known listing
+claims still require the combined Xbox search source.
+
+Search More checks up to four pages per action, stopping earlier when a new
+game appears in the active scope. It applies failed-page `error.details`
+continuation directly and awaits classification before deciding whether a page
+added visible games. If the bound finds none, it explains the bounded scan and
+offers **Search further** against the retained cursor. Only actual source
+exhaustion removes continuation; unavailable classification is reported as
+unavailable details, never as no more games. Query, account, market, language,
+scope and request-version changes fence stale paging publication.
+The `forza-more-pages.json` fixture preserves six actual unauthenticated
+RO/en-US, limit-eight responses captured from the signed a31 producer, including
+DLC-only and failed-candidate pages. Its test backend adds a separately labelled
+synthetic seventh exhausted page; that is not claimed as a live observation.
+
 `swift run XodusPreview --self-check` exercises the detached presentation.
 Optionally set `XODUS_REFINEMENT_EVIDENCE` to an existing private output directory
 to save synthetic light/dark cover and constrained welcome PNGs. No window,

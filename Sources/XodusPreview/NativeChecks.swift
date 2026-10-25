@@ -197,13 +197,88 @@ enum NativeChecks {
             try await PublicDescriptorChecks.run(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
-                for scenario in ["querybudget", "querysourcewarning", "querysourcefailed"] {
+                do {
+                    let config = configuration("queryforzareal")
+                    try FileManager.default.createDirectory(at: config.stateDirectory, withIntermediateDirectories: true)
+                    let consumer = LiveSession(configuration: config)
+                    await consumer.connect()
+                    consumer.market = "RO"
+                    consumer.language = "en-US"
+                    await consumer.refreshCatalog("Forza")
+                    let baseIDs = Set(consumer.products.map(\.id))
+                    check(baseIDs.count == 7 && consumer.discoveryFailures.count == 16
+                          && !consumer.catalogHasQueryWarning,
+                          "REQ100 captured Forza first page retains seven PC games without warnings for rejected non-PC candidates")
+                    let selection = DiscoverSelection()
+                    await selection.loadMoreSearch(session: consumer, query: "Forza") {
+                        Set(consumer.products.map(\.id)).intersection(baseIDs)
+                    }
+                    check(consumer.products.count == 15 && consumer.discoveryFailures.count == 57
+                          && consumer.catalogError == nil && consumer.nextCursor != nil,
+                          "REQ100 captured Forza DLC-only pages and failed-page details advance exactly four bounded requests (products \(consumer.products.count), failures \(consumer.discoveryFailures.count), error \(consumer.catalogError ?? "none"))")
+                    check(selection.continuationNotice(session: consumer, query: "Forza")
+                          == "No additional games found in the next four result pages." && !selection.pagingSearch,
+                          "REQ100 no-new-visible-games bound replaces the no-op More control without falsely claiming source exhaustion")
+                    check(selection.canSearchFurther(session: consumer, query: "Forza"),
+                          "REQ100 retained cursor offers explicit Search further after the bounded no-match pass")
+                    selection.scope = .installed
+                    check(selection.continuationNotice(session: consumer, query: "Forza") == nil,
+                          "REQ100 bounded continuation stop belongs only to its active search scope")
+                    selection.scope = .allGames
+                    await consumer.refreshCatalog("Forza", more: true)
+                    check(consumer.products.count == 15 && consumer.discoveryFailures.count == 73
+                          && consumer.catalogError == nil && consumer.nextCursor != nil
+                          && selection.continuationNotice(session: consumer, query: "Forza") == nil,
+                          "REQ100 captured sixth all-rejected page still preserves its advanced details cursor")
+                    await selection.loadMoreSearch(session: consumer, query: "Forza") {
+                        Set(consumer.products.map(\.id)).intersection(baseIDs)
+                    }
+                    check(consumer.nextCursor == nil
+                          && selection.continuationNotice(session: consumer, query: "Forza") == "No more games in this search scope."
+                          && !selection.canSearchFurther(session: consumer, query: "Forza"),
+                          "REQ100 only actual source exhaustion removes the explicit continuation action")
+                    check(await consumer.disconnect(), "REQ100 real-order fixture closes its synthetic backend")
+                    try cleanLifecycle(config)
+                    let progressConfig = configuration("queryforzareal")
+                    try FileManager.default.createDirectory(at: progressConfig.stateDirectory, withIntermediateDirectories: true)
+                    let progress = LiveSession(configuration: progressConfig)
+                    await progress.connect()
+                    progress.market = "RO"
+                    progress.language = "en-US"
+                    await progress.refreshCatalog("Forza")
+                    let progressSelection = DiscoverSelection()
+                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") {
+                        Set(progress.products.map(\.id))
+                    }
+                    check(progress.products.count == 9 && progress.discoveryFailures.count == 24
+                          && progressSelection.continuationNotice(session: progress, query: "Forza") == nil,
+                          "REQ100 paging stops after one page when that active scope gains real results")
+                    let version = progress.catalogRequestVersion
+                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") { nil }
+                    check(progress.catalogRequestVersion == version
+                          && progressSelection.continuationNotice(session: progress, query: "Forza")
+                            == "Additional game details couldn't be checked. Refresh to try again.",
+                          "REQ100 unavailable classification stops honestly without pretending no more games or issuing more pages")
+                    progressSelection.resetPaging()
+                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") {
+                        progress.market = "GB"
+                        return []
+                    }
+                    check(progress.catalogRequestVersion == version + 1 && !progressSelection.pagingSearch
+                          && progressSelection.continuationNotice(session: progress, query: "Forza") == nil,
+                          "REQ100 scope withdrawal during metadata loading cannot request or publish stale continuation")
+                    check(await progress.disconnect(), "REQ100 progress fixture closes its synthetic backend")
+                    try cleanLifecycle(progressConfig)
+                }
+                for scenario in ["querybudget", "querysourceretry", "querysourcewarning", "querysourcefailed"] {
                     let config = configuration(scenario)
                     try FileManager.default.createDirectory(at: config.stateDirectory, withIntermediateDirectories: true)
                     let consumer = LiveSession(configuration: config)
                     await consumer.connect()
                     await consumer.refreshCatalog("Forza")
                     if scenario == "querybudget" {
+                        check(!consumer.catalogHasQueryWarning && !consumer.catalogCanRetryQueryWarning,
+                              "REQ100 expected non-PC candidate rejections do not produce a generic search warning or Retry")
                         check(consumer.discoveryFailures.count == 16 && consumer.nextCursor == "q1-aa"
                               && consumer.canLoadMoreCatalog && consumer.catalogError == nil && consumer.products.isEmpty,
                               "REQ100 16 rejected candidates preserve real More continuation, not global search unavailable")
@@ -212,9 +287,12 @@ enum NativeChecks {
                               && consumer.discoveryFailures.count == 16 && consumer.catalogError == nil,
                               "REQ100 More resumes exact cursor and appends useful PC results without restarting")
                     } else {
-                        check(consumer.catalogSourceFailure?.code == .packageUnavailable
+                        check(consumer.catalogHasQueryWarning
+                              && consumer.catalogCanRetryQueryWarning == (scenario == "querysourceretry"),
+                              "REQ100 source degradation is disclosed with Retry only when the source is retryable")
+                        check(consumer.catalogSourceFailure?.code == (scenario == "querysourceretry" ? .networkUnavailable : .packageUnavailable)
                               && consumer.catalogEmptyTitle != "No Store matches"
-                              && (scenario == "querysourcewarning"
+                              && (scenario != "querysourcefailed"
                                   ? consumer.products.count == 1 && consumer.catalogError == nil
                                   : consumer.products.isEmpty && consumer.discoveryFailures.count == 1),
                               "REQ100 optional source warning survives actual \(scenario) decode and consumer presentation")
@@ -222,6 +300,16 @@ enum NativeChecks {
                             await consumer.refreshCatalog("Halo")
                             check(consumer.catalogSourceFailure == nil && consumer.products.count == 1,
                                   "REQ100 a new complete query retires the earlier source warning")
+                            check(!consumer.catalogHasQueryWarning,
+                                  "REQ100 normal partial public search has no default warning")
+                            let stopped = Task { await consumer.refreshCatalog("Halo") }
+                            for _ in 0..<1_000 where !consumer.searching { await Task.yield() }
+                            check(consumer.searching, "REQ100 stopped-query fixture reached its owned read")
+                            consumer.stopCatalogSearch()
+                            await stopped.value
+                            await consumer.refreshCatalog("Halo")
+                            check(consumer.gamePassCatalogError != nil && !consumer.catalogHasQueryWarning,
+                                  "REQ100 stale browse-catalog failure cannot brand a normal query as partial failure")
                             await consumer.refreshCatalog("Forza")
                             check(consumer.catalogSourceFailure != nil, "REQ100 source warning binds to its new query")
                         }

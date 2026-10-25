@@ -227,7 +227,8 @@ public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
     }
 
     fileprivate func validatePublicScope(market: String, language: String, requiresPCCandidate: Bool,
-                                         allowsGamePassListing: Bool = false) throws {
+                                         allowsGamePassListing: Bool = false,
+                                         allowsUnknownGamePassListing: Bool = false) throws {
         try CatalogArtworkReference.validate(artwork, status: artworkStatus)
         guard artwork.allSatisfy({ $0.source == .displayCatalog && $0.role != .tile }) else {
             throw ManagementError.invalidPayload
@@ -246,7 +247,9 @@ public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
             }
         }
         if let gamePass {
-            guard allowsGamePassListing, gamePass.market == market, gamePass.completeness == "partial",
+            guard (allowsGamePassListing
+                   || (allowsUnknownGamePassListing && gamePass.status == .unknown && gamePass.plans.isEmpty)),
+                  gamePass.market == market, gamePass.completeness == "partial",
                   gamePass.source == "xbox.com-search", ContractValidator.validDate(gamePass.checkedAt),
                   gamePass.plans.count <= 32,
                   gamePass.status != .unknown || gamePass.plans.isEmpty,
@@ -392,7 +395,8 @@ public struct CatalogQuery: Codable, Equatable, Sendable {
         for product in products {
             try product.validatePublicScope(market: market, language: language,
                                             requiresPCCandidate: true,
-                                            allowsGamePassListing: allowsGamePassListing)
+                                            allowsGamePassListing: allowsGamePassListing,
+                                            allowsUnknownGamePassListing: true)
         }
     }
 }

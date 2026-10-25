@@ -580,6 +580,15 @@ final class LiveSession: ObservableObject {
             && (authentication?.state == .signedOut || (supports(.authLogout) && needsAccountDisconnect))
     }
     var catalogAtLimit: Bool { Set(products.map(\.id) + discoveryFailures.map(\.id)).count >= 512 }
+    var catalogHasQueryWarning: Bool {
+        catalogSourceFailure != nil || discoveryFailures.contains {
+            $0.error.code != "PACKAGE_UNAVAILABLE" || $0.error.retryable
+        }
+    }
+    var catalogCanRetryQueryWarning: Bool {
+        catalogSourceFailure?.retryable == true || discoveryFailures.contains(where: \.error.retryable)
+    }
+    var catalogRequestVersion: Int { queryGeneration }
     var canLoadMoreCatalog: Bool { nextCursor != nil && !searching && !catalogAtLimit }
     var catalogEmptyTitle: String {
         if searching { return "Finding games" }
