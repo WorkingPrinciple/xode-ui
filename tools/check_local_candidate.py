@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from build_local_candidate import (build_evidence, copy_release_notices, source_build_number,
+from build_local_candidate import (build_evidence, copy_engine_notice, copy_release_notices, source_build_number,
                                    source_identity, validate_host)
 from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, swift_pins
 
@@ -94,6 +94,20 @@ class LocalCandidateChecks(unittest.TestCase):
             self.assertEqual((resources / "LICENSE.txt").read_text(), "GPL fixture")
             self.assertEqual((resources / "NOTICE.txt").read_text(), "Notice fixture")
             self.assertEqual((resources / "TRADEMARKS.md").read_text(), "Trademark fixture")
+
+    def test_engine_notice_is_bundled_as_plain_text(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source, resources = root / "NOTICE", root / "Resources"
+            resources.mkdir()
+            source.write_text("Calimocho notice fixture\n", encoding="utf-8")
+            record = copy_engine_notice(source, resources)
+            self.assertEqual((resources / "EngineNotices/NOTICE.txt").read_text(),
+                             "Calimocho notice fixture\n")
+            self.assertEqual(record["bytes"], source.stat().st_size)
+            source.write_bytes(b"\x00\xffbinary")
+            with self.assertRaises(UnicodeDecodeError):
+                copy_engine_notice(source, resources)
 
     def test_candidate_pins_do_not_change_release_defaults(self):
         arguments = ("a" * 40, "b" * 40, {"sha256": "c" * 64, "bytes": 20},

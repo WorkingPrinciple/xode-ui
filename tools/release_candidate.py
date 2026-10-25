@@ -21,12 +21,21 @@ from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
                            hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
 from distribution_manifest import require_distribution_ready, distribution_blockers
-from package_beta import PRODUCER_NOTICES_SHA256
+from package_beta import (INSTALL_NOTE, PRODUCER_NOTICES_SHA256, RELEASE_NOTES,
+                          create_installer_dmg, validate_dmg_background)
 
 
 def read_json(path):
     _, data = owned_bytes(path, bounded=4 * 1024 * 1024)
     return json.loads(data, object_pairs_hook=unique_object)
+
+
+def validate_engine_notice(path):
+    identity, data = owned_bytes(path, bounded=2 * 1024 * 1024)
+    text = data.decode("utf-8")
+    require(bool(text.strip()) and "\x00" not in text,
+            "Calimocho NOTICE must be non-empty UTF-8 text")
+    return identity
 
 
 def frozen_payloads(candidate, approved_unnotarized_cli=None):
@@ -133,10 +142,16 @@ def notarize(path, stage, receipt, receipt_path, label, profile):
     return submission
 
 
-def distribute(app, stage, receipt, receipt_path, identity, profile, producer_notices_sha256=None):
-    require(producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "Supply the independently pinned 0.2.0 producer-notice inventory digest")
+def distribute(app, stage, receipt, receipt_path, identity, profile, producer_notices_sha256=None,
+               dmg_background=None):
+    require(isinstance(PRODUCER_NOTICES_SHA256, str)
+            and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
+            and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
+            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
     require_distribution_ready(app, producer_notices_sha256)
+    engine_notice = validate_engine_notice(app / "Contents/Resources/EngineNotices/NOTICE.txt")
+    require(engine_notice == receipt.get("engineNotice"),
+            "Calimocho NOTICE differs from the signed dry-run candidate")
     with (app / "Contents/Info.plist").open("rb") as source:
         info = plistlib.load(source)
     version, channel = info.get("CFBundleShortVersionString"), info.get("XodeReleaseChannel")
@@ -150,6 +165,9 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
     build_number = info.get("CFBundleVersion")
     require(isinstance(build_number, str) and build_number.isdecimal(),
             "App build number is invalid")
+    background_identity = validate_dmg_background(dmg_background)
+    require(background_identity == receipt.get("dmgBackground"),
+            "DMG background differs from the reviewed dry-run asset")
     receipt.update({"appVersion": version, "buildNumber": int(build_number),
                     "releaseChannel": channel,
                     "releaseTag": f"v{version}-{channel_slug}.1"})
@@ -169,23 +187,36 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
             stage, receipt, receipt_path, "app-gatekeeper")
     distribution = stage / "distribution"
     distribution.mkdir(mode=0o700)
-    execute(["/usr/bin/ditto", str(app), str(distribution / app.name)],
+    distribution_app = distribution / app.name
+    execute(["/usr/bin/ditto", str(app), str(distribution_app)],
             stage, receipt, receipt_path, "distribution-app-copy")
-    execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(distribution / app.name)],
+    execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(distribution_app)],
             stage, receipt, receipt_path, "distribution-app-signature")
+    (distribution / "INSTALL.txt").write_text(INSTALL_NOTE, encoding="utf-8")
+    (distribution / "RELEASE-NOTES.txt").write_text(RELEASE_NOTES, encoding="utf-8")
     dmg = stage / f"X-Ode-{version}-{channel_slug}.dmg"
-    execute(["/usr/bin/hdiutil", "create", "-volname", product_name, "-srcfolder", str(distribution),
-             "-format", "UDZO", str(dmg)], stage, receipt, receipt_path, "dmg-create")
-    execute(["/usr/bin/codesign", "--sign", identity, "--timestamp", str(dmg)],
-            stage, receipt, receipt_path, "dmg-sign")
+    def run_dmg_command(arguments):
+        if arguments[0] == "dmgbuild":
+            label = "dmg-create"
+        elif arguments[0] == "/usr/bin/codesign" and "--force" in arguments:
+            label = "dmg-sign"
+        elif arguments[0] == "/usr/bin/codesign":
+            label = "dmg-signature"
+        else:
+            label = "dmg-component-signature"
+        execute(arguments, stage, receipt, receipt_path, label)
+    dmg_design = create_installer_dmg(distribution, dmg, product_name, identity,
+                                      dmg_background, app, run_dmg_command)
     receipt["artifacts"]["dmgSubmittedBytes"] = {"path": str(dmg), **owned_bytes(dmg)[0]}
+    receipt["artifacts"]["dmgBackground"] = dmg_design["background"]
+    receipt["artifacts"]["dmgVolumeIcon"] = dmg_design["volumeIcon"]
     write_receipt(receipt_path, receipt)
     receipt["dmgSubmission"] = notarize(dmg, stage, receipt, receipt_path, "dmg", profile)
     for verb in ("staple", "validate"):
         execute(["/usr/bin/xcrun", "stapler", verb, str(dmg)],
                 stage, receipt, receipt_path, "dmg-stapler-" + verb)
     execute(["/usr/bin/codesign", "--verify", "--strict", str(dmg)],
-            stage, receipt, receipt_path, "dmg-signature")
+            stage, receipt, receipt_path, "stapled-dmg-signature")
     execute(["/usr/sbin/spctl", "--assess", "--type", "open", "--context",
              "context:primary-signature", "--verbose=4", str(dmg)],
             stage, receipt, receipt_path, "dmg-gatekeeper")
@@ -195,9 +226,12 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
     write_receipt(receipt_path, receipt)
 
 
-def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notices_sha256=None):
-    require(producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "Supply the independently pinned 0.2.0 producer-notice inventory digest")
+def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notices_sha256=None,
+           dmg_background=None):
+    require(isinstance(PRODUCER_NOTICES_SHA256, str)
+            and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
+            and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
+            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
     receipt = read_json(receipt_path)
     stage = receipt_path.parent
     require(receipt["version"] == 1 and receipt["state"] == "signed_dry_run_complete"
@@ -207,6 +241,13 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notice
     require(profile == receipt["notaryProfile"], "Use the dry-run's admitted notary profile")
     app = Path(receipt["artifacts"]["app"]["path"])
     require(app.resolve(strict=True) == app and app.is_relative_to(stage), "App must remain in its owned dry-run stage")
+    require(validate_engine_notice(app / "Contents/Resources/EngineNotices/NOTICE.txt")
+            == receipt.get("engineNotice"),
+            "Calimocho NOTICE differs from the signed dry-run candidate")
+    require(dmg_background is not None, "Supply the reviewed X Ode DMG background PNG")
+    background_identity = validate_dmg_background(dmg_background)
+    require(background_identity == receipt.get("dmgBackground"),
+            "DMG background differs from the reviewed dry-run asset")
     for name, relative in (("launcher", "Contents/MacOS/Xodus"),
                            ("authenticationHelper", "Contents/MacOS/XodusAuthHost"),
                            ("resourceSeal", "Contents/_CodeSignature/CodeResources"),
@@ -233,7 +274,7 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notice
         execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
                 stage, receipt, receipt_path, "resume-app-signature")
         distribute(app, stage, receipt, receipt_path, receipt["certificateSHA1"], profile,
-                   producer_notices_sha256)
+                   producer_notices_sha256, dmg_background)
         frozen_payloads(candidate, approved_unnotarized_cli)
         write_receipt(receipt_path, receipt)
         print(receipt_path, flush=True)
@@ -252,18 +293,26 @@ def build(args):
     require(branch == "main" or branch.startswith("release/"),
             "Package releases only from main or a release/* branch")
     require(args.producer_notices is not None
+            and isinstance(PRODUCER_NOTICES_SHA256, str)
+            and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and args.producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "Supply the pinned 0.2.0 producer-notice inventory and digest")
+            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
     root = args.output_root.resolve(strict=True)
     info = root.stat()
     require(root == args.output_root and info.st_uid == os.getuid() and info.st_mode & 0o022 == 0,
             "Use a canonical, owned, non-writable-by-others output root")
     cli, helper, producer = frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
+    require(args.dmg_background is not None, "Supply the reviewed X Ode DMG background PNG")
+    background_identity = validate_dmg_background(args.dmg_background)
+    require(args.engine_notice is not None, "Supply the admitted Calimocho -02 NOTICE text")
+    engine_notice_identity = validate_engine_notice(args.engine_notice)
     stage = Path(tempfile.mkdtemp(prefix="Ode-release-", dir=root))
     stage.chmod(0o700)
     receipt_path = stage / "release-receipt.json"
     receipt = {"version": 1, "state": "building", "dryRun": args.dry_run,
                "appSource": source, "producer": producer, "commands": [], "artifacts": {},
+               "dmgBackground": background_identity,
+               "engineNotice": engine_notice_identity,
                "certificateSHA1": args.identity.upper(), "notaryProfile": args.notary_profile,
                "notarized": False, "installed": False, "activated": False,
                "appE2E": "unobserved", "productionQualified": False}
@@ -275,10 +324,15 @@ def build(args):
         receipt["buildInvocation"] = {"function": "refresh_local_candidate.refresh", "completed": False,
             "inputs": {"appCommit": source["commit"], "cli": str(cli), "windowsHelper": str(helper),
                        "producerSource": str(args.producer_source), "producerCommit": PRODUCER_COMMIT,
-                       "installedAppReadOnly": str(args.installed_app), "certificateSHA1": args.identity.upper()}}
+                       "installedAppReadOnly": str(args.installed_app), "certificateSHA1": args.identity.upper(),
+                       "dmgBackground": str(args.dmg_background),
+                       "dmgBackgroundSHA256": background_identity["sha256"],
+                       "engineNotice": str(args.engine_notice),
+                       "engineNoticeSHA256": engine_notice_identity["sha256"]}}
         write_receipt(receipt_path, receipt)
         app, build_receipt = refresh(args.installed_app, stage, args.identity, cli,
-                                     args.producer_source, PRODUCER_COMMIT, helper, notices, notices_sha)
+                                     args.producer_source, PRODUCER_COMMIT, helper, notices, notices_sha,
+                                     args.engine_notice)
         with (app / "Contents/Info.plist").open("rb") as bundle:
             app_info = plistlib.load(bundle)
         app_version = app_info.get("CFBundleShortVersionString")
@@ -295,6 +349,9 @@ def build(args):
         receipt["buildInvocation"]["completed"] = True
         receipt["candidateBuildReceipt"] = {"path": str(build_receipt), **owned_bytes(build_receipt)[0]}
         receipt["candidateBuild"] = read_json(build_receipt)
+        require(validate_engine_notice(app / "Contents/Resources/EngineNotices/NOTICE.txt")
+                == engine_notice_identity,
+                "Built app does not contain the admitted Calimocho NOTICE text")
         receipt["artifacts"]["app"] = {"path": str(app)}
         log = app.parent / "build.log"
         receipt["buildInvocation"]["log"] = str(log)
@@ -309,7 +366,8 @@ def build(args):
                                           "DMG creation/signing/notarization/stapling/Gatekeeper",
                                           "install/activation", "app_e2e"]
         else:
-            distribute(app, stage, receipt, receipt_path, args.identity, args.notary_profile, notices_sha)
+            distribute(app, stage, receipt, receipt_path, args.identity, args.notary_profile,
+                       notices_sha, args.dmg_background)
         require(source_identity(project) == source, "Source changed during release build")
         frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
         receipt["artifacts"]["bundledCLI"] = owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli")[0]
@@ -340,6 +398,10 @@ def main():
     parser.add_argument("--producer-notices", type=Path)
     parser.add_argument("--producer-notices-sha256",
                         help="Independently reviewed exact inventory digest; required for distribution")
+    parser.add_argument("--dmg-background", type=Path,
+                        help="Reviewed X Ode installer PNG; required for distribution")
+    parser.add_argument("--engine-notice", type=Path,
+                        help="Plain-text Calimocho -02 NOTICE included in the candidate")
     parser.add_argument("--resume-receipt", type=Path, help="Submit the exact already-signed successful dry-run app")
     parser.add_argument("--notary-profile", default="notary")
     parser.add_argument("--approve-unnotarized-cli",
@@ -349,10 +411,10 @@ def main():
     if args.resume_receipt:
         require(not args.dry_run and not any((args.app_commit, args.installed_app, args.output_root,
                                              args.identity, args.candidate, args.producer_source,
-                                             args.producer_notices)),
+                                             args.producer_notices, args.dmg_background, args.engine_notice)),
                 "Resume takes only its exact dry-run receipt and notary profile")
         resume(args.resume_receipt, args.notary_profile, args.approve_unnotarized_cli,
-               args.producer_notices_sha256)
+               args.producer_notices_sha256, args.dmg_background)
     else:
         require(all((args.app_commit, args.installed_app, args.output_root,
                      args.identity, args.candidate, args.producer_source)), "Supply all pinned build inputs")

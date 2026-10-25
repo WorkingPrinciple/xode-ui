@@ -25,13 +25,12 @@ Both copy and bind the inventory/notices before signing, rejecting a different
 producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
 
-For the first beta, version 0.2.0, the producer commit is
-`1fd1341d57052754bced4244121cf9d48234bc66` and the independently pinned
-inventory SHA-256 is
-`84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e`.
-Pass it as `--producer-notices-sha256` to the final package command. This pins
-the reviewed inventory identity; its 14 explicit unresolved obligations remain
-distribution blockers and are not cleared by the pin.
+The prior producer tuple and its notice inventory were superseded by the
+Calimocho `-02` admission rebuild. The replacement source, signed binaries and
+manifest are not yet admitted here, so no current producer-notice digest is
+pinned. Do not reuse the earlier `1fd1341` / `84682aa8…` tuple for packaging:
+the tools fail closed until the new inventory is regenerated and independently
+approved.
 
 The package builder accepts only CFBundleVersion values above the installed
 0.2.0 build 2, so the beta installs as an update rather than a downgrade.
@@ -76,10 +75,12 @@ missing or linked inputs. Private QA queue/inspection JSON is excluded before
 signing. `verify_shipping_package.py` independently enforces that same list.
 Run `python3 tools/check_package_resources.py` for neutral regressions.
 
-The existing release workflow is `tools/release_candidate.py --dry-run` followed
-by its exact-receipt resume, using the existing Developer ID identity and
-`--notary-profile notary`. A non-dry-run or resume submits private artifact bytes
-to Apple; do not invoke it before the exact distribution target, rights and
+The release workflow is `tools/release_candidate.py --dry-run` followed by its
+exact-receipt resume, using the existing Developer ID identity and
+`--notary-profile notary`. Resume builds the same drag-to-Applications DMG as
+the no-submit packager and requires the exact reviewed background image from
+the dry-run. A non-dry-run or resume submits private artifact bytes to Apple;
+do not invoke it before the exact distribution target, rights, QA PASS and
 external-submission authority are resolved. It is not an authorization probe.
 `xcrun --find notarytool`, `xcrun --find stapler` and their help/version commands
 need no submission or credential access. A metadata-only local lookup for the
@@ -91,13 +92,25 @@ authentication remains unverified; do not claim readiness from installed tools.
 For an approved beta package that must not be submitted or installed, use
 `tools/package_beta.py --app "/absolute/path/to/X Ode.app" --source
 /absolute/clean/main-or-release-checkout --output-root /absolute/existing/output
---format zip` (or `dmg`) and the pinned
-`--producer-notices-sha256 84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e`.
-For `--format dmg`, also supply `--dmg-background` with the reviewed X Ode
-installer PNG. The builder creates a writable staging image, adds an
-Applications drop link and Finder layout/background, converts it to a
-compressed read-only DMG, then signs and verifies the final image. Finder
-automation can require the current user's macOS Automation authorization.
+--format zip` (or `dmg`) and the new independently approved
+`--producer-notices-sha256` value. Final packaging is currently blocked until
+the `-02` producer and its matching inventory are admitted and pinned.
+For `--format dmg`, install the pinned packaging helper from
+`tools/requirements-release.txt` in a dedicated Python environment and supply
+`--dmg-background` with the reviewed X Ode installer PNG when that asset is
+provided by the branding lane. The builder uses
+headless `dmgbuild` to create an APFS/ULFO image with a volume icon,
+Applications drop link, Finder layout and background, then signs and verifies
+the final image. The image builder writes the layout metadata without opening
+Finder or triggering Apple Events.
+The local-candidate builders accept `--engine-notice` for the plain-text
+Calimocho `-02` NOTICE and place it at
+`Contents/Resources/EngineNotices/NOTICE.txt`; final beta packaging refuses to
+proceed without that resource. The complete engine binaries and full licence
+tree remain a separate download and are never put in the app notarization
+payload. `release_candidate.py --dry-run` also requires `--engine-notice` and
+`--dmg-background`; the exact NOTICE digest is carried into the dry-run receipt
+and checked again before submission.
 It derives app version/channel from Info.plist, requires the source checkout to
 be clean and on `main` or `release/*`, and verifies that its commit/tree match
 the app receipt and its `rev-list --count HEAD` matches CFBundleVersion. It

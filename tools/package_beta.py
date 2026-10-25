@@ -20,7 +20,7 @@ MINIMUM_UPDATE_BUILD = 2
 IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_IDENTIFIER = "io.github.dragoshont.xodus"
-PRODUCER_NOTICES_SHA256 = "84682aa8edb8aeef97f5304d17b6282f76b0f027b362e49ae4347b61fb99b04e"
+PRODUCER_NOTICES_SHA256 = None
 INSTALL_NOTE = """X Ode beta
 
 Verify the adjacent SHA-256 file before opening this archive. The app is signed
@@ -42,8 +42,6 @@ Known beta limitation: No Man's Sky uses an explicitly configured developer-loca
 On a Mac without that exact tested engine installed, X Ode reports that the engine
 is missing and does not substitute another engine.
 """
-
-
 def run(arguments, timeout=1800):
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)
     require(result.returncode == 0, "Packaging command failed: " + Path(arguments[0]).name)
@@ -88,62 +86,37 @@ def release_identity(source, expected_source):
     return {"commit": commit, "tree": tree, "buildNumber": int(build_number)}
 
 
-def create_installer_dmg(payload, staging, artifact, product_name, identity,
-                         background_image, run_command):
+def validate_dmg_background(background_image):
     background_record, background_data = owned_bytes(background_image, bounded=20 * 1024 * 1024)
     require(Path(background_image).suffix.lower() == ".png"
             and background_data.startswith(b"\x89PNG\r\n\x1a\n"),
             "DMG background must be a PNG image")
-    background_directory = payload / ".background"
-    background_directory.mkdir()
-    (background_directory / "X-Ode-Installer.png").write_bytes(background_data)
-    (payload / "Applications").symlink_to("/Applications")
+    return background_record
 
-    writable_image = staging / "X-Ode-writable.dmg"
-    mountpoint = staging / "mounted"
-    mountpoint.mkdir()
-    run_command(["/usr/bin/hdiutil", "create", "-srcfolder", str(payload),
-                 "-volname", product_name, "-format", "UDRW", "-fs", "HFS+",
-                 str(writable_image)])
-    run_command(["/usr/bin/hdiutil", "attach", "-nobrowse", "-readwrite", "-noverify",
-                 "-mountpoint", str(mountpoint), str(writable_image)])
-    layout_script = """on run argv
-    set mountPath to item 1 of argv
-    set volumeName to item 2 of argv
-    set imagePath to POSIX file (mountPath & "/.background/X-Ode-Installer.png") as alias
-    tell application "Finder"
-        tell disk volumeName
-            open
-            set installerWindow to container window
-            set current view of installerWindow to icon view
-            set toolbar visible of installerWindow to false
-            set statusbar visible of installerWindow to false
-            set bounds of installerWindow to {100, 100, 820, 620}
-            set viewOptions to icon view options of installerWindow
-            set arrangement of viewOptions to not arranged
-            set icon size of viewOptions to 112
-            set background picture of viewOptions to imagePath
-            set position of item "X Ode.app" of installerWindow to {205, 235}
-            set position of item "Applications" of installerWindow to {515, 235}
-            set position of item "INSTALL.txt" of installerWindow to {205, 385}
-            set position of item "RELEASE-NOTES.txt" of installerWindow to {515, 385}
-            update without registering applications
-        end tell
-    end tell
-end run
-"""
-    try:
-        run_command(["/usr/bin/osascript", "-e", layout_script, str(mountpoint), product_name])
-    finally:
-        run_command(["/usr/bin/hdiutil", "detach", str(mountpoint)])
-    run_command(["/usr/bin/hdiutil", "convert", str(writable_image),
-                 "-format", "UDZO", "-imagekey", "zlib-level=9", "-o", str(artifact)])
+
+def create_installer_dmg(payload, artifact, product_name, identity,
+                         background_image, app_bundle, run_command):
+    background_record = validate_dmg_background(background_image)
+    volume_icon = app_bundle / "Contents/Resources/Xodus.icns"
+    icon_record, icon_data = owned_bytes(volume_icon, bounded=8 * 1024 * 1024)
+    require(icon_data.startswith(b"icns"), "App volume icon is not a valid ICNS file")
+    settings = Path(__file__).with_name("xode_dmg_settings.py").resolve(strict=True)
+    app_path = payload / (product_name + ".app")
+    run_command([
+        "dmgbuild", "-s", str(settings),
+        "-D", "app=" + str(app_path),
+        "-D", "install_note=" + str(payload / "INSTALL.txt"),
+        "-D", "release_notes=" + str(payload / "RELEASE-NOTES.txt"),
+        "-D", "background=" + str(background_image),
+        "-D", "volume_icon=" + str(volume_icon),
+        product_name, str(artifact),
+    ])
     run_command(["/usr/bin/codesign", "--force", "--sign", identity.upper(),
-                 "--timestamp", "--identifier", APP_IDENTIFIER + ".beta.0.2.0", str(artifact)])
+                 "--timestamp", "--identifier", APP_IDENTIFIER + ".installer-dmg", str(artifact)])
     run_command(["/usr/bin/codesign", "--verify", "--strict", str(artifact)])
     verify_developer_id_component(artifact, identity, TEAM_ID, run_command,
                                   hardened_runtime=False)
-    return background_record
+    return {"background": background_record, "volumeIcon": icon_record}
 
 
 def package_beta(app, output_root, package_format, source, identity=IDENTITY,
@@ -162,6 +135,8 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     require(package_format in ("zip", "dmg"), "Package format must be zip or dmg")
     require(package_format != "dmg" or dmg_background is not None,
             "A reviewed DMG background PNG is required for the installer image")
+    if dmg_background is not None:
+        validate_dmg_background(dmg_background)
     require(isinstance(identity, str) and identity.upper() == IDENTITY,
             "Use the approved Developer ID certificate leaf")
 
@@ -179,8 +154,10 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
             "App bundle display names differ from the product identity")
     require(info.get("CFBundleIdentifier") == APP_IDENTIFIER,
             "App bundle identifier differs from the product identity")
-    require(producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "Supply the independently pinned 0.2.0 producer-notice inventory digest")
+    require(isinstance(PRODUCER_NOTICES_SHA256, str)
+            and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
+            and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
+            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
     build_number = info.get("CFBundleVersion")
     source_identity = app_source(app)
     release_source = release_identity(source, source_identity)
@@ -191,6 +168,11 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
             and (notices / "inventory.json").is_file()
             and not (notices / "inventory.json").is_symlink(),
             "Pinned producer notice inventory is required in the app bundle")
+    engine_notice = app / "Contents/Resources/EngineNotices/NOTICE.txt"
+    engine_notice_identity, engine_notice_data = owned_bytes(engine_notice, bounded=2 * 1024 * 1024)
+    engine_notice_text = engine_notice_data.decode("utf-8")
+    require(bool(engine_notice_text.strip()) and "\x00" not in engine_notice_text,
+            "Calimocho NOTICE must be non-empty UTF-8 text in the app bundle")
     blockers = distribution_blockers(app, producer_notices_sha256)
     require(not blockers, "Distribution preflight blocked: " + "; ".join(blockers))
     signatures = verify_developer_id_bundle(app, identity, TEAM_ID, run_command)
@@ -211,6 +193,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
         "releaseTag": f"v{version}-{channel_slug}.1",
         "appSource": source_identity,
         "producerNoticesSHA256": producer_notices_sha256,
+        "engineNotice": engine_notice_identity,
         "certificateSha1": identity.upper(),
         "teamIdentifier": TEAM_ID,
         "format": package_format,
@@ -238,8 +221,8 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
                 run_command(["/usr/bin/ditto", "-c", "-k", "--sequesterRsrc",
                              "--keepParent", str(payload), str(artifact)])
             else:
-                background_record = create_installer_dmg(
-                    payload, staging, artifact, product_name, identity, dmg_background, run_command)
+                design_records = create_installer_dmg(
+                    payload, artifact, product_name, identity, dmg_background, app, run_command)
 
             artifact_identity = identify_file(artifact)
             digest = artifact_identity["sha256"]
@@ -253,7 +236,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
                 "installNote": "INSTALL.txt (included in package)",
             }
             if package_format == "dmg":
-                receipt["artifacts"]["background"] = background_record
+                receipt["artifacts"].update(design_records)
             receipt["state"] = "prepared_not_submitted"
             write_receipt(receipt_path, receipt)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:

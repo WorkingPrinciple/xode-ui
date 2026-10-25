@@ -58,6 +58,17 @@ def copy_release_notices(source, resources):
         shutil.copyfile(path, resources / bundle_name)
 
 
+def copy_engine_notice(notice_path, resources):
+    identity, data = owned_bytes(notice_path, bounded=2 * 1024 * 1024)
+    text = data.decode("utf-8")
+    require(bool(text.strip()) and "\x00" not in text,
+            "Engine NOTICE must be non-empty UTF-8 text")
+    destination = resources / "EngineNotices/NOTICE.txt"
+    destination.parent.mkdir(parents=True)
+    destination.write_bytes(data)
+    return identity
+
+
 def build_evidence(messages):
     artifacts, native_features = [], {}
     for line in messages.splitlines():
@@ -79,7 +90,7 @@ def build_evidence(messages):
     return artifacts[0], native_features
 
 
-def build(engine_root, output_root, identity):
+def build(engine_root, output_root, identity, engine_notice=None):
     validate_host()
     project = Path(__file__).resolve().parent.parent
     engine_root = engine_root.resolve(strict=True)
@@ -160,6 +171,7 @@ def build(engine_root, output_root, identity):
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump(info, output)
     copy_release_notices(source, resources)
+    engine_notice_record = copy_engine_notice(engine_notice, resources) if engine_notice else None
     run(["swiftc", "Sources/XodusCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
          "-o", str(stage / "RenderAppIcon")], source, log)
     run([str(stage / "RenderAppIcon"), str(resources / "Xodus.iconset")], source, log)
@@ -193,6 +205,8 @@ def build(engine_root, output_root, identity):
         "architecture": "arm64",
         "generatedProducerPins": owned_bytes(producer_pins)[0], "packageFiles": inventory,
     }
+    if engine_notice_record:
+        receipt["engineNotice"] = engine_notice_record
     (stage / "candidate-receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(app)
     print(stage / "candidate-receipt.json")
@@ -203,5 +217,7 @@ if __name__ == "__main__":
     parser.add_argument("--engine-source", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--identity", required=True)
+    parser.add_argument("--engine-notice", type=Path,
+                        help="Plain-text Calimocho NOTICE from the admitted release")
     args = parser.parse_args()
-    build(args.engine_source, args.output_root, args.identity)
+    build(args.engine_source, args.output_root, args.identity, args.engine_notice)

@@ -77,6 +77,13 @@ def verify_payload_coverage(app, optional):
     notices = app / "Contents/Resources/ProducerNotices"
     if notices.exists():
         allowed.update(path.relative_to(app).as_posix() for path in notices.rglob("*") if path.is_file())
+    engine_notice = app / "Contents/Resources/EngineNotices/NOTICE.txt"
+    if engine_notice.exists():
+        allowed.add(engine_notice.relative_to(app).as_posix())
+        _, data = owned_bytes(engine_notice, bounded=2 * 1024 * 1024)
+        text = data.decode("utf-8")
+        require(bool(text.strip()) and "\x00" not in text,
+                "Engine NOTICE must be non-empty UTF-8 text")
     for path in app.rglob("*"):
         require(not path.is_symlink(), "Linked distribution payload")
         if not path.is_file():
@@ -120,6 +127,17 @@ def write_manifest(app, source, producer, archive, producer_notices=None,
     layout = resource_layout(management)
     notice, _ = owned_bytes(layout / "CompatibilityData/AWACY-LICENSE.txt")
     optional = optional_payloads(app)
+    engine_notice = resources / "EngineNotices/NOTICE.txt"
+    engine_notice_record = None
+    if engine_notice.exists():
+        _, notice_data = owned_bytes(engine_notice, bounded=2 * 1024 * 1024)
+        notice_text = notice_data.decode("utf-8")
+        require(bool(notice_text.strip()) and "\x00" not in notice_text,
+                "Engine NOTICE must be non-empty UTF-8 text")
+        engine_notice_record = {
+            "path": engine_notice.relative_to(app).as_posix(),
+            **owned_bytes(engine_notice)[0],
+        }
     for component in optional.values():
         component.update({"license": "unresolved", "rightsReview": "unresolved",
                           "correspondingSource": "delivery-unresolved"})
@@ -137,6 +155,7 @@ def write_manifest(app, source, producer, archive, producer_notices=None,
         "version": 1, "components": records,
         "optionalComponents": optional,
         "producerNotices": dependency_inventory,
+        "engineNotice": engine_notice_record,
         "appSourceArchive": owned_bytes(archive)[0],
         "compatibilityDataNotice": {"license": "MIT", **notice,
             "path": str((layout / "CompatibilityData/AWACY-LICENSE.txt").relative_to(app))},

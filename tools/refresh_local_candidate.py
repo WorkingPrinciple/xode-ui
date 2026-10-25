@@ -17,7 +17,7 @@ import subprocess
 import tarfile
 import tempfile
 
-from build_local_candidate import (copy_release_notices, run, source_build_number,
+from build_local_candidate import (copy_engine_notice, copy_release_notices, run, source_build_number,
                                    source_identity, validate_host)
 from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
                            owned_bytes, require, swift_pins)
@@ -35,7 +35,8 @@ def validate_payload_pair(cli, helper, producer, tree):
 
 
 def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
-            selected_helper=None, producer_notices=None, producer_notices_sha256=None):
+            selected_helper=None, producer_notices=None, producer_notices_sha256=None,
+            engine_notice=None):
     validate_host()
     preflight(identity)
     project = Path(__file__).resolve().parent.parent
@@ -133,6 +134,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump(bundle_info, output)
     copy_release_notices(source, resources)
+    engine_notice_record = copy_engine_notice(engine_notice, resources) if engine_notice else None
     shutil.copyfile(installed / "Contents/Resources/Xodus.icns", resources / "Xodus.icns")
     copy_resources(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
                    resources / "XodusAppFoundation_XodusManagement.bundle")
@@ -151,6 +153,8 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         "signedHelper": helper_record,
         "preservedWindowsHelper": windows_helper_record,
     }
+    if engine_notice_record:
+        receipt["engineNotice"] = engine_notice_record
     previous_receipt = installed / "Contents/Resources/local-candidate-receipt.json"
     if previous_receipt.exists():
         receipt["priorReceiptAvailable"] = True
@@ -184,7 +188,9 @@ if __name__ == "__main__":
     parser.add_argument("--windows-helper", type=Path)
     parser.add_argument("--producer-notices", type=Path)
     parser.add_argument("--producer-notices-sha256")
+    parser.add_argument("--engine-notice", type=Path,
+                        help="Plain-text Calimocho NOTICE from the admitted release")
     args = parser.parse_args()
     refresh(args.installed_app, args.output_root, args.identity, args.cli,
             args.producer_source, args.producer_commit, args.windows_helper, args.producer_notices,
-            args.producer_notices_sha256)
+            args.producer_notices_sha256, args.engine_notice)

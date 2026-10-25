@@ -11,16 +11,27 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import package_beta
 import release_candidate as release
 import refresh_local_candidate as refresh_tool
 import shipping_pair as pins
 
+PRODUCER_NOTICES_SHA256 = "a" * 64
+package_beta.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
+release.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
+
 
 class ReleaseCandidateChecks(unittest.TestCase):
     def neutral_app(self, root):
-        app = root / "Neutral.app"
+        app = root / "X Ode.app"
         contents = app / "Contents"
         contents.mkdir(parents=True, exist_ok=True)
+        resources = contents / "Resources"
+        resources.mkdir()
+        (resources / "Xodus.icns").write_bytes(b"icns neutral icon")
+        engine_notices = resources / "EngineNotices"
+        engine_notices.mkdir()
+        (engine_notices / "NOTICE.txt").write_text("Calimocho notice fixture\n")
         with (contents / "Info.plist").open("wb") as output:
             plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
                            "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "441",
@@ -102,11 +113,17 @@ class ReleaseCandidateChecks(unittest.TestCase):
             args = argparse.Namespace(app_commit=source["commit"], output_root=root,
                                       candidate=root, approve_unnotarized_cli=None,
                                       producer_notices=root / "notices",
-                                      producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
+                                      producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                      dmg_background=root / "background.png")
             with patch.object(release, "source_identity", return_value=source), \
                     patch.object(release, "release_branch", return_value="feature/package"):
                 with self.assertRaisesRegex(ValueError, "only from main or a release/\\* branch"):
                     release.build(args)
+
+    def test_distribution_stops_when_current_producer_notices_are_unpinned(self):
+        with patch.object(release, "PRODUCER_NOTICES_SHA256", None):
+            with self.assertRaisesRegex(ValueError, "No current producer-notice inventory is pinned"):
+                release.distribute(None, None, {}, None, None, None)
 
     def test_missing_approval_stops_before_build_or_signing(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -116,7 +133,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
             args = argparse.Namespace(app_commit=source["commit"], output_root=root,
                                       candidate=root, approve_unnotarized_cli=None,
                                       producer_notices=root / "notices",
-                                      producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
+                                      producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                      dmg_background=root / "background.png")
             with patch.object(release, "CLI_SHA256", cli_hash), \
                     patch.object(release, "HELPER_SHA256", helper_hash), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash), \
@@ -212,12 +230,18 @@ class ReleaseCandidateChecks(unittest.TestCase):
     def test_outer_notarization_signature_stapler_and_gatekeeper_remain_mandatory(self):
         labels = ("app-stapler-staple", "app-stapler-validate", "stapled-app-signature",
                   "app-gatekeeper", "distribution-app-signature", "dmg-sign",
-                  "dmg-stapler-staple", "dmg-stapler-validate", "dmg-signature", "dmg-gatekeeper")
+                  "dmg-stapler-staple", "dmg-stapler-validate", "dmg-signature",
+                  "stapled-dmg-signature", "dmg-gatekeeper")
         for failure in (None, "app", "dmg", *labels):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
                 receipt = {"commands": [], "artifacts": {}, "notarized": False}
                 app = self.neutral_app(root)
+                background = root / "background.png"
+                background.write_bytes(b"\x89PNG\r\n\x1a\nneutral background")
+                asset_identity = {"sha256": "a" * 64, "bytes": 1}
+                receipt["dmgBackground"] = asset_identity
+                receipt["engineNotice"] = asset_identity
                 def execute(arguments, stage, receipt, path, label):
                     if label == failure:
                         raise ValueError("Required check failed")
@@ -226,18 +250,34 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     if label == failure:
                         raise ValueError("Notary rejection")
                     return {"id": "neutral-" + label, "status": "Accepted"}
+                def read_asset(path, *args, **kwargs):
+                    if Path(path) == background:
+                        return asset_identity, b"\x89PNG\r\n\x1a\nneutral background"
+                    if Path(path).name == "Xodus.icns":
+                        return asset_identity, b"icns neutral icon"
+                    if Path(path).name == "NOTICE.txt":
+                        return asset_identity, b"Calimocho notice fixture\n"
+                    return asset_identity, b""
                 with patch.object(release, "execute", side_effect=execute), \
                         patch.object(release, "require_distribution_ready"), \
                         patch.object(release, "notarize", side_effect=notarize) as notary, \
-                        patch.object(release, "owned_bytes", return_value=({"sha256": "a" * 64}, b"")):
+                        patch.object(release, "owned_bytes", side_effect=read_asset), \
+                        patch.object(release, "validate_dmg_background", return_value=asset_identity), \
+                        patch.object(package_beta, "validate_dmg_background", return_value=asset_identity), \
+                        patch.object(package_beta, "verify_developer_id_component",
+                                     return_value={"identifier": "xode.installer-dmg",
+                                                   "teamIdentifier": "M62Z4M5EUY",
+                                                   "certificateSha1": "c" * 40,
+                                                   "hardenedRuntime": False,
+                                                   "secureTimestamp": True}):
                     if failure:
                         with self.assertRaises(ValueError):
                             release.distribute(app, root, receipt, root / "receipt.json", "c" * 40, "notary",
-                                               release.PRODUCER_NOTICES_SHA256)
+                                               PRODUCER_NOTICES_SHA256, background)
                         self.assertFalse(receipt["notarized"])
                     else:
                         release.distribute(app, root, receipt, root / "receipt.json", "c" * 40, "notary",
-                                           release.PRODUCER_NOTICES_SHA256)
+                                           PRODUCER_NOTICES_SHA256, background)
                         self.assertTrue(receipt["notarized"])
                         self.assertEqual([call.args[4] for call in notary.call_args_list], ["app", "dmg"])
                         self.assertTrue(set(labels).issubset({record["label"] for record in receipt["commands"]}))
@@ -267,7 +307,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 candidate=root, installed_app=root / "ReadOnly.app", identity="c" * 40,
                 producer_source=root, notary_profile="notary", dry_run=True, approve_unnotarized_cli=None,
                 producer_notices=root / "ReviewedNotices",
-                producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
+                producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                dmg_background=root / "background.png", engine_notice=root / "Calimocho-NOTICE.txt")
 
             def refresh(installed, output, *unused):
                 app = output / "candidate/Neutral.app"
@@ -278,6 +319,9 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                    "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "441",
                                    "XodeReleaseChannel": "Beta"}, bundle)
                 (resources / "local-candidate-receipt.json").write_text("{}")
+                engine_notices = resources / "EngineNotices"
+                engine_notices.mkdir()
+                (engine_notices / "NOTICE.txt").write_text("Calimocho notice fixture\n")
                 receipt = app.parent / "candidate-receipt.json"
                 receipt.write_text("{}")
                 return app, receipt
@@ -288,6 +332,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "frozen_payloads", return_value=(root / "cli", root / "helper", {})), \
                     patch.object(release, "refresh", side_effect=refresh) as refresh_mock, \
                     patch.object(release, "owned_bytes", return_value=({"sha256": "d" * 64, "bytes": 2}, b"{}")), \
+                    patch.object(release, "validate_dmg_background",
+                                 return_value={"sha256": "d" * 64, "bytes": 2}), \
                     patch.object(release, "execute") as execute, \
                     patch.object(release, "notarize") as notarize:
                 path = release.build(args)
@@ -298,7 +344,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 self.assertEqual(execute.call_count, 1)
                 self.assertEqual(execute.call_args.args[0][:2], ["/usr/bin/codesign", "--verify"])
                 self.assertEqual(refresh_mock.call_args.args[-2:],
-                                 (args.producer_notices, args.producer_notices_sha256))
+                                 (args.producer_notices_sha256, args.engine_notice))
                 self.assertEqual(blockers.call_args.args[-1], args.producer_notices_sha256)
                 self.assertEqual(receipt["producerNoticesSHA256"], args.producer_notices_sha256)
 
@@ -348,6 +394,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 "notarized": False, "installed": False, "activated": False, "notaryProfile": "notary",
                 "commands": [], "certificateSHA1": "c" * 40, "producer": {},
                 "appSource": {"commit": "a" * 40, "tree": "b" * 40},
+                "dmgBackground": identity,
+                "engineNotice": identity,
                 "sealedAppResourceReceipt": identity,
                 "buildInvocation": {"inputs": {"cli": str(root / "cli")}},
                 "artifacts": {"app": {"path": str(app)}, **{name: identity for name in
@@ -359,12 +407,15 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "owned_bytes", return_value=(identity, b"{}")), \
                     patch.object(release, "frozen_payloads", return_value=(root / "cli", root / "helper", {})), \
                     patch.object(release, "verify_designated_requirement"), \
+                    patch.object(release, "validate_dmg_background", return_value=identity), \
                     patch.object(release, "execute"), patch.object(release, "distribute") as distribute, \
                     patch.object(release, "refresh") as refresh:
                 release.resume(root / "release-receipt.json", "notary",
-                               producer_notices_sha256=release.PRODUCER_NOTICES_SHA256)
+                               producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                               dmg_background=root / "background.png")
                 self.assertEqual(distribute.call_args.args[0], app)
-                self.assertEqual(distribute.call_args.args[-1], release.PRODUCER_NOTICES_SHA256)
+                self.assertEqual(distribute.call_args.args[-2], PRODUCER_NOTICES_SHA256)
+                self.assertEqual(distribute.call_args.args[-1], root / "background.png")
                 refresh.assert_not_called()
                 receipt["state"] = "failed"
                 with self.assertRaises(ValueError):

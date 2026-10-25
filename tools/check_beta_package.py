@@ -11,8 +11,11 @@ import tempfile
 from unittest.mock import patch
 
 import package_beta as beta
-from package_beta import (IDENTITY, PRODUCER_NOTICES_SHA256, TEAM_ID,
+from package_beta import (IDENTITY, TEAM_ID,
                          package_beta as create_beta_package)
+
+PRODUCER_NOTICES_SHA256 = "a" * 64
+beta.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
 
 
 def fixture(root):
@@ -45,6 +48,9 @@ def fixture(root):
     notices = app / "Contents/Resources/ProducerNotices"
     notices.mkdir()
     (notices / "inventory.json").write_text("Neutral fixture inventory")
+    engine_notices = app / "Contents/Resources/EngineNotices"
+    engine_notices.mkdir()
+    (engine_notices / "NOTICE.txt").write_text("Neutral Calimocho notice fixture\n")
     output = root / "output"
     output.mkdir(mode=0o700)
     output.chmod(0o700)
@@ -73,14 +79,11 @@ def fake_runner(calls):
             assert (payload / "RELEASE-NOTES.txt").read_text(encoding="utf-8") == beta.RELEASE_NOTES
             assert (payload / "X Ode.app").is_dir()
             Path(arguments[-1]).write_bytes(b"Neutral beta archive")
-        elif arguments[0] == "/usr/bin/hdiutil":
-            if arguments[1] == "create":
-                Path(arguments[-1]).write_bytes(b"Neutral writable disk image")
-            elif arguments[1] == "convert":
-                Path(arguments[-1]).write_bytes(b"Neutral signed disk image")
-        elif arguments[0] == "/usr/bin/osascript":
-            assert "background picture" in arguments[2]
-            assert 'set position of item "Applications"' in arguments[2]
+        elif arguments[0] == "dmgbuild":
+            assert "-s" in arguments and "app=" in " ".join(arguments)
+            assert any(value.startswith("background=") for value in arguments)
+            assert "X Ode" in arguments
+            Path(arguments[-1]).write_bytes(b"Neutral signed disk image")
         return ""
     return run
 
@@ -125,6 +128,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     commands.clear()
     background = root / "installer.png"
     background.write_bytes(b"\x89PNG\r\n\x1a\nNeutral background fixture")
+    (app / "Contents/Resources/Xodus.icns").write_bytes(b"icnsNeutral icon fixture")
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()), \
             patch.object(beta, "verify_developer_id_component",
@@ -138,8 +142,10 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert (output / "X-Ode-0.2.0-beta.dmg").is_file()
     assert dmg_receipt["artifacts"]["background"]["sha256"] == hashlib.sha256(
         background.read_bytes()).hexdigest()
-    assert any(command[0] == "/usr/bin/hdiutil" and command[1] == "attach" for command in commands)
-    assert any(command[0] == "/usr/bin/hdiutil" and command[1] == "convert" for command in commands)
+    assert dmg_receipt["artifacts"]["volumeIcon"]["sha256"] == hashlib.sha256(
+        (app / "Contents/Resources/Xodus.icns").read_bytes()).hexdigest()
+    dmg_command = next(command for command in commands if command[0] == "dmgbuild")
+    assert any(value.startswith("app=") and value.endswith("/X Ode.app") for value in dmg_command)
     assert any(command[0] == "/usr/bin/codesign" and "--timestamp" in command for command in commands)
     assert not any(any(name in command[0] for name in ("notarytool", "stapler", "launchctl"))
                    or command[0] == "/usr/bin/open" for command in commands)
@@ -153,6 +159,11 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     rejected(lambda: create_beta_package(app, output, "dmg", source,
                                          producer_notices_sha256=PRODUCER_NOTICES_SHA256,
                                          run_command=fake_runner([])))
+
+    with patch.object(beta, "PRODUCER_NOTICES_SHA256", None):
+        rejected(lambda: create_beta_package(app, output, "zip", source,
+                                             producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                             run_command=fake_runner([])))
 
     with (app / "Contents/Info.plist").open("wb") as output_file:
         plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
