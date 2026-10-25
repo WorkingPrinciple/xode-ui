@@ -2,61 +2,79 @@
 import AppKit
 import SwiftUI
 import XodusCore
+import XodusManagement
 
 struct RuntimeInstallationPicker: View {
     @ObservedObject var settings: RuntimeProviderSettings
+    @ObservedObject private var installed: InstalledGamesController
     var backendPath = ""
-    @AppStorage(EngineDefaults.defaultEngineKey) private var defaultProvider = ""
-    @AppStorage("Xodus.lifecycle.engine.calimocho") private var calimochoRecord = ""
-    @AppStorage("Xodus.lifecycle.registry") private var registryPath = ""
+    var embeddedInSettings = false
+    @AppStorage(NativeEngineDefaults.preferenceKey) private var savedAdmission = Data()
     @StateObject private var registryObservation: EngineRegistryObservation
     @State private var error: String?
+    @State private var settingDefault = false
 
-    init(settings: RuntimeProviderSettings, backendPath: String = "") {
+    init(settings: RuntimeProviderSettings, backendPath: String = "",
+         installed: InstalledGamesController? = nil, embeddedInSettings: Bool = false) {
         self.settings = settings
         self.backendPath = backendPath
+        self.installed = installed ?? InstalledGamesController()
+        self.embeddedInSettings = embeddedInSettings
         _registryObservation = StateObject(wrappedValue: EngineRegistryObservation(inspector: settings.providerInspector))
     }
 
     private var allowsFileReads: Bool { !settings.applicationTerminating }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            LabeledContent("Default engine", value: RuntimeInstallationPicker.defaultEngineName(
-                provider: defaultProvider, calimocho: calimochoRecord, entries: registryObservation.entries))
-                .accessibilityIdentifier("xodus.engines.default")
-            ForEach(RuntimeInstallationPicker.calimochoEntries(registryObservation.entries,
-                                                               inspections: registryObservation.inspections)) { entry in
-                let inspection = registryObservation.inspections[entry.name]
-                let launchReady = inspection.map(RuntimeInstallationPicker.isLaunchReady) == true
-                let isDefault = defaultProvider == RuntimeProviderKind.calimocho.rawValue && calimochoRecord == entry.name
-                EngineRow(name: entry.engine_label ?? entry.name, version: entry.version, location: nil,
-                          status: isDefault ? "Default" : launchReady ? "Ready" : "Not verified") {
-                    if !isDefault {
-                        Button("Set as Default") {
-                            guard let inspection, NativeEngineSettings.persistAdmission(
-                                inspection, registryPath: registryPath) else {
-                                error = "This engine couldn't be set as default. Refresh the registry and try again."
-                                return
-                            }
-                            EngineDefaults.setDefaultEngine(.calimocho)
-                            error = nil
-                        }
-                        .disabled(!launchReady || !allowsFileReads || registryObservation.status == .loading)
-                        .accessibilityLabel("Set \(entry.engine_label ?? entry.name) as default")
+    private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
+        let defaultID = try? NativeEngineSettings.defaultAdmissionName()
+        return EngineConfiguratorForm(
+            choices: installed.availableEngineOverrides.compactMap { selection in
+                selection.inspection.engineName.map {
+                    EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: true)
+                }
+            } + installed.failedEngineOverrides.sorted().map {
+                EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: false)
+            }, defaultID: defaultID, defaultName: defaultID.map { InstalledGamesController.readableEngineName($0) } ?? "Unavailable",
+            checking: installed.checkingEngineOverrides || settingDefault,
+            error: error ?? (defaultID == nil ? "The default engine selection couldn't be read. Refresh engines and try again." : nil),
+            settings: settings, allowsFileReads: allowsFileReads,
+            setDefault: { name in
+                guard !settingDefault, allowsFileReads else { return }
+                settingDefault = true
+                Task {
+                    defer { settingDefault = false }
+                    await installed.refreshEngineOverrides(force: true)
+                    guard allowsFileReads, !Task.isCancelled,
+                          let selection = installed.availableEngineOverrides.first(where: {
+                              $0.inspection.engineName == name
+                          }) else {
+                        error = "This engine couldn't be verified. Refresh engines and try again."
+                        return
+                    }
+                    do {
+                        try NativeEngineSettings.persistDefaultAdmission(selection)
+                        error = nil
+                    } catch {
+                        self.error = "This engine couldn't be set as default. Refresh engines and try again."
                     }
                 }
-            }
-            UserEngineRows(settings: settings, allowsFileReads: allowsFileReads)
-            if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
-            Divider()
-            CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
-            Divider()
+            }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } }) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
-                                 observation: registryObservation, showsEntries: false)
+                                 observation: registryObservation, showsEntries: true)
+        }
+    }
+
+    var body: some View {
+        Group {
+            if embeddedInSettings { configurator.sections }
+            else { configurator }
         }
         .disabled(settings.planning || settings.applicationTerminating)
-        .task { await settings.refreshCrossOverDependency() }
+        .task {
+            await installed.refreshEngineOverrides(force: false)
+            await settings.refreshCrossOverDependency()
+        }
+        .onChange(of: savedAdmission) { _, _ in error = nil }
     }
 
     static func defaultEngineName(provider: String, calimocho: String,

@@ -978,8 +978,13 @@ enum GameOperationChecks {
               "REQ92: Persisted default prefills the actual review without installation")
         let typedRoot = root.appendingPathComponent("Typed drive É")
         try FileManager.default.createDirectory(at: typedRoot, withIntermediateDirectories: false)
+        check(try defaultConsent.destination(forRootPath: typedRoot.path).deletingLastPathComponent().path == typedRoot.path
+              && locationOperations.installConsent?.destination == defaultConsent.destination,
+              "REQ110: The view-facing Destination follows the edited root immediately, before blur validation commits consent")
         await locationOperations.updateTypedInstallLocation(defaultConsent, path: typedRoot.path)
+        let displayedTypedDestination = try locationOperations.installConsent?.destination(forRootPath: typedRoot.path)
         check(locationOperations.installConsent?.destination.deletingLastPathComponent().path == typedRoot.path
+              && displayedTypedDestination?.path == locationOperations.installConsent?.destination.path
               && locationOperations.installLocationError == nil,
               "REQ110: Typed install root preserves spaces/Unicode and resolves the separate game destination")
         await locationOperations.updateTypedInstallLocation(defaultConsent, path: "relative/folder")

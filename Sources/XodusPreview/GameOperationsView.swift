@@ -462,6 +462,7 @@ struct GameInstallConsentView: View {
     let consent: GameInstallConsent
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
     @State private var installRootPath: String
+    @FocusState private var installRootFocused: Bool
 
     init(operations: GameOperationsController, consent: GameInstallConsent) {
         self.operations = operations
@@ -471,6 +472,7 @@ struct GameInstallConsentView: View {
 
     var body: some View {
         let consent = operations.installConsent ?? self.consent
+        let displayedDestination = try? consent.destination(forRootPath: installRootPath)
         VStack(spacing: 0) {
             Form {
                 Section {
@@ -485,9 +487,17 @@ struct GameInstallConsentView: View {
                             HStack {
                                 TextField("Install folder", text: $installRootPath)
                                     .textFieldStyle(.roundedBorder)
+                                    .labelsHidden()
+                                    .accessibilityLabel("Install folder")
                                     .accessibilityIdentifier("xodus.install.root")
+                                    .focused($installRootFocused)
                                     .onSubmit {
                                         Task { await operations.updateTypedInstallLocation(consent, path: installRootPath) }
+                                    }
+                                    .onChange(of: installRootFocused) { _, focused in
+                                        if !focused {
+                                            Task { await operations.updateTypedInstallLocation(consent, path: installRootPath) }
+                                        }
                                     }
                                 Button("Browse…") {
                                     Task { await operations.chooseInstallLocation(consent) }
@@ -498,7 +508,7 @@ struct GameInstallConsentView: View {
                         }
                     }
                     LabeledContent("Destination") {
-                        Text(consent.destination.path).textSelection(.enabled)
+                        Text(displayedDestination?.path ?? "—").textSelection(.enabled)
                             .multilineTextAlignment(.trailing)
                     }
                     if let error = operations.installLocationError {
@@ -506,7 +516,8 @@ struct GameInstallConsentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     LabeledContent("Free space now",
-                                   value: GameOperationProgressView.bytes(consent.freeBytes))
+                                   value: displayedDestination?.path == consent.destination.path
+                                        ? GameOperationProgressView.bytes(consent.freeBytes) : "—")
                     if operations.checkingCompatibility,
                        let estimate = catalog.images[consent.game.id]?.facts.downloadBytes {
                         LabeledContent("Estimated download",
@@ -516,7 +527,6 @@ struct GameInstallConsentView: View {
                         LabeledContent("Verified package size",
                                        value: GameOperationProgressView.bytes(bytes))
                     }
-                    LabeledContent("Staging and expansion", value: "Calculated during setup")
                 }
                 Section {
                     if operations.checkingCompatibility {
@@ -537,15 +547,9 @@ struct GameInstallConsentView: View {
                         if operations.log != nil { Button("Show log") { operations.showLog() } }
                     }
                 }
-                if consent.compatibility?.supported == true || consent.nativeAccountHash != nil {
+                if consent.installedID != nil, !consent.resuming, consent.nativeAccountHash != nil {
                     Section {
-                        Text(consent.nativeAccountHash != nil
-                             ? consent.resuming
-                                ? "The account-bound service verifies package access and continues the interrupted download. Existing verified package data is reused."
-                                : "The account-bound service verifies package access before downloading. Repair downloads all package files again. Keep a separate backup of saves stored inside the game folder."
-                             : consent.installedID == nil
-                             ? "Ode to X verifies free space again before download. Additional working space can be required while package files are staged and expanded."
-                             : "Ode to X checks changed or missing files in this folder. Your saves and installed entry are kept.")
+                        Text("Repair downloads all package files again. Keep a separate backup of saves stored inside the game folder.")
                             .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -566,7 +570,7 @@ struct GameInstallConsentView: View {
             .padding(20)
         }
         .frame(minWidth: 520, idealWidth: 560, maxWidth: 640,
-               minHeight: 440, idealHeight: 560, maxHeight: 680)
+               minHeight: 360, idealHeight: 420, maxHeight: 620)
         .modifier(InstallFormPresentation())
         .onChange(of: operations.installConsent?.destination) { _, destination in
             if let destination { installRootPath = destination.deletingLastPathComponent().path }

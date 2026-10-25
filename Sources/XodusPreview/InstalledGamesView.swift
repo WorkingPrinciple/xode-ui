@@ -241,10 +241,11 @@ struct InstalledPlayButton: View {
     }
 
     private var nativeAction: NativeInstallationStatus.Action {
-        library.installationStatuses[game.id]?.action ?? .check
+        if library.packageErrors[game.id] != nil || library.unavailableDriveIDs.contains(game.id) { return .check }
+        return library.installationStatuses[game.id]?.action ?? .check
     }
 
-    private var nativeActionTitle: String {
+    var nativeActionTitle: String {
         if library.checkingInstallations.contains(game.id) { return "Checking installation…" }
         switch nativeAction {
         case .play: return "Play"

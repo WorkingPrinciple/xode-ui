@@ -38,8 +38,14 @@ Installed acceptance requires FH6 and a short-description game screenshots plus
 keyboard/VoiceOver expand-collapse observations.
 
 REQ109 / COR152-154: Settings → Engines and the Engines account page share one
-configurator. It names the current default engine, lists admitted Calimocho
-builds with **Set as Default**, and lists user-added engines with **Remove**.
+configurator. Its default picker and installed engine rows use the same bounded
+bundled admission bindings as launch and the per-game Engine menu, not the
+user-selected diagnostic registry. Selecting a default persists the exact
+verified admission in `Xodus.lifecycle.defaultAdmission.v2`; an unset selection
+uses the bundled launch default. Per-game overrides and title profiles retain
+precedence. Only explicitly declared Calimocho records consume the diagnostic
+registry's 16-candidate inspection limit; generic free Wine entries do not.
+User-added engines have **Remove**.
 User engines are configuration only and cannot become the default until a
 reviewed launch route exists. **Choose…** or a typed path adds a Wine app or
 folder after static layout checks (bin/wine*, bin/wineserver, lib/wine; Mach-O
@@ -561,7 +567,10 @@ unverified. Do not create mocks or damage installations to claim acceptance.
 Settings offers a persistent default install folder and a return to the original
 `~/Games/Xodus` default. Under REQ110, a new game's actual review shows an editable
 **Install folder** root and native **Browse…**, with the resolved game destination
-shown separately. Typed roots support absolute paths, spaces, Unicode and `~`;
+shown separately and following the draft root immediately. Tab or Return
+validates the edited root off-main; free-space information is withheld until
+the displayed destination matches the validated choice. Typed roots support
+absolute paths, spaces, Unicode and `~`;
 unavailable or unwritable roots require correction rather than a fallback.
 Confirmation revalidates the selected root off-main and carries its destination
 through the operation, installer arguments and registration. Folder selection

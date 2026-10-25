@@ -598,7 +598,8 @@ struct EnginesView: View {
 
     var body: some View {
         // RuntimeInstallationPicker hosts the grouped engine Form itself; the account sheet supplies the title.
-        RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
+        RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath,
+                                  installed: state.installedGames)
     }
 }
 

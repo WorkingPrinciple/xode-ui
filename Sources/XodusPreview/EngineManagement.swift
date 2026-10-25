@@ -71,7 +71,7 @@ final class EngineRegistryObservation: ObservableObject {
             guard token == revision, !Task.isCancelled else { return }
             entries = loaded.engines
             status = entries.isEmpty ? .missing : .detected
-            let candidates = entries.filter { $0.kind.lowercased() == "free" || $0.provider?.id == "calimocho" }
+            let candidates = entries.filter { $0.provider?.id == "calimocho" }
             guard !candidates.isEmpty else { return }
             guard let executable else {
                 inspectionMessage = EngineInspectionError.unsupported.localizedDescription

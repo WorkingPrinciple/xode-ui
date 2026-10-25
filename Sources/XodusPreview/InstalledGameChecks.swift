@@ -166,6 +166,17 @@ enum InstalledGameChecks {
         check(!InstalledGamesController.permitsNativeInspection(activeChecks: 2, preparingLaunch: false)
               && InstalledGamesController.permitsNativeInspection(activeChecks: 2, preparingLaunch: true),
               "REQ106: Two background checks cannot consume the separate single foreground launch inspection slot")
+        await mounted.checkInstallation(mountedGame)
+        let missingStatus = NativeInstallationStatus(version: 1, operation: "install-status", product: mountedGame.storeId,
+            runID: UUID().uuidString, gameDirectory: mountedGame.folder, logDirectory: "/fixture",
+            resultPath: "/fixture/result.json", success: true, exitCode: 0, errorCode: nil, status: .missing,
+            reasonCode: nil, detail: nil, filesTotal: nil, contentID: nil)
+        try mounted.recordInstallationStatus(missingStatus, for: mountedGame)
+        check(InstalledPlayButton(library: mounted, operations: GameOperationsController(installed: mounted),
+                  game: mountedGame).nativeActionTitle == "Check installation"
+              && InstalledGameAttentionView(installed: mounted, operations: GameOperationsController(installed: mounted),
+                  game: mountedGame, close: {}).needsAttention,
+              "Detail: A registered unavailable folder keeps recovery instead of contradictory Install in the header")
     }
 
     static func descriptionChecks(check: (Bool, String) -> Void) {
@@ -248,8 +259,9 @@ enum InstalledGameChecks {
               "COR161: Pending external roots gate only their destination while known same-product candidates still prevent duplication")
         check(GameInstallationDiscovery.mountedLibraryRoots([], home: home.path).isEmpty,
               "REQ106: Unmounted volumes are never guessed or auto-mounted for discovery")
+        guard let discoveredRoot = roots.first else { return }
         let observed = try await GameStorageProbe().read {
-            try GameInstallationDiscovery.scan(originalRoot: roots[0], location: nil, entries: [],
+            try GameInstallationDiscovery.scan(originalRoot: discoveredRoot, location: nil, entries: [],
                 mountedRoots: [volume.path], inspectPackage: { _ in .msixvc })
         }
         check(observed.candidates.count == 1 && observed.candidates.first?.config.storeId == "9NR1R1XWLCNB",

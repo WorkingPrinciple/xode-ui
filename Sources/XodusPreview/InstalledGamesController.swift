@@ -40,7 +40,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var availableEngineOverrides: [AdmittedEngineSelection] = []
     @Published private(set) var checkingEngineOverrides = false
     private var engineOverridesChecked = false
-    private var failedEngineOverrides: Set<String> = []
+    @Published private(set) var failedEngineOverrides: Set<String> = []
     @Published private(set) var undiscoveredInstallations: [String: String] = [:]
     private var mountedDiscoveryProbes: [String: GameStorageProbe] = [:]
     @Published private(set) var pendingDiscoveryRoots: Set<String> = []

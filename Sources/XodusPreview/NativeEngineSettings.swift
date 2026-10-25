@@ -5,6 +5,36 @@ import XodusCore
 import XodusManagement
 
 struct NativeEngineSettings: View {
+    static func defaultAdmissionName(defaults: UserDefaults = .standard) throws -> String {
+        guard defaults.object(forKey: NativeEngineDefaults.preferenceKey) != nil else {
+            return try NativeEngineDefaults.read().defaultEngine
+        }
+        guard let data = defaults.data(forKey: NativeEngineDefaults.preferenceKey) else {
+            throw NativeLaunchError.selectionChanged
+        }
+        if data.isEmpty { return try NativeEngineDefaults.read().defaultEngine }
+        let saved = try JSONDecoder().decode(AdmittedEngineSelection.self, from: data)
+        guard let name = saved.inspection.engineName, let digest = saved.inspection.registrySha256 else {
+            throw NativeLaunchError.selectionChanged
+        }
+        try saved.validate(registryPath: saved.registryPath, engineName: name, registryDigest: digest)
+        return name
+    }
+
+    static func persistDefaultAdmission(_ selection: AdmittedEngineSelection,
+                                         defaults: UserDefaults = .standard) throws {
+        guard let name = selection.inspection.engineName, let digest = selection.inspection.registrySha256 else {
+            throw NativeLaunchError.selectionChanged
+        }
+        try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
+        let data = try JSONEncoder().encode(selection)
+        defaults.set(data, forKey: NativeEngineDefaults.preferenceKey)
+        guard defaults.data(forKey: NativeEngineDefaults.preferenceKey) == data else {
+            throw GameScriptError.storage
+        }
+        EngineDefaults.setDefaultEngine(.calimocho, defaults)
+    }
+
     let allowsFileReads: Bool
     let backendPath: String
     @ObservedObject var observation: EngineRegistryObservation
@@ -205,11 +235,12 @@ struct NativeEngineSettings: View {
 
     static func persistAdmission(_ inspection: EngineInspection, registryPath: String,
                                  defaults: UserDefaults = .standard) -> Bool {
-        guard inspection.ready, let name = inspection.engineName,
-              let data = try? JSONEncoder().encode(AdmittedEngineSelection(
-                registryPath: registryPath, inspection: inspection)) else { return false }
+        let selection = AdmittedEngineSelection(registryPath: registryPath, inspection: inspection)
+        guard let name = inspection.engineName,
+              let data = try? JSONEncoder().encode(selection) else { return false }
+        do { try persistDefaultAdmission(selection, defaults: defaults) }
+        catch { return false }
         defaults.set(data, forKey: AdmittedEngineSelection.preferenceKey)
-        defaults.set(data, forKey: NativeEngineDefaults.preferenceKey)
         defaults.set(name, forKey: "Xodus.lifecycle.engine.calimocho")
         return true
     }

@@ -401,6 +401,30 @@ enum EngineManagementChecks {
     }
 
     private static func selectionPersistenceChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let largeRegistry = root.appendingPathComponent("many-generic-engines.json")
+        let invocation = root.appendingPathComponent("must-not-inspect-generic")
+        let unusedInspector = root.appendingPathComponent("unused-inspector")
+        try Data("#!/bin/sh\ntouch '\(invocation.path)'\nexit 91\n".utf8).write(to: unusedInspector)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: unusedInspector.path)
+        var genericRecords: [[String: Any]] = (0..<28).map {
+            ["name": "generic-\($0)", "kind": "free", "wine": "/synthetic/wine",
+             "smoke_test": ["status": "pass"]]
+        }
+        try JSONSerialization.data(withJSONObject: ["engines": genericRecords]).write(to: largeRegistry)
+        let genericObservation = EngineRegistryObservation()
+        await genericObservation.refresh(path: largeRegistry.path, allowsFileReads: true, executable: unusedInspector)
+        check(genericObservation.status == .detected && genericObservation.entries.count == 28
+              && genericObservation.inspectionMessage == nil && genericObservation.inspections.isEmpty
+              && !FileManager.default.fileExists(atPath: invocation.path),
+              "COR167: Generic free Wine registries never consume Calimocho admission slots or execute inspection")
+        for index in genericRecords.indices {
+            genericRecords[index]["provider"] = ["id": "calimocho", "contract_version": 1]
+        }
+        try JSONSerialization.data(withJSONObject: ["engines": genericRecords]).write(to: largeRegistry)
+        await genericObservation.refresh(path: largeRegistry.path, allowsFileReads: true, executable: unusedInspector)
+        check(genericObservation.inspectionMessage?.contains("at most 16") == true
+              && !FileManager.default.fileExists(atPath: invocation.path),
+              "COR167: Declared Calimocho candidates retain the bounded admission cap without inspecting excess records")
         let suite = "REQ95-\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -444,6 +468,25 @@ enum EngineManagementChecks {
             admittedProvider: "calimocho", admission: "admitted", ready: true, qualified: false,
             wineSha256: wineHash, wineserverSha256: serverHash, error: nil)
         let alternate = AdmittedEngineSelection(registryPath: registry.path, inspection: alternateInspection)
+        check(try NativeEngineSettings.defaultAdmissionName(defaults: defaults) == NativeEngineDefaults.read().defaultEngine,
+              "COR167: Settings uses the bundled launch default when no saved admission exists, never legacy None")
+        try NativeEngineSettings.persistDefaultAdmission(alternate, defaults: defaults)
+        let savedDefault = defaults.data(forKey: NativeEngineDefaults.preferenceKey)
+            .flatMap { try? JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+        check(try savedDefault == alternate
+              && NativeEngineSettings.defaultAdmissionName(defaults: defaults) == alternate.inspection.engineName
+              && EngineDefaults.defaultEngine(defaults) == .calimocho,
+              "COR167: Set Default stores the exact bounded binding admission consumed by launch and updates its readable identity")
+        for invalid in ["invalid saved type", Data("invalid saved admission".utf8)] as [Any] {
+            defaults.set(invalid, forKey: NativeEngineDefaults.preferenceKey)
+            do {
+                _ = try NativeEngineSettings.defaultAdmissionName(defaults: defaults)
+                check(false, "COR167: Invalid saved default is reported instead of silently displaying a fallback")
+            } catch {
+                check(true, "COR167: Invalid saved default is reported instead of silently displaying a fallback")
+            }
+        }
+        defaults.removeObject(forKey: NativeEngineDefaults.preferenceKey)
         defaults.set(try JSONEncoder().encode(selection), forKey: AdmittedEngineSelection.preferenceKey)
         EngineDefaults.setDefaultEngine(.calimocho, defaults)
         guard let reloadedDefaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
@@ -523,6 +566,11 @@ enum EngineManagementChecks {
         check(explicit.engineOverrideV2?.version == 2 && explicit.engineOverrideV2?.selection == alternate
               && explicit.engineSelection == game.engineSelection && explicit.engineOverride == game.engineOverride,
               "COR134: Optional menu override survives reload in a versioned field without migrating legacy choices")
+        let perGameBytes = try Data(contentsOf: storeURL)
+        try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
+        check(try Data(contentsOf: storeURL) == perGameBytes
+              && NativeEngineSettings.defaultAdmissionName(defaults: defaults) == selection.inspection.engineName,
+              "COR167: Settings Set Default leaves the persisted per-game V2 override unchanged")
         let explicitLaunch = try await NativeLaunchConfiguration.resolveDefault(game: explicit, configuration: backend,
             provider: .calimocho, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
         check(explicitLaunch.admittedSelection == alternate && explicitLaunch.engine == "alternate-calimocho",

@@ -15,6 +15,12 @@ struct GameInstallConsent: Identifiable, Sendable {
     var nativeAccountHash: String?
     var resuming = false
     var storageVolume: GameStorageVolume?
+
+    func destination(forRootPath path: String) throws -> URL {
+        guard installedID == nil, !resuming else { return destination }
+        return try GameInstallLocation.rootURL(path: path)
+            .appendingPathComponent(destination.lastPathComponent, isDirectory: true)
+    }
 }
 
 @MainActor
@@ -962,10 +968,19 @@ final class GameOperationsController: ObservableObject {
     }
 
     func confirmInstallLocation(_ consent: GameInstallConsent, path: String) async {
+        guard !choosingInstallLocation, !checkingCompatibility else { return }
         if consent.installedID == nil, !consent.resuming {
             await updateTypedInstallLocation(consent, path: path)
         }
         guard let current = installConsent, current.id == consent.id, installLocationError == nil else { return }
+        do {
+            guard try current.destination(forRootPath: path).path == current.destination.path else {
+                throw GameScriptError.invalidDestination
+            }
+        } catch {
+            installLocationError = Self.message(error)
+            return
+        }
         if current.installedID == nil {
             do {
                 let resume = resumableInstallations[current.game.id]

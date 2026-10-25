@@ -382,7 +382,8 @@ struct LiveProductView: View {
                                 }
                             } else {
                                 InstalledPlayButton(library: installedLibrary, operations: operations,
-                                                    game: installed, usesGlass: true, prominent: true)
+                                                    game: installed, usesGlass: true, prominent: true,
+                                                    showsDiagnostics: false)
                             }
                             InstalledGameActions(library: installedLibrary, operations: operations,
                                                  game: installed, usesGlass: true)
@@ -421,7 +422,8 @@ struct LiveProductView: View {
                                               recoveryTitle: installRecoveryTitle, recover: recoverInstall)
                         }
                     }.controlSize(.large)
-                    if let installed {
+                    if let installed, !InstalledGameAttentionView(installed: installedLibrary, operations: operations,
+                        game: installed, close: dismiss.callAsFunction).needsAttention {
                         InstalledPlayError(library: installedLibrary, game: installed)
                     }
                 }

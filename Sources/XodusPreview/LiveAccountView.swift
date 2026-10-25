@@ -198,9 +198,8 @@ struct LiveSettingsView: View {
             Section("Game storage") {
                 GameInstallLocationSettings()
             }
-            Section("Engines") {
-                RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
-            }
+            RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath,
+                installed: state.installedGames, embeddedInSettings: true)
 
             Section("Account") {
                 LabeledContent("Status", value: session.accountJourneyTitle)
