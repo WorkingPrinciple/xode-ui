@@ -29,6 +29,14 @@ failure without new evidence.
 
 ## Native interface
 
+REQ105 keeps the first complete paragraph of every game description visible.
+Blank lines, later ALL-CAPS headings and list starts delimit the remaining text;
+wrapped prose and sentences are not character-truncated. The native **More**
+disclosure exposes its expanded state to accessibility, retains selectable text,
+and resets when the product changes. Short descriptions have no empty disclosure.
+Installed acceptance requires FH6 and a short-description game screenshots plus
+keyboard/VoiceOver expand-collapse observations.
+
 REQ95 / COR132-134 launch routing uses the Settings default admission unless
 the user explicitly chooses an optional override in the existing game Actions
 menu. Only `engineOverrideV2` records that choice; historical `engineOverride`
