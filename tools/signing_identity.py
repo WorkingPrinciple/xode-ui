@@ -108,7 +108,8 @@ MACH_O_MAGICS = {
 def _certificate_fingerprints(path, run):
     with tempfile.TemporaryDirectory(prefix="xodus-certs-") as directory:
         prefix = Path(directory).resolve(strict=True) / "certificate"
-        run(["/usr/bin/codesign", "--extract-certificates", str(prefix), str(path)])
+        run(["/usr/bin/codesign", "--display",
+             "--extract-certificates=" + str(prefix), str(path)])
         certificates = sorted(prefix.parent.glob(prefix.name + "[0-9]*"))
         require(certificates and certificates[0].name == prefix.name + "0",
                 "Signed component has no extractable leaf certificate")
@@ -133,7 +134,7 @@ def verify_developer_id_component(path, identity, team_id="M62Z4M5EUY", run=comm
     authorities = re.findall(r"^Authority=(.+)$", metadata, re.MULTILINE)
     timestamps = re.findall(r"^Timestamp=(.+)$", metadata, re.MULTILINE)
     runtime_flags = re.findall(r"^.*\bflags=.*\bruntime\b.*$", metadata, re.MULTILINE)
-    require(len(identifiers) == len(teams) == len(authorities) >= 1 and len(timestamps) == 1,
+    require(len(identifiers) == len(teams) == len(timestamps) == 1 and authorities,
             "Developer ID signature metadata is incomplete")
     require(teams[0] == team_id and authorities[0].startswith("Developer ID Application: "),
             "Component is not signed by the required Developer ID team")

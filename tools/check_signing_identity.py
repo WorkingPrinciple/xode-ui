@@ -97,6 +97,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
         "TeamIdentifier=M62Z4M5EUY\n"
         "Timestamp=Oct 25, 2026 at 12:00:00 PM\n"
         "Authority=Developer ID Application: Neutral (M62Z4M5EUY)\n"
+        "Authority=Developer ID Certification Authority\n"
+        "Authority=Apple Root CA\n"
     )
 
     neutral_certificate = b"Neutral public certificate"
@@ -104,8 +106,11 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
 
     def signed_component_command(metadata=signed_metadata):
         def invoke(arguments):
-            if arguments[0] == "/usr/bin/codesign" and "--extract-certificates" in arguments:
-                prefix = Path(arguments[arguments.index("--extract-certificates") + 1])
+            extract_option = next((argument for argument in arguments
+                                   if argument.startswith("--extract-certificates=")), None)
+            if arguments[0] == "/usr/bin/codesign" and extract_option:
+                assert "--display" in arguments
+                prefix = Path(extract_option.split("=", 1)[1])
                 Path(str(prefix) + "0").write_bytes(neutral_certificate)
                 return ""
             if arguments[0] == "/usr/bin/codesign" and "--display" in arguments:
