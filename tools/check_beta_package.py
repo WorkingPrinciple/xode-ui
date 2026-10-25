@@ -41,7 +41,7 @@ def fixture(root):
         plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
                        "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "3",
                        "XodeReleaseChannel": "Beta",
-                       "CFBundleIdentifier": beta.APP_IDENTIFIER}, output)
+                       "CFBundleIdentifier": beta.APP_BUNDLE_IDENTIFIER}, output)
     (app / "Contents/Resources/local-candidate-receipt.json").write_text(json.dumps({
         "appSource": {"commit": commit, "tree": tree},
     }))
@@ -59,9 +59,9 @@ def fixture(root):
 
 def signatures():
     return {
-        "app": {"identifier": beta.APP_IDENTIFIER, "teamIdentifier": TEAM_ID,
+        "app": {"identifier": beta.APP_SIGNING_IDENTIFIER, "teamIdentifier": TEAM_ID,
                 "certificateSha1": IDENTITY, "hardenedRuntime": True, "secureTimestamp": True},
-        "Contents/MacOS/Xodus": {"identifier": beta.APP_IDENTIFIER,
+        "Contents/MacOS/Xodus": {"identifier": beta.APP_SIGNING_IDENTIFIER,
                 "teamIdentifier": TEAM_ID, "certificateSha1": IDENTITY,
                 "hardenedRuntime": True, "secureTimestamp": True},
     }
@@ -136,6 +136,19 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
                                              run_command=fake_runner([])))
     inventory_path.write_bytes(inventory_bytes)
 
+    info_path = app / "Contents/Info.plist"
+    info_bytes = info_path.read_bytes()
+    wrong_info = plistlib.loads(info_bytes)
+    wrong_info["CFBundleIdentifier"] = beta.APP_SIGNING_IDENTIFIER
+    with info_path.open("wb") as output_file:
+        plistlib.dump(wrong_info, output_file)
+    with patch.object(beta, "distribution_blockers", return_value=[]), \
+            patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
+        rejected(lambda: create_beta_package(app, output, "zip", source,
+                                             producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                             run_command=fake_runner([])))
+    info_path.write_bytes(info_bytes)
+
     commands.clear()
     background = root / "installer.tiff"
     background.write_bytes(b"II*\x00Neutral background fixture")
@@ -157,7 +170,10 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
         (app / "Contents/Resources/Xodus.icns").read_bytes()).hexdigest()
     dmg_command = next(command for command in commands if command[0] == "dmgbuild")
     assert any(value.startswith("app=") and value.endswith("/X Ode.app") for value in dmg_command)
-    assert any(command[0] == "/usr/bin/codesign" and "--timestamp" in command for command in commands)
+    dmg_signing = next(command for command in commands
+                       if command[0] == "/usr/bin/codesign" and "--timestamp" in command)
+    assert dmg_signing[dmg_signing.index("--identifier") + 1] == (
+        beta.APP_SIGNING_IDENTIFIER + ".installer-dmg")
     assert not any(any(name in command[0] for name in ("notarytool", "stapler", "launchctl"))
                    or command[0] == "/usr/bin/open" for command in commands)
 
@@ -180,7 +196,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
         plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
                        "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "2",
                        "XodeReleaseChannel": "Beta",
-                       "CFBundleIdentifier": beta.APP_IDENTIFIER}, output_file)
+                       "CFBundleIdentifier": beta.APP_BUNDLE_IDENTIFIER}, output_file)
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         rejected(lambda: create_beta_package(app, output, "zip", source,

@@ -19,7 +19,8 @@ from signing_identity import verify_developer_id_bundle, verify_developer_id_com
 MINIMUM_UPDATE_BUILD = 2
 IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
-APP_IDENTIFIER = "io.github.dragoshont.xodus"
+APP_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.development"
+APP_SIGNING_IDENTIFIER = "io.github.dragoshont.xodus"
 PRODUCER_NOTICES_SHA256 = None
 INSTALL_NOTE = """X Ode beta
 
@@ -114,7 +115,7 @@ def create_installer_dmg(payload, artifact, product_name, identity,
         product_name, str(artifact),
     ])
     run_command(["/usr/bin/codesign", "--force", "--sign", identity.upper(),
-                 "--timestamp", "--identifier", APP_IDENTIFIER + ".installer-dmg", str(artifact)])
+                 "--timestamp", "--identifier", APP_SIGNING_IDENTIFIER + ".installer-dmg", str(artifact)])
     run_command(["/usr/bin/codesign", "--verify", "--strict", str(artifact)])
     verify_developer_id_component(artifact, identity, TEAM_ID, run_command,
                                   hardened_runtime=False)
@@ -154,8 +155,8 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     product_name = info.get("CFBundleDisplayName")
     require(product_name == "X Ode" and info.get("CFBundleName") == product_name,
             "App bundle display names differ from the product identity")
-    require(info.get("CFBundleIdentifier") == APP_IDENTIFIER,
-            "App bundle identifier differs from the product identity")
+    require(info.get("CFBundleIdentifier") == APP_BUNDLE_IDENTIFIER,
+            "App bundle identifier differs from the installed development identity")
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,

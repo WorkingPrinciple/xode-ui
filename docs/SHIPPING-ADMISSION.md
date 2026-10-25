@@ -1202,7 +1202,8 @@ Use the owner's valid Developer ID Application identity for new candidates.
 Do not re-sign a preserved working engine in place. Sign a separate candidate
 and regenerate its package identity metadata consistently.
 
-Signing identifiers remain `io.github.dragoshont.xodus`,
+The app bundle identifier remains `io.github.dragoshont.xodus.development`;
+the fixed code-signing identifiers remain `io.github.dragoshont.xodus`,
 `io.github.dragoshont.xodus.cli` and
 `io.github.dragoshont.xodus.auth-host`. The existing signing helper uses an
 exact certificate-leaf requirement. This is not yet a team-based renewal policy.
