@@ -473,7 +473,8 @@ enum PCGamesChecks {
             ["ProductType": "Game", "ProductKind": 17],
             ["ProductType": "GameAddon", "ProductKind": "GameAddon"],
             ["ProductType": "Game"],
-            ["ProductKind": "GameBundle"]
+            ["ProductKind": "GameBundle"],
+            ["ProductType": "Game", "ProductKind": "Game"]
         ]
         let classifiedIDs = classificationFields.indices.map { String(format: "9CLASS%06d", $0) }
         let classifiedProducts = classificationFields.enumerated().map { index, fields -> [String: Any] in
@@ -481,6 +482,7 @@ enum PCGamesChecks {
             product.removeValue(forKey: "ProductType")
             product.removeValue(forKey: "ProductKind")
             product.merge(fields, uniquingKeysWith: { _, new in new })
+            if index == 9 { product["DisplaySkuAvailabilities"] = [["Sku": ["Properties": [:]]]] }
             return product
         }
         let classificationTransport = PCGamesMockTransport([try response(["Products": classifiedProducts])])
@@ -488,9 +490,22 @@ enum PCGamesChecks {
             ids: classifiedIDs, kinds: [:], candidateCount: classifiedIDs.count, market: "US", language: "en-US")
         check(Set(classified.games.map(\.id)) == [classifiedIDs[0], classifiedIDs[7]]
               && classified.excludedCount == 3
-              && classified.unresolvedIDs == Set(classifiedIDs[2...5]),
+              && classified.unresolvedIDs == Set(Array(classifiedIDs[2...5]) + [classifiedIDs[9]]),
               "Public base Game evidence admits PC games; applications/addons/bundles exclude; absent, conflicting, unknown or malformed kinds remain unresolved")
         let requests = await transport.requests
+        let classificationControllerTransport = PCGamesMockTransport([try response([
+            "access_token": "neutral-access", "refresh_token": "neutral-refresh"
+        ])] + (try authResponses()) + [try page(classifiedIDs.map { item($0) }),
+                                       try response(["Products": classifiedProducts])])
+        let classificationController = PCGamesController(store: PCGamesMockStore("neutral-refresh"),
+            client: PCGamesClient(transport: classificationControllerTransport))
+        await classificationController.restorePresence()
+        classificationController.refresh()
+        await classificationController.waitForOperation()
+        check(classificationController.snapshot?.unresolvedCount == 5
+              && classificationController.resolutionNotice == nil
+              && !classificationController.accessIsCurrent(for: classifiedIDs[2]),
+              "Successful but unclassifiable descriptors remain unconfirmed without a failed-details Retry banner")
         check(requests.count == 6 && requests.allSatisfy { $0.timeoutInterval == 30 && !$0.httpShouldHandleCookies },
               "S4: Exact bounded request chain uses no cookies or invented endpoint")
         let userBody = try JSONSerialization.jsonObject(with: requests[0].httpBody ?? Data()) as? [String: Any]
@@ -606,7 +621,7 @@ enum PCGamesChecks {
         partialController.refresh()
         await partialController.waitForOperation()
         check(partialController.snapshot?.unresolvedCount == 1 && !partialController.accessIsCurrent
-              && partialController.accessIsCurrent(for: first),
+              && partialController.accessIsCurrent(for: first) && partialController.resolutionNotice != nil,
               "REQ88: Unrelated unresolved metadata does not stale the resolved account library")
         check(!partialController.accessIsCurrent(for: second)
               && !partialController.accessIsCurrent(for: "NOTHELD00001")

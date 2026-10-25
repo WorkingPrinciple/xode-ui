@@ -541,6 +541,15 @@ unmount an active game's drive, install a game, move files or alter accounts to
 manufacture acceptance. Source checks do not establish installed UI or physical
 drive acceptance.
 
+## Library detail recovery
+
+Library detail recovery distinguishes missing/failed descriptor reads from a
+successfully returned product whose base-game or PC-package classification is
+unconfirmed. The latter remains unresolved for access and completeness, but does
+not create a failed-details banner or Retry action. Missing/failed reads still
+show recovery; this distinction never promotes ambiguous products to PC games.
+The synthetic `--library-access-check` covers both paths.
+
 ## Nonzero operation results
 
 Native lifecycle results are validated against the actual child exit status

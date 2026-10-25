@@ -238,6 +238,7 @@ struct PCGamesSnapshot: Sendable {
     let unresolvedIDs: Set<String>
     let unresolvedCount: Int
     let unresolvedKinds: [String: PCGameAcquisitionKind]
+    let detailFailureCount: Int
     var isComplete: Bool { unresolvedCount == 0 }
     func hasResolvedGame(_ productID: String) -> Bool {
         !unresolvedIDs.contains(productID) && games.contains { $0.id == productID }
@@ -245,7 +246,7 @@ struct PCGamesSnapshot: Sendable {
 
     init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
          boundAccountHash: String? = nil, unresolvedIDs: Set<String> = [], unresolvedCount: Int = 0,
-         unresolvedKinds: [String: PCGameAcquisitionKind] = [:]) {
+         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil) {
         self.games = games
         self.excludedCount = excludedCount
         self.updatedAt = updatedAt
@@ -254,6 +255,7 @@ struct PCGamesSnapshot: Sendable {
         self.unresolvedIDs = unresolvedIDs
         self.unresolvedCount = unresolvedCount
         self.unresolvedKinds = unresolvedKinds
+        self.detailFailureCount = detailFailureCount ?? unresolvedCount
     }
 
     func retainingUnresolved(from previous: Self?) -> Self {
@@ -268,7 +270,7 @@ struct PCGamesSnapshot: Sendable {
             $0.title.localizedStandardCompare($1.title) == .orderedAscending
         }, excludedCount: excludedCount, updatedAt: updatedAt, accountID: accountID,
             boundAccountHash: boundAccountHash, unresolvedIDs: unresolvedIDs, unresolvedCount: unresolvedCount,
-            unresolvedKinds: unresolvedKinds)
+            unresolvedKinds: unresolvedKinds, detailFailureCount: detailFailureCount)
     }
 }
 
@@ -725,13 +727,15 @@ struct PCGamesClient: Sendable {
               candidateCount >= ids.count else { throw PCGamesError.invalidResponse }
         var games: [PCGame] = []
         var unresolved = Set(ids)
+        var detailFailures = Set<String>()
         var excluded = 0
         var completedBatches = 0
         func snapshot() -> PCGamesSnapshot {
             PCGamesSnapshot(games: games.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending },
                 excludedCount: excluded, updatedAt: Date(), accountID: accountID, boundAccountHash: accountHash,
                 unresolvedIDs: unresolved, unresolvedCount: candidateCount - ids.count + unresolved.count,
-                unresolvedKinds: kinds.filter { unresolved.contains($0.key) })
+                unresolvedKinds: kinds.filter { unresolved.contains($0.key) },
+                detailFailureCount: detailFailures.count)
         }
         if !ids.isEmpty { await progress?(snapshot()) }
         for start in stride(from: 0, to: ids.count, by: 20) {
@@ -742,6 +746,7 @@ struct PCGamesClient: Sendable {
                 guard products.count <= batch.count,
                       Set(products.map(\.ProductId)).count == products.count,
                       products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+                detailFailures.formUnion(Set(batch).subtracting(products.map(\.ProductId)))
                 games += products.compactMap(\.game).map {
                     PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: kinds[$0.id] ?? .unknown)
                 }
@@ -756,6 +761,7 @@ struct PCGamesClient: Sendable {
                 completedBatches += 1
             } catch is CancellationError { throw CancellationError() }
             catch {
+                detailFailures.formUnion(batch)
                 Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
                     .warning("Public PC descriptor batch failed; \(batch.count) candidates remain unresolved")
             }
