@@ -265,23 +265,43 @@ enum NativeChecks {
                         let current = CatalogProjection(key: key, facts: facts, isVisible: { _ in true })
                         check(current.visible.count == 8 && !current.visible.contains { $0.id == alreadyOwned.id },
                               "REQ100 exact paging projection does not count an already-visible Library identity as a new public game")
+                        var incompleteFacts = facts
+                        incompleteFacts.removeValue(forKey: progress.products[0].id)
+                        let incomplete = CatalogProjection(key: key, facts: incompleteFacts, isVisible: { _ in true })
+                        check(incomplete.unresolvedClassificationCount == 1 && incomplete.visible.count == 7,
+                              "REQ100 one missing descriptor leaves other classified games visible")
                     }
-                    let version = progress.catalogRequestVersion
+                    let beforeMissingDetails = progress.catalogRequestVersion
                     await progressSelection.loadMoreSearch(session: progress, query: "Forza") { nil }
-                    check(progress.catalogRequestVersion == version
+                    check(progress.catalogRequestVersion == beforeMissingDetails + 4
                           && progressSelection.continuationNotice(session: progress, query: "Forza")
-                            == "Additional game details couldn't be checked. Refresh to try again.",
-                          "REQ100 unavailable classification stops honestly without pretending no more games or issuing more pages")
-                    progressSelection.resetPaging()
-                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") {
-                        progress.market = "GB"
-                        return []
-                    }
-                    check(progress.catalogRequestVersion == version + 1 && !progressSelection.pagingSearch
-                          && progressSelection.continuationNotice(session: progress, query: "Forza") == nil,
-                          "REQ100 scope withdrawal during metadata loading cannot request or publish stale continuation")
+                            == "No additional games found in the next four result pages."
+                          && progress.nextCursor != nil
+                          && progressSelection.canSearchFurther(session: progress, query: "Forza"),
+                          "REQ100 unavailable classification still advances four bounded pages and keeps Search further reachable")
+                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") { nil }
+                    check(progress.nextCursor == nil && !progressSelection.canSearchFurther(session: progress, query: "Forza"),
+                          "REQ100 Search further after unavailable classification reaches actual source exhaustion")
                     check(await progress.disconnect(), "REQ100 progress fixture closes its synthetic backend")
                     try cleanLifecycle(progressConfig)
+                    let scopeConfig = configuration("queryforzareal")
+                    try FileManager.default.createDirectory(at: scopeConfig.stateDirectory, withIntermediateDirectories: true)
+                    let scoped = LiveSession(configuration: scopeConfig)
+                    await scoped.connect()
+                    scoped.market = "RO"
+                    scoped.language = "en-US"
+                    await scoped.refreshCatalog("Forza")
+                    let scopedSelection = DiscoverSelection()
+                    let version = scoped.catalogRequestVersion
+                    await scopedSelection.loadMoreSearch(session: scoped, query: "Forza") {
+                        scoped.market = "GB"
+                        return []
+                    }
+                    check(scoped.catalogRequestVersion == version + 1 && !scopedSelection.pagingSearch
+                          && scopedSelection.continuationNotice(session: scoped, query: "Forza") == nil,
+                          "REQ100 scope withdrawal during metadata loading cannot request or publish stale continuation")
+                    check(await scoped.disconnect(), "REQ100 scope fixture closes its synthetic backend")
+                    try cleanLifecycle(scopeConfig)
                 }
                 for scenario in ["querybudget", "querysourceretry", "querysourcewarning", "querysourcefailed"] {
                     let config = configuration(scenario)

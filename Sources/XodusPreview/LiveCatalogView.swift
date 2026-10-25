@@ -81,32 +81,20 @@ final class DiscoverSelection: ObservableObject {
         defer { pagingSearch = false }
         let scope = searchScope(session, query: query)
         let initialVersion = session.catalogRequestVersion
-        let original = await visibleIDs()
+        let original = await visibleIDs() ?? []
         guard !Task.isCancelled, session.catalogRequestVersion == initialVersion,
               scope == searchScope(session, query: query),
               session.catalogMatches(query: query) else { return }
         resetPaging()
-        guard let original else {
-            pagingScope = scope
-            pagingCursor = session.nextCursor
-            pagingNotice = "Additional game details couldn't be checked. Refresh to try again."
-            return
-        }
         for page in 0..<4 {
             let version = session.catalogRequestVersion
             await session.refreshCatalog(query, more: true)
             guard !Task.isCancelled, session.catalogRequestVersion == version + 1,
                   scope == searchScope(session, query: query), session.catalogMatches(query: query),
                   !session.catalogStopped, session.catalogError == nil else { return }
-            let current = await visibleIDs()
+            let current = await visibleIDs() ?? []
             guard !Task.isCancelled, session.catalogRequestVersion == version + 1,
                   scope == searchScope(session, query: query) else { return }
-            guard let current else {
-                pagingScope = scope
-                pagingCursor = session.nextCursor
-                pagingNotice = "Additional game details couldn't be checked. Refresh to try again."
-                return
-            }
             if !current.subtracting(original).isEmpty { return }
             if session.nextCursor == nil || page == 3 || session.catalogAtLimit {
                 pagingScope = scope
@@ -575,7 +563,6 @@ struct LiveCatalogView: View {
                     await art.load(ids: current.index.results.storeProducts.map(\.id),
                                    market: session.market, language: session.language)
                     current = CatalogProjection(key: projectionKey, facts: art.images.mapValues(\.facts), isVisible: isVisible)
-                    guard current.unresolvedClassificationCount == 0 else { return nil }
                     return Set(current.visible.filter {
                         current.index.games[$0.id].map(selection.scope.includes) == true
                     }.map(\.id))

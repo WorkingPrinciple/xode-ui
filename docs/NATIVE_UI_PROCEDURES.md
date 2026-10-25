@@ -85,8 +85,9 @@ game appears in the active scope. It applies failed-page `error.details`
 continuation directly and awaits classification before deciding whether a page
 added visible games. If the bound finds none, it explains the bounded scan and
 offers **Search further** against the retained cursor. Only actual source
-exhaustion removes continuation; unavailable classification is reported as
-unavailable details, never as no more games. Query, account, market, language,
+exhaustion removes continuation; missing or unknown classification is not a
+new visible game and does not block the bounded scan or Search further.
+Query, account, market, language,
 scope and request-version changes fence stale paging publication.
 The `forza-more-pages.json` fixture preserves six actual unauthenticated
 RO/en-US, limit-eight responses captured from the signed a31 producer, including
