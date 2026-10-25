@@ -159,10 +159,11 @@ struct LibraryProjection {
             gamePass: key.gamePass, active: key.active, accessIsCurrent: key.accessIsCurrent,
             permittedInstalledIDs: key.permitted)
         byID = Dictionary(collection.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        candidates = LibraryGame.visible(collection, query: key.query, filter: key.filter, sort: key.sort)
+        candidates = LibraryGame.visible(collection.filter { $0.installed == nil },
+            query: key.query, filter: key.filter, sort: key.sort)
         visible = candidates.filter(isVisible)
         local = LibraryGame.localRecords(installed: key.installed, qualified: collection,
-            query: key.query, sort: key.sort)
+            query: key.query, sort: key.sort, includingQualified: true)
         continuing = LibraryGame.continuing(collection.filter(recommendable), launchableIDs: key.launchable)
         hero = LibraryGame.heroCandidates(qualified: collection.filter(recommendable),
             catalogue: [], continuingIDs: continuing.map(\.id))

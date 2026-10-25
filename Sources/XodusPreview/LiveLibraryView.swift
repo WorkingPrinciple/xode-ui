@@ -66,7 +66,7 @@ struct LiveLibraryView: View {
         nativeMinecraft.installation.appears(in: filter, query: query)
     }
     private var visibleLocalRecords: [LibraryGame] {
-        [.all, .installed].contains(filter) ? localRecords.filter(isVisible) : []
+        LibraryGame.visible(localRecords, query: "", filter: filter, sort: sort).filter(isVisible)
     }
     private var accountCollectionIncomplete: Bool {
         !library.accessIsCurrent || library.snapshot?.isComplete != true
@@ -107,8 +107,9 @@ struct LiveLibraryView: View {
         let next = LibraryProjection(key: key,
             isVisible: { showsUnsupported || unsupportedIssues($0).isEmpty }, recommendable: recommendable)
         var targets = Set(next.visible.map { "library-card-\($0.id)" })
-        if [.all, .installed].contains(nextFilter) {
-            targets.formUnion(next.local.filter { showsUnsupported || unsupportedIssues($0).isEmpty }
+        if !next.local.isEmpty {
+            targets.formUnion(LibraryGame.visible(next.local, query: "", filter: nextFilter, sort: sort)
+                .filter { showsUnsupported || unsupportedIssues($0).isEmpty }
                 .map { "library-local-\($0.id)" })
         }
         let target = selection.collectionTarget(remaining: targets)
@@ -256,7 +257,7 @@ struct LiveLibraryView: View {
                 }
                 if !visibleLocalRecords.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Local installations (\(visibleLocalRecords.count))").font(.title2.weight(.semibold))
+                        Text("Installed games (\(visibleLocalRecords.count))").font(.title2.weight(.semibold))
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
                             ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
                         }
@@ -631,7 +632,7 @@ struct LiveLibraryView: View {
         let artworkID = game.installed?.storeId ?? game.id
         return GameCard(title: game.title, gameFacts: game.facts,
                      compatibilityIssues: unsupportedIssues(game),
-                     showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(game.id),
+                     showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(artworkID),
                      openLabel: "View",
                      focusReturn: ($focusedGameID, game.id),
                      open: { open(game) }) {

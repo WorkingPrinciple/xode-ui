@@ -2,9 +2,34 @@
 
 ## Purpose and authorization
 
-### REQ101 r4 source candidate: numeric Xbox account identity
+### REQ102 r5 source candidate: sibling-region descriptor localization
 
 The current accepted backend source is
+`ad31a91e60306811aa0c9649cf70b06f592ee412`, tree
+`ea434803e638599006b9bf2146f6f4ff9e87cebd`. Descriptor localization selects
+exact locale, base language, lowest same-base regional tag, then neutral;
+unrelated languages remain rejected. The wire schema is unchanged.
+
+The genuine canonical app producer has signed CLI
+`59ebf56f69aa895282c3f960ea48181a9bc5d274dedfcf6479738db03e13b594`
+(28,739,664 bytes), Windows helper
+`803549253613ad008d8d653574fa167a31ce19e97c72f3a11a04a5b87f0d8d7f`
+(20,480 bytes), and manifest
+`8e212aea448a144ed52fe4189dd0f2c1ac5174ad6b50ae0d8f72e82fa94cbbf7`
+(16,989 bytes). Unsigned input
+`d81b4d5975aba989aab8b460db02bfa09475fdda00285ef968bb8e5e5662dd06`
+(28,889,376 bytes) and provenance
+`478e89d3d4a1c9fd17ce8bcbc4df9c7c37186d6165b9762455490dd235fa273b`
+(2,197 bytes) pass the sealed-input verifier with only its source/tree predicates
+changed in memory before repinning. Owned artifact hashes, sizes, strict
+fixed-leaf/team signature and three exact helper embeddings were independently
+checked. Only current producer and recipe bindings change; historical gameplay
+identities remain intact. Artifact admission is not installed/native acceptance,
+notarization or game qualification.
+
+### Retained REQ101 r4 source candidate: numeric Xbox account identity
+
+The previously accepted backend source is
 `b9946865fe500b20013d2d4875a6aa564bfa0809`, tree
 `dfb28e8deac90b17f298e981701c0179940364d2`. It accepts canonical numeric
 or string provider XUIDs while retaining exact authenticated-account equality.

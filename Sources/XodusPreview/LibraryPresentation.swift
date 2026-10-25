@@ -297,12 +297,17 @@ struct LibraryGame: Identifiable {
     }
 
     static func localRecords(installed: [InstalledGame], qualified: [Self],
-                             query: String, sort: LibrarySort) -> [Self] {
+                             query: String, sort: LibrarySort, includingQualified: Bool = false) -> [Self] {
         let qualifiedInstallations = Set(qualified.compactMap { $0.installed?.id })
-        let records = installed.filter { !qualifiedInstallations.contains($0.id) }.map {
+        let qualifiedByInstallation = Dictionary(qualified.compactMap { game in
+            game.installed.map { ($0.id, game) }
+        }, uniquingKeysWith: { first, _ in first })
+        let records = installed.filter { includingQualified || !qualifiedInstallations.contains($0.id) }.map {
+            let current = includingQualified ? qualifiedByInstallation[$0.id] : nil
             // UUID keeps separate imports reachable even if Store IDs overlap.
-            Self(id: $0.id.uuidString, title: $0.title, installed: $0, pc: nil, product: nil,
-                 owned: false, gamePass: false, accessIsCurrent: false)
+            return Self(id: $0.id.uuidString, title: $0.title, installed: $0, pc: current?.pc, product: current?.product,
+                 owned: current?.owned ?? false, gamePass: current?.gamePass ?? false,
+                 accessIsCurrent: current?.accessIsCurrent ?? false)
         }
         return visible(records, query: query, filter: .installed, sort: sort)
     }

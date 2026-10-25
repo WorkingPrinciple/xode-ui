@@ -550,6 +550,13 @@ not create a failed-details banner or Retry action. Missing/failed reads still
 show recovery; this distinction never promotes ambiguous products to PC games.
 The synthetic `--library-access-check` covers both paths.
 
+The **Installed games** section is the registry inventory, not the remainder
+after license checks. Registry UUIDs keep cards in place as access/readiness
+arrives or expires. The main account grid excludes installed records; filters
+still apply to installed cards, with purchase badges only from actual purchase
+evidence. License changes update card actions without moving games between
+sections. Hero and Continue Playing keep their existing authorization checks.
+
 ## Nonzero operation results
 
 Native lifecycle results are validated against the actual child exit status

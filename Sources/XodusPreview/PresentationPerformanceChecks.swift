@@ -106,11 +106,11 @@ enum PresentationPerformanceChecks {
         check(searchSelection.previousResults.index.games.isEmpty
               && searchSelection.projection.current.index.games.isEmpty,
               "REQ-59: Account retirement releases current and dimmed private library results")
-        func libraryKey(permitted: Set<String>) -> LibraryProjectionKey {
-            LibraryProjectionKey(accountHash: "account-a", query: "", owned: [], products: products,
+        func libraryKey(permitted: Set<String>, owned: [PCGame] = [], filter: LibraryFilter = .all) -> LibraryProjectionKey {
+            LibraryProjectionKey(accountHash: "account-a", query: "", owned: owned, products: products,
                 gamePass: [], active: false, installed: installed, permitted: permitted,
                 launchable: Set(installed.map(\.id)), accessIsCurrent: true, metadataRevision: 0,
-                compatibility: [:], filter: .all, sort: .title, showsUnsupported: true)
+                compatibility: [:], filter: filter, sort: .title, showsUnsupported: true)
         }
         let permitted = Set(installed.map(\.storeId))
         let input = libraryKey(permitted: permitted)
@@ -118,8 +118,9 @@ enum PresentationPerformanceChecks {
         let original = LibraryGame.collection(installed: installed, owned: [], products: products,
             gamePass: [], active: false, accessIsCurrent: true, permittedInstalledIDs: permitted)
         check(projection.collection.map(\.id) == original.map(\.id)
-              && projection.visible.map(\.id) == LibraryGame.visible(original, query: "", filter: .all, sort: .title).map(\.id)
-              && projection.local.isEmpty, "Retained Library preserves qualified join, sort and local separation")
+              && projection.visible.isEmpty
+              && projection.local.count == installed.count,
+              "Retained Library preserves qualified authority while all installed cards stay in one inventory")
         let libraryCache = PresentationCache<LibraryProjectionKey, LibraryProjection>(empty: .empty)
         libraryCache.prepare(input) { projection }
         let expired = libraryKey(permitted: [])
@@ -143,6 +144,20 @@ enum PresentationPerformanceChecks {
         }
         let mixedInput = libraryKey(permitted: [installed[0].storeId])
         let mixed = LibraryProjection(key: mixedInput, isVisible: { _ in true }, recommendable: { _ in true })
+        check(projection.local.map(\.id) == mixed.local.map(\.id)
+              && mixed.local.map(\.id) == localOnly.map(\.id)
+              && projection.local.count == installed.count
+              && projection.visible.allSatisfy { $0.installed == nil },
+              "Installed inventory stays in place through pending, partial and complete license checks without duplicate main-grid cards")
+        let purchased = PCGame(id: installed[0].storeId, title: installed[0].title, artwork: nil,
+                               acquisitionKind: .purchased)
+        let ownedInventory = LibraryProjection(key: libraryKey(permitted: permitted,
+            owned: [purchased], filter: .owned), isVisible: { _ in true }, recommendable: { _ in true })
+        let ownedInstalled = LibraryGame.visible(ownedInventory.local, query: "", filter: .owned, sort: .title)
+        check(ownedInventory.visible.isEmpty && ownedInstalled.count == 1
+              && ownedInstalled.first?.installed?.id == installed[0].id
+              && LibraryGame.visible(localOnly, query: "", filter: .owned, sort: .title).isEmpty,
+              "Installed inventory retains purchased filtering without inventing ownership while grants are pending")
         let qualifiedIDs = Set(mixed.visible.compactMap { $0.installed?.id })
         let localIDs = Set(mixed.local.compactMap { $0.installed?.id })
         check(qualifiedIDs.isDisjoint(with: localIDs)
