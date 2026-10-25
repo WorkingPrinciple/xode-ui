@@ -46,13 +46,13 @@ flowchart LR
 
 ### Visual reference, not gameplay evidence
 
-![Historical Library fixture mockup with original fictional game illustrations](https://raw.githubusercontent.com/dragoshont/xodus-macos-app/fac58d6f501c356a0e763d397263e5a0a30b3477/design/previews/library.png)
+![Historical Library fixture mockup with original fictional game illustrations](https://raw.githubusercontent.com/WorkingPrinciple/xode-ui/fac58d6f501c356a0e763d397263e5a0a30b3477/design/previews/library.png)
 
 **Historical fixture mockup, not a current app or game screenshot.** The image
 uses fictional titles and original illustrations; its access labels are invented.
 It retains the earlier Xodus name. It was inspected for account names, emails and
 tokens; none were visible. No live account capture or copyrighted game art is
-republished. [Artwork provenance](https://github.com/dragoshont/xodus-macos-app/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/XodusPreview/Resources/Artwork/PROVENANCE.json).
+republished. [Artwork provenance](https://github.com/WorkingPrinciple/xode-ui/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/XodusPreview/Resources/Artwork/PROVENANCE.json).
 
 ## Before you try it
 
@@ -80,7 +80,7 @@ replace the credential helper silently. See the [release checklist](docs/LAUNCH-
 The Swift app source is included on `main`:
 
 ```sh
-git clone https://github.com/dragoshont/xodus-macos-app.git x-ode-source
+git clone https://github.com/WorkingPrinciple/xode-ui.git x-ode-source
 cd x-ode-source
 swift build --product XodusPreview
 sh tools/check.sh
@@ -113,7 +113,7 @@ claims. Documentation does not hide or disable existing controls.
 ## Scope and credits
 
 X Ode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the
-[macOS backend fork](https://github.com/dragoshont/xodus-macos).
+[macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos).
 Original app source, documentation and mockups are GPL-3.0-only; preserve
 [the source license](LICENSE), [licensing boundaries](docs/LICENSING.md),
 upstream notices and corresponding-source obligations when distributing.
@@ -125,5 +125,5 @@ Xbox, Apple, CodeWeavers or game publishers. X Ode is the documentation
 product name; bundle identifiers, Keychain identities, signer requirements and
 existing Xodus paths are unchanged.
 
-Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
-and [publication precautions](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).
+Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
+and [publication precautions](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).
