@@ -157,7 +157,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
+            "No current producer-notice inventory is pinned; await the -03 admission rebuild")
     build_number = info.get("CFBundleVersion")
     source_identity = app_source(app)
     release_source = release_identity(source, source_identity)
@@ -291,7 +291,7 @@ def main():
     parser.add_argument("--producer-notices-sha256", required=True,
                         help="Independently reviewed exact producer inventory digest")
     parser.add_argument("--dmg-background", type=Path,
-                        help="Approved PNG background art required when --format dmg")
+                        help="Reviewed combined HiDPI TIFF required when --format dmg")
     arguments = parser.parse_args()
     receipt = package_beta(arguments.app, arguments.output_root, arguments.format, arguments.source,
                            arguments.identity,

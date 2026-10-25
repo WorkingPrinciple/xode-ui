@@ -147,7 +147,7 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
+            "No current producer-notice inventory is pinned; await the -03 admission rebuild")
     require_distribution_ready(app, producer_notices_sha256)
     engine_notice = validate_engine_notice(app / "Contents/Resources/EngineNotices/NOTICE.txt")
     require(engine_notice == receipt.get("engineNotice"),
@@ -231,7 +231,7 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notice
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
+            "No current producer-notice inventory is pinned; await the -03 admission rebuild")
     receipt = read_json(receipt_path)
     stage = receipt_path.parent
     require(receipt["version"] == 1 and receipt["state"] == "signed_dry_run_complete"
@@ -296,7 +296,7 @@ def build(args):
             and isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and args.producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "No current producer-notice inventory is pinned; await the -02 admission rebuild")
+            "No current producer-notice inventory is pinned; await the -03 admission rebuild")
     root = args.output_root.resolve(strict=True)
     info = root.stat()
     require(root == args.output_root and info.st_uid == os.getuid() and info.st_mode & 0o022 == 0,
@@ -304,7 +304,7 @@ def build(args):
     cli, helper, producer = frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
     require(args.dmg_background is not None, "Supply the reviewed X Ode combined HiDPI TIFF background")
     background_identity = validate_dmg_background(args.dmg_background)
-    require(args.engine_notice is not None, "Supply the admitted Calimocho -02 NOTICE text")
+    require(args.engine_notice is not None, "Supply the admitted Calimocho -03 NOTICE text")
     engine_notice_identity = validate_engine_notice(args.engine_notice)
     stage = Path(tempfile.mkdtemp(prefix="Ode-release-", dir=root))
     stage.chmod(0o700)
@@ -401,7 +401,7 @@ def main():
     parser.add_argument("--dmg-background", type=Path,
                         help="Reviewed combined HiDPI TIFF; required for distribution")
     parser.add_argument("--engine-notice", type=Path,
-                        help="Plain-text Calimocho -02 NOTICE included in the candidate")
+                        help="Plain-text Calimocho -03 NOTICE included in the candidate")
     parser.add_argument("--resume-receipt", type=Path, help="Submit the exact already-signed successful dry-run app")
     parser.add_argument("--notary-profile", default="notary")
     parser.add_argument("--approve-unnotarized-cli",

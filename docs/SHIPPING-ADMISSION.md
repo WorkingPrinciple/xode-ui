@@ -26,7 +26,7 @@ producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
 
 The prior producer tuple and its notice inventory were superseded by the
-Calimocho `-02` admission rebuild. The replacement source, signed binaries and
+Calimocho `-03` admission rebuild. The replacement source, signed binaries and
 manifest are not yet admitted here, so no current producer-notice digest is
 pinned. Do not reuse the earlier `1fd1341` / `84682aa8…` tuple for packaging:
 the tools fail closed until the new inventory is regenerated and independently
@@ -94,18 +94,21 @@ For an approved beta package that must not be submitted or installed, use
 /absolute/clean/main-or-release-checkout --output-root /absolute/existing/output
 --format zip` (or `dmg`) and the new independently approved
 `--producer-notices-sha256` value. Final packaging is currently blocked until
-the `-02` producer and its matching inventory are admitted and pinned.
-For `--format dmg`, combine the reviewed 660x400 and 1320x800 artwork from the
-branding lane with `tiffutil -cathidpicheck dmg-background.png
-dmg-background@2x.png -out background.tiff`, install the pinned packaging
-helper from `tools/requirements-release.txt` in a dedicated Python environment,
-and supply the resulting TIFF as `--dmg-background`. The builder uses
-headless `dmgbuild` to create an APFS/ULFO image with a volume icon,
+Calimocho `calimocho-11.20-4.0b3-03` (0.1120.4.3) and its matching notice
+inventory are admitted and pinned.
+For `--format dmg`, combine the reviewed 660x400 and 1320x800 artwork in
+`design/installer/` with
+`tiffutil -cathidpicheck design/installer/dmg-background.png
+design/installer/dmg-background@2x.png -out background.tiff`, install the
+pinned packaging helper from `tools/requirements-release.txt` in a dedicated
+Python environment, and supply the resulting TIFF as `--dmg-background`. The
+artwork source and regeneration steps are in `design/installer/README.md`. The
+builder uses headless `dmgbuild` to create an APFS/ULFO image with a volume icon,
 Applications drop link, the 660x400 Finder layout, 128-pixel icons and artwork,
 then signs and verifies the final image. The image builder writes the layout
 metadata without opening Finder or triggering Apple Events.
 Both local-candidate builders and `build_app.sh` accept the plain-text
-Calimocho `-02` NOTICE (`--engine-notice`) and place it at
+Calimocho `-03` NOTICE (`--engine-notice`) and place it at
 `Contents/Resources/EngineNotices/NOTICE.txt`; final beta packaging refuses to
 proceed without that resource. The complete engine binaries and full licence
 tree remain a separate download and are never put in the app notarization
