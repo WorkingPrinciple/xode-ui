@@ -597,16 +597,8 @@ struct EnginesView: View {
     @EnvironmentObject private var session: LiveSession
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Engines").font(.title2.bold())
-            Form {
-                Section {
-                    RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
-                }
-            }
-            .formStyle(.grouped)
-            .frame(minHeight: 440)
-        }
+        // RuntimeInstallationPicker hosts the grouped engine Form itself; the account sheet supplies the title.
+        RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
     }
 }
 
