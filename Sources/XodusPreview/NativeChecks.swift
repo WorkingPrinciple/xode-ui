@@ -60,6 +60,7 @@ enum NativeChecks {
                 try await EngineManagementChecks.routingOnly(check: check)
                 try await InstalledGameChecks.legacyNativeReadiness(check: check)
                 try await InstalledGameChecks.externalDiscoveryChecks(check: check)
+                try await InstalledGameChecks.discoveryIsolationChecks(check: check)
                 print("\(count) non-UI engine selection checks, \(failures) failures. No windows, account or game launches.")
                 return failures == 0
             }

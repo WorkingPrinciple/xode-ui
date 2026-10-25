@@ -8,6 +8,126 @@ import XodusCore
 
 @MainActor
 enum InstalledGameChecks {
+    static func discoveryIsolationChecks(check: (Bool, String) -> Void) async throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/DiscoveryIsolation-\(UUID().uuidString)")
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "REQ106: Isolation fixture is cleaned") }
+        }
+        let local = root.appendingPathComponent("local/game")
+        let remote = root.appendingPathComponent("remote/game")
+        for (folder, product) in [(local, "FIXTURE00001"), (remote, "9NR1R1XWLCNB"),
+                                 (root.appendingPathComponent("remote/second"), "FIXTURE00002"),
+                                 (root.appendingPathComponent("remote/third"), "FIXTURE00003")] {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try Data("<Game><Identity Name=\"Fixture\" Version=\"1.0.0.0\"/><StoreId>\(product)</StoreId></Game>".utf8)
+                .write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+        }
+        let launcher = root.appendingPathComponent("local/launch.sh")
+        try Data("#!/bin/sh\nexit 99\n".utf8).write(to: launcher)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: launcher.path)
+        let game = InstalledGame(id: UUID(), title: "Local", identityName: "Fixture", version: "1.0.0.0",
+            storeId: "FIXTURE00001", folder: local.path, launcher: launcher.path, importedAt: Date())
+        let store = InstalledGameStore(file: root.appendingPathComponent("registry/games.json"))
+        try await store.save([game])
+        let completeness = DiscoveryCompletenessFixture()
+        let controller = InstalledGamesController(store: store, inspectPackage: { _ in .win32 },
+            mountedStorageRoots: { [] }, discoveryRoot: remote.deletingLastPathComponent(),
+            installLocation: { nil }, discoveryCompleteness: { _, _ in
+                try await completeness.check()
+            })
+        await controller.load()
+        check(controller.launchableIDs.contains(game.id), "REQ106: Local fixture starts with verified launch readiness")
+        completeness.slow = true
+        let scan = Task { await controller.discoverNativeInstallations(root: remote.deletingLastPathComponent()) }
+        try await Task.sleep(for: .milliseconds(100))
+        check(controller.discoveringInstallations && !controller.editing
+              && controller.launchableIDs.contains(game.id) && !controller.mutationActive,
+              "REQ106: Pending slow NFS discovery never takes global editing or local launch readiness")
+        scan.cancel()
+        await scan.value
+        completeness.slow = false
+        completeness.timeout = true
+        await controller.verifyDiscoveredInstallation(productID: "9NR1R1XWLCNB")
+        check(controller.launchableIDs.contains(game.id) && !controller.editing
+              && !controller.verifyingDiscoveredProducts.contains("9NR1R1XWLCNB"),
+              "REQ106: Candidate verification timeout leaves other games launchable and clears only its busy state")
+        let operations = GameOperationsController(installed: controller)
+        let candidate = PCGame(id: "9NR1R1XWLCNB", title: "Forza Horizon 6", artwork: nil)
+        check(GameInstallAction(game: candidate, operations: operations).actionTitle == "Check installation"
+              && !controller.canCreateInstallation(productID: candidate.id),
+              "REQ106: Timed-out NFS verification stays Check installation and never offers a duplicate Install")
+        check(controller.discoveryError == nil
+              && controller.discoveredVerificationErrors[candidate.id] != nil
+              && controller.discoveredVerificationErrors["FIXTURE00002"] == nil,
+              "REQ106: An explicit failed check reports only on its own product, never an automatic-discovery banner")
+        completeness.timeout = false
+        completeness.slow = true
+        let first = Task { await controller.verifyDiscoveredInstallation(productID: candidate.id) }
+        let second = Task { await controller.verifyDiscoveredInstallation(productID: "FIXTURE00002") }
+        let verificationDeadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while controller.verifyingDiscoveredProducts.count < 2 && ContinuousClock.now < verificationDeadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        await controller.verifyDiscoveredInstallation(productID: "FIXTURE00003")
+        check(controller.verifyingDiscoveredProducts.count == 2 && !controller.editing
+              && controller.launchableIDs.contains(game.id),
+              "REQ106: Candidate verification admits at most two cancellable workers without locking local Play")
+        controller.cancelDiscoveredVerification(productID: candidate.id)
+        controller.cancelDiscoveredVerification(productID: "FIXTURE00002")
+        await first.value
+        await second.value
+        check(controller.verifyingDiscoveredProducts.isEmpty && controller.discoveredVerificationErrors[candidate.id] == nil,
+              "REQ106: Cancelling product checks retires only their busy states without a failure-shaped cancellation")
+        let slowGame = InstalledGame(id: UUID(), title: "Slow drive", identityName: "Fixture", version: "1.0.0.0",
+            storeId: candidate.id, folder: remote.path, launcher: launcher.path, importedAt: Date())
+        let isolatedStore = InstalledGameStore(file: root.appendingPathComponent("independent/games.json"))
+        try await isolatedStore.save([slowGame, game])
+        let gate = PackageInspectionInterleaving()
+        defer { gate.release() }
+        let isolated = InstalledGamesController(store: isolatedStore, inspectPackage: { folder in
+            if folder.path == remote.path { return try gate.inspect(folder) }
+            return .win32
+        }, mountedStorageRoots: { [] })
+        let loading = Task { await isolated.load() }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !gate.isWaiting || !isolated.launchableIDs.contains(game.id) {
+            guard ContinuousClock.now < deadline else { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(gate.isWaiting && isolated.launchableIDs.contains(game.id) && !isolated.editing,
+              "REQ106: A slow per-game probe publishes local Play independently before the slow probe returns (waiting \(gate.isWaiting), local \(isolated.launchableIDs.contains(game.id)), errors \(isolated.packageErrors.count))")
+        await loading.value
+        check(isolated.launchableIDs.contains(game.id) && isolated.packageErrors[game.id] == nil,
+              "REQ106: A readiness probe timeout preserves every other game's launchability")
+        func tileHeight() -> CGFloat {
+            let tile = PCGameTile(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
+                installed: isolated, operations: GameOperationsController(installed: isolated),
+                allowsArtworkLoading: false, viewDetails: {})
+            let host = NSHostingView(rootView: tile.frame(width: 220))
+            host.layoutSubtreeIfNeeded()
+            return host.fittingSize.height
+        }
+        let readyHeight = tileHeight()
+        try FileManager.default.removeItem(at: local)
+        await isolated.checkInstallation(game)
+        check(isolated.packageErrors[game.id] == InstalledGameError.missingFolder.localizedDescription
+              && !isolated.launchableIDs.contains(game.id) && tileHeight() == readyHeight,
+              "COR156: Missing-folder truth disables unsafe Play without adding diagnostic text or icons to catalogue card layout")
+        check(InstalledGameFiles.folderReadError(NSError(domain: NSCocoaErrorDomain,
+            code: NSFileReadNoPermissionError)) == .folderUnavailable
+              && InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain,
+                  code: Int(ETIMEDOUT))) == .folderUnavailable
+              && InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain,
+                  code: Int(ENOENT))) == .missingFolder,
+              "COR156: Permission and timeout errors remain unverified, never mislabeled as a missing folder")
+        let warning = NSHostingView(rootView: InstallationWarning(message: InstalledGameError.missingFolder.localizedDescription))
+        warning.layoutSubtreeIfNeeded()
+        check(warning.fittingSize.height > 0 && warning.fittingSize.height <= 24,
+              "COR156: Detail recovery uses a compact warning with help and accessible label, not an inline paragraph")
+    }
+
     static func externalDiscoveryChecks(check: (Bool, String) -> Void) async throws {
         let menu = NSMenu()
         let item = NSMenuItem(title: "Engine", action: nil, keyEquivalent: "")
@@ -60,7 +180,7 @@ enum InstalledGameChecks {
                 mountedRoots: [volume.path], inspectPackage: { _ in throw InstalledGameError.invalidConfig })
         }
         check(refused.candidates.isEmpty && refused.identifiedInstallations[folder.path] == "9NR1R1XWLCNB"
-              && !refused.errors.isEmpty,
+              && refused.errors.isEmpty,
               "REQ106: Package-inspection failure retains a known matching identity for duplicate-download protection")
         do {
             _ = try MicrosoftGameConfig.configurationFile(in: [
@@ -86,7 +206,7 @@ enum InstalledGameChecks {
         await blockedMounts.discoverNativeInstallations(root: library)
         check(blockedMounts.discoveringMounts
               && !blockedMounts.canCreateInstallation(productID: "9NR1R1XWLCNB")
-              && blockedMounts.discoveryError != nil,
+              && blockedMounts.discoveryError == nil,
               "REQ106: Dead mount enumeration times out off-main and keeps unknown-root Install fail-closed")
         gate.release()
         let controller = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
@@ -127,8 +247,9 @@ enum InstalledGameChecks {
         check(GameInstallAction(game: game, operations: operations).actionTitle == "Check installation",
               "REQ106: Unverified matching package uses existing Check installation action, not blind Install")
         await GameInstallAction(game: game, operations: operations).requestInstall()
-        check(operations.installConsent == nil && operations.operation == nil && operations.error != nil,
-              "REQ106: Check installation retries discovery only and surfaces its failure without a download or consent")
+        check(operations.installConsent == nil && operations.operation == nil
+              && operations.existingInstallationError(productID: game.id) != nil && operations.error == nil,
+              "REQ106: Check installation verifies only its product and surfaces its own failure without a download or consent")
         complete = true
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1 && controller.games[0].folder == folder.path
@@ -342,7 +463,7 @@ enum InstalledGameChecks {
               && Set(inspections) == Set(["FIXTURE00002", "FIXTURE00003", "FIXTURE00004", "FIXTURE00005"]),
               "COR105: Discovery scans original, saved default and recorded roots using exact product/folder completeness checks")
         check(!controller.games.contains { $0.storeId == "FIXTURE00005" }
-              && controller.discoveryError?.contains("incomplete") == true && controller.launchableIDs.isEmpty,
+              && controller.discoveryError == nil && controller.launchableIDs.isEmpty,
               "COR105: Config-only incomplete payload is not adopted or promoted to launch/account readiness")
         await controller.discoverNativeInstallations()
         check(controller.games.count == 4 && controller.games.filter { $0.id == existing.id }.count == 1,
@@ -355,8 +476,8 @@ enum InstalledGameChecks {
         offline.useUnifiedAccount(session)
         await offline.discoverNativeInstallations()
         check(offline.games.count == 4 && offline.games.contains { $0.id == existing.id && $0.folder == existing.folder }
-              && offline.discoveryError?.contains("unavailable") == true,
-              "COR105: Offline recorded root reports unavailable without pruning or relocating its entries")
+              && offline.discoveryError == nil,
+              "COR105: Automatic offline discovery keeps entries without a raw-path banner")
         let invalid = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
             mountedStorageRoots: { [] }, discoveryRoot: original,
             installLocation: { throw GameScriptError.invalidDestination },
@@ -364,8 +485,8 @@ enum InstalledGameChecks {
         await invalid.load()
         invalid.useUnifiedAccount(session)
         await invalid.discoverNativeInstallations()
-        check(invalid.games.count == 4 && invalid.discoveryError != nil,
-              "COR105: Invalid saved default reports failure instead of silently falling back")
+        check(invalid.games.count == 4 && invalid.discoveryError == nil,
+              "COR105: Automatic invalid saved root retains entries without importing a fallback or showing a banner")
         let changingRoot = root.appendingPathComponent("changing")
         let changingFolder = changingRoot.appendingPathComponent("game")
         try FileManager.default.createDirectory(at: changingFolder, withIntermediateDirectories: true)
@@ -385,7 +506,8 @@ enum InstalledGameChecks {
         await changing.load()
         changing.useUnifiedAccount(session)
         await changing.discoverNativeInstallations()
-        check(changing.games.isEmpty && changing.discoveryError?.contains("configuration changed") == true,
+        check(changing.games.isEmpty && changing.discoveryError == nil
+              && changing.hasUnverifiedInstallation(productID: "FIXTURE00006"),
               "COR105: Same-product config identity changed during completeness checking cannot be adopted from stale metadata")
         let capped = root.appendingPathComponent("capped")
         try FileManager.default.createDirectory(at: capped, withIntermediateDirectories: false)
@@ -1091,6 +1213,18 @@ enum InstalledGameChecks {
               && concurrent.launchableIDs.contains(routed.id)
               && afterConcurrentImport.first?.packageType == .msixvc,
               "M1: Superseded observations cannot overwrite newer format, errors, launchability or persisted facts")
+    }
+}
+
+@MainActor
+private final class DiscoveryCompletenessFixture {
+    var slow = false
+    var timeout = false
+
+    func check() async throws -> Bool {
+        if timeout { throw GameScriptError.timeout }
+        if slow { try await Task.sleep(for: .seconds(60)) }
+        return false
     }
 }
 

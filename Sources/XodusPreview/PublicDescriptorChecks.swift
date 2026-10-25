@@ -352,7 +352,8 @@ enum PublicDescriptorChecks {
         let missingClient = PCGamesClient(transport: missingTransport)
         let missing = try await missingClient.resolveCollection(ids: sample,
             kinds: [:], candidateCount: 3, market: "US", language: "en-US")
-        check(missing.games.count == 2 && missing.unresolvedIDs == [sample[1]] && missing.excludedCount == 0,
+        check(missing.games.count == 2 && missing.unresolvedIDs == [sample[1]] && missing.excludedCount == 0
+              && missing.detailFailureCount == 0,
               "A partial response's omission is unresolved, not non-PC classification or authoritative removal")
         await missingTransport.configure()
         let recovered = try await missingClient.resolveCollection(ids: sample, kinds: [:], candidateCount: 3,
@@ -399,7 +400,7 @@ enum PublicDescriptorChecks {
         let management = try ManagementClient()
         for scenario in ["descriptorsretry", "descriptorscapacity", "descriptorsauth", "descriptorsretryexhausted",
                          "descriptorscommandretry", "descriptorscommandexhausted", "descriptorscommandauth",
-                         "descriptorscommandpermanent", "descriptorscommandmalformed"] {
+                         "descriptorscommandpermanent", "descriptorscommandmalformed", "descriptorsunavailable"] {
             let backend = try ManagementClient()
             _ = try await backend.connect(BackendConfiguration(executable: helper,
                 stateDirectory: root.appendingPathComponent(scenario)))
@@ -437,6 +438,14 @@ enum PublicDescriptorChecks {
             let failures = await recovery.failures(ids: sample, market: "US", language: "en-US")
             let expected: Bool
             switch scenario {
+            case "descriptorsunavailable":
+                expected = products.count == 2 && requests == 1 && delays.isEmpty && failures.isEmpty
+                let client = PCGamesClient(transport: DescriptorTransport(), descriptors: recovery)
+                let snapshot = try await client.resolveCollection(ids: sample, kinds: [:], candidateCount: 3,
+                                                                  market: "US", language: "en-US")
+                check(snapshot.unresolvedIDs == [sample[2]] && snapshot.detailFailureCount == 0
+                      && snapshot.games.count == 2,
+                      "COR152: Permanent per-product package rejection stays unresolved without a catalogue failure banner")
             case "descriptorscommandretry":
                 expected = products.count == 3 && requests == 3
                     && delays == [.seconds(1), .seconds(2)] && failures.isEmpty

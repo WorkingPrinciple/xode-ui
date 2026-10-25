@@ -14,7 +14,7 @@ enum GameStorageProbeError: Error, LocalizedError {
 
 @MainActor
 final class GameStorageProbe {
-    private var active = false
+    private(set) var active = false
 
     func read<Value: Sendable>(timeout: Duration = .seconds(15),
                               _ operation: @escaping @Sendable () throws -> Value) async throws -> Value {

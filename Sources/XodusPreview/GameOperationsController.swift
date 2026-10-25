@@ -877,9 +877,23 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
-    func checkExistingInstallations() async {
-        await installed.discoverNativeInstallations()
-        error = installed.discoveryError
+    func checkExistingInstallations(productID: String) async {
+        if !installed.hasUnverifiedInstallation(productID: productID) {
+            await installed.discoverNativeInstallations()
+        }
+        await installed.verifyDiscoveredInstallation(productID: productID)
+    }
+
+    func existingInstallationError(productID: String) -> String? {
+        installed.discoveredVerificationErrors[productID]
+    }
+
+    func checkingExistingInstallation(productID: String) -> Bool {
+        installed.verifyingDiscoveredProducts.contains(productID)
+    }
+
+    func cancelExistingInstallationCheck(productID: String) {
+        installed.cancelDiscoveredVerification(productID: productID)
     }
 
     func installDestination(for game: PCGame, root: URL? = nil) async throws -> URL {

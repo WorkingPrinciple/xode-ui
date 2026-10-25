@@ -41,21 +41,16 @@ struct InstalledGameAttentionView: View {
     var body: some View {
         if needsAttention {
             VStack(alignment: .leading, spacing: 12) {
-                Label(attentionTitle,
-                      systemImage: localIssue ? "exclamationmark.circle" : "info.circle")
-                    .font(.headline)
-                Text(driveUnavailable ? InstalledGamesController.driveUnavailableMessage
+                InstallationWarning(message: driveUnavailable ? InstalledGamesController.driveUnavailableMessage
                      : incomplete ? "This game isn't fully installed."
-                     : localIssue ? "The installation or launch files need to be checked."
+                     : localIssue ? installed.packageErrors[game.id] ?? "The installation or launch files need to be checked."
                      : installed.accountAccessMessage)
-                    .fixedSize(horizontal: false, vertical: true)
                 if !localIssue {
-                    Text("Game launching is unavailable until Xbox service access is restored.")
-                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     Button("Open settings", action: openSettings.callAsFunction)
                 }
                 if localIssue && installed.checkingInstallations.contains(game.id) {
                     ProgressView("Checking installation").controlSize(.small)
+                    Button("Cancel") { installed.cancelInstallationCheck(game) }
                 } else if localIssue {
                     HStack {
                         Button(driveUnavailable ? "Check again" : "Check installation") { Task { await installed.checkInstallation(game) } }
@@ -76,13 +71,10 @@ struct InstalledGameAttentionView: View {
                 Button("Remove from library", role: .destructive) { confirmingRemoval = true }
                     .disabled(installed.editing || installed.mutationActive || installed.runningGameID == game.id)
                 if let error = installed.error {
-                    Text(error).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    InstallationWarning(message: error)
                 }
                 DisclosureGroup("Technical details") {
                     InstalledPackageTypeLabel(game: game)
-                    if let error = installed.packageErrors[game.id] {
-                        Text(error).font(.callout).textSelection(.enabled)
-                    }
                     InstalledPlayError(library: installed, game: game)
                 }
                 .font(.callout).foregroundStyle(.secondary)

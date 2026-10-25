@@ -222,9 +222,7 @@ struct PCGameTile: View {
             CatalogArtworkView(reference: allowsArtworkLoading ? game.artwork : nil,
                                status: game.artwork == nil ? .absent : .available, contentMode: .fit)
         } status: {
-            if let match = PCGamesController.installedMatch(game, in: installed.games) {
-                InstalledPlayError(library: installed, game: match)
-            } else {
+            if PCGamesController.installedMatch(game, in: installed.games) == nil {
                 Text("Not installed").font(.callout).foregroundStyle(.secondary)
             }
         }

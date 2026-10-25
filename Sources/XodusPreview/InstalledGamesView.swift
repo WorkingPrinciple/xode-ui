@@ -25,8 +25,7 @@ struct InstalledGamesView: View {
                                 Text("Last played \(Text(date, style: .relative)) ago")
                                     .font(.callout).foregroundStyle(.secondary)
                             }
-                            InstalledPlayButton(library: library, operations: operations, game: game)
-                            playError(game)
+                            InstalledPlayButton(library: library, operations: operations, game: game, showsDiagnostics: false)
                         }
                         .padding(24).frame(maxWidth: .infinity, alignment: .leading)
                         .background(.regularMaterial)
@@ -78,10 +77,9 @@ struct InstalledGamesView: View {
                         }
                         Spacer()
                         InstalledGameActions(library: library, operations: operations, game: game)
-                        InstalledPlayButton(library: library, operations: operations, game: game)
+                        InstalledPlayButton(library: library, operations: operations, game: game, showsDiagnostics: false)
                     }
                     InstalledUpdateBadge(library: library, operations: operations, game: game)
-                    playError(game)
                 }
                 .accessibilityElement(children: .contain)
                 Divider()
@@ -95,9 +93,6 @@ struct InstalledGamesView: View {
             .accessibilityIdentifier("xodus.installed.import")
     }
 
-    @ViewBuilder private func playError(_ game: InstalledGame) -> some View {
-        InstalledPlayError(library: library, game: game)
-    }
 }
 
 struct InstalledUpdateBadge: View {
@@ -134,19 +129,21 @@ struct InstalledPlayError: View {
     let game: InstalledGame
 
     var body: some View {
-        if let error = library.packageErrors[game.id] {
-            Text(error).font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("xodus.installed.packageError")
+        if let message = library.packageErrors[game.id] ?? library.playErrors[game.id] ?? library.playNotices[game.id] {
+            InstallationWarning(message: message)
         }
-        if let error = library.playErrors[game.id] {
-            Text(error).font(.callout).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("xodus.installed.playError")
-        } else if let notice = library.playNotices[game.id] {
-            Text(notice).font(.callout).foregroundStyle(.secondary)
-                .accessibilityIdentifier("xodus.installed.playResult")
-        }
+    }
+}
+
+struct InstallationWarning: View {
+    let message: String
+
+    var body: some View {
+        Image(systemName: "exclamationmark.triangle")
+            .foregroundStyle(.secondary)
+            .help(message)
+            .accessibilityLabel(message)
+            .accessibilityIdentifier("xodus.installed.detailWarning")
     }
 }
 
@@ -204,6 +201,7 @@ struct InstalledPlayButton: View {
     var usesGlass = false
     var prominent = true
     var heroStyle = false
+    var showsDiagnostics = true
     var attention: (() -> Void)?
     private var needsAttention: Bool {
         !canStop && !launching && (library.placeholderIDs.contains(game.id)
@@ -284,10 +282,11 @@ struct InstalledPlayButton: View {
         .accessibilityIdentifier("xodus.installed.readinessAction")
         if library.checkingInstallations.contains(game.id) {
             ProgressView().controlSize(.small).accessibilityLabel("Checking installation of \(game.title)")
+            Button("Cancel") { library.cancelInstallationCheck(game) }
         }
-        if attention == nil, !library.checkingInstallations.contains(game.id),
+        if showsDiagnostics, attention == nil, !library.checkingInstallations.contains(game.id),
            let reason = library.installationErrors[game.id] ?? library.installationStatuses[game.id]?.explanation {
-            Text(reason).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            InstallationWarning(message: reason)
         }
     }
 
@@ -295,12 +294,12 @@ struct InstalledPlayButton: View {
         if operations.operation?.productID == game.storeId
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
             GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
-                              operations: operations, enabled: false, primary: prominent)
+                              operations: operations, enabled: false, primary: prominent, showsDiagnostics: showsDiagnostics)
         } else if !canStop, !launching, library.unavailableDriveIDs.contains(game.id) {
             VStack(alignment: .leading, spacing: 8) {
-                Label("Drive unavailable", systemImage: "externaldrive.badge.exclamationmark")
-                Text(InstalledGamesController.driveUnavailableMessage)
-                    .font(.caption).fixedSize(horizontal: false, vertical: true)
+                if showsDiagnostics {
+                    InstallationWarning(message: InstalledGamesController.driveUnavailableMessage)
+                }
                 Button("Check again") { Task { await library.checkInstallation(game) } }
                     .disabled(library.editing || library.mutationActive || library.accountDisconnecting
                               || library.applicationTerminating)

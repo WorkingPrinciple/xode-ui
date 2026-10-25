@@ -356,6 +356,7 @@ struct GameInstallAction: View {
     @ObservedObject var operations: GameOperationsController
     var enabled = true
     var primary = true
+    var showsDiagnostics = true
     var disabledReason: String? = nil
     var recoveryTitle: String? = nil
     var recover: (() -> Void)? = nil
@@ -389,7 +390,7 @@ struct GameInstallAction: View {
     func requestInstall() async {
         guard canInstall else { return }
         if operations.installationCheckRequired(for: game) {
-            await operations.checkExistingInstallations()
+            await operations.checkExistingInstallations(productID: game.id)
             return
         }
         if let reviewInstall { reviewInstall(game) }
@@ -398,7 +399,10 @@ struct GameInstallAction: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if active, operations.recoveryRequired {
+            if operations.checkingExistingInstallation(productID: game.id) {
+                ProgressView("Check installation").controlSize(.small)
+                Button("Cancel") { operations.cancelExistingInstallationCheck(productID: game.id) }
+            } else if active, operations.recoveryRequired {
                 Label("Installation needs attention", systemImage: "exclamationmark.circle")
                     .font(.callout.weight(.semibold))
                 Button("Check last operation") { Task { await operations.reconcile() } }
@@ -437,13 +441,15 @@ struct GameInstallAction: View {
                 .help("\(actionTitle) \(game.title)")
                 .accessibilityLabel("\(actionTitle) \(game.title)")
                 .accessibilityIdentifier("xodus.pcGames.download")
-                if let unavailableReason {
+                if showsDiagnostics, let unavailableReason {
                     InstallUnavailableNotice(message: unavailableReason,
                         recoveryTitle: recoveryTitle, recover: recover)
                 }
-                if failed {
-                    Label("Installation needs attention", systemImage: "exclamationmark.circle")
-                        .font(.caption)
+                if showsDiagnostics, failed {
+                    InstallationWarning(message: operations.error ?? "Installation needs attention")
+                }
+                if showsDiagnostics, let error = operations.existingInstallationError(productID: game.id) {
+                    InstallationWarning(message: error)
                 }
             }
         }

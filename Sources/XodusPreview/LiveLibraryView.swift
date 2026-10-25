@@ -134,9 +134,6 @@ struct LiveLibraryView: View {
             VStack(alignment: .leading, spacing: 0) {
             if query.isEmpty, !heroGames.isEmpty {
                 heroCarousel
-                if let game = heroGames.first(where: { $0.id == selection.heroID })?.installed {
-                    InstalledPlayError(library: installed, game: game).padding(.horizontal, 56)
-                }
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
@@ -323,10 +320,17 @@ struct LiveLibraryView: View {
             guard allowsStartupTasks else { return }
             while !Task.isCancelled {
                 await macEvidence.refresh()
-                await installed.discoverNativeInstallations()
-                await NativeMinecraft.shared.refresh()
                 if NSApp.isActive { await installed.refreshNativeInstallationStatuses() }
+                await NativeMinecraft.shared.refresh()
                 do { try await Task.sleep(for: .seconds(5)) }
+                catch { return }
+            }
+        }
+        .task(id: allowsStartupTasks) {
+            guard allowsStartupTasks else { return }
+            while !Task.isCancelled {
+                await installed.discoverNativeInstallations()
+                do { try await Task.sleep(for: .seconds(30)) }
                 catch { return }
             }
         }
@@ -426,7 +430,7 @@ struct LiveLibraryView: View {
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else if let match = game.installed {
                 InstalledPlayButton(library: installed, operations: operations, game: match,
-                                    usesGlass: true, heroStyle: true)
+                                    usesGlass: true, heroStyle: true, showsDiagnostics: false)
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else {
@@ -436,6 +440,7 @@ struct LiveLibraryView: View {
                             owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
                             gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
                             pcCandidate: true),
+                        showsDiagnostics: false,
                         disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
                             : "Wait for Ode to X to finish starting.")
                 }
@@ -565,9 +570,6 @@ struct LiveLibraryView: View {
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
                 selection.measureAncestor("horizontal", frame: $0)
             }
-            ForEach(continuing) { game in
-                InstalledPlayError(library: installed, game: game)
-            }
         }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
             selection.measureAncestor("lane", frame: $0)
@@ -637,11 +639,7 @@ struct LiveLibraryView: View {
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
-        } status: {
-            if let match = game.installed {
-                InstalledPlayError(library: installed, game: match)
-            }
-        }
+        } status: { EmptyView() }
         .contextMenu {
             Button("View details") { open(game) }
             if let match = game.installed {

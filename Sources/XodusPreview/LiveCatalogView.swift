@@ -971,9 +971,6 @@ struct LiveCatalogView: View {
                                status: cover == nil ? .absent : .available)
         } status: {
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
-            if query.isEmpty, let match = game.installed {
-                InstalledPlayError(library: installed, game: match)
-            }
         }
     }
 
@@ -992,10 +989,11 @@ struct LiveCatalogView: View {
             if primary { LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true) }
         } else if let match = game.installed {
             InstalledPlayButton(library: installed, operations: operations, game: match,
-                                usesGlass: true, prominent: primary)
+                                usesGlass: true, prominent: primary, showsDiagnostics: false)
         } else if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
             GameInstallAction(game: pc, operations: operations,
                               enabled: allowsStartupTasks && canReviewInstall(game), primary: primary,
+                              showsDiagnostics: false,
                               disabledReason: !allowsStartupTasks ? "Wait for Ode to X to finish starting."
                                 : game.pc == nil && game.product?.pcCatalogCandidate != true
                                     ? "PC availability for this title hasn't been confirmed. Installation is unavailable."

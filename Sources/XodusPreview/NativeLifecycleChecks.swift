@@ -252,9 +252,9 @@ enum NativeLifecycleChecks {
         installed.useUnifiedAccount(session)
         await installed.discoverNativeInstallations(root: discovery)
         check(!installed.games.contains { $0.storeId == "FIXTURE00002" }
-              && installed.discoveryError?.contains("broken-game") == true
-              && installed.discoveryError?.contains("verified local service") == true,
-              "Automatic discovery rejects config-only folders without an admitted completeness service and reports corrupt siblings")
+              && installed.discoveryError == nil
+              && installed.hasUnverifiedInstallation(productID: "FIXTURE00002"),
+              "Automatic discovery keeps valid candidates unverified and skips corrupt siblings without raw-path banners")
         let discoveredCount = installed.games.count
         await installed.discoverNativeInstallations(root: discovery)
         check(installed.games.count == discoveredCount,

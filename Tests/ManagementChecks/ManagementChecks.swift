@@ -2155,7 +2155,8 @@ enum MockBackend {
                         let recovering = ["descriptorsretry", "descriptorscapacity", "descriptorsauth",
                                           "descriptorsretryexhausted"].contains(scenario)
                         if recovering, descriptorReads > 1, ids != ["9DESC0000002"] { exit(3) }
-                        let failed = recovering && (descriptorReads < 3 || scenario == "descriptorsauth"
+                        let failed = scenario == "descriptorsunavailable" ? ids.filter { $0 == "9DESC0000002" }
+                            : recovering && (descriptorReads < 3 || scenario == "descriptorsauth"
                             || scenario == "descriptorsretryexhausted")
                             ? ids.filter { $0 == "9DESC0000002" }
                             : scenario == "descriptorsoversized" ? ids
@@ -2192,7 +2193,8 @@ enum MockBackend {
                             .object(["productID": .string(id), "error": .object([
                                 "code": .string(["descriptorsretry", "descriptorsretryexhausted"].contains(scenario)
                                     ? "NETWORK_UNAVAILABLE"
-                                    : scenario == "descriptorsauth" ? "AUTH_INVALID" : "LIMIT_EXCEEDED"),
+                                    : scenario == "descriptorsauth" ? "AUTH_INVALID"
+                                    : scenario == "descriptorsunavailable" ? "PACKAGE_UNAVAILABLE" : "LIMIT_EXCEEDED"),
                                 "message": .string("Synthetic public descriptor failure"),
                                 "retryable": .bool(recovering)
                             ])])

@@ -621,7 +621,7 @@ enum PCGamesChecks {
         partialController.refresh()
         await partialController.waitForOperation()
         check(partialController.snapshot?.unresolvedCount == 1 && !partialController.accessIsCurrent
-              && partialController.accessIsCurrent(for: first) && partialController.resolutionNotice != nil,
+              && partialController.accessIsCurrent(for: first) && partialController.resolutionNotice == nil,
               "REQ88: Unrelated unresolved metadata does not stale the resolved account library")
         check(!partialController.accessIsCurrent(for: second)
               && !partialController.accessIsCurrent(for: "NOTHELD00001")

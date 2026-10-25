@@ -746,7 +746,8 @@ struct PCGamesClient: Sendable {
                 guard products.count <= batch.count,
                       Set(products.map(\.ProductId)).count == products.count,
                       products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-                detailFailures.formUnion(Set(batch).subtracting(products.map(\.ProductId)))
+                detailFailures.formUnion(await descriptors.failures(ids: batch, market: market,
+                                                                     language: language).keys)
                 games += products.compactMap(\.game).map {
                     PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: kinds[$0.id] ?? .unknown)
                 }

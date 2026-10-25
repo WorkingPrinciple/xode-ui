@@ -62,7 +62,11 @@ Mounted reads have a three-second deadline and retain their worker reservation
 until a blocked syscall returns; discovery shares the existing 512-child budget.
 Configuration filenames match case-insensitively only when exactly one variant
 exists. A known matching but unverified package uses **Check installation** and
-cannot start a second default-root download. Only a successful authoritative
+cannot start a second default-root download. Automatic discovery only identifies
+candidates; pressing Check verifies that product first, with a cancellable
+15-minute deadline and busy/Cancel controls on its card only. At most two
+candidate verifications run concurrently, using retained independent probes.
+Only a successful authoritative
 `install-status` completeness result permits registration at the original path,
 with symlink-safe volume identity; discovery does not finalize, copy, auto-mount,
 or grant launch/account readiness. Native acceptance must separately confirm FH6
@@ -557,10 +561,21 @@ No folder is silently resolved to another drive, moved or deleted.
 
 Automatic discovery inspects the original root, saved default and parents of
 recorded game folders, deduplicated and bounded to 512 child entries across the
-scan. Root enumeration, config/package reads and post-check identity validation
-share the controller's existing storage probe with readiness. An unavailable
-recorded root is reported; its entries are never pruned. An invalid saved default
-is an error rather than permission to substitute another folder.
+scan. Discovery, candidate verification and each registered game's readiness use
+independent bounded probes. Neither discovery nor checks take the global editing
+lock. Registered network-drive games are verified lazily; local readiness is
+published per game, independently of discovery and other probe failures.
+Unrecognizable automatic discoveries are skipped without a banner or raw paths;
+root failures remain diagnostic logs and never prune registered entries or
+authorize a fallback installation. Explicit checks retain actionable failures.
+Expected per-product catalogue `PACKAGE_UNAVAILABLE` classifications remain
+unresolved without a failure banner; genuine failures after REQ98 retries retain
+their notice.
+Library, catalogue and recent/hero cards contain no readiness diagnostic text or
+warning icons. Explicitly opened game details expose recovery through a compact
+warning's tooltip and equivalent accessible label, not an inline paragraph.
+Only a confirmed missing-path error is classified as a missing folder;
+permission, timeout and other unreadable-path failures stay unverified.
 
 Config and package classification are not completion proof. Before a new folder
 is registered, the existing pinned CLI's exact-product/exact-folder

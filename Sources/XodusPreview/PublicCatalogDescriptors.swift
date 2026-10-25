@@ -330,6 +330,7 @@ actor PublicCatalogDescriptors {
         }
         for failure in response.failures where failure.error.code != "LIMIT_EXCEEDED"
             || failure.error.retryable || ids.count == 1 {
+            guard failure.error.code != "PACKAGE_UNAVAILABLE" || failure.error.retryable else { continue }
             result.failures[failure.productID] = failure.error.code == "LIMIT_EXCEEDED" && !failure.error.retryable
                 ? "This game's public details exceed the safe response size."
                 : "Some public game details couldn't be loaded. Try again."

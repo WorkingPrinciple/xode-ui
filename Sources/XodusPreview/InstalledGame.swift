@@ -39,12 +39,13 @@ struct GameEngineOverride: Codable, Equatable, Sendable {
 }
 
 enum InstalledGameError: Error, LocalizedError {
-    case invalidConfig, missingFolder, missingLauncher, placeholderContent, invalidRegistry, storage, launch
+    case invalidConfig, missingFolder, folderUnavailable, missingLauncher, placeholderContent, invalidRegistry, storage, launch
 
     var errorDescription: String? {
         switch self {
         case .invalidConfig: "This folder doesn't contain a valid MicrosoftGame.config. Choose the installed Xbox game folder."
         case .missingFolder: "The game folder is no longer available. Reconnect its drive or import the game again."
+        case .folderUnavailable: "The installation couldn't be checked. Try again."
         case .missingLauncher: "The launch script is missing or isn't an executable file. Import the game again to choose its script."
         case .placeholderContent: "This installation contains only Minecraft's placeholder, not a playable game. Install the full Minecraft Launcher package before playing. Signing in again won't replace these files."
         case .invalidRegistry: "The installed games list couldn't be read. Your game files haven't been changed."
@@ -190,8 +191,17 @@ enum InstalledGameFiles {
     }
 
     static func checkFolder(_ url: URL) throws {
-        let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
-        guard url.isFileURL, values?.isDirectory == true else { throw InstalledGameError.missingFolder }
+        let values: URLResourceValues
+        do { values = try url.resourceValues(forKeys: [.isDirectoryKey]) }
+        catch { throw folderReadError(error as NSError) }
+        guard url.isFileURL, values.isDirectory == true else { throw InstalledGameError.missingFolder }
+    }
+
+    static func folderReadError(_ error: NSError) -> InstalledGameError {
+        if error.domain == NSCocoaErrorDomain,
+           [NSFileNoSuchFileError, NSFileReadNoSuchFileError].contains(error.code) { return .missingFolder }
+        if error.domain == NSPOSIXErrorDomain, [Int(ENOENT), Int(ENOTDIR)].contains(error.code) { return .missingFolder }
+        return .folderUnavailable
     }
 
     static func checkLauncher(_ url: URL) throws {
