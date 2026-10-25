@@ -63,7 +63,22 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        let systemQuit = Self.systemSessionEnding
         Task {
+            if let gameOperations, let download = gameOperations.stoppableDownloadForQuit {
+                if !systemQuit {
+                    let alert = NSAlert()
+                    alert.messageText = GameDownloadCopy.quitTitle(title: download.title, percent: download.percent)
+                    alert.informativeText = GameDownloadCopy.quitMessage
+                    alert.addButton(withTitle: GameDownloadCopy.continueDownloading)
+                    alert.addButton(withTitle: GameDownloadCopy.stopAndQuit)
+                    guard alert.runModal() == .alertSecondButtonReturn else {
+                        sender.reply(toApplicationShouldTerminate: false)
+                        return
+                    }
+                }
+                await gameOperations.stopDownloadForQuit()
+            }
             await LibraryXboxStats.shared.shutdown()
             await XboxCompanionController.shared.shutdown()
             let closed = await termination.shutdown(session: liveSession, runtime: runtimeSettings,
@@ -83,6 +98,14 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
             sender.reply(toApplicationShouldTerminate: closed)
         }
         return .terminateLater
+    }
+
+    /// Log out, restart and shut down must not be blocked by a download prompt.
+    private static var systemSessionEnding: Bool {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent,
+              let reason = event.attributeDescriptor(forKeyword: kAEQuitReason)?.enumCodeValue else { return false }
+        return [kAELogOut, kAEReallyLogOut, kAEShowRestartDialog, kAERestart, kAEShowShutdownDialog, kAEShutDown]
+            .map { OSType($0) }.contains(reason)
     }
 }
 

@@ -296,5 +296,33 @@ enum InstalledProductAccessChecks {
         }
         check(await session.disconnect(), "Synthetic license wire child is joined")
         try FileManager.default.removeItem(at: root)
+        await postInstallChecks(check: check)
+    }
+
+    static func postInstallChecks(check: (Bool, String) -> Void) async {
+        let account = String(repeating: "a", count: 64)
+        let existing = "9NGLST31DG26"
+        let installed = "9NX6K9HN4F4K"
+        let now = Date()
+        let access = InstalledProductAccess()
+        defer { access.retire() }
+        var requests: [String] = []
+        let reader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            requests.append(id)
+            try await Task.sleep(for: .milliseconds(150))
+            let payload: [String: Any] = [
+                "section": "license", "accountHash": account,
+                "checkedAt": ISO8601DateFormatter().string(from: now),
+                "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]
+            ]
+            return try JSONDecoder().decode(OdeAccountRead.self, from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let scan = Task { await access.refresh(account: account, installedIDs: [existing], now: now, read: reader) }
+        try? await Task.sleep(for: .milliseconds(40))
+        // Library publishes the freshly installed title while the earlier scan is still running.
+        await access.refresh(account: account, installedIDs: [existing, installed], now: now, read: reader)
+        await scan.value
+        check(requests == [existing, installed] && access.permits(installed, account: account, now: now),
+              "REQ114 post-install: a title installed during an access scan is checked automatically, so Play enables without Retry")
     }
 }

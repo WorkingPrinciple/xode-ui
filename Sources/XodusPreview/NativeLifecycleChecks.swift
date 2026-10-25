@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import Darwin
 import Foundation
 import CryptoKit
 import XodusCore
@@ -33,7 +34,7 @@ enum NativeLifecycleChecks {
         let install = try JSONDecoder().decode(NativeGameResult.self,
             from: Data(json.replacingOccurrences(of: "\"launch\"", with: "\"install\"")
                 .replacingOccurrences(of: "OPERATION_FAILED", with: "CANCELLED").utf8))
-        check(install.failureMessage.contains("Partial files") && install.failureMessage.contains("installation"),
+        check(install.failureMessage.contains("will start over") && !install.failureMessage.contains("resume"),
               "COR137: Real install cancellation keeps installation recovery copy")
         let normal = try JSONDecoder().decode(NativeGameResult.self,
             from: Data(json.replacingOccurrences(of: "\"success\":false", with: "\"success\":true")
@@ -56,6 +57,162 @@ enum NativeLifecycleChecks {
         } catch GameScriptError.failed(14) {
             check(true, "COR137: Lifecycle install cancellation keeps the existing installation contract")
         }
+    }
+
+    static func orphanRunChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let fixture = root.appendingPathComponent("s2-orphan")
+        let destination = fixture.appendingPathComponent("Games/Orphan-Xbox")
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let state = fixture.appendingPathComponent("state-run")
+        let identity = NativeOrphanRun.Identity(operation: "install", product: "FIXTURE00001",
+            gameDirectory: destination.path, stateDirectory: state.path, executable: "/opt/xode/xodus-cli")
+        let arguments = ["/opt/xode/xodus-cli", "install", "FIXTURE00001", "--game-dir", destination.path,
+                         "--state-dir", state.path, "--account-hash", String(repeating: "a", count: 64),
+                         "--allow-keychain-prompt"]
+        check(NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli", arguments: arguments, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/usr/bin/xodus-cli", arguments: arguments, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli",
+                    arguments: arguments.map { $0 == state.path ? state.path + "-other" : $0 }, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli",
+                    arguments: arguments.map { $0 == "FIXTURE00001" ? "FIXTURE00002" : $0 }, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli",
+                    arguments: arguments.map { $0 == "install" ? "uninstall" : $0 }, identity: identity),
+              "REQ114 S2: Only the exact backend command for this run (executable, operation, product, folder, state) is accepted")
+        check(!NativeOrphanRun.matches(pid: getpid(), identity: identity),
+              "REQ114 S2: Ode never treats itself as the orphaned backend")
+        let unrelated = Process()
+        unrelated.executableURL = URL(fileURLWithPath: "/bin/sleep")
+        unrelated.arguments = ["30"]
+        try unrelated.run()
+        defer { if unrelated.isRunning { unrelated.terminate() } }
+        check(!NativeOrphanRun.terminate(pid: unrelated.processIdentifier, identity: identity) && unrelated.isRunning,
+              "REQ114 S2: Stop download refuses to signal a process that isn't this run's backend")
+        let runs = state.appendingPathComponent("runs/\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: runs, withIntermediateDirectories: true)
+        try GameScriptFiles.writePrivate(Data("""
+            {"version":1,"event":"identity_bound"}
+            {"version":1,"event":"child_started","pid":4242}
+
+            """.utf8), to: runs.appendingPathComponent("events.jsonl"))
+        check(NativeOrphanRun.childStartedPID(state: state) == 4242,
+              "REQ114 S2: The backend's child_started event identifies the running installer")
+
+        check(!NativeOrphanRun.lockHeld(gameDirectory: destination),
+              "REQ114 S2: No backend lock file means no live run")
+        guard let lockURL = NativeOrphanRun.lockURL(gameDirectory: destination) else {
+            check(false, "REQ114 S2 fixture: lock path")
+            return
+        }
+        check(lockURL.lastPathComponent == ".Orphan-Xbox.xodus-lifecycle.lock"
+              && lockURL.deletingLastPathComponent().path == destination.deletingLastPathComponent().resolvingSymlinksInPath().path,
+              "REQ114 S2: The probe uses the backend's sibling game-folder lock")
+        let holder = open(lockURL.path, O_RDWR | O_CREAT | O_CLOEXEC, 0o600)
+        guard holder >= 0, flock(holder, LOCK_EX | LOCK_NB) == 0 else {
+            check(false, "REQ114 S2 fixture: hold backend lock")
+            return
+        }
+        check(NativeOrphanRun.lockHeld(gameDirectory: destination)
+              && NativeOrphanRun.status(identity: identity) == .running(pid: nil),
+              "REQ114 S2: A held backend lock is a live run even when its process can't be verified")
+
+        let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+            processed: fixture.appendingPathComponent("processed"), logs: fixture.appendingPathComponent("logs"),
+            games: destination.deletingLastPathComponent(), journal: fixture.appendingPathComponent("journal/operation.json"))
+        let journal = GameOperationJournal(file: paths.journal)
+        let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+        await library.load()
+        let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: "FIXTURE00001", title: "Orphan fixture", destination: destination.path,
+            installedID: nil, nativeAccountHash: String(repeating: "a", count: 64))
+        try await journal.save(record)
+        let controller = GameOperationsController(installed: library, paths: paths)
+        await controller.restore()
+        check(controller.orphanRunning && !controller.awaitingRecovery && controller.error == nil
+              && controller.operation?.id == record.id && library.mutationActive && !controller.canDismissRecovery,
+              "REQ114 S2: Relaunch during a still-running download shows it as running, not as needing a check")
+        check(!controller.canCancel,
+              "REQ114 S2: Stop download is offered only after the exact backend process is verified")
+        await controller.reconcile()
+        let stillPending = try await journal.load()
+        check(controller.orphanRunning && controller.error == nil && stillPending?.id == record.id,
+              "REQ114 S2: Checking during a live run never reads its receipt or claims the registry is unreadable")
+        flock(holder, LOCK_UN)
+        close(holder)
+        for _ in 0..<40 where controller.orphanRunning || controller.recoveryRequired {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let pending = try await journal.load()
+        check(!controller.orphanRunning && !controller.recoveryRequired && !library.mutationActive && pending == nil
+              && controller.error?.contains("installed games list") != true,
+              "REQ114 S2: When the orphaned run ends, Ode reconciles it automatically and releases the lock")
+    }
+
+    static func recoveryLockChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        for error in [GameScriptError.invalidDestination, .runtimeUnavailable, .invalidReceipt] as [Error] {
+            check(GameOperationsController.releasesWithoutRecovery(native: true, childStarted: false, error: error)
+                  && !GameOperationsController.releasesWithoutRecovery(native: true, childStarted: true, error: error),
+                  "REQ114 B1: A native failure before the backend child starts releases the lock; after start it needs checking")
+        }
+        for kind in [GameOperationRecord.Kind.uninstall, .install] {
+            let fixture = root.appendingPathComponent("b1-nochild-\(kind.rawValue)")
+            let destination = fixture.appendingPathComponent("game")
+            try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+            let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+                processed: fixture.appendingPathComponent("processed"), logs: fixture.appendingPathComponent("logs"),
+                games: destination, journal: fixture.appendingPathComponent("state/operation.json"))
+            let journal = GameOperationJournal(file: paths.journal)
+            let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+            await library.load()
+            let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: kind,
+                productID: "FIXTURE00001", title: "No child fixture", destination: destination.path,
+                installedID: kind == .uninstall ? UUID() : nil, nativeAccountHash: String(repeating: "a", count: 64))
+            try await journal.save(record)
+            check(!FileManager.default.fileExists(atPath: NativeGameLifecycle.directory(runID: record.id).path),
+                  "REQ114 B1 fixture: the journaled run never created backend state")
+            let controller = GameOperationsController(installed: library, paths: paths)
+            await controller.restore()
+            check(controller.recoveryRequired && library.mutationActive,
+                  "REQ114 B1: Relaunch still fences a pending \(kind.rawValue) until it is checked")
+            // No signed-in account: the missing state folder alone proves nothing ran.
+            await controller.reconcile()
+            let pending = try await journal.load()
+            let resumable = try await journal.loadResumable()
+            check(!controller.recoveryRequired && !library.mutationActive && controller.operation == nil
+                  && pending == nil && controller.error == nil
+                  && controller.notice?.contains("didn't start. Nothing was changed.") == true
+                  && (kind == .install) == (resumable[record.productID] != nil),
+                  "REQ114 B1: Checking a \(kind.rawValue) whose backend never started releases install/uninstall/repair/sign-out")
+        }
+        let fixture = root.appendingPathComponent("b1-uninstall-preflight")
+        let folder = fixture.appendingPathComponent("removed-game")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("""
+            <Game><Identity Name="Fixture.Removed" Version="1.0.0.0"/><StoreId>FIXTURE00001</StoreId></Game>
+            """.utf8).write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+        let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+            processed: fixture.appendingPathComponent("processed"), logs: fixture.appendingPathComponent("logs"),
+            games: fixture, journal: fixture.appendingPathComponent("state/operation.json"))
+        let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")),
+                                               inspectPackage: { _ in .msixvc })
+        await library.load()
+        try library.reserveMutation(gameID: nil)
+        try await library.registerNativeInstallation(folder: folder, expectedStoreID: "FIXTURE00001")
+        library.releaseMutation()
+        guard let registered = library.games.first else { throw GameScriptError.invalidReceipt }
+        try FileManager.default.removeItem(at: folder)
+        let controller = GameOperationsController(installed: library, paths: paths)
+        controller.prepareUninstall(registered)
+        controller.confirmUninstall(registered)
+        await controller.waitForMutation()
+        let pending = try await GameOperationJournal(file: paths.journal).load()
+        check(controller.error == InstalledGameError.missingFolder.localizedDescription
+              && !controller.recoveryRequired && !library.mutationActive && pending == nil
+              && controller.canStartMutation && library.games.count == 1,
+              "REQ114 B1: Uninstall of a deleted folder is refused before any journal or lock, and stays recoverable")
+        var unplugged = registered
+        unplugged.storageVolume = GameStorageVolume(path: "/Volumes/REQ114-Unplugged-\(UUID().uuidString)")
+        check(unplugged.storageVolume?.isUnavailable(mountedRoots: GameStorageVolume.mountedRoots()) == true,
+              "REQ114 M7 fixture: the recorded drive is not mounted")
     }
 
     static func run(check: (Bool, String) -> Void) async throws {
@@ -121,7 +278,7 @@ enum NativeLifecycleChecks {
               && diskFailure?.availableBytes == 29_631_885_312
               && diskFailure?.code == "DISK_SPACE"
               && diskFailure?.message.contains("Not enough space") == true
-              && diskFailure?.message.contains("Partial files are kept") == true,
+              && diskFailure?.message.contains("will start over") == true,
               "COR178: Exact streaming need/have becomes a typed actionable disk-space failure")
         check(NativeGameResult.NativeDiskSpaceFailure.parse("arbitrary disk space text") == nil
               && NativeGameResult.NativeDiskSpaceFailure.parse("Streaming failed: not enough free disk space: need 1 bytes, have 2 bytes") == nil
@@ -183,8 +340,48 @@ enum NativeLifecycleChecks {
                   && controller.resumableInstallations[record.productID]?.destination == destination.path,
                   "COR179 review: \(mode) optional stderr preserves backend failure, partial Resume and terminal journal/mutation release")
         }
+        do {
+            // REQ114 D1: a refused uninstall names its reason and marks the install damaged instead of "game operation failed".
+            let fixture = root.appendingPathComponent("d1-uninstall")
+            let destination = fixture.appendingPathComponent("Games/Pentiment-Xbox")
+            let logs = fixture.appendingPathComponent("logs")
+            try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: false)
+            let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+                processed: fixture.appendingPathComponent("processed"), logs: logs,
+                games: fixture.appendingPathComponent("Games"), journal: fixture.appendingPathComponent("state/operation.json"))
+            let journal = GameOperationJournal(file: paths.journal)
+            let installedID = UUID()
+            let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+            await library.load()
+            for (code, expected) in [("UNINSTALL_NOT_A_GAME", "Repair the installation"),
+                                     ("UNINSTALL_PERMISSION_DENIED", destination.path),
+                                     ("UNINSTALL_UNSAFE_TREE", "links or special files")] {
+                let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .uninstall,
+                    productID: "9N2X2CQNM2KS", title: "Pentiment", destination: destination.path,
+                    installedID: installedID, nativeAccountHash: String(repeating: "a", count: 64))
+                try await journal.save(record)
+                let controller = GameOperationsController(installed: library, paths: paths)
+                await controller.restore()
+                let refused = NativeGameResult(version: 1, runID: UUID().uuidString, operation: "uninstall",
+                    product: record.productID, success: false, exitCode: 1, errorCode: code,
+                    gameDirectory: destination.path, logDirectory: logs.path,
+                    resultPath: logs.appendingPathComponent("result.json").path,
+                    progressPath: logs.appendingPathComponent("progress.jsonl").path)
+                try await controller.completeNative(record, result: refused)
+                let damaged = code == "UNINSTALL_NOT_A_GAME"
+                check(NativeGameResult.failureCodes.contains(code)
+                      && controller.error?.contains(expected) == true
+                      && controller.error?.contains("game operation failed") == false
+                      && (controller.damagedInstallations[installedID] != nil) == damaged
+                      && controller.operation == nil && !library.mutationActive,
+                      "REQ114 D1: \(code) shows its specific reason\(damaged ? " and offers Repair / Remove (Keep Files)" : "")")
+            }
+        }
+        try await recoveryLockChecks(root: root, check: check)
+        try await orphanRunChecks(root: root, check: check)
         for (code, expected) in [
-            ("CANCELLED", "cancelled"), ("TIMEOUT", "install operation took too long"),
+            ("CANCELLED", "will start over"), ("TIMEOUT", "install operation took too long"),
             ("RESOURCE_BUSY", "in use"), ("ACCOUNT_UNAVAILABLE", "Keychain"),
             ("DISK_SPACE_FLOOR", "Free space"), ("DISK_SPACE_FLOOR_INVALID", "limit is invalid"),
             ("OPERATION_FAILED", "Open its log")

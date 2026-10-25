@@ -745,9 +745,9 @@ enum NativeLaunchError: Error, LocalizedError {
         switch self {
         case .candidateBlocked(let reason): reason
         case .runtimeNotQualified:
-            "Choose the local primary and legacy runtime pair in Runtime settings before playing. Experimental local runtimes do not require release qualification."
+            "This game's tested runtime isn't set up on this Mac. Open Engines to choose the runtime it needs. No other runtime was substituted."
         case .registryMissing:
-            "Choose the engine registry in Runtime settings before playing."
+            "No engine is set up for this game. Open Engines to choose one before playing."
         case .engineNotSelected:
             "Choose a verified Calimocho build in Engines before playing. No CrossOver or GPTK engine was substituted."
         case .configurationConflict:
@@ -763,7 +763,7 @@ enum NativeLaunchError: Error, LocalizedError {
         case .providerNotAdmitted:
             "This Calimocho configuration has not passed artifact admission. Refresh its registry in Engines. It cannot launch or fall back to another provider."
         case .engineUnavailable:
-            "The selected registry engine is no longer available. Restore it or choose another engine in Runtime settings."
+            "The engine this game uses isn't available on this Mac. Open Engines to restore it or choose another. No other engine was substituted."
         case .invalidProfile:
             "The title's local launch profile is invalid. Check its product ID and use the verified native-web-shims-v1 folder, separate from the game runtime."
         case .shimsUnavailable:

@@ -44,11 +44,12 @@ struct DownloadQueueRow: View {
             }
             HStack(spacing: 12) {
                 if job.phase.canPause {
-                    Button("Pause") { queue.pause(job.id) }
+                    Button("Stop Download") { queue.pause(job.id) }
+                        .help("Stops the download. Downloading again will start over.")
                         .accessibilityIdentifier("xodus.queue.pause")
                 }
                 if job.phase.canResume {
-                    Button("Resume") { queue.resume(job.id) }
+                    Button(GameDownloadCopy.downloadAgain) { queue.resume(job.id) }
                         .accessibilityIdentifier("xodus.queue.resume")
                 }
                 if job.phase.canCancel {

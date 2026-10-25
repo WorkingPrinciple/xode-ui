@@ -137,9 +137,9 @@ struct LiveRootView: View {
                         retainedBrowse(.discover)
                     }
                     if state.destination == .downloads {
-                        LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue) {
-                            state.navigate(.discover)
-                        }
+                        LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue,
+                                         browseGames: { state.navigate(.discover) },
+                                         resolveGame: { id in state.pcGames.representedGames.first { $0.id == id } })
                     }
                 }
                 .id("\(session.accountHash ?? ""):\(session.market):\(session.language)")
@@ -656,6 +656,7 @@ struct LiveActivityView: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject var queue: DownloadQueueController
     var browseGames: () -> Void = {}
+    var resolveGame: (String) -> PCGame? = { _ in nil }
     @EnvironmentObject private var session: LiveSession
     @ObservedObject private var artwork = LibraryCatalogArtwork.shared
 
@@ -671,6 +672,7 @@ struct LiveActivityView: View {
             .padding(.horizontal, 30).padding(.vertical, 24)
             List {
                 DownloadQueueView(queue: queue)
+                StoppedDownloadsSection(operations: operations, resolveGame: resolveGame)
                 if operations.installingDirectly {
                     Section("Current") { GameOperationProgressView(operations: operations) }
                 }
@@ -721,7 +723,8 @@ struct LiveActivityView: View {
                               systemImage: "arrow.clockwise").foregroundStyle(.secondary)
                     }
                 }
-                if session.activity.jobs.isEmpty && !operations.hasDownloadStatus && queue.jobs.isEmpty {
+                if session.activity.jobs.isEmpty && !operations.hasDownloadStatus && queue.jobs.isEmpty
+                    && operations.resumableInstallations.isEmpty {
                     ContentUnavailableView {
                         Label("No downloads", systemImage: "arrow.down.circle")
                     } description: {

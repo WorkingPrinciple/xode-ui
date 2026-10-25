@@ -153,7 +153,7 @@ enum InstalledGameChecks {
               "COR170: Registered entry automatically verifies and retains a concrete disconnected-service Retry, never unsafe Play (service \(serviceFailure ?? "nil"), package \(automatic.packageErrors[nativeGame.id] ?? "nil"))")
         for (status, reason, title) in [
             (NativeInstallationStatus.Status.missing, "CONTENT_MISSING", "Download"),
-            (.partial, "CONTENT_INCOMPLETE", "Resume"),
+            (.partial, "CONTENT_INCOMPLETE", GameDownloadCopy.downloadAgain),
             (.partial, "MANIFEST_INVALID", "Repair")
         ] {
             try automatic.recordInstallationStatus(NativeInstallationStatus(version: 1, operation: "install-status",

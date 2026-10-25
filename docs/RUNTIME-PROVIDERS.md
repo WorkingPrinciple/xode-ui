@@ -101,6 +101,14 @@ action rows, with explicit missing/checking/error/unsupported states. Actual
 download UI is withheld until a trusted distribution exists. Source/native
 render evidence, installed delivery and product acceptance are separate gates.
 
+## Calimocho release engine discovery (REQ-115/B3, beta 0.11.4)
+
+- Xode discovers only `~/Library/Application Support/Xode/Engines/<engine_id>/calimocho-engine.json` (schema `calimocho-engine/1`). The folder name must equal `engine_id`, and the folder must not be a symlink. The only compiled pin is `calimocho-11.20-4.0b3-01` (wine `c2eb2810…3437`, wineserver `05a3193d…9639`, descriptor `fb6c79da…fe8`, `MANIFEST.sha256` `7c9e08a9…33c5`, Team ID `M62Z4M5EUY`).
+- The app checks every manifested file digest and checks the code signature against `anchor apple generic and certificate leaf[subject.OU] = "M62Z4M5EUY"`. It expands `${ENGINE_ROOT}` and refuses `DYLD_*`, `MTL_HUD*`, `PATH`, `HOME`, unknown variables, absolute paths and paths that escape the engine folder. It then renders a private local registry with absolute paths.
+- Backend `engine-inspect` remains the admission gate. Admission checks identity and integrity only: it is not title qualification, and it grants no right to bundle or redistribute Apple GPTK components. Xode never bundles, links or publishes the engine.
+- Shipped defaults pin the release engine by name and its wine/wineserver pins, not by a registry path or digest. If the engine is missing, Play says that Calimocho isn't installed and nothing else is substituted.
+- **Temporary developer-local exception:** No Man's Sky keeps its private `calimocho-wine11.20-gptk4b3-tls-vulkan-private` binding (`developerLocal: true`). It resolves only when the exact pinned registry exists and hash-verifies on this Mac. On any other Mac it reports that the tested engine isn't installed, without substitution. NMS moves to the release engine only after a save-backed qualification, which is a separate decision. Release notes for 0.11.4 must state this exception.
+
 ## Persisted launch selection (M3)
 
 ### Current Calimocho execution policy (REQ95 / COR110)

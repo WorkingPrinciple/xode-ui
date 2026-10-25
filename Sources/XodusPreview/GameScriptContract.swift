@@ -47,7 +47,7 @@ enum GameScriptError: Error, LocalizedError, Equatable {
             case 11: "Ode to X couldn't prepare this download. This result doesn't establish whether access or sign-in failed. Check download access to retry; your library record is unchanged."
             case 12: "This game can't be installed with Ode to X yet."
             case 13: "The download couldn't be verified. Try installing again."
-            case 14: "Installation cancelled. Partial files are kept; installing again resumes the download."
+            case 14: GameDownloadCopy.stopped(repair: false)
             case 21: "Ode to X couldn't find a running environment for this game. Check the log."
             case 22: "Quit the running game or finish the download first."
             case 31: "Ode to X couldn't create the game environment. Check the log and try Repair game setup again."

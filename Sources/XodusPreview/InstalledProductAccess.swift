@@ -124,8 +124,13 @@ final class InstalledProductAccess: ObservableObject {
             errors = errors.filter { installed.contains($0.key) }
         }
         attempts = attempts.filter { installed.contains($0.key) }
-        if let operation { await operation.value; return }
-        let ids = installed.sorted().filter { id in
+        // A request made during a scan (e.g. a just-installed title) is re-evaluated afterwards rather than dropped.
+        let requestEpoch = generation
+        while let operation {
+            await operation.value
+            guard !Task.isCancelled, generation == requestEpoch, accountHash == account else { return }
+        }
+        let ids = installed.sorted { (attempts[$0] == nil ? 0 : 1, $0) < (attempts[$1] == nil ? 0 : 1, $1) }.filter { id in
             if let selectedProductID, id != selectedProductID { return false }
             if force { return true }
             guard let last = attempts[id] else { return true }

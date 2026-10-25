@@ -3,6 +3,10 @@ import SwiftUI
 import XodusManagement
 
 enum InstalledGameActionCopy {
+    static let removeKeepingFiles = "Remove from Library (Keep Files)…"
+    static func removeKeepingFilesMessage(folder: String) -> String {
+        "No files are deleted. The game folder stays at \(folder) with your saves, and the game can be added back later. To delete the files, use Uninstall."
+    }
     static let launchUnavailable = "This game can't launch from Ode to X yet. A supported launch setup isn't available."
 
     static func title(incomplete: Bool, installationIssue: Bool, launchIssue: Bool) -> String {
@@ -28,8 +32,9 @@ struct InstalledGameAttentionView: View {
     @Environment(\.openSettings) private var openSettings
 
     private var incomplete: Bool { installed.placeholderIDs.contains(game.id) }
+    private var damaged: String? { operations.damagedInstallations[game.id] }
     private var localIssue: Bool {
-        driveUnavailable || incomplete || installed.packageErrors[game.id] != nil
+        driveUnavailable || incomplete || damaged != nil || installed.packageErrors[game.id] != nil
             || installed.installationErrors[game.id] != nil
             || installed.installationStatuses[game.id].map { !$0.success || $0.status != .complete } == true
     }
@@ -42,22 +47,32 @@ struct InstalledGameAttentionView: View {
     var offersRepair: Bool { localIssue && !driveUnavailable && repairGame != nil && operations.canRepair(game) }
     var offersInstallationCheck: Bool { localIssue && !installationCheckInHeader }
 
+    /// After install the access check runs automatically; show it as one in-progress status, not a warning.
+    var accessChecking: Bool {
+        !localIssue && installed.accountAccessAllowed && installed.productAccess.checking
+            && installed.productAccessNotice(for: game) != nil
+    }
+
     var body: some View {
         if needsAttention {
             VStack(alignment: .leading, spacing: 12) {
+                if accessChecking {
+                    ProgressView("Checking game access…").controlSize(.small)
+                        .accessibilityIdentifier("xodus.game.checkingAccess")
+                } else {
                 InstallationWarning(message: driveUnavailable ? InstalledGamesController.driveUnavailableMessage
                      : incomplete ? "This game isn't fully installed."
+                     : damaged != nil ? damaged ?? ""
                      : localIssue ? installed.packageErrors[game.id] ?? installed.installationErrors[game.id]
                         ?? installed.installationStatuses[game.id]?.explanation ?? "Installation verification is incomplete. Retry to verify this game."
-                     : installed.accountAccessAllowed ? "Game access needs verification." : installed.accountAccessMessage,
+                     : installed.accountAccessAllowed ? "Couldn't confirm game access." : installed.accountAccessMessage,
                      showsMessage: true)
-                if !localIssue {
+                }
+                if !localIssue && !accessChecking {
                     if installed.accountAccessAllowed, let notice = installed.productAccessNotice(for: game) {
                         Text(notice).font(.callout).fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("xodus.game.accessReason")
-                        if installed.productAccess.checking {
-                            ProgressView("Checking game access…").controlSize(.small)
-                        } else if installed.canRetryProductAccess {
+                        if installed.canRetryProductAccess {
                             Button("Retry") { Task { await installed.retryProductAccess(for: game) } }
                                 .help("Checks this exact game's account access without downloading or launching.")
                                 .accessibilityIdentifier("xodus.game.retryAccess")
@@ -92,7 +107,8 @@ struct InstalledGameAttentionView: View {
                     Text(game.folder).textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Button("Remove from library", role: .destructive) { confirmingRemoval = true }
+                Button(InstalledGameActionCopy.removeKeepingFiles, role: .destructive) { confirmingRemoval = true }
+                    .help("Removes this game from the library. The game folder and saves aren't deleted.")
                     .disabled(installed.editing || installed.mutationActive || installed.runningGameID == game.id)
                 if let error = installed.error {
                     InstallationWarning(message: error)
@@ -104,15 +120,15 @@ struct InstalledGameAttentionView: View {
                 .font(.callout).foregroundStyle(.secondary)
             }
             .accessibilityIdentifier("xodus.game.needsAttention")
-            .confirmationDialog("Remove \(game.title) from your library?", isPresented: $confirmingRemoval) {
-                Button("Remove from library", role: .destructive) {
+            .confirmationDialog("Remove \(game.title) from the library?", isPresented: $confirmingRemoval) {
+                Button("Remove (Keep Files)", role: .destructive) {
                     Task {
                         await installed.remove(game)
                         if !installed.games.contains(where: { $0.id == game.id }) { close() }
                     }
                 }
                 Button("Cancel", role: .cancel) {}
-            } message: { Text("Your game files and saves will stay on this Mac.") }
+            } message: { Text(InstalledGameActionCopy.removeKeepingFilesMessage(folder: game.folder)) }
         }
     }
 }

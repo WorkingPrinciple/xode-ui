@@ -5,14 +5,32 @@ import XodusManagement
 
 struct NativeEngineDefaults: Decodable {
     struct Binding: Decodable {
-        let registryPath: String
-        let registrySha256: String
+        /// Absent for release engines: their registry is rendered on this Mac after verification.
+        let registryPath: String?
+        let registrySha256: String?
         let engineName: String
         let wineSha256: String
         let wineserverSha256: String
+        /// TEMPORARY (0.11.4, Ode decision B): a developer-local engine kept only so NMS keeps its
+        /// verified engine on the owner's Mac. Elsewhere its files are absent and Play reports that.
+        var developerLocal: Bool? = nil
 
-        @MainActor func inspect(configuration: BackendConfiguration,
-                                inspector: EngineInspectionClient = EngineInspectionClient()) async throws -> AdmittedEngineSelection {
+        var release: CalimochoReleasePin? {
+            guard registryPath == nil, registrySha256 == nil, let pin = CalimochoReleasePin.named(engineName),
+                  pin.wineSha256 == wineSha256, pin.wineserverSha256 == wineserverSha256 else { return nil }
+            return pin
+        }
+
+        /// Path and expected bytes digest of the registry to inspect, rendering it for release engines.
+        func registry(enginesRoot: URL = CalimochoReleaseEngines.defaultEnginesRoot,
+                      registries: URL = CalimochoReleaseEngines.defaultRegistriesRoot,
+                      signature: (URL, String) -> Bool = CalimochoReleaseEngines.codeSignatureValid) throws -> (path: String, digest: String) {
+            if let pin = release {
+                let rendered = try CalimochoReleaseEngines.renderRegistry(
+                    try CalimochoReleaseEngines.verify(pin, root: enginesRoot, signature: signature), registries: registries)
+                return (rendered.url.path, rendered.digest)
+            }
+            guard let registryPath, let registrySha256 else { throw NativeLaunchError.engineUnavailable }
             let path = NativeTitleLaunchProfile.expand(registryPath)
             let registry = URL(fileURLWithPath: path)
             try GameScriptFiles.checkPath(registry)
@@ -20,11 +38,17 @@ struct NativeEngineDefaults: Decodable {
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == registrySha256 else {
                 throw NativeLaunchError.selectionChanged
             }
+            return (path, registrySha256)
+        }
+
+        @MainActor func inspect(configuration: BackendConfiguration,
+                                inspector: EngineInspectionClient = EngineInspectionClient()) async throws -> AdmittedEngineSelection {
+            let (path, digest) = try registry()
             let result = try await inspector.inspect(executable: configuration.executable,
-                registry: registry, engine: engineName, expectedDigest: registrySha256,
+                registry: URL(fileURLWithPath: path), engine: engineName, expectedDigest: digest,
                 executableIdentity: configuration.executableIdentity)
             let selection = AdmittedEngineSelection(registryPath: path, inspection: result)
-            try selection.validate(registryPath: path, engineName: engineName, registryDigest: registrySha256)
+            try selection.validate(registryPath: path, engineName: engineName, registryDigest: digest)
             guard result.wineSha256 == wineSha256, result.wineserverSha256 == wineserverSha256 else {
                 throw NativeLaunchError.selectionChanged
             }
@@ -44,11 +68,12 @@ struct NativeEngineDefaults: Decodable {
         guard value.version == 1, (1...16).contains(value.bindings.count),
               Set(value.bindings.map(\.engineName)).count == value.bindings.count,
               value.bindings.contains(where: { $0.engineName == value.defaultEngine }),
-              value.bindings.allSatisfy({
-                  NativeTitleLaunchProfile.expand($0.registryPath).hasPrefix("/")
-                    && EngineInspection.validDigest($0.registrySha256)
-                    && EngineInspection.validDigest($0.wineSha256)
-                    && EngineInspection.validDigest($0.wineserverSha256)
+              value.bindings.allSatisfy({ binding in
+                  EngineInspection.validDigest(binding.wineSha256) && EngineInspection.validDigest(binding.wineserverSha256)
+                    && (binding.release != nil && binding.developerLocal != true
+                        || binding.developerLocal == true
+                            && binding.registryPath.map { NativeTitleLaunchProfile.expand($0).hasPrefix("/") } == true
+                            && EngineInspection.validDigest(binding.registrySha256))
               }) else { throw NativeLaunchError.invalidProfile }
         return value
     }

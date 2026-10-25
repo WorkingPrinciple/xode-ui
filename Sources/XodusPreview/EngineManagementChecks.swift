@@ -19,7 +19,154 @@ enum EngineManagementChecks {
         try await selectionPersistenceChecks(root: root, check: check)
     }
 
+    static func launchSupportChecks(check: (Bool, String) -> Void) {
+        let suite = "Xodus.req114.support.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { check(false, "REQ114 M1 isolated defaults"); return }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        guard let catalog = try? NativeEngineDefaults.read(),
+              let nms = catalog.bindings.first(where: { $0.engineName == "calimocho-wine11.20-gptk4b3-tls-vulkan-private" }) else {
+            check(false, "REQ114 M1 bundled engine defaults readable"); return
+        }
+        let present: (String) -> String? = { $0 == nms.registryPath.map(NativeTitleLaunchProfile.expand) ? nms.registrySha256 : nil }
+        let unprofiled = NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
+            engineDefaults: { catalog }, registryDigest: present)
+        check(unprofiled == .notSupported(NativeLaunchSupport.notSupportedReason) && !unprofiled.canPlay
+              && !unprofiled.offersEngines,
+              "REQ114 M1/R1 title without an admitted launch profile is not yet supported and never offers Play")
+        let halls = NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults,
+            engineDefaults: { catalog }, registryDigest: present)
+        check(!halls.canPlay && halls.offersEngines && halls.reason?.contains("Apple Game Porting Toolkit") == true
+              && halls.reason?.contains("No other engine was substituted") == true,
+              "REQ114 M1/R3 profiled title pinned to an absent engine shows Engine needed, not Play")
+        check(NativeLaunchSupport.evaluate(productID: "BQVQTL3PCH05", defaults: defaults,
+                engineDefaults: { catalog }, registryDigest: present) == .supported,
+              "REQ114 M1 profiled title whose bound engine registry matches is supported")
+        check(NativeLaunchSupport.evaluate(productID: "BQVQTL3PCH05", defaults: defaults,
+                engineDefaults: { catalog }, registryDigest: { _ in nil }).offersEngines,
+              "REQ114 M1 missing engine registry on this Mac withholds Play")
+        check(NativeLaunchSupport.evaluate(productID: "BQVQTL3PCH05", defaults: defaults,
+                engineDefaults: { catalog }, registryDigest: { _ in String(repeating: "0", count: 64) }).offersEngines,
+              "REQ114 M1 changed engine registry bytes withhold Play")
+        check(NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults, hasEngineOverride: true,
+                engineDefaults: { catalog }, registryDigest: present) == .supported
+              && NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults, hasEngineOverride: true,
+                engineDefaults: { catalog }, registryDigest: present) != .supported,
+              "REQ114 M1 explicit per-game engine applies only to profiled titles")
+        let unavailable = InstalledGamesController.nativeLaunchFailureMessage(NativeLaunchError.engineUnavailable)
+        check(unavailable == NativeLaunchError.engineUnavailable.localizedDescription
+              && unavailable.contains("Open Engines") && !unavailable.contains("Runtime settings")
+              && InstalledGamesController.launchFailureOpensEngines(NativeLaunchError.engineUnavailable)
+              && !InstalledGamesController.launchFailureOpensEngines(NativeLaunchError.installationNotReady)
+              && InstalledGamesController.nativeLaunchFailureMessage(GameScriptError.failed(14))
+                == InstalledGameActionCopy.launchUnavailable,
+              "REQ114 B2 Play failures keep their specific cause and offer Engines only for engine issues")
+        check(EngineDisplayName.label("calimocho-wine11.20-gptk4b3-tls-vulkan-private") == "Calimocho (Wine 11.20)"
+              && EngineDisplayName.label("apple-gptk-4.0b3") == "Apple Game Porting Toolkit",
+              "REQ114 U2 engine identifiers map to user-meaningful names without renaming IDs")
+    }
+
+    /// REQ-115/B3: release engines are discovered, hash- and signature-verified and rendered per Mac; nothing user-specific ships.
+    static func releaseEngineChecks(check: (Bool, String) -> Void) throws {
+        let bundled = try Data(contentsOf: LaunchRecipeResources.engineDefaultsURL())
+        let catalog = try NativeEngineDefaults.read()
+        let release = catalog.bindings.first { $0.engineName == catalog.defaultEngine }
+        let devLocal = catalog.bindings.filter { $0.registryPath != nil }
+        check(release?.release == .release01 && release?.registryPath == nil && release?.registrySha256 == nil
+              && devLocal.map(\.engineName) == ["calimocho-wine11.20-gptk4b3-tls-vulkan-private"]
+              && devLocal.allSatisfy { $0.developerLocal == true }
+              && String(decoding: bundled, as: UTF8.self).components(separatedBy: "${HOME}/src/").count == 2
+              && !String(decoding: bundled, as: UTF8.self).contains("/Users/"),
+              "REQ115 B3: shipped engine defaults pin the release engine by name and keep only the documented NMS developer-local exception")
+
+        let root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".xodus-req115-engine-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: root) }
+        let engines = root.appendingPathComponent("Engines"), registries = root.appendingPathComponent("registries")
+        let name = "calimocho-11.20-4.0b3-01"
+        func build(environment: [String: String] = ["WINELOADER": "${ENGINE_ROOT}/bin/wine", "WINEDEBUG": "-all"],
+                   wine: String = "bin/wine") throws -> CalimochoReleasePin {
+            let folder = engines.appendingPathComponent(name)
+            try? FileManager.default.removeItem(at: folder)
+            try FileManager.default.createDirectory(at: folder.appendingPathComponent("bin"), withIntermediateDirectories: true)
+            for (file, body) in [("bin/wine", "wine"), ("bin/wineserver", "server")] {
+                try Data(body.utf8).write(to: folder.appendingPathComponent(file))
+                chmod(folder.appendingPathComponent(file).path, 0o755)
+            }
+            let manifest: [String: Any] = ["schema": "calimocho-engine/1", "engine_id": name, "version": "11.20-4.0b3-01",
+                "provider": ["id": "calimocho", "contract_version": 1], "paths": ["wine": wine, "wineserver": "bin/wineserver"],
+                "environment": environment, "signing": ["team_id": "M62Z4M5EUY"]]
+            let json = try JSONSerialization.data(withJSONObject: manifest)
+            try json.write(to: folder.appendingPathComponent("calimocho-engine.json"))
+            try Data("listing".utf8).write(to: folder.appendingPathComponent("MANIFEST.sha256"))
+            return CalimochoReleasePin(engineName: name, wineSha256: CalimochoReleaseEngines.digest(Data("wine".utf8)),
+                wineserverSha256: CalimochoReleaseEngines.digest(Data("server".utf8)),
+                engineJSONSha256: CalimochoReleaseEngines.digest(json),
+                manifestSha256: CalimochoReleaseEngines.digest(Data("listing".utf8)), teamID: "M62Z4M5EUY",
+                renderer: "apple-4.0b3", attestation: "fixture")
+        }
+        let signed: (URL, String) -> Bool = { _, requirement in requirement.contains("\"M62Z4M5EUY\"") }
+        func outcome(_ pin: CalimochoReleasePin, signature: @escaping (URL, String) -> Bool = signed) -> CalimochoReleaseError? {
+            do { _ = try CalimochoReleaseEngines.verify(pin, root: engines, signature: signature); return nil }
+            catch let error as CalimochoReleaseError { return error } catch { return .damaged("unexpected") }
+        }
+        try FileManager.default.createDirectory(at: engines, withIntermediateDirectories: true)
+        let missingPin = try build()
+        try FileManager.default.removeItem(at: engines.appendingPathComponent(name))
+        check(outcome(missingPin) == .notInstalled
+              && NativeLaunchSupport.releaseManifestStatus(missingPin, root: engines) == .notInstalled
+              && CalimochoReleaseError.notInstalled.localizedDescription == "Calimocho isn't installed.",
+              "REQ115 B3: an absent release engine reports Calimocho isn't installed")
+
+        let pin = try build()
+        let verified = try CalimochoReleaseEngines.verify(pin, root: engines, signature: signed)
+        let rendered = try CalimochoReleaseEngines.renderRegistry(verified, registries: registries)
+        let registry = try NativeEngineRegistry.read(rendered.url)
+        let entry = registry.engines.first
+        let folder = engines.appendingPathComponent(name).path
+        check(CalimochoReleaseEngines.installedNames(root: engines) == [name]
+              && registry.engines.count == 1 && entry?.name == name && entry?.provider?.id == "calimocho"
+              && entry?.wine == folder + "/bin/wine" && entry?.sha256 == pin.wineSha256
+              && entry?.wineserver_sha256 == pin.wineserverSha256
+              && entry?.environment == ["WINELOADER": folder + "/bin/wine", "WINEDEBUG": "-all"]
+              && registry.byteDigest == rendered.digest
+              && (try? CalimochoReleaseEngines.renderRegistry(verified, registries: registries).digest) == rendered.digest,
+              "REQ115 B3: a verified release engine renders a stable local registry with absolute paths and its environment unchanged")
+
+        check(outcome(pin, signature: { _, _ in false }) == .untrusted,
+              "REQ115 B3: an engine not signed by the publisher's Team ID is refused")
+        try Data("tampered".utf8).write(to: engines.appendingPathComponent(name + "/bin/wineserver"))
+        check(outcome(pin).map { if case .damaged = $0 { true } else { false } } == true,
+              "REQ115 B3: a changed wineserver fails its release pin")
+        for (label, mutate) in [("DYLD_* environment", { try build(environment: ["DYLD_INSERT_LIBRARIES": "/tmp/x"]) }),
+                                ("MTL_HUD environment", { try build(environment: ["MTL_HUD_ENABLED": "1"]) }),
+                                ("unknown ${VAR}", { try build(environment: ["X": "${HOME}/x"]) }),
+                                ("path escaping the engine folder", { try build(wine: "../outside/wine") }),
+                                ("absolute path", { try build(wine: "/bin/sh") })] as [(String, () throws -> CalimochoReleasePin)] {
+            let mutated = try mutate()
+            check(outcome(mutated).map { if case .damaged = $0 { true } else { false } } == true,
+                  "REQ115 B3: release manifest with \(label) is refused")
+        }
+        let linkPin = try build()
+        let real = engines.appendingPathComponent(name), moved = root.appendingPathComponent("elsewhere")
+        try FileManager.default.moveItem(at: real, to: moved)
+        try FileManager.default.createSymbolicLink(at: real, withDestinationURL: moved)
+        check(outcome(linkPin).map { if case .damaged = $0 { true } else { false } } == true
+              && CalimochoReleaseEngines.installedNames(root: engines).isEmpty,
+              "REQ115 B3: a symlinked engine folder is neither discovered nor verified")
+
+        let installed = CalimochoReleaseEngines.defaultEnginesRoot.appendingPathComponent(name)
+        if FileManager.default.fileExists(atPath: installed.path) {
+            // Read-only: verifies this Mac's real release install against compiled pins and its Developer ID signature.
+            let real = Result { try CalimochoReleaseEngines.verify(.release01) }
+            let render = (try? real.get()).flatMap { try? CalimochoReleaseEngines.renderRegistry($0, registries: registries) }
+            check((try? real.get()) != nil && render != nil,
+                  "REQ115 B3: installed release engine on this Mac matches compiled pins and Team ID M62Z4M5EUY (\((try? real.get()) == nil ? String(describing: real) : "verified"))")
+        }
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
+        launchSupportChecks(check: check)
+        try releaseEngineChecks(check: check)
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).resolvingSymlinksInPath()
             .appendingPathComponent("EngineManagementChecks-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
@@ -237,9 +384,10 @@ enum EngineManagementChecks {
             } catch {
                 let message = InstalledGamesController.nativeLaunchFailureMessage(error)
                 check(error is EngineInspectionError && error.localizedDescription.contains(reason)
-                      && message == InstalledGameActionCopy.launchUnavailable
+                      && message == error.localizedDescription && message != InstalledGameActionCopy.launchUnavailable
+                      && InstalledGamesController.launchFailureOpensEngines(error)
                       && !FileManager.default.fileExists(atPath: launched.path) && lifecycle.stateDirectory == nil,
-                      "REQ95 native lifecycle rejection retains \(reason) diagnostically with generic Play failure before spawn or state writes")
+                      "REQ95 native lifecycle rejection retains \(reason) diagnostically with its specific Play failure and Engines action before spawn or state writes")
             }
         }
         try Data("#!/bin/sh\nexit 2\n".utf8).write(to: mockCLI)

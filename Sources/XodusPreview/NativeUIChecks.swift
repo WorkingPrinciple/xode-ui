@@ -1088,8 +1088,9 @@ enum NativeUIChecks {
                     saveDetachedEvidence(host, directory: directory, name: "cor171-\(name)-\(Int(width)).png", check: check)
                 }
             }
-            check(heights[1] < heights[0] && heights[2] > heights[0],
-                  "COR171: Sheet height shrinks for resume and grows for recovery instead of retaining blank fixed height (\(heights))")
+            // REQ114 I3/M6: resume now carries the restart note and Discard, so it differs from (not shrinks below) a fresh install.
+            check(heights[1] != heights[0] && heights[2] > max(heights[0], heights[1]),
+                  "COR171: Sheet height follows resume and recovery content instead of retaining blank fixed height (\(heights))")
         }
     }
 
