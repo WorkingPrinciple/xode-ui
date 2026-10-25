@@ -593,4 +593,36 @@ actor GameOperationJournal {
     func clear() throws {
         if unlink(file.path) != 0 && errno != ENOENT { throw GameScriptError.storage }
     }
+
+    private var resumableFile: URL { file.appendingPathExtension("resumable.json") }
+
+    func loadResumable() throws -> [String: GameOperationRecord] {
+        guard let data = try GameScriptFiles.read(resumableFile, maximumBytes: 512 * 1024,
+                                                  missingAllowed: true) else { return [:] }
+        let records = try JSONDecoder().decode([String: GameOperationRecord].self, from: data)
+        guard records.count <= 128 else { throw GameScriptError.storage }
+        for (product, record) in records {
+            try record.validate()
+            guard product == record.productID, record.kind == .install, record.installedID == nil else {
+                throw GameScriptError.storage
+            }
+        }
+        return records
+    }
+
+    func retainResumable(_ record: GameOperationRecord) throws {
+        try record.validate()
+        guard record.kind == .install, record.installedID == nil else { return }
+        var records = try loadResumable()
+        records[record.productID] = record
+        guard records.count <= 128 else { throw GameScriptError.storage }
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records), to: resumableFile)
+    }
+
+    func removeResumable(_ record: GameOperationRecord) throws {
+        var records = try loadResumable()
+        guard records[record.productID]?.destination == record.destination else { return }
+        records[record.productID] = nil
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records), to: resumableFile)
+    }
 }

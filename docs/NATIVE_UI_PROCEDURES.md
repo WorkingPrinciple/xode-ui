@@ -609,6 +609,19 @@ Pending external roots gate only destinations under those roots, not unrelated
 local install reviews. A known same-product folder still prevents a duplicate
 elsewhere. An unmanaged folder remains Check/Import even at the default path;
 resume writes require a matching validated Ode operation product and destination.
+Selecting a root and confirming both check the exact derived destination
+off-main. An existing unregistered folder, even empty, is refused rather than
+overwritten; checking or importing it is separate from installation.
+Cancellation retains a private resumable operation alongside the active journal.
+Resume is bound to its original product, destination and account; it cannot
+redirect to a newer default or turn an unrelated folder into a managed install.
+The pinned CLI streams files into the destination before its final completeness
+check (`commands/streaming.rs`, lines 502–614 at producer `01d4cfd6`), so a
+config-bearing cancelled folder is a reachable partial state, not installed proof.
+Successful registration retires the matching resumable record. A pre-start
+launch Cancel cancels the actual lifecycle task as well as preparation.
+Package-format backfill records only positive classification evidence; an
+unknown observation never downgrades a previously known type.
 
 Config and package classification are not completion proof. Before a new folder
 is registered, the existing pinned CLI's exact-product/exact-folder

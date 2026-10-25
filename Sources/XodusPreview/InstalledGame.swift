@@ -333,7 +333,8 @@ actor InstalledGameStore {
     /// list unchanged when the value already matches, so backfill is idempotent.
     func recordPackageType(id: UUID, type: PackageType, observedAtImport: Date? = nil) throws -> [InstalledGame] {
         var games = try load()
-        guard let index = games.firstIndex(where: { $0.id == id }), games[index].packageType != type else {
+        guard type != .unknown,
+              let index = games.firstIndex(where: { $0.id == id }), games[index].packageType != type else {
             return games
         }
         if let observedAtImport, games[index].importedAt != observedAtImport { return games }

@@ -221,6 +221,11 @@ enum GameOperationChecks {
             if [ "$mode" = mismatch ]; then printf '0\\n' | publish "$receipts/$r.status"; exit 3; fi
             trap 'printf "14\\n" | publish "$receipts/$r.status"; exit 14' TERM
             printf '{"phase":"downloading","bytesDone":20,"bytesTotal":100}\\n' | publish "$receipts/$r.progress.json"
+            if [ "$mode" = partialslow ]; then
+                mkdir -p "$folder"
+                printf '<Game><Identity Name="Fixture.Game" Version="1.2.3.4"/><StoreId>%s</StoreId></Game>' "$product" > "$folder/MicrosoftGame.config"
+                while :; do sleep 0.1; done
+            fi
             if [ "$mode" = slow ]; then while :; do sleep 0.1; done; fi
             if [ "$mode" = invalidprogress ]; then
                 printf '{"phase":"downloading","bytesDone":-1}\\n' | publish "$receipts/$r.progress.json"
@@ -999,6 +1004,21 @@ enum GameOperationChecks {
               && retainedDefault == firstLocation
               && locationOperations.operation == nil && installed.games.isEmpty,
               "REQ92: Per-install override updates the reviewed destination, not the default or existing paths")
+        let occupiedDestination = try paths.destination(title: game.title, productID: game.id, root: typedRoot)
+        try FileManager.default.createDirectory(at: occupiedDestination, withIntermediateDirectories: false)
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: typedRoot.path)
+        check(locationOperations.installLocationError == GameInstallLocationError.destinationExists.localizedDescription
+              && locationOperations.installConsent?.destination.deletingLastPathComponent().path == secondRoot.path,
+              "H1: Selecting an unscanned root refuses an existing empty or unrecognized game destination")
+        try FileManager.default.removeItem(at: occupiedDestination)
+        let racedDestination = try paths.destination(title: game.title, productID: game.id, root: secondRoot)
+        try FileManager.default.createDirectory(at: racedDestination, withIntermediateDirectories: false)
+        await locationOperations.confirmInstallLocation(defaultConsent, path: secondRoot.path)
+        check(locationOperations.operation == nil
+              && locationOperations.installLocationError == GameInstallLocationError.destinationExists.localizedDescription,
+              "H1: Final confirmation rechecks exact destination existence after an initially valid root selection")
+        try FileManager.default.removeItem(at: racedDestination)
+        await locationOperations.updateInstallLocation(defaultConsent, root: secondRoot)
         locationOperations.confirmInstall(defaultConsent)
         check(locationOperations.operation == nil && locationOperations.installConsent != nil,
               "REQ92: A retained pre-override consent cannot install into the old destination")
@@ -1027,6 +1047,41 @@ enum GameOperationChecks {
               && destinationLibrary.games.first?.folder == confirmedDestination.path
               && destinationLibrary.games.first.map { destinationLibrary.launchableIDs.contains($0.id) } == true,
               "REQ110: Disposable install propagates the confirmed path through child arguments, registration and independent readiness")
+        try FileManager.default.removeItem(at: root.appendingPathComponent("arguments"))
+        let partialRoot = root.appendingPathComponent("partial resume drive")
+        try FileManager.default.createDirectory(at: partialRoot, withIntermediateDirectories: false)
+        let partialStore = InstalledGameStore(file: root.appendingPathComponent("partial-registry/games.json"))
+        let partialLibrary = InstalledGamesController(store: partialStore, inspectPackage: { _ in .win32 })
+        await partialLibrary.load()
+        let partialPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed, logs: paths.logs,
+            games: paths.games, journal: root.appendingPathComponent("partial-operation.json"))
+        let partialOperations = GameOperationsController(installed: partialLibrary, paths: partialPaths,
+            compatibilityCatalogue: catalogue)
+        try writeMode("partialslow")
+        await partialOperations.prepareInstall(game)
+        guard let partialConsent = partialOperations.installConsent else { throw GameScriptError.invalidDestination }
+        await partialOperations.confirmInstallLocation(partialConsent, path: partialRoot.path)
+        let partialDestination = try paths.destination(title: game.title, productID: game.id, root: partialRoot)
+        try await wait { FileManager.default.fileExists(atPath: partialDestination.appendingPathComponent("MicrosoftGame.config").path) }
+        await partialOperations.cancelInstall()
+        await partialOperations.waitForMutation()
+        let resumedOperations = GameOperationsController(installed: partialLibrary, paths: partialPaths,
+            compatibilityCatalogue: catalogue)
+        await resumedOperations.restore()
+        check(!resumedOperations.recoveryRequired && resumedOperations.canStartMutation
+              && resumedOperations.resumableInstallations[game.id]?.destination == partialDestination.path
+              && partialLibrary.games.isEmpty,
+              "M2: Cancelling a config-bearing partial install preserves a durable exact-product/destination resume without registering or globally locking")
+        try writeMode("success")
+        await resumedOperations.prepareInstall(game)
+        guard let resumedConsent = resumedOperations.installConsent else { throw GameScriptError.invalidDestination }
+        check(resumedConsent.resuming && resumedConsent.destination.path == partialDestination.path,
+              "M2: Reloaded Resume returns to the original managed partial folder instead of the current default")
+        await resumedOperations.confirmInstallLocation(resumedConsent, path: firstRoot.path)
+        await resumedOperations.waitForMutation()
+        check(partialLibrary.games.first?.folder == partialDestination.path
+              && resumedOperations.resumableInstallations[game.id] == nil,
+              "M2: Resume installs only to its retained destination and retires the resume record after verified registration")
         try FileManager.default.removeItem(at: root.appendingPathComponent("arguments"))
         let secondLocation = try await Task.detached { try GameInstallLocation(folder: secondRoot) }.value
         locationDefaults.set(try JSONEncoder().encode(secondLocation), forKey: GameInstallLocation.preferenceKey)
@@ -1367,6 +1422,11 @@ enum GameOperationChecks {
               && afterUninstall.facts.badgeLabels() == ["In your library"]
               && GameInstallAction(game: game, operations: operations).canInstall,
               "REQ-50: Only explicit uninstall invokes its transport; success withdraws installed facts but preserves held reinstall eligibility")
+        await operations.prepareInstall(game)
+        check(operations.installConsent == nil
+              && operations.error == GameInstallLocationError.destinationExists.localizedDescription,
+              "H1: Removing registration never grants Install permission to overwrite the retained unmanaged folder")
+        try FileManager.default.removeItem(at: URL(fileURLWithPath: repaired.folder))
         for code in [10, 11, 12, 14] {
             try writeMode(String(code))
             try await install()
@@ -1380,6 +1440,7 @@ enum GameOperationChecks {
         check(operations.failureCode == 13 && operations.error == GameScriptError.failed(13).localizedDescription
               && installed.games.isEmpty && !operations.isBusy,
               "Present install result on nonzero exit is decoded without registering a false installed success")
+        try FileManager.default.removeItem(at: URL(fileURLWithPath: repaired.folder))
         let unsupportedCache = compatibilityData.replacingOccurrences(of: "\"supported\":true", with: "\"supported\":false")
             .replacingOccurrences(of: "\"reason\":null", with: "\"reason\":\"Neutral Xbox feature is not supported.\"")
         try privateFile(cached, unsupportedCache)
@@ -1526,17 +1587,17 @@ enum GameOperationChecks {
                 detectAvailability: { RunnerAvailability([.crossover]) })
             await consentLibrary.load()
             let consentPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed,
-                logs: paths.logs, games: paths.games,
+                logs: paths.logs, games: root.appendingPathComponent("\(label)/games"),
                 journal: root.appendingPathComponent("\(label)/operation.json"))
             let controller = GameOperationsController(installed: consentLibrary, paths: consentPaths,
                                                       compatibilityCatalogue: catalogue)
             let a = PCGame(id: "FIXTURE00004", title: "Consent A", artwork: nil)
             let b = PCGame(id: "FIXTURE00005", title: "Queued B", artwork: nil)
-            let aFolder = try paths.destination(title: a.title, productID: a.id)
+            let aFolder = try consentPaths.destination(title: a.title, productID: a.id)
             func queuedRecord(_ game: PCGame) throws -> GameOperationRecord {
                 GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
                     productID: game.id, title: game.title,
-                    destination: try paths.destination(title: game.title, productID: game.id).path, installedID: nil)
+                    destination: try consentPaths.destination(title: game.title, productID: game.id).path, installedID: nil)
             }
             try writeMode("success")
             if repairing {

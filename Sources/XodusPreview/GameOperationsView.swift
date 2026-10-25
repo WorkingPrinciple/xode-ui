@@ -376,7 +376,8 @@ struct GameInstallAction: View {
             : operations.operation?.kind == .repair ? "Repairing" : "Installing"
     }
     var actionTitle: String {
-        operations.installationCheckRequired(for: game) ? "Check installation"
+        operations.resumableInstallations[game.id] != nil ? "Resume"
+        : operations.installationCheckRequired(for: game) ? "Check installation"
             : failed ? "Retry installation" : "Install"
     }
     var canInstall: Bool { enabled && operations.canStartMutation }

@@ -221,6 +221,22 @@ enum NativeLifecycleChecks {
         }
         check(result.success && result.exitCode == 0 && received.last?.bytesDone == 25 && !runner.isRunning,
               "Native lifecycle: actual synthetic child receipt agrees; a popup warning does not override clean exit")
+        let prestartState = root.appendingPathComponent("cancel-after-preparation")
+        var prestartCancelled = false
+        var prestartFailure: String?
+        let prestart = Task {
+            do {
+                _ = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+                    operation: "launch", product: "FIXTURE00001", gameDirectory: game,
+                    runID: InstalledGamesController.runID(), stateRoot: prestartState)
+            } catch NativeLifecycleCancellation.launchStopped { prestartCancelled = true }
+            catch { prestartFailure = error.localizedDescription }
+        }
+        InstalledGamesController.cancelPrestartLaunch(preparation: nil, launch: prestart, launcher: runner)
+        await prestart.value
+        check(prestartCancelled && prestartFailure == nil && !runner.isRunning
+              && !FileManager.default.fileExists(atPath: prestartState.path),
+              "M1: Visible Cancel after preparation cancels the actual pending launch task before spawn without a failure")
         try Data("""
             <Game><Identity Name="Fixture.Native" Version="1.0.0.0"/><StoreId>FIXTURE00001</StoreId></Game>
             """.utf8).write(to: game.appendingPathComponent("MicrosoftGame.config"))

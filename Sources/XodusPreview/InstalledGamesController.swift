@@ -1170,9 +1170,19 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func cancelInstallationCheck(_ game: InstalledGame) {
-        if runningGameID == game.id && !launchStarted { nativePreparationTask?.cancel() }
+        if runningGameID == game.id && !launchStarted {
+            stopToken = runToken
+            Self.cancelPrestartLaunch(preparation: nativePreparationTask, launch: nativeLaunchTask, launcher: nativeLauncher)
+        }
         installationCheckTasks[game.id]?.cancel()
         nativeInspectionTasks[game.id]?.cancel()
+    }
+
+    static func cancelPrestartLaunch(preparation: Task<MicrosoftGameConfig, Error>?,
+                                     launch: Task<Void, Never>?, launcher: NativeGameLifecycle) {
+        preparation?.cancel()
+        launch?.cancel()
+        launcher.cancel()
     }
 
     func reserveMutation(gameID: UUID?) throws {

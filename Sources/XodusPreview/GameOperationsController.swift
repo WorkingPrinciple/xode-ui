@@ -47,6 +47,7 @@ final class GameOperationsController: ObservableObject {
     @Published private(set) var compatibility: [String: GameCompatibilityResult] = [:]
     @Published private(set) var compatibilityErrors: [String: String] = [:]
     @Published private(set) var operation: GameOperationRecord?
+    @Published private(set) var resumableInstallations: [String: GameOperationRecord] = [:]
     @Published private(set) var progress: GameScriptProgress?
     @Published private(set) var cancelling = false
     @Published private(set) var checkingRecovery = false
@@ -280,7 +281,7 @@ final class GameOperationsController: ObservableObject {
 
     private func admitInstall(productID: String, installedID: UUID? = nil, destination: String? = nil,
                               managedOperation: GameOperationRecord? = nil) -> Bool {
-        let record = managedOperation ?? operation
+        let record = managedOperation ?? operation ?? resumableInstallations[productID]
         let resumingManagedOperation = record.map {
             $0.kind != .uninstall && $0.productID == productID && $0.destination == destination
                 && (try? $0.validate()) != nil
@@ -316,6 +317,7 @@ final class GameOperationsController: ObservableObject {
         guard !restored, !isBusy, !terminating else { return }
         restored = true
         do {
+            resumableInstallations = try await journal.loadResumable()
             guard let record = try await journal.load() else { return }
             resetFeedback(productID: record.productID)
             try installed.reserveMutation(gameID: record.installedID)
@@ -779,6 +781,13 @@ final class GameOperationsController: ObservableObject {
             error = "Your Xbox account changed. Choose the game again before reviewing installation."
             return
         }
+        do { resumableInstallations = try await journal.loadResumable() }
+        catch { self.error = Self.message(error); return }
+        let resume = repairing == nil ? resumableInstallations[game.id] : nil
+        guard resume == nil || resume?.nativeAccountHash == reviewAccount else {
+            error = "Reconnect the Xbox account used for this installation before resuming."
+            return
+        }
         if usesUnifiedAccount, repairing == nil { await installed.discoverNativeInstallations() }
         guard !Task.isCancelled, canStartMutation,
               reviewAccount == (usesUnifiedAccount ? nativeAccount : nil) else { return }
@@ -786,14 +795,21 @@ final class GameOperationsController: ObservableObject {
             guard repairing.storeId == game.id, installed.games.contains(repairing),
                   installed.runningGameID != repairing.id else { return }
         }
+        resetFeedback(productID: game.id)
         let proposedDestination: URL
         do {
             if let repairing { proposedDestination = URL(fileURLWithPath: repairing.folder) }
+            else if let resume { proposedDestination = URL(fileURLWithPath: resume.destination) }
             else { proposedDestination = try await installDestination(for: game) }
+            if repairing == nil {
+                let destination = proposedDestination
+                try await storageProbe.read {
+                    try GameInstallLocation.validateDestination(destination, productID: game.id, managedRecord: resume)
+                }
+            }
         } catch { self.error = Self.message(error); return }
         guard admitInstall(productID: game.id, installedID: repairing?.id,
                            destination: proposedDestination.path) else { return }
-        resetFeedback(productID: game.id)
         if repairing == nil { downloadRetry = game }
         preparingConsent = true
         preparingInstallProductID = game.id
@@ -829,6 +845,7 @@ final class GameOperationsController: ObservableObject {
                                                 freeBytes: storage.0, installedID: repairing?.id,
                                                 nativeAccountHash: usesUnifiedAccount ? nativeAccount : nil,
                                                 storageVolume: storage.1)
+            installConsent?.resuming = resume != nil
             installLocationError = nil
             error = nil
             preparingConsent = false
@@ -872,6 +889,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     func installationCheckRequired(for game: PCGame) -> Bool {
+        if resumableInstallations[game.id] != nil { return false }
         do {
             let location = try installLocationDefaults.flatMap { try GameInstallLocation.load($0) }
             let destination = try paths.destination(title: game.title, productID: game.id,
@@ -948,6 +966,19 @@ final class GameOperationsController: ObservableObject {
             await updateTypedInstallLocation(consent, path: path)
         }
         guard let current = installConsent, current.id == consent.id, installLocationError == nil else { return }
+        if current.installedID == nil {
+            do {
+                let resume = resumableInstallations[current.game.id]
+                try await storageProbe.read {
+                    try GameInstallLocation.validateDestination(current.destination, productID: current.game.id,
+                        managedRecord: resume)
+                }
+            } catch {
+                guard installConsent?.id == current.id else { return }
+                installLocationError = Self.message(error)
+                return
+            }
+        }
         confirmInstall(current)
     }
 
@@ -956,6 +987,9 @@ final class GameOperationsController: ObservableObject {
               !checkingCompatibility, canStartMutation else { return }
         do {
             let destination = try await installDestination(for: consent.game, root: root)
+            try await storageProbe.read {
+                try GameInstallLocation.validateDestination(destination, productID: consent.game.id, managedRecord: nil)
+            }
             guard !installed.games.contains(where: { $0.folder == destination.path }) else {
                 throw GameScriptError.invalidDestination
             }
@@ -986,7 +1020,8 @@ final class GameOperationsController: ObservableObject {
         resetFeedback(productID: consent.game.id)
         installConsent = nil
         let record = GameOperationRecord(id: InstalledGamesController.runID(),
-            kind: consent.resuming ? .resume : consent.installedID == nil ? .install : .repair, productID: consent.game.id,
+            kind: consent.resuming && consent.installedID != nil ? .resume
+                : consent.installedID == nil ? .install : .repair, productID: consent.game.id,
             title: consent.game.title, destination: consent.destination.path, installedID: consent.installedID,
             nativeAccountHash: consent.nativeAccountHash)
         if let id = consent.installedID,
@@ -1067,6 +1102,21 @@ final class GameOperationsController: ObservableObject {
         log = nil
         failureCode = nil
         mutationTask = Task {
+            if record.kind == .install {
+                do {
+                    let resume = resumableInstallations[record.productID]
+                    try await storageProbe.read {
+                        try GameInstallLocation.validateDestination(URL(fileURLWithPath: record.destination),
+                            productID: record.productID, managedRecord: resume)
+                    }
+                } catch {
+                    self.error = Self.message(error)
+                    operation = nil
+                    installed.releaseMutation()
+                    mutationTask = nil
+                    return
+                }
+            }
             if let storageVolume {
                 do {
                     try await storageProbe.read {
@@ -1184,6 +1234,8 @@ final class GameOperationsController: ObservableObject {
                 error = result?.failureMessage
             }
         }
+        try await updateResumableInstallation(record, cancelled: result?.errorCode == "CANCELLED" || result == nil,
+                                             completed: result?.success == true)
         try await journal.clear()
         operation = nil
         recoveryRequired = false
@@ -1198,6 +1250,16 @@ final class GameOperationsController: ObservableObject {
         failureCode = nil
         downloadNeedsSignIn = false
         downloadRetry = nil
+    }
+
+    private func updateResumableInstallation(_ record: GameOperationRecord, cancelled: Bool,
+                                             completed: Bool) async throws {
+        if cancelled {
+            try await journal.retainResumable(record)
+        } else if completed {
+            try await journal.removeResumable(record)
+        }
+        resumableInstallations = try await journal.loadResumable()
     }
 
     private func complete(_ record: GameOperationRecord, outcome: GameScriptOutcome) async throws {
@@ -1249,6 +1311,7 @@ final class GameOperationsController: ObservableObject {
                 notice = GameScriptError.failed(14).localizedDescription
             }
         }
+        try await updateResumableInstallation(record, cancelled: outcome.code == 14, completed: outcome.code == 0)
         try await journal.clear()
         operation = nil
         recoveryRequired = false

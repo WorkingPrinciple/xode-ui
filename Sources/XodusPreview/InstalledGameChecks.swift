@@ -110,6 +110,22 @@ enum InstalledGameChecks {
             return host.fittingSize.height
         }
         let readyHeight = tileHeight()
+        let nested = local.appendingPathComponent("Binaries/game.exe")
+        try FileManager.default.createDirectory(at: nested.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("nested fixture".utf8).write(to: nested)
+        var knownGame = game
+        knownGame.packageType = .msixvc
+        let knownStore = InstalledGameStore(file: root.appendingPathComponent("known/games.json"))
+        try await knownStore.save([knownGame])
+        let unknownObservation = InstalledGamesController(store: knownStore)
+        await unknownObservation.load()
+        let retainedClassification = try await knownStore.load().first?.packageType
+        check(try PackageInspector.detect(folder: local) == .unknown
+              && unknownObservation.games.first?.packageType == .msixvc && retainedClassification == .msixvc,
+              "M3: Missing root-level evidence with a nested executable never overwrites known MSIXVC classification")
+        let positive = try await knownStore.recordPackageType(id: knownGame.id, type: .win32)
+        check(positive.first?.packageType == .win32,
+              "M3: Positive new package classification still replaces an older known classification")
         try FileManager.default.removeItem(at: local)
         await isolated.checkInstallation(game)
         check(isolated.packageErrors[game.id] == InstalledGameError.missingFolder.localizedDescription

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import Darwin
 
 struct GameStorageVolume: Codable, Equatable, Sendable {
     let path: String
@@ -57,6 +58,27 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
         return URL(fileURLWithPath: expanded, isDirectory: true)
     }
 
+    static func validateDestination(_ destination: URL, productID: String,
+                                    managedRecord: GameOperationRecord?) throws {
+        try GameScriptFiles.checkPath(destination, allowMissing: true)
+        var info = stat()
+        guard lstat(destination.path, &info) == 0 else {
+            if errno == ENOENT { return }
+            throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)))
+        }
+        guard let record = managedRecord, record.kind == .install, record.productID == productID,
+              record.destination == destination.path, record.installedID == nil else {
+            throw GameInstallLocationError.destinationExists
+        }
+        try record.validate()
+        try InstalledGameFiles.checkFolder(destination)
+        if try MicrosoftGameConfig.configurationFile(in: destination) != nil {
+            guard try MicrosoftGameConfig.read(folder: destination).storeId == productID else {
+                throw InstalledGameError.invalidConfig
+            }
+        }
+    }
+
     static func load(_ defaults: UserDefaults) throws -> Self? {
         guard defaults.object(forKey: preferenceKey) != nil else { return nil }
         guard let data = defaults.data(forKey: preferenceKey) else { throw GameScriptError.invalidDestination }
@@ -87,12 +109,13 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
 }
 
 enum GameInstallLocationError: Error, LocalizedError {
-    case driveUnavailable, notWritable
+    case driveUnavailable, notWritable, destinationExists
 
     var errorDescription: String? {
         switch self {
         case .driveUnavailable: "The selected install drive is unavailable. Reconnect it or choose another folder."
         case .notWritable: "The selected folder isn't writable. Choose another folder."
+        case .destinationExists: "A folder already exists at this destination. Check or import it, or choose another install folder."
         }
     }
 }
