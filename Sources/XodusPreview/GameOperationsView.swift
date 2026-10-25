@@ -9,7 +9,7 @@ struct GameServiceAccountView: View {
 
     var accountStatusText: String {
         if operations.serviceSignOutConfirmed, operations.serviceStatus?.signedIn == false {
-            return "Signed out of Xbox in Ode to X"
+            return "Signed out of Xbox in \(AppBrand.displayName)"
         }
         if operations.serviceAccountNeedsVerification { return "Xbox account hasn't been confirmed" }
         if operations.serviceStatus?.signedIn == true { return "Xbox sign-in confirmed" }
@@ -78,7 +78,7 @@ struct GameServiceSignInActions: View {
                 Label(operations.serviceLabel, systemImage: operations.serviceAccountSymbol)
                     .accessibilityIdentifier(statusIdentifier)
                 Text(operations.serviceError
-                     ?? "Xbox game access uses the account connected to Ode to X. The status above reflects the current connection.")
+                     ?? "Xbox game access uses the account connected to \(AppBrand.displayName). The status above reflects the current connection.")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let onOpenOdeAccount {
@@ -88,7 +88,7 @@ struct GameServiceSignInActions: View {
             } else {
             Label(statusText, systemImage: operations.serviceAccountSymbol)
                 .accessibilityIdentifier(statusIdentifier)
-            Text("Ode to X sign-in and Xbox game-service sign-in are separate. Continue with Microsoft here only when a game download or Xbox feature needs it; Ode to X won't open this second sign-in automatically.")
+            Text("\(AppBrand.displayName) sign-in and Xbox game-service sign-in are separate. Continue with Microsoft here only when a game download or Xbox feature needs it; \(AppBrand.displayName) won't open this second sign-in automatically.")
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if operations.serviceAccountNeedsVerification {
@@ -300,12 +300,12 @@ struct GameOperationProgressView: View {
                         .foregroundStyle(.secondary)
                     if let value = operations.progress, let total = value.bytesTotal, total > 0 {
                         ProgressView(value: Double(value.bytesDone), total: Double(total))
-                            .accessibilityLabel("Download progress")
+                            .accessibilityLabel("Download progress for \(operation.title)")
                             .accessibilityIdentifier("xodus.install.progress")
                         Text("\(Self.bytes(value.bytesDone)) of \(Self.bytes(total)) (\(Int(Double(value.bytesDone) / Double(total) * 100))%)")
                             .font(.callout).foregroundStyle(.secondary)
                     } else {
-                        ProgressView().controlSize(.small).accessibilityLabel("Download progress")
+                        ProgressView().controlSize(.small).accessibilityLabel("Download progress for \(operation.title)")
                         if let value = operations.progress, value.phase == .downloading {
                             Text("\(Self.bytes(value.bytesDone)) downloaded").font(.callout).foregroundStyle(.secondary)
                         }
@@ -548,7 +548,6 @@ struct GameInstallConsentView: View {
                                 TextField("Install folder", text: $installRootPath)
                                     .textFieldStyle(.roundedBorder)
                                     .labelsHidden()
-                                    .accessibilityLabel("Install folder")
                                     .accessibilityIdentifier("xodus.install.root")
                                     .focused($installRootFocused)
                                     .onSubmit {

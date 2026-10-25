@@ -94,7 +94,7 @@ enum PreviewChecks {
         welcomeSession.errorMessage = "Xcode not configured: private developer-path sentinel"
         check(!welcomeSession.hasConfirmedSignIn && !welcomeSession.canStartWelcomeSignIn
               && welcomeSession.welcomeMessage ==
-                "Sign-in is unavailable in this copy of Ode to X. A matching app and sign-in service are required.",
+                "Sign-in is unavailable in this copy of Xode. A matching app and sign-in service are required.",
               "Unconfigured welcome is locked and never exposes developer setup details")
         check(welcomeSession.welcomeNotice == welcomeSession.welcomeMessage,
               "Welcome keeps actual unavailable-service guidance separate from its neutral account introduction")
@@ -198,7 +198,7 @@ enum PreviewChecks {
         check(live.products.isEmpty, "Live catalog never starts with invented titles")
         check(live.authentication == nil, "Live account does not start with simulated sign-in")
         check(live.currentCredentialState == nil && live.accountSymbol == "person.crop.circle"
-              && live.accountLabel == "Connect Ode to X",
+              && live.accountLabel == "Connect Xode",
               "Disconnected live account presentation never borrows the fixture's connection or profile badge")
         check(live.activity.jobs.isEmpty, "Live activity does not start with simulated jobs")
         check(!live.canSignIn, "Sign-in is disabled until backend capability negotiation")
@@ -210,6 +210,7 @@ enum PreviewChecks {
         detailChecks(check: check)
         companionChecks(check: check)
         NativeUIChecks.run(check: check)
+        BrandUXChecks.run(check: check)
         print("\(count) preview checks, \(failures) failures. No backend connected.")
         return failures == 0
     }

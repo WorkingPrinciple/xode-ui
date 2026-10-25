@@ -34,14 +34,12 @@ struct RuntimeInstallationPicker: View {
 
     private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
         let defaultID = try? NativeEngineSettings.defaultAdmissionName()
+        let choices = installed.availableEngineOverrides.compactMap { selection in
+            selection.inspection.engineName.map { EngineChoice.named($0, ready: true) }
+        } + installed.failedEngineOverrides.sorted().map { EngineChoice.named($0, ready: false) }
         return EngineConfiguratorForm(
-            choices: installed.availableEngineOverrides.compactMap { selection in
-                selection.inspection.engineName.map {
-                    EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: true)
-                }
-            } + installed.failedEngineOverrides.sorted().map {
-                EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: false)
-            }, defaultID: defaultID, defaultName: defaultID.map { InstalledGamesController.readableEngineName($0) } ?? "Unavailable",
+            choices: choices,
+            defaultID: defaultID, defaultName: defaultID.map { EngineDisplayName.name($0) } ?? "Unavailable",
             checking: installed.checkingEngineOverrides || settingDefault,
             error: error ?? (defaultID == nil ? "The default engine selection couldn't be read. Refresh engines and try again." : nil),
             settings: settings, allowsFileReads: allowsFileReads, userEngineModel: userEngineModel,
@@ -66,7 +64,9 @@ struct RuntimeInstallationPicker: View {
                     }
                 }
             }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } },
-            showsAdvanced: showsAdvanced) {
+            showsAdvanced: showsAdvanced,
+            calimochoStatus: .from(choices: choices, checking: installed.checkingEngineOverrides || settingDefault,
+                                   installed: allowsFileReads ? CalimochoRelease.isPresent() : nil)) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)
         }

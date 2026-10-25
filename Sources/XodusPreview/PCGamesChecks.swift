@@ -177,7 +177,7 @@ enum PCGamesChecks {
               "Broker deletion failure never claims launcher logout and releases joined sign-out holds")
         check(session.accountJourneyMessage.contains("Sign-out didn't finish")
               && session.accountJourneyMessage.contains("Some Xbox Live details may remain")
-              && session.accountJourneyMessage.contains("Choose Sign in with Xbox Live")
+              && session.accountJourneyMessage.contains("Choose Sign in with Microsoft")
               && session.accountError?.contains("launcher profile was not disconnected") == true,
               "Plain-language partial sign-out keeps its next action while retaining exact failure detail")
         await session.refreshAccount()

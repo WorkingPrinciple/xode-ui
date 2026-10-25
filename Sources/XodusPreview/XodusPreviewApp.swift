@@ -90,9 +90,9 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
             }
             if !closed, gameOperations?.canQuit == false {
                 let alert = NSAlert()
-                alert.messageText = "Wait before quitting Ode to X"
+                alert.messageText = "Wait before quitting \(AppBrand.displayName)"
                 alert.informativeText = "Wait for the current game operation to finish. You can cancel an installation first."
-                alert.addButton(withTitle: "Keep Ode to X open")
+                alert.addButton(withTitle: "Keep \(AppBrand.displayName) Open")
                 alert.runModal()
             }
             sender.reply(toApplicationShouldTerminate: closed)
@@ -117,6 +117,11 @@ struct XodusPreviewApp: App {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
+    private func openSettingsPane(_ pane: SettingsPane) {
+        SettingsPaneSelection.select(pane)
+        openSettings()
+    }
+
     private var navigationAllowed: Bool {
 #if !XODUS_SHIPPING
         state.fixtureMode || session.hasConfirmedSignIn
@@ -126,7 +131,7 @@ struct XodusPreviewApp: App {
     }
 
     init() {
-        ProcessInfo.processInfo.processName = "Ode to X"
+        ProcessInfo.processInfo.processName = AppBrand.displayName
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,
            GameLaunchArguments.parse(Array(CommandLine.arguments.dropFirst())) == nil {
@@ -206,7 +211,7 @@ struct XodusPreviewApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Ode to X") {
+        WindowGroup(AppBrand.displayName) {
             Group {
 #if !XODUS_SHIPPING
                 if state.fixtureMode { RootView() }
@@ -236,18 +241,39 @@ struct XodusPreviewApp: App {
         .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("About Ode to X") {
-                    NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Ode to X"])
-                }
+                Button("About \(AppBrand.displayName)") { AppBrandPresentation.orderFrontAboutPanel() }
                 Button("Licenses") { openWindow(id: "licenses") }
                 Button("Acknowledgments") { openWindow(id: "acknowledgments") }
             }
+            CommandGroup(after: .appSettings) {
+                Button("Engines…") { openSettingsPane(.engines) }
+#if !XODUS_SHIPPING
+                    .disabled(state.fixtureMode)
+#endif
+                    .keyboardShortcut("e", modifiers: [.command, .shift])
+            }
             CommandGroup(replacing: .appTermination) {
-                Button("Quit Ode to X") { NSApp.terminate(nil) }
+                Button("Quit \(AppBrand.displayName)") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
+            // Replaces the text-editing group so ⌘F always means game search, never a text-view Find submenu.
+            CommandGroup(replacing: .textEditing) {
+                Button("Find…") { state.requestSearchFocus() }
+                    .keyboardShortcut("f")
+                    .disabled(!navigationAllowed)
+            }
+            CommandGroup(before: .toolbar) {
+                Button("Refresh") { Task { await state.refreshCurrentDestination(session: session) } }
+                    .keyboardShortcut("r")
+                    .disabled(!navigationAllowed || !state.canRefresh(session: session))
+                Divider()
+            }
+            CommandGroup(replacing: .help) {
+                Button(AppBrand.supportTitle) { openWindow(id: AppBrandPresentation.supportWindowID) }
+                Button("Send Feedback…") { openWindow(id: AppBrandPresentation.supportWindowID) }
+            }
             CommandGroup(after: .newItem) {
-                Button("Import installed Xbox game…") { Task { await state.installedGames.chooseGame() } }
+                Button(NativeToolbarImportButton.title + "…") { Task { await state.installedGames.chooseGame() } }
                     .keyboardShortcut("i", modifiers: [.command, .shift])
 #if !XODUS_SHIPPING
                     .disabled(!session.hasConfirmedSignIn || state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
@@ -261,7 +287,7 @@ struct XodusPreviewApp: App {
             CommandMenu("Navigate") {
                 Button("Library") { state.navigate(.library) }.keyboardShortcut("1")
                     .disabled(!navigationAllowed)
-                Button("Discover") { state.navigate(.discover) }.keyboardShortcut("2")
+                Button("Discover") { state.selectTab(.discover) }.keyboardShortcut("2")
                     .disabled(!navigationAllowed)
                 Button("Downloads") { state.navigate(.downloads) }.keyboardShortcut("3")
                     .disabled(!navigationAllowed)
@@ -280,13 +306,7 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") {
-                    SettingsPaneSelection.select(.engines)
-                    openSettings()
-                }
-                    .disabled(state.fixtureMode)
-                    .keyboardShortcut("e", modifiers: [.command, .shift])
-                Button("Return to live Ode to X") {
+                Button("Return to live \(AppBrand.displayName)") {
                     state.fixtureMode = false
                     state.navigate(.library)
                 }.disabled(!state.fixtureMode)
@@ -302,11 +322,6 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") {
-                    SettingsPaneSelection.select(.engines)
-                    openSettings()
-                }
-                    .keyboardShortcut("e", modifiers: [.command, .shift])
 #endif
             }
         }
@@ -333,5 +348,10 @@ struct XodusPreviewApp: App {
             .defaultSize(width: 560, height: 420)
         Window("Acknowledgments", id: "acknowledgments") { AppAcknowledgmentsView() }
             .defaultSize(width: 560, height: 420)
+        Window(AppBrand.supportTitle, id: AppBrandPresentation.supportWindowID) {
+            BetaSupportView { openSettingsPane(.advanced) }
+        }
+            .defaultSize(width: 480, height: 360)
+            .windowResizability(.contentSize)
     }
 }

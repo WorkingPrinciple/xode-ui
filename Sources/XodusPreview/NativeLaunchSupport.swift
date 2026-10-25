@@ -99,15 +99,11 @@ enum NativeLaunchSupport: Equatable {
     }
 }
 
-/// User-facing engine names; identifiers are never renamed.
-enum EngineDisplayName {
+extension EngineDisplayName {
+    /// Launch-support wording: Calimocho names come from the shared presentation; identifiers are never renamed.
     static func label(_ engine: String) -> String {
         let lowered = engine.lowercased()
-        if lowered.hasPrefix("calimocho") {
-            let version = engine.range(of: #"wine(\d+(?:\.\d+)?)"#, options: [.regularExpression, .caseInsensitive])
-                .map { String(engine[$0].dropFirst(4)) }
-            return version.map { "Calimocho (Wine \($0))" } ?? "Calimocho"
-        }
+        if lowered.hasPrefix("calimocho") { return name(engine) }
         if lowered.contains("gptk") || lowered.hasPrefix("apple-") { return "Apple Game Porting Toolkit" }
         if lowered.contains("crossover") { return "CrossOver" }
         return engine

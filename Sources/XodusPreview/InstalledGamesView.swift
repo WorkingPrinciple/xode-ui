@@ -58,7 +58,7 @@ struct InstalledGamesView: View {
             if library.loading {
                 ProgressView("Loading installed games").controlSize(.small)
             } else if library.loaded, library.games.isEmpty {
-                Text("Add a game you've already installed with Ode to X.")
+                Text("Add a game you've already installed with \(AppBrand.displayName).")
                     .foregroundStyle(.secondary)
                 importButton
             }
@@ -88,7 +88,7 @@ struct InstalledGamesView: View {
     }
 
     private var importButton: some View {
-        Button("Import installed Xbox game") { Task { await library.chooseGame() } }
+        Button(NativeToolbarImportButton.title) { Task { await library.chooseGame() } }
             .disabled(!library.loaded || library.editing || library.choosing || library.mutationActive)
             .accessibilityIdentifier("xodus.installed.import")
     }

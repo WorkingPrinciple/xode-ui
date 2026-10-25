@@ -33,24 +33,24 @@ enum GameScriptError: Error, LocalizedError, Equatable {
         switch self {
         case .unavailable: "This Mac isn't ready for this game operation. Check game setup and try again."
         case .runtimeUnavailable: "The bundled game runtime could not be verified. Reinstall the approved app."
-        case .invalidReceipt: "Ode to X couldn't confirm how the operation finished. Your installed list wasn't changed. Check the log before trying again."
+        case .invalidReceipt: "\(AppBrand.displayName) couldn't confirm how the operation finished. Your installed list wasn't changed. Check the log before trying again."
         case .missingStatus: "The operation stopped without a result. Your installed list wasn't changed. Check the log before trying again."
         case .statusMismatch: "The operation returned conflicting results. Your installed list wasn't changed. Check the log before trying again."
         case .invalidProgress: "Download progress couldn't be read. The operation is stopping; partial files are kept."
-        case .storage: "Ode to X couldn't save the operation details. Check access to Application Support and try again."
+        case .storage: "\(AppBrand.displayName) couldn't save the operation details. Check access to Application Support and try again."
         case .busy: "Wait for the current game or operation to finish."
         case .timeout: "The operation didn't finish. Check the log before trying again."
         case .invalidDestination: "The game folder isn't safe to use. Choose a different installation or check game setup."
         case .failed(let code):
             switch code {
             case 10: "There isn't enough free space. Free up storage and try again."
-            case 11: "Ode to X couldn't prepare this download. This result doesn't establish whether access or sign-in failed. Check download access to retry; your library record is unchanged."
-            case 12: "This game can't be installed with Ode to X yet."
+            case 11: "\(AppBrand.displayName) couldn't prepare this download. This result doesn't establish whether access or sign-in failed. Check download access to retry; your library record is unchanged."
+            case 12: "This game can't be installed with \(AppBrand.displayName) yet."
             case 13: "The download couldn't be verified. Try installing again."
             case 14: GameDownloadCopy.stopped(repair: false)
-            case 21: "Ode to X couldn't find a running environment for this game. Check the log."
+            case 21: "\(AppBrand.displayName) couldn't find a running environment for this game. Check the log."
             case 22: "Quit the running game or finish the download first."
-            case 31: "Ode to X couldn't create the game environment. Check the log and try Repair game setup again."
+            case 31: "\(AppBrand.displayName) couldn't create the game environment. Check the log and try Repair game setup again."
             default: "The operation couldn't finish (code \(code)). Check the log and try again."
             }
         }
@@ -180,7 +180,7 @@ struct GameCompatibilityResult: Decodable, Equatable, Sendable {
 
     var badge: String { supported ? "Available to install" : "Installation unavailable" }
     var explanation: String {
-        supported ? "Available to install" : reason ?? "This game can't be installed with Ode to X yet."
+        supported ? "Available to install" : reason ?? "This game can't be installed with \(AppBrand.displayName) yet."
     }
     var checkedDate: Date? {
         Self.parseDate(checkedAt)

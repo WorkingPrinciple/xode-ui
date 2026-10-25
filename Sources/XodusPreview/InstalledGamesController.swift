@@ -1025,7 +1025,7 @@ final class InstalledGamesController: ObservableObject {
             }
         }
         guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
-            installationErrors[game.id] = "The verified local service isn't connected. Reconnect Ode to X and check again."
+            installationErrors[game.id] = "The verified local service isn't connected. Reconnect \(AppBrand.displayName) and check again."
             return nil
         }
         guard Self.permitsNativeInspection(activeChecks: nativeInspectionTasks.count,
@@ -1440,12 +1440,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     static func readableEngineName(_ name: String?) -> String {
-        guard let name else { return "Calimocho" }
-        if name.contains("dirt5") { return "Calimocho 11.20 (DIRT 5)" }
-        if name.contains("witcher") { return "Calimocho 11.20 (Witcher)" }
-        if name.contains("private") { return "Calimocho 11.20 (Private)" }
-        if name.contains("wine11.20") { return "Calimocho 11.20" }
-        return name
+        EngineDisplayName.name(name)
     }
 
     func setEngineOverrideV2(_ selection: AdmittedEngineSelection?, for game: InstalledGame) async {

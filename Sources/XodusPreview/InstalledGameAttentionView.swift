@@ -7,7 +7,7 @@ enum InstalledGameActionCopy {
     static func removeKeepingFilesMessage(folder: String) -> String {
         "No files are deleted. The game folder stays at \(folder) with your saves, and the game can be added back later. To delete the files, use Uninstall."
     }
-    static let launchUnavailable = "This game can't launch from Ode to X yet. A supported launch setup isn't available."
+    static let launchUnavailable = "This game can't launch from \(AppBrand.displayName) yet. A supported launch setup isn't available."
 
     static func title(incomplete: Bool, installationIssue: Bool, launchIssue: Bool) -> String {
         incomplete ? "Install required" : installationIssue ? "Check installation"

@@ -224,7 +224,7 @@ enum NativeLifecycleChecks {
             windowRecorded: false, monitorReliable: true, success: false)?.contains("runtime component") == true,
             "A loader's explicit missing-library report names a missing component, not an invented repair")
         check(NativePlayerFailure.message(errorCode: nil, error: nil, diagnostic: "",
-            windowRecorded: false, monitorReliable: true, success: true)?.contains("before Ode to X detected its window") == true,
+            windowRecorded: false, monitorReliable: true, success: true)?.contains("before \(AppBrand.displayName) detected its window") == true,
             "A clean exit with reliable empty window evidence is not described as playable")
         for reliable in [true, false] {
             check(NativePlayerFailure.message(errorCode: "ACCOUNT_UNAVAILABLE", error: nil,
@@ -395,7 +395,7 @@ enum NativeLifecycleChecks {
                   "Native lifecycle maps \(code) actionably without inventing a launch during installation")
         }
         try Data().write(to: failureLog.appendingPathComponent("windows.jsonl"))
-        check(try await resultFixture.playerMessage()?.contains("before Ode to X detected its window") == true,
+        check(try await resultFixture.playerMessage()?.contains("before \(AppBrand.displayName) detected its window") == true,
               "Player failure reader binds empty monitor evidence to the exact result run folder")
         try Data(#"{"dialog":false,"title":"Observed game"}"#.utf8)
             .write(to: failureLog.appendingPathComponent("windows.jsonl"))

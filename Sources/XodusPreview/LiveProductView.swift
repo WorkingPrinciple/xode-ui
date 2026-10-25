@@ -84,7 +84,7 @@ enum GameDetailFacetCopy {
 
     static func gamePassActionStatus(startupAllowed: Bool, libraryNotice: String?,
                                      operationNotice: String?) -> String? {
-        if !startupAllowed { return "Wait for Ode to X to finish starting." }
+        if !startupAllowed { return "Wait for \(AppBrand.displayName) to finish starting." }
         return libraryNotice ?? operationNotice
     }
 
@@ -162,8 +162,19 @@ struct LiveProductView: View {
         LibraryPCPackageEvidence.listed(observed: art?.facts.pcPackageListed,
                                        candidate: product.pcCatalogCandidate)
     }
+    /// Badges show PC Game Pass only for titles in the current live public list.
     private var gameFacts: GameFacts {
-        GameFacts(pc: owned, gamePass: gamePass, installed: installed, accessIsCurrent: library.accessIsCurrent(for: product.id))
+        GameFacts(pc: owned, gamePass: session.gamePassBadgeProductIDs.contains(product.id), installed: installed,
+                  accessIsCurrent: library.accessIsCurrent(for: product.id))
+    }
+    /// The complete, error-free public PC Game Pass list doesn't include this game and it isn't owned.
+    private var publicGamePassExcludes: Bool {
+        owned == nil && session.gamePassCatalogExhausted && session.gamePassCatalogError == nil
+            && session.gamePassCatalogCheckedAt != nil && !session.gamePassProductIDs.contains(product.id)
+    }
+    private var notIncluded: Bool {
+        checksTitleAccess && titleAccess.notIncluded(product.id, account: session.accountHash,
+                                                     publicGamePassExcludes: publicGamePassExcludes)
     }
     private var canReviewGamePass: Bool {
         currentTitleAccess || DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent(for: product.id),
@@ -180,12 +191,13 @@ struct LiveProductView: View {
             && product.pcCatalogCandidate && !library.accessIsCurrent(for: product.id)
     }
     private var installAccessReason: String? {
-        if !allowsStartupTasks { return "Wait for Ode to X to finish starting." }
+        if !allowsStartupTasks { return "Wait for \(AppBrand.displayName) to finish starting." }
         if checksTitleAccess {
             if !titleAccess.checking && session.nativeLifecycleConfiguration == nil {
                 return operations.installUnavailableReason ?? "Account access is busy. Wait before checking this game."
             }
-            return titleAccess.reviewNotice(for: product.id, account: session.accountHash)
+            return titleAccess.reviewNotice(for: product.id, account: session.accountHash,
+                                            publicGamePassExcludes: publicGamePassExcludes)
         }
         if let notice = library.accountReadiness.notice { return notice }
         if owned == nil && !product.pcCatalogCandidate {
@@ -203,6 +215,10 @@ struct LiveProductView: View {
         return library.installRecovery(for: product.id)
     }
     private func recoverInstall() {
+        if notIncluded {
+            if let url = InstalledProductAccess.storeURL(productID: product.id) { NSWorkspace.shared.open(url) }
+            return
+        }
         if checksTitleAccess {
             guard session.nativeLifecycleConfiguration != nil else { openSettings(); return }
             Task { await titleAccess.refresh(session: session, installedIDs: [product.id], force: true) }
@@ -216,6 +232,9 @@ struct LiveProductView: View {
         }
     }
     private var installRecoveryTitle: String? {
+        if notIncluded, InstalledProductAccess.storeURL(productID: product.id) != nil {
+            return InstalledProductAccess.storeActionTitle
+        }
         if checksTitleAccess {
             if titleAccess.checking { return nil }
             return session.nativeLifecycleConfiguration == nil ? "Account settings" : "Check access for this game"
@@ -378,7 +397,7 @@ struct LiveProductView: View {
                                           || !operations.canStartMutation)
                                 if !allowsStartupTasks || !library.accessIsCurrent(for: product.id) || !operations.canStartMutation {
                                     InstallUnavailableNotice(message: !allowsStartupTasks
-                                        ? "Wait for Ode to X to finish starting."
+                                        ? "Wait for \(AppBrand.displayName) to finish starting."
                                         : library.installAccessNotice(for: product.id)
                                             ?? operations.installUnavailableReason ?? "Installation is not available yet.",
                                         recoveryTitle: library.accessIsCurrent(for: product.id) ? nil : installRecovery.title,

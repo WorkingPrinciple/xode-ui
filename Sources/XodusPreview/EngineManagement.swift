@@ -15,6 +15,25 @@ enum EngineObservationStatus: String, CaseIterable {
     case error = "Check failed"
 }
 
+/// The released Calimocho engine Xode points users to. Presence is a read-only file check;
+/// verification and admission belong to the engine-inspection path.
+enum CalimochoRelease {
+    static let engineID = "calimocho-11.20-4.0b3-01"
+    static let getTitle = "Get Calimocho (beta)"
+    /// Release tag page. The asset isn't published yet (owner decision); the one place to change it.
+    static let downloadURL = URL(string: "https://github.com/dragoshont/calimocho/releases/tag/engine-11.20-4.0b3-01")!
+
+    static func manifest(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
+        home.appendingPathComponent("Library/Application Support/Xode/Engines", isDirectory: true)
+            .appendingPathComponent(engineID, isDirectory: true)
+            .appendingPathComponent("calimocho-engine.json")
+    }
+
+    static func isPresent(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
+        FileManager.default.fileExists(atPath: manifest(home: home).path)
+    }
+}
+
 enum EngineManagementPolicy {
     static let calimochoSource = URL(string: "https://github.com/dragoshont/calimocho")!
 

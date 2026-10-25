@@ -85,7 +85,7 @@ struct OdeStartupBackdrop: View {
     var body: some View {
         VStack(spacing: 16) {
             XOdeLogo().fill(XboxBrand.green).frame(width: 80, height: 80)
-            Text("Ode to X").font(.largeTitle.weight(.medium))
+            Text("\(AppBrand.displayName)").font(.largeTitle.weight(.medium))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .windowBackgroundColor))

@@ -60,7 +60,7 @@ enum EngineManagementChecks {
               && InstalledGamesController.nativeLaunchFailureMessage(GameScriptError.failed(14))
                 == InstalledGameActionCopy.launchUnavailable,
               "REQ114 B2 Play failures keep their specific cause and offer Engines only for engine issues")
-        check(EngineDisplayName.label("calimocho-wine11.20-gptk4b3-tls-vulkan-private") == "Calimocho (Wine 11.20)"
+        check(EngineDisplayName.label("calimocho-wine11.20-gptk4b3-tls-vulkan-private") == "Calimocho"
               && EngineDisplayName.label("apple-gptk-4.0b3") == "Apple Game Porting Toolkit",
               "REQ114 U2 engine identifiers map to user-meaningful names without renaming IDs")
     }
@@ -119,6 +119,11 @@ enum EngineManagementChecks {
 
         let pin = try build()
         let verified = try CalimochoReleaseEngines.verify(pin, root: engines, signature: signed)
+        check(CalimochoAvailability.verifiedRelease(pin, root: engines.appendingPathComponent("absent"), signature: signed) == .missing
+              && CalimochoAvailability.verifiedRelease(pin, root: engines, signature: signed) == .ready
+              && CalimochoAvailability.verifiedRelease(pin, root: engines, signature: { _, _ in false })
+                != .ready,
+              "REQ115 B3: Engines availability is ready only for a verified release, missing when absent, invalid when unsigned")
         let rendered = try CalimochoReleaseEngines.renderRegistry(verified, registries: registries)
         let registry = try NativeEngineRegistry.read(rendered.url)
         let entry = registry.engines.first

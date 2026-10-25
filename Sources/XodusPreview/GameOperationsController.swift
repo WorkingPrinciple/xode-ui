@@ -262,8 +262,8 @@ final class GameOperationsController: ObservableObject {
         } catch {
             serviceLog = await scriptLog(runID)
             serviceError = error as? GameScriptError == .unavailable
-                ? "Ode to X couldn't use this runtime's game-service sign-out helper. A matching runtime with sign-out support is required. No PC-library or launcher sign-in was removed."
-                : "Ode to X couldn't confirm game-service sign-out. That service may have stopped, but credential removal isn't confirmed. No PC-library or launcher sign-in was removed. Check the sign-out log before retrying."
+                ? "\(AppBrand.displayName) couldn't use this runtime's game-service sign-out helper. A matching runtime with sign-out support is required. No PC-library or launcher sign-in was removed."
+                : "\(AppBrand.displayName) couldn't confirm game-service sign-out. That service may have stopped, but credential removal isn't confirmed. No PC-library or launcher sign-in was removed. Check the sign-out log before retrying."
             return false
         }
     }
@@ -532,7 +532,7 @@ final class GameOperationsController: ObservableObject {
                     downloadNeedsSignIn = true
                     error = status.signedIn
                         ? "Your saved game sign-in needs account verification before retrying this download. Continue with Microsoft; installation resumes only after confirmation."
-                        : "Ode to X couldn't confirm saved game access. This can also happen when the service is unavailable. Continue with Microsoft to check authorization; installation resumes only after confirmation."
+                        : "\(AppBrand.displayName) couldn't confirm saved game access. This can also happen when the service is unavailable. Continue with Microsoft to check authorization; installation resumes only after confirmation."
                     installConsent?.checkError = error
                 }
             } catch {
@@ -540,7 +540,7 @@ final class GameOperationsController: ObservableObject {
                 serviceError = Self.message(error)
                 serviceLog = await scriptLog(runID)
                 if !terminating, feedbackProductID == game.id {
-                    self.error = "Ode to X couldn't check download access. No new sign-in was started. Check download access to retry, or show the log."
+                    self.error = "\(AppBrand.displayName) couldn't check download access. No new sign-in was started. Check download access to retry, or show the log."
                     installConsent?.checkError = self.error
                     log = serviceLog
                 }
@@ -648,7 +648,7 @@ final class GameOperationsController: ObservableObject {
                 gamePassStatus = nil
                 gamePassFromCache = false
                 gamePassError = gamePassFailureCode == 11
-                    ? "Ode to X couldn't verify PC Game Pass download access. Check game access status or try the check again. This result doesn't establish that your subscription or sign-in expired."
+                    ? "\(AppBrand.displayName) couldn't verify PC Game Pass download access. Check game access status or try the check again. This result doesn't establish that your subscription or sign-in expired."
                     : Self.message(error)
                 gamePassLog = await scriptLog(runID)
             }
@@ -1718,7 +1718,7 @@ final class GameOperationsController: ObservableObject {
         guard !stopped else { return }
         cancelling = false
         orphanStoppable = false
-        error = "Ode to X couldn't confirm which process is running this download, so it wasn't stopped. It will be checked when it finishes."
+        error = "\(AppBrand.displayName) couldn't confirm which process is running this download, so it wasn't stopped. It will be checked when it finishes."
     }
 
     /// Explicit user choice to stop waiting on a receipt that can't be read. Nothing is

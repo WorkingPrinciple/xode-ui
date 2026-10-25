@@ -547,8 +547,8 @@ struct GameCompatibilityFacts: View {
             return nil
         }
         switch value.lowercased() {
-        case "none": return "None identified"
-        case "unknown": return "Unknown"
+        case "none": return "None found"
+        case "unknown", "unspecified", "": return "No information yet"
         default: return value
         }
     }
@@ -557,7 +557,7 @@ struct GameCompatibilityFacts: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(GameCompatibilityFactsCopy.heading).font(.headline)
             if let packageListing {
-                LabeledContent("Microsoft Store", value: packageListing ? "PC package listed" : "No PC listing")
+                LabeledContent("Microsoft Store", value: packageListing ? "Available for PC" : "No PC version listed")
             }
             if let antiCheat {
                 LabeledContent("Anti-cheat", value: antiCheat)

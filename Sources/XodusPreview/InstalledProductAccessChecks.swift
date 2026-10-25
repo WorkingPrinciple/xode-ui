@@ -44,6 +44,21 @@ enum InstalledProductAccessChecks {
               && !controller.permitsReview(unknown, account: account, pcCandidate: true, now: now)
               && controller.reviewNotice(for: unknown, account: account, now: now)?.contains("unconfirmed") == true,
               "COR89: Selected account access permits review only; denial/unknown explain exact outcome without inventing ownership")
+        check(controller.reviewNotice(for: unknown, account: account, publicGamePassExcludes: true, now: now)
+                == "Not included in your Game Pass or purchases."
+              && controller.notIncluded(unknown, account: account, publicGamePassExcludes: true, now: now)
+              && InstalledProductAccess.storeURL(productID: unknown)?.absoluteString
+                == "https://apps.microsoft.com/detail/\(unknown)"
+              && InstalledProductAccess.storeURL(productID: "not a product") == nil,
+              "COR186 A1: An unlisted license answer for a title outside the complete public PC Game Pass list says it isn't included, with a Microsoft Store page")
+        check(controller.reviewNotice(for: unknown, account: account, now: now)?.contains("unconfirmed") == true
+              && !controller.notIncluded(unknown, account: account, publicGamePassExcludes: false, now: now)
+              && !controller.notIncluded(denied, account: account, publicGamePassExcludes: true, now: now)
+              && !controller.notIncluded(product, account: account, publicGamePassExcludes: true, now: now)
+              && !controller.notIncluded(unknown, account: other, publicGamePassExcludes: true, now: now)
+              && !controller.notIncluded(unknown, account: account, publicGamePassExcludes: true,
+                                         now: now.addingTimeInterval(301)),
+              "COR186 A1: Without a complete exclusion, a denial, a permit, another account or a stale fact never claims 'not included'")
         check(controller.permits(product, account: account, now: now)
               && !controller.permits(denied, account: account, now: now)
               && !controller.permits(unknown, account: account, now: now),
@@ -98,8 +113,10 @@ enum InstalledProductAccessChecks {
         check(controller.errors[product] != nil && !controller.permits(product, account: account,
             now: now.addingTimeInterval(301)), "Transport failure cannot extend a stale permission or become denial")
         check(!controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(301))
-              && controller.reviewNotice(for: product, account: account, now: now.addingTimeInterval(301))?.contains("couldn't be checked") == true,
-              "COR89: Failed selected-title read shows retryable error, never a denial or successful review")
+              && controller.reviewNotice(for: product, account: account, now: now.addingTimeInterval(301))?.contains("couldn't be checked") == true
+              && controller.reviewNotice(for: product, account: account, publicGamePassExcludes: true,
+                                         now: now.addingTimeInterval(301))?.contains("couldn't be checked") == true,
+              "COR89/COR186 A1: Failed selected-title read keeps the couldn't-check copy, never a denial, 'not included' or successful review")
         check(controller.facts[denied] == nil && controller.facts[unknown] == nil,
               "Removed installed IDs leave the access cache")
         await controller.refresh(account: other, installedIDs: [product], now: now) { id in

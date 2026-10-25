@@ -237,3 +237,20 @@ enum CalimochoReleaseEngines {
         return SecStaticCodeCheckValidity(code, flags, requirement) == errSecSuccess
     }
 }
+
+extension CalimochoAvailability {
+    /// Local release verification (manifest digests and Team ID) for the Engines pane. It reads and hashes
+    /// the engine, so call it off the main actor. Backend `engine-inspect` admission remains the launch gate.
+    static func verifiedRelease(_ pin: CalimochoReleasePin = .release01,
+                                root: URL = CalimochoReleaseEngines.defaultEnginesRoot,
+                                signature: (URL, String) -> Bool = CalimochoReleaseEngines.codeSignatureValid) -> Self {
+        do {
+            _ = try CalimochoReleaseEngines.verify(pin, root: root, signature: signature)
+            return .ready
+        } catch CalimochoReleaseError.notInstalled {
+            return .missing
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
+    }
+}

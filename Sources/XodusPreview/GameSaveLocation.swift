@@ -58,7 +58,7 @@ enum GameSaveLocation {
                             home: URL = FileManager.default.homeDirectoryForCurrentUser) throws -> Observation? {
         if let recordedPath {
             return Observation(folder: try directory(recordedPath, home: home),
-                               basis: "This folder exists on this Mac. Ode to X doesn't check its contents or which launcher profile uses it.")
+                               basis: "This folder exists on this Mac. \(AppBrand.displayName) doesn't check its contents or which launcher profile uses it.")
         }
         let relative: String
         switch productID {
@@ -70,7 +70,7 @@ enum GameSaveLocation {
         guard FileManager.default.fileExists(atPath: path) else { return nil }
         let basis = productID == "C3KLDKZBHNCZ"
             ? "This folder exists, but Fallout's GDK save location hasn't been confirmed."
-            : "This game folder exists on this Mac. Ode to X doesn't check its contents or which launcher profile uses it."
+            : "This game folder exists on this Mac. \(AppBrand.displayName) doesn't check its contents or which launcher profile uses it."
         return Observation(folder: try directory(path, home: home), basis: basis)
     }
 }
@@ -107,7 +107,7 @@ struct GameSaveLocationView: View {
                 Label(errorMessage, systemImage: "exclamationmark.circle")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            Text("Ode to X shows locations only; it doesn't check save contents or cloud sync.")
+            Text("\(AppBrand.displayName) shows locations only; it doesn't check save contents or cloud sync.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .accessibilityIdentifier("xodus.saveLocation")

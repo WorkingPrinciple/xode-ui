@@ -205,7 +205,7 @@ struct RuntimeProviderSection: View {
             .disabled(settings.planning || settings.applicationTerminating)
             if let configuration = settings.configuration {
                 if configuration.provider == .crossover {
-                    Text("Use your own legitimately installed and licensed CrossOver. Ode to X does not include or copy CrossOver.")
+                    Text("Use your own legitimately installed and licensed CrossOver. \(AppBrand.displayName) does not include or copy CrossOver.")
                         .foregroundStyle(.secondary)
                 }
                 TextField("Provider version (unknown if blank)", text: settings.text(\.providerVersion))

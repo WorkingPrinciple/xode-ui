@@ -609,7 +609,7 @@ private enum XboxCompanionRefreshError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .failed(11): "Xbox companion data requires the current game-service account. Check game sign-in."
-        case .failed(13): "Xbox returned companion data Ode to X couldn't validate. Saved data is kept."
+        case .failed(13): "Xbox returned companion data \(AppBrand.displayName) couldn't validate. Saved data is kept."
         case .failed(1): "Xbox companion data timed out. Try again later."
         case .failed(2): "The Xbox title identifier wasn't accepted."
         case .failed: "Xbox companion data couldn't be refreshed. Saved data is kept."

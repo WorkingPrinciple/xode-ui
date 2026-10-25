@@ -1,4 +1,6 @@
-# X Ode
+# Xode
+
+By Working Principle · xode.win · Beta 0.11.4
 
 A native macOS interface for legitimately entitled Xbox PC games, powered by
 the Xodus backend and separately installed runtimes.
@@ -35,7 +37,7 @@ performance review.
 
 ```mermaid
 flowchart LR
-    UI["X Ode: Discover / Account / Library"] --> Catalog["Public catalog: discovery only"]
+    UI["Xode: Discover / Account / Library"] --> Catalog["Public catalog: discovery only"]
     UI --> Access["Account-bound access checks"]
     Access --> Consent["Support check + explicit Install"]
     Consent --> Backend["Paired Xodus backend + reviewed runtime"]
@@ -112,18 +114,21 @@ claims. Documentation does not hide or disable existing controls.
 
 ## Scope and credits
 
-X Ode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the
+Xode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the
 [macOS backend fork](https://github.com/dragoshont/xodus-macos).
 Original app source, documentation and mockups are GPL-3.0-only; preserve
-[the source license](LICENSE), [licensing boundaries](docs/LICENSING.md),
-upstream notices and corresponding-source obligations when distributing.
+[the source license](LICENSE), [NOTICE](NOTICE), [licensing boundaries](docs/LICENSING.md),
+upstream notices and corresponding-source obligations when distributing. The
+Xode and Working Principle names and logos aren't licensed by the GPL; see
+[TRADEMARKS](TRADEMARKS.md).
 CrossOver, games and other third-party components retain their own terms; GPL
 does not authorize redistribution of proprietary packages or credentials.
 
 This is an independent project, not affiliated with or endorsed by Microsoft,
-Xbox, Apple, CodeWeavers or game publishers. X Ode is the documentation
-product name; bundle identifiers, Keychain identities, signer requirements and
-existing Xodus paths are unchanged.
+Xbox, Apple, CodeWeavers or game publishers. Xode is the product name shown in
+the app (one source: `AppBrand` in `Sources/XodusCore/AppBrand.swift`); bundle
+identifiers, executables, module names, preference keys, Keychain identities,
+signer requirements and existing Xodus paths are unchanged.
 
 Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
 and [publication precautions](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).

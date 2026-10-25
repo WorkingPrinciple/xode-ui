@@ -37,9 +37,11 @@ struct DownloadQueueRow: View {
             if job.phase.occupiesSlot {
                 if let fraction = job.progress?.fraction {
                     ProgressView(value: fraction)
+                        .accessibilityLabel(Self.progressLabel(job.title))
                         .accessibilityValue(Text("\(Int((fraction * 100).rounded())) percent"))
                 } else {
                     ProgressView().controlSize(.small)
+                        .accessibilityLabel(Self.progressLabel(job.title))
                 }
             }
             HStack(spacing: 12) {
@@ -63,6 +65,8 @@ struct DownloadQueueRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(job.title), \(statusLabel)")
     }
+
+    static func progressLabel(_ title: String) -> String { "Download progress for \(title)" }
 
     private var statusLabel: String {
         switch job.phase {

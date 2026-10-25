@@ -199,7 +199,7 @@ enum NativePlayerFailure {
             return "A required runtime component couldn't be loaded. Open the launch log to see its name. No repair has been applied."
         }
         if monitorReliable, windowRecorded == false {
-            return "The game closed before Ode to X detected its window. Open the launch log to review the exit."
+            return "The game closed before \(AppBrand.displayName) detected its window. Open the launch log to review the exit."
         }
         return nil
     }

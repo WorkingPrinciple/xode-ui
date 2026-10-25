@@ -478,7 +478,7 @@ enum InstalledGameChecks {
                   resumingManagedOperation: true),
               "REQ106: A queued partial-install record is admitted at its original destination")
         check(InstalledGamesController.readableEngineName("calimocho-wine11.20-gptk4b3-tls-vulkan-private")
-              == "Calimocho 11.20 (Private)"
+              == "Calimocho"
               && !controller.defaultEngineLabel(for: InstalledGame(id: UUID(), title: "Fixture",
                   identityName: "Fixture", version: "1", storeId: "FIXTURE00001",
                   folder: folder.path, launcher: "", importedAt: Date())).isEmpty,
