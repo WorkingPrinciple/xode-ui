@@ -865,6 +865,7 @@ final class GameOperationsController: ObservableObject {
     }
 
     func installationCheckRequired(for game: PCGame) -> Bool {
+        guard !installed.discoveringMounts else { return true }
         do {
             let location = try installLocationDefaults.flatMap { try GameInstallLocation.load($0) }
             let destination = try paths.destination(title: game.title, productID: game.id,

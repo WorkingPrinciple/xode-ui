@@ -40,9 +40,11 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var availableEngineOverrides: [AdmittedEngineSelection] = []
     @Published private(set) var checkingEngineOverrides = false
     private var engineOverridesChecked = false
+    private var failedEngineOverrides: Set<String> = []
     @Published private(set) var undiscoveredInstallations: [String: String] = [:]
     private var mountedDiscoveryProbes: [String: GameStorageProbe] = [:]
     @Published private(set) var pendingDiscoveryRoots: Set<String> = []
+    @Published private(set) var discoveringMounts = false
     @Published private(set) var mutationGameID: UUID?
     @Published private(set) var mutationActive = false
     /// Per-game update availability, recomputed from installed versions vs. `availableVersions`.
@@ -208,8 +210,13 @@ final class InstalledGamesController: ObservableObject {
         let mountedStorageRoots = mountedStorageRoots
         let inspectPackage = inspectPackage
         let account = unifiedSession?.accountHash
+        pendingDiscoveryRoots.formUnion(mountedDiscoveryProbes.keys)
+        discoveringMounts = true
         do {
-            let volumes = mountedStorageRoots()
+            let volumes = try await readinessProbe.read(timeout: .seconds(3)) {
+                mountedStorageRoots()
+            }
+            discoveringMounts = false
             if let volumes {
                 let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes).map(\.path))
                 pendingDiscoveryRoots.formIntersection(mounted)
@@ -330,7 +337,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func canCreateInstallation(productID: String, destination: String? = nil) -> Bool {
-        Self.permitsInstallation(productID: productID, destination: destination,
+        !discoveringMounts && Self.permitsInstallation(productID: productID, destination: destination,
                                  candidates: undiscoveredInstallations, pendingRoots: pendingDiscoveryRoots)
             && !games.contains { $0.storeId == productID }
     }
@@ -997,27 +1004,35 @@ final class InstalledGamesController: ObservableObject {
         catch { self.error = InstalledGameError.storage.localizedDescription }
     }
 
-    func refreshEngineOverrides(force: Bool = true) async {
+    func refreshEngineOverrides(force: Bool = true, retryFailed: Bool = false) async {
         guard loaded, !checkingEngineOverrides, !applicationTerminating,
-              force || !engineOverridesChecked,
+              force || !engineOverridesChecked || (retryFailed && !failedEngineOverrides.isEmpty),
               let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
         checkingEngineOverrides = true
-        engineOverridesChecked = false
-        availableEngineOverrides = []
         defer { checkingEngineOverrides = false }
         do {
             let catalog = try NativeEngineDefaults.read()
-            var choices: [AdmittedEngineSelection] = []
-            for binding in catalog.bindings {
+            let names = Self.engineInspectionNames(all: Set(catalog.bindings.map(\.engineName)),
+                failed: failedEngineOverrides, checked: engineOverridesChecked, force: force)
+            var choices = availableEngineOverrides.filter { !names.contains($0.inspection.engineName ?? "") }
+            var failures = failedEngineOverrides.subtracting(names)
+            for binding in catalog.bindings where names.contains(binding.engineName) {
                 do { choices.append(try await binding.inspect(configuration: configuration)) }
                 catch {
+                    failures.insert(binding.engineName)
                     Self.launchLog.error("Override unavailable: \(binding.engineName, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 }
                 guard !applicationTerminating, !Task.isCancelled else { return }
             }
             availableEngineOverrides = choices
-            engineOverridesChecked = choices.count == catalog.bindings.count
+            failedEngineOverrides = failures
+            engineOverridesChecked = true
         } catch { self.error = Self.nativeLaunchFailureMessage(error) }
+    }
+
+    static func engineInspectionNames(all: Set<String>, failed: Set<String>, checked: Bool,
+                                      force: Bool) -> Set<String> {
+        force || !checked ? all : failed.intersection(all)
     }
 
     func engineOverrides(for game: InstalledGame) -> [AdmittedEngineSelection] {

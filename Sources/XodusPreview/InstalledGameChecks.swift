@@ -9,6 +9,19 @@ import XodusCore
 @MainActor
 enum InstalledGameChecks {
     static func externalDiscoveryChecks(check: (Bool, String) -> Void) async throws {
+        let menu = NSMenu()
+        let item = NSMenuItem(title: "Engine", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        submenu.addItem(withTitle: "Use default (Calimocho 11.20)", action: nil, keyEquivalent: "")
+        item.submenu = submenu
+        menu.addItem(item)
+        check(InstalledGameActions.containsEngineMenu(menu, defaultTitle: "Use default (Calimocho 11.20)"),
+              "REQ95: Root Actions menu tracking finds its nested Engine submenu for retry")
+        check(InstalledGamesController.engineInspectionNames(all: ["ready", "failed"], failed: ["failed"],
+              checked: true, force: false) == ["failed"]
+              && InstalledGamesController.engineInspectionNames(all: ["ready", "failed"], failed: ["failed"],
+              checked: true, force: true) == ["ready", "failed"],
+              "REQ95: Menu retry inspects only failures while explicit refresh can revalidate every binding")
         let home = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appendingPathComponent(".build/ExternalDiscovery-\(UUID().uuidString)")
         let volume = home.appendingPathComponent("Mounts/homelab")
@@ -59,8 +72,28 @@ enum InstalledGameChecks {
         }
         var complete = false
         let store = InstalledGameStore(file: home.appendingPathComponent("registry/games.json"))
+        let gate = PackageInspectionInterleaving(initiallyArmed: false)
+        let blockedMounts = InstalledGamesController(
+            store: InstalledGameStore(file: home.appendingPathComponent("blocked/games.json")),
+            mountedStorageRoots: {
+                _ = try? gate.inspect(home)
+                return []
+            }, discoveryRoot: library, installLocation: { nil })
+        await blockedMounts.load()
+        gate.arm()
+        let blockedSession = LiveSession()
+        blockedMounts.useUnifiedAccount(blockedSession)
+        await blockedMounts.discoverNativeInstallations(root: library)
+        check(blockedMounts.discoveringMounts
+              && !blockedMounts.canCreateInstallation(productID: "9NR1R1XWLCNB")
+              && blockedMounts.discoveryError != nil,
+              "REQ106: Dead mount enumeration times out off-main and keeps unknown-root Install fail-closed")
+        gate.release()
         let controller = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
-            mountedStorageRoots: { [] }, discoveryRoot: library, installLocation: { nil },
+            mountedStorageRoots: {
+                guard !Thread.isMainThread else { fatalError("Mount enumeration ran on UI thread") }
+                return []
+            }, discoveryRoot: library, installLocation: { nil },
             discoveryCompleteness: { _, _ in complete })
         await controller.load()
         let session = LiveSession()
@@ -1066,6 +1099,14 @@ private final class PackageInspectionInterleaving: @unchecked Sendable {
     private let resume = DispatchSemaphore(value: 0)
     private var first = true
     private var waiting = false
+
+    init(initiallyArmed: Bool = true) { first = initiallyArmed }
+
+    func arm() {
+        lock.lock()
+        first = true
+        lock.unlock()
+    }
 
     var isWaiting: Bool {
         lock.lock()
