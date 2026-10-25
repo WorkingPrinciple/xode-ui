@@ -365,7 +365,7 @@ enum GameOperationChecks {
                     accessIsCurrent: row.accessIsCurrent, gamePass: row.gamePass,
                     subscriptionActive: false, pcCandidate: true))
             check(row.facts.badgeLabels() == labels && row.installed == nil
-                  && row.owned == (kind == .purchased) && action.actionTitle == "Install" && action.canInstall
+                  && row.owned == (kind == .purchased) && action.actionTitle == "Download" && action.canInstall
                   && operations.installConsent == nil && !operations.canConfirmInstall,
                   "REQ-50: \(kind) held acquisition pairs truthful uninstalled badges with review, not unchecked confirmation")
         }

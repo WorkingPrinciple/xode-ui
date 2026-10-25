@@ -30,6 +30,8 @@ struct InstalledGameAttentionView: View {
     private var incomplete: Bool { installed.placeholderIDs.contains(game.id) }
     private var localIssue: Bool {
         driveUnavailable || incomplete || installed.packageErrors[game.id] != nil
+            || installed.installationErrors[game.id] != nil
+            || installed.installationStatuses[game.id].map { !$0.success || $0.status != .complete } == true
     }
     var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
     var attentionTitle: String {
@@ -45,7 +47,8 @@ struct InstalledGameAttentionView: View {
             VStack(alignment: .leading, spacing: 12) {
                 InstallationWarning(message: driveUnavailable ? InstalledGamesController.driveUnavailableMessage
                      : incomplete ? "This game isn't fully installed."
-                     : localIssue ? installed.packageErrors[game.id] ?? "The installation or launch files need to be checked."
+                     : localIssue ? installed.packageErrors[game.id] ?? installed.installationErrors[game.id]
+                        ?? installed.installationStatuses[game.id]?.explanation ?? "Installation verification is incomplete. Retry to verify this game."
                      : installed.accountAccessMessage)
                 if !localIssue {
                     Button("Open settings", action: openSettings.callAsFunction)
@@ -56,7 +59,7 @@ struct InstalledGameAttentionView: View {
                 } else if localIssue {
                     HStack {
                         if offersInstallationCheck {
-                            Button(driveUnavailable ? "Check again" : "Check installation") {
+                            Button("Retry") {
                                 Task { await installed.checkInstallation(game) }
                             }
                             .disabled(installed.editing || installed.mutationActive)
@@ -123,6 +126,6 @@ struct LocalInstalledGameView: View {
             HStack { Spacer(); Button("Done", action: dismiss.callAsFunction).keyboardShortcut(.cancelAction) }
         }
         .padding(28).frame(width: 560, height: 480)
-        .task { await installed.checkInstallation(game) }
+        .task { await installed.automaticallyCheckInstallation(game) }
     }
 }

@@ -825,6 +825,7 @@ enum NativeUIChecks {
             freeBytes: 80_000_000_000, installedID: nil,
             compatibility: GameCompatibilityResult(storeId: "FIXTURE00002", packageBytes: 3_200_000_000,
                 supported: true, reason: nil, checkedAt: "2026-10-07T00:00:00Z"))
+        checkConsentContentHeight(operations: state.gameOperations, consent: consent, check: check)
         for size in [CGSize(width: 520, height: 440), CGSize(width: 640, height: 680)] {
             let install = NSHostingView(rootView: GameInstallConsentView(
                 operations: state.gameOperations, consent: consent))
@@ -899,6 +900,41 @@ enum NativeUIChecks {
               && state.gameOperations.setupResult == nil && !state.gameOperations.setupBusy
               && session.authentication == nil && !session.accountBusy,
               "Setup-focused Account allocates native controls without unrelated credentials, scripts or windows")
+    }
+
+    static func checkConsentContentHeight(operations: GameOperationsController, consent: GameInstallConsent,
+                                         check: (Bool, String) -> Void) {
+        var resume = consent
+        resume.resuming = true
+        var failed = consent
+        failed.checkError = "The game drive couldn't be reached. Reconnect the drive and try again before installing."
+        for width: CGFloat in [520, 640] {
+            var heights: [CGFloat] = []
+            for (name, fixture) in [("ordinary", consent), ("resume", resume), ("error", failed)] {
+                let host = NSHostingView(rootView: GameInstallConsentView(operations: operations, consent: fixture))
+                host.frame.size.width = width
+                host.layoutSubtreeIfNeeded()
+                let height = host.fittingSize.height
+                heights.append(height)
+                host.frame = CGRect(x: 0, y: 0, width: width, height: height)
+                host.layoutSubtreeIfNeeded()
+                let buttons = descendants(of: host).compactMap { $0 as? NSButton }
+                let footer = buttons.filter {
+                    let rect = $0.convert($0.bounds, to: host)
+                    return host.isFlipped ? rect.midY > height - 80 : rect.midY < 80
+                }
+                let scrolls = descendants(of: host).compactMap { $0 as? NSScrollView }
+                check(host.window == nil && height > 200 && height <= 620 && footer.count == 2
+                      && footer.allSatisfy { host.bounds.contains($0.convert($0.bounds, to: host)) }
+                      && scrolls.allSatisfy { !$0.hasHorizontalScroller },
+                      "COR171: \(name) consent at \(Int(width)) fits its content and both footer actions (\(height), footer \(footer.count))")
+                if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+                    saveDetachedEvidence(host, directory: directory, name: "cor171-\(name)-\(Int(width)).png", check: check)
+                }
+            }
+            check(heights[1] < heights[0] && heights[2] > heights[0],
+                  "COR171: Sheet height shrinks for resume and grows for recovery instead of retaining blank fixed height (\(heights))")
+        }
     }
 
     private static func saveDetachedEvidence(_ host: NSView, directory: String, name: String,
@@ -1033,7 +1069,7 @@ enum NativeUIChecks {
                     && installAction.statusTitle == "Preparing installation"
                   : operations.operation != nil
                   ? installAction.active && installAction.showsCancel && operations.progress != nil
-                  : installAction.failed && installAction.actionTitle == "Retry installation"),
+                  : installAction.failed && installAction.actionTitle == "Retry"),
               "UI-9 source: Shared tile/detail Install controls reflect preparation, byte progress/cancel or failure/retry")
         let availableCancellation = feedback.preparationCancelTitle ?? feedback.installCancelTitle
         check(catalog.window == nil && operations.hasDownloadStatus

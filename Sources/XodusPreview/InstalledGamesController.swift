@@ -59,6 +59,7 @@ final class InstalledGamesController: ObservableObject {
             if accountDisconnecting {
                 nativePreparationTask?.cancel()
                 for task in discoveryTasks.values { task.cancel() }
+                for task in automaticDiscoveryTasks.values { task.cancel() }
                 for task in installationCheckTasks.values { task.cancel() }
             }
         }
@@ -73,6 +74,7 @@ final class InstalledGamesController: ObservableObject {
                 foregroundHandoff?.cancel()
                 for task in nativeInspectionTasks.values { task.cancel() }
                 for task in discoveryTasks.values { task.cancel() }
+                for task in automaticDiscoveryTasks.values { task.cancel() }
                 for task in installationCheckTasks.values { task.cancel() }
             }
         }
@@ -92,6 +94,9 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var discoveredVerificationErrors: [String: String] = [:]
     private var discoveredCandidates: [String: GameInstallationDiscovery.Candidate] = [:]
     private var discoveryTasks: [String: Task<Void, Never>] = [:]
+    @Published private(set) var automaticDiscoveryProducts: Set<String> = []
+    private var automaticDiscoveryTasks: [String: Task<Void, Never>] = [:]
+    private var automaticDiscoveryAttempts: [String: String] = [:]
     private let discoveryRoot: URL
     private let installLocation: @Sendable () throws -> GameInstallLocation?
     private let discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)?
@@ -105,6 +110,7 @@ final class InstalledGamesController: ObservableObject {
     private var nativeInspectionTasks: [UUID: Task<NativeInstallationStatus, Error>] = [:]
     private var installationCheckTasks: [UUID: Task<Void, Never>] = [:]
     private var nativeInspectionDates: [UUID: ContinuousClock.Instant] = [:]
+    private var automaticReadinessAttempts: [UUID: String] = [:]
     private var playingTask: Task<Void, Never>?
     private var runToken: UUID?
     private var stopToken: UUID?
@@ -358,15 +364,58 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    func discoveredReadinessKey(productID: String) -> String {
+        let paths = undiscoveredInstallations.filter { $0.value == productID }.keys.sorted().joined(separator: "|")
+        return "\(productID):\(paths):\(unifiedSession?.accountHash ?? ""):\(discoveryCompleteness != nil || unifiedSession?.nativeInstallStatusConfiguration != nil)"
+    }
+
+    func automaticallyVerifyDiscoveredInstallation(productID: String) async {
+        let key = discoveredReadinessKey(productID: productID)
+        if let pending = automaticDiscoveryTasks[productID] { await pending.value }
+        guard !Task.isCancelled else { return }
+        guard automaticDiscoveryAttempts[productID] != key else { return }
+        automaticDiscoveryAttempts[productID] = key
+        automaticDiscoveryProducts.insert(productID)
+        let task = Task { @MainActor in
+            defer {
+                automaticDiscoveryProducts.remove(productID)
+                automaticDiscoveryTasks[productID] = nil
+            }
+            do {
+                let deadline = ContinuousClock.now.advanced(by: NativeInstallationQuery.largeInstallTimeout)
+                while Set(discoveryTasks.keys).union(candidateVerificationProbes.filter { $0.value.active }.keys).count >= 2 {
+                    guard ContinuousClock.now < deadline else { throw GameScriptError.timeout }
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                try Task.checkCancellation()
+                guard loaded, !applicationTerminating, !accountDisconnecting,
+                      discoveredReadinessKey(productID: productID) == key else { return }
+                await verifyDiscoveredInstallation(productID: productID)
+            } catch is CancellationError {
+                discoveredVerificationErrors[productID] = "Installation verification was cancelled. Retry when you're ready."
+            } catch {
+                discoveredVerificationErrors[productID] = error.localizedDescription
+            }
+        }
+        automaticDiscoveryTasks[productID] = task
+        await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+    }
+
     func verifyDiscoveredInstallation(productID: String) async {
+        if let pending = discoveryTasks[productID] { await pending.value; return }
         discoveredVerificationErrors[productID] = nil
+        let candidates = discoveredCandidates.values.filter {
+            $0.config.storeId == productID && undiscoveredInstallations[$0.folder.path] == productID
+        }
+        guard candidates.count <= 1 else {
+            discoveredVerificationErrors[productID] = "Multiple installation folders match this game. Import the exact folder you want to use."
+            return
+        }
         guard !verifyingDiscoveredProducts.contains(productID),
               Set(discoveryTasks.keys).union(candidateVerificationProbes.filter { $0.value.active }.keys).count < 2,
               !accountDisconnecting, !applicationTerminating,
-              let candidate = discoveredCandidates.values.first(where: {
-                  $0.config.storeId == productID && undiscoveredInstallations[$0.folder.path] == productID
-              }) else {
-            discoveredVerificationErrors[productID] = "The installation couldn't be checked. Try again."
+              let candidate = candidates.first else {
+            discoveredVerificationErrors[productID] = "The game location couldn't be verified. Check its location or drive access, then retry."
             return
         }
         let account = unifiedSession?.accountHash
@@ -428,9 +477,12 @@ final class InstalledGamesController: ObservableObject {
                 discoveredVerificationErrors[productID] = nil
             } catch is CancellationError {
                 Self.launchLog.debug("Product installation check cancelled.")
+                discoveredVerificationErrors[productID] = "Installation verification was cancelled. Retry when you're ready."
             } catch {
                 Self.launchLog.error("Product installation check failed: \(error.localizedDescription, privacy: .private)")
-                if let failure = error as? GameScriptError, case .timeout = failure {
+                if let failure = error as? GameInstallationDiscoveryError {
+                    discoveredVerificationErrors[productID] = failure.localizedDescription
+                } else if let failure = error as? GameScriptError, case .timeout = failure {
                     discoveredVerificationErrors[productID] = NativeInstallationQuery.failureMessage(error)
                 } else {
                     discoveredVerificationErrors[productID] = "The installation couldn't be checked. Try again."
@@ -446,6 +498,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func cancelDiscoveredVerification(productID: String) {
+        automaticDiscoveryTasks[productID]?.cancel()
         discoveryTasks[productID]?.cancel()
     }
 
@@ -591,7 +644,10 @@ final class InstalledGamesController: ObservableObject {
         packageErrors = [:]
         for task in nativeInspectionTasks.values { task.cancel() }
         for task in discoveryTasks.values { task.cancel() }
+        for task in automaticDiscoveryTasks.values { task.cancel() }
         for task in installationCheckTasks.values { task.cancel() }
+        automaticDiscoveryAttempts = [:]
+        automaticReadinessAttempts = [:]
         discoveredVerificationErrors = [:]
         installationStatuses = [:]
         installationErrors = [:]
@@ -767,14 +823,33 @@ final class InstalledGamesController: ObservableObject {
         usesUnifiedAccount || game.usesNativeLifecycle == true
     }
 
+    func automaticReadinessKey(for game: InstalledGame) -> String {
+        "\(game.id):\(game.importedAt.timeIntervalSince1970):\(unifiedSession?.nativeInstallStatusConfiguration != nil):\(loaded):\(mutationActive):\(editing)"
+    }
+
+    func automaticallyCheckInstallation(_ game: InstalledGame) async {
+        let key = "\(game.id):\(game.importedAt.timeIntervalSince1970):\(unifiedSession?.nativeInstallStatusConfiguration != nil)"
+        let contextChanged = automaticReadinessAttempts[game.id].map { $0 != key } == true
+        guard automaticReadinessAttempts[game.id] != key, requiresNativeInstallationStatus(game),
+              installationStatuses[game.id] == nil, installationErrors[game.id] == nil || contextChanged,
+              packageErrors[game.id] == nil, loaded, !mutationActive, !editing, !choosing,
+              !accountDisconnecting, !applicationTerminating, runningGameID != game.id,
+              NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+                evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil else { return }
+        automaticReadinessAttempts[game.id] = key
+        guard !Task.isCancelled else { automaticReadinessAttempts[game.id] = nil; return }
+        await checkInstallation(game)
+    }
+
     func refreshNativeInstallationStatuses() async {
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
               !applicationTerminating, runningGameID == nil, stoppingGameID == nil,
               unifiedSession?.nativeInstallStatusConfiguration != nil else { return }
         let pending = games.filter { game in
             guard requiresNativeInstallationStatus(game), !Self.isMountedGame(game) else { return false }
-            let ttl: Duration = installationStatuses[game.id]?.status == .complete ? .seconds(120) : .seconds(15)
-            return nativeInspectionDates[game.id].map { ContinuousClock.now >= $0.advanced(by: ttl) } ?? true
+            guard installationErrors[game.id] == nil, packageErrors[game.id] == nil,
+                  installationStatuses[game.id] == nil || installationStatuses[game.id]?.status == .complete else { return false }
+            return nativeInspectionDates[game.id].map { ContinuousClock.now >= $0.advanced(by: .seconds(120)) } ?? true
         }
         await withTaskGroup(of: Void.self) { group in
             var pending = pending.makeIterator()
@@ -1166,6 +1241,7 @@ final class InstalledGamesController: ObservableObject {
         let task = Task { @MainActor in
             await observeLaunchableGame(game)
             guard !Task.isCancelled, requiresNativeInstallationStatus(game), !unavailableDriveIDs.contains(game.id),
+                  packageErrors[game.id] == nil,
                   let current = games.first(where: { $0.id == game.id && $0.folder == game.folder }) else { return }
             _ = await inspectNativeInstallation(current, timeout: Self.inspectionTimeout(for: current, explicitCheck: true))
         }
@@ -1174,6 +1250,9 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func cancelInstallationCheck(_ game: InstalledGame) {
+        if checkingInstallations.contains(game.id) {
+            installationErrors[game.id] = "Installation verification was cancelled. Retry when you're ready."
+        }
         if runningGameID == game.id && !launchStarted {
             stopToken = runToken
             Self.cancelPrestartLaunch(preparation: nativePreparationTask, launch: nativeLaunchTask, launcher: nativeLauncher)

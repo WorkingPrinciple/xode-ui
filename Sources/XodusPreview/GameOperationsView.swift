@@ -377,10 +377,14 @@ struct GameInstallAction: View {
     }
     var actionTitle: String {
         operations.resumableInstallations[game.id] != nil ? "Resume"
-        : operations.installationCheckRequired(for: game) ? "Check installation"
-            : failed ? "Retry installation" : "Install"
+        : operations.installationCheckRequired(for: game)
+            ? operations.existingInstallationError(productID: game.id) == nil ? "Checking…" : "Retry"
+            : failed ? "Retry" : "Download"
     }
-    var canInstall: Bool { enabled && operations.canStartMutation }
+    var canInstall: Bool {
+        operations.installationCheckRequired(for: game)
+            ? operations.canCheckExistingInstallation : enabled && operations.canStartMutation
+    }
     var unavailableReason: String? {
         guard !canInstall else { return nil }
         return !enabled ? (disabledReason ?? "Installation is not available yet.")
@@ -400,8 +404,9 @@ struct GameInstallAction: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if operations.checkingExistingInstallation(productID: game.id) {
-                ProgressView("Check installation").controlSize(.small)
+            if !active, !preparing, operations.checkingExistingInstallation(productID: game.id)
+                || (operations.installationCheckRequired(for: game) && operations.existingInstallationError(productID: game.id) == nil) {
+                ProgressView("Checking…").controlSize(.small)
                 Button("Cancel") { operations.cancelExistingInstallationCheck(productID: game.id) }
             } else if active, operations.recoveryRequired {
                 Label("Installation needs attention", systemImage: "exclamationmark.circle")
@@ -453,6 +458,9 @@ struct GameInstallAction: View {
                     InstallationWarning(message: error)
                 }
             }
+        }
+        .task(id: operations.automaticInstallationKey(for: game)) {
+            await operations.automaticallyCheckExistingInstallation(game)
         }
     }
 }
@@ -528,23 +536,25 @@ struct GameInstallConsentView: View {
                                        value: GameOperationProgressView.bytes(bytes))
                     }
                 }
-                Section {
-                    if operations.checkingCompatibility {
-                        ProgressView("Preparing installation…").controlSize(.small)
-                            .accessibilityIdentifier("xodus.install.checking")
-                    } else if let result = consent.compatibility, !result.supported {
-                        Label(result.explanation, systemImage: "exclamationmark.circle")
-                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("xodus.install.compatibility")
-                    } else if let error = consent.checkError {
-                        Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if operations.hasDownloadRecovery {
-                            Button(operations.downloadNeedsSignIn ? "Continue with Microsoft" : "Check download access") {
-                                operations.recoverDownload(productID: consent.game.id)
-                            }.disabled(!operations.canRecoverDownload)
+                if operations.checkingCompatibility || consent.compatibility?.supported == false || consent.checkError != nil {
+                    Section {
+                        if operations.checkingCompatibility {
+                            ProgressView("Preparing installation…").controlSize(.small)
+                                .accessibilityIdentifier("xodus.install.checking")
+                        } else if let result = consent.compatibility, !result.supported {
+                            Label(result.explanation, systemImage: "exclamationmark.circle")
+                                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("xodus.install.compatibility")
+                        } else if let error = consent.checkError {
+                            Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if operations.hasDownloadRecovery {
+                                Button(operations.downloadNeedsSignIn ? "Continue with Microsoft" : "Check download access") {
+                                    operations.recoverDownload(productID: consent.game.id)
+                                }.disabled(!operations.canRecoverDownload)
+                            }
+                            if operations.log != nil { Button("Show log") { operations.showLog() } }
                         }
-                        if operations.log != nil { Button("Show log") { operations.showLog() } }
                     }
                 }
                 if consent.installedID != nil, !consent.resuming, consent.nativeAccountHash != nil {
@@ -555,6 +565,8 @@ struct GameInstallConsentView: View {
                 }
             }
             .formStyle(.grouped)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxHeight: 540)
             Divider()
             HStack {
                 Spacer()
@@ -569,8 +581,7 @@ struct GameInstallConsentView: View {
             }
             .padding(20)
         }
-        .frame(minWidth: 520, idealWidth: 560, maxWidth: 640,
-               minHeight: 360, idealHeight: 420, maxHeight: 620)
+        .frame(minWidth: 520, idealWidth: 560, maxWidth: 640)
         .modifier(InstallFormPresentation())
         .onChange(of: operations.installConsent?.destination) { _, destination in
             if let destination { installRootPath = destination.deletingLastPathComponent().path }
@@ -581,7 +592,7 @@ struct GameInstallConsentView: View {
 private struct InstallFormPresentation: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
         if #available(macOS 15.0, *) {
-            content.presentationSizing(.form)
+            content.presentationSizing(.fitted)
         } else {
             content
         }

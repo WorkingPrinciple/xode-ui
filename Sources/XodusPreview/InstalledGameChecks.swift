@@ -55,7 +55,7 @@ enum InstalledGameChecks {
               "REQ106: Candidate verification timeout leaves other games launchable and clears only its busy state")
         let operations = GameOperationsController(installed: controller)
         let candidate = PCGame(id: "9NR1R1XWLCNB", title: "Forza Horizon 6", artwork: nil)
-        check(GameInstallAction(game: candidate, operations: operations).actionTitle == "Check installation"
+        check(GameInstallAction(game: candidate, operations: operations).actionTitle == "Retry"
               && !controller.canCreateInstallation(productID: candidate.id),
               "REQ106: Timed-out NFS verification stays Check installation and never offers a duplicate Install")
         check(controller.discoveryError == nil
@@ -64,7 +64,8 @@ enum InstalledGameChecks {
               "REQ106: An explicit failed check reports only on its own product, never an automatic-discovery banner")
         completeness.timeout = false
         completeness.slow = true
-        let first = Task { await controller.verifyDiscoveredInstallation(productID: candidate.id) }
+        let first = Task { await controller.automaticallyVerifyDiscoveredInstallation(productID: candidate.id) }
+        let coalesced = Task { await controller.automaticallyVerifyDiscoveredInstallation(productID: candidate.id) }
         let second = Task { await controller.verifyDiscoveredInstallation(productID: "FIXTURE00002") }
         let verificationDeadline = ContinuousClock.now.advanced(by: .seconds(2))
         while controller.verifyingDiscoveredProducts.count < 2 && ContinuousClock.now < verificationDeadline {
@@ -77,9 +78,11 @@ enum InstalledGameChecks {
         controller.cancelDiscoveredVerification(productID: candidate.id)
         controller.cancelDiscoveredVerification(productID: "FIXTURE00002")
         await first.value
+        await coalesced.value
         await second.value
-        check(controller.verifyingDiscoveredProducts.isEmpty && controller.discoveredVerificationErrors[candidate.id] == nil,
-              "REQ106: Cancelling product checks retires only their busy states without a failure-shaped cancellation")
+        check(controller.verifyingDiscoveredProducts.isEmpty && controller.automaticDiscoveryProducts.isEmpty
+              && controller.discoveredVerificationErrors[candidate.id]?.contains("cancelled") == true,
+              "COR169: Coalesced automatic checks cancel only their product and retain a neutral cancelled reason for explicit Retry")
         let slowGame = InstalledGame(id: UUID(), title: "Slow drive", identityName: "Fixture", version: "1.0.0.0",
             storeId: candidate.id, folder: remote.path, launcher: launcher.path, importedAt: Date())
         let isolatedStore = InstalledGameStore(file: root.appendingPathComponent("independent/games.json"))
@@ -126,6 +129,27 @@ enum InstalledGameChecks {
         let positive = try await knownStore.recordPackageType(id: knownGame.id, type: .win32)
         check(positive.first?.packageType == .win32,
               "M3: Positive new package classification still replaces an older known classification")
+        let nativeGame = InstalledGame(id: UUID(), title: game.title, identityName: game.identityName,
+            version: game.version, storeId: game.storeId, folder: game.folder, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        let automaticStore = InstalledGameStore(file: root.appendingPathComponent("automatic/games.json"))
+        try await automaticStore.save([nativeGame])
+        let automatic = InstalledGamesController(store: automaticStore, inspectPackage: { _ in .win32 },
+            mountedStorageRoots: { [] })
+        await automatic.load()
+        guard let admittedNative = automatic.games.first else {
+            check(false, "COR170: Automatic readiness fixture must load its registered game")
+            return
+        }
+        await automatic.automaticallyCheckInstallation(admittedNative)
+        let serviceFailure = automatic.installationErrors[nativeGame.id]
+        await automatic.automaticallyCheckInstallation(admittedNative)
+        check(serviceFailure?.contains("service") == true
+              && automatic.installationErrors[nativeGame.id] == serviceFailure
+              && automatic.installationStatuses[nativeGame.id] == nil
+              && InstalledPlayButton(library: automatic, operations: GameOperationsController(installed: automatic),
+                  game: nativeGame).nativeActionTitle == "Retry",
+              "COR170: Registered entry automatically verifies and retains a concrete disconnected-service Retry, never unsafe Play (service \(serviceFailure ?? "nil"), package \(automatic.packageErrors[nativeGame.id] ?? "nil"))")
         try FileManager.default.removeItem(at: local)
         await isolated.checkInstallation(game)
         check(isolated.packageErrors[game.id] == InstalledGameError.missingFolder.localizedDescription
@@ -159,6 +183,9 @@ enum InstalledGameChecks {
               && mounted.installationStatuses[mountedGame.id]?.action == .play
               && mounted.launchableIDs.contains(mountedGame.id),
               "REQ106: Verified mounted completeness publishes fresh Play immediately without waiting for skipped bulk inspection")
+        check(InstalledPlayButton(library: mounted, operations: GameOperationsController(installed: mounted),
+            game: mountedGame).nativeActionTitle == "Play",
+              "COR170: A verified complete installed game presents Play, never routine readiness bookkeeping")
         check(InstalledGamesController.inspectionTimeout(for: mountedGame) == .seconds(900)
               && InstalledGamesController.inspectionTimeout(for: game, explicitCheck: true) == .seconds(900)
               && InstalledGamesController.inspectionTimeout(for: game) == .seconds(120),
@@ -173,7 +200,7 @@ enum InstalledGameChecks {
             reasonCode: nil, detail: nil, filesTotal: nil, contentID: nil)
         try mounted.recordInstallationStatus(missingStatus, for: mountedGame)
         check(InstalledPlayButton(library: mounted, operations: GameOperationsController(installed: mounted),
-                  game: mountedGame).nativeActionTitle == "Check installation"
+                  game: mountedGame).nativeActionTitle == "Retry"
               && InstalledGameAttentionView(installed: mounted, operations: GameOperationsController(installed: mounted),
                   game: mountedGame, close: {}).needsAttention,
               "Detail: A registered unavailable folder keeps recovery instead of contradictory Install in the header")
@@ -292,6 +319,7 @@ enum InstalledGameChecks {
             check(true, "REQ106: Ambiguous case variants refuse instead of choosing an arbitrary config")
         }
         var complete = false
+        var completenessCalls = 0
         let store = InstalledGameStore(file: home.appendingPathComponent("registry/games.json"))
         let gate = PackageInspectionInterleaving(initiallyArmed: false)
         let blockedMounts = InstalledGamesController(
@@ -317,7 +345,7 @@ enum InstalledGameChecks {
                 guard !Thread.isMainThread else { fatalError("Mount enumeration ran on UI thread") }
                 return []
             }, discoveryRoot: library, installLocation: { nil },
-            discoveryCompleteness: { _, _ in complete })
+            discoveryCompleteness: { _, _ in completenessCalls += 1; return complete })
         await controller.load()
         let session = LiveSession()
         controller.useUnifiedAccount(session)
@@ -355,16 +383,22 @@ enum InstalledGameChecks {
             processed: home.appendingPathComponent("processed"), logs: home.appendingPathComponent("logs"),
             games: library, journal: home.appendingPathComponent("operation.json"))
         let resumeOperations = GameOperationsController(installed: controller, paths: resumePaths)
-        check(GameInstallAction(game: game, operations: resumeOperations).actionTitle == "Check installation",
+        check(GameInstallAction(game: game, operations: resumeOperations).actionTitle == "Checking…",
               "COR161: A discovered unmanaged folder never becomes a new Install just because it matches the default destination")
-        check(GameInstallAction(game: game, operations: operations).actionTitle == "Check installation",
+        check(GameInstallAction(game: game, operations: operations).actionTitle == "Checking…",
               "REQ106: Unverified matching package uses existing Check installation action, not blind Install")
-        await GameInstallAction(game: game, operations: operations).requestInstall()
+        let callsBeforeEntry = completenessCalls
+        await operations.automaticallyCheckExistingInstallation(game)
         check(operations.installConsent == nil && operations.operation == nil
               && operations.existingInstallationError(productID: game.id) != nil && operations.error == nil,
-              "REQ106: Check installation verifies only its product and surfaces its own failure without a download or consent")
+              "COR169: Entering a discovered product automatically verifies it and surfaces failure without download or consent")
+        await operations.automaticallyCheckExistingInstallation(game)
+        check(completenessCalls == callsBeforeEntry + 1
+              && GameInstallAction(game: game, operations: operations).actionTitle == "Retry"
+              && operations.existingInstallationError(productID: game.id)?.contains("incomplete") == true,
+              "COR170: Terminal readiness has a specific reason and Retry, with no repeated automatic verification storm")
         complete = true
-        await controller.discoverNativeInstallations(root: library)
+        await GameInstallAction(game: game, operations: operations).requestInstall()
         check(controller.games.count == 1 && controller.games[0].folder == folder.path
               && controller.games[0].usesNativeLifecycle == true
               && controller.games[0].storageVolume != nil && controller.launchableIDs.isEmpty
@@ -378,6 +412,11 @@ enum InstalledGameChecks {
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1,
               "REQ106: Losing an external folder never prunes or relocates an already registered installation")
+        let consent = GameInstallConsent(game: PCGame(id: "FIXTURE00002", title: "Original Ridge", artwork: nil),
+            destination: home.appendingPathComponent("Original Ridge"), freeBytes: 80_000_000_000,
+            installedID: nil, compatibility: GameCompatibilityResult(storeId: "FIXTURE00002",
+                packageBytes: 3_200_000_000, supported: true, reason: nil, checkedAt: "2026-10-07T00:00:00Z"))
+        NativeUIChecks.checkConsentContentHeight(operations: operations, consent: consent, check: check)
     }
 
     static func storageLocationChecks(check: (Bool, String) -> Void) async throws {

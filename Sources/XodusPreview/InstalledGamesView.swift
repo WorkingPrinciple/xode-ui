@@ -246,13 +246,13 @@ struct InstalledPlayButton: View {
     }
 
     var nativeActionTitle: String {
-        if library.checkingInstallations.contains(game.id) { return "Checking installation…" }
+        if library.checkingInstallations.contains(game.id) { return "Checking…" }
         switch nativeAction {
         case .play: return "Play"
-        case .install: return "Install"
-        case .resume: return "Resume"
-        case .repair: return "Repair"
-        case .check: return "Check installation"
+        case .install, .resume, .repair: return "Retry"
+        case .check:
+            return library.packageErrors[game.id] != nil || library.installationErrors[game.id] != nil
+                ? "Retry" : "Checking…"
         }
     }
 
@@ -262,10 +262,13 @@ struct InstalledPlayButton: View {
         if library.unavailableDriveIDs.contains(game.id) { return true }
         return NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
             evidence: evidenceStore.games[game.storeId]) == nil && unsupportedIssues.isEmpty
-            && library.requiresNativeInstallationStatus(game) && nativeAction == .check
+            && library.requiresNativeInstallationStatus(game) && nativeAction != .play
     }
 
     @ViewBuilder private var nativeInstallationButton: some View {
+        if nativeActionTitle == "Checking…" {
+            ProgressView("Checking…").controlSize(.small)
+        } else {
         Button {
             let action = nativeAction
             Task {
@@ -291,8 +294,8 @@ struct InstalledPlayButton: View {
                   || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
         .accessibilityLabel("\(nativeActionTitle) for \(game.title)")
         .accessibilityIdentifier("xodus.installed.readinessAction")
+        }
         if library.checkingInstallations.contains(game.id) {
-            ProgressView().controlSize(.small).accessibilityLabel("Checking installation of \(game.title)")
             Button("Cancel") { library.cancelInstallationCheck(game) }
         }
         if showsDiagnostics, attention == nil, !library.checkingInstallations.contains(game.id),
@@ -301,7 +304,8 @@ struct InstalledPlayButton: View {
         }
     }
 
-    @ViewBuilder var body: some View {
+    var body: some View {
+        Group {
         if launching && !library.launchStarted {
             ProgressView(library.checkingInstallations.contains(game.id) ? "Checking installation" : "Preparing game")
                 .controlSize(.small)
@@ -315,7 +319,7 @@ struct InstalledPlayButton: View {
                 if showsDiagnostics {
                     InstallationWarning(message: InstalledGamesController.driveUnavailableMessage)
                 }
-                Button("Check again") { Task { await library.checkInstallation(game) } }
+                Button("Retry") { Task { await library.checkInstallation(game) } }
                     .disabled(library.editing || library.mutationActive || library.accountDisconnecting
                               || library.applicationTerminating)
             }.accessibilityIdentifier("xodus.installed.driveUnavailable")
@@ -335,6 +339,10 @@ struct InstalledPlayButton: View {
             if library.updateStatus(for: game).hasUpdate {
                 Label("Update available", systemImage: "arrow.down.circle").font(.caption)
             }
+        }
+        }
+        .task(id: library.automaticReadinessKey(for: game)) {
+            await library.automaticallyCheckInstallation(game)
         }
     }
 

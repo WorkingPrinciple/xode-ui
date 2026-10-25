@@ -919,7 +919,24 @@ final class GameOperationsController: ObservableObject {
     }
 
     func checkingExistingInstallation(productID: String) -> Bool {
-        installed.verifyingDiscoveredProducts.contains(productID)
+        installed.verifyingDiscoveredProducts.contains(productID) || installed.automaticDiscoveryProducts.contains(productID)
+    }
+
+    func automaticInstallationKey(for game: PCGame) -> String {
+        "\(installationCheckRequired(for: game)):\(installed.discoveredReadinessKey(productID: game.id)):\(canCheckExistingInstallation):\(operation == nil):\(preparingConsent)"
+    }
+
+    func automaticallyCheckExistingInstallation(_ game: PCGame) async {
+        guard canCheckExistingInstallation, installationCheckRequired(for: game),
+              !installed.games.contains(where: { $0.storeId == game.id }),
+              operation == nil, !installingDirectly, !preparingConsent,
+              !installed.mutationActive, !installed.accountDisconnecting, !terminating else { return }
+        await installed.automaticallyVerifyDiscoveredInstallation(productID: game.id)
+    }
+
+    var canCheckExistingInstallation: Bool {
+        installed.loaded && !installed.accountDisconnecting && !installed.mutationActive
+            && !installed.editing && !installed.choosing && !terminating
     }
 
     func cancelExistingInstallationCheck(productID: String) {

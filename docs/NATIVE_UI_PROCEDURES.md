@@ -564,6 +564,18 @@ unverified. Do not create mocks or damage installations to claim acceptance.
 
 ## Game storage (REQ-92)
 
+COR169/170: Entry into an existing discovered product starts bounded asynchronous
+verification rather than a standing **Check installation** button. Verified
+complete candidates are registered at their original exact folder through the
+normal index path; this is an index write, not a payload download or migration.
+Each product/path/account/service context is attempted once automatically;
+terminal failures retain their reason and require **Retry**, with at most two
+candidate workers. Registered games reuse per-game readiness. Checking is
+transient progress with cancellation, verified launchable games show **Play**,
+and genuinely absent content shows **Download** through the existing consent.
+Incomplete, ambiguous, inaccessible and timed-out existing folders never become
+a duplicate Download. Periodic readiness does not automatically retry failures.
+
 Settings offers a persistent default install folder and a return to the original
 `~/Games/Xodus` default. Under REQ110, a new game's actual review shows an editable
 **Install folder** root and native **Browse…**, with the resolved game destination
@@ -578,6 +590,10 @@ does not install anything. The explicit confirmation remains required; Cancel
 does not register or download a game. Repair and resume retain their recorded
 destination and do not offer a location override. Changing the default never
 relocates games, prefixes or saves.
+
+COR171: The review sheet fits its native Form content instead of imposing a
+fixed minimum/ideal height. Resume shrinks and recovery explanations grow the
+sheet; Cancel and confirmation remain in a separate, reachable footer.
 
 Selected folders retain their observed mount root. Invalid saved settings and
 unavailable selected drives produce an error, not a substitute destination.

@@ -278,10 +278,10 @@ enum CatalogDetailLoadingChecks {
             request.recognitionLevel = .accurate
             try VNImageRequestHandler(cgImage: image).perform([request])
             let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-            let showsInstall = labels.contains { $0.caseInsensitiveCompare("Install") == .orderedSame }
+            let showsInstall = labels.contains { $0.caseInsensitiveCompare("Download") == .orderedSame }
             check(labels.contains(where: { $0.localizedCaseInsensitiveContains("Synthetic game") })
                   && (name == "product detail" ? showsInstall : !showsInstall),
-                  "REQ-61/85: Priced-fixture \(name) retains its title and exposes Install only in details (non-vacuous pixel guard)")
+                  "REQ-61/85: Priced-fixture \(name) retains its title and exposes Download only in details (non-vacuous pixel guard)")
             check(!labels.contains(where: {
                 let text = $0.lowercased()
                 return text.contains("$") || text.contains("19.99") || text.contains("9.99")

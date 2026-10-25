@@ -310,7 +310,7 @@ struct LiveProductView: View {
             }
         }
         .task(id: installed?.id) {
-            if allowsStartupTasks, let installed { await installedLibrary.checkInstallation(installed) }
+            if allowsStartupTasks, let installed { await installedLibrary.automaticallyCheckInstallation(installed) }
         }
         .task(id: product.id) {
             guard allowsStartupTasks,
