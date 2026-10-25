@@ -30,6 +30,10 @@ assert settings["icon_size"] == 128 and settings["symlinks"] == {"Applications":
 assert settings["icon_locations"]["X Ode.app"] == (165, 190)
 assert settings["icon_locations"]["Applications"] == (495, 190)
 assert settings["background"] == "/tmp/background.tiff"
+with (Path(__file__).with_name("Info.plist")).open("rb") as source_info_file:
+    source_info = plistlib.load(source_info_file)
+assert source_info["CFBundleIdentifier"] == beta.APP_BUNDLE_IDENTIFIER
+assert beta.APP_SIGNING_IDENTIFIER == "io.github.dragoshont.xodus"
 
 
 def fixture(root):

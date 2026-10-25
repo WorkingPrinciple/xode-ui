@@ -14,13 +14,14 @@ import tempfile
 
 from distribution_manifest import distribution_blockers
 from shipping_pair import hex_value, owned_bytes, require, unique_object
-from signing_identity import verify_developer_id_bundle, verify_developer_id_component
+from signing_identity import (IDENTIFIERS, verify_developer_id_bundle,
+                              verify_developer_id_component)
 
 MINIMUM_UPDATE_BUILD = 2
 IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.development"
-APP_SIGNING_IDENTIFIER = "io.github.dragoshont.xodus"
+APP_SIGNING_IDENTIFIER = IDENTIFIERS["app"]
 PRODUCER_NOTICES_SHA256 = None
 INSTALL_NOTE = """X Ode beta
 
