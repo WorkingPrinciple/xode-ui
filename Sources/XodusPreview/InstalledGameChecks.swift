@@ -252,6 +252,16 @@ enum InstalledGameChecks {
               && namedPrimary.actionGameTitle == "Current catalog title"
               && mountedGame.title == "Large mounted fixture",
               "COR171 native: Global account admission never hides exact-product access failure; catalog action naming preserves authoritative config")
+        for primary in [
+            InstalledPlayButton(library: mounted, operations: GameOperationsController(installed: mounted),
+                game: mountedGame, displayTitle: "Current catalog title", usesGlass: true, heroStyle: true),
+            InstalledPlayButton(library: mounted, operations: GameOperationsController(installed: mounted),
+                game: mountedGame, displayTitle: "Current catalog title", usesGlass: true, prominent: false)
+        ] {
+            check(primary.actionGameTitle == namedPrimary.actionGameTitle
+                  && primary.game.storeId == mountedGame.storeId && primary.game.title == mountedGame.title,
+                  "COR171: Hero and card primary action titles agree with detail without changing installed product/config identity")
+        }
         mounted.setAccountAccessAllowed(false, message: "Account identity changed.")
         check(!mounted.canRequestPlay(mountedGame.storeId) && accessAttention.needsAttention
               && mounted.accountAccessMessage == "Account identity changed.",

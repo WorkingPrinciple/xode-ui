@@ -300,7 +300,7 @@ struct InstalledPlayButton: View {
         .disabled(library.checkingInstallations.contains(game.id) || library.editing || library.choosing
                   || library.applicationTerminating || nativeReadinessUnavailableReason != nil
                   || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
-        .help(nativeReadinessUnavailableReason ?? "\(nativeActionTitle) for \(game.title)")
+        .help(nativeReadinessUnavailableReason ?? "\(nativeActionTitle) for \(actionGameTitle)")
         .accessibilityLabel("\(nativeActionTitle) for \(actionGameTitle)")
         .accessibilityIdentifier("xodus.installed.readinessAction")
         }
@@ -386,7 +386,7 @@ struct InstalledPlayButton: View {
              : canStop ? "Stop \(actionGameTitle)" : launching ? "Launching \(actionGameTitle)"
             : !library.canRequestPlay(game.storeId) ? "Play \(actionGameTitle), game access hasn't been confirmed"
             : needsRepair ? "Repair \(actionGameTitle)" : "Play \(actionGameTitle)")
-        .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
+        .help(opensAttention ? "Open \(actionGameTitle) to see installation, compatibility and launch availability"
               : !canStop && !library.canRequestPlay(game.storeId)
                 ? "This account's access to the game hasn't been confirmed." : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")

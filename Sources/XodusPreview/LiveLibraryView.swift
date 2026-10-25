@@ -430,7 +430,7 @@ struct LiveLibraryView: View {
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else if let match = game.installed {
                 InstalledPlayButton(library: installed, operations: operations, game: match,
-                                    usesGlass: true, heroStyle: true, showsDiagnostics: false)
+                                    displayTitle: game.title, usesGlass: true, heroStyle: true, showsDiagnostics: false)
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else {

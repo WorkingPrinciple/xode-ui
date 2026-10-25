@@ -989,7 +989,7 @@ struct LiveCatalogView: View {
             if primary { LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true) }
         } else if let match = game.installed {
             InstalledPlayButton(library: installed, operations: operations, game: match,
-                                usesGlass: true, prominent: primary, showsDiagnostics: false)
+                                displayTitle: game.title, usesGlass: true, prominent: primary, showsDiagnostics: false)
         } else if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
             GameInstallAction(game: pc, operations: operations,
                               enabled: allowsStartupTasks && canReviewInstall(game), primary: primary,
