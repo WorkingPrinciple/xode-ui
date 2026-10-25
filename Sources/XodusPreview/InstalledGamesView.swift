@@ -113,7 +113,7 @@ struct InstalledUpdateBadge: View {
                 Button("Update") {
                     Task {
                         await operations.repair(
-                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game)
+                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game, intent: .update)
                     }
                 }
                 .disabled(!operations.canRepair(game))

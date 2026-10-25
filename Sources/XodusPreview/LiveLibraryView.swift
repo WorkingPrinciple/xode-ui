@@ -648,7 +648,7 @@ struct LiveLibraryView: View {
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
-        } status: { EmptyView() }
+        } status: { GameCardDownloadStatus(operations: operations, productID: artworkID) }
         .contextMenu {
             Button("View details") { open(game) }
             if let match = game.installed {

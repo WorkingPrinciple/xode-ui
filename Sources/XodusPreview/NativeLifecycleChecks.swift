@@ -213,6 +213,14 @@ enum NativeLifecycleChecks {
         unplugged.storageVolume = GameStorageVolume(path: "/Volumes/REQ114-Unplugged-\(UUID().uuidString)")
         check(unplugged.storageVolume?.isUnavailable(mountedRoots: GameStorageVolume.mountedRoots()) == true,
               "REQ114 M7 fixture: the recorded drive is not mounted")
+        let current = GameStorageVolume.read(at: fixture)
+        let recorded = current.map { GameStorageVolume(path: $0.path, uuid: "00000000-0000-0000-0000-000000000000") }
+        check(current?.uuid != nil && current.map { $0.identifies($0) } == true
+              && recorded?.identifies(current) == false
+              && current.map { GameStorageVolume(path: $0.path).identifies($0) } == true
+              && current.map { GameStorageVolume(path: "/Volumes/Other", uuid: $0.uuid).identifies($0) } == false
+              && GameInstallLocationError.driveChanged.localizedDescription.contains("nothing was deleted"),
+              "REQ114 M7: Uninstall requires the same drive identity (mount path and recorded volume UUID)")
     }
 
     static func run(check: (Bool, String) -> Void) async throws {

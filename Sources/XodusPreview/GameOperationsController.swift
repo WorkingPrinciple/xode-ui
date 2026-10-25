@@ -28,9 +28,78 @@ enum GameDownloadCopy {
         percent.map { "\(title) is still downloading (\($0)%)." } ?? "\(title) is still downloading."
     }
     static let quitMessage = "If you quit, the download stops and will start over next time."
+    static let stopNote = "If you stop, the download will start over next time."
     static func percent(_ progress: GameScriptProgress?) -> Int? {
         guard let progress, progress.phase == .downloading, let total = progress.bytesTotal, total > 0 else { return nil }
         return Int((Double(min(progress.bytesDone, total)) / Double(total) * 100).rounded(.down))
+    }
+}
+
+/// UX-M2: what the toolbar indicator and the game's card show while a download runs.
+struct GameDownloadIndicator: Equatable, Sendable {
+    let productID: String
+    let title: String
+    let status: String
+    let percent: Int?
+
+    var fraction: Double? { percent.map { Double($0) / 100 } }
+    var summary: String { percent.map { "\(status) \($0)%" } ?? status }
+    var accessibilityLabel: String { "\(title): \(summary)" }
+
+    init?(record: GameOperationRecord?, progress: GameScriptProgress?, preparing: Bool) {
+        guard let record, record.kind != .uninstall else { return nil }
+        productID = record.productID
+        title = record.title
+        percent = GameDownloadCopy.percent(progress)
+        if let progress { status = progress.phase.title }
+        else { status = preparing ? GameScriptProgress.Phase.preparing.title : "Starting" }
+    }
+}
+
+/// UX-M2: announced once when an install or repair registers successfully.
+struct GameReadyAnnouncement: Equatable, Sendable {
+    let productID: String
+    let title: String
+    let folder: String
+    var body: String { "\(title) is ready to play." }
+}
+
+/// M2: Repair, Update, Resume and Download Full Game each start a large download; the user confirms first.
+enum GameLifecycleIntent: Equatable, Sendable {
+    case repair, update, resume, downloadFullGame
+}
+
+struct GameLifecycleConfirmation: Equatable, Sendable {
+    let intent: GameLifecycleIntent
+    let title: String
+    let downloadBytes: Int64?
+
+    var messageText: String {
+        switch intent {
+        case .repair: "Repair \(title)?"
+        case .update: "Update \(title)?"
+        case .resume: "Download \(title) again?"
+        case .downloadFullGame: "Download the full game for \(title)?"
+        }
+    }
+    var actionTitle: String {
+        switch intent {
+        case .repair: "Repair"
+        case .update: "Update"
+        case .resume: GameDownloadCopy.downloadAgain
+        case .downloadFullGame: "Download"
+        }
+    }
+    var informativeText: String {
+        let size = downloadBytes.map {
+            " Download size: \(ByteCountFormatter.string(fromByteCount: $0, countStyle: .file))."
+        } ?? ""
+        switch intent {
+        case .repair: return "Repair downloads all of the game's files again and replaces damaged ones. Saved games aren't changed.\(size)"
+        case .update: return "The new version is downloaded and installed. You can't play while it updates.\(size)"
+        case .resume: return "\(GameDownloadCopy.restartNote)\(size)"
+        case .downloadFullGame: return "The full game is downloaded into its install folder.\(size)"
+        }
     }
 }
 
@@ -155,7 +224,7 @@ final class GameOperationsController: ObservableObject {
     private var setupCheckedOnce = false
     private var setupRefreshPending = false
     private var restored = false
-    private var terminating = false
+    private(set) var terminating = false
     @Published private(set) var directInstallCancelled = false
     private var queueProgressObserver: ((GameScriptProgress) -> Void)?
     // Queued runs whose stop/cancel arrived while they were still waiting for the
@@ -389,23 +458,62 @@ final class GameOperationsController: ObservableObject {
     func restore() async {
         guard !restored, !isBusy, !terminating else { return }
         restored = true
-        do {
-            resumableInstallations = try await journal.loadResumable()
-            guard let record = try await journal.load() else { return }
-            resetFeedback(productID: record.productID)
-            try installed.reserveMutation(gameID: record.installedID)
-            operation = record
-            recoveryRequired = true
-            error = "The last game operation needs checking. No operation will be repeated automatically."
-            log = await Task.detached { GameScriptFiles.log(runID: record.id, paths: self.paths) }.value
-            if await followOrphanIfRunning(record) { error = nil }
-        } catch {
+        var resumableFailed = false
+        do { resumableInstallations = try await journal.loadResumable() }
+        catch { resumableFailed = true }
+        let saved: GameOperationRecord?
+        do { saved = try await journal.load() }
+        catch {
+            // Only an unreadable operation.json is unreadable recovery; keep mutations fenced meanwhile.
             recoveryRequired = true
             recoveryUnreadable = true
             self.error = GameScriptError.storage.localizedDescription
-            // Keep mutations fenced when a saved operation cannot be understood.
-            if !installed.mutationActive { try? installed.reserveMutation(gameID: nil) }
+            claimRecoveryMutation(gameID: nil)
+            return
         }
+        guard let record = saved else {
+            if resumableFailed { error = GameScriptError.storage.localizedDescription }
+            return
+        }
+        resetFeedback(productID: record.productID)
+        operation = record
+        recoveryRequired = true
+        error = "The last game operation needs checking. No operation will be repeated automatically."
+        log = await Task.detached { GameScriptFiles.log(runID: record.id, paths: self.paths) }.value
+        claimRecoveryMutation(gameID: record.installedID)
+        if await followOrphanIfRunning(record) { error = nil }
+    }
+
+    /// True only while this controller holds the mutation fence for a restored recovery.
+    private(set) var recoveryMutationOwned = false
+    private var recoveryReservationTask: Task<Void, Never>?
+
+    /// Reserves the mutation fence for a restored record; when other work holds it, retries
+    /// instead of treating the saved operation as unreadable.
+    private func claimRecoveryMutation(gameID: UUID?) {
+        if (try? installed.reserveMutation(gameID: gameID)) != nil {
+            recoveryMutationOwned = true
+            return
+        }
+        recoveryReservationTask?.cancel()
+        recoveryReservationTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard let self, self.recoveryRequired, !self.recoveryMutationOwned else { return }
+                if (try? self.installed.reserveMutation(gameID: gameID)) != nil {
+                    self.recoveryMutationOwned = true
+                    self.recoveryReservationTask = nil
+                    return
+                }
+            }
+        }
+    }
+
+    /// Clears recovery ownership once the restored record has been completed or dismissed.
+    private func settleRecoveryMutation() {
+        recoveryReservationTask?.cancel()
+        recoveryReservationTask = nil
+        recoveryMutationOwned = false
     }
 
     func refreshService() {
@@ -783,11 +891,21 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
-    func resume(_ game: PCGame, installed installedGame: InstalledGame) async {
-        await repair(game, installed: installedGame, resuming: true)
+    /// Set by the app to a native confirmation; checks leave it nil so synthetic runs proceed unattended.
+    var confirmLifecycle: (@MainActor (GameLifecycleConfirmation) async -> Bool)?
+    /// Set by the app to post a "ready to play" notification; nil in synthetic checks.
+    var announceReady: (@MainActor (GameReadyAnnouncement) -> Void)?
+
+    var downloadIndicator: GameDownloadIndicator? {
+        GameDownloadIndicator(record: operation, progress: progress, preparing: preparingConsent)
     }
 
-    func repair(_ game: PCGame, installed installedGame: InstalledGame, resuming: Bool = false) async {
+    func resume(_ game: PCGame, installed installedGame: InstalledGame) async {
+        await repair(game, installed: installedGame, resuming: true, intent: .resume)
+    }
+
+    func repair(_ game: PCGame, installed installedGame: InstalledGame, resuming: Bool = false,
+                intent: GameLifecycleIntent? = nil) async {
         guard canStartMutation, !installingDirectly, installed.games.contains(installedGame),
               installedGame.storeId == game.id, !resuming || usesUnifiedAccount,
               !installed.checkingInstallations.contains(installedGame.id) else { return }
@@ -799,6 +917,15 @@ final class GameOperationsController: ObservableObject {
         installConsent?.resuming = resuming
         guard !directInstallCancelled else { installConsent = nil; return }
         guard let consent = installConsent else { return }
+        if consentAdmitted(consent), let confirm = confirmLifecycle {
+            let request = GameLifecycleConfirmation(intent: intent ?? (resuming ? .resume : .repair),
+                title: game.title, downloadBytes: consent.compatibility?.packageBytes)
+            let accepted = await confirm(request)
+            guard accepted, !directInstallCancelled, installConsent?.id == consent.id else {
+                installConsent = nil
+                return
+            }
+        }
         if consentAdmitted(consent) {
             confirmInstall(consent)
         } else {
@@ -1248,7 +1375,11 @@ final class GameOperationsController: ObservableObject {
             if record.kind == .uninstall {
                 do {
                     try await storageProbe.read {
-                        try InstalledGameFiles.checkFolder(URL(fileURLWithPath: record.destination))
+                        let folder = URL(fileURLWithPath: record.destination)
+                        try InstalledGameFiles.checkFolder(folder)
+                        if let storageVolume, !storageVolume.identifies(GameStorageVolume.read(at: folder)) {
+                            throw GameInstallLocationError.driveChanged
+                        }
                     }
                 } catch {
                     self.error = Self.message(error)
@@ -1293,8 +1424,16 @@ final class GameOperationsController: ObservableObject {
                         try await journal.clear()
                         operation = nil
                         installed.releaseMutation()
-                    } catch { self.error = GameScriptError.storage.localizedDescription; recoveryRequired = true }
-                } else { recoveryRequired = true }
+                    } catch {
+                        self.error = GameScriptError.storage.localizedDescription
+                        recoveryRequired = true
+                        recoveryMutationOwned = true
+                    }
+                } else {
+                    // The run's own reservation is still held and now fences recovery.
+                    recoveryRequired = true
+                    recoveryMutationOwned = true
+                }
             }
             mutationTask = nil
             cancelling = false
@@ -1361,6 +1500,8 @@ final class GameOperationsController: ObservableObject {
                 try await installed.registerNativeInstallation(folder: URL(fileURLWithPath: record.destination),
                                                                expectedStoreID: record.productID)
                 notice = record.kind == .repair ? "\(record.title) was repaired." : "\(record.title) was installed."
+                announceReady?(GameReadyAnnouncement(productID: record.productID, title: record.title,
+                                                     folder: record.destination))
             }
         } else {
             let cancelled = result?.errorCode == "CANCELLED" || result == nil
@@ -1384,6 +1525,7 @@ final class GameOperationsController: ObservableObject {
         recoveryRequired = false
         recoveryUnreadable = false
         installed.releaseMutation()
+        settleRecoveryMutation()
     }
 
     @Published private(set) var discardingPartialProductID: String?
@@ -1409,19 +1551,27 @@ final class GameOperationsController: ObservableObject {
             installed.releaseMutation()
         }
         do {
-            try await storageProbe.read {
-                try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
-                if FileManager.default.fileExists(atPath: destination.path) {
-                    try FileManager.default.removeItem(at: destination)
+            let found = try await storageProbe.read { () -> Bool in
+                // L1: an unmounted drive or missing parent keeps the record; nothing is claimed deleted.
+                var parent = stat()
+                guard lstat(destination.deletingLastPathComponent().path, &parent) == 0 else {
+                    throw GameInstallLocationError.driveUnavailable
                 }
+                try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
+                guard FileManager.default.fileExists(atPath: destination.path) else { return false }
+                try FileManager.default.removeItem(at: destination)
+                return true
             }
             try await journal.removeResumable(record)
             resumableInstallations = try await journal.loadResumable()
-            notice = "The partial download of \(record.title) was deleted."
+            notice = found ? "The partial download of \(record.title) was deleted."
+                : "No downloaded files were found for \(record.title). Its stopped download was removed from the list."
         } catch {
             resumableInstallations = (try? await journal.loadResumable()) ?? resumableInstallations
             let cocoa = error as NSError
-            if [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cocoa.code)
+            if error as? GameInstallLocationError == .driveUnavailable {
+                self.error = "The drive for \(record.title)'s partial download isn't connected, so nothing was deleted. Reconnect the drive, then try again."
+            } else if [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cocoa.code)
                 || InstalledGameFiles.folderReadError(cocoa) == .folderPermission
                 || (cocoa.userInfo[NSUnderlyingErrorKey] as? NSError).map({ InstalledGameFiles.folderReadError($0) == .folderPermission }) == true {
                 self.error = "The partial download couldn't be deleted because \(record.destination) isn't writable. Check its permissions in Finder."
@@ -1478,6 +1628,8 @@ final class GameOperationsController: ObservableObject {
                 }.value
                 try await installed.registerInstallation(folder: folder, launcher: launcher, expectedStoreID: record.productID)
                 notice = record.kind == .repair ? "\(record.title) is ready to play." : "\(record.title) was installed."
+                announceReady?(GameReadyAnnouncement(productID: record.productID, title: record.title,
+                                                     folder: result.folder))
             }
         } else {
             if record.kind != .uninstall, let data = outcome.result {
@@ -1511,6 +1663,7 @@ final class GameOperationsController: ObservableObject {
         recoveryRequired = false
         recoveryUnreadable = false
         installed.releaseMutation()
+        settleRecoveryMutation()
     }
 
     private func publishProgress(_ value: GameScriptProgress, runID: String) {
@@ -1594,6 +1747,11 @@ final class GameOperationsController: ObservableObject {
 
     func reconcile() async {
         guard recoveryRequired, let record = operation, !checkingRecovery, mutationTask == nil else { return }
+        // Completing a record releases the mutation fence, so only check once this controller holds it.
+        guard recoveryMutationOwned else {
+            error = "Other game activity is still finishing. The last operation will be checked after it ends."
+            return
+        }
         checkingRecovery = true
         defer { checkingRecovery = false }
         do {
@@ -1615,6 +1773,7 @@ final class GameOperationsController: ObservableObject {
                     recoveryRequired = false
                     recoveryUnreadable = false
                     installed.releaseMutation()
+                    settleRecoveryMutation()
                     error = nil
                     notice = "The last \(record.kind == .uninstall ? "uninstall" : record.kind == .repair ? "repair" : "installation") of \(record.title) didn't start. Nothing was changed."
                     return
@@ -1651,8 +1810,8 @@ final class GameOperationsController: ObservableObject {
     }
 
     var canDismissRecovery: Bool {
-        recoveryRequired && recoveryUnreadable && !orphanRunning && !checkingRecovery && mutationTask == nil
-            && !terminating
+        recoveryRequired && recoveryUnreadable && recoveryMutationOwned && !orphanRunning && !checkingRecovery
+            && mutationTask == nil && !terminating
     }
 
     private func orphanIdentity(_ record: GameOperationRecord) -> NativeOrphanRun.Identity {
@@ -1678,7 +1837,8 @@ final class GameOperationsController: ObservableObject {
         let state = URL(fileURLWithPath: identity.stateDirectory)
         orphanTask = Task { [weak self] in
             while !Task.isCancelled {
-                guard let self, !self.terminating else { return }
+                // Keep following while a quit is pending: a refused quit must not leave the run locked.
+                guard let self else { return }
                 try? self.nativeRunner.follow(state: state) { [weak self] value in
                     self?.publishProgress(value, runID: record.id)
                 }
@@ -1702,7 +1862,8 @@ final class GameOperationsController: ObservableObject {
                 self.orphanStoppable = false
                 self.orphanPID = nil
                 self.orphanTask = nil
-                await self.reconcile()
+                if self.terminating { self.orphanReconcilePending = true }
+                else { await self.reconcile() }
                 self.cancelling = false
                 return
             }
@@ -1736,7 +1897,8 @@ final class GameOperationsController: ObservableObject {
         operation = nil
         recoveryRequired = false
         recoveryUnreadable = false
-        if installed.mutationActive { installed.releaseMutation() }
+        if recoveryMutationOwned { installed.releaseMutation() }
+        settleRecoveryMutation()
         resetFeedback(productID: record?.productID)
         notice = record.map { "The last operation for \($0.title) was dismissed. Check its game folder before trying again." }
             ?? "The last game operation was dismissed. Check your game folders before trying again."
@@ -1784,7 +1946,14 @@ final class GameOperationsController: ObservableObject {
         terminating = true
         Task { await cancelPrecheck() }
     }
-    func resumeAfterTerminationRefusal() { terminating = false }
+    func resumeAfterTerminationRefusal() {
+        terminating = false
+        guard orphanReconcilePending else { return }
+        orphanReconcilePending = false
+        Task { await reconcile() }
+    }
+    /// A followed backend run finished while quitting; it's checked if the quit is refused.
+    private(set) var orphanReconcilePending = false
 
     private func scriptLog(_ runID: String) async -> URL? {
         let paths = paths

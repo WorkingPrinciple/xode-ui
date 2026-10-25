@@ -11,7 +11,7 @@ struct NativeEngineDefaults: Decodable {
         let engineName: String
         let wineSha256: String
         let wineserverSha256: String
-        /// TEMPORARY (0.11.4, Ode decision B): a developer-local engine kept only so NMS keeps its
+        /// TEMPORARY (first beta, Ode decision B): a developer-local engine kept only so NMS keeps its
         /// verified engine on the owner's Mac. Elsewhere its files are absent and Play reports that.
         var developerLocal: Bool? = nil
 

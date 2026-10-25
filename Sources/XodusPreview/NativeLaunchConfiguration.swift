@@ -769,7 +769,7 @@ enum NativeLaunchError: Error, LocalizedError {
         case .shimsUnavailable:
             "The native sign-in components are missing or have changed. Restore native-web-shims-v1 before playing."
         case .installationNotReady:
-            "This installation isn't verified complete. Check it, resume the download or repair it before playing."
+            "This installation isn't verified complete. Check it, download it again or repair it before playing."
         }
     }
 }

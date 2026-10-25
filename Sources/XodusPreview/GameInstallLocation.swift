@@ -4,6 +4,14 @@ import Darwin
 
 struct GameStorageVolume: Codable, Equatable, Sendable {
     let path: String
+    /// M7: the volume's UUID when it was recorded. Older records have none and match by path only.
+    var uuid: String? = nil
+
+    /// The recorded drive is the drive mounted now: same mount path and, when recorded, same volume UUID.
+    func identifies(_ current: Self?) -> Bool {
+        guard let current, current.path == path else { return false }
+        return uuid == nil || uuid == current.uuid
+    }
 
     func contains(_ folder: String) -> Bool {
         path.hasPrefix("/") && path.count <= 4096
@@ -13,9 +21,9 @@ struct GameStorageVolume: Codable, Equatable, Sendable {
 
     static func read(at folder: URL) -> Self? {
         guard folder.standardizedFileURL.path == folder.resolvingSymlinksInPath().standardizedFileURL.path,
-              let values = try? folder.resourceValues(forKeys: [.volumeURLKey]),
+              let values = try? folder.resourceValues(forKeys: [.volumeURLKey, .volumeUUIDStringKey]),
               let volume = values.volume else { return nil }
-        let result = Self(path: volume.standardizedFileURL.path)
+        let result = Self(path: volume.standardizedFileURL.path, uuid: values.volumeUUIDString)
         return result.contains(folder.path) ? result : nil
     }
 
@@ -109,11 +117,12 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
 }
 
 enum GameInstallLocationError: Error, LocalizedError {
-    case driveUnavailable, notWritable, destinationExists
+    case driveUnavailable, driveChanged, notWritable, destinationExists
 
     var errorDescription: String? {
         switch self {
         case .driveUnavailable: "The selected install drive is unavailable. Reconnect it or choose another folder."
+        case .driveChanged: "A different drive is connected where this game was installed, so nothing was deleted. Reconnect the original drive and try again."
         case .notWritable: "The selected folder isn't writable. Choose another folder."
         case .destinationExists: "A folder already exists at this destination. Check or import it, or choose another install folder."
         }

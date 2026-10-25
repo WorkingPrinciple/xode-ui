@@ -56,10 +56,22 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     var runtimeSettings: RuntimeProviderSettings?
     var installedGames: InstalledGamesController?
     var pcGames: PCGamesController?
-    var gameOperations: GameOperationsController?
+    var gameOperations: GameOperationsController? {
+        didSet {
+            guard let gameOperations, gameOperations !== oldValue else { return }
+            gameOperations.announceReady = { [weak self] in self?.readyNotifier.post($0) }
+        }
+    }
+    let readyNotifier = GameReadyNotifier()
     let termination = ApplicationTerminationCoordinator()
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
+        readyNotifier.play = { [weak self] folder in
+            guard let installed = self?.installedGames,
+                  let game = installed.games.first(where: { $0.folder == folder }) else { return }
+            Task { await installed.play(game) }
+        }
+        readyNotifier.configure()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -88,7 +100,9 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
                 LibraryXboxStats.shared.resumeAfterTerminationRefusal()
                 XboxCompanionController.shared.resumeAfterTerminationRefusal()
             }
-            if !closed, gameOperations?.canQuit == false {
+            // Logout/restart/shutdown is refused at once without a modal that would hang unattended.
+            if Self.showsWaitBeforeQuitting(closed: closed, systemQuit: systemQuit,
+                                            canQuit: gameOperations?.canQuit ?? true) {
                 let alert = NSAlert()
                 alert.messageText = "Wait before quitting \(AppBrand.displayName)"
                 alert.informativeText = "Wait for the current game operation to finish. You can cancel an installation first."
@@ -98,6 +112,10 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
             sender.reply(toApplicationShouldTerminate: closed)
         }
         return .terminateLater
+    }
+
+    nonisolated static func showsWaitBeforeQuitting(closed: Bool, systemQuit: Bool, canQuit: Bool) -> Bool {
+        !closed && !systemQuit && !canQuit
     }
 
     /// Log out, restart and shut down must not be blocked by a download prompt.

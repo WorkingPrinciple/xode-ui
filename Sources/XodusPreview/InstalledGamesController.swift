@@ -1096,7 +1096,7 @@ final class InstalledGamesController: ObservableObject {
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId, config.identityName == game.identityName,
                           config.version == game.version,
-                          game.storageVolume == nil || GameStorageVolume.read(at: folder) == game.storageVolume else {
+                          game.storageVolume.map { $0.identifies(GameStorageVolume.read(at: folder)) } ?? true else {
                         throw InstalledGameError.invalidConfig
                     }
                     return config
@@ -1628,7 +1628,9 @@ final class InstalledGamesController: ObservableObject {
                     }
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId else { throw InstalledGameError.invalidConfig }
-                    if game.storageVolume == nil, let volume = GameStorageVolume.read(at: folder) {
+                    if let volume = GameStorageVolume.read(at: folder),
+                       game.storageVolume == nil
+                        || (game.storageVolume?.uuid == nil && game.storageVolume?.path == volume.path && volume.uuid != nil) {
                         volumes[game.id] = volume
                     }
                     if nativeIDs.contains(game.id) { validNativeFolders.insert(game.id); continue }
