@@ -25,6 +25,8 @@ struct NativeToolbarSearch: View {
     var enabled = true
     var openSearch: () -> Void = {}
     var showResults: (() -> Void)?
+    var recentSearchesPresented: Binding<Bool> = .constant(false)
+    var recentSearchesContent = AnyView(EmptyView())
 
     static func collapsedAccessibility(for placeholder: String) -> (label: String, help: String) {
         (label: placeholder, help: "Open catalogue search")
@@ -40,10 +42,12 @@ struct NativeToolbarSearch: View {
         focused = true
     }
 
+    private var expanded: Bool { focused || recentSearchesPresented.wrappedValue }
+
     var body: some View {
         let accessibility = Self.collapsedAccessibility(for: placeholder)
         Group {
-            if Self.width(text: text, focused: focused) == 32 {
+            if Self.width(text: text, focused: expanded) == 32 {
                 Button(action: expand) {
                     Image(systemName: "magnifyingglass").frame(width: 24, height: 24)
                 }
@@ -57,7 +61,11 @@ struct NativeToolbarSearch: View {
                                   showResults: showResults)
             }
         }
-        .frame(width: Self.width(text: text, focused: focused))
+        .frame(width: Self.width(text: text, focused: expanded))
+        .popover(isPresented: recentSearchesPresented, attachmentAnchor: .rect(.bounds),
+                 arrowEdge: .bottom) {
+            recentSearchesContent
+        }
     }
 }
 

@@ -558,6 +558,24 @@ not create a failed-details banner or Retry action. Missing/failed reads still
 show recovery; this distinction never promotes ambiguous products to PC games.
 The synthetic `--library-access-check` covers both paths.
 
+Discover recent searches appear in a native popover attached below the active,
+empty toolbar search field, not in browse content. Down/Return transfers focus
+to the first suggestion; Return activates the focused button, and Clear removes
+history. Escape, focus exit and selection dismiss the presentation. Keep the
+search control expanded while suggestion focus is active. Verify native focus
+transfer and placement at minimum/wide sizes separately from detached checks.
+
+Discover reuses Library's ambient backdrop for browsing, with a neutral search
+surface. Horizontal shelves and its main scroll view hide indicators without
+changing native scrolling or accessibility routes. Genre shelves are bounded
+cached projections keyed by search scope and metadata revision; selection
+changes cannot reuse cards from another scope. The
+`--presentation-performance-check` runner compares repeated filtering with cached
+shelf lookup for 512 synthetic products, three shelves and 80 simulated updates.
+This measures CPU work, not native frame or input latency. Routine coverage and
+loading-mechanics prose is absent; real failures, Retry/Stop and title-specific
+access/compatibility reasons remain.
+
 The **Installed games** section is the registry inventory, not the remainder
 after license checks. Registry UUIDs keep cards in place as access/readiness
 arrives or expires. The main account grid excludes installed records; filters

@@ -88,6 +88,8 @@ struct XodusToolbar: ToolbarContent {
     var libraryContrast = false
     var openSearch: () -> Void = {}
     var showSearchResults: (() -> Void)?
+    var recentSearchesPresented: Binding<Bool> = .constant(false)
+    var recentSearchesContent = AnyView(EmptyView())
     let openAccount: () -> Void
 
     @ToolbarContentBuilder var body: some ToolbarContent {
@@ -116,7 +118,9 @@ struct XodusToolbar: ToolbarContent {
         navigation.fixedSize().accessibilityIdentifier("xodus.navigation")
         NativeToolbarSearch(text: searchText, focused: searchFocused,
                             placeholder: searchPlaceholder, enabled: searchEnabled, openSearch: openSearch,
-                            showResults: showSearchResults)
+                            showResults: showSearchResults,
+                            recentSearchesPresented: recentSearchesPresented,
+                            recentSearchesContent: recentSearchesContent)
     }
 
     private var picker: some View {

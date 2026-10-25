@@ -168,7 +168,7 @@ enum CatalogDetailLoadingChecks {
                                       (.darkAqua, .dark)] {
             for (label, view, size) in [
                 ("Installed", AnyView(card), CGSize(width: 280, height: 400)),
-                ("Game Pass catalogue coverage", AnyView(catalogue), CGSize(width: 800, height: 1000))
+                ("Game Pass benefits", AnyView(catalogue), CGSize(width: 800, height: 1000))
             ] {
                 let host = NSHostingView(rootView: view.padding(20)
                     .frame(width: size.width, height: size.height, alignment: .topLeading)
