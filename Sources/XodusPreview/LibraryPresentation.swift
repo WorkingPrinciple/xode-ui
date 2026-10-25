@@ -381,6 +381,7 @@ struct LibraryControls: View {
     @Binding var sort: LibrarySort
     @Binding var showsUnsupportedGames: Bool
     var allowsSorting = true
+    var allowsAccountFilters = true
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -408,10 +409,11 @@ struct LibraryControls: View {
     }
     private var filters: some View {
         Picker("Filter games", selection: $filter) {
-            ForEach(LibraryFilter.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(allowsAccountFilters ? LibraryFilter.allCases : [.installed]) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 400)
         .accessibilityIdentifier("xodus.library.filter")
+        .disabled(!allowsAccountFilters)
     }
     private var supportFilter: some View {
         LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount, showsUnsupportedGames: $showsUnsupportedGames)

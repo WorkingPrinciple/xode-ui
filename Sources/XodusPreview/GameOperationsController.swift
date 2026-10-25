@@ -627,8 +627,8 @@ final class GameOperationsController: ObservableObject {
             do {
                 let outcome = try await setupRunner.run(command: .setup, runID: runID, arguments: ["check"])
                 setupLog = outcome.log
-                guard outcome.code == 0, let data = outcome.result else { throw GameScriptError.failed(outcome.code) }
-                setupResult = try GameSetupResult.parse(data)
+                setupResult = try GameSetupResult.parse(outcome)
+                setupError = outcome.code == 0 ? nil : GameScriptError.failed(outcome.code).localizedDescription
             } catch {
                 setupResult = nil
                 setupError = Self.message(error)
@@ -663,9 +663,9 @@ final class GameOperationsController: ObservableObject {
                 await cancelPrecheck()
                 let outcome = try await mutationRunner.run(command: .setup, runID: runID, arguments: ["repair"])
                 setupLog = outcome.log
-                guard outcome.code == 0, let data = outcome.result else { throw GameScriptError.failed(outcome.code) }
-                setupResult = try GameSetupResult.parse(data)
-                await installed.refreshAfterSetupRepair()
+                setupResult = try GameSetupResult.parse(outcome)
+                setupError = outcome.code == 0 ? nil : GameScriptError.failed(outcome.code).localizedDescription
+                if outcome.code == 0 { await installed.refreshAfterSetupRepair() }
             } catch {
                 setupResult = nil
                 setupError = Self.message(error)
@@ -1068,6 +1068,13 @@ final class GameOperationsController: ObservableObject {
                 try await completeNative(record, result: nil)
                 return
             }
+            if cancelling, error as? GameScriptError == .failed(14), let result = nativeRunner.completedResult {
+                guard nativeAccount == account, result.errorCode == "CANCELLED", !result.success else {
+                    throw GameScriptError.statusMismatch
+                }
+                try await completeNative(record, result: result)
+                return
+            }
             throw error
         }
     }
@@ -1088,8 +1095,16 @@ final class GameOperationsController: ObservableObject {
                 notice = record.kind == .repair ? "\(record.title) was repaired." : "\(record.title) was installed."
             }
         } else {
-            failureCode = result?.errorCode == "CANCELLED" || result == nil ? 14 : Int(result?.exitCode ?? 1)
-            error = result?.failureMessage ?? GameScriptError.failed(14).localizedDescription
+            let cancelled = result?.errorCode == "CANCELLED" || result == nil
+            failureCode = cancelled ? 14 : (result?.exitCode == 14 ? 1 : Int(result?.exitCode ?? 1))
+            if cancelled {
+                error = nil
+                notice = record.kind == .uninstall
+                    ? "Uninstall cancelled. Check the installation before trying again."
+                    : "\(record.kind == .repair ? "Repair" : "Installation") cancelled. Partial files are kept; you can resume when ready."
+            } else {
+                error = result?.failureMessage
+            }
         }
         try await journal.clear()
         operation = nil
@@ -1131,6 +1146,12 @@ final class GameOperationsController: ObservableObject {
                 notice = record.kind == .repair ? "\(record.title) is ready to play." : "\(record.title) was installed."
             }
         } else {
+            if record.kind != .uninstall, let data = outcome.result {
+                let result = try JSONDecoder().decode(GameInstallResult.self, from: data)
+                guard result.storeId == record.productID, result.folder == record.destination else {
+                    throw GameScriptError.invalidReceipt
+                }
+            }
             failureCode = outcome.code
             if outcome.code == 11, record.kind == .install {
                 downloadRetry = PCGame(id: record.productID, title: record.title, artwork: nil)
@@ -1145,6 +1166,10 @@ final class GameOperationsController: ObservableObject {
                     ?? GameScriptError.failed(outcome.code).localizedDescription
                 : outcome.code == 11 ? GameScriptError.failed(11).localizedDescription
                 : specificFailure ?? GameScriptError.failed(outcome.code).localizedDescription
+            if outcome.code == 14 {
+                error = nil
+                notice = GameScriptError.failed(14).localizedDescription
+            }
         }
         try await journal.clear()
         operation = nil
@@ -1190,6 +1215,7 @@ final class GameOperationsController: ObservableObject {
                 failureCode = nil
                 error = nil
                 log = nil
+                notice = nil
                 return .cancel
             }
             return .fail(code: code)

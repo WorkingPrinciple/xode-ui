@@ -541,6 +541,25 @@ unmount an active game's drive, install a game, move files or alter accounts to
 manufacture acceptance. Source checks do not establish installed UI or physical
 drive acceptance.
 
+## Nonzero operation results
+
+Native lifecycle results are validated against the actual child exit status
+and the persisted receipt even on failure or cancellation. A bound `CANCELLED`
+receipt is cancellation, not an error banner or installed success. A child
+that reports success after cancellation remains unresolved rather than being
+registered. Timeouts identify the actual operation; account, busy and disk-space
+failures retain actionable guidance and logs.
+
+Legacy setup/install scripts have a different receipt shape. Preserve a
+present nonzero result, validate its own contract and retain unready setup
+items. Never reinterpret a legacy response as a native lifecycle receipt,
+register a nonzero installation, or fabricate a missing receipt. Queue
+pause/cancel feedback remains in its job rather than a shared failure banner.
+`--game-operation-check` covers synthetic nonzero setup/install receipts,
+contradictory readiness and cancellation feedback; `--live-check` also covers
+native receipt/status agreement and joined cancellation. These do not establish
+installed game-operation acceptance.
+
 ## Xbox account country (REQ-101 / COR-127)
 
 The account-bound `ode.account.read.v1` profile supplies `accountCountry`.
@@ -575,3 +594,13 @@ For installed acceptance, inspect the exact paired candidate's Account country,
 library and Store query market under the existing input owner. Exercise the
 fallback only with a genuinely unknown provider result; do not alter the user's
 account country or make a provider failure to manufacture acceptance.
+
+An unknown country does not replace the installed Library with a country gate.
+Keep local registrations and management reachable, with normal installation,
+account and per-product access checks. Play retains its existing country-bound
+access requirement; visibility does not grant entitlement. Show country confirmation
+inline; temporarily show Installed without overwriting the saved account filter.
+Discover/Search, Game Pass and market-dependent metadata wait for confirmation.
+Downloads remains reachable without catalogue artwork requests. The detached
+country suite includes the actual unknown-country Library projection and native
+picker; installed acceptance still belongs to the current native input owner.

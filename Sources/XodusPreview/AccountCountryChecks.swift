@@ -105,6 +105,18 @@ enum AccountCountryChecks {
                 check(!nextSession.accountCountryReady && nextSession.market.isEmpty
                       && nextSession.accountCountryNeedsConfirmation,
                       "COR127 provider-unavailable response without saved confirmation keeps country unknown")
+                let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                    .appendingPathComponent(".build/CountryLibrary-\(UUID().uuidString)")
+                try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+                let game = InstalledGame(id: UUID(), title: "Country-independent local game",
+                    identityName: "Fixture.CountryLocal", version: "1.0.0.0", storeId: "FIXTURE00001",
+                    folder: root.path, launcher: "", importedAt: Date(), usesNativeLifecycle: true)
+                let store = InstalledGameStore(file: root.appendingPathComponent("registry/installed.json"))
+                try await store.save([game])
+                let installed = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
+                await installed.load()
+                NativeUIChecks.checkCountryPendingLibrary(session: nextSession, installed: installed, check: check)
+                try FileManager.default.removeItem(at: root)
                 let transport = CountryRequestProbe()
                 let artwork = LibraryCatalogArtwork(transport: transport)
                 await LiveActivityView.loadArtwork(productID: "FIXTURE00001", session: nextSession, artwork: artwork)

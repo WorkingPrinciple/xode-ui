@@ -192,7 +192,10 @@ enum GameOperationChecks {
             printf 'Neutral setup log\\n' > '\(paths.logs.path)'/"$r.stderr.log"
             mode="$(cat '\(root.path)/mode')"
             if [ "$mode" = setupslow ]; then sleep 0.3; fi
-            if [ "$mode" = setup31 ]; then printf '31\\n' | publish "$receipts/$r.status"; exit 31; fi
+            if [ "$mode" = setup31 ]; then
+                printf '{"ready":false,"items":[]}\\n' | publish "$receipts/$r.result.json"
+                printf '31\\n' | publish "$receipts/$r.status"; exit 31
+            fi
             if [ "$mode" = setup22 ]; then printf '22\\n' | publish "$receipts/$r.status"; exit 22; fi
             if [ "$mode" = setupmissing ]; then exit 9; fi
             if [ "$mode" = setupmismatch ]; then printf '0\\n' | publish "$receipts/$r.status"; exit 3; fi
@@ -200,10 +203,11 @@ enum GameOperationChecks {
                 printf '{"ready":true,"items":[]}\\n' | publish "$receipts/$r.result.json"
             else
                 ready=true; environment=true; fix=null
-                if [ "$mode" = setupnotready ]; then ready=false; environment=false; fix='"Repair the game environment."'; fi
+                if [ "$mode" = setupnotready ] || [ "$mode" = setupfailure ]; then ready=false; environment=false; fix='"Repair the game environment."'; fi
                 if [ -f '\(signed.path)' ]; then signin=true; signinfix=null; else signin=false; signinfix='"Sign in for games."'; fi
                 printf '{"ready":%s,"items":[{"id":"crossover","title":"CrossOver","ready":true,"fix":null},{"id":"environment","title":"Game environment","ready":%s,"fix":%s},{"id":"service","title":"Game service","ready":true,"fix":null},{"id":"signin","title":"Game sign-in","ready":%s,"fix":%s}],"extra":1}\\n' "$ready" "$environment" "$fix" "$signin" "$signinfix" | publish "$receipts/$r.result.json"
             fi
+            if [ "$mode" = setupfailure ]; then printf '31\\n' | publish "$receipts/$r.status"; exit 31; fi
             printf '0\\n' | publish "$receipts/$r.status"
             """)
         let launcher = root.appendingPathComponent("fixture launcher.sh")
@@ -239,6 +243,7 @@ enum GameOperationChecks {
             fi
             if [ "$mode" = wrongid ]; then resultid=OTHER0000001; else resultid="$product"; fi
             printf '{"folder":"%s","launcher":"%s","storeId":"%s","title":"Ignored result title","bottle":"ignored","contentId":"ignored","bytesOnDisk":42}\\n' "$folder" '\(launcher.path)' "$resultid" | publish "$receipts/$r.result.json"
+            if [ "$mode" = resultfailure ]; then printf '13\\n' | publish "$receipts/$r.status"; exit 13; fi
             printf '0\\n' | publish "$receipts/$r.status"
             exit 0
             """)
@@ -686,7 +691,26 @@ enum GameOperationChecks {
         }
         check(operations.setupError == GameScriptError.statusMismatch.localizedDescription,
               "B8 conflicting process/status results remain explicit, not readiness defaults")
+        try writeMode("setupfailure")
+        operations.repairSetup()
+        await operations.waitForSetup()
+        check(operations.setupResult?.ready == false && operations.setupResult?.items.count == 4
+              && operations.setupError == GameScriptError.failed(31).localizedDescription
+              && operations.setupNeedsAttention && !installed.runtimeRepairActive && operations.canQuit,
+              "Nonzero setup repair keeps validated unready items and actionable failure without reporting success")
+        do {
+            _ = try GameSetupResult.parse(GameScriptOutcome(code: 31, result: Data(setupData.utf8), log: nil))
+            check(false, "Nonzero setup cannot publish a contradictory Ready result")
+        } catch {
+            check(error as? GameScriptError == .statusMismatch,
+                  "Nonzero setup cannot publish a contradictory Ready result")
+        }
         let setupValidation = GameScriptRunner(paths: paths)
+        try writeMode("setup31")
+        let failedSetup = try await setupValidation.run(command: .setup, runID: InstalledGamesController.runID(),
+                                                        arguments: ["repair"])
+        check(failedSetup.code == 31 && failedSetup.result != nil,
+              "Nonzero setup preserves a present bounded result receipt for truthful consumer decoding")
         for arguments in [[], ["install"], ["check", "repair"], ["../repair"]] {
             do {
                 _ = try await setupValidation.run(command: .setup, runID: InstalledGamesController.runID(), arguments: arguments)
@@ -1068,7 +1092,7 @@ enum GameOperationChecks {
         }
         await cancellingInstall.value
         await operations.waitForMutation()
-        check(!operations.isBusy && !installed.mutationActive && operations.error == GameScriptError.failed(14).localizedDescription
+        check(!operations.isBusy && !installed.mutationActive && operations.error == nil && operations.notice != nil
               && operations.log != nil && installed.games.isEmpty,
               "S5 SIGTERM joins the script, consumes code 14 and keeps partial files unregistered")
         // M7: a queue-originated pause/cancel also stops the engine with code 14, but unlike an
@@ -1299,10 +1323,16 @@ enum GameOperationChecks {
         for code in [10, 11, 12, 14] {
             try writeMode(String(code))
             try await install()
-            check(operations.error == GameScriptError.failed(code).localizedDescription && operations.log != nil
+            check((code == 14 ? (operations.error == nil && operations.notice != nil)
+                               : operations.error == GameScriptError.failed(code).localizedDescription) && operations.log != nil
                   && installed.games.isEmpty && !operations.isBusy,
-                  "S5 code \(code) has a specific error/recovery and cannot become installed")
+                  "S5 code \(code) has truthful failure/cancellation feedback and cannot become installed")
         }
+        try writeMode("resultfailure")
+        try await install()
+        check(operations.failureCode == 13 && operations.error == GameScriptError.failed(13).localizedDescription
+              && installed.games.isEmpty && !operations.isBusy,
+              "Present install result on nonzero exit is decoded without registering a false installed success")
         let unsupportedCache = compatibilityData.replacingOccurrences(of: "\"supported\":true", with: "\"supported\":false")
             .replacingOccurrences(of: "\"reason\":null", with: "\"reason\":\"Neutral Xbox feature is not supported.\"")
         try privateFile(cached, unsupportedCache)

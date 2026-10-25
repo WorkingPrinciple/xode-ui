@@ -542,9 +542,10 @@ actor GameScriptRunner {
             let value = try GameScriptProgress.parse(data)
             if value.phase == .failed { await progress(value) }
         }
-        let result = code == 0 && [.install, .serviceStatus, .serviceSignOut, .check, .gamePassStatus, .gameStats,
-                                   .xboxCompanion, .xboxAchievements, .stop, .setup].contains(command)
-            ? try GameScriptFiles.read(paths.receipt(runID, suffix: "result.json")) : nil
+        let returnsResult: [GameScriptCommand] = [.install, .serviceStatus, .serviceSignOut, .check,
+            .gamePassStatus, .gameStats, .xboxCompanion, .xboxAchievements, .stop, .setup]
+        let result = returnsResult.contains(command)
+            ? try GameScriptFiles.read(paths.receipt(runID, suffix: "result.json"), missingAllowed: code != 0) : nil
         return GameScriptOutcome(code: code, result: result, log: GameScriptFiles.log(runID: runID, paths: paths))
     }
 }

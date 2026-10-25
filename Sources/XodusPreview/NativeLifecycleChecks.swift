@@ -63,6 +63,20 @@ enum NativeLifecycleChecks {
             gameDirectory: root.path, logDirectory: failureLog.path,
             resultPath: failureLog.appendingPathComponent("result.json").path,
             progressPath: failureLog.appendingPathComponent("progress.jsonl").path)
+        for (code, expected) in [
+            ("CANCELLED", "cancelled"), ("TIMEOUT", "install operation took too long"),
+            ("RESOURCE_BUSY", "in use"), ("ACCOUNT_UNAVAILABLE", "Keychain"),
+            ("DISK_SPACE_FLOOR", "Free space"), ("DISK_SPACE_FLOOR_INVALID", "limit is invalid"),
+            ("OPERATION_FAILED", "Open its log")
+        ] {
+            let failed = NativeGameResult(version: 1, runID: resultFixture.runID, operation: "install",
+                product: resultFixture.product, success: false, exitCode: 1, errorCode: code,
+                gameDirectory: resultFixture.gameDirectory, logDirectory: resultFixture.logDirectory,
+                resultPath: resultFixture.resultPath, progressPath: resultFixture.progressPath)
+            check(NativeGameResult.failureCodes.contains(code)
+                  && failed.failureMessage.contains(expected) && !failed.failureMessage.contains("playable game"),
+                  "Native lifecycle maps \(code) actionably without inventing a launch during installation")
+        }
         try Data().write(to: failureLog.appendingPathComponent("windows.jsonl"))
         check(try await resultFixture.playerMessage()?.contains("before Ode to X detected its window") == true,
               "Player failure reader binds empty monitor evidence to the exact result run folder")
@@ -211,8 +225,8 @@ enum NativeLifecycleChecks {
             } catch GameScriptError.failed(14) {
                 let persisted = try NativeGameLifecycle.readResult(state: cancelledState, operation: "launch",
                     product: "FIXTURE00001", gameDirectory: game)
-                check(!runner.isRunning && persisted.success == succeeds,
-                      "REQ95 cancellation joins child, refuses success-after-cancel and preserves truthful persisted result")
+                check(!runner.isRunning && persisted.success == succeeds && runner.completedResult == persisted,
+                      "REQ95 cancellation joins child, validates its terminal receipt and refuses success-after-cancel")
             }
         }
         do {

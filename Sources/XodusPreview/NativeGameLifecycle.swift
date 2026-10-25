@@ -51,7 +51,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
 
     static let failureCodes: Set<String> = [
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
-        "RESOURCE_BUSY"
+        "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID"
     ]
 
     var failureMessage: String {
@@ -59,8 +59,13 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "ACCOUNT_UNAVAILABLE": "Your Xbox sign-in couldn't be read. Check Account and approve any macOS Keychain prompt."
         case "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED": "Your Xbox account changed. Refresh your library before trying again."
         case "CANCELLED": "The operation was cancelled. Partial files are kept; you can retry the installation."
-        case "TIMEOUT": "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
+        case "TIMEOUT":
+            operation == "launch"
+                ? "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
+                : "The \(operation) operation took too long. Check its log before trying again; completion wasn't confirmed."
         case "RESOURCE_BUSY": "This installation is in use. Wait for its current operation to finish and try again."
+        case "DISK_SPACE_FLOOR": "There isn't enough free space to continue safely. Free space on the installation drive before retrying."
+        case "DISK_SPACE_FLOOR_INVALID": "The free-space limit is invalid. Check the operation log before retrying."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
     }
@@ -163,6 +168,7 @@ final class NativeGameLifecycle {
     private var cancellationRequested = false
     private(set) var started = false
     private(set) var stateDirectory: URL?
+    private(set) var completedResult: NativeGameResult?
     var isRunning: Bool { process?.isRunning == true }
     var processIdentifier: Int32? { process?.isRunning == true ? process?.processIdentifier : nil }
 
@@ -185,6 +191,8 @@ final class NativeGameLifecycle {
         active = true
         cancellationRequested = false
         started = false
+        completedResult = nil
+        stateDirectory = nil
         defer { active = false }
 #if XODUS_SHIPPING
         guard configuration.executableIdentity != nil else { throw GameScriptError.runtimeUnavailable }
@@ -253,9 +261,11 @@ final class NativeGameLifecycle {
         while try readProgress(state: state, onProgress: onProgress) {}
         guard pending.isEmpty else { throw GameScriptError.invalidProgress }
         try output.synchronize()
+        let result = try Self.readResult(state: state, operation: operation, product: product,
+                                        gameDirectory: gameDirectory, exitCode: child.terminationStatus)
+        completedResult = result
         guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
-        return try Self.readResult(state: state, operation: operation, product: product,
-                                   gameDirectory: gameDirectory, exitCode: child.terminationStatus)
+        return result
     }
 
     static func readResult(state: URL, operation: String, product: String,

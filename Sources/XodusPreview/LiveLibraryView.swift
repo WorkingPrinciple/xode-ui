@@ -41,10 +41,11 @@ struct LiveLibraryView: View {
     @FocusState private var focusedGameID: String?
     @AppStorage(LibrarySupportVisibility.preferenceKey)
     private var showsUnsupportedGames = LibrarySupportVisibility.defaultShowsUnsupported
-    private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
+    private var countryUnresolved: Bool { session.hasConfirmedSignIn && !session.accountCountryReady }
+    private var artworkAllowed: Bool { !countryUnresolved && (allowsArtworkLoading ?? allowsStartupTasks) }
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
     private var filter: LibraryFilter {
-        get { selection.filter }
+        get { countryUnresolved ? .installed : selection.filter }
         nonmutating set { changeScope(filter: newValue, showsUnsupported: showsUnsupportedGames) }
     }
     private var sort: LibrarySort {
@@ -158,9 +159,22 @@ struct LiveLibraryView: View {
                 if let error = installed.discoveryError {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
-                PCGamesView(library: library, installed: installed, operations: operations,
+                if countryUnresolved {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Your installed games stay visible. Confirm your account country to browse the catalogue and Game Pass.")
+                                .font(.callout).foregroundStyle(.secondary)
+                            AccountCountrySettings()
+                        }
+                    } label: {
+                        Label("Account country for browsing", systemImage: "globe")
+                    }
+                    .accessibilityIdentifier("xodus.library.countryNotice")
+                } else {
+                    PCGamesView(library: library, installed: installed, operations: operations,
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
+                }
                 VStack(alignment: .leading, spacing: 22) {
                 VStack(spacing: 0) {
                 LibraryControls(count: LibraryGame.displayedCount(
@@ -170,7 +184,7 @@ struct LiveLibraryView: View {
                                 showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: {
                                     changeScope(filter: filter, showsUnsupported: $0)
                                 }),
-                                allowsSorting: true)
+                                allowsSorting: true, allowsAccountFilters: !countryUnresolved)
                     .id("library-games")
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
                         selection.measureHeader($0)
@@ -302,7 +316,9 @@ struct LiveLibraryView: View {
             selection.heroPlaying = false
             selection.localDetail = nil
         }
-        .task(id: allowsStartupTasks) { if allowsStartupTasks { await library.loadOnAppear() } }
+        .task(id: "\(allowsStartupTasks):\(countryUnresolved)") {
+            if allowsStartupTasks && !countryUnresolved { await library.loadOnAppear() }
+        }
         .task(id: allowsStartupTasks) {
             guard allowsStartupTasks else { return }
             while !Task.isCancelled {

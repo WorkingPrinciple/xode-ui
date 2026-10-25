@@ -97,9 +97,9 @@ struct LiveRootView: View {
     }
     private var libraryArtworkAllowed: Bool {
 #if XODUS_SHIPPING
-        startupAllowed
+        startupAllowed && session.accountCountryReady
 #else
-        startupAllowed || LibraryPreviewExporter.requested
+        (startupAllowed && session.accountCountryReady) || LibraryPreviewExporter.requested
 #endif
     }
     private var searchPlaceholder: String {
@@ -121,7 +121,7 @@ struct LiveRootView: View {
                 OdeStartupBackdrop()
                     .accessibilityIdentifier("xodus.welcome.background")
             } else if session.hasConfirmedSignIn, !session.accountCountryReady,
-                      state.destination != .downloads {
+                      state.destination == .discover {
                 Form {
                     Section("Account country") { AccountCountrySettings() }
                 }
@@ -342,7 +342,7 @@ struct LiveRootView: View {
             await state.loadRecentActivityIfVisible(session: session)
         }
         .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
-            guard accountContentAllowed, state.destination == .discover else { return }
+            guard accountContentAllowed, session.accountCountryReady, state.destination == .discover else { return }
             if !state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 do { try await Task.sleep(for: .milliseconds(250)) }
                 catch { return }
@@ -350,7 +350,7 @@ struct LiveRootView: View {
             await session.loadCatalogOnEntry(state.query)
         }
         .task(id: "\(accountContentAllowed):\(session.isReady):\(session.market):\(session.language)") {
-            guard accountContentAllowed, session.isReady, state.destination == .library,
+            guard accountContentAllowed, session.accountCountryReady, session.isReady, state.destination == .library,
                   state.query.isEmpty, session.catalogMatches(query: "") else { return }
             await session.loadCatalogOnEntry("")
             guard !Task.isCancelled, session.catalogMatches(query: "") else { return }

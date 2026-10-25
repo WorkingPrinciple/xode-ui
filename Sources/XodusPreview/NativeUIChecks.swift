@@ -35,6 +35,28 @@ private struct InstallSheetFixtureView: View {
 
 @MainActor
 enum NativeUIChecks {
+    static func checkCountryPendingLibrary(session: LiveSession, installed: InstalledGamesController,
+                                           check: (Bool, String) -> Void) {
+        let windows = NSApplication.shared.windows.count
+        let state = AppState(installedGames: installed)
+        state.librarySelection.filter = .owned
+        let saved = installed.games
+        let host = NSHostingView(rootView: LiveRootView(allowsStartupTasks: false)
+            .environmentObject(state).environmentObject(session))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 1200, height: 860)
+        host.layoutSubtreeIfNeeded()
+        let projection = state.librarySelection.projection.current
+        check(!session.accountCountryReady && !saved.isEmpty
+              && Set(projection.local.compactMap(\.installed?.id)) == Set(saved.map(\.id))
+              && state.librarySelection.filter == .owned,
+              "Unknown country renders installed Library records without destroying the saved account filter")
+        check(descendants(of: host).contains { $0 is NSPopUpButton }
+              && host.window == nil && NSApplication.shared.windows.count == windows
+              && installed.games == saved,
+              "Unknown-country Library keeps inline native confirmation and does not mutate registrations or open a window")
+    }
+
     static func checkAccountCountry(session: LiveSession, confirmationRequired: Bool,
                                     check: (Bool, String) -> Void) throws {
         let windows = NSApplication.shared.windows.count
