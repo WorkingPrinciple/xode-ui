@@ -77,7 +77,8 @@ final class InstalledProductAccess: ObservableObject {
         checking = false
     }
 
-    func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false) async {
+    func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false,
+                 selectedProductID: String? = nil) async {
         let scope = session.accountCatalogScope
         if catalogScope != scope {
             retire()
@@ -86,7 +87,8 @@ final class InstalledProductAccess: ObservableObject {
         guard session.accountCountryReady else { return }
         let account = session.hasConfirmedSignIn ? session.accountHash : nil
         guard account == nil || session.nativeLifecycleConfiguration != nil else { return }
-        await refresh(account: account, installedIDs: installedIDs, now: now, force: force) { id in
+        await refresh(account: account, installedIDs: installedIDs, now: now, force: force,
+                      selectedProductID: selectedProductID) { id in
             for _ in 0..<100 where session.accountBusy {
                 try await Task.sleep(for: .milliseconds(100))
             }
@@ -98,6 +100,7 @@ final class InstalledProductAccess: ObservableObject {
     }
 
     func refresh(account: String?, installedIDs: [String], now: Date = Date(), force: Bool = false,
+                 selectedProductID: String? = nil,
                  read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
         if account != accountHash {
             let old = operation
@@ -123,6 +126,7 @@ final class InstalledProductAccess: ObservableObject {
         attempts = attempts.filter { installed.contains($0.key) }
         if let operation { await operation.value; return }
         let ids = installed.sorted().filter { id in
+            if let selectedProductID, id != selectedProductID { return false }
             if force { return true }
             guard let last = attempts[id] else { return true }
             return now.timeIntervalSince(last) >= 60

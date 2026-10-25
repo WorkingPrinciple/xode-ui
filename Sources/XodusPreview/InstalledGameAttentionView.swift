@@ -33,7 +33,7 @@ struct InstalledGameAttentionView: View {
             || installed.installationErrors[game.id] != nil
             || installed.installationStatuses[game.id].map { !$0.success || $0.status != .complete } == true
     }
-    var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
+    var needsAttention: Bool { localIssue || !installed.accountAccessAllowed || installed.productAccessNotice(for: game) != nil }
     var attentionTitle: String {
         driveUnavailable ? "Drive unavailable" : localIssue ? "Installation needs attention"
             : "Game launching unavailable"
@@ -49,9 +49,23 @@ struct InstalledGameAttentionView: View {
                      : incomplete ? "This game isn't fully installed."
                      : localIssue ? installed.packageErrors[game.id] ?? installed.installationErrors[game.id]
                         ?? installed.installationStatuses[game.id]?.explanation ?? "Installation verification is incomplete. Retry to verify this game."
-                     : installed.accountAccessMessage)
+                     : installed.accountAccessAllowed ? "Game access needs verification." : installed.accountAccessMessage)
                 if !localIssue {
-                    Button("Open settings", action: openSettings.callAsFunction)
+                    if installed.accountAccessAllowed, let notice = installed.productAccessNotice(for: game) {
+                        Text(notice).font(.callout).fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("xodus.game.accessReason")
+                        if installed.productAccess.checking {
+                            ProgressView("Checking game access…").controlSize(.small)
+                        } else if installed.canRetryProductAccess {
+                            Button("Retry") { Task { await installed.retryProductAccess(for: game) } }
+                                .help("Checks this exact game's account access without downloading or launching.")
+                                .accessibilityIdentifier("xodus.game.retryAccess")
+                        } else {
+                            Button("Open settings", action: openSettings.callAsFunction)
+                        }
+                    } else {
+                        Button("Open settings", action: openSettings.callAsFunction)
+                    }
                 }
                 if offersInstallationCheck && installed.checkingInstallations.contains(game.id) {
                     ProgressView("Checking installation").controlSize(.small)

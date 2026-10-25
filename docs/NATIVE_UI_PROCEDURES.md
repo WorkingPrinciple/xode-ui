@@ -576,6 +576,13 @@ and genuinely absent content shows **Download** through the existing consent.
 Incomplete, ambiguous, inaccessible and timed-out existing folders never become
 a duplicate Download. Periodic readiness does not automatically retry failures.
 
+A complete installation still requires exact-product access for the current
+account. If that access is unconfirmed, detail shows the provider/access reason
+and a read-only Retry (or Account settings when disconnected), not only a
+disabled Play tooltip. Retry checks only that StoreID and preserves other access
+facts. Catalog and installed config titles may differ for the same StoreID;
+the header action uses the displayed catalog name without rewriting config.
+
 Settings offers a persistent default install folder and a return to the original
 `~/Games/Xodus` default. Under REQ110, a new game's actual review shows an editable
 **Install folder** root and native **Browse…**, with the resolved game destination

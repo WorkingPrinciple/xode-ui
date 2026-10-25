@@ -51,6 +51,24 @@ enum InstalledProductAccessChecks {
         check(!controller.permits(product, account: other, now: now)
               && !controller.permits(product, account: nil, now: now),
               "Different or absent account cannot borrow an installed access fact")
+        let selected = InstalledProductAccess()
+        defer { selected.retire() }
+        await selected.refresh(account: account, installedIDs: [product, denied, unknown], now: now) { id in
+            try response(id, access: id == product ? "permitted" : "unknown",
+                         reason: id == product ? nil : "productNotListed")
+        }
+        let preservedFact = selected.facts[product]?.checkedAt
+        var selectedRequests: [String] = []
+        await selected.refresh(account: account, installedIDs: [product, denied, unknown], now: now,
+            force: true, selectedProductID: unknown) { id in
+                selectedRequests.append(id)
+                return try response(id, access: "unknown", reason: "productNotListed")
+            }
+        check(selectedRequests == [unknown] && selected.facts.count == 3
+              && selected.facts[product]?.checkedAt == preservedFact
+              && !selected.permits(unknown, account: account, now: now)
+              && !selected.permits(product, account: other, now: now),
+              "COR171 native: Exact-product access Retry preserves unrelated facts and cannot borrow another edition or account permission")
         check(!controller.permitsReview(product, account: other, pcCandidate: true, now: now)
               && !controller.permitsReview(product, account: nil, pcCandidate: true, now: now)
               && !controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(120)),

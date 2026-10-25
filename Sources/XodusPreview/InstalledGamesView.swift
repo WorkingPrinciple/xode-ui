@@ -199,6 +199,8 @@ struct InstalledPlayButton: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject private var evidenceStore = MacGameEvidenceStore.shared
     let game: InstalledGame
+    var displayTitle: String? = nil
+    var actionGameTitle: String { displayTitle ?? game.title }
     var usesGlass = false
     var prominent = true
     var heroStyle = false
@@ -299,7 +301,7 @@ struct InstalledPlayButton: View {
                   || library.applicationTerminating || nativeReadinessUnavailableReason != nil
                   || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
         .help(nativeReadinessUnavailableReason ?? "\(nativeActionTitle) for \(game.title)")
-        .accessibilityLabel("\(nativeActionTitle) for \(game.title)")
+        .accessibilityLabel("\(nativeActionTitle) for \(actionGameTitle)")
         .accessibilityIdentifier("xodus.installed.readinessAction")
         }
         if library.checkingInstallations.contains(game.id) {
@@ -380,10 +382,10 @@ struct InstalledPlayButton: View {
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.checkingInstallations.contains(game.id)
                   || library.accountDisconnecting || !library.canRequestPlay(game.storeId))
-        .accessibilityLabel(opensAttention ? "\(title) for \(game.title)"
-             : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
-            : !library.canRequestPlay(game.storeId) ? "Play \(game.title), game access hasn't been confirmed"
-            : needsRepair ? "Repair \(game.title)" : "Play \(game.title)")
+        .accessibilityLabel(opensAttention ? "\(title) for \(actionGameTitle)"
+             : canStop ? "Stop \(actionGameTitle)" : launching ? "Launching \(actionGameTitle)"
+            : !library.canRequestPlay(game.storeId) ? "Play \(actionGameTitle), game access hasn't been confirmed"
+            : needsRepair ? "Repair \(actionGameTitle)" : "Play \(actionGameTitle)")
         .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
               : !canStop && !library.canRequestPlay(game.storeId)
                 ? "This account's access to the game hasn't been confirmed." : "")

@@ -240,6 +240,22 @@ enum InstalledGameChecks {
         check(InstalledPlayButton(library: mounted, operations: GameOperationsController(installed: mounted),
             game: mountedGame).nativeActionTitle == "Play",
               "COR170: A verified complete installed game presents Play, never routine readiness bookkeeping")
+        let accessSession = LiveSession()
+        mounted.useUnifiedAccount(accessSession)
+        mounted.setAccountAccessAllowed(true)
+        let accessAttention = InstalledGameAttentionView(installed: mounted,
+            operations: GameOperationsController(installed: mounted), game: mountedGame, close: {})
+        let namedPrimary = InstalledPlayButton(library: mounted, operations: GameOperationsController(installed: mounted),
+            game: mountedGame, displayTitle: "Current catalog title")
+        check(mounted.accountAccessAllowed && !mounted.canRequestPlay(mountedGame.storeId)
+              && mounted.productAccessNotice(for: mountedGame) != nil && accessAttention.needsAttention
+              && namedPrimary.actionGameTitle == "Current catalog title"
+              && mountedGame.title == "Large mounted fixture",
+              "COR171 native: Global account admission never hides exact-product access failure; catalog action naming preserves authoritative config")
+        mounted.setAccountAccessAllowed(false, message: "Account identity changed.")
+        check(!mounted.canRequestPlay(mountedGame.storeId) && accessAttention.needsAttention
+              && mounted.accountAccessMessage == "Account identity changed.",
+              "COR171 native: Product access recovery never bypasses a global account mismatch")
         check(InstalledGamesController.inspectionTimeout(for: mountedGame) == .seconds(900)
               && InstalledGamesController.inspectionTimeout(for: game, explicitCheck: true) == .seconds(900)
               && InstalledGamesController.inspectionTimeout(for: game) == .seconds(120),
@@ -760,8 +776,9 @@ enum InstalledGameChecks {
         await controller.play(game)
         let attention = InstalledGameAttentionView(installed: controller,
             operations: GameOperationsController(installed: controller), game: game, close: {})
-        check(controller.playErrors[game.id] != nil && !attention.needsAttention
-              && !attention.offersRepair,
+        check(controller.playErrors[game.id] != nil && attention.needsAttention
+              && !attention.offersRepair && !attention.offersInstallationCheck
+              && controller.productAccessNotice(for: game) != nil,
               "REQ95: A launch/access refusal never becomes an installation-damage claim or repair action")
         try Data("<Game><Identity Name=\"Wrong\" Version=\"7.6.0.0\"/><StoreId>FIXTURE00001</StoreId></Game>".utf8)
             .write(to: folder.appendingPathComponent("MicrosoftGame.config"))

@@ -631,6 +631,23 @@ final class InstalledGamesController: ObservableObject {
         return !usesUnifiedAccount || productAccess.permits(productID, account: unifiedSession?.accountHash)
     }
 
+    func productAccessNotice(for game: InstalledGame) -> String? {
+        guard !canRequestPlay(game.storeId) else { return nil }
+        return productAccess.reviewNotice(for: game.storeId, account: unifiedSession?.accountHash)
+    }
+
+    var canRetryProductAccess: Bool {
+        accountAccessAllowed && unifiedSession?.nativeLifecycleConfiguration != nil && !productAccess.checking
+            && !accountDisconnecting && !applicationTerminating
+    }
+
+    func retryProductAccess(for game: InstalledGame) async {
+        guard canRetryProductAccess, games.contains(where: { $0.id == game.id && $0.storeId == game.storeId }),
+              let session = unifiedSession else { return }
+        await productAccess.refresh(session: session, installedIDs: games.map(\.storeId),
+            force: true, selectedProductID: game.storeId)
+    }
+
     func suspendAccountView() {
         guard runningGameID == nil, stoppingGameID == nil, !mutationActive else { return }
         games = []

@@ -386,7 +386,7 @@ struct LiveProductView: View {
                                 }
                             } else {
                                 InstalledPlayButton(library: installedLibrary, operations: operations,
-                                                    game: installed, usesGlass: true, prominent: true,
+                                                    game: installed, displayTitle: product.title, usesGlass: true, prominent: true,
                                                     showsDiagnostics: false)
                             }
                             InstalledGameActions(library: installedLibrary, operations: operations,
