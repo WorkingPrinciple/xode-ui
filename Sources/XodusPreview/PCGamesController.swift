@@ -66,6 +66,7 @@ final class PCGamesController: ObservableObject {
     private weak var unifiedSession: LiveSession?
     private(set) var usesUnifiedAccount = false
     private var lastAutomaticAttempt: (account: String, date: Date)?
+    private var snapshotScope: String?
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
 
     func useUnifiedAccount(_ session: LiveSession) {
@@ -78,6 +79,8 @@ final class PCGamesController: ObservableObject {
         guard !needsSignIn else { return [] }
         if usesUnifiedAccount {
             guard unifiedSession?.hasConfirmedSignIn == true,
+                  unifiedSession?.accountCountryReady == true,
+                  snapshotScope == unifiedSession?.accountCatalogScope,
                   accountHash == unifiedSession?.accountHash else { return [] }
         }
         return snapshot?.games ?? []
@@ -106,6 +109,8 @@ final class PCGamesController: ObservableObject {
         if !hasSavedSignIn || needsSignIn { return .signIn }
         if error != nil { return .unavailable }
         if usesUnifiedAccount && (unifiedSession?.hasConfirmedSignIn != true
+            || unifiedSession?.accountCountryReady != true
+            || snapshotScope != unifiedSession?.accountCatalogScope
             || accountHash != unifiedSession?.accountHash) { return .accountMismatch }
         return .ready
     }
@@ -135,7 +140,7 @@ final class PCGamesController: ObservableObject {
     }
 
     init(store: any PCGamesRefreshStore = PCGamesCredentialStore(), client: PCGamesClient = PCGamesClient(),
-         market: String = PCGamesClient.market(Locale.current.region?.identifier),
+         market: String = "US",
          language: String = PCGamesClient.language(Locale.preferredLanguages.first ?? "en-US")) {
         self.store = store
         self.client = client
@@ -308,6 +313,16 @@ final class PCGamesController: ObservableObject {
         operation = Task {
             defer { finish(token) }
             do {
+                if !session.accountCountryReady { await session.refreshAccountCountry() }
+                try current(token)
+                guard session.accountCountryReady else {
+                    error = session.accountCountryError ?? "Confirm your account country to load your PC library."
+                    return
+                }
+                let market = session.market, language = session.language
+                let scope = session.accountCatalogScope
+                if snapshotScope != scope { snapshot = nil }
+                snapshotScope = scope
                 // This task has not entered readUnifiedAccount yet, so accountBusy cannot include itself.
                 let deadline = ContinuousClock.now.advanced(by: .seconds(30))
                 while session.accountBusy {
@@ -315,6 +330,7 @@ final class PCGamesController: ObservableObject {
                     guard session.hasConfirmedSignIn, session.accountHash == account else {
                         throw PCGamesError.identityMismatch
                     }
+                    guard session.accountCatalogScope == scope else { throw CancellationError() }
                     guard ContinuousClock.now < deadline else {
                         logger.warning("Account collection admission timed out before dispatch")
                         throw PCGamesError.libraryReadBusy
@@ -325,6 +341,7 @@ final class PCGamesController: ObservableObject {
                 guard session.hasConfirmedSignIn, session.accountHash == account else {
                     throw PCGamesError.identityMismatch
                 }
+                guard session.accountCatalogScope == scope else { throw CancellationError() }
                 logger.notice("Account collection dispatch")
                 let read = try await session.readUnifiedAccount(.library, market: market, language: language)
                 let collection = try read.payload.decode(OdeAccountCollection.self)
@@ -338,13 +355,15 @@ final class PCGamesController: ObservableObject {
                     accountHash: read.accountHash) { [weak self, weak session] partial in
                         guard let self, let session, self.generation == token,
                               !self.terminating, !self.accountDisconnecting,
-                              session.hasConfirmedSignIn, session.accountHash == read.accountHash else { return }
+                              session.hasConfirmedSignIn, session.accountHash == read.accountHash,
+                              session.accountCatalogScope == scope else { return }
                         self.snapshot = partial.retainingUnresolved(from: self.snapshot)
                     }
                 try current(token)
                 guard session.hasConfirmedSignIn, session.accountHash == read.accountHash else {
                     throw PCGamesError.identityMismatch
                 }
+                guard session.accountCatalogScope == scope else { throw CancellationError() }
                 snapshot = result.retainingUnresolved(from: snapshot)
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 hasSavedSignIn = true
@@ -368,17 +387,20 @@ final class PCGamesController: ObservableObject {
 
     func retireUnifiedAccount() async {
         guard usesUnifiedAccount else { return }
-        generation = UUID()
+        let token = UUID()
+        generation = token
         let old = operation
         old?.cancel()
         snapshot = nil
+        snapshotScope = nil
+        lastAutomaticAttempt = nil
         hasSavedSignIn = false
         restored = false
         attemptedAutomaticLoad = false
-        lastAutomaticAttempt = nil
         needsSignIn = false
         error = nil
         await old?.value
+        guard generation == token else { return }
         operation = nil
         busy = false
     }

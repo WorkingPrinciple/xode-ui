@@ -115,6 +115,9 @@ struct XboxProfileView: View {
                         if let location = profile.location {
                             Label(location, systemImage: "location").foregroundStyle(.secondary)
                         }
+                        if let country = profile.accountCountry?.countryCode {
+                            LabeledContent("Account country", value: country)
+                        }
                     }
                     Spacer()
                 }

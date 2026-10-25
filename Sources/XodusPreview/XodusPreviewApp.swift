@@ -136,7 +136,12 @@ struct XodusPreviewApp: App {
             || CommandLine.arguments.contains("--gamepass-compatibility-export") {
             Task { @MainActor in
                 let collections = GamePassCollections()
-                await collections.load(market: PCGamesClient.market(Locale.current.region?.identifier), language: "en-US")
+                guard let value = ProcessInfo.processInfo.environment["XODUS_PUBLIC_CATALOG_MARKET"],
+                      let country = XboxAccountCountry.normalized(value) else {
+                    print("Public catalogue checks require explicit XODUS_PUBLIC_CATALOG_MARKET; no account country is inferred.")
+                    exit(64)
+                }
+                await collections.load(market: country, language: "en-US")
                 for category in collections.collections {
                     print("\(category.key): \(category.title); feed=\(category.feedID); records=\(category.productIDs.count); resolved=\(category.products.count); error=\(category.error != nil)")
                 }
@@ -147,7 +152,7 @@ struct XodusPreviewApp: App {
                 if valid, CommandLine.arguments.contains("--gamepass-compatibility-export") {
                     do {
                         try await collections.exportCompatibility(to: URL(fileURLWithPath: CommandLine.arguments[2]),
-                            market: PCGamesClient.market(Locale.current.region?.identifier))
+                            market: country)
                     } catch {
                         print("Public compatibility export failed; no successful snapshot is claimed.")
                         exit(1)

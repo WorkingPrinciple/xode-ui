@@ -120,6 +120,13 @@ struct LiveRootView: View {
             if requiresAccountGate {
                 OdeStartupBackdrop()
                     .accessibilityIdentifier("xodus.welcome.background")
+            } else if session.hasConfirmedSignIn, !session.accountCountryReady,
+                      state.destination != .downloads {
+                Form {
+                    Section("Account country") { AccountCountrySettings() }
+                }
+                .formStyle(.grouped)
+                .accessibilityIdentifier("xodus.account.countryRequired")
             } else {
                 ZStack {
                     if libraryVisited || state.destination == .library {
@@ -231,6 +238,15 @@ struct LiveRootView: View {
             guard profileBootstrapBinding != nil else { return }
             await companion.refresh(for: state.gameOperations.serviceStatus)
         }
+        .task(id: session.accountCatalogScope) {
+            guard startupAllowed, unifiedAccountMode else { return }
+            state.librarySelection.projection.clear(to: .empty)
+            state.discoverSelection.clear()
+            await state.pcGames.retireUnifiedAccount()
+            guard !Task.isCancelled, session.accountCountryReady else { return }
+            await state.pcGames.refreshInBackground()
+            if session.nativeLifecycleConfiguration == nil { await session.prepareUnifiedRuntime() }
+        }
         .task(id: "\(unifiedAccountVerified):\(state.installedGames.loaded):\(state.installedGames.editing):\(state.installedGames.games.count)") {
             guard startupAllowed, !launchArgumentHandled, unifiedAccountVerified,
                   state.installedGames.loaded, !state.installedGames.editing,
@@ -256,7 +272,7 @@ struct LiveRootView: View {
             state.installedGames.setAccountAccessAllowed(unifiedAccountVerified,
                 message: "Your Xbox Live account is being checked. Try again when it finishes.")
         }
-        .task(id: "\(session.accountHash ?? ""):\(unifiedAccountVerified):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
+        .task(id: "\(session.accountCatalogScope):\(unifiedAccountVerified):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
             guard startupAllowed, unifiedAccountMode else { return }
             while !Task.isCancelled {
                 await state.installedGames.productAccess.refresh(session: session,

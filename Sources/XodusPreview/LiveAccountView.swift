@@ -204,6 +204,7 @@ struct LiveSettingsView: View {
 
             Section("Account") {
                 LabeledContent("Status", value: session.accountJourneyTitle)
+                if session.hasConfirmedSignIn { AccountCountrySettings() }
                 Button("Open account") { state.openAccount() }
                 if session.hasConfirmedSignIn { AccountHubDestinations() }
             }
@@ -289,7 +290,11 @@ struct LiveSettingsView: View {
                      ? "Discover browses PC Game Pass titles or searches the public Microsoft Store. Neither source is an owned library."
                      : "Discover checks a bounded public PC Game Pass page. This engine searches checked products only, not the whole Store or an owned library.")
                     .foregroundStyle(.secondary)
-                TextField("Market (for example US)", text: $session.market)
+                if session.hasConfirmedSignIn {
+                    LabeledContent("Market", value: session.accountCountryLabel)
+                } else {
+                    TextField("Market (for example US)", text: $session.market)
+                }
                 TextField("Language (for example en-US)", text: $session.language)
                 Button("Refresh catalog scope") { Task { await session.refreshCatalog(state.query) } }
                     .disabled(!session.isReady || session.searching)

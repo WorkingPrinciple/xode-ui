@@ -1796,6 +1796,7 @@ enum MockBackend {
                         }
                         if command == "ode.account.read.v1" {
                             let section = request["params"]?["section"]?.string ?? ""
+                            try trace("\(section):\(request["params"]?["market"]?.string ?? "")")
                             if section == "library" { accountLibraryReads += 1 }
                             let warm = scenario.hasPrefix("odelibrary")
                             if warm, accountLibraryReads > 1 { Thread.sleep(forTimeInterval: 0.15) }
@@ -1824,14 +1825,22 @@ enum MockBackend {
                             } else {
                                 payload = section == "library" ? .object(["items": .array(items)])
                                     : .object(["gamertag": .string("Fixture"), "displayName": .null,
-                                        "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null])
+                                        "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null,
+                                        "accountCountry": .object([
+                                            "status": .string(scenario == "odecountryunknown" ? "unknown" : "verified"),
+                                            "countryCode": scenario == "odecountryunknown" ? .null
+                                                : .string(scenario.hasPrefix("odecountry") ? "UK" : "US"),
+                                            "locale": scenario == "odecountryunknown" ? .null : .string("en-GB"),
+                                            "source": .string("xboxAccount.legalCountry"),
+                                            "reason": scenario == "odecountryunknown" ? .string("providerUnavailable") : .null
+                                        ])])
                             }
                             let response = result(request, data: .object([
                                 "section": .string(section),
                                 "accountHash": .string(String(repeating: scenario == "odemismatch" ? "b" : "a", count: 64)),
                                 "checkedAt": .string("2026-10-19T12:00:00Z"), "payload": payload
                             ]))
-                            if scenario == "odeslow" {
+                            if scenario == "odeslow" || (scenario == "odecountryslow" && section == "library") {
                                 DispatchQueue.global().async {
                                     Thread.sleep(forTimeInterval: 0.3)
                                     do { try emit(.object(response)) } catch { exit(3) }

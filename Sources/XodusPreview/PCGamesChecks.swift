@@ -360,7 +360,8 @@ enum PCGamesChecks {
             await library.refreshInBackground(now: next)
             await refresh.value
             let trace = try String(contentsOf: traceURL, encoding: .utf8)
-            check(trace.components(separatedBy: "ode.account.read.v1").count == 3,
+            check(trace.split(separator: "\n").filter { $0.hasPrefix("library:") }.count == 2
+                  && trace.split(separator: "\n").filter { $0.hasPrefix("profile:") }.count == 1,
                   "Only one background collection read runs at a time")
             if scenario == "odelibraryfailure" {
                 check(library.representedGames.count == 1 && library.error != nil && !library.accessIsCurrent,

@@ -260,6 +260,7 @@ enum InstalledProductAccessChecks {
         let session = LiveSession(configuration: config)
         await session.connect()
         await session.refreshAccount()
+        await session.refreshAccountCountry()
         let license = Task { try await session.readUnifiedAccount(.license, productID: product) }
         try await Task.sleep(for: .milliseconds(40))
         let profile = try await session.readUnifiedAccount(.profile)

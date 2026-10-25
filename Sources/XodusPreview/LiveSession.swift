@@ -79,6 +79,14 @@ final class LiveSession: ObservableObject {
     @Published private(set) var backendPath: String
     @Published var market = "US" { didSet { if market != oldValue { invalidateCatalogScope() } } }
     @Published var language = "en-US" { didSet { if language != oldValue { invalidateCatalogScope() } } }
+    @Published private(set) var accountCountryChecking = false
+    @Published private(set) var accountCountryVerified = false
+    @Published private(set) var accountCountryNeedsConfirmation = false
+    @Published private(set) var accountCountryError: String?
+    private var countryAccountHash: String?
+    private var countryCode: String?
+    private var countryGeneration = UUID()
+    private let countryDefaults: UserDefaults
     @Published var lookupID = ""
     @Published private(set) var diagnosticPreview: String?
     @Published private(set) var diagnosticPreviewing = false
@@ -174,15 +182,17 @@ final class LiveSession: ObservableObject {
 
     init(configuration: BackendConfiguration? = nil,
          signInPollingBudget: Duration = .seconds(600),
+         countryDefaults: UserDefaults = .standard,
          shutdownClient: @escaping @Sendable (ManagementClient) async -> Bool = { await $0.close() }) {
+        self.countryDefaults = countryDefaults
         self.shutdownClient = shutdownClient
         self.signInPollingBudget = signInPollingBudget
 #if XODUS_SHIPPING
         self.configuration = nil
         backendPath = Bundle.main.bundleURL
             .appendingPathComponent("Contents/Resources/XodusEngine/xodus-cli").path
-        let scope = CatalogLocale.preferred(region: Locale.current.region?.identifier, languages: Locale.preferredLanguages)
-        market = scope.market
+        let scope = CatalogLocale.preferred(region: nil, languages: Locale.preferredLanguages)
+        market = ""
         language = scope.language
         if ShippingPairPins.approved == nil {
             errorMessage = ManagementError.pairedEngineUnavailable.localizedDescription
@@ -208,13 +218,79 @@ final class LiveSession: ObservableObject {
         } else {
             backendPath = bundledPath ?? UserDefaults.standard.string(forKey: "Xodus.developerBackendPath") ?? ""
         }
-        let scope = CatalogLocale.preferred(region: Locale.current.region?.identifier, languages: Locale.preferredLanguages)
-        market = scope.market
+        let scope = CatalogLocale.preferred(region: nil, languages: Locale.preferredLanguages)
+        market = ""
         language = scope.language
 #endif
     }
 
     var isReady: Bool { phase == .ready }
+    var accountCountryReady: Bool {
+        hasConfirmedSignIn && countryAccountHash == accountHash && countryCode == market && !market.isEmpty
+    }
+    var accountCatalogScope: String {
+        "\(accountHash ?? ""):\(accountCountryReady):\(market):\(language)"
+    }
+    var accountCountryLabel: String {
+        guard accountCountryReady else {
+            return accountCountryChecking ? "Checking Xbox account" : "Not confirmed"
+        }
+        let name = Locale.current.localizedString(forRegionCode: market) ?? market
+        return "\(name) (\(market)) — \(accountCountryVerified ? "verified by Xbox" : "confirmed by you")"
+    }
+
+    func refreshAccountCountry() async {
+        guard hasConfirmedSignIn, !accountCountryChecking, let account = accountHash else { return }
+        let token = countryGeneration
+        accountCountryChecking = true
+        defer { if token == countryGeneration { accountCountryChecking = false } }
+        do {
+            let deadline = ContinuousClock.now.advanced(by: .seconds(30))
+            while accountBusy {
+                try Task.checkCancellation()
+                guard token == countryGeneration, accountHash == account else { return }
+                guard ContinuousClock.now < deadline else { throw ManagementError.disconnected }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            _ = try await readUnifiedAccount(.profile)
+        } catch is CancellationError { }
+        catch {
+            guard token == countryGeneration, accountHash == account else { return }
+            accountCountryError = "Xbox account country couldn't be checked. \(Self.describe(error))"
+        }
+    }
+
+    func applyAccountCountry(_ value: XboxAccountCountry?, account: String) {
+        guard hasConfirmedSignIn, accountHash == account else { return }
+        countryAccountHash = account
+        accountCountryVerified = value?.countryCode != nil
+        accountCountryNeedsConfirmation = !accountCountryVerified
+        accountCountryError = accountCountryVerified ? nil : "Xbox hasn't confirmed an account country."
+        let saved = countryDefaults.string(forKey: "Xodus.accountCountry.\(account)")
+        countryCode = value?.countryCode ?? saved.flatMap(XboxAccountCountry.normalized)
+        market = countryCode ?? ""
+    }
+
+    func confirmAccountCountry(_ code: String) {
+        guard hasConfirmedSignIn, accountCountryNeedsConfirmation,
+              let account = accountHash, let code = XboxAccountCountry.normalized(code),
+              Locale.Region.isoRegions.contains(where: { $0.identifier == code }) else { return }
+        countryDefaults.set(code, forKey: "Xodus.accountCountry.\(account)")
+        countryAccountHash = account
+        countryCode = code
+        market = code
+    }
+
+    private func retireAccountCountry() {
+        countryGeneration = UUID()
+        countryAccountHash = nil
+        countryCode = nil
+        accountCountryChecking = false
+        accountCountryVerified = false
+        accountCountryNeedsConfirmation = false
+        accountCountryError = nil
+        market = ""
+    }
     private var licenseReadGeneration: Int?
     private var licenseReadInFlight: Bool { licenseReadGeneration == generation }
     private var waitingInteractiveAccountReads = 0
@@ -817,6 +893,9 @@ final class LiveSession: ObservableObject {
                             productID: String? = nil) async throws -> OdeAccountRead {
         guard (section == .license && productID.map(PCGamesClient.validProductID) == true && titleID == nil)
             || (section != .license && productID == nil) else { throw ManagementError.invalidPayload }
+        guard section != .library || (accountCountryReady && (market == nil || market == self.market)) else {
+            throw ManagementError.invalidPayload
+        }
         let admissionGeneration = generation
         let admissionAuthentication = authenticationGeneration
         if section != .license {
@@ -846,9 +925,12 @@ final class LiveSession: ObservableObject {
                 if section == .license { licenseReadGeneration = nil }
             }
         }
+        // The country-independent profile endpoint still requires a syntactic wire market.
+        // This bootstrap value is never used for a catalogue or owned-library request.
+        let requestMarket = section == .profile && !accountCountryReady ? "US" : (market ?? self.market)
         var params: [String: JSONValue] = [
             "section": .string(section.rawValue), "accountHash": .string(account),
-            "market": .string(market ?? self.market), "language": .string(language ?? self.language),
+            "market": .string(requestMarket), "language": .string(language ?? self.language),
             "titleID": titleID.map(JSONValue.string) ?? .null
         ]
         if let productID { params["productID"] = .string(productID) }
@@ -857,6 +939,10 @@ final class LiveSession: ObservableObject {
         guard token == generation, authToken == authenticationGeneration,
               accountHash == account, hasConfirmedSignIn else { throw ManagementError.disconnected }
         try result.validate(section: section, accountHash: account)
+        if section == .profile {
+            let profile = try result.payload.decode(XboxProfile.self)
+            applyAccountCountry(profile.accountCountry, account: account)
+        }
         return result
     }
 
@@ -1053,6 +1139,7 @@ final class LiveSession: ObservableObject {
         eventTask = nil
         authTask = nil
         hello = nil
+        if authentication != nil || countryAccountHash != nil { retireAccountCountry() }
         authentication = nil
         accountStatusCurrent = false
         nativeSignInHostAdmitted = false
@@ -1205,6 +1292,10 @@ final class LiveSession: ObservableObject {
             lastSignInFailure = SignInFailureSnapshot(flow.error)
         } else if status.flow?.state == .completed {
             lastSignInFailure = nil
+        }
+        if (authentication != nil && authentication?.accountHash != status.accountHash)
+            || (status.state != .credentialPresent && countryAccountHash != nil) {
+            retireAccountCountry()
         }
         authentication = status
         if status.state != .signedOut { appSignOutComplete = false }
@@ -1804,6 +1895,9 @@ final class LiveSession: ObservableObject {
 #endif
 
     private func invalidateCatalogScope() {
+        lookupBusy = false
+        LibraryCatalogArtwork.shared.retireScope()
+        // Retire publication now, but keep the producer slot until its actual read finishes.
         catalogSourceFailure = nil
         queryGeneration += 1
         queuedCatalog = nil
@@ -1845,20 +1939,21 @@ final class LiveSession: ObservableObject {
         lookupBusy = true
         errorMessage = nil
         let token = generation
+        let scope = queryGeneration
         do {
             let result = try await client.request(.enqueue, params: [
                 "kind": .string("catalogRefresh"), "idempotencyKey": .string(UUID().uuidString),
                 "product": .object(["productID": .string(id), "market": .string(market),
                                     "language": .string(language), "refresh": .string("network")])
             ]).decode(JobResult.self)
-            guard token == generation else { return }
+            guard token == generation, scope == queryGeneration else { return }
             guard result.job.product.productID == id else { throw ManagementError.invalidPayload }
             try await reconcileActivity()
         } catch {
-            guard token == generation else { return }
+            guard token == generation, scope == queryGeneration else { return }
             errorMessage = Self.describe(error)
         }
-        if token == generation { lookupBusy = false }
+        if token == generation, scope == queryGeneration { lookupBusy = false }
     }
 
     func changeJob(_ job: CatalogJob, command: ManagementCommand) async {

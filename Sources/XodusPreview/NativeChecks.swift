@@ -52,6 +52,7 @@ enum NativeChecks {
         }
         do {
             if accountPresentationOnly {
+                try await AccountCountryChecks.run(configuration: configuration, check: check)
                 let pendingConfiguration = configuration("statuspermission")
                 let pending = LiveSession(configuration: pendingConfiguration)
                 await pending.connect()

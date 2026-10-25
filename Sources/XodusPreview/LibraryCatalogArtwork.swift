@@ -53,6 +53,10 @@ final class LibraryCatalogArtwork: ObservableObject {
         return generation
     }
 
+    func retireScope() {
+        _ = enterScope("retired:\(UUID().uuidString)")
+    }
+
     func loadDetail(id: String, market: String, language: String) async {
         let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language).lowercased())"
         guard PCGamesClient.validProductID(id) else { return }

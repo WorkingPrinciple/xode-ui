@@ -5,6 +5,7 @@ import XodusManagement
 
 @MainActor
 final class InstalledProductAccess: ObservableObject {
+    private var catalogScope: String?
     struct Fact {
         let value: OdeProductAccess
         let checkedAt: Date
@@ -77,13 +78,22 @@ final class InstalledProductAccess: ObservableObject {
     }
 
     func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false) async {
+        let scope = session.accountCatalogScope
+        if catalogScope != scope {
+            retire()
+            catalogScope = scope
+        }
+        guard session.accountCountryReady else { return }
         let account = session.hasConfirmedSignIn ? session.accountHash : nil
         guard account == nil || session.nativeLifecycleConfiguration != nil else { return }
         await refresh(account: account, installedIDs: installedIDs, now: now, force: force) { id in
             for _ in 0..<100 where session.accountBusy {
                 try await Task.sleep(for: .milliseconds(100))
             }
-            return try await session.readUnifiedAccount(.license, productID: id)
+            guard session.accountCatalogScope == scope else { throw CancellationError() }
+            let result = try await session.readUnifiedAccount(.license, productID: id)
+            guard session.accountCatalogScope == scope else { throw CancellationError() }
+            return result
         }
     }
 

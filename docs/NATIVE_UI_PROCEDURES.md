@@ -534,3 +534,38 @@ disconnected and reconnected external drive with an existing entry. Do not
 unmount an active game's drive, install a game, move files or alter accounts to
 manufacture acceptance. Source checks do not establish installed UI or physical
 drive acceptance.
+
+## Xbox account country (REQ-101 / COR-127)
+
+The account-bound `ode.account.read.v1` profile supplies `accountCountry`.
+Only the exact `xboxAccount.legalCountry` source and `verified` status establish
+a provider country; `UK` normalizes to API market `GB`. Profile location is
+free text, not country evidence. Display language remains independent.
+No Mac region, IP, language or default US country is used for catalogue scope.
+The country-independent profile RPC alone uses a syntactic bootstrap market
+required by the transport; that value never authorizes catalogue or owned
+library queries.
+
+For a bound `unknown` provider response, show an unselected native country
+picker and require **Confirm account country**. The explicit fallback is saved
+only under the authenticated account hash and labelled **confirmed by you**.
+It remains changeable in Account. A fresh verified provider response takes
+precedence. A foreign-account, malformed or failed management response does
+not authorize fallback. The account has to be checked again instead.
+
+Country/account changes retire catalogue projections, detail artwork and
+library eligibility immediately. Old-scope results cannot publish, and new
+owned-library queries use the session country, not a controller/device default.
+An already-running catalogue producer retains its reserved worker until the
+actual read completes; retiring its publication is not evidence of producer
+quiescence. Account disconnect retires the country binding.
+
+`--account-presentation-check` covers strict decoding, GB normalization, actual
+mock wire reads, saved fallback isolation, provider precedence, foreign-profile
+rejection, disconnect retirement, suspended old-country library publication,
+and detached native controls with an initially disabled confirmation button.
+These checks do not perform native input or prove installed appearance.
+For installed acceptance, inspect the exact paired candidate's Account country,
+library and Store query market under the existing input owner. Exercise the
+fallback only with a genuinely unknown provider result; do not alter the user's
+account country or make a provider failure to manufacture acceptance.

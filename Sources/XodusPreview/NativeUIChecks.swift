@@ -35,6 +35,33 @@ private struct InstallSheetFixtureView: View {
 
 @MainActor
 enum NativeUIChecks {
+    static func checkAccountCountry(session: LiveSession, confirmationRequired: Bool,
+                                    check: (Bool, String) -> Void) throws {
+        let windows = NSApplication.shared.windows.count
+        let host = NSHostingView(rootView: AccountCountrySettings().environmentObject(session).padding(20)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: 400)
+        host.layoutSubtreeIfNeeded()
+        let controls = descendants(of: host)
+        let buttons = controls.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
+        check(confirmationRequired ? (buttons.count == 2 && buttons.first?.isEnabled == false) : buttons.count == 1,
+              "COR127 native country confirmation has no preselected country and is absent for verified accounts")
+        check(host.window == nil && NSApplication.shared.windows.count == windows,
+              "REQ101 country controls render without a native window or desktop input")
+        if let folder = ProcessInfo.processInfo.environment["XODUS_COUNTRY_PROOF"] {
+            guard let image = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                throw GameScriptError.invalidReceipt
+            }
+            host.cacheDisplay(in: host.bounds, to: image)
+            guard let png = image.representation(using: .png, properties: [:]) else {
+                throw GameScriptError.invalidReceipt
+            }
+            let name = confirmationRequired ? "country-confirmation.png" : "country-verified.png"
+            try png.write(to: URL(fileURLWithPath: folder).appendingPathComponent(name))
+        }
+    }
+
     static func checkAccountDismissalWhileLoading(session: LiveSession,
                                                    check: (Bool, String) -> Void) async throws {
         let windows = NSApplication.shared.windows.count
