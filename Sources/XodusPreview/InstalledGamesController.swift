@@ -936,6 +936,7 @@ final class InstalledGamesController: ObservableObject {
         inspectionGeneration = UUID()
         let inspectPackage = inspectPackage
         let metadata = try await Task.detached(priority: .userInitiated) {
+            try GameScriptFiles.checkPath(folder)
             let config = try MicrosoftGameConfig.read(folder: folder)
             if let launcher { try InstalledGameFiles.checkLauncher(launcher) }
             if let expectedStoreID, config.storeId != expectedStoreID { throw GameScriptError.invalidReceipt }
@@ -1025,9 +1026,6 @@ final class InstalledGamesController: ObservableObject {
                     failures[game.id] = Self.driveUnavailableMessage
                     continue
                 }
-                if game.storageVolume == nil, let volume = GameStorageVolume.read(at: folder) {
-                    volumes[game.id] = volume
-                }
                 if game.publisher == nil, let publisher = (try? MicrosoftGameConfig.read(folder: folder))?.publisher {
                     publishers[game.id] = publisher
                 }
@@ -1037,11 +1035,15 @@ final class InstalledGamesController: ObservableObject {
                 }
                 do {
                     try InstalledGameFiles.checkFolder(folder)
+                    try GameScriptFiles.checkPath(folder)
                     if game.usesNativeLifecycle != true {
                         try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: game.launcher))
                     }
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId else { throw InstalledGameError.invalidConfig }
+                    if game.storageVolume == nil, let volume = GameStorageVolume.read(at: folder) {
+                        volumes[game.id] = volume
+                    }
                     if nativeIDs.contains(game.id) { validNativeFolders.insert(game.id); continue }
                     if config.placeholderOnly {
                         placeholders.insert(game.id)

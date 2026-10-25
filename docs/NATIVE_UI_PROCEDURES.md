@@ -495,6 +495,12 @@ Old registry entries without volume evidence stay readable; actual folder
 metadata can backfill it, but missing evidence alone does not prove a drive
 is disconnected.
 
+Volume hints are validated before saving. A legacy hint that does not contain
+its recorded folder is discarded for that entry only; the entry and all other
+games remain present and still require fresh exact-folder readiness checks.
+Symlinked folders or ancestors cannot generate volume evidence or be imported.
+No folder is silently resolved to another drive, moved or deleted.
+
 Automatic discovery inspects the original root, saved default and parents of
 recorded game folders, deduplicated and bounded to 512 child entries across the
 scan. Root enumeration, config/package reads and post-check identity validation

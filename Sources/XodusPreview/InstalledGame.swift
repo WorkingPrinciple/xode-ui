@@ -218,16 +218,24 @@ actor InstalledGameStore {
         guard Set(games.map(\.id)).count == games.count, Set(games.map(\.folder)).count == games.count,
               games.allSatisfy({ !$0.title.isEmpty && !$0.identityName.isEmpty && !$0.version.isEmpty
                   && !$0.storeId.isEmpty && $0.folder.hasPrefix("/")
-                  && ($0.storageVolume?.contains($0.folder) ?? true)
                   && ($0.usesNativeLifecycle == true ? $0.launcher.isEmpty : $0.launcher.hasPrefix("/"))
                   && ($0.lastSessionSeconds.map { $0.isFinite && $0 >= 0 } ?? true)
                   && ($0.lastPlayedAt.map { $0.timeIntervalSince1970.isFinite } ?? true) }) else {
             throw InstalledGameError.invalidRegistry
         }
-        return games
+        return games.map { game in
+            guard let volume = game.storageVolume, !volume.contains(game.folder) else { return game }
+            var entry = game
+            // Discard only the invalid hint; readiness still requires fresh exact-folder checks.
+            entry.storageVolume = nil
+            return entry
+        }
     }
 
     func save(_ games: [InstalledGame]) throws {
+        guard games.allSatisfy({ $0.storageVolume?.contains($0.folder) ?? true }) else {
+            throw InstalledGameError.invalidRegistry
+        }
         let directory = file.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
@@ -305,6 +313,7 @@ actor InstalledGameStore {
         guard let index = games.firstIndex(where: { $0.id == id }),
               games[index].importedAt == observedAtImport,
               games[index].storageVolume != volume else { return games }
+        guard volume.contains(games[index].folder) else { throw InstalledGameError.invalidRegistry }
         games[index].storageVolume = volume
         try save(games)
         return games

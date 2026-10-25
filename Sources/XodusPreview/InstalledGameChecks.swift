@@ -74,6 +74,45 @@ enum InstalledGameChecks {
               && !controller.launchableIDs.contains(entries[1].id)
               && controller.packageErrors[entries[1].id] == InstalledGameError.missingFolder.localizedDescription,
               "REQ92: A deleted folder on a mounted drive is not mislabeled as an unavailable drive")
+        let invalidStore = InstalledGameStore(file: root.appendingPathComponent("invalid-registry/games.json"))
+        try await invalidStore.save([entries[0]])
+        var invalid = entries[1]
+        invalid.storageVolume = GameStorageVolume(path: "/different-volume")
+        let validBytes = try Data(contentsOf: invalidStore.file)
+        do {
+            try await invalidStore.save([entries[0], invalid])
+            check(false, "REQ92 invalid volume containment cannot be persisted")
+        } catch {
+            check(try Data(contentsOf: invalidStore.file) == validBytes,
+                  "REQ92 invalid volume containment cannot be persisted")
+        }
+        try JSONEncoder().encode([entries[0], invalid]).write(to: invalidStore.file)
+        do {
+            let migrated = try await invalidStore.load()
+            check(migrated.count == 2 && migrated[0] == entries[0]
+                  && migrated[1].storageVolume == nil && migrated[1].folder == invalid.folder,
+                  "REQ92 a legacy invalid volume is retired per entry without losing the other installed games")
+        } catch {
+            check(false, "REQ92 a legacy invalid volume is retired per entry without losing the other installed games")
+        }
+        let link = root.appendingPathComponent("linked-game")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: URL(fileURLWithPath: entries[0].folder))
+        check(GameStorageVolume.read(at: link) == nil,
+              "REQ92 symlinked folders do not generate lexical-volume evidence from their resolved target")
+        var linked = entries[0]
+        linked = InstalledGame(id: UUID(), title: linked.title, identityName: linked.identityName,
+            version: linked.version, storeId: linked.storeId, folder: link.path, launcher: linked.launcher,
+            importedAt: Date(), packageType: .msixvc)
+        linked.storageVolume = GameStorageVolume(path: "/different-volume")
+        try JSONEncoder().encode([entries[0], linked]).write(to: invalidStore.file)
+        let linkedController = InstalledGamesController(store: invalidStore, inspectPackage: { _ in .msixvc })
+        await linkedController.load()
+        check(linkedController.games.count == 2 && !linkedController.launchableIDs.contains(linked.id)
+              && linkedController.packageErrors[linked.id] != nil,
+              "REQ92 symlinked registry entry is not ready and does not poison a healthy saved library")
+        await linkedController.importGame(folder: link, launcher: launcher)
+        check(linkedController.error != nil && linkedController.games.count == 2,
+              "REQ92 manual import refuses symlinked storage without replacing recorded games")
         let probe = GameStorageProbe()
         do {
             _ = try await probe.read(timeout: .milliseconds(10)) {
@@ -255,8 +294,8 @@ enum InstalledGameChecks {
             do { _ = try MicrosoftGameConfig.parse(Data(xml.utf8)); check(false, "Invalid installed config is refused") }
             catch { check(error is InstalledGameError, "Invalid installed config is refused") }
         }
-        let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
-            .appendingPathComponent("InstalledGameChecks-\(UUID().uuidString)")
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/InstalledGameChecks-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
                                                 attributes: [.posixPermissions: 0o700])
         defer {
@@ -415,7 +454,10 @@ enum InstalledGameChecks {
         check(library.loaded && library.games.isEmpty && library.error == nil,
               "Absent private list loads as empty without importing or scanning games")
         await library.importGame(folder: folder, launcher: zero)
-        guard let game = library.games.first else { throw InstalledGameError.invalidRegistry }
+        guard let game = library.games.first else {
+            check(false, "Exact-folder fixture import: \(library.error ?? "no error")")
+            throw InstalledGameError.invalidRegistry
+        }
         let unclassified = InstalledGamesController(store: store, compatibilityCatalogue: nil)
         await unclassified.load()
         guard let title = unclassified.games.first else { throw InstalledGameError.invalidRegistry }

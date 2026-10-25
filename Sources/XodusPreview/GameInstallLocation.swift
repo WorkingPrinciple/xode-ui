@@ -11,9 +11,11 @@ struct GameStorageVolume: Codable, Equatable, Sendable {
     }
 
     static func read(at folder: URL) -> Self? {
-        guard let values = try? folder.resourceValues(forKeys: [.volumeURLKey]),
+        guard folder.standardizedFileURL.path == folder.resolvingSymlinksInPath().standardizedFileURL.path,
+              let values = try? folder.resourceValues(forKeys: [.volumeURLKey]),
               let volume = values.volume else { return nil }
-        return Self(path: volume.standardizedFileURL.path)
+        let result = Self(path: volume.standardizedFileURL.path)
+        return result.contains(folder.path) ? result : nil
     }
 
     static func mountedRoots() -> [String]? {
