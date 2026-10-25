@@ -2,6 +2,76 @@
 import SwiftUI
 import XodusManagement
 
+struct GameDescriptionParagraphs: Equatable {
+    let first: String
+    let remaining: String
+
+    init(_ description: String) {
+        let text = description.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let lines = text.components(separatedBy: "\n")
+        var hasProse = false
+        var hasList = false
+        var boundary = lines.count
+        for (index, line) in lines.enumerated() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty {
+                if hasProse || hasList {
+                    boundary = index
+                    break
+                }
+                continue
+            }
+            let heading = trimmed.unicodeScalars.contains(where: CharacterSet.letters.contains)
+                && trimmed == trimmed.uppercased() && trimmed != trimmed.lowercased()
+            let bullet = trimmed.range(of: #"^(?:[-*•]\s+|\d+[.)]\s+)"#,
+                                       options: .regularExpression) != nil
+            if (hasProse && (heading || bullet)) || (hasList && heading) {
+                boundary = index
+                break
+            }
+            if bullet { hasList = true }
+            else if !heading { hasProse = true }
+        }
+        first = lines[..<boundary].joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        remaining = lines[boundary...].joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+struct GameDescriptionView: View {
+    let gameID: String
+    let description: String
+
+    var body: some View {
+        GameDescriptionContent(description: description).id(gameID)
+    }
+}
+
+private struct GameDescriptionContent: View {
+    let description: String
+    @State private var expanded = false
+
+    var body: some View {
+        let paragraphs = GameDescriptionParagraphs(description)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("About the game").font(.title2.weight(.semibold))
+            Text(paragraphs.first).textSelection(.enabled)
+            if !paragraphs.remaining.isEmpty {
+                DisclosureGroup("More", isExpanded: $expanded) {
+                    Text(paragraphs.remaining).textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .accessibilityIdentifier("xodus.game.description.expand")
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: 680, alignment: .leading)
+    }
+}
+
 enum GameDetailFacetCopy {
     static func installation(installed: Bool) -> String {
         installed ? "Installed on this Mac" : "Not installed"
@@ -10,6 +80,12 @@ enum GameDetailFacetCopy {
     static func precheckStatus(productID: String, installed: Bool, precheckingProductID: String?) -> String? {
         guard !installed, precheckingProductID == productID else { return nil }
         return "Checking installation requirements"
+    }
+
+    static func gamePassActionStatus(startupAllowed: Bool, libraryNotice: String?,
+                                     operationNotice: String?) -> String? {
+        if !startupAllowed { return "Wait for Ode to X to finish starting." }
+        return libraryNotice ?? operationNotice
     }
 
     static func access(acquisition: PCGameAcquisitionKind?, current: Bool) -> String? {
@@ -65,10 +141,13 @@ struct LiveProductView: View {
     var installationID: UUID? = nil
     var allowsStartupTasks = true
     var allowsArtworkLoading = true
+    var reviewInstall: ((PCGame) -> Void)? = nil
     @EnvironmentObject private var session: LiveSession
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openSettings) private var openSettings
     @ObservedObject var catalog = LibraryCatalogArtwork.shared
     @ObservedObject private var stats = LibraryXboxStats.shared
+    @StateObject private var titleAccess = InstalledProductAccess()
 
     private var installed: InstalledGame? {
         installedLibrary.games.first { $0.storeId == product.id && (installationID == nil || $0.id == installationID) }
@@ -84,12 +163,64 @@ struct LiveProductView: View {
                                        candidate: product.pcCatalogCandidate)
     }
     private var gameFacts: GameFacts {
-        GameFacts(pc: owned, gamePass: gamePass, installed: installed, accessIsCurrent: library.accessIsCurrent)
+        GameFacts(pc: owned, gamePass: gamePass, installed: installed, accessIsCurrent: library.accessIsCurrent(for: product.id))
     }
     private var canReviewGamePass: Bool {
-        DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent,
+        currentTitleAccess || DiscoverBrowse.canReviewInstall(owned: owned != nil, accessIsCurrent: library.accessIsCurrent(for: product.id),
             gamePass: gamePass, subscriptionActive: operations.gamePassActive,
             pcCandidate: owned != nil || product.pcCatalogCandidate)
+    }
+    private var currentTitleAccess: Bool {
+        operations.usesUnifiedAccount && session.hasConfirmedSignIn
+            && titleAccess.permitsReview(product.id, account: session.accountHash,
+                                         pcCandidate: product.pcCatalogCandidate)
+    }
+    private var checksTitleAccess: Bool {
+        operations.usesUnifiedAccount && session.hasConfirmedSignIn
+            && product.pcCatalogCandidate && !library.accessIsCurrent(for: product.id)
+    }
+    private var installAccessReason: String? {
+        if !allowsStartupTasks { return "Wait for Ode to X to finish starting." }
+        if checksTitleAccess {
+            if !titleAccess.checking && session.nativeLifecycleConfiguration == nil {
+                return operations.installUnavailableReason ?? "Account access is busy. Wait before checking this game."
+            }
+            return titleAccess.reviewNotice(for: product.id, account: session.accountHash)
+        }
+        if let notice = library.accountReadiness.notice { return notice }
+        if owned == nil && !product.pcCatalogCandidate {
+            return "PC availability for this title hasn't been confirmed. Installation is unavailable."
+        }
+        if gamePass && !operations.gamePassActive && owned == nil {
+            return "PC Game Pass download access hasn't been confirmed for this account."
+        }
+        return library.installAccessNotice(for: product.id)
+    }
+    private var installRecovery: PCGamesInstallRecovery {
+        guard allowsStartupTasks else { return .none }
+        if checksTitleAccess { return .none }
+        if library.accountReadiness == .ready && owned == nil && !product.pcCatalogCandidate { return .none }
+        return library.installRecovery(for: product.id)
+    }
+    private func recoverInstall() {
+        if checksTitleAccess {
+            guard session.nativeLifecycleConfiguration != nil else { openSettings(); return }
+            Task { await titleAccess.refresh(session: session, installedIDs: [product.id], force: true) }
+            return
+        }
+        switch installRecovery {
+        case .none: break
+        case .accountSettings: openSettings()
+        case .refreshLibrary: library.refresh()
+        case .retryLibrary: Task { await library.retryLibraryLoad() }
+        }
+    }
+    private var installRecoveryTitle: String? {
+        if checksTitleAccess {
+            if titleAccess.checking { return nil }
+            return session.nativeLifecycleConfiguration == nil ? "Account settings" : "Check access for this game"
+        }
+        return installRecovery.title
     }
     private var landscape: [CatalogArtworkReference] {
         art?.landscape ?? product.artwork.filter { $0.role == .hero }
@@ -118,7 +249,11 @@ struct LiveProductView: View {
                         }
                         if let installed {
                             InstalledGameAttentionView(installed: installedLibrary, operations: operations,
-                                game: installed, repairGame: library.accessIsCurrent ? owned : nil,
+                                game: installed, repairGame: library.accessIsCurrent(for: product.id) ? owned : nil,
+                                installationCheckInHeader: unsupportedIssues.isEmpty
+                                   && !(installedLibrary.placeholderIDs.contains(installed.id) && owned != nil)
+                                   && InstalledPlayButton(library: installedLibrary, operations: operations,
+                                       game: installed).ownsInstallationCheck,
                                 close: dismiss.callAsFunction)
                         }
                         if let error = catalog.detailErrors[product.id] ?? catalog.error {
@@ -131,16 +266,11 @@ struct LiveProductView: View {
                             }
                         }
                         if let details {
-                            media(details)
                             if let description = details.description ?? details.shortDescription {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    Text("About the game").font(.title2.weight(.semibold))
-                                    Text(description).textSelection(.enabled)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .frame(maxWidth: 680, alignment: .leading)
-                                }
+                                GameDescriptionView(gameID: product.id, description: description)
                                 .id("detail-information")
                             }
+                            media(details)
                             requirements(details)
                         }
                         VStack(alignment: .leading, spacing: 16) {
@@ -180,13 +310,18 @@ struct LiveProductView: View {
             }
         }
         .task(id: installed?.id) {
-            if allowsStartupTasks, let installed { await installedLibrary.checkInstallation(installed) }
+            if allowsStartupTasks, let installed { await installedLibrary.automaticallyCheckInstallation(installed) }
         }
         .task(id: product.id) {
             guard allowsStartupTasks,
                   operations.compatibility[product.id] == nil else { return }
             operations.precheck([product.id])
         }
+        .task(id: "\(product.id):\(session.accountHash ?? ""):\(session.hasConfirmedSignIn):\(operations.usesUnifiedAccount)") {
+            guard allowsStartupTasks, checksTitleAccess else { titleAccess.retire(); return }
+            await titleAccess.refresh(session: session, installedIDs: [product.id])
+        }
+        .onDisappear { titleAccess.retire() }
     }
 
     private var header: some View {
@@ -239,21 +374,31 @@ struct LiveProductView: View {
                                     Label("Download full game", systemImage: "icloud.and.arrow.down")
                                 }
                                 .modifier(LibraryActionStyle())
-                                .disabled(!allowsStartupTasks || !library.accessIsCurrent
+                                .disabled(!allowsStartupTasks || !library.accessIsCurrent(for: product.id)
                                           || !operations.canStartMutation)
+                                if !allowsStartupTasks || !library.accessIsCurrent(for: product.id) || !operations.canStartMutation {
+                                    InstallUnavailableNotice(message: !allowsStartupTasks
+                                        ? "Wait for Ode to X to finish starting."
+                                        : library.installAccessNotice(for: product.id)
+                                            ?? operations.installUnavailableReason ?? "Installation is not available yet.",
+                                        recoveryTitle: library.accessIsCurrent(for: product.id) ? nil : installRecovery.title,
+                                        recover: recoverInstall)
+                                }
                             } else {
                                 InstalledPlayButton(library: installedLibrary, operations: operations,
-                                                    game: installed, usesGlass: true, prominent: true)
+                                                    game: installed, displayTitle: product.title, usesGlass: true, prominent: true,
+                                                    showsDiagnostics: false)
                             }
                             InstalledGameActions(library: installedLibrary, operations: operations,
                                                  game: installed, usesGlass: true)
-                        } else if let owned {
-                            GameInstallAction(game: owned, operations: operations,
-                                              enabled: allowsStartupTasks && library.accessIsCurrent)
                         } else if canReviewGamePass {
-                            GameInstallAction(game: PCGame(product: product), operations: operations,
-                                              enabled: allowsStartupTasks && canReviewGamePass)
+                            GameInstallAction(game: owned ?? PCGame(product: product), operations: operations,
+                                              enabled: allowsStartupTasks,
+                                              disabledReason: installAccessReason,
+                                              recoveryTitle: operations.installAccountUnavailable ? "Account settings" : nil,
+                                              recover: { openSettings() }, reviewInstall: reviewInstall)
                         } else if gamePass, !operations.usesUnifiedAccount {
+                            VStack(alignment: .leading, spacing: 8) {
                             Button {
                                 operations.checkGamePass(
                                     discoveryProducts: session.gamePassProducts,
@@ -267,16 +412,22 @@ struct LiveProductView: View {
                             .help(library.accessIsCurrent
                                   ? "Verify this account's current PC Game Pass download access."
                                   : "Refresh your PC library before checking Game Pass access.")
-                        } else {
-                            Button("Install", systemImage: "icloud.and.arrow.down") {
-                                Task { await operations.install(PCGame(product: product)) }
+                            if let status = GameDetailFacetCopy.gamePassActionStatus(
+                                startupAllowed: allowsStartupTasks, libraryNotice: library.gamePassCheckNotice,
+                                operationNotice: operations.installUnavailableReason) {
+                                InstallUnavailableNotice(message: status,
+                                    recoveryTitle: library.gamePassCheckNotice == nil ? nil : installRecovery.title,
+                                    recover: recoverInstall)
                             }
-                            .modifier(LibraryActionStyle())
-                            .disabled(true)
-                            .help("Current ownership or Game Pass access is required to install this game.")
+                            }
+                        } else {
+                            GameInstallAction(game: owned ?? PCGame(product: product), operations: operations,
+                                              enabled: false, disabledReason: installAccessReason,
+                                              recoveryTitle: installRecoveryTitle, recover: recoverInstall)
                         }
                     }.controlSize(.large)
-                    if let installed {
+                    if let installed, !InstalledGameAttentionView(installed: installedLibrary, operations: operations,
+                        game: installed, close: dismiss.callAsFunction).needsAttention {
                         InstalledPlayError(library: installedLibrary, game: installed)
                     }
                 }
@@ -284,7 +435,7 @@ struct LiveProductView: View {
             }
             .padding(.horizontal, 40).padding(.bottom, 48)
         }
-        .frame(height: 388).clipped()
+        .frame(minHeight: 388).clipped()
         .foregroundStyle(.white)
         .environment(\.libraryOnHeroMedia, true)
         .environment(\.colorScheme, .dark)
@@ -295,14 +446,8 @@ struct LiveProductView: View {
     @ViewBuilder private func media(_ details: CatalogDetailFacts) -> some View {
         if !details.trailers.isEmpty || !details.screenshots.isEmpty {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Trailers and screenshots").font(.title2.weight(.semibold))
-                if let trailer = details.trailers.first {
-                    CatalogTrailerView(trailer: trailer, allowsLoading: allowsArtworkLoading,
-                                       allowsPlayback: allowsStartupTasks)
-                        .frame(maxWidth: 640, alignment: .leading)
-                }
-
                 if !details.screenshots.isEmpty {
+                    Text("Screenshots").font(.title2.weight(.semibold))
                     ScrollView(.horizontal) {
                         LazyHStack(spacing: 16) {
                             ForEach(Array(details.screenshots.enumerated()), id: \.element.url) { index, image in
@@ -313,6 +458,12 @@ struct LiveProductView: View {
                             }
                         }.scrollTargetLayout()
                     }.scrollTargetBehavior(.viewAligned).scrollIndicators(.hidden)
+                }
+                if let trailer = details.trailers.first {
+                    Text("Trailer").font(.title2.weight(.semibold))
+                    CatalogTrailerView(trailer: trailer, allowsLoading: allowsArtworkLoading,
+                                       allowsPlayback: allowsStartupTasks)
+                        .frame(maxWidth: 640, alignment: .leading)
                 }
             }
         }

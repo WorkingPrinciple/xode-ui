@@ -1,11 +1,162 @@
 # Runtime provider configuration v1
 
+## Engine management source candidate (REQ-79/80)
+
+Settings now puts **Calimocho** and **CrossOver** first as provider choices to
+understand and acquire, not two simultaneous effective defaults. CrossOver's
+existing publisher-signature check reports observed version/build/location.
+Its Get action opens the [official CodeWeavers portal](https://www.codeweavers.com/crossover/download);
+Ode does not download, redistribute, purchase or accept a licence.
+Calimocho has no verified public binary distribution. Its
+[official source](https://github.com/dragoshont/calimocho) is guidance, not an
+installer. A source checkout or a Wine-looking filename never means installed.
+
+Registered engines are read locally from `Xodus.lifecycle.registry`. All
+records remain visible, including missing executables, failed/pending smoke
+tests and unsupported kinds. Versions/source URLs are explicitly declarations.
+Smoke tested means a local record reports pass and the executable is present;
+only the launch service verifies the complete registered artifacts. No provider
+row grants whole-provider game qualification. Refresh retires stale observations
+on errors and offers retry. Choosing a registry performs no installation.
+
+For account-bound native launches, `Xodus.lifecycle.engine.crossover` and
+`Xodus.lifecycle.engine.standaloneWine` select exact records of the matching
+kind. A CrossOver preference cannot silently point at generic free Wine.
+The existing optional `Xodus.defaultEngine` and per-game `engineOverride` remain
+in use. Pinned title recipes retain their exact engine/graphics binding; their
+existing precedence is not replaced by these preferences. Unpinned per-game
+choices override the default; a missing explicit record refuses launch.
+Legacy imported-game executable/bottle registrations remain separate and are
+labelled accordingly. No prefix, bottle or save is migrated by Settings.
+
+The separate, account-free **source-only** `engine-inspect` v1 consumer matches
+producer `ce6e6d56c880698303afdc587f7f65f09e284849`:
+`docs/contracts/engine-inspect-v1.schema.json` and `docs/LIFECYCLE-CLI.md` in the
+private backend repository. It is not a management operation or runtime-plan
+capability. `engine-inspect --contract-version 1` must explicitly advertise
+`engineAdmissionV1` before a registry inspection is attempted. The installed
+CLI3121 does not implement it and is not replaced by this work.
+
+An optional schema1 declaration
+`"provider":{"id":"calimocho","contract_version":1}` is **untrusted**.
+Only the supporting backend's independently reviewed admission manifest and
+complete artifact validation can return `admittedProvider:"calimocho"`.
+The production manifest is currently empty: there is no production-admitted
+Calimocho selection or downloadable release claimed here. Generic records,
+including existing source-built Wine records without a declaration, stay Wine.
+No substring heuristic, self-trusted manifest or app-only allowlist is used.
+
+A successful admitted selection persists the registry path and exact projection
+(registry SHA256, unique engine name, Wine/server SHA256, provider admission).
+The app binds to the bytes it actually decoded, re-inspects with the **actual
+launch executable and its paired identity** before lifecycle side effects, then
+passes `--expected-registry-sha256` to the supporting backend's shared launch
+validator. Stale/malformed tuples, capability failures and changed identities
+refuse launch; there is no fallback to CLI3121 or another engine. The inspector
+bounds stdout/stderr, deadline, cancellation and owned-child cleanup. These
+source checks do not constitute new-CLI delivery or Calimocho game acceptance.
+
+For optional source integration coverage, set
+`XODUS_ENGINE_INSPECTION_TEST_BACKEND` to an explicitly approved, pinned source
+CLI executable when running `XodusPreview --live-check`. The consumer probes
+that executable and inspects only owned neutral generic-Wine and unadmitted
+Calimocho fixtures; it never launches their artifacts. The normal suite uses
+synthetic CLI scripts, including an unsupported old-CLI fixture. Neither mode
+establishes installed delivery or production admission.
+
+### Research and native proposal
+
+Reviewed 24 October 2026 against Heroic main
+[`509a34feea8541b73c928e289f2cf262d432db4a`](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/tree/509a34feea8541b73c928e289f2cf262d432db4a):
+
+- [Official Heroic feature documentation](https://heroicgameslauncher.com/docs/faq)
+  describes Wine Manager downloads and Wine Settings. Current
+  [manager code](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/backend/wine/manager/utils.ts)
+  reconciles cached releases with existing install directories and compatible
+  architectures; discovery and installation are separate observations.
+- [Downloader implementation](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/backend/wine/manager/downloader/main.ts)
+  has progress, unpacking, abort/error handling and optional upstream SHA512
+  checks. It warns rather than refuses when no checksum exists; Ode does not
+  adopt that weaker trust policy or its destructive update/removal semantics.
+  [Repository constants](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/backend/wine/manager/downloader/constants.ts)
+  identify Heroic Wine-Crossover builds, **not the commercial CrossOver app**.
+- [WineVersionSelector](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/frontend/screens/Settings/components/WineVersionSelector.tsx)
+  resolves actual binary paths, reports missing versions and retains valid
+  selected installations. The
+  [install selector](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/509a34feea8541b73c928e289f2cf262d432db4a/src/frontend/screens/Library/components/InstallModal/WineSelector/index.tsx)
+  separates global configuration, selected version and per-title prefix/bottle.
+  Ode retains its own pinned-recipe and no-silent-substitution rules.
+- [Porting Kit](https://www.portingkit.com/) describes itself in its official
+  page metadata as a Windows-game/app installer using **Wineskin technology**.
+  It is a product/wrapper workflow, not another Wine engine identity. Apple's
+  [Game Porting Toolkit](https://developer.apple.com/games/game-porting-toolkit/)
+  and graphics payload identity are also distinct from provider identity.
+
+The coordinator received this research and native UI proposal before
+implementation: retain the grouped macOS Form; prominent provider observations
+and real acquisition actions; configured default and exact registry selection;
+progressive disclosure for legacy bottles, graphics declarations and diagnostics.
+Use standard Pickers, buttons, selectable locations, semantic text and adaptive
+action rows, with explicit missing/checking/error/unsupported states. Actual
+download UI is withheld until a trusted distribution exists. Source/native
+render evidence, installed delivery and product acceptance are separate gates.
+
 ## Persisted launch selection (M3)
+
+### Current Calimocho execution policy (REQ95 / COR110)
+
+Current Play accepts only an explicitly selected, admitted Calimocho configuration.
+CrossOver, GPTK and generic Wine records remain historical data; detecting them or
+retaining an old preference does not permit execution or automatic substitution.
+No default is invented by CrossOver detection.
+
+Selecting Calimocho for a game persists the complete `engineSelection` alongside
+`engineOverride` in the private installed-game list: registry path and byte digest,
+engine name, admission result, Wine digest and wineserver digest. Reload uses that
+game's saved tuple, not the current global registry or default admission.
+Clearing an override clears its tuple without changing the independent default.
+An enum-only Calimocho choice cannot be saved or launched.
+
+The resolver reads that exact registry, matches the actual Wine/server fields,
+and refuses changed bytes, missing/unusable artifacts, unadmitted selections,
+conflicting title recipes and sibling fallbacks. The resolved tuple travels into
+the launch service's fresh, identity-bound `engine-inspect` check immediately
+before launch; it is not replaced by a second global preference read.
+Artifact admission remains distinct from gameplay qualification.
+The legacy bash argument-two/`XODUS_ENGINE` handoff cannot establish identity and
+does not execute under current policy. Historical script/session regressions use
+an explicit diagnostic entry point compiled out of shipping builds; normal Play
+never calls that entry point.
+
+Prefix preflight runs off-main, reads the CLI's existing sibling ownership record,
+and refuses a conflicting or malformed record without writing it. A nonempty
+unmarked prefix is explicitly displayed as `legacy-unclaimed`; it is used as-is,
+not claimed, migrated or moved. The CLI repeats its own ownership checks.
+No prefix or save is inspected during source checks except synthetic fixtures.
+
+The owner-directed NMS free recipe binds only product `BQVQTL3PCH05` at the
+confirmed `~/Games/Xodus/NoMansSky-Xbox` folder: exact PERF registry digest
+`170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609`,
+engine `calimocho-wine11.20-gptk4b3-tls-vulkan-private`, runtime candidate
+`7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b`,
+existing `req71-nms-calimocho-port11b-v1` prefix, `Binaries/NMS.exe`,
+local saves, online environment and no auto-dismiss. It requires explicit matching
+admission; it does not silently select the latest engine. No new HUD/fullscreen
+setting, prefix import, reseed or registry rewrite is applied. The historical
+CrossOver recipe is retained as evidence, not admitted for current Play.
+Account-bound CLI launch already uses the isolated management/Ode profile;
+the historical `--account-profile launch` flag adds no distinct authentication
+semantics to that lifecycle route.
+
+### Historical selector handoff
+
+The following M3 description documents the old imported-game contract, not
+current execution admission.
 
 Launch selection is separate from the configuration-only planning contract below.
 `Xodus.defaultEngine` persists the optional default. The private installed-game
 list persists each game's optional `engineOverride`; override, default, then
-first available runner is the selection order. A missing selected runner is an
+first available runner was the selection order. A missing selected runner was an
 explicit refusal, never a substitution.
 
 Availability does not read `Xodus.developerBackendPath`: that preference names a
@@ -62,7 +213,15 @@ cannot replace newer reimport observations. Store updates additionally compare
 the observed import date before writing refreshed package facts.
 No UWP/EAppx support status or installation policy is changed.
 
-Official, separately installed CrossOver is the first-release dependency.
+Official, separately installed CrossOver is required for CrossOver launch routes,
+not a universal dependency for every configured engine or game.
+The account-bound resolver reuses the current `CrossOverDetector` observation
+when the final selected registry record has `kind:"crossover"` (case-insensitive),
+including recipe-pinned and fallback selections. Missing, unverified or incomplete
+observations refuse that route before prefix resolution; they do not substitute
+another engine. This app dependency check does not authenticate the registry
+executable as part of the detected bundle or replace backend artifact validation.
+Generic Wine and Calimocho admission remain independent of this CrossOver check.
 GPTK3/GPTK4 and user-selected standalone/source-built Wine remain Experimental
 tracks; any explicit graphics override is also Experimental. The UI requires
 acknowledgement before their pure planning, reset by configuration or observed
@@ -94,7 +253,7 @@ Wine and graphics identities remain unknown. Existing explicit decoded/selected
 configurations, including a deliberately cleared choice, are not rewritten.
 The current UI is memory-only; this does not introduce persistence/migration.
 Library/Account/Settings share checking/absent/unverified/verified presentation.
-Absent/unverified CrossOver blocks first-release gameplay setup, not public
+Absent/unverified CrossOver blocks CrossOver runtime-plan setup, not public
 browsing or Microsoft sign-in. No license, game, device, existing bottle, save,
 credential or provider process is inspected/executed by this separate app check.
 

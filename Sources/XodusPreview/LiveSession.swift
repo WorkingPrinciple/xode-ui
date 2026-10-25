@@ -51,6 +51,8 @@ final class LiveSession: ObservableObject {
     @Published private(set) var discoveryFailures: [DiscoveryFailure] = []
     @Published private(set) var discoveryCheckedAt: String?
     @Published private(set) var gamePassProductIDs = Set<String>()
+    // Browse records survive partial refreshes; cover badges require fresh observations.
+    @Published private(set) var gamePassBadgeProductIDs = Set<String>()
     @Published private(set) var gamePassProducts: [CatalogProduct] = []
     @Published private(set) var gamePassCatalogLoading = false
     @Published private(set) var gamePassCatalogError: String?
@@ -73,16 +75,30 @@ final class LiveSession: ObservableObject {
     @Published var selectedProduct: CatalogProduct?
     @Published var errorMessage: String?
     @Published var catalogError: String?
+    @Published private(set) var catalogSourceFailure: CatalogQuery.SourceFailure?
     @Published private(set) var backendPath: String
     @Published var market = "US" { didSet { if market != oldValue { invalidateCatalogScope() } } }
     @Published var language = "en-US" { didSet { if language != oldValue { invalidateCatalogScope() } } }
+    @Published private(set) var accountCountryChecking = false
+    @Published private(set) var accountCountryVerified = false
+    @Published private(set) var accountCountryNeedsConfirmation = false
+    @Published private(set) var accountCountryError: String?
+    private var countryAccountHash: String?
+    private var countryCode: String?
+    private var countryGeneration = UUID()
+    private let countryDefaults: UserDefaults
     @Published var lookupID = ""
     @Published private(set) var diagnosticPreview: String?
     @Published private(set) var diagnosticPreviewing = false
     @Published private(set) var diagnosticSaving = false
     @Published private(set) var diagnosticSaved = false
     @Published private(set) var diagnosticExportError: String?
+    private var descriptorMetricBaseline: (counts: ManagementClient.DescriptorMetricCounts, instant: ContinuousClock.Instant)?
+    private(set) var descriptorMetricCounts: ManagementClient.DescriptorMetricCounts?
+    private(set) var descriptorMetricIntervalCompleted = false
+    private let descriptorMetricLogger = Logger(subsystem: "io.github.dragoshont.xodus", category: "descriptor-metrics")
     private var client: ManagementClient?
+    private var descriptorsOwner: UUID?
     private var connectedConfiguration: BackendConfiguration?
     private var accountRuntime: OdeRuntimeProcess?
     private var runtimeGeneration = UUID()
@@ -116,6 +132,7 @@ final class LiveSession: ObservableObject {
     private var catalogTask: Task<Void, Never>?
     private var catalogWorkerID: UUID?
     private var queuedCatalog: CatalogRequest?
+    private var queryResults = CatalogQueryResultCache()
 
     struct SignInFailureSnapshot: Equatable {
         enum Code: String {
@@ -153,6 +170,48 @@ final class LiveSession: ObservableObject {
         let queryGeneration: Int
     }
 
+    struct CatalogQuerySnapshot {
+        let products: [CatalogProduct]
+        let failures: [DiscoveryFailure]
+        let nextCursor: String?
+        let sourceFailure: CatalogQuery.SourceFailure?
+        let checkedAt: String?
+        let corpus: String
+        let storedAt: ContinuousClock.Instant
+    }
+
+    /// Bounded, scope-keyed results of completed public store queries so a repeated query
+    /// publishes immediately instead of waiting behind the single producer slot again.
+    struct CatalogQueryResultCache {
+        static let capacity = 24
+        static let lifetime = Duration.seconds(600)
+        private var entries: [String: CatalogQuerySnapshot] = [:]
+        private var order: [String] = []
+
+        static func key(account: String?, market: String, language: String, query: String) -> String {
+            "\(account ?? ""):\(market):\(language):\(query)"
+        }
+
+        func fresh(_ key: String, now: ContinuousClock.Instant = .now) -> CatalogQuerySnapshot? {
+            guard let entry = entries[key], now - entry.storedAt < Self.lifetime else { return nil }
+            return entry
+        }
+
+        mutating func store(_ snapshot: CatalogQuerySnapshot, for key: String) {
+            entries[key] = snapshot
+            order.removeAll { $0 == key }
+            order.append(key)
+            while order.count > Self.capacity { entries[order.removeFirst()] = nil }
+        }
+
+        mutating func removeAll() {
+            entries = [:]
+            order = []
+        }
+
+        var count: Int { entries.count }
+    }
+
     private struct ClosingOperation {
         let id: UUID
         let client: ManagementClient
@@ -166,15 +225,17 @@ final class LiveSession: ObservableObject {
 
     init(configuration: BackendConfiguration? = nil,
          signInPollingBudget: Duration = .seconds(600),
+         countryDefaults: UserDefaults = .standard,
          shutdownClient: @escaping @Sendable (ManagementClient) async -> Bool = { await $0.close() }) {
+        self.countryDefaults = countryDefaults
         self.shutdownClient = shutdownClient
         self.signInPollingBudget = signInPollingBudget
 #if XODUS_SHIPPING
         self.configuration = nil
         backendPath = Bundle.main.bundleURL
             .appendingPathComponent("Contents/Resources/XodusEngine/xodus-cli").path
-        let scope = CatalogLocale.preferred(region: Locale.current.region?.identifier, languages: Locale.preferredLanguages)
-        market = scope.market
+        let scope = CatalogLocale.preferred(region: nil, languages: Locale.preferredLanguages)
+        market = ""
         language = scope.language
         if ShippingPairPins.approved == nil {
             errorMessage = ManagementError.pairedEngineUnavailable.localizedDescription
@@ -200,13 +261,79 @@ final class LiveSession: ObservableObject {
         } else {
             backendPath = bundledPath ?? UserDefaults.standard.string(forKey: "Xodus.developerBackendPath") ?? ""
         }
-        let scope = CatalogLocale.preferred(region: Locale.current.region?.identifier, languages: Locale.preferredLanguages)
-        market = scope.market
+        let scope = CatalogLocale.preferred(region: nil, languages: Locale.preferredLanguages)
+        market = ""
         language = scope.language
 #endif
     }
 
     var isReady: Bool { phase == .ready }
+    var accountCountryReady: Bool {
+        hasConfirmedSignIn && countryAccountHash == accountHash && countryCode == market && !market.isEmpty
+    }
+    var accountCatalogScope: String {
+        "\(accountHash ?? ""):\(accountCountryReady):\(market):\(language)"
+    }
+    var accountCountryLabel: String {
+        guard accountCountryReady else {
+            return accountCountryChecking ? "Checking Xbox account" : "Not confirmed"
+        }
+        let name = Locale.current.localizedString(forRegionCode: market) ?? market
+        return "\(name) (\(market)) — \(accountCountryVerified ? "verified by Xbox" : "confirmed by you")"
+    }
+
+    func refreshAccountCountry() async {
+        guard hasConfirmedSignIn, !accountCountryChecking, let account = accountHash else { return }
+        let token = countryGeneration
+        accountCountryChecking = true
+        defer { if token == countryGeneration { accountCountryChecking = false } }
+        do {
+            let deadline = ContinuousClock.now.advanced(by: .seconds(30))
+            while accountBusy {
+                try Task.checkCancellation()
+                guard token == countryGeneration, accountHash == account else { return }
+                guard ContinuousClock.now < deadline else { throw ManagementError.disconnected }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            _ = try await readUnifiedAccount(.profile)
+        } catch is CancellationError { }
+        catch {
+            guard token == countryGeneration, accountHash == account else { return }
+            accountCountryError = "Xbox account country couldn't be checked. \(Self.describe(error))"
+        }
+    }
+
+    func applyAccountCountry(_ value: XboxAccountCountry?, account: String) {
+        guard hasConfirmedSignIn, accountHash == account else { return }
+        countryAccountHash = account
+        accountCountryVerified = value?.countryCode != nil
+        accountCountryNeedsConfirmation = !accountCountryVerified
+        accountCountryError = accountCountryVerified ? nil : "Xbox hasn't confirmed an account country."
+        let saved = countryDefaults.string(forKey: "Xodus.accountCountry.\(account)")
+        countryCode = value?.countryCode ?? saved.flatMap(XboxAccountCountry.normalized)
+        market = countryCode ?? ""
+    }
+
+    func confirmAccountCountry(_ code: String) {
+        guard hasConfirmedSignIn, accountCountryNeedsConfirmation,
+              let account = accountHash, let code = XboxAccountCountry.normalized(code),
+              Locale.Region.isoRegions.contains(where: { $0.identifier == code }) else { return }
+        countryDefaults.set(code, forKey: "Xodus.accountCountry.\(account)")
+        countryAccountHash = account
+        countryCode = code
+        market = code
+    }
+
+    private func retireAccountCountry() {
+        countryGeneration = UUID()
+        countryAccountHash = nil
+        countryCode = nil
+        accountCountryChecking = false
+        accountCountryVerified = false
+        accountCountryNeedsConfirmation = false
+        accountCountryError = nil
+        market = ""
+    }
     private var licenseReadGeneration: Int?
     private var licenseReadInFlight: Bool { licenseReadGeneration == generation }
     private var waitingInteractiveAccountReads = 0
@@ -283,13 +410,25 @@ final class LiveSession: ObservableObject {
         return "Choose Sign in with Xbox Live to check your saved sign-in or connect your account."
     }
     static let signOutConfirmationMessage = "Remove this Xbox account from Ode to X on this Mac? Your games, saves, other apps and Microsoft browser sessions stay unchanged. If sign-out doesn't finish, Ode to X will tell you which step failed."
+    var welcomeNotice: String? {
+        if signingOut || connectionTransitioning || accountStatusChecking || managementStateLocked
+            || connectionFailedAfterAdmission
+            || !isReady || !nativeSignInHostAdmitted || !supports(.authBegin)
+            || !supports(.authCancel) || !supports(.authStatus) || signInPending
+            || accountError != nil || needsAccountDisconnect
+            || authentication?.flow?.state == .failed || authentication?.flow?.state == .cancelled
+            || (appSignOutComplete && authentication?.state == .signedOut && accountStatusCurrent) {
+            return welcomeMessage
+        }
+        return nil
+    }
     var welcomeMessage: String {
         if signingOut { return "Signing out of Ode to X. Waiting for saved sign-in removal to finish." }
         if failedAccountAction == .signOut, let accountError { return accountError }
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in…" }
         if managementStateLocked { return ManagementError.stateLocked.localizedDescription }
         if connectionFailedAfterAdmission {
-            return "Ode to X couldn't connect to its sign-in service. If another copy of Ode to X is open, close it normally, then sign in again."
+            return "Ode couldn't connect to its sign-in service. Choose Sign in with Xbox Live to reconnect."
         }
         guard isReady, nativeSignInHostAdmitted, supports(.authBegin),
               supports(.authCancel), supports(.authStatus) else {
@@ -545,7 +684,9 @@ final class LiveSession: ObservableObject {
         if !isReady { return "Reconnect in Settings to browse games." }
         if !canRefresh { return "This catalog isn't available in this build." }
         if catalogStopped { return "Start a new search when you're ready." }
-        if catalogError != nil || !discoveryFailures.isEmpty { return "Try another search or refresh the results." }
+        if catalogError != nil || !discoveryFailures.isEmpty || catalogSourceFailure != nil {
+            return "Try another search or refresh the results."
+        }
         if query.isEmpty { return "Find your next game with Discover or search." }
         return "Try a different title or a shorter search."
     }
@@ -558,12 +699,21 @@ final class LiveSession: ObservableObject {
             && (authentication?.state == .signedOut || (supports(.authLogout) && needsAccountDisconnect))
     }
     var catalogAtLimit: Bool { Set(products.map(\.id) + discoveryFailures.map(\.id)).count >= 512 }
+    var catalogHasQueryWarning: Bool {
+        catalogSourceFailure != nil || discoveryFailures.contains {
+            $0.error.code != "PACKAGE_UNAVAILABLE" || $0.error.retryable
+        }
+    }
+    var catalogCanRetryQueryWarning: Bool {
+        catalogSourceFailure?.retryable == true || discoveryFailures.contains(where: \.error.retryable)
+    }
+    var catalogRequestVersion: Int { queryGeneration }
     var canLoadMoreCatalog: Bool { nextCursor != nil && !searching && !catalogAtLimit }
     var catalogEmptyTitle: String {
         if searching { return "Finding games" }
         if catalogStopped { return "Search stopped" }
         if catalogCorpus == "publicMicrosoftStoreSearch", catalogError == nil,
-           discoveryFailures.isEmpty, discoveryCheckedAt != nil { return "No Store matches" }
+           discoveryFailures.isEmpty, catalogSourceFailure == nil, discoveryCheckedAt != nil { return "No Store matches" }
         return "No games to show"
     }
     func catalogEmptyExplanation(query: String, canRefresh: Bool) -> String {
@@ -571,7 +721,7 @@ final class LiveSession: ObservableObject {
         if !isReady { return "Connect Ode to X in Settings to load public product metadata." }
         if !canRefresh { return "This engine does not provide this catalog operation. Update the paired app build." }
         if catalogStopped { return "Run a new search or refresh this scope when you are ready." }
-        if catalogError != nil || !discoveryFailures.isEmpty {
+        if catalogError != nil || !discoveryFailures.isEmpty || catalogSourceFailure != nil {
             return "The public catalog could not be fully checked. Refresh to try again; no empty owned library is inferred."
         }
         if query.isEmpty { return "Request public catalog data in this scope. Catalog results do not establish ownership or installation access." }
@@ -786,6 +936,9 @@ final class LiveSession: ObservableObject {
                             productID: String? = nil) async throws -> OdeAccountRead {
         guard (section == .license && productID.map(PCGamesClient.validProductID) == true && titleID == nil)
             || (section != .license && productID == nil) else { throw ManagementError.invalidPayload }
+        guard section != .library || (accountCountryReady && (market == nil || market == self.market)) else {
+            throw ManagementError.invalidPayload
+        }
         let admissionGeneration = generation
         let admissionAuthentication = authenticationGeneration
         if section != .license {
@@ -815,9 +968,12 @@ final class LiveSession: ObservableObject {
                 if section == .license { licenseReadGeneration = nil }
             }
         }
+        // The country-independent profile endpoint still requires a syntactic wire market.
+        // This bootstrap value is never used for a catalogue or owned-library request.
+        let requestMarket = section == .profile && !accountCountryReady ? "US" : (market ?? self.market)
         var params: [String: JSONValue] = [
             "section": .string(section.rawValue), "accountHash": .string(account),
-            "market": .string(market ?? self.market), "language": .string(language ?? self.language),
+            "market": .string(requestMarket), "language": .string(language ?? self.language),
             "titleID": titleID.map(JSONValue.string) ?? .null
         ]
         if let productID { params["productID"] = .string(productID) }
@@ -826,6 +982,10 @@ final class LiveSession: ObservableObject {
         guard token == generation, authToken == authenticationGeneration,
               accountHash == account, hasConfirmedSignIn else { throw ManagementError.disconnected }
         try result.validate(section: section, accountHash: account)
+        if section == .profile {
+            let profile = try result.payload.decode(XboxProfile.self)
+            applyAccountCountry(profile.accountCountry, account: account)
+        }
         return result
     }
 
@@ -940,6 +1100,11 @@ final class LiveSession: ObservableObject {
             let negotiated = try await connection.connect(admittedTarget)
             guard token == generation, revision == lifecycleRevision, client === connection else { return }
             hello = negotiated
+            let descriptorOwner = UUID()
+            descriptorsOwner = descriptorOwner
+            await PublicCatalogDescriptors.shared.bind(
+                negotiated.supports(.descriptors) ? connection : nil, owner: descriptorOwner)
+            guard token == generation, revision == lifecycleRevision, client === connection else { return }
             connectedConfiguration = admittedTarget
             nativeSignInHostAdmitted = admittedTarget.nativeAuthHost != nil
             let startupQueryRevision = queryGeneration
@@ -991,6 +1156,9 @@ final class LiveSession: ObservableObject {
     }
 
     private func retireClient() async -> Bool {
+        descriptorMetricBaseline = nil
+        descriptorMetricCounts = nil
+        descriptorMetricIntervalCompleted = false
         guard await stopUnifiedRuntime() else {
             errorMessage = ManagementError.shutdownFailed.localizedDescription
             return false
@@ -1011,9 +1179,11 @@ final class LiveSession: ObservableObject {
         catalogTask = nil
         catalogWorkerID = nil
         queuedCatalog = nil
+        queryResults.removeAll()
         eventTask = nil
         authTask = nil
         hello = nil
+        if authentication != nil || countryAccountHash != nil { retireAccountCountry() }
         authentication = nil
         accountStatusCurrent = false
         nativeSignInHostAdmitted = false
@@ -1038,10 +1208,12 @@ final class LiveSession: ObservableObject {
         nextCursor = nil
         cacheRevision = nil
         catalogCorpus = "observedPublicProducts"
+        catalogSourceFailure = nil
         discoveryFailures = []
         discoveryCheckedAt = nil
         discoveryRevision = nil
         gamePassProductIDs = []
+        gamePassBadgeProductIDs = []
         gamePassProducts = []
         gamePassRevision = nil
         gamePassCatalogLoading = false
@@ -1062,6 +1234,10 @@ final class LiveSession: ObservableObject {
         accountOperationBusy = false
         signingOut = false
         accountStatusChecking = false
+        if let owner = descriptorsOwner {
+            descriptorsOwner = nil
+            await PublicCatalogDescriptors.shared.unbind(owner: owner)
+        }
         guard let previous = client else {
             phase = .disconnected
             return true
@@ -1160,6 +1336,10 @@ final class LiveSession: ObservableObject {
             lastSignInFailure = SignInFailureSnapshot(flow.error)
         } else if status.flow?.state == .completed {
             lastSignInFailure = nil
+        }
+        if (authentication != nil && authentication?.accountHash != status.accountHash)
+            || (status.state != .credentialPresent && countryAccountHash != nil) {
+            retireAccountCountry()
         }
         authentication = status
         if status.state != .signedOut { appSignOutComplete = false }
@@ -1451,8 +1631,9 @@ final class LiveSession: ObservableObject {
             cursor: more ? nextCursor : nil, more: more, generation: generation, queryGeneration: queryGeneration)
         currentQuery = query
         catalogRequestScope = "\(market):\(language)"
-        if !more {
-            if !retainsProducts { products = [] }
+        if !more && !retainsProducts {
+            catalogSourceFailure = nil
+            products = []
             nextCursor = nil
             cacheRevision = nil
             discoveryFailures = []
@@ -1527,6 +1708,64 @@ final class LiveSession: ObservableObject {
         }
     }
 
+    private func queryResultKey(_ query: String, market: String, language: String) -> String {
+        CatalogQueryResultCache.key(account: accountHash, market: market, language: language, query: query)
+    }
+
+    private func rememberQueryResult(_ request: CatalogRequest) {
+        guard catalogError == nil, currentQuery == request.query,
+              catalogRequestScope == "\(request.market):\(request.language)" else { return }
+        queryResults.store(CatalogQuerySnapshot(products: products, failures: discoveryFailures,
+            nextCursor: nextCursor, sourceFailure: catalogSourceFailure, checkedAt: discoveryCheckedAt,
+            corpus: catalogCorpus, storedAt: .now),
+            for: queryResultKey(request.query, market: request.market, language: request.language))
+    }
+
+    func hasRecentQueryResult(_ query: String) -> Bool {
+        let scopedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !scopedQuery.isEmpty, supports(.query) else { return false }
+        return queryResults.fresh(queryResultKey(scopedQuery, market: market, language: language)) != nil
+    }
+
+    var recentQueryResultCount: Int { queryResults.count }
+
+    /// Publishes a remembered query page set in the current scope. Any in-flight read is
+    /// fenced from publication and a queued older read is dropped; the producer slot itself
+    /// is released when its bounded read returns.
+    private func publishRecentQueryResult(_ query: String) -> Bool {
+        guard isReady, validScope, supports(.query), !query.isEmpty,
+              let snapshot = queryResults.fresh(queryResultKey(query, market: market, language: language))
+        else { return false }
+        queryGeneration += 1
+        queuedCatalog = nil
+        currentQuery = query
+        catalogRequestScope = "\(market):\(language)"
+        catalogCorpus = snapshot.corpus
+        catalogRequestAppends = false
+        products = snapshot.products
+        discoveryFailures = snapshot.failures
+        nextCursor = snapshot.nextCursor
+        catalogSourceFailure = snapshot.sourceFailure
+        discoveryCheckedAt = snapshot.checkedAt
+        cacheRevision = nil
+        catalogError = nil
+        catalogStopped = false
+        searching = false
+        return true
+    }
+
+    /// Typed-input entry point: debounces edits unless the query already has a remembered
+    /// result, then loads it. Cancelling the caller (a newer edit) skips the stale read.
+    func loadCatalogAfterInput(_ query: String) async {
+        let scopedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !scopedQuery.isEmpty, !hasRecentQueryResult(scopedQuery) {
+            do { try await Task.sleep(for: CatalogSearchTiming.debounce) }
+            catch { return }
+        }
+        guard !Task.isCancelled else { return }
+        await loadCatalogOnEntry(scopedQuery)
+    }
+
     func loadCatalogOnEntry(_ query: String) async {
         let scopedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let corpus = scopedQuery.isEmpty && supports(.discover) ? "pcGamePassDiscovery"
@@ -1535,6 +1774,7 @@ final class LiveSession: ObservableObject {
            catalogRequestScope == "\(market):\(language)",
            !catalogStopped, catalogError == nil,
            searching || discoveryCheckedAt != nil || cacheRevision != nil { return }
+        if corpus == "publicMicrosoftStoreSearch", publishRecentQueryResult(scopedQuery) { return }
         await refreshCatalog(scopedQuery)
     }
 
@@ -1569,29 +1809,19 @@ final class LiveSession: ObservableObject {
             discoveryCheckedAt == nil {
             gamePassCatalogExhausted = false
             await refreshCatalog("")
+            return
         } else if gamePassCatalogExhausted && nextCursor == nil {
             return
         }
         guard current(), catalogCorpus == "pcGamePassDiscovery", currentQuery.isEmpty,
               catalogError == nil, !catalogStopped else { return }
-        var cursors = Set<String>()
-        for _ in 0..<32 {
-            guard current(), catalogCorpus == "pcGamePassDiscovery", currentQuery.isEmpty,
-                  catalogError == nil, !catalogStopped, let cursor = nextCursor else { return }
-            guard !catalogAtLimit else {
-                gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
-                gamePassCatalogHasMore = false
-                return
-            }
-            guard cursors.insert(cursor).inserted else {
-                gamePassCatalogError = "Xbox returned a repeated catalogue page. Refresh to try again."
-                return
-            }
-            await refreshCatalog("", more: true)
+        guard nextCursor != nil else { return }
+        guard !catalogAtLimit else {
+            gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
+            gamePassCatalogHasMore = false
+            return
         }
-        if current(), nextCursor != nil {
-            gamePassCatalogError = "The catalogue is partially loaded. Choose Load remaining games to continue."
-        }
+        await refreshCatalog("", more: true)
     }
 
     func catalogMatches(query: String) -> Bool {
@@ -1626,11 +1856,16 @@ final class LiveSession: ObservableObject {
             ], timeout: .seconds(45)).decode(CatalogQuery.self)
             guard isCurrent(request) else { return }
             try applyQueryPage(page, request: request)
+            rememberQueryResult(request)
         } catch {
             guard isCurrent(request) else { return }
             if case let ManagementError.queryFailed(page) = error {
                 do { try applyQueryPage(page, request: request) }
                 catch { catalogError = Self.describe(error); return }
+                if !products.isEmpty || page.nextCursor != nil {
+                    catalogError = nil
+                    return
+                }
             }
             catalogError = Self.describe(error)
         }
@@ -1652,6 +1887,7 @@ final class LiveSession: ObservableObject {
             discoveryFailures = page.failures
         }
         nextCursor = page.nextCursor
+        catalogSourceFailure = request.more ? (page.sourceFailure ?? catalogSourceFailure) : page.sourceFailure
         discoveryCheckedAt = page.checkedAt
         catalogCorpus = page.corpus
     }
@@ -1665,6 +1901,8 @@ final class LiveSession: ObservableObject {
 
     private func browseDiscovery(_ request: CatalogRequest) async {
         guard let client, request.generation == generation else { return }
+        catalogSourceFailure = nil
+        if !request.more { gamePassBadgeProductIDs = [] }
         gamePassCatalogLoading = true
         gamePassCatalogError = nil
         defer {
@@ -1704,16 +1942,23 @@ final class LiveSession: ObservableObject {
         let existingIDs = Set(products.map(\.id) + discoveryFailures.map(\.id))
         let incomingIDs = Set(page.products.map(\.id) + page.failures.map(\.id))
         if request.more {
-            guard page.corpusRevision == discoveryRevision, existingIDs.isDisjoint(with: incomingIDs),
-                  existingIDs.count + incomingIDs.count <= 512, page.nextCursor != request.cursor else {
+            guard page.corpusRevision == discoveryRevision,
+                  existingIDs.union(incomingIDs).count <= 512, page.nextCursor != request.cursor else {
                 throw ManagementError.backendError("REVISION_CONFLICT", retryable: true)
             }
-            products += page.products
-            discoveryFailures += page.failures
-        } else {
-            products = refreshedProducts(page.products, failures: page.failures.map(\.productID))
-            discoveryFailures = page.failures
         }
+        if gamePassRevision != page.corpusRevision { gamePassBadgeProductIDs = [] }
+        gamePassBadgeProductIDs.subtract(incomingIDs)
+        gamePassBadgeProductIDs.formUnion(pcProducts.filter { $0.freshness == "live" }.map(\.id))
+        // A first page cannot revoke successful records from later pages.
+        let incoming = Dictionary(uniqueKeysWithValues: page.products.map { ($0.id, $0) })
+        let successful = Set(page.products.map(\.id))
+        let priorProducts = Set(products.map(\.id))
+        products = products.map { incoming[$0.id] ?? $0 }
+            + page.products.filter { !priorProducts.contains($0.id) }
+        discoveryFailures = request.more
+            ? discoveryFailures.filter { !successful.contains($0.id) && !incomingIDs.contains($0.id) } + page.failures
+            : page.failures
         nextCursor = page.nextCursor
         gamePassCatalogHasMore = page.nextCursor != nil
         gamePassCatalogExhausted = page.nextCursor == nil
@@ -1726,10 +1971,14 @@ final class LiveSession: ObservableObject {
             // Retain bounded public records, with the explicit unconfirmed/partial notice.
             gamePassRevision = page.corpusRevision
         }
-        let incoming = Dictionary(uniqueKeysWithValues: pcProducts.map { ($0.id, $0) })
-        gamePassProducts = gamePassProducts.map { incoming[$0.id] ?? $0 }
+        let incomingPC = Dictionary(uniqueKeysWithValues: pcProducts.map { ($0.id, $0) })
+        gamePassProducts = gamePassProducts.map { incomingPC[$0.id] ?? $0 }
             + pcProducts.filter { !gamePassProductIDs.contains($0.id) }
         gamePassProductIDs.formUnion(pcProducts.map(\.id))
+        if catalogAtLimit, nextCursor != nil {
+            gamePassCatalogHasMore = false
+            gamePassCatalogError = "The catalogue reached this build's limit. Some games remain unloaded."
+        }
     }
 
 #if !XODUS_SHIPPING
@@ -1750,14 +1999,20 @@ final class LiveSession: ObservableObject {
 #endif
 
     private func invalidateCatalogScope() {
+        lookupBusy = false
+        LibraryCatalogArtwork.shared.retireScope()
+        // Retire publication now, but keep the producer slot until its actual read finishes.
+        catalogSourceFailure = nil
         queryGeneration += 1
         queuedCatalog = nil
+        queryResults.removeAll()
         products = []
         selectedProduct = nil
         nextCursor = nil
         cacheRevision = nil
         discoveryRevision = nil
         gamePassProductIDs = []
+        gamePassBadgeProductIDs = []
         gamePassProducts = []
         gamePassRevision = nil
         gamePassCatalogLoading = false
@@ -1789,20 +2044,21 @@ final class LiveSession: ObservableObject {
         lookupBusy = true
         errorMessage = nil
         let token = generation
+        let scope = queryGeneration
         do {
             let result = try await client.request(.enqueue, params: [
                 "kind": .string("catalogRefresh"), "idempotencyKey": .string(UUID().uuidString),
                 "product": .object(["productID": .string(id), "market": .string(market),
                                     "language": .string(language), "refresh": .string("network")])
             ]).decode(JobResult.self)
-            guard token == generation else { return }
+            guard token == generation, scope == queryGeneration else { return }
             guard result.job.product.productID == id else { throw ManagementError.invalidPayload }
             try await reconcileActivity()
         } catch {
-            guard token == generation else { return }
+            guard token == generation, scope == queryGeneration else { return }
             errorMessage = Self.describe(error)
         }
-        if token == generation { lookupBusy = false }
+        if token == generation, scope == queryGeneration { lookupBusy = false }
     }
 
     func changeJob(_ job: CatalogJob, command: ManagementCommand) async {
@@ -1863,15 +2119,68 @@ final class LiveSession: ObservableObject {
         let token = generation
         defer { if token == generation { diagnosticPreviewing = false } }
         do {
-            let value = try await client.request(.diagnostics)
+            let value: JSONValue
+            if await client.descriptorMetricsOptedIn {
+                let checkpoint = try await client.descriptorMetricsDiagnosticCheckpoint()
+                guard token == generation else { return }
+                value = checkpoint.data
+                if let counts = checkpoint.counts {
+                    recordDescriptorMetrics(counts)
+                } else {
+                    incompleteDescriptorMetrics()
+                }
+            } else {
+                value = try await client.request(.diagnostics)
+            }
             guard token == generation else { return }
             guard let jobs = value["jobCount"]?.uint64, let products = value["cachedProductCount"]?.uint64,
                   value["redacted"] == .bool(true) else { throw ManagementError.invalidPayload }
             diagnosticPreview = "Management protocol 1.0\nCatalog checks: \(jobs)\nCached public products: \(products)\nRuntime certified: no\nOwned-PC inventory authorized: no\nNo account identifiers, tokens, URLs or raw engine logs included."
         } catch {
             guard token == generation else { return }
+            if await client.descriptorMetricsOptedIn {
+                incompleteDescriptorMetrics()
+            }
             errorMessage = Self.describe(error)
         }
+    }
+
+    private func incompleteDescriptorMetrics() {
+        descriptorMetricBaseline = nil
+        descriptorMetricCounts = nil
+        descriptorMetricIntervalCompleted = false
+        descriptorMetricLogger.notice("Descriptor interval incomplete.")
+    }
+
+    private func recordDescriptorMetrics(_ counts: ManagementClient.DescriptorMetricCounts) {
+        let now = ContinuousClock.now
+        descriptorMetricCounts = counts
+        descriptorMetricIntervalCompleted = false
+        guard let baseline = descriptorMetricBaseline else {
+            descriptorMetricBaseline = (counts, now)
+            descriptorMetricLogger.notice("Descriptor interval baseline checkpoint=\(counts.checkpoint, privacy: .public).")
+            return
+        }
+        descriptorMetricBaseline = nil
+        let elapsed = baseline.instant.duration(to: now)
+        guard elapsed <= .seconds(180) else {
+            descriptorMetricLogger.notice("Descriptor interval incomplete: boundary exceeds 180 seconds.")
+            return
+        }
+        let milliseconds = elapsed.components.seconds * 1_000
+            + elapsed.components.attoseconds / 1_000_000_000_000_000
+        descriptorMetricIntervalCompleted = true
+        descriptorMetricLogger.notice("""
+            Descriptor interval complete start=\(baseline.counts.checkpoint, privacy: .public) \
+            end=\(counts.checkpoint, privacy: .public) elapsedMilliseconds=\(milliseconds, privacy: .public) \
+            lookups=\(counts.lookups - baseline.counts.lookups, privacy: .public) \
+            hits=\(counts.hits - baseline.counts.hits, privacy: .public) \
+            forced=\(counts.forced - baseline.counts.forced, privacy: .public) \
+            coalesced=\(counts.coalesced - baseline.counts.coalesced, privacy: .public) \
+            attempts=\(counts.attempts - baseline.counts.attempts, privacy: .public) \
+            terminals=\(counts.terminals - baseline.counts.terminals, privacy: .public) \
+            successes=\(counts.successes - baseline.counts.successes, privacy: .public).
+            """)
     }
 
     func chooseDiagnosticDestination() {

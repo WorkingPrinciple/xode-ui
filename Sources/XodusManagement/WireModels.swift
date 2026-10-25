@@ -11,6 +11,7 @@ public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
     case odeRuntimeVerify = "ode.runtime.verify.v1"
     case product = "product.detail", plan = "install.plan", enqueue = "jobs.enqueue"
     case discover = "catalog.discover", query = "catalog.query"
+    case descriptors = "catalog.descriptors"
     case pause = "jobs.pause", resume = "jobs.resume", cancel = "jobs.cancel", retry = "jobs.retry"
     case jobs = "jobs.snapshot", replay = "events.replay", installed = "installed.snapshot"
     case inspectInstallation = "installed.inspect"
@@ -26,6 +27,7 @@ public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
         case .odeAccountRead, .odeRuntimeVerify: "odeAccountData"
         case .search: "searchData"
         case .discover: "discoveryData"
+        case .descriptors: "descriptorsData"
         case .query: "queryData"
         case .product: "productData"
         case .enqueue, .cancel, .retry: "jobData"
@@ -225,7 +227,8 @@ public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
     }
 
     fileprivate func validatePublicScope(market: String, language: String, requiresPCCandidate: Bool,
-                                         allowsGamePassListing: Bool = false) throws {
+                                         allowsGamePassListing: Bool = false,
+                                         allowsUnknownGamePassListing: Bool = false) throws {
         try CatalogArtworkReference.validate(artwork, status: artworkStatus)
         guard artwork.allSatisfy({ $0.source == .displayCatalog && $0.role != .tile }) else {
             throw ManagementError.invalidPayload
@@ -244,7 +247,9 @@ public struct CatalogProduct: Codable, Equatable, Sendable, Identifiable {
             }
         }
         if let gamePass {
-            guard allowsGamePassListing, gamePass.market == market, gamePass.completeness == "partial",
+            guard (allowsGamePassListing
+                   || (allowsUnknownGamePassListing && gamePass.status == .unknown && gamePass.plans.isEmpty)),
+                  gamePass.market == market, gamePass.completeness == "partial",
                   gamePass.source == "xbox.com-search", ContractValidator.validDate(gamePass.checkedAt),
                   gamePass.plans.count <= 32,
                   gamePass.status != .unknown || gamePass.plans.isEmpty,
@@ -352,6 +357,15 @@ public struct CatalogDiscovery: Codable, Equatable, Sendable {
 }
 
 public struct CatalogQuery: Codable, Equatable, Sendable {
+    public struct SourceFailure: Codable, Equatable, Sendable {
+        public enum Code: String, Codable, Sendable {
+            case packageUnavailable = "PACKAGE_UNAVAILABLE"
+            case networkUnavailable = "NETWORK_UNAVAILABLE"
+        }
+        public let code: Code
+        public let message: String
+        public let retryable: Bool
+    }
     public let corpus: String
     public let completeness: String
     public let source: String
@@ -361,21 +375,28 @@ public struct CatalogQuery: Codable, Equatable, Sendable {
     public let products: [CatalogProduct]
     public let failures: [DiscoveryFailure]
     public let nextCursor: String?
+    public let sourceFailure: SourceFailure?
 
     public func validatePublicScope(query: String, market: String, language: String, limit: Int) throws {
         let ids = products.map(\.id) + failures.map(\.id)
         guard corpus == "publicMicrosoftStoreSearch", completeness == "partial",
               ["MicrosoftStoreEdge:v9.0/searchResults",
                "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"].contains(source), freshness == "live",
-              self.query == query, ids.count <= limit, Set(ids).count == ids.count,
+              self.query == query, products.count <= limit, failures.count <= 16, Set(ids).count == ids.count,
               !ids.isEmpty || nextCursor == nil else {
             throw ManagementError.invalidPayload
+        }
+        if let sourceFailure {
+            guard !sourceFailure.message.isEmpty, sourceFailure.message.count <= 1_024 else {
+                throw ManagementError.invalidPayload
+            }
         }
         let allowsGamePassListing = source == "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"
         for product in products {
             try product.validatePublicScope(market: market, language: language,
                                             requiresPCCandidate: true,
-                                            allowsGamePassListing: allowsGamePassListing)
+                                            allowsGamePassListing: allowsGamePassListing,
+                                            allowsUnknownGamePassListing: true)
         }
     }
 }

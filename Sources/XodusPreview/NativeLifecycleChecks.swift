@@ -6,6 +6,58 @@ import XodusManagement
 
 @MainActor
 enum NativeLifecycleChecks {
+    static func launchOutcomeChecks(check: (Bool, String) -> Void) throws {
+        let json = """
+            {"version":1,"run_id":"2b9218c5-1251-4d57-9c3c-e0097a607dc9",
+             "operation":"launch","product":"BQVQTL3PCH05","success":false,"exit_code":1,
+             "error_code":"OPERATION_FAILED","error":"Account broker did not shut down cleanly",
+             "wine_exit_code":0,"wine_termination_signal":null,
+             "game_dir":"/fixture/game","log_dir":"/fixture/run",
+             "result_path":"/fixture/run/result.json","progress_path":"/fixture/run/progress.jsonl"}
+            """
+        let old = try JSONDecoder().decode(NativeGameResult.self, from: Data(json.utf8))
+        check(old.launchFailureMessage(stoppedByUser: true) == nil,
+              "COR137: Owner Stop with the exact old NMS broker-failure receipt returns to Play without a message")
+        check(old.launchFailureMessage(stoppedByUser: false) == nil,
+              "COR137: Clean Wine exit with only broker teardown failure is diagnostic-only")
+        let cancelled = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "OPERATION_FAILED", with: "CANCELLED").utf8))
+        check(cancelled.launchFailureMessage(stoppedByUser: true) == nil,
+              "COR137: New launch CANCELLED plus known Stop intent returns to Play without installer copy")
+        check(cancelled.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
+              "COR137: Cancellation without owner Stop intent remains a generic launch failure")
+        let crashed = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "\"wine_exit_code\":0", with: "\"wine_exit_code\":1").utf8))
+        check(crashed.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
+              "COR137: Genuine failed game exit stays visible through the existing generic launch surface")
+        let install = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "\"launch\"", with: "\"install\"")
+                .replacingOccurrences(of: "OPERATION_FAILED", with: "CANCELLED").utf8))
+        check(install.failureMessage.contains("Partial files") && install.failureMessage.contains("installation"),
+              "COR137: Real install cancellation keeps installation recovery copy")
+        let normal = try JSONDecoder().decode(NativeGameResult.self,
+            from: Data(json.replacingOccurrences(of: "\"success\":false", with: "\"success\":true")
+                .replacingOccurrences(of: "\"exit_code\":1", with: "\"exit_code\":0")
+                .replacingOccurrences(of: "\"error_code\":\"OPERATION_FAILED\"", with: "\"error_code\":null").utf8))
+        check(normal.launchFailureMessage(stoppedByUser: false) == nil,
+              "COR137: Normal launch exit returns to Play without a message")
+        check(InstalledGamesController.nativeLaunchFailureMessage(GameScriptError.failed(14))
+              == InstalledGameActionCopy.launchUnavailable,
+              "COR137: Launch error mapping never presents installer cancellation copy")
+        do {
+            try NativeLifecycleCancellation.check(operation: "launch", cancelled: true)
+            check(false, "COR137: Lifecycle cancellation retains launch operation identity")
+        } catch NativeLifecycleCancellation.launchStopped {
+            check(true, "COR137: Lifecycle cancellation retains launch operation identity")
+        }
+        do {
+            try NativeLifecycleCancellation.check(operation: "install", cancelled: true)
+            check(false, "COR137: Lifecycle install cancellation keeps the existing installation contract")
+        } catch GameScriptError.failed(14) {
+            check(true, "COR137: Lifecycle install cancellation keeps the existing installation contract")
+        }
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         check(NativePlayerFailure.message(errorCode: "TIMEOUT", error: nil, diagnostic: "",
             windowRecorded: nil, monitorReliable: false, success: false)?.contains("Open the launch log") == true,
@@ -31,6 +83,11 @@ enum NativeLifecycleChecks {
                 windowRecorded: true, monitorReliable: true, success: true) == nil,
               "Missing/broken monitor evidence and an observed window cannot fabricate a no-window failure")
         var progress = NativeGameProgress()
+        try progress.consume(Data(#"{"event":"bytes","id":18446744073709551615,"delta_bytes":590354826}"#.utf8))
+        try progress.consume(Data(#"{"event":"phase","phase":"Downloading ntfs..."}"#.utf8))
+        check(progress.bytesDone == 0 && progress.bytesTotal == nil && progress.phase == .preparing
+              && progress.value.message == "Reading package",
+              "COR178: Source-container reads remain package preparation, not zero-byte payload downloading")
         for line in [
             #"{"event":"file_started","id":18446744073709551615,"name":"metadata","total_bytes":50}"#,
             #"{"event":"bytes","id":18446744073709551615,"delta_bytes":50}"#,
@@ -58,11 +115,88 @@ enum NativeLifecycleChecks {
         }
         let failureLog = root.appendingPathComponent("player-evidence")
         try FileManager.default.createDirectory(at: failureLog, withIntermediateDirectories: false)
+        let diskDiagnostic = "Streaming failed: not enough free disk space: need 93820089418 bytes, have 29631885312 bytes\n"
+        let diskFailure = NativeGameResult.NativeDiskSpaceFailure.parse(diskDiagnostic)
+        check(diskFailure?.requiredBytes == 93_820_089_418
+              && diskFailure?.availableBytes == 29_631_885_312
+              && diskFailure?.code == "DISK_SPACE"
+              && diskFailure?.message.contains("Not enough space") == true
+              && diskFailure?.message.contains("Partial files are kept") == true,
+              "COR178: Exact streaming need/have becomes a typed actionable disk-space failure")
+        check(NativeGameResult.NativeDiskSpaceFailure.parse("arbitrary disk space text") == nil
+              && NativeGameResult.NativeDiskSpaceFailure.parse("Streaming failed: not enough free disk space: need 1 bytes, have 2 bytes") == nil
+              && NativeGameResult.NativeDiskSpaceFailure.parse("Streaming failed: not enough free disk space: need -1 bytes, have 0 bytes") == nil,
+              "COR178: Disk-space classification rejects ambiguous, contradictory and malformed diagnostics")
         let resultFixture = NativeGameResult(version: 1, runID: UUID().uuidString, operation: "launch",
             product: "FIXTURE00001", success: true, exitCode: 0, errorCode: nil,
             gameDirectory: root.path, logDirectory: failureLog.path,
             resultPath: failureLog.appendingPathComponent("result.json").path,
             progressPath: failureLog.appendingPathComponent("progress.jsonl").path)
+        let failedInstall = NativeGameResult(version: 1, runID: resultFixture.runID, operation: "install",
+            product: resultFixture.product, success: false, exitCode: 1, errorCode: "OPERATION_FAILED",
+            gameDirectory: resultFixture.gameDirectory, logDirectory: resultFixture.logDirectory,
+            resultPath: resultFixture.resultPath, progressPath: resultFixture.progressPath)
+        try Data(diskDiagnostic.utf8).write(to: failureLog.appendingPathComponent("stderr.log"))
+        check(await failedInstall.installationFailureMessage() == diskFailure?.message,
+              "COR178: Bounded exact-run diagnostic reader surfaces disk-space recovery without exposing raw log text")
+        try Data("Unknown failure; sensitive details remain in the log".utf8)
+            .write(to: failureLog.appendingPathComponent("stderr.log"))
+        check(await failedInstall.installationFailureMessage() == failedInstall.failureMessage,
+              "COR178: Unrecognized diagnostics retain redacted failure and never fabricate a disk-space cause")
+        try Data().write(to: failureLog.appendingPathComponent("stderr.log"))
+        for mode in ["missing", "empty", "oversized", "symlink"] {
+            let fixture = root.appendingPathComponent("optional-diagnostic-\(mode)")
+            let destination = fixture.appendingPathComponent("game")
+            let logs = fixture.appendingPathComponent("logs")
+            try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: false)
+            let diagnostic = logs.appendingPathComponent("stderr.log")
+            if mode == "empty" { try Data().write(to: diagnostic) }
+            if mode == "oversized" { try Data(repeating: 65, count: 4_194_305).write(to: diagnostic) }
+            if mode == "symlink" {
+                try FileManager.default.createSymbolicLink(at: diagnostic,
+                    withDestinationURL: failureLog.appendingPathComponent("stderr.log"))
+            }
+            let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+                processed: fixture.appendingPathComponent("processed"), logs: logs, games: destination,
+                journal: fixture.appendingPathComponent("state/operation.json"))
+            let journal = GameOperationJournal(file: paths.journal)
+            let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+                productID: "FIXTURE00001", title: "Partial fixture", destination: destination.path,
+                installedID: nil, nativeAccountHash: String(repeating: "a", count: 64))
+            try await journal.save(record)
+            let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+            await library.load()
+            let controller = GameOperationsController(installed: library, paths: paths)
+            await controller.restore()
+            let failed = NativeGameResult(version: 1, runID: UUID().uuidString, operation: "install",
+                product: record.productID, success: false, exitCode: 1, errorCode: "OPERATION_FAILED",
+                gameDirectory: destination.path, logDirectory: logs.path,
+                resultPath: logs.appendingPathComponent("result.json").path,
+                progressPath: logs.appendingPathComponent("progress.jsonl").path)
+            try await controller.completeNative(record, result: failed)
+            let pending = try await journal.load()
+            let resumable = try await journal.loadResumable()
+            check(controller.error == failed.failureMessage && controller.operation == nil
+                  && !controller.recoveryRequired && !library.mutationActive && controller.canQuit
+                  && pending == nil && resumable[record.productID]?.destination == destination.path
+                  && controller.resumableInstallations[record.productID]?.destination == destination.path,
+                  "COR179 review: \(mode) optional stderr preserves backend failure, partial Resume and terminal journal/mutation release")
+        }
+        for (code, expected) in [
+            ("CANCELLED", "cancelled"), ("TIMEOUT", "install operation took too long"),
+            ("RESOURCE_BUSY", "in use"), ("ACCOUNT_UNAVAILABLE", "Keychain"),
+            ("DISK_SPACE_FLOOR", "Free space"), ("DISK_SPACE_FLOOR_INVALID", "limit is invalid"),
+            ("OPERATION_FAILED", "Open its log")
+        ] {
+            let failed = NativeGameResult(version: 1, runID: resultFixture.runID, operation: "install",
+                product: resultFixture.product, success: false, exitCode: 1, errorCode: code,
+                gameDirectory: resultFixture.gameDirectory, logDirectory: resultFixture.logDirectory,
+                resultPath: resultFixture.resultPath, progressPath: resultFixture.progressPath)
+            check(NativeGameResult.failureCodes.contains(code)
+                  && failed.failureMessage.contains(expected) && !failed.failureMessage.contains("playable game"),
+                  "Native lifecycle maps \(code) actionably without inventing a launch during installation")
+        }
         try Data().write(to: failureLog.appendingPathComponent("windows.jsonl"))
         check(try await resultFixture.playerMessage()?.contains("before Ode to X detected its window") == true,
               "Player failure reader binds empty monitor evidence to the exact result run folder")
@@ -115,10 +249,10 @@ enum NativeLifecycleChecks {
             deadline = time.monotonic() + 5
             while not cancelled and time.monotonic() < deadline:
                 time.sleep(0.01)
-        code = 1 if operation == "repair" or cancelled else 0
+        code = 0 if os.environ.get("S5_SUCCESS_AFTER_CANCEL") == "1" else 1 if operation == "repair" or cancelled else 0
         result = dict(version=1, run_id=run_id, operation=operation, product=product,
             success=code == 0, exit_code=code,
-            error_code="CANCELLED" if cancelled else "OPERATION_FAILED" if code else None,
+            error_code="CANCELLED" if cancelled and code else "OPERATION_FAILED" if code else None,
             game_dir=game, log_dir=str(log), result_path=str(log / "result.json"), progress_path=str(progress))
         result["warnings"] = [dict(code="POPUP_MONITOR_FAILED", message="Synthetic monitor timeout")]
         result["popup_monitor_error"] = "Synthetic monitor timeout"
@@ -155,6 +289,22 @@ enum NativeLifecycleChecks {
         }
         check(result.success && result.exitCode == 0 && received.last?.bytesDone == 25 && !runner.isRunning,
               "Native lifecycle: actual synthetic child receipt agrees; a popup warning does not override clean exit")
+        let prestartState = root.appendingPathComponent("cancel-after-preparation")
+        var prestartCancelled = false
+        var prestartFailure: String?
+        let prestart = Task {
+            do {
+                _ = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+                    operation: "launch", product: "FIXTURE00001", gameDirectory: game,
+                    runID: InstalledGamesController.runID(), stateRoot: prestartState)
+            } catch NativeLifecycleCancellation.launchStopped { prestartCancelled = true }
+            catch { prestartFailure = error.localizedDescription }
+        }
+        InstalledGamesController.cancelPrestartLaunch(preparation: nil, launch: prestart, launcher: runner)
+        await prestart.value
+        check(prestartCancelled && prestartFailure == nil && !runner.isRunning
+              && !FileManager.default.fileExists(atPath: prestartState.path),
+              "M1: Visible Cancel after preparation cancels the actual pending launch task before spawn without a failure")
         try Data("""
             <Game><Identity Name="Fixture.Native" Version="1.0.0.0"/><StoreId>FIXTURE00001</StoreId></Game>
             """.utf8).write(to: game.appendingPathComponent("MicrosoftGame.config"))
@@ -185,9 +335,10 @@ enum NativeLifecycleChecks {
         let session = LiveSession()
         installed.useUnifiedAccount(session)
         await installed.discoverNativeInstallations(root: discovery)
-        check(installed.games.contains { $0.storeId == "FIXTURE00002" && $0.usesNativeLifecycle == true }
-              && installed.discoveryError?.contains("broken-game") == true,
-              "Automatic discovery imports valid native records while a corrupt sibling stays an explicit separate error")
+        check(!installed.games.contains { $0.storeId == "FIXTURE00002" }
+              && installed.discoveryError == nil
+              && installed.hasUnverifiedInstallation(productID: "FIXTURE00002"),
+              "Automatic discovery keeps valid candidates unverified and skips corrupt siblings without raw-path banners")
         let discoveredCount = installed.games.count
         await installed.discoverNativeInstallations(root: discovery)
         check(installed.games.count == discoveredCount,
@@ -197,14 +348,23 @@ enum NativeLifecycleChecks {
             runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("repair"))
         check(!repair.success && repair.errorCode == "OPERATION_FAILED",
               "Native lifecycle: stream completed before a failed repair cannot register success")
-        let cancelled = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
-            operation: "launch", product: "FIXTURE00001", gameDirectory: game,
-            runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("cancel"),
-            launchEnvironment: ["S5_SYNTHETIC_ENV": "owned-fixture"],
-            unsetLaunchEnvironment: ["HOME"],
-            onProgress: { _ in runner.cancel() })
-        check(cancelled.errorCode == "CANCELLED" && !runner.isRunning,
-              "Native lifecycle: cancellation signals the exact live child and joins its terminal receipt")
+        for succeeds in [false, true] {
+            let cancelledState = root.appendingPathComponent("cancel-\(succeeds)")
+            do {
+                _ = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
+                    operation: "launch", product: "FIXTURE00001", gameDirectory: game,
+                    runID: InstalledGamesController.runID(), stateRoot: cancelledState,
+                    launchEnvironment: ["S5_SYNTHETIC_ENV": "owned-fixture",
+                                        "S5_SUCCESS_AFTER_CANCEL": succeeds ? "1" : "0"],
+                    unsetLaunchEnvironment: ["HOME"], onProgress: { _ in runner.cancel() })
+                check(false, "REQ95 requested cancellation cannot return success or terminal result")
+            } catch NativeLifecycleCancellation.launchStopped {
+                let persisted = try NativeGameLifecycle.readResult(state: cancelledState, operation: "launch",
+                    product: "FIXTURE00001", gameDirectory: game)
+                check(!runner.isRunning && persisted.success == succeeds && runner.completedResult == persisted,
+                      "REQ95 cancellation joins child, validates its terminal receipt and refuses success-after-cancel")
+            }
+        }
         do {
             _ = try await runner.run(configuration: configuration, accountHash: String(repeating: "a", count: 64),
                 operation: "uninstall", product: "FIXTURE00001", gameDirectory: game,
@@ -246,11 +406,16 @@ enum NativeLifecycleChecks {
             shimHashes[name] = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
         }
         let shims = NativeShimReference(directory: shimDirectory, hashes: shimHashes)
-        let automatic = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults)
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults)
+            check(false, "Unconfigured Play cannot silently choose generic Wine")
+        } catch NativeLaunchError.engineNotSelected {
+            check(true, "REQ95 unconfigured Play refuses generic Wine/CrossOver/GPTK substitution")
+        }
         let proven = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
                                                             provenEngine: "synthetic")
-        check(automatic.engine == "synthetic" && proven.engine == "synthetic",
-              "Play automatically selects an available Free Wine engine or the game's proven engine without manual setup")
+        check(proven.engine == "synthetic",
+              "Historical exact recipe data remains inspectable without admitting it for current execution")
         let orderedRegistry = try JSONDecoder().decode(NativeEngineRegistry.self,
             from: JSONSerialization.data(withJSONObject: ["engines": [
                 ["name": "failed-presentation", "kind": "free", "engine_label": "Free Wine",
@@ -261,13 +426,18 @@ enum NativeLifecycleChecks {
                 ["name": "synthetic", "kind": "free", "engine_label": "Free Wine",
                  "wine": executable.path, "smoke_test": ["status": "pass"]]
             ]]))
+        do {
+            _ = try NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
+                defaults: defaults, provenEngine: nil)
+            check(false, "Unspecified selection cannot use an ordered legacy runner")
+        } catch NativeLaunchError.engineNotSelected {
+            check(true, "REQ95 installed legacy runner order cannot admit an unspecified Calimocho configuration")
+        }
         check(try NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
-                defaults: defaults, provenEngine: nil).name == "synthetic"
-              && NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: nil,
                 defaults: defaults, provenEngine: "paid").name == "paid"
               && NativeLaunchConfiguration.selectEngine(registry: orderedRegistry, provider: .standaloneWine,
                 defaults: defaults, provenEngine: "paid").name == "synthetic",
-              "Unconfigured Play prefers available Free Wine, excludes failed presentation, and preserves proven/explicit precedence")
+              "Historical explicit recipe resolution stays separate from current execution policy")
         do {
             _ = try NativeLaunchConfiguration.resolve(game: nativeGame, provider: nil, defaults: defaults,
                                                        provenEngine: "unavailable-proven-engine")
@@ -666,11 +836,12 @@ enum NativeLifecycleChecks {
               && nms.requiredFiles?.first?.sha256 == "c2b53b24c9f4a29df60bffc73e3da6ec1b4d0d88ebcf40e81acc32ad6ff9b8cc"
               && nms.prefixRegistryImports?.first?.sha256 == "4b91e27c5ae34a0237e2e60678d74117c8f110e261105128ea269058c1962eac",
               "NMS tile data preserves S3's exact engine, frozen runtime pair, c2b driver and native-JSON import")
-        check(freeNMS.engine == "nms-free-gptk3-d3dshared"
-              && freeNMS.runtime?.legacySHA256 == "de6f1c47f3cfb087655a4852c185cf89c3d64ca5e2327146d424426d3b7944a5"
-              && freeNMS.environment["CX_APPLEGPTK_LIBD3DSHARED_PATH"]?.hasSuffix("/libd3dshared.dylib") == true
-              && freeNMS.requiredFiles?.contains(where: { $0.sha256 == "5131e631eee8b542eadf48f4df9fd662d9aeeb59139137e0e6e14047dc434995" }) == true,
-              "Preferred free NMS keeps its original NMS legacy DLL and pinned GPTK3 support library, separate from CrossOver fallback")
+        check(freeNMS.engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private"
+              && freeNMS.runtime?.primaryPath == "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll"
+              && freeNMS.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+              && freeNMS.environment == ["XODUS_PRIVATE_LOCAL_SAVES": "1", "XODUS_XBL_ONLINE": "1"]
+              && freeNMS.arguments == ["--exe", "Binaries/NMS.exe", "--no-auto-dismiss"],
+              "Free NMS binds the observed port11b runtime, executable, local saves and online environment without old GPTK3 overrides")
         let suite = "io.github.xodus.recipe-check.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -680,8 +851,8 @@ enum NativeLifecycleChecks {
         try JSONEncoder().encode(obsolete).write(to: root.appendingPathComponent(nms.productID + ".json"))
         let defaultNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults)
         let fallbackNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults, provider: .crossover)
-        check(defaultNMS?.engine == "nms-free-gptk3-d3dshared" && fallbackNMS?.engine == "crossover-26.3",
-              "Automatic NMS uses the qualified free binding; explicit CrossOver selects its exact separate fallback recipe")
+        check(defaultNMS?.engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private" && fallbackNMS?.engine == "crossover-26.3",
+              "Automatic NMS uses the observed port11b binding; explicit CrossOver selects its unchanged separate recipe")
         let brotatoRegistry = root.appendingPathComponent("brotato-route-registry.json")
         try JSONSerialization.data(withJSONObject: ["engines": [
             ["name": "wine-stable", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]],

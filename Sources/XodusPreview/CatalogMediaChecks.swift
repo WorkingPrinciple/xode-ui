@@ -99,6 +99,19 @@ enum CatalogMediaChecks {
         _ = try await freshStore.image(for: reference)
         check(MediaFixtureProtocol.state.observed().isEmpty,
               "A new artwork store decodes a fresh persisted image without a network request")
+        let sharedReference = try makeReference("SharedLibraryDiscover")
+        MediaFixtureProtocol.state.reset([.init(status: 200, headers: [
+            "Content-Type": "image/png", "Cache-Control": "max-age=3600"
+        ], data: data)])
+        let sharedStore = CatalogArtworkStore(diskCache: reopened, session: session)
+        async let libraryImage = sharedStore.image(for: sharedReference, bucket: .card)
+        async let discoverImage = sharedStore.image(for: sharedReference, bucket: .card)
+        let (firstCard, secondCard) = try await (libraryImage, discoverImage)
+        let warmCard = try await sharedStore.image(for: sharedReference, bucket: .card)
+        _ = try await sharedStore.image(for: sharedReference, bucket: .hero)
+        check(firstCard === secondCard && firstCard === warmCard
+              && MediaFixtureProtocol.state.observed().count == 1,
+              "REQ-82: Library/Discover concurrent card artwork coalesces one download; warm cards reuse the decoded image and hero size reuses saved bytes")
         let stale = CatalogMediaEntry(url: url.absoluteString, data: data, digest: entry(url).digest,
             mimeType: "image/png", etag: "\"fixture-v1\"", lastModified: nil, expiresAt: .distantPast)
         try await reopened.store(stale, for: url, generation: saved.generation)

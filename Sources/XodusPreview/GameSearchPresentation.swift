@@ -26,7 +26,17 @@ enum GameSearchHistory {
 
 }
 
+enum CatalogSearchTiming {
+    static let debounce = Duration.milliseconds(250)
+}
+
 enum GameSearchPresentation {
+    static let placeholderLimit = 8
+
+    static func classifyingCount(storeIDs: [String], classified: Set<String>, pending: Set<String>) -> Int {
+        Set(storeIDs).filter { pending.contains($0) && !classified.contains($0) }.count
+    }
+
     static func compatibilityDetailsActionLabel(for title: String) -> String {
         "View compatibility details for \(title)"
     }

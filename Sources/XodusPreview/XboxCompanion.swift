@@ -24,6 +24,7 @@ struct XboxProfile: Decodable, Sendable {
     let gamerscore: UInt?
     let bio: String?
     let location: String?
+    let accountCountry: XboxAccountCountry?
 }
 
 struct XboxFriend: Decodable, Identifiable, Sendable {
@@ -77,6 +78,11 @@ struct XboxCompanionCache: Decodable, Sendable {
 
     func confirmsAccount(_ binding: String?) -> Bool {
         binding == accountHash && profile.available && profile.value != nil
+    }
+
+    func toolbarProfile(for binding: String?) -> XboxProfile? {
+        guard let binding, XboxAccountBinding.valid(binding), confirmsAccount(binding) else { return nil }
+        return profile.value
     }
 
     static func decode(_ data: Data) throws -> Self {
@@ -418,7 +424,8 @@ final class XboxCompanionController: ObservableObject {
         await bind(binding, signedIn: session.hasConfirmedSignIn)
         guard !terminating, let binding else { return }
         if let task { await task.value; return }
-        if !force, error == nil, let date = cache?.date, Date().timeIntervalSince(date) < 900 { return }
+        if !force, session.accountCountryReady, error == nil, let date = cache?.date,
+           Date().timeIntervalSince(date) < 900 { return }
         let epoch = generation
         refreshing = true
         let job = Task {

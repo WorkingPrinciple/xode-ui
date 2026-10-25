@@ -4,11 +4,377 @@ import SwiftUI
 import XodusCore
 
 @MainActor
+private final class OffscreenInstallWindow: NSWindow {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+}
+
+@MainActor
+private final class InstallSheetFixture: ObservableObject {
+    @Published var detail: PCGame?
+    var requestInstall: (@MainActor () async -> Void)?
+    var dismissed = false
+}
+
+private struct InstallSheetFixtureView: View {
+    @ObservedObject var fixture: InstallSheetFixture
+    @ObservedObject var operations: GameOperationsController
+
+    var body: some View {
+        Color.clear.frame(width: 640, height: 480)
+            .gameDetailSheet(item: $fixture.detail, operations: operations, allowed: true,
+                             onDismiss: { fixture.dismissed = true }) { game, reviewInstall in
+                let action = GameInstallAction(game: game, operations: operations, reviewInstall: reviewInstall)
+                action.padding(24).frame(width: 500, height: 400)
+                    .onAppear { fixture.requestInstall = { await action.requestInstall() } }
+            }
+            .background { GameOperationPresentation(operations: operations) }
+    }
+}
+
+@MainActor
 enum NativeUIChecks {
+    static func checkSettingsLayouts(check: (Bool, String) -> Void) throws {
+        let suite = "XodusSettingsLayout-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            check(false, "COR174 Settings layout checks use an isolated preference suite")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let state = AppState(settingsDefaults: defaults)
+        let session = LiveSession()
+        let renderDirectory = ProcessInfo.processInfo.environment["XODUS_SETTINGS_RENDER_DIRECTORY"]
+            .map(URL.init(fileURLWithPath:))
+        if let renderDirectory {
+            try FileManager.default.createDirectory(at: renderDirectory, withIntermediateDirectories: true)
+        }
+
+        for pane in SettingsPane.allCases {
+            SettingsPaneSelection.select(pane, defaults: defaults)
+            check(SettingsPaneSelection.selected(defaults: defaults) == pane,
+                  "COR174 \(pane.title) restores from its selected-pane preference")
+            for width in [CGFloat(560), CGFloat(820)] {
+                for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                    let host = NSHostingView(rootView: LiveSettingsView()
+                        .environmentObject(state)
+                        .environmentObject(session)
+                        .defaultAppStorage(defaults)
+                        .frame(width: width, height: 900)
+                        .background(Color(nsColor: .windowBackgroundColor)))
+                    let window = OffscreenInstallWindow(
+                        contentRect: CGRect(x: -10000, y: -10000, width: width, height: 900),
+                        styleMask: [.titled], backing: .buffered, defer: false)
+                    window.isReleasedWhenClosed = false
+                    window.sharingType = .none
+                    window.contentView = host
+                    defer {
+                        window.orderOut(nil)
+                        window.close()
+                    }
+                    host.sizingOptions = []
+                    host.appearance = NSAppearance(named: appearance)
+                    host.frame = CGRect(x: 0, y: 0, width: width, height: 900)
+                    window.displayIfNeeded()
+                    host.layoutSubtreeIfNeeded()
+                    check(host.window === window && !window.isKeyWindow && !window.isMainWindow
+                          && host.frame.width == width,
+                          "COR174 \(pane.title) renders offscreen at \(Int(width)) in \(appearance.rawValue) without activation")
+                    func descendants(_ view: NSView) -> [NSView] {
+                        [view] + view.subviews.flatMap(descendants)
+                    }
+                    let segmentControls = descendants(host).compactMap { $0 as? NSSegmentedControl }
+                    let segmentLabels = segmentControls.flatMap { control in
+                        (0..<control.segmentCount).compactMap { control.label(forSegment: $0) }
+                    }
+                    let segmentImages = segmentControls.flatMap { control in
+                        (0..<control.segmentCount).map { control.image(forSegment: $0) != nil }
+                    }
+                    check(Set(segmentLabels) == Set(SettingsPane.allCases.map(\.title))
+                          && segmentImages.count == SettingsPane.allCases.count
+                          && segmentImages.allSatisfy { $0 },
+                          "COR174 Native segmented tabs expose all four pane labels and symbols")
+                    if let renderDirectory, let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+                        host.cacheDisplay(in: host.bounds, to: bitmap)
+                        let appearanceName = appearance == .darkAqua ? "dark" : "light"
+                        try bitmap.representation(using: .png, properties: [:])?.write(to: renderDirectory
+                            .appendingPathComponent("\(pane.rawValue)-\(Int(width))-\(appearanceName).png"))
+                    }
+                }
+            }
+        }
+        let operations = state.gameOperations
+        operations.useUnifiedAccount(session)
+        check(operations.serviceLabel == "Check Xbox account connection"
+              && operations.serviceAccountSymbol == "person.crop.circle.badge.exclamationmark",
+              "COR174 Signed-out unified account status is truthful and non-successful")
+        try checkSettingsFullContentRenders(state: state, session: session, defaults: defaults,
+                                            renderDirectory: renderDirectory, check: check)
+    }
+
+    private static func checkSettingsFullContentRenders(state: AppState, session: LiveSession,
+                                                        defaults: UserDefaults, renderDirectory: URL?,
+                                                        check: (Bool, String) -> Void) throws {
+        guard let renderDirectory else { return }
+        for pane in [SettingsPane.account, .advanced] {
+            SettingsPaneSelection.select(pane, defaults: defaults)
+            for width in [CGFloat(560), CGFloat(820)] {
+                for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                    let height: CGFloat = 2600
+                    let host = NSHostingView(rootView: LiveSettingsView()
+                        .environmentObject(state)
+                        .environmentObject(session)
+                        .defaultAppStorage(defaults)
+                        .frame(width: width, height: height)
+                        .background(Color(nsColor: .windowBackgroundColor)))
+                    let window = OffscreenInstallWindow(
+                        contentRect: CGRect(x: -10000, y: -10000, width: width, height: height),
+                        styleMask: [.titled], backing: .buffered, defer: false)
+                    window.isReleasedWhenClosed = false
+                    window.sharingType = .none
+                    window.contentView = host
+                    defer {
+                        window.orderOut(nil)
+                        window.close()
+                    }
+                    host.sizingOptions = []
+                    host.appearance = NSAppearance(named: appearance)
+                    host.frame = CGRect(x: 0, y: 0, width: width, height: height)
+                    window.displayIfNeeded()
+                    host.layoutSubtreeIfNeeded()
+                    check(host.window === window && !window.isKeyWindow && !window.isMainWindow
+                          && host.frame.height == height,
+                          "COR174 \(pane.title) full-content render is offscreen at \(Int(width)) in \(appearance.rawValue)")
+                    guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { continue }
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    guard let png = bitmap.representation(using: .png, properties: [:]) else { continue }
+                    let appearanceName = appearance == .darkAqua ? "dark" : "light"
+                    try png.write(to: renderDirectory
+                        .appendingPathComponent("\(pane.rawValue)-full-\(Int(width))-\(appearanceName).png"))
+                }
+            }
+        }
+    }
+
+    static func checkSignedInSettingsAccountPane(session: LiveSession,
+                                                 check: (Bool, String) -> Void) throws {
+        let suite = "XodusSignedInSettings-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            check(false, "COR174 signed-in Settings uses an isolated preference suite")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let windows = NSApplication.shared.windows.count
+        let state = AppState(settingsDefaults: defaults)
+        state.pcGames.useUnifiedAccount(session)
+        state.gameOperations.useUnifiedAccount(session)
+        SettingsPaneSelection.select(.account, defaults: defaults)
+        let height: CGFloat = 2600
+        let host = NSHostingView(rootView: LiveSettingsView()
+            .environmentObject(state)
+            .environmentObject(session)
+            .defaultAppStorage(defaults)
+            .frame(width: 560, height: height)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: height)
+        host.layoutSubtreeIfNeeded()
+        check(session.hasConfirmedSignIn
+              && SettingsPaneSelection.selected(defaults: defaults) == .account
+              && host.window == nil && NSApplication.shared.windows.count == windows,
+              "COR174 Signed-in Account pane renders from a confirmed synthetic session without a window or auth request")
+        if let directory = ProcessInfo.processInfo.environment["XODUS_SETTINGS_RENDER_DIRECTORY"],
+           let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            try bitmap.representation(using: .png, properties: [:])?.write(
+                to: URL(fileURLWithPath: directory).appendingPathComponent("account-signed-in-full-560-light.png"))
+        }
+    }
+
+    static func checkCountryPendingLibrary(session: LiveSession, installed: InstalledGamesController,
+                                           check: (Bool, String) -> Void) {
+        let windows = NSApplication.shared.windows.count
+        let state = AppState(installedGames: installed)
+        state.librarySelection.filter = .owned
+        let saved = installed.games
+        let host = NSHostingView(rootView: LiveRootView(allowsStartupTasks: false)
+            .environmentObject(state).environmentObject(session))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 1200, height: 860)
+        host.layoutSubtreeIfNeeded()
+        let projection = state.librarySelection.projection.current
+        check(!session.accountCountryReady && !saved.isEmpty
+              && Set(projection.local.compactMap(\.installed?.id)) == Set(saved.map(\.id))
+              && state.librarySelection.filter == .owned,
+              "Unknown country renders installed Library records without destroying the saved account filter")
+        check(descendants(of: host).contains { $0 is NSPopUpButton }
+              && host.window == nil && NSApplication.shared.windows.count == windows
+              && installed.games == saved,
+              "Unknown-country Library keeps inline native confirmation and does not mutate registrations or open a window")
+    }
+
+    static func checkAccountCountry(session: LiveSession, confirmationRequired: Bool,
+                                    check: (Bool, String) -> Void) throws {
+        let windows = NSApplication.shared.windows.count
+        let host = NSHostingView(rootView: AccountCountrySettings().environmentObject(session).padding(20)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: 400)
+        host.layoutSubtreeIfNeeded()
+        let controls = descendants(of: host)
+        let buttons = controls.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
+        check(confirmationRequired ? (buttons.count == 2 && buttons.first?.isEnabled == false) : buttons.count == 1,
+              "COR127 native country confirmation has no preselected country and is absent for verified accounts")
+        check(host.window == nil && NSApplication.shared.windows.count == windows,
+              "REQ101 country controls render without a native window or desktop input")
+        if let folder = ProcessInfo.processInfo.environment["XODUS_COUNTRY_PROOF"] {
+            guard let image = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                throw GameScriptError.invalidReceipt
+            }
+            host.cacheDisplay(in: host.bounds, to: image)
+            guard let png = image.representation(using: .png, properties: [:]) else {
+                throw GameScriptError.invalidReceipt
+            }
+            let name = confirmationRequired ? "country-confirmation.png" : "country-verified.png"
+            try png.write(to: URL(fileURLWithPath: folder).appendingPathComponent(name))
+        }
+    }
+
+    static func checkAccountDismissalWhileLoading(session: LiveSession,
+                                                   check: (Bool, String) -> Void) async throws {
+        let windows = NSApplication.shared.windows.count
+        let state = AppState()
+        state.showingAccount = true
+        var closed = false
+        let host = NSHostingView(rootView: LiveAccountView(onClose: { closed = true },
+            refreshStatusOnAppear: false).environmentObject(state).environmentObject(session))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 560, height: 520)
+        host.layoutSubtreeIfNeeded()
+        let buttons = descendants(of: host).compactMap { $0 as? NSButton }
+        let close = buttons.first { ["\r", "\u{1b}"].contains($0.keyEquivalent) }
+        let protectedFooter = buttons.suffix(3).filter { $0 !== close }
+        check(session.hasConfirmedSignIn && session.accountBusy && session.accountStatusChecking,
+              "COR95: Populated Account is rendered while an existing-account status read is pending")
+        check(close?.isEnabled == true,
+              "COR95: Actual Account Close remains enabled during background account loading")
+        check(close?.keyEquivalent == "\u{1b}",
+              "COR95: Actual Account Close retains Escape while signed in and loading")
+        check(protectedFooter.count == 2 && protectedFooter.allSatisfy { !$0.isEnabled }
+              && !state.canSignOut(session: session),
+              "COR95: Background loading still fences status and protected account mutations")
+        close?.performClick(nil)
+        for _ in 0..<10 where !closed {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        check(closed && session.accountBusy && !session.signInPending,
+              "COR95: Actual rendered Close invokes dismissal without cancelling the pending account read")
+        check(host.window == nil && NSApplication.shared.windows.count == windows,
+              "COR95: Loading dismissal check creates no native window or desktop input")
+    }
+
+    static func checkInstallSheetPresentation(operations: GameOperationsController, game: PCGame,
+                                              check: (Bool, String) -> Void) async throws {
+        let fixture = InstallSheetFixture()
+        let window = OffscreenInstallWindow(contentRect: CGRect(x: -10000, y: -10000, width: 640, height: 480),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.sharingType = .none
+        window.contentView = NSHostingView(rootView: InstallSheetFixtureView(fixture: fixture, operations: operations))
+        defer {
+            if let sheet = window.attachedSheet { window.endSheet(sheet) }
+            window.orderOut(nil)
+            window.close()
+        }
+        window.contentView?.layoutSubtreeIfNeeded()
+        window.orderBack(nil)
+        fixture.detail = game
+        func wait(_ predicate: @MainActor () -> Bool) async throws {
+            for _ in 0..<200 {
+                if predicate() { return }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            throw GameScriptError.timeout
+        }
+        try await wait { window.attachedSheet != nil && fixture.requestInstall != nil }
+        let detailSheet = window.attachedSheet
+        await fixture.requestInstall?()
+        await fixture.requestInstall?()
+        try await wait {
+            fixture.dismissed && operations.presentedInstallConsent != nil
+                && window.attachedSheet != nil && window.attachedSheet !== detailSheet
+        }
+        check(fixture.detail == nil && fixture.dismissed && operations.operation == nil
+              && operations.presentedInstallConsent?.game.id == game.id && !window.isKeyWindow,
+              "COR89 native presenter: detail dismisses before a distinct consent sheet attaches without activating a window or starting installation")
+        check(window.attachedSheet?.contentView?.bounds.height ?? 0 >= 400,
+              "COR89 native presenter: the consent renders a full native sheet rather than staying queued behind detail")
+        await operations.cancelInstallConsent()
+        try await wait { window.attachedSheet == nil }
+        check(operations.operation == nil && operations.installConsent == nil && !window.isKeyWindow,
+              "COR89 native presenter: cancelling the attached review closes it without starting installation")
+    }
+
     static func run(check: (Bool, String) -> Void) {
+        var retried = false
+        let recovery = LibraryDetailsRecoveryNotice(
+            message: "Some game details are unavailable. Your available games are still here.",
+            retry: { retried = true })
+        recovery.retry()
+        check(retried, "REQ98 Library recovery has a real retry action independent of the hidden collection header")
+        for width in [CGFloat(220), 380] {
+            let renderer = ImageRenderer(content: recovery.frame(width: width, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true))
+            check(renderer.cgImage.map { $0.width == Int(width) && $0.height >= 50 } == true,
+                  "REQ98 native recovery notice and keyboard-accessible Button wrap at \(Int(width))pt")
+            if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+                for scheme in [ColorScheme.light, .dark] {
+                    let host = NSHostingView(rootView: recovery.padding(16)
+                        .frame(width: width + 32, height: 140, alignment: .topLeading)
+                        .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, scheme))
+                    host.sizingOptions = []
+                    host.appearance = NSAppearance(named: scheme == .light ? .aqua : .darkAqua)
+                    host.frame = CGRect(x: 0, y: 0, width: width + 32, height: 140)
+                    host.layoutSubtreeIfNeeded()
+                    saveDetachedEvidence(host, directory: directory,
+                        name: "library-recovery-\(scheme == .light ? "light" : "dark")-\(Int(width)).png",
+                        check: check)
+                }
+            }
+        }
         checkContinuePlayingScroller(check: check)
+        checkDetailFirstCards(check: check)
         checkLoadingPresentation(check: check)
         checkActionExtentObservation(check: check)
+        let blockedGame = PCGame(id: "FIXTURE00001", title: "Unavailable details", artwork: nil)
+        let blockedOperations = GameOperationsController(installed: InstalledGamesController())
+        let blockedReason = "PC game details for this title couldn't be loaded. Refresh your library to try again."
+        let blockedInstall = GameInstallAction(game: blockedGame, operations: blockedOperations,
+            enabled: false, disabledReason: blockedReason)
+        check(!blockedInstall.canInstall && blockedInstall.unavailableReason == blockedReason,
+              "REQ88: Disabled Install retains a visible, title-specific reason rather than tooltip-only help")
+        for width in [CGFloat(220), 320, 650] {
+            let content = blockedInstall.frame(width: width, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            let renderer = ImageRenderer(content: content)
+            let image = renderer.cgImage
+            check(image.map { $0.width == Int(width) && $0.height >= 39 } == true,
+                  "REQ88: Disabled Install and wrapping recovery text render offscreen at \(Int(width)) points (\(image?.width ?? 0)x\(image?.height ?? 0))")
+        }
+        var recoverySelected = false
+        let heroNotice = InstallUnavailableNotice(
+            message: "PC Game Pass download access hasn't been confirmed for this account.",
+            recoveryTitle: "Account settings", recover: { recoverySelected = true })
+        heroNotice.recover?()
+        check(recoverySelected && heroNotice.recoveryTitle == "Account settings",
+              "COR88: Disabled Install recovery is an independent actionable control, not disabled with Install")
+        for width in [CGFloat(220), 380] {
+            let renderer = ImageRenderer(content: heroNotice
+                .environment(\.libraryOnHeroMedia, true)
+                .frame(width: width).background(Color.white))
+            check(renderer.cgImage.map { $0.width == Int(width) && $0.height > 70 } == true,
+                  "COR88: White-on-dark hero blocker and recovery wrap above bright artwork at \(Int(width))pt without clipping")
+        }
         do { try RecentLibraryChecks.imageChecks(check: check) }
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))
@@ -61,6 +427,31 @@ enum NativeUIChecks {
               "Minecraft information lays out without a window, launcher scan or test journal")
         let application = NSApplication.shared
         let windows = application.windows.count
+        for (picture, loading, failed, expected) in [
+            (true, false, false, "Profile picture"),
+            (false, true, false, "Profile picture is loading"),
+            (false, false, true, "Profile picture couldn't be loaded"),
+            (false, false, false, "No profile picture available")
+        ] {
+            check(ToolbarAccountButton.pictureStatus(hasPicture: picture, loading: loading, failed: failed) == expected,
+                  "REQ90: Profile fallback explicitly labels picture/loading/error/absence without inferring membership")
+        }
+        for width in [CGFloat(650), 1200] {
+            for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                let actions = NativeToolbarAccountActions(accountLabel: "Microsoft account", accountSymbol: "person.crop.circle",
+                    libraryContrast: true, importGame: {}, openAccount: {})
+                    .environment(\.catalogPresentationActive, false)
+                let host = NSHostingView(rootView: actions)
+                host.sizingOptions = [.intrinsicContentSize]
+                host.appearance = NSAppearance(named: appearance)
+                host.frame = CGRect(x: 0, y: 0, width: width, height: 64)
+                host.layoutSubtreeIfNeeded()
+                let fitting = host.intrinsicContentSize
+                check(host.window == nil && fitting.width > 80 && fitting.width < 180
+                      && fitting.height <= 64,
+                      "REQ90: Native account/import group fits \(Int(width))pt \(appearance.rawValue) with trailing inset, without artwork fetch or window (\(fitting))")
+            }
+        }
         var hasHero = LibraryHeroPresenceKey.defaultValue
         LibraryHeroPresenceKey.reduce(value: &hasHero) { false }
         check(!hasHero, "A plain Library has no artwork underlap preference")
@@ -83,6 +474,7 @@ enum NativeUIChecks {
                                          pageWidth: width, contentWidth: width * 5) == width * 4,
                   "Hero paging clamps the first and last pages at \(Int(width)) points")
         }
+
         for size in [CGFloat(16), 48, 112, 1024] {
             let rect = CGRect(x: 7, y: 11, width: size, height: size)
             let mark = XOdeMark.path(in: rect)
@@ -117,7 +509,9 @@ enum NativeUIChecks {
                 let runtime = RuntimeProviderSettings()
                 let welcome = NSHostingView(rootView: LiveWelcomeView(session: session, runtime: runtime,
                     operations: GameOperationsController(installed: InstalledGamesController()))
-                    .environmentObject(AppState()))
+                    .environmentObject(AppState())
+                    .environment(\.colorScheme, appearance == .aqua ? .light : .dark)
+                    .background(Color(nsColor: .windowBackgroundColor)))
                 welcome.sizingOptions = []
                 welcome.appearance = NSAppearance(named: appearance)
                 welcome.frame = CGRect(origin: .zero, size: size)
@@ -131,9 +525,51 @@ enum NativeUIChecks {
                 check(!session.hasConfirmedSignIn && !session.accountBusy
                       && !session.canStartWelcomeSignIn && !runtime.checkingDependency,
                       "Detached welcome layout cannot connect, sign in, inspect credentials or install CrossOver")
+                if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+                    saveDetachedEvidence(welcome, directory: directory,
+                        name: "welcome-\(appearance.rawValue)-\(Int(size.width)).png", check: check)
+                }
             }
         }
         let colours: [Color] = [.red, .green, .blue]
+        let coverIssue = LibraryCompatibilityIssue(kind: .antiCheat, title: "Uses Easy Anti-Cheat",
+            detail: "Synthetic title cannot run with this runtime.", source: nil)
+        let statusCard = GameCard(title: "Synthetic title", compatibilityIssues: [coverIssue],
+            showsGamePassCatalogBadge: true, open: {}) {
+                Color.blue
+            } status: { EmptyView() }
+        check(statusCard.coverStatusDescription ==
+              "In PC Game Pass catalog, Uses Easy Anti-Cheat. Synthetic title cannot run with this runtime.",
+              "COR97/101: One existing cover control exposes catalog membership and exact compatibility reason without another keyboard stop")
+        let packageCard = GameCard(title: "Unsupported PC title",
+            compatibilityIssues: [LibraryCompatibilityIssue(kind: .packageType, title: "EAPPX",
+                detail: "EAPPX. Ode to X 0.1 supports MSIXVC packages only.", source: nil)], open: {}) {
+                Color.blue
+            } status: { EmptyView() }
+        check(!packageCard.coverStatusDescription.contains("EAPPX")
+              && !packageCard.coverStatusDescription.contains("MSIXVC")
+              && packageCard.coverStatusDescription.contains("Not supported"),
+              "REQ60/62: Card help and AX use plain compatibility state, never package format")
+        let unknownCard = GameCard(title: "Unknown title", open: {}) {
+            Color.blue
+        } status: { EmptyView() }
+        check(unknownCard.coverStatusDescription.isEmpty,
+              "COR97/101: Unknown title gains neither a compatibility icon nor a membership claim")
+        if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+            for scheme in [ColorScheme.light, .dark] {
+                let cards = HStack(alignment: .top, spacing: 24) { statusCard; unknownCard }
+                    .padding(24).frame(width: 440, height: 400, alignment: .top)
+                    .background(Color(nsColor: .windowBackgroundColor))
+                    .environment(\.colorScheme, scheme)
+                let host = NSHostingView(rootView: cards)
+                host.sizingOptions = []
+                host.appearance = NSAppearance(named: scheme == .light ? .aqua : .darkAqua)
+                host.frame = CGRect(x: 0, y: 0, width: 440, height: 400)
+                host.layoutSubtreeIfNeeded()
+                saveDetachedEvidence(host, directory: directory,
+                    name: "cover-\(scheme == .light ? "light" : "dark").png", check: check)
+            }
+        }
         let covers = LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
             ForEach(0..<3) { index in
                 GameCard(title: index == 1 ? "A longer two-line game title" : "Game \(index)",
@@ -141,7 +577,7 @@ enum NativeUIChecks {
                     colours[index]
                 } status: {
                     Text(Array(repeating: "Metadata", count: index + 1).joined(separator: "\n"))
-                } actions: { EmptyView() }
+                }
             }
         }
         .frame(width: 558, height: 520, alignment: .topLeading).background(.white)
@@ -374,6 +810,12 @@ enum NativeUIChecks {
         check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:)))
               && text.isEmpty,
               "REQ-59: Escape clears the query using the same native search binding")
+        focused = true
+        check(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:)))
+              && !focused
+              && !DiscoverSearchOverlayLayout.isPresented(searchFocused: focused,
+                  suggestionFocused: false, query: text, searches: ["Halo"]),
+              "Escape from an empty native search resigns editor focus and dismisses recent suggestions")
         text = "next scope"
         search = NativeSearchField(text: search.$text, focused: search.$focused,
                                    placeholder: "Search Microsoft Store games")
@@ -391,9 +833,53 @@ enum NativeUIChecks {
         search.updateField(field, coordinator: coordinator)
         check(field.wantsFocus && field.window == nil && field.stringValue == text,
               "Command-F focus intent survives re-enabling without creating or activating a window")
-        coordinator.controlTextDidEndEditing(Notification(name: NSControl.textDidEndEditingNotification, object: field))
+        check(NativeSearchField.endEditingClearsFocus(retired: false, attached: true, editing: false)
+              && !NativeSearchField.endEditingClearsFocus(retired: false, attached: true, editing: true)
+              && !NativeSearchField.endEditingClearsFocus(retired: false, attached: false, editing: false)
+              && !NativeSearchField.endEditingClearsFocus(retired: true, attached: true, editing: false),
+              "REQ-107: Only a settled, attached, current editor losing focus collapses search")
+        focused = true
         search.updateField(field, coordinator: coordinator)
-        check(!focused && !field.wantsFocus, "Ending native editing clears the shared focus intent")
+        coordinator.controlTextDidEndEditing(Notification(name: NSControl.textDidEndEditingNotification, object: field))
+        coordinator.settleEndEditing(field)
+        check(focused && field.wantsFocus,
+              "REQ-107: A toolbar rebuild that detaches the editor keeps the search the user opened")
+        NativeSearchField.dismantleNSView(field, coordinator: coordinator)
+        coordinator.controlTextDidBeginEditing(Notification(name: NSControl.textDidBeginEditingNotification, object: field))
+        check(focused && coordinator.retired && !field.wantsFocus,
+              "REQ-107: A replaced editor's late notifications cannot change the new search")
+        focused = false
+        coordinator.controlTextDidBeginEditing(Notification(name: NSControl.textDidBeginEditingNotification, object: field))
+        check(!focused, "A retired editor cannot request focus for the replacement")
+        search.updateField(field, coordinator: coordinator)
+        check(!coordinator.retired && !field.wantsFocus, "A refreshed editor coordinator resumes ordinary focus tracking")
+
+        var pressFocus = false, pressNavigations = 0
+        let pressed = NativeToolbarSearch(text: .constant(""),
+            focused: Binding(get: { pressFocus }, set: { pressFocus = $0 }),
+            placeholder: "Search all games", openSearch: { pressNavigations += 1 })
+        for _ in 0..<12 { pressed.expand() }
+        check(pressFocus && pressNavigations == 12
+              && NativeToolbarSearch.width(text: "", focused: pressFocus) == 220,
+              "REQ-107: Repeated magnifier presses each reach the action and leave one expanded, focused editor")
+        pressFocus = false
+        for _ in 0..<12 {
+            pressed.expand()
+            pressFocus = false
+        }
+        pressed.expand()
+        check(pressFocus && pressNavigations == 25,
+              "REQ-107: Alternating press/dismiss cycles never leave the magnifier unresponsive")
+        check(DiscoverLayout.contentTopInset(query: "forza", hasFeatured: true) == DiscoverLayout.toolbarClearance
+              && DiscoverLayout.contentTopInset(query: "forza", hasFeatured: false) == DiscoverLayout.toolbarClearance
+              && DiscoverLayout.contentTopInset(query: "", hasFeatured: false) == DiscoverLayout.toolbarClearance
+              && DiscoverLayout.contentTopInset(query: "", hasFeatured: true) == 0
+              && DiscoverLayout.toolbarClearance >= 80,
+              "REQ-107: Search results start below the transparent toolbar, traffic lights and account button")
+        // Detached hosting views don't hit-test; real click acceptance stays a native observation.
+        check(NativeToolbarSearch.collapsedHitSize.width == NativeToolbarSearch.width(text: "", focused: false)
+              && NativeToolbarSearch.collapsedHitSize.height >= 28,
+              "REQ-107: The collapsed magnifier's rectangular hit shape spans its whole toolbar slot")
 
         let layout = AccountActionsLayout()
         let horizontalBounds = CGRect(x: 0, y: 0, width: 610, height: 28)
@@ -495,6 +981,7 @@ enum NativeUIChecks {
             freeBytes: 80_000_000_000, installedID: nil,
             compatibility: GameCompatibilityResult(storeId: "FIXTURE00002", packageBytes: 3_200_000_000,
                 supported: true, reason: nil, checkedAt: "2026-10-07T00:00:00Z"))
+        checkConsentContentHeight(operations: state.gameOperations, consent: consent, check: check)
         for size in [CGSize(width: 520, height: 440), CGSize(width: 640, height: 680)] {
             let install = NSHostingView(rootView: GameInstallConsentView(
                 operations: state.gameOperations, consent: consent))
@@ -569,6 +1056,61 @@ enum NativeUIChecks {
               && state.gameOperations.setupResult == nil && !state.gameOperations.setupBusy
               && session.authentication == nil && !session.accountBusy,
               "Setup-focused Account allocates native controls without unrelated credentials, scripts or windows")
+    }
+
+    static func checkConsentContentHeight(operations: GameOperationsController, consent: GameInstallConsent,
+                                         check: (Bool, String) -> Void) {
+        var resume = consent
+        resume.resuming = true
+        var failed = consent
+        failed.checkError = "The game drive couldn't be reached. Reconnect the drive and try again before installing."
+        for width: CGFloat in [520, 640] {
+            var heights: [CGFloat] = []
+            for (name, fixture) in [("ordinary", consent), ("resume", resume), ("error", failed)] {
+                let host = NSHostingView(rootView: GameInstallConsentView(operations: operations, consent: fixture))
+                host.frame.size.width = width
+                host.layoutSubtreeIfNeeded()
+                let height = host.fittingSize.height
+                heights.append(height)
+                host.frame = CGRect(x: 0, y: 0, width: width, height: height)
+                host.layoutSubtreeIfNeeded()
+                let buttons = descendants(of: host).compactMap { $0 as? NSButton }
+                let footer = buttons.filter {
+                    let rect = $0.convert($0.bounds, to: host)
+                    return host.isFlipped ? rect.midY > height - 80 : rect.midY < 80
+                }
+                let scrolls = descendants(of: host).compactMap { $0 as? NSScrollView }
+                check(host.window == nil && height > 200 && height <= 620 && footer.count == 2
+                      && footer.allSatisfy { host.bounds.contains($0.convert($0.bounds, to: host)) }
+                      && scrolls.allSatisfy { !$0.hasHorizontalScroller },
+                      "COR171: \(name) consent at \(Int(width)) fits its content and both footer actions (\(height), footer \(footer.count))")
+                if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
+                    saveDetachedEvidence(host, directory: directory, name: "cor171-\(name)-\(Int(width)).png", check: check)
+                }
+            }
+            check(heights[1] < heights[0] && heights[2] > heights[0],
+                  "COR171: Sheet height shrinks for resume and grows for recovery instead of retaining blank fixed height (\(heights))")
+        }
+    }
+
+    private static func saveDetachedEvidence(_ host: NSView, directory: String, name: String,
+                                             check: (Bool, String) -> Void) {
+        do {
+            guard host.window == nil,
+                  let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+                check(false, "Detached refinement evidence has a bitmap without a native window")
+                return
+            }
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            guard let data = bitmap.representation(using: .png, properties: [:]) else {
+                check(false, "Detached refinement evidence encodes PNG")
+                return
+            }
+            try data.write(to: URL(fileURLWithPath: directory, isDirectory: true).appendingPathComponent(name))
+            check(true, "Detached refinement evidence saved: \(name)")
+        } catch {
+            check(false, "Detached refinement evidence failed: \(error.localizedDescription)")
+        }
     }
 
     static func checkWelcomePrivacy(installed: InstalledGamesController, check: (Bool, String) -> Void) {
@@ -673,6 +1215,10 @@ enum NativeUIChecks {
         catalog.layoutSubtreeIfNeeded()
         let feedback = GameOperationProgressView(operations: operations)
         let installAction = GameInstallAction(game: game, operations: operations)
+        check((installAction.preparing || installAction.active)
+                ? installAction.registrationStatusTitle(installed: false) == nil
+                : installAction.registrationStatusTitle(installed: false) != nil,
+              "COR178: Active preparation/installation never renders a contradictory Not installed row status")
         let actionHost = NSHostingView(rootView: installAction)
         actionHost.sizingOptions = []
         actionHost.frame = CGRect(x: 0, y: 0, width: 230, height: 180)
@@ -683,7 +1229,7 @@ enum NativeUIChecks {
                     && installAction.statusTitle == "Preparing installation"
                   : operations.operation != nil
                   ? installAction.active && installAction.showsCancel && operations.progress != nil
-                  : installAction.failed && installAction.actionTitle == "Retry installation"),
+                  : installAction.failed && installAction.actionTitle == "Retry"),
               "UI-9 source: Shared tile/detail Install controls reflect preparation, byte progress/cancel or failure/retry")
         let availableCancellation = feedback.preparationCancelTitle ?? feedback.installCancelTitle
         check(catalog.window == nil && operations.hasDownloadStatus
@@ -856,6 +1402,22 @@ enum NativeUIChecks {
                     changed()
                 })
         }
+    }
+
+    private static func checkDetailFirstCards(check: (Bool, String) -> Void) {
+        var opened = 0
+        let card = GameCard(title: "A game with a longer two-line title", openLabel: "View",
+                            open: { opened += 1 }) {
+            Color.blue
+        } status: { EmptyView() }
+        check(card.openFromKeyboard() == .handled && opened == 1
+              && card.artworkAccessibilityLabel == "View A game with a longer two-line title",
+              "REQ-85: A named poster Return opens details once without starting play or installation")
+        let host = NSHostingView(rootView: card.frame(width: 196))
+        host.layoutSubtreeIfNeeded()
+        let height = host.fittingSize.height
+        check(height >= 196 * 1.5 + 36 && height < 196 * 1.5 + 70 && host.window == nil,
+              "REQ-85: A 196-point poster reserves its art/title but no hidden or persistent action-row height: \(height)")
     }
 
     private static func descendants(of view: NSView) -> [NSView] {

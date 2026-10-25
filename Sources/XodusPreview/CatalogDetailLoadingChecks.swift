@@ -7,9 +7,11 @@ import Vision
 private actor DetailPriorityTransport: PCGamesTransport {
     let malformedPrice: Bool
     let priced: Bool
-    init(malformedPrice: Bool = false, priced: Bool = false) {
+    let media: Bool
+    init(malformedPrice: Bool = false, priced: Bool = false, media: Bool = false) {
         self.malformedPrice = malformedPrice
         self.priced = priced
+        self.media = media
     }
     private(set) var started = false
     private(set) var finished = false
@@ -32,6 +34,15 @@ private actor DetailPriorityTransport: PCGamesTransport {
                                          "ProductDescription": "Synthetic description."]],
                 "Properties": ["Categories": ["Games"]],
         ]
+        if media {
+            product["LocalizedProperties"] = [[
+                "ProductTitle": "Synthetic game", "ProductDescription": "Synthetic description.",
+                "Images": [["ImagePurpose": "Screenshot", "Uri": "//store-images.s-microsoft.com/image/apps.fixture",
+                            "Width": 1920, "Height": 1080]],
+                "CMSVideos": [["HLS": "https://cdn-dynmedia-1.microsoft.com/is/content/microsoftassets/original-fixture-AVS.m3u8?packagedStreaming=true",
+                               "Caption": "Synthetic trailer"]]
+            ]]
+        }
         if malformedPrice {
             product["DisplaySkuAvailabilities"] = [[
                 "Sku": ["SkuType": "full"],
@@ -66,6 +77,10 @@ enum CatalogDetailLoadingChecks {
             try await Task.sleep(for: .milliseconds(10))
         }
         guard await transport.started else { throw PCGamesError.transport }
+        check(catalogue.pendingIDs == ["FIXTURE00001"]
+              && GameSearchPresentation.classifyingCount(storeIDs: ["FIXTURE00001", "FIXTURE00003"],
+                  classified: [], pending: catalogue.pendingIDs) == 1,
+              "REQ-107: A result awaiting public details is a placeholder, not an empty search")
         await catalogue.loadDetail(id: "FIXTURE00002", market: "US", language: "en-US")
         let bulkFinished = await transport.finished
         check(!bulkFinished && catalogue.images["FIXTURE00002"]?.detail?.description == "Synthetic description.",
@@ -75,6 +90,10 @@ enum CatalogDetailLoadingChecks {
         check(detailRequests == 1, "Reopening cached selected details does not fetch them again")
         await transport.release()
         await bulk.value
+        check(catalogue.pendingIDs.isEmpty
+              && GameSearchPresentation.classifyingCount(storeIDs: ["FIXTURE00001"],
+                  classified: [], pending: catalogue.pendingIDs) == 0,
+              "REQ-107: Settled detail reads retire placeholders even when a result stays unclassified")
         check(catalogue.images["FIXTURE00001"] != nil && catalogue.images["FIXTURE00002"] != nil,
               "Bulk artwork completion preserves independently loaded selected details")
         let changedTransport = DetailPriorityTransport()
@@ -87,6 +106,8 @@ enum CatalogDetailLoadingChecks {
             try await Task.sleep(for: .milliseconds(10))
         }
         await changedCatalogue.loadDetail(id: "FIXTURE00002", market: "GB", language: "en-GB")
+        check(changedCatalogue.pendingIDs.isEmpty,
+              "REQ-101/107: A region change retires placeholders owned by the old scope")
         await changedTransport.release()
         await oldScope.value
         check(changedCatalogue.images["FIXTURE00001"] == nil &&
@@ -99,6 +120,7 @@ enum CatalogDetailLoadingChecks {
               "REQ-61: Removed offer data is ignored while catalogue identity and game details remain readable")
         try await detailPackageFallback(check: check)
         try await commerceAbsence(check: check)
+        try await detailReadingOrder(check: check)
         try await statusContrast(check: check)
         try await concurrency(check: check)
     }
@@ -108,15 +130,16 @@ enum CatalogDetailLoadingChecks {
             Text("Details").font(.title2.weight(.semibold))
             DetailGameSizeView(installed: nil, downloadBytes: nil, packageFormat: "MSIXVC",
                                allowsMeasurement: false)
+            GameCompatibilityFacts(productID: "FIXTURE00001", packageFormat: "MSIXVC", compatibility: nil)
         }
         .padding(24)
-        .frame(width: 420, height: 160, alignment: .topLeading)
+        .frame(width: 420, height: 240, alignment: .topLeading)
         .background(Color.white)
         .environment(\.colorScheme, .light)
         let host = NSHostingView(rootView: view)
         host.appearance = NSAppearance(named: .aqua)
         host.sizingOptions = []
-        host.frame = CGRect(x: 0, y: 0, width: 420, height: 160)
+        host.frame = CGRect(x: 0, y: 0, width: 420, height: 240)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless],
                               backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: .aqua)
@@ -134,7 +157,9 @@ enum CatalogDetailLoadingChecks {
         try VNImageRequestHandler(cgImage: image).perform([request])
         let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
         check(labels.contains { $0 == "Details" }
-              && labels.contains { $0.localizedCaseInsensitiveContains("MSIXVC") }
+              && labels.filter { $0.localizedCaseInsensitiveContains("MSIXVC") }.count == 1
+              && labels.contains { $0 == "Compatibility" }
+              && !labels.contains { $0.localizedCaseInsensitiveContains("Windows package") }
               && !labels.contains { $0.localizedCaseInsensitiveContains("download") }
               && !window.isVisible && !window.isKeyWindow,
               "REQ-62: Detail-only package label remains visible without rich catalogue metadata: \(labels)")
@@ -147,7 +172,7 @@ enum CatalogDetailLoadingChecks {
             Color.clear.frame(height: 80)
         } status: {
             Label("Installed", systemImage: "internaldrive").font(.caption)
-        } actions: { EmptyView() }
+        }
         let catalogue = LiveCatalogView(library: PCGamesController(), installed: installed,
             operations: operations, query: "", allowsArtworkLoading: false,
             allowsStartupTasks: false, allowsHeroAnimation: false, clearSearch: {})
@@ -156,7 +181,7 @@ enum CatalogDetailLoadingChecks {
                                       (.darkAqua, .dark)] {
             for (label, view, size) in [
                 ("Installed", AnyView(card), CGSize(width: 280, height: 400)),
-                ("Game Pass catalogue coverage", AnyView(catalogue), CGSize(width: 800, height: 1000))
+                ("Game Pass benefits", AnyView(catalogue), CGSize(width: 800, height: 1000))
             ] {
                 let host = NSHostingView(rootView: view.padding(20)
                     .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -230,7 +255,7 @@ enum CatalogDetailLoadingChecks {
         let game = PCGame(id: image.product.id, title: image.product.title, artwork: nil,
                           acquisitionKind: .purchased)
         let card = PCGameTile(game: game, installed: installed, operations: operations,
-            catalog: catalogue, allowsArtworkLoading: false, accessIsCurrent: true)
+            catalog: catalogue, allowsArtworkLoading: false, viewDetails: {}, accessIsCurrent: true)
         let detail = LiveProductView(product: image.product, library: PCGamesController(),
             installedLibrary: installed, operations: operations, allowsStartupTasks: false,
             allowsArtworkLoading: false, catalog: catalogue).environmentObject(LiveSession())
@@ -253,9 +278,10 @@ enum CatalogDetailLoadingChecks {
             request.recognitionLevel = .accurate
             try VNImageRequestHandler(cgImage: image).perform([request])
             let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let showsInstall = labels.contains { $0.caseInsensitiveCompare("Download") == .orderedSame }
             check(labels.contains(where: { $0.localizedCaseInsensitiveContains("Synthetic game") })
-                  && labels.contains(where: { $0.localizedCaseInsensitiveContains("Install") }),
-                  "REQ-61: Priced-fixture \(name) renders its title and retained Install control (non-vacuous pixel guard)")
+                  && (name == "product detail" ? showsInstall : !showsInstall),
+                  "REQ-61/85: Priced-fixture \(name) retains its title and exposes Download only in details (non-vacuous pixel guard)")
             check(!labels.contains(where: {
                 let text = $0.lowercased()
                 return text.contains("$") || text.contains("19.99") || text.contains("9.99")
@@ -266,6 +292,61 @@ enum CatalogDetailLoadingChecks {
                   "REQ-61: Rendered regression never presents or activates its synthetic window")
             window.contentView = nil
         }
+    }
+
+    private static func detailReadingOrder(check: (Bool, String) -> Void) async throws {
+        let catalogue = LibraryCatalogArtwork(transport: DetailPriorityTransport(media: true))
+        await catalogue.loadDetail(id: "FIXTURE00002", market: "US", language: "en-US")
+        guard let image = catalogue.images["FIXTURE00002"], let facts = image.detail else {
+            throw PCGamesError.transport
+        }
+        check(facts.description == "Synthetic description." && facts.screenshots.count == 1 && facts.trailers.count == 1,
+              "COR106/107: Reading-order fixture includes unchanged description, screenshot and trailer")
+        let installed = InstalledGamesController()
+        let operations = GameOperationsController(installed: installed)
+        let detail = LiveProductView(product: image.product, library: PCGamesController(),
+            installedLibrary: installed, operations: operations, allowsStartupTasks: false,
+            allowsArtworkLoading: false, catalog: catalogue).environmentObject(LiveSession())
+        let host = NSHostingView(rootView: detail.environment(\.colorScheme, .light).background(.white))
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 1000, height: 850)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        defer { window.contentView = nil }
+        host.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(50))
+        func scrollViews(_ view: NSView) -> [NSScrollView] {
+            (view as? NSScrollView).map { [$0] } ?? [] + view.subviews.flatMap(scrollViews)
+        }
+        guard let document = scrollViews(host).compactMap(\.documentView).max(by: {
+            $0.bounds.height < $1.bounds.height
+        }), let bitmap = document.bitmapImageRepForCachingDisplay(in: document.bounds) else {
+            throw PCGamesError.transport
+        }
+        document.cacheDisplay(in: document.bounds, to: bitmap)
+        guard let image = bitmap.cgImage,
+              let context = CGContext(data: nil, width: image.width, height: image.height,
+                  bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { throw PCGamesError.transport }
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        guard let rendered = context.makeImage() else { throw PCGamesError.transport }
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.minimumTextHeight = 0.004
+        try VNImageRequestHandler(cgImage: rendered).perform([request])
+        let labels = (request.results ?? []).compactMap { result -> (String, Double)? in
+            result.topCandidates(1).first.map { ($0.string, result.boundingBox.midY) }
+        }
+        let headings = ["Synthetic game", "About the game", "Screenshots", "Trailer"]
+        let positions = headings.map { heading in labels.first { $0.0 == heading }?.1 }
+        check(positions.allSatisfy { $0 != nil }
+              && zip(positions.compactMap { $0 }, positions.compactMap { $0 }.dropFirst()).allSatisfy { $0.0 > $0.1 },
+              "COR106/107: Actual detail reads hero -> About the game -> screenshots -> trailer; observed \(labels.map(\.0))")
+        check(!window.isVisible && !window.isKeyWindow && !operations.isBusy,
+              "COR106/107: Reading-order check uses no visible window, playback, downloads or operation")
     }
 
     private static func concurrency(check: (Bool, String) -> Void) async throws {
@@ -298,7 +379,7 @@ enum CatalogDetailLoadingChecks {
               "Joined selected details both complete with the admitted public response")
         let failure = Task { await catalogue.load(ids: ["FIXTURE00003"], market: "US", language: "en-US") }
         try await wait(transport, 3)
-        await transport.complete(2, status: 503)
+        await transport.complete(2, status: 404)
         await failure.value
         check(catalogue.images.count == 21 && catalogue.error != nil,
               "Failed public refresh retains useful admitted metadata and reports failure, not empty success")

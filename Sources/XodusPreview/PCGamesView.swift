@@ -2,7 +2,24 @@
 import SwiftUI
 import XodusManagement
 
+struct LibraryDetailsRecoveryNotice: View {
+    let message: String
+    let retry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(message).font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("xodus.pcGames.partialResolution")
+            Button("Retry game details", action: retry)
+                .accessibilityIdentifier("xodus.pcGames.retryDetails")
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
 struct PCGamesView: View {
+    @EnvironmentObject private var session: LiveSession
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
@@ -43,9 +60,8 @@ struct PCGamesView: View {
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
             if let notice = library.resolutionNotice {
-                Text(notice).font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.pcGames.partialResolution")
+                LibraryDetailsRecoveryNotice(message: notice, retry: { library.refresh() })
+                    .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
             }
             if library.presenceUnavailable {
                 ContentUnavailableView {
@@ -110,7 +126,9 @@ struct PCGamesView: View {
                             ForEach(visibleGames) { game in
                                 PCGameTile(game: game, installed: installed, operations: operations,
                                            allowsArtworkLoading: allowsStartupTasks,
-                                           accessIsCurrent: library.accessIsCurrent)
+                                           gamePass: session.gamePassBadgeProductIDs.contains(game.id),
+                                           viewDetails: { open(game) },
+                                           accessIsCurrent: library.accessIsCurrent(for: game.id))
                             }
 
                         }
@@ -168,6 +186,15 @@ struct PCGamesView: View {
             .interactiveDismissDisabled(library.busy)
         }
     }
+    private func open(_ game: PCGame) {
+        do {
+            session.selectedProduct = try LibraryGame.details(id: game.id, title: game.title,
+                artwork: game.artwork.map { [$0] } ?? [], market: session.market, language: session.language,
+                source: "AccountPCLibrary:identityOnly", pcCandidate: false)
+        } catch {
+            session.errorMessage = "Game details couldn't be opened. Your games haven't changed."
+        }
+    }
 }
 
 struct PCGameTile: View {
@@ -177,7 +204,7 @@ struct PCGameTile: View {
     @ObservedObject var catalog = LibraryCatalogArtwork.shared
     var allowsArtworkLoading = true
     var gamePass = false
-    var viewDetails: (() -> Void)?
+    let viewDetails: () -> Void
     var accessIsCurrent = true
 
     private var unsupportedIssues: [LibraryCompatibilityIssue] {
@@ -189,25 +216,17 @@ struct PCGameTile: View {
     var body: some View {
         GameCard(title: game.title,
                  gameFacts: GameFacts(pc: game, gamePass: gamePass, accessIsCurrent: accessIsCurrent),
-                 alwaysShowsActions: true, open: { viewDetails?() }) {
+                 compatibilityIssues: unsupportedIssues,
+                 showsGamePassCatalogBadge: gamePass,
+                 open: viewDetails) {
             CatalogArtworkView(reference: allowsArtworkLoading ? game.artwork : nil,
                                status: game.artwork == nil ? .absent : .available, contentMode: .fit)
         } status: {
-            if !unsupportedIssues.isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues)
+            if PCGamesController.installedMatch(game, in: installed.games) == nil,
+               let status = GameInstallAction(game: game, operations: operations)
+                    .registrationStatusTitle(installed: false) {
+                Text(status).font(.callout).foregroundStyle(.secondary)
             }
-            if let match = PCGamesController.installedMatch(game, in: installed.games) {
-                InstalledPlayError(library: installed, game: match)
-            } else {
-                Text("Not installed").font(.callout).foregroundStyle(.secondary)
-            }
-        } actions: {
-            if unsupportedIssues.isEmpty, let match = PCGamesController.installedMatch(game, in: installed.games) {
-                InstalledPlayButton(library: installed, operations: operations, game: match)
-            } else if unsupportedIssues.isEmpty {
-                GameInstallAction(game: game, operations: operations, enabled: accessIsCurrent)
-            }
-            if let viewDetails { Button("View game", action: viewDetails) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)

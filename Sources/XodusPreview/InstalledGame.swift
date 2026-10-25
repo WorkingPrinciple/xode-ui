@@ -18,20 +18,35 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
     /// Detected on-disk package format (M1). Optional so pre-M1 registries decode
     /// unchanged; it is backfilled from file evidence after load, never invented.
     var packageType: PackageType? = nil
-    /// A persisted per-game engine choice (M3). When set it takes precedence over
-    /// the configured default; a missing selected engine refuses launch, never
-    /// silently substitutes another runner.
+    /// Historical choices are preserved, but current launches read only V2.
     var engineOverride: RuntimeProviderKind? = nil
+    var engineSelection: AdmittedEngineSelection? = nil
+    var engineOverrideV2: GameEngineOverride? = nil
     var usesNativeLifecycle: Bool? = nil
+    var storageVolume: GameStorageVolume? = nil
+}
+
+struct GameEngineOverride: Codable, Equatable, Sendable {
+    let version: Int
+    let selection: AdmittedEngineSelection
+    let chosenAt: Date
+
+    init(selection: AdmittedEngineSelection, chosenAt: Date = Date()) {
+        version = 2
+        self.selection = selection
+        self.chosenAt = chosenAt
+    }
 }
 
 enum InstalledGameError: Error, LocalizedError {
-    case invalidConfig, missingFolder, missingLauncher, placeholderContent, invalidRegistry, storage, launch
+    case invalidConfig, missingFolder, folderPermission, folderUnavailable, missingLauncher, placeholderContent, invalidRegistry, storage, launch
 
     var errorDescription: String? {
         switch self {
         case .invalidConfig: "This folder doesn't contain a valid MicrosoftGame.config. Choose the installed Xbox game folder."
         case .missingFolder: "The game folder is no longer available. Reconnect its drive or import the game again."
+        case .folderUnavailable: "The installation couldn't be checked. Try again."
+        case .folderPermission: "Ode to X can't read this folder. Check its permissions and try again."
         case .missingLauncher: "The launch script is missing or isn't an executable file. Import the game again to choose its script."
         case .placeholderContent: "This installation contains only Minecraft's placeholder, not a playable game. Install the full Minecraft Launcher package before playing. Signing in again won't replace these files."
         case .invalidRegistry: "The installed games list couldn't be read. Your game files haven't been changed."
@@ -60,16 +75,25 @@ struct MicrosoftGameConfig: Equatable, Sendable {
 
     static func read(folder: URL) throws -> Self {
         try InstalledGameFiles.checkFolder(folder)
+        guard let file = try configurationFile(in: folder) else { throw InstalledGameError.invalidConfig }
+        let data: Data
+        do { data = try InstalledGameFiles.readRegular(file, maximumBytes: 1_048_576) }
+        catch { throw InstalledGameError.invalidConfig }
+        return try parse(data)
+    }
+
+    static func configurationFile(in folder: URL) throws -> URL? {
         let matches: [URL]
         do {
             matches = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-                .filter { $0.lastPathComponent.lowercased() == "microsoftgame.config" }
         } catch { throw InstalledGameError.invalidConfig }
-        guard matches.count == 1 else { throw InstalledGameError.invalidConfig }
-        let data: Data
-        do { data = try InstalledGameFiles.readRegular(matches[0], maximumBytes: 1_048_576) }
-        catch { throw InstalledGameError.invalidConfig }
-        return try parse(data)
+        return try configurationFile(in: matches)
+    }
+
+    static func configurationFile(in entries: [URL]) throws -> URL? {
+        let matches = entries.filter { $0.lastPathComponent.lowercased() == "microsoftgame.config" }
+        guard matches.count <= 1 else { throw InstalledGameError.invalidConfig }
+        return matches.first
     }
 
     static func parse(_ data: Data) throws -> Self {
@@ -168,8 +192,19 @@ enum InstalledGameFiles {
     }
 
     static func checkFolder(_ url: URL) throws {
-        let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
-        guard url.isFileURL, values?.isDirectory == true else { throw InstalledGameError.missingFolder }
+        let values: URLResourceValues
+        do { values = try url.resourceValues(forKeys: [.isDirectoryKey]) }
+        catch { throw folderReadError(error as NSError) }
+        guard url.isFileURL, values.isDirectory == true else { throw InstalledGameError.missingFolder }
+    }
+
+    static func folderReadError(_ error: NSError) -> InstalledGameError {
+        if error.domain == NSCocoaErrorDomain, error.code == NSFileReadNoPermissionError { return .folderPermission }
+        if error.domain == NSPOSIXErrorDomain, [Int(EACCES), Int(EPERM)].contains(error.code) { return .folderPermission }
+        if error.domain == NSCocoaErrorDomain,
+           [NSFileNoSuchFileError, NSFileReadNoSuchFileError].contains(error.code) { return .missingFolder }
+        if error.domain == NSPOSIXErrorDomain, [Int(ENOENT), Int(ENOTDIR)].contains(error.code) { return .missingFolder }
+        return .folderUnavailable
     }
 
     static func checkLauncher(_ url: URL) throws {
@@ -221,10 +256,19 @@ actor InstalledGameStore {
                   && ($0.lastPlayedAt.map { $0.timeIntervalSince1970.isFinite } ?? true) }) else {
             throw InstalledGameError.invalidRegistry
         }
-        return games
+        return games.map { game in
+            guard let volume = game.storageVolume, !volume.contains(game.folder) else { return game }
+            var entry = game
+            // Discard only the invalid hint; readiness still requires fresh exact-folder checks.
+            entry.storageVolume = nil
+            return entry
+        }
     }
 
     func save(_ games: [InstalledGame]) throws {
+        guard games.allSatisfy({ $0.storageVolume?.contains($0.folder) ?? true }) else {
+            throw InstalledGameError.invalidRegistry
+        }
         let directory = file.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
@@ -259,6 +303,9 @@ actor InstalledGameStore {
             updated.lastSessionSeconds = previous.lastSessionSeconds
             updated.packageType = game.packageType ?? previous.packageType
             updated.engineOverride = game.engineOverride ?? previous.engineOverride
+            updated.engineSelection = game.engineSelection ?? previous.engineSelection
+            updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
+            updated.storageVolume = game.storageVolume ?? previous.storageVolume
         }
         games.removeAll { $0.folder == game.folder }
         games.append(updated)
@@ -286,7 +333,8 @@ actor InstalledGameStore {
     /// list unchanged when the value already matches, so backfill is idempotent.
     func recordPackageType(id: UUID, type: PackageType, observedAtImport: Date? = nil) throws -> [InstalledGame] {
         var games = try load()
-        guard let index = games.firstIndex(where: { $0.id == id }), games[index].packageType != type else {
+        guard type != .unknown,
+              let index = games.firstIndex(where: { $0.id == id }), games[index].packageType != type else {
             return games
         }
         if let observedAtImport, games[index].importedAt != observedAtImport { return games }
@@ -295,11 +343,42 @@ actor InstalledGameStore {
         return games
     }
 
+    func recordStorageVolume(id: UUID, volume: GameStorageVolume, observedAtImport: Date) throws -> [InstalledGame] {
+        var games = try load()
+        guard let index = games.firstIndex(where: { $0.id == id }),
+              games[index].importedAt == observedAtImport,
+              games[index].storageVolume != volume else { return games }
+        guard volume.contains(games[index].folder) else { throw InstalledGameError.invalidRegistry }
+        games[index].storageVolume = volume
+        try save(games)
+        return games
+    }
+
     /// Persist a per-game engine override (or clear it with `nil`).
-    func setEngineOverride(id: UUID, override: RuntimeProviderKind?) throws -> [InstalledGame] {
+    func setEngineOverride(id: UUID, override: RuntimeProviderKind?,
+                           selection: AdmittedEngineSelection? = nil) throws -> [InstalledGame] {
         var games = try load()
         guard let index = games.firstIndex(where: { $0.id == id }) else { return games }
+        if override == .calimocho {
+            guard let selection, let engine = selection.inspection.engineName,
+                  let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineNotSelected }
+            try selection.validate(registryPath: selection.registryPath, engineName: engine, registryDigest: digest)
+        }
         games[index].engineOverride = override
+        games[index].engineSelection = override == .calimocho ? selection : nil
+        try save(games)
+        return games
+    }
+
+    func setEngineOverrideV2(id: UUID, selection: AdmittedEngineSelection?) throws -> [InstalledGame] {
+        var games = try load()
+        guard let index = games.firstIndex(where: { $0.id == id }) else { throw InstalledGameError.invalidRegistry }
+        if let selection {
+            guard let name = selection.inspection.engineName,
+                  let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+            try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
+        }
+        games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }
         try save(games)
         return games
     }

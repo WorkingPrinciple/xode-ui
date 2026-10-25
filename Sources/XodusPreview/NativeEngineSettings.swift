@@ -2,67 +2,150 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import XodusCore
+import XodusManagement
 
 struct NativeEngineSettings: View {
+    static func defaultAdmissionName(defaults: UserDefaults = .standard) throws -> String {
+        guard defaults.object(forKey: NativeEngineDefaults.preferenceKey) != nil else {
+            return try NativeEngineDefaults.read().defaultEngine
+        }
+        guard let data = defaults.data(forKey: NativeEngineDefaults.preferenceKey) else {
+            throw NativeLaunchError.selectionChanged
+        }
+        if data.isEmpty { return try NativeEngineDefaults.read().defaultEngine }
+        let saved = try JSONDecoder().decode(AdmittedEngineSelection.self, from: data)
+        guard let name = saved.inspection.engineName, let digest = saved.inspection.registrySha256 else {
+            throw NativeLaunchError.selectionChanged
+        }
+        try saved.validate(registryPath: saved.registryPath, engineName: name, registryDigest: digest)
+        return name
+    }
+
+    static func persistDefaultAdmission(_ selection: AdmittedEngineSelection,
+                                         defaults: UserDefaults = .standard) throws {
+        guard let name = selection.inspection.engineName, let digest = selection.inspection.registrySha256 else {
+            throw NativeLaunchError.selectionChanged
+        }
+        try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
+        let data = try JSONEncoder().encode(selection)
+        defaults.set(data, forKey: NativeEngineDefaults.preferenceKey)
+        guard defaults.data(forKey: NativeEngineDefaults.preferenceKey) == data else {
+            throw GameScriptError.storage
+        }
+        EngineDefaults.setDefaultEngine(.calimocho, defaults)
+    }
+
     let allowsFileReads: Bool
+    let backendPath: String
+    @ObservedObject var observation: EngineRegistryObservation
+    var showsEntries = true
     @AppStorage("Xodus.lifecycle.registry") private var registryPath = ""
     @AppStorage("Xodus.lifecycle.runtime") private var runtimeData = Data()
     @AppStorage("Xodus.lifecycle.profileDirectory") private var profileDirectory = ""
     @AppStorage("Xodus.evidence.triedGames") private var evidencePath = ""
-    @State private var entries: [NativeEngineRegistry.Entry] = []
+    @State private var refreshID = UUID()
     @State private var errorMessage: String?
-    @ObservedObject private var localDiscovery = LocalNetworkDiscovery.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Engine registry")
-                Spacer()
-                Button("Choose registry…") {
-                    let panel = NSOpenPanel()
-                    panel.canChooseDirectories = false
-                    panel.canChooseFiles = true
-                    panel.allowsMultipleSelection = false
-                    panel.allowedContentTypes = [.json]
-                    if panel.runModal() == .OK, let url = panel.url { registryPath = url.path }
+            LabeledContent("Engine registry") {
+                HStack {
+                    Button("Refresh") { refreshID = UUID() }
+                        .disabled(!allowsFileReads || observation.status == .loading)
+                        .accessibilityIdentifier("xodus.engines.registry.refresh")
+                    Button("Choose registry…") {
+                        let panel = NSOpenPanel()
+                        panel.canChooseDirectories = false
+                        panel.canChooseFiles = true
+                        panel.allowsMultipleSelection = false
+                        panel.allowedContentTypes = [.json]
+                        if panel.runModal() == .OK, let url = panel.url { registryPath = url.path }
+                    }
+                    .disabled(!allowsFileReads)
+                    .accessibilityIdentifier("xodus.lifecycle.chooseRegistry")
                 }
-                .disabled(!allowsFileReads)
-                .accessibilityIdentifier("xodus.lifecycle.chooseRegistry")
             }
             if !registryPath.isEmpty {
                 Text(registryPath).font(.caption).foregroundStyle(.secondary)
                     .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
             }
-            ForEach(RuntimeProviderSettings.providerChoices, id: \.self) { provider in
-                NativeEnginePicker(provider: provider, entries: entries)
+            if observation.status == .loading {
+                ProgressView("Reading engine registry").controlSize(.small)
             }
-            Text("Only registry engines with a passed smoke test are listed. Each game and engine uses its own bottle; changing engines never reuses another engine's bottle.")
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            if NativeRuntimePins.approved == nil {
-                Button("Choose local game runtime…") {
-                    let panel = NSOpenPanel()
-                    panel.canChooseDirectories = false
-                    panel.canChooseFiles = true
-                    panel.allowsMultipleSelection = false
-                    panel.message = "Choose xgameruntime.dll. The sibling xgameruntime_legacy.dll is required."
-                    guard panel.runModal() == .OK, let url = panel.url else { return }
-                    Task {
-                        do {
-                            let reference = try await Task.detached { try NativeRuntimeReference.capture(url) }.value
-                            runtimeData = try JSONEncoder().encode(NativeLocalRuntime(reference))
-                            errorMessage = nil
-                        } catch {
-                            errorMessage = "The matching runtime DLL pair couldn't be read. Choose xgameruntime.dll beside xgameruntime_legacy.dll."
-                        }
+            if registryPath.isEmpty {
+                Text(
+                    "Choose the engine registry to detect installed engines."
+                )
+                .foregroundStyle(.secondary)
+            } else if observation.entries.isEmpty, observation.status == .missing {
+                Text(
+                    "No engines are registered in this file. Choose another registry or ask the engine provider for its installation record."
+                )
+                .foregroundStyle(.secondary)
+        }
+        if showsEntries {
+            ForEach(observation.entries) { entry in
+                VStack(alignment: .leading, spacing: 4) {
+                    LabeledContent(entry.name, value: observation.inspections[entry.name]?.ready == true
+                                   ? "Artifact verified" : EngineManagementPolicy.status(entry).rawValue)
+                    LabeledContent("Declared version", value: entry.version ?? "Unknown")
+                    Text(entry.wine).textSelection(.enabled)
+                    if let source = entry.source_url {
+                        Text("Declared source: \(source)").textSelection(.enabled)
                     }
-                }.disabled(!allowsFileReads)
-                Text(runtimeData.isEmpty ? "No local game runtime selected."
-                     : "Local experimental runtime selected. Its two DLL hashes are checked before each launch; gameplay and release qualification remain separate.")
+                    if let inspection = observation.inspections[entry.name] {
+                        Text(
+                            inspection.ready
+                                ? "Artifact verification passed; not game qualified."
+                                : "Provider not admitted. This record cannot be selected as Calimocho.")
+                    }
+                }
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            if let message = observation.errorMessage {
+                Label(message, systemImage: "exclamationmark.circle")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            HStack {
-                Text("Title launch profiles")
-                Spacer()
+            if let message = observation.inspectionMessage {
+                Label(message, systemImage: "exclamationmark.circle")
+                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            if let errorMessage {
+                Label(errorMessage, systemImage: "exclamationmark.circle")
+                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            if NativeRuntimePins.approved == nil {
+                LabeledContent("Local game runtime") {
+                    Button("Choose…") {
+                        let panel = NSOpenPanel()
+                        panel.canChooseDirectories = false
+                        panel.canChooseFiles = true
+                        panel.allowsMultipleSelection = false
+                        panel.message =
+                            "Choose xgameruntime.dll. The sibling xgameruntime_legacy.dll is required."
+                        guard panel.runModal() == .OK, let url = panel.url else { return }
+                        Task {
+                            do {
+                                let reference = try await Task.detached { try NativeRuntimeReference.capture(url) }
+                                    .value
+                                runtimeData = try JSONEncoder().encode(NativeLocalRuntime(reference))
+                                errorMessage = nil
+                            } catch {
+                                errorMessage =
+                                    "The matching runtime DLL pair couldn't be read. Choose xgameruntime.dll beside xgameruntime_legacy.dll."
+                            }
+                        }
+                    }.disabled(!allowsFileReads)
+                }
+                Text(
+                    runtimeData.isEmpty
+                        ? "Not selected"
+                        : "Selected · DLL hashes checked before launch"
+                )
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            LabeledContent("Title launch profiles") {
                 Button("Choose folder…") {
                     let panel = NSOpenPanel()
                     panel.canChooseDirectories = true
@@ -72,11 +155,10 @@ struct NativeEngineSettings: View {
                 }.disabled(!allowsFileReads)
             }
             if !profileDirectory.isEmpty {
-                Text(profileDirectory).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                Text(profileDirectory).font(.caption).foregroundStyle(.secondary)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
             }
-            HStack {
-                Text("Mac test evidence")
-                Spacer()
+            LabeledContent("Mac test evidence") {
                 Button("Choose evidence JSON…") {
                     let panel = NSOpenPanel()
                     panel.canChooseDirectories = false
@@ -87,61 +169,32 @@ struct NativeEngineSettings: View {
                 }.disabled(!allowsFileReads)
             }
             if !evidencePath.isEmpty {
-                Text(evidencePath).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-            }
-            Button("Find consoles on local network") { localDiscovery.search() }
-                .disabled(!allowsFileReads)
-                .accessibilityIdentifier("xodus.localNetwork.discover")
-            Text(localDiscovery.status).font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.circle")
-                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(evidencePath).font(.caption).foregroundStyle(.secondary)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
             }
         }
-        .task(id: registryPath) {
-            entries = []
-            errorMessage = nil
-            guard allowsFileReads, !registryPath.isEmpty else { return }
-            let path = registryPath
-            do {
-                let loaded = try await Task.detached {
-                    try NativeEngineRegistry.read(URL(fileURLWithPath: path)).engines
-                }.value
-                guard path == registryPath, !Task.isCancelled else { return }
-                entries = loaded.filter {
-                    $0.isAvailable
+        }
+        .task(id: "\(registryPath)|\(refreshID)|\(allowsFileReads)|\(backendPath)") {
+            let executable = backendPath.isEmpty ? nil : URL(fileURLWithPath: backendPath)
+            var identity: NativeAuthHostBinding?
+            #if XODUS_SHIPPING
+                do {
+                    let pair = try ShippingPairAdmission.configuration(
+                        bundle: .main,
+                        stateDirectory: URL(fileURLWithPath: NSHomeDirectory()), pins: ShippingPairPins.approved
+                    )
+                    guard pair.executable == executable else { throw EngineInspectionError.unsupported }
+                    identity = pair.executableIdentity
+                } catch {
+                    errorMessage =
+                        "The approved app engine is unavailable. Provider inspection was not started."
+                    return
                 }
-            } catch {
-                guard path == registryPath, !Task.isCancelled else { return }
-                errorMessage = "The engine registry couldn't be read. Choose the current registry file again."
-            }
+            #endif
+            await observation.refresh(
+                path: registryPath, allowsFileReads: allowsFileReads,
+                executable: executable, executableIdentity: identity)
         }
     }
-}
 
-private struct NativeEnginePicker: View {
-    let provider: RuntimeProviderKind
-    let entries: [NativeEngineRegistry.Entry]
-    @AppStorage private var selection: String
-
-    init(provider: RuntimeProviderKind, entries: [NativeEngineRegistry.Entry]) {
-        self.provider = provider
-        self.entries = entries
-        _selection = AppStorage(wrappedValue: "", "Xodus.lifecycle.engine.\(provider.rawValue)")
-    }
-
-    var body: some View {
-        Picker(provider.label, selection: $selection) {
-            Text("Choose an engine").tag("")
-            if !selection.isEmpty, !entries.contains(where: { $0.name == selection }) {
-                Text("\(selection) (unavailable)").tag(selection)
-            }
-            ForEach(entries) { entry in
-                Text("\(entry.engine_label ?? (entry.kind.lowercased() == "free" ? "Free Wine" : "CrossOver")) - \(entry.name)")
-                    .tag(entry.name)
-            }
-        }
-        .disabled(entries.isEmpty)
-    }
 }

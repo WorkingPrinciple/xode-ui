@@ -360,7 +360,8 @@ enum PCGamesChecks {
             await library.refreshInBackground(now: next)
             await refresh.value
             let trace = try String(contentsOf: traceURL, encoding: .utf8)
-            check(trace.components(separatedBy: "ode.account.read.v1").count == 3,
+            check(trace.split(separator: "\n").filter { $0.hasPrefix("library:") }.count == 2
+                  && trace.split(separator: "\n").filter { $0.hasPrefix("profile:") }.count == 1,
                   "Only one background collection read runs at a time")
             if scenario == "odelibraryfailure" {
                 check(library.representedGames.count == 1 && library.error != nil && !library.accessIsCurrent,
@@ -383,6 +384,8 @@ enum PCGamesChecks {
             check(await session.disconnect(), "Warm Library fixture joins its management child")
             check(library.representedGames.isEmpty && !library.accessIsCurrent,
                   "An unconfirmed account cannot expose another session's retained Library")
+            check(!library.accessIsCurrent(for: "FIXTURE00001"),
+                  "REQ88: Unified account confirmation is required for per-title access")
             await library.retireUnifiedAccount()
             check(library.snapshot == nil && library.representedGames.isEmpty,
                   "Account retirement clears retained Library and automatic-refresh ownership")
@@ -470,7 +473,8 @@ enum PCGamesChecks {
             ["ProductType": "Game", "ProductKind": 17],
             ["ProductType": "GameAddon", "ProductKind": "GameAddon"],
             ["ProductType": "Game"],
-            ["ProductKind": "GameBundle"]
+            ["ProductKind": "GameBundle"],
+            ["ProductType": "Game", "ProductKind": "Game"]
         ]
         let classifiedIDs = classificationFields.indices.map { String(format: "9CLASS%06d", $0) }
         let classifiedProducts = classificationFields.enumerated().map { index, fields -> [String: Any] in
@@ -478,6 +482,7 @@ enum PCGamesChecks {
             product.removeValue(forKey: "ProductType")
             product.removeValue(forKey: "ProductKind")
             product.merge(fields, uniquingKeysWith: { _, new in new })
+            if index == 9 { product["DisplaySkuAvailabilities"] = [["Sku": ["Properties": [:]]]] }
             return product
         }
         let classificationTransport = PCGamesMockTransport([try response(["Products": classifiedProducts])])
@@ -485,9 +490,22 @@ enum PCGamesChecks {
             ids: classifiedIDs, kinds: [:], candidateCount: classifiedIDs.count, market: "US", language: "en-US")
         check(Set(classified.games.map(\.id)) == [classifiedIDs[0], classifiedIDs[7]]
               && classified.excludedCount == 3
-              && classified.unresolvedIDs == Set(classifiedIDs[2...5]),
+              && classified.unresolvedIDs == Set(Array(classifiedIDs[2...5]) + [classifiedIDs[9]]),
               "Public base Game evidence admits PC games; applications/addons/bundles exclude; absent, conflicting, unknown or malformed kinds remain unresolved")
         let requests = await transport.requests
+        let classificationControllerTransport = PCGamesMockTransport([try response([
+            "access_token": "neutral-access", "refresh_token": "neutral-refresh"
+        ])] + (try authResponses()) + [try page(classifiedIDs.map { item($0) }),
+                                       try response(["Products": classifiedProducts])])
+        let classificationController = PCGamesController(store: PCGamesMockStore("neutral-refresh"),
+            client: PCGamesClient(transport: classificationControllerTransport))
+        await classificationController.restorePresence()
+        classificationController.refresh()
+        await classificationController.waitForOperation()
+        check(classificationController.snapshot?.unresolvedCount == 5
+              && classificationController.resolutionNotice == nil
+              && !classificationController.accessIsCurrent(for: classifiedIDs[2]),
+              "Successful but unclassifiable descriptors remain unconfirmed without a failed-details Retry banner")
         check(requests.count == 6 && requests.allSatisfy { $0.timeoutInterval == 30 && !$0.httpShouldHandleCookies },
               "S4: Exact bounded request chain uses no cookies or invented endpoint")
         let userBody = try JSONSerialization.jsonObject(with: requests[0].httpBody ?? Data()) as? [String: Any]
@@ -593,17 +611,81 @@ enum PCGamesChecks {
             accessToken: "neutral", market: "US", language: "en-US")
         check(incompleteShelf.games.map(\.id) == [first] && incompleteShelf.excludedCount == 0,
               "S4: Incomplete unrelated rows do not fail the joined shelf or inflate hidden-game count")
+        let partialTransport = PCGamesMockTransport([try response([
+            "access_token": "neutral-access", "refresh_token": "neutral-refresh"
+        ])] + (try authResponses()) + [try page([item(first), item(second)]),
+                                       try response(["Products": [catalogProduct(first)]])])
+        let partialController = PCGamesController(store: PCGamesMockStore("neutral-refresh"),
+            client: PCGamesClient(transport: partialTransport))
+        await partialController.restorePresence()
+        partialController.refresh()
+        await partialController.waitForOperation()
+        check(partialController.snapshot?.unresolvedCount == 1 && !partialController.accessIsCurrent
+              && partialController.accessIsCurrent(for: first) && partialController.resolutionNotice == nil,
+              "REQ88: Unrelated unresolved metadata does not stale the resolved account library")
+        check(!partialController.accessIsCurrent(for: second)
+              && !partialController.accessIsCurrent(for: "NOTHELD00001")
+              && partialController.installAccessNotice(for: first) == nil
+              && partialController.installAccessNotice(for: second)?.contains("Refresh your library") == true,
+              "REQ88: Only exact resolved titles have current access; unresolved titles have supported recovery copy")
+        check(partialController.installRecovery(for: second) == .refreshLibrary
+              && partialController.installRecovery(for: "NOTHELD00001") == .accountSettings,
+              "COR88: Exact unresolved title offers library refresh; unconfirmed nonheld access offers account review, not a guessed purchase")
+        let selectedAccess = InstalledProductAccess()
+        let selectedAccount = partialController.accountHash!
+        let selectedNow = ISO8601DateFormatter().date(from: "2030-01-01T00:00:00Z")!
+        var selectedRequests: [String] = []
+        await selectedAccess.refresh(account: selectedAccount, installedIDs: [third], now: selectedNow) { id in
+            selectedRequests.append(id)
+            return try JSONDecoder().decode(OdeAccountRead.self, from: response([
+                "section": "license", "accountHash": selectedAccount, "checkedAt": "2030-01-01T00:00:00Z",
+                "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]
+            ]).data)
+        }
+        check(!partialController.accessIsCurrent && !partialController.representedGames.contains { $0.id == third }
+              && selectedRequests == [third]
+              && selectedAccess.permitsReview(third, account: selectedAccount, pcCandidate: true, now: selectedNow)
+              && !selectedAccess.permitsReview(third, account: selectedAccount, pcCandidate: false, now: selectedNow),
+              "COR89: Uninstalled selected ID actually queries exact account access despite unrelated unresolved library; PC evidence still required")
+        selectedAccess.retire()
+        for pcCandidate in [true, false] {
+            let nonheldID = "NOTHELD00001"
+            let canReview = DiscoverBrowse.canReviewInstall(
+                owned: partialController.representedGames.contains { $0.id == nonheldID },
+                accessIsCurrent: partialController.accessIsCurrent(for: nonheldID),
+                gamePass: true, subscriptionActive: false, pcCandidate: pcCandidate)
+            let status = partialController.gamePassCheckNotice
+            check(partialController.hasSavedSignIn && !partialController.busy
+                  && partialController.error == nil && !canReview
+                  && status == "Refresh your PC library before checking Game Pass access.",
+                  "REQ88: Nonheld title (PC candidate \(pcCandidate)) explains aggregate library gate, not ownership or PC availability")
+        }
+        check(PCGamesAccountReadiness.ready.gamePassCheckNotice(libraryIsComplete: true) == nil,
+              "REQ88: Current aggregate library does not show a false Game Pass refresh blocker")
+        for (state, expected) in [
+            (PCGamesAccountReadiness.closing, "Account access is closing."),
+            (.updating, "Wait for your library"),
+            (.keychainApproval, "Approve Keychain access"),
+            (.signIn, "Sign in in Account settings"),
+            (.unavailable, "Your library couldn't be updated."),
+            (.accountMismatch, "Refresh your library for the current account")
+        ] {
+            for complete in [false, true] {
+                check(state.gamePassCheckNotice(libraryIsComplete: complete)?.hasPrefix(expected) == true,
+                      "REQ88: \(state) account reason precedes aggregate completeness \(complete) for Game Pass")
+            }
+        }
         for uri in ["//evil.invalid/image/square", "http://store-images.s-microsoft.com/image/square",
                     "//store-images.s-microsoft.com/image/a?token=secret", "//store-images.s-microsoft.com/image/../file",
                     "//store-images.s-microsoft.com@evil.invalid/image/a"] {
             check(PCGamesClient.artwork(uri: uri, width: 100, height: 100, role: .boxArt) == nil,
                   "S4: Artwork rejects unapproved host/grammar without broadening the shared loader")
         }
-        check(PCGamesClient.market(nil) == "US" && PCGamesClient.market("GB") == "GB"
-              && PCGamesClient.market("gb&token=x") == "US"
+        check(PCGamesClient.market(nil) == nil && PCGamesClient.market("GB") == "GB"
+              && PCGamesClient.market("gb&token=x") == nil
               && PCGamesClient.language("en-GB") == "en-GB"
               && PCGamesClient.language("en-US&token=x") == "en-US",
-              "S4: Locale query values are bounded; absent region usesUS")
+              "REQ101: Locale query values are bounded; absent country never invents US")
         let deviceResponse = try response(["device_code": "neutral-device", "user_code": "ABCD-EFGH",
             "verification_uri": "https://www.microsoft.com/link", "expires_in": 900, "interval": 5])
         let tokenResponse = try response(["access_token": "neutral-access", "refresh_token": "neutral-refresh-rotated"])
@@ -632,6 +714,12 @@ enum PCGamesChecks {
             controller.refresh()
             check(!controller.accessIsCurrent,
                   "SDD-LIB-06: refresh in flight cannot authorize new installs")
+            check(!controller.accessIsCurrent(for: first) && controller.installAccessNotice(for: first) != nil,
+                  "REQ88: Per-title access remains blocked with visible status while refresh is busy")
+            check(controller.gamePassCheckNotice?.hasPrefix("Wait for your library") == true,
+                  "REQ88: Rendered Game Pass caption uses actual busy account status instead of an unavailable refresh")
+            check(controller.installRecovery(for: first) == .none,
+                  "COR88: Busy title does not offer a disabled refresh as its recovery")
             check(controller.busy && controller.representedGames.map(\.id) == [first]
                   && !LibraryLoadingPresentation.showsPlaceholders(library: controller,
                       hasUsableContent: !controller.representedGames.isEmpty),
@@ -644,6 +732,8 @@ enum PCGamesChecks {
                 check(controller.snapshot?.games.map(\.id) == [first] && !controller.accessIsCurrent
                       && controller.error != nil && !controller.needsSignIn,
                       "SDD-LIB-06: failed paging retains last-complete representation with stale access")
+                check(!controller.accessIsCurrent(for: first) && controller.installAccessNotice(for: first) != nil,
+                      "REQ88: Retained title after a failed refresh is not current account access")
             } else if mode == "removed" {
                 check(controller.representedGames.isEmpty && controller.error == nil
                       && controller.snapshot?.games.isEmpty == true,
@@ -651,6 +741,8 @@ enum PCGamesChecks {
             } else {
                 check(controller.needsSignIn && controller.snapshot == nil && controller.representedGames.isEmpty,
                       "SDD-LIB-03/06: \(mode) retires account A access rather than showing it as current")
+                check(!controller.accessIsCurrent(for: first),
+                      "REQ88: Revocation or a different account cannot reuse per-title access")
             }
         }
         let pollingTransport = PCGamesMockTransport([
@@ -738,6 +830,8 @@ enum PCGamesChecks {
                   && retry.error == PCGamesError.credentialBrokerUnavailable.localizedDescription
                   && failedChecks == 1 && failedReads == 0 && failedRequests.isEmpty,
                   "F3: Failed presence/metadata stage \(stage) is unavailable, not signed out or partially admitted")
+            check(!retry.accessIsCurrent(for: first) && retry.installAccessNotice(for: first) != nil,
+                  "REQ88: Unavailable saved-account evidence blocks title access with visible status")
             check(!LibraryLoadingPresentation.showsPlaceholders(library: retry, hasUsableContent: false),
                   "REQ-75: Actual credential-restoration failure removes placeholders for explicit retry")
             retry.signIn()
@@ -778,6 +872,13 @@ enum PCGamesChecks {
         check(migrating.hasSavedSignIn && migrating.needsKeychainApproval && !migrating.busy
               && beforeApproval == 0 && beforeMigrationReads == 0 && beforeMigrationRequests.isEmpty,
               "B6: Migration presence gates sign-in/refresh without reading a token or prompting at startup")
+        check(!migrating.accessIsCurrent(for: first)
+              && migrating.installAccessNotice(for: first)?.contains("Keychain") == true,
+              "REQ88: Per-title review cannot bypass credential approval")
+        check(migrating.gamePassCheckNotice?.hasPrefix("Approve Keychain access") == true,
+              "REQ88: Rendered Game Pass caption preserves Keychain recovery precedence")
+        check(migrating.installRecovery(for: first) == .accountSettings,
+              "COR88: Keychain blocker points to the existing Account settings recovery")
         migrating.approveKeychain()
         migrating.approveKeychain()
         await migrating.waitForOperation()
@@ -1017,7 +1118,7 @@ enum PCGamesChecks {
               && passOnly.facts(for: "FIXTURE00001").memberships.isEmpty,
               "REQ-63: PC catalogue membership never invents another plan or a negative membership badge")
         check(DiscoverCopy.noResults("mortis") == "No games match ‘mortis’."
-              && DiscoverCopy.partial == "Some results may be missing."
+              && DiscoverCopy.partial == "Some games couldn't be loaded."
               && DiscoverCopy.unavailable == "Search isn't available right now.",
               "REQ-59/60: Search states have actionable product copy, not source or QA diagnostics")
         check(GameSearchHistory.recording("  MORTIS ", in: ["mortis", "harbor"]) == ["MORTIS", "harbor"]

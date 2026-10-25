@@ -5,6 +5,7 @@ import XodusManagement
 struct GameServiceAccountView: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject var library: PCGamesController
+    var onOpenOdeAccount: (() -> Void)? = nil
 
     var accountStatusText: String {
         if operations.serviceSignOutConfirmed, operations.serviceStatus?.signedIn == false {
@@ -17,22 +18,20 @@ struct GameServiceAccountView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            GroupBox("Your game library") {
-                VStack(alignment: .leading, spacing: 10) {
-                    if library.hasSavedSignIn {
-                        HStack {
-                            Label("Microsoft sign-in saved for your library", systemImage: "checkmark.circle")
-                            Spacer()
-                        }
-                    } else {
-                        Text("Open Library to check your games and saved sign-in.")
-                            .foregroundStyle(.secondary)
-                    }
-                    Text("A game in your library may still need a download access check.")
-                        .font(.callout).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Your game library").font(.headline)
+                if library.hasSavedSignIn {
+                    Label("Microsoft sign-in saved for your library", systemImage: "checkmark.circle")
+                } else {
+                    Text("Open Library to check your games and saved sign-in.")
+                        .foregroundStyle(.secondary)
                 }
+                Text("A game in your library may still need a download access check.")
+                    .font(.callout).foregroundStyle(.secondary)
             }
-            GroupBox("Xbox access") {
+            Divider()
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Xbox access").font(.headline)
                 GameServiceSignInActions(operations: operations, statusText: accountStatusText,
                     statusIdentifier: "xodus.games.accountStatus",
                     checkIdentifier: "xodus.games.checkSignIn",
@@ -40,11 +39,13 @@ struct GameServiceAccountView: View {
                     errorIdentifier: "xodus.games.signInError",
                     logIdentifier: "xodus.games.signInLog",
                     verifyIdentifier: "xodus.games.verifyExplanation",
-                    setupRepairing: operations.setupRepairing)
+                    setupRepairing: operations.setupRepairing,
+                    onOpenOdeAccount: onOpenOdeAccount)
             }
-            GroupBox("PC Game Pass") {
+            Divider()
+            VStack(alignment: .leading, spacing: 10) {
+                Text("PC Game Pass").font(.headline)
                 GamePassAccountView(operations: operations, library: library)
-                    .padding(.top, 2)
             }
             DisclosureGroup("Library and subscription details") {
                 AccountTierView(entitlements: operations.accountEntitlements(library: library))
@@ -67,15 +68,23 @@ struct GameServiceSignInActions: View {
     var logIdentifier: String
     var verifyIdentifier: String
     var setupRepairing = false
+    var onOpenOdeAccount: (() -> Void)? = nil
+
+    func openOdeAccount() { onOpenOdeAccount?() }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if operations.usesUnifiedAccount {
-                Label(operations.serviceLabel, systemImage: "exclamationmark.circle")
+                Label(operations.serviceLabel, systemImage: operations.serviceAccountSymbol)
                     .accessibilityIdentifier(statusIdentifier)
-                Text(operations.serviceError ?? "This runtime isn't connected to your Xbox Live account.")
+                Text(operations.serviceError
+                     ?? "Xbox game access uses the account connected to Ode to X. The status above reflects the current connection.")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let onOpenOdeAccount {
+                    Button("Open Ode account", action: openOdeAccount)
+                        .accessibilityIdentifier("xodus.games.openOdeAccount")
+                }
             } else {
             Label(statusText, systemImage: operations.serviceAccountSymbol)
                 .accessibilityIdentifier(statusIdentifier)
@@ -274,7 +283,7 @@ struct GameOperationProgressView: View {
                 } else {
                     Text(operations.cancelling ? "Stopping installation"
                          : operation.kind == .uninstall ? "Uninstalling"
-                         : operations.progress?.phase.title ?? "Preparing download")
+                         : operations.progress?.message ?? operations.progress?.phase.title ?? "Preparing download")
                         .foregroundStyle(.secondary)
                     if let value = operations.progress, let total = value.bytesTotal, total > 0 {
                         ProgressView(value: Double(value.bytesDone), total: Double(total))
@@ -284,7 +293,7 @@ struct GameOperationProgressView: View {
                             .font(.callout).foregroundStyle(.secondary)
                     } else {
                         ProgressView().controlSize(.small).accessibilityLabel("Download progress")
-                        if let value = operations.progress {
+                        if let value = operations.progress, value.phase == .downloading {
                             Text("\(Self.bytes(value.bytesDone)) downloaded").font(.callout).foregroundStyle(.secondary)
                         }
                     }
@@ -326,13 +335,44 @@ struct GameOperationProgressView: View {
     }
 }
 
+struct InstallUnavailableNotice: View {
+    let message: String
+    var recoveryTitle: String? = nil
+    var recover: (() -> Void)? = nil
+    @Environment(\.libraryOnHeroMedia) private var onHero
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(message).fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("xodus.pcGames.installUnavailableReason")
+            if let recoveryTitle, let recover {
+                Button(recoveryTitle, action: recover).buttonStyle(.bordered)
+                    .accessibilityIdentifier("xodus.pcGames.installRecovery")
+            }
+        }
+        .font(.callout)
+        .foregroundStyle(onHero ? Color.white : Color.primary)
+        .padding(onHero ? 12 : 0)
+        .background(onHero ? Color.black.opacity(0.8) : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 10))
+        .frame(maxWidth: 380, alignment: .leading)
+        .accessibilityElement(children: .contain)
+    }
+}
+
 struct GameInstallAction: View {
     let game: PCGame
     @ObservedObject var operations: GameOperationsController
     var enabled = true
     var primary = true
+    var showsDiagnostics = true
+    var disabledReason: String? = nil
+    var recoveryTitle: String? = nil
+    var recover: (() -> Void)? = nil
+    var reviewInstall: ((PCGame) -> Void)? = nil
     var preparing: Bool {
-        operations.installingDirectly && operations.directInstallProductID == game.id
+        (operations.preparingConsent && operations.preparingInstallProductID == game.id)
+            || (operations.installingDirectly && operations.directInstallProductID == game.id)
     }
     var active: Bool { operations.operation?.productID == game.id }
     var failed: Bool {
@@ -342,15 +382,49 @@ struct GameInstallAction: View {
         operations.cancelling || operations.directInstallCancelled ? "Stopping"
             : preparing ? "Preparing installation"
             : operations.operation?.kind == .uninstall ? "Uninstalling"
-            : operations.operation?.kind == .repair ? "Repairing" : "Installing"
+            : operations.operation?.kind == .repair ? "Repairing"
+            : operations.progress?.message ?? operations.progress?.phase.title ?? "Preparing installation"
     }
-    var actionTitle: String { failed ? "Retry installation" : "Install" }
-    var canInstall: Bool { enabled && operations.canStartMutation }
+    var actionTitle: String {
+        operations.resumableInstallations[game.id] != nil ? "Resume"
+        : operations.installationCheckRequired(for: game)
+            ? operations.existingInstallationError(productID: game.id) == nil ? "Checking…" : "Retry"
+            : failed ? "Retry" : "Download"
+    }
+    var canInstall: Bool {
+        operations.installationCheckRequired(for: game)
+            ? operations.canCheckExistingInstallation : enabled && operations.canStartMutation
+    }
+    var unavailableReason: String? {
+        guard !canInstall else { return nil }
+        return !enabled ? (disabledReason ?? "Installation is not available yet.")
+            : (operations.installUnavailableReason ?? "Installation is not available yet.")
+    }
     var showsCancel: Bool { preparing || (active && operations.canCancel) }
+
+    func registrationStatusTitle(installed: Bool) -> String? {
+        guard !active, !preparing else { return nil }
+        if !installed, operations.resumableInstallations[game.id] != nil { return "Partially installed" }
+        return installed ? "Installed" : "Not installed"
+    }
+
+    func requestInstall() async {
+        guard canInstall else { return }
+        if operations.installationCheckRequired(for: game) {
+            await operations.checkExistingInstallations(productID: game.id)
+            return
+        }
+        if let reviewInstall { reviewInstall(game) }
+        else { await operations.prepareInstall(game) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if active, operations.recoveryRequired {
+            if !active, !preparing, operations.checkingExistingInstallation(productID: game.id)
+                || (operations.installationCheckRequired(for: game) && operations.existingInstallationError(productID: game.id) == nil) {
+                ProgressView("Checking…").controlSize(.small)
+                Button("Cancel") { operations.cancelExistingInstallationCheck(productID: game.id) }
+            } else if active, operations.recoveryRequired {
                 Label("Installation needs attention", systemImage: "exclamationmark.circle")
                     .font(.callout.weight(.semibold))
                 Button("Check last operation") { Task { await operations.reconcile() } }
@@ -379,20 +453,30 @@ struct GameInstallAction: View {
                 }
             } else {
                 Button {
-                    Task { await operations.install(game) }
+                    Task { await requestInstall() }
                 } label: {
-                    Label(actionTitle, systemImage: "icloud.and.arrow.down")
+                    Label(actionTitle, systemImage: operations.installationCheckRequired(for: game)
+                          ? "arrow.clockwise" : "icloud.and.arrow.down")
                 }
                 .modifier(LibraryActionStyle(primary: primary))
                 .disabled(!canInstall)
-                .help("Install \(game.title)")
-                .accessibilityLabel("\(failed ? "Retry installation of" : "Install") \(game.title)")
+                .help("\(actionTitle) \(game.title)")
+                .accessibilityLabel("\(actionTitle) \(game.title)")
                 .accessibilityIdentifier("xodus.pcGames.download")
-                if failed {
-                    Label("Installation needs attention", systemImage: "exclamationmark.circle")
-                        .font(.caption)
+                if showsDiagnostics, let unavailableReason {
+                    InstallUnavailableNotice(message: unavailableReason,
+                        recoveryTitle: recoveryTitle, recover: recover)
+                }
+                if showsDiagnostics, failed {
+                    InstallationWarning(message: operations.error ?? "Installation needs attention")
+                }
+                if showsDiagnostics, let error = operations.existingInstallationError(productID: game.id) {
+                    InstallationWarning(message: error)
                 }
             }
+        }
+        .task(id: operations.automaticInstallationKey(for: game)) {
+            await operations.automaticallyCheckExistingInstallation(game)
         }
     }
 }
@@ -401,9 +485,18 @@ struct GameInstallConsentView: View {
     @ObservedObject var operations: GameOperationsController
     let consent: GameInstallConsent
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
+    @State private var installRootPath: String
+    @FocusState private var installRootFocused: Bool
+
+    init(operations: GameOperationsController, consent: GameInstallConsent) {
+        self.operations = operations
+        self.consent = consent
+        _installRootPath = State(initialValue: consent.destination.deletingLastPathComponent().path)
+    }
 
     var body: some View {
         let consent = operations.installConsent ?? self.consent
+        let displayedDestination = try? consent.destination(forRootPath: installRootPath)
         VStack(spacing: 0) {
             Form {
                 Section {
@@ -413,12 +506,42 @@ struct GameInstallConsentView: View {
                     if consent.installedID != nil { Text(consent.game.title).font(.headline) }
                 }
                 Section("Storage") {
+                    if consent.installedID == nil, !consent.resuming {
+                        LabeledContent("Install folder") {
+                            HStack {
+                                TextField("Install folder", text: $installRootPath)
+                                    .textFieldStyle(.roundedBorder)
+                                    .labelsHidden()
+                                    .accessibilityLabel("Install folder")
+                                    .accessibilityIdentifier("xodus.install.root")
+                                    .focused($installRootFocused)
+                                    .onSubmit {
+                                        Task { await operations.updateTypedInstallLocation(consent, path: installRootPath) }
+                                    }
+                                    .onChange(of: installRootFocused) { _, focused in
+                                        if !focused {
+                                            Task { await operations.updateTypedInstallLocation(consent, path: installRootPath) }
+                                        }
+                                    }
+                                Button("Browse…") {
+                                    Task { await operations.chooseInstallLocation(consent) }
+                                }
+                                .accessibilityIdentifier("xodus.install.chooseLocation")
+                            }
+                            .disabled(operations.checkingCompatibility || operations.choosingInstallLocation)
+                        }
+                    }
                     LabeledContent("Destination") {
-                        Text(consent.destination.path).textSelection(.enabled)
+                        Text(displayedDestination?.path ?? "—").textSelection(.enabled)
                             .multilineTextAlignment(.trailing)
                     }
+                    if let error = operations.installLocationError {
+                        Label(error, systemImage: "exclamationmark.circle")
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     LabeledContent("Free space now",
-                                   value: GameOperationProgressView.bytes(consent.freeBytes))
+                                   value: displayedDestination?.path == consent.destination.path
+                                        ? GameOperationProgressView.bytes(consent.freeBytes) : "—")
                     if operations.checkingCompatibility,
                        let estimate = catalog.images[consent.game.id]?.facts.downloadBytes {
                         LabeledContent("Estimated download",
@@ -428,68 +551,114 @@ struct GameInstallConsentView: View {
                         LabeledContent("Verified package size",
                                        value: GameOperationProgressView.bytes(bytes))
                     }
-                    LabeledContent("Staging and expansion", value: "Calculated during setup")
                 }
-                Section {
-                    if operations.checkingCompatibility {
-                        ProgressView("Preparing installation…").controlSize(.small)
-                            .accessibilityIdentifier("xodus.install.checking")
-                    } else if let result = consent.compatibility, !result.supported {
-                        Label(result.explanation, systemImage: "exclamationmark.circle")
-                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("xodus.install.compatibility")
-                    } else if let error = consent.checkError {
-                        Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if operations.hasDownloadRecovery {
-                            Button(operations.downloadNeedsSignIn ? "Continue with Microsoft" : "Check download access") {
-                                operations.recoverDownload(productID: consent.game.id)
-                            }.disabled(!operations.canRecoverDownload)
+                if operations.checkingCompatibility || consent.compatibility?.supported == false || consent.checkError != nil {
+                    Section {
+                        if operations.checkingCompatibility {
+                            ProgressView("Preparing installation…").controlSize(.small)
+                                .accessibilityIdentifier("xodus.install.checking")
+                        } else if let result = consent.compatibility, !result.supported {
+                            Label(result.explanation, systemImage: "exclamationmark.circle")
+                                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("xodus.install.compatibility")
+                        } else if let error = consent.checkError {
+                            Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if operations.hasDownloadRecovery {
+                                Button(operations.downloadNeedsSignIn ? "Continue with Microsoft" : "Check download access") {
+                                    operations.recoverDownload(productID: consent.game.id)
+                                }.disabled(!operations.canRecoverDownload)
+                            }
+                            if operations.log != nil { Button("Show log") { operations.showLog() } }
                         }
-                        if operations.log != nil { Button("Show log") { operations.showLog() } }
                     }
                 }
-                if consent.compatibility?.supported == true || consent.nativeAccountHash != nil {
+                if consent.installedID != nil, !consent.resuming, consent.nativeAccountHash != nil {
                     Section {
-                        Text(consent.nativeAccountHash != nil
-                             ? consent.resuming
-                                ? "The account-bound service verifies package access and continues the interrupted download. Existing verified package data is reused."
-                                : "The account-bound service verifies package access before downloading. Repair downloads all package files again. Keep a separate backup of saves stored inside the game folder."
-                             : consent.installedID == nil
-                             ? "Ode to X verifies free space again before download. Additional working space can be required while package files are staged and expanded."
-                             : "Ode to X checks changed or missing files in this folder. Your saves and installed entry are kept.")
+                        Text("Repair downloads all package files again. Keep a separate backup of saves stored inside the game folder.")
                             .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
             .formStyle(.grouped)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxHeight: 540)
             Divider()
             HStack {
                 Spacer()
                 Button("Cancel") { Task { await operations.cancelInstallConsent() } }.keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("xodus.install.cancelConsent")
                 Button(consent.resuming ? "Resume" : consent.installedID == nil ? "Install" : "Check and repair") {
-                    operations.confirmInstall(consent)
+                    Task { await operations.confirmInstallLocation(consent, path: installRootPath) }
                 }
-                    .disabled(!operations.canConfirmInstall).keyboardShortcut(.defaultAction)
+                    .disabled(!operations.canConfirmInstall || operations.choosingInstallLocation).keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("xodus.install.confirm")
             }
             .padding(20)
         }
-        .frame(minWidth: 520, idealWidth: 560, maxWidth: 640,
-               minHeight: 440, idealHeight: 560, maxHeight: 680)
+        .frame(minWidth: 520, idealWidth: 560, maxWidth: 640)
         .modifier(InstallFormPresentation())
+        .onChange(of: operations.installConsent?.destination) { _, destination in
+            if let destination { installRootPath = destination.deletingLastPathComponent().path }
+        }
     }
 }
 
 private struct InstallFormPresentation: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
         if #available(macOS 15.0, *) {
-            content.presentationSizing(.form)
+            content.presentationSizing(.fitted)
         } else {
             content
         }
+    }
+}
+
+struct GameDetailInstallRequest: Sendable {
+    let game: PCGame
+    let accountHash: String?
+
+    func resolve(accountHash: String?) -> PCGame? {
+        self.accountHash == accountHash ? game : nil
+    }
+}
+
+private struct GameDetailSheet<Item: Identifiable, Detail: View>: ViewModifier {
+    @Binding var item: Item?
+    @ObservedObject var operations: GameOperationsController
+    let allowed: Bool
+    let accountHash: String?
+    let onDismiss: () -> Void
+    let detail: (Item, @escaping (PCGame) -> Void) -> Detail
+    @State private var pendingInstall: GameDetailInstallRequest?
+
+    func body(content: Content) -> some View {
+        content.sheet(item: $item, onDismiss: {
+            let request = pendingInstall
+            pendingInstall = nil
+            onDismiss()
+            guard allowed, let request, let game = request.resolve(accountHash: accountHash) else { return }
+            Task { await operations.prepareInstall(game, expectedAccountHash: request.accountHash) }
+        }) { item in
+            detail(item) { game in
+                guard self.item?.id == item.id, allowed, pendingInstall == nil, operations.canStartMutation,
+                      operations.installConsent == nil else { return }
+                pendingInstall = GameDetailInstallRequest(game: game, accountHash: accountHash)
+                self.item = nil
+            }
+        }
+    }
+}
+
+extension View {
+    func gameDetailSheet<Item: Identifiable, Detail: View>(
+        item: Binding<Item?>, operations: GameOperationsController, allowed: Bool, accountHash: String? = nil,
+        onDismiss: @escaping () -> Void = {},
+        @ViewBuilder detail: @escaping (Item, @escaping (PCGame) -> Void) -> Detail
+    ) -> some View {
+        modifier(GameDetailSheet(item: item, operations: operations, allowed: allowed, accountHash: accountHash,
+                                 onDismiss: onDismiss, detail: detail))
     }
 }
 
@@ -534,6 +703,30 @@ struct InstalledGameActions: View {
     var body: some View {
         Menu {
             if let details { Button("Details", action: details) }
+            if library.playLogs[game.id] != nil {
+                Button("Show launch log") { library.showLog(for: game) }
+                    .accessibilityLabel("Show \(game.title) launch log in Finder")
+                    .accessibilityIdentifier("xodus.installed.showLog")
+            }
+            Menu("Engine") {
+                Button("Use default (\(library.defaultEngineLabel(for: game)))",
+                       systemImage: game.engineOverrideV2 == nil ? "checkmark" : "circle") {
+                    Task { await library.setEngineOverrideV2(nil, for: game) }
+                }
+                ForEach(library.engineOverrides(for: game), id: \.inspection.engineName) { selection in
+                    if let name = selection.inspection.engineName {
+                        Button(InstalledGamesController.readableEngineName(name),
+                               systemImage: game.engineOverrideV2?.selection == selection ? "checkmark" : "circle") {
+                            Task { await library.setEngineOverrideV2(selection, for: game) }
+                        }
+                    }
+                }
+                Divider()
+                Button("Refresh engines") { Task { await library.refreshEngineOverrides() } }
+                    .disabled(library.checkingEngineOverrides)
+            }
+            .disabled(library.editing || library.choosing || library.mutationActive
+                      || library.accountDisconnecting || library.applicationTerminating || library.runningGameID == game.id)
             InstalledGameManagement(library: library, operations: operations, game: game)
         } label: {
             if heroStyle {
@@ -547,6 +740,22 @@ struct InstalledGameActions: View {
         .buttonBorderShape(heroStyle ? .circle : .automatic)
         .fixedSize()
         .accessibilityLabel("Actions for \(game.title)")
+        .task {
+            await library.refreshEngineOverrides(force: false)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { notification in
+            guard let menu = notification.object as? NSMenu,
+                  Self.containsEngineMenu(menu, defaultTitle: "Use default (\(library.defaultEngineLabel(for: game)))")
+            else { return }
+            Task { await library.refreshEngineOverrides(force: false, retryFailed: true) }
+        }
+    }
+
+    static func containsEngineMenu(_ menu: NSMenu, defaultTitle: String) -> Bool {
+        menu.items.contains { item in
+            item.title == defaultTitle
+                || item.submenu.map { containsEngineMenu($0, defaultTitle: defaultTitle) } == true
+        }
     }
 }
 

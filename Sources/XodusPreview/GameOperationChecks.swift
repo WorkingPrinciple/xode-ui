@@ -192,7 +192,10 @@ enum GameOperationChecks {
             printf 'Neutral setup log\\n' > '\(paths.logs.path)'/"$r.stderr.log"
             mode="$(cat '\(root.path)/mode')"
             if [ "$mode" = setupslow ]; then sleep 0.3; fi
-            if [ "$mode" = setup31 ]; then printf '31\\n' | publish "$receipts/$r.status"; exit 31; fi
+            if [ "$mode" = setup31 ]; then
+                printf '{"ready":false,"items":[]}\\n' | publish "$receipts/$r.result.json"
+                printf '31\\n' | publish "$receipts/$r.status"; exit 31
+            fi
             if [ "$mode" = setup22 ]; then printf '22\\n' | publish "$receipts/$r.status"; exit 22; fi
             if [ "$mode" = setupmissing ]; then exit 9; fi
             if [ "$mode" = setupmismatch ]; then printf '0\\n' | publish "$receipts/$r.status"; exit 3; fi
@@ -200,10 +203,11 @@ enum GameOperationChecks {
                 printf '{"ready":true,"items":[]}\\n' | publish "$receipts/$r.result.json"
             else
                 ready=true; environment=true; fix=null
-                if [ "$mode" = setupnotready ]; then ready=false; environment=false; fix='"Repair the game environment."'; fi
+                if [ "$mode" = setupnotready ] || [ "$mode" = setupfailure ]; then ready=false; environment=false; fix='"Repair the game environment."'; fi
                 if [ -f '\(signed.path)' ]; then signin=true; signinfix=null; else signin=false; signinfix='"Sign in for games."'; fi
                 printf '{"ready":%s,"items":[{"id":"crossover","title":"CrossOver","ready":true,"fix":null},{"id":"environment","title":"Game environment","ready":%s,"fix":%s},{"id":"service","title":"Game service","ready":true,"fix":null},{"id":"signin","title":"Game sign-in","ready":%s,"fix":%s}],"extra":1}\\n' "$ready" "$environment" "$fix" "$signin" "$signinfix" | publish "$receipts/$r.result.json"
             fi
+            if [ "$mode" = setupfailure ]; then printf '31\\n' | publish "$receipts/$r.status"; exit 31; fi
             printf '0\\n' | publish "$receipts/$r.status"
             """)
         let launcher = root.appendingPathComponent("fixture launcher.sh")
@@ -217,6 +221,11 @@ enum GameOperationChecks {
             if [ "$mode" = mismatch ]; then printf '0\\n' | publish "$receipts/$r.status"; exit 3; fi
             trap 'printf "14\\n" | publish "$receipts/$r.status"; exit 14' TERM
             printf '{"phase":"downloading","bytesDone":20,"bytesTotal":100}\\n' | publish "$receipts/$r.progress.json"
+            if [ "$mode" = partialslow ]; then
+                mkdir -p "$folder"
+                printf '<Game><Identity Name="Fixture.Game" Version="1.2.3.4"/><StoreId>%s</StoreId></Game>' "$product" > "$folder/MicrosoftGame.config"
+                while :; do sleep 0.1; done
+            fi
             if [ "$mode" = slow ]; then while :; do sleep 0.1; done; fi
             if [ "$mode" = invalidprogress ]; then
                 printf '{"phase":"downloading","bytesDone":-1}\\n' | publish "$receipts/$r.progress.json"
@@ -239,6 +248,8 @@ enum GameOperationChecks {
             fi
             if [ "$mode" = wrongid ]; then resultid=OTHER0000001; else resultid="$product"; fi
             printf '{"folder":"%s","launcher":"%s","storeId":"%s","title":"Ignored result title","bottle":"ignored","contentId":"ignored","bytesOnDisk":42}\\n' "$folder" '\(launcher.path)' "$resultid" | publish "$receipts/$r.result.json"
+            if [ "$mode" = resultfailure ]; then printf '13\\n' | publish "$receipts/$r.status"; exit 13; fi
+            if [ "$mode" = networkfailure ]; then printf '11\\n' | publish "$receipts/$r.status"; exit 11; fi
             printf '0\\n' | publish "$receipts/$r.status"
             exit 0
             """)
@@ -260,7 +271,7 @@ enum GameOperationChecks {
                     antiCheat: "none", technologyReferences: [], referencePlatforms: []))
             }))
         let installed = InstalledGamesController(store: store, launchingDuration: .milliseconds(50),
-            defaultEngine: { nil }, detectAvailability: { RunnerAvailability([.crossover]) },
+            defaultEngine: { .crossover }, detectAvailability: { RunnerAvailability([.crossover]) },
             compatibilityCatalogue: catalogue)
         let operations = GameOperationsController(installed: installed, paths: paths,
                                                   compatibilityCatalogue: catalogue)
@@ -354,7 +365,7 @@ enum GameOperationChecks {
                     accessIsCurrent: row.accessIsCurrent, gamePass: row.gamePass,
                     subscriptionActive: false, pcCandidate: true))
             check(row.facts.badgeLabels() == labels && row.installed == nil
-                  && row.owned == (kind == .purchased) && action.actionTitle == "Install" && action.canInstall
+                  && row.owned == (kind == .purchased) && action.actionTitle == "Download" && action.canInstall
                   && operations.installConsent == nil && !operations.canConfirmInstall,
                   "REQ-50: \(kind) held acquisition pairs truthful uninstalled badges with review, not unchecked confirmation")
         }
@@ -368,7 +379,14 @@ enum GameOperationChecks {
             check(publicRow.facts.badgeLabels() == ["Game Pass"] && publicRow.eligibility == nil
                   && !publicRow.owned && action.canInstall == subscription && !operations.canConfirmInstall,
                   "REQ-50: Public-only Game Pass stays membership-only; active probe permits review, never confirmation")
+            let retainedOwnedAction = GameInstallAction(game: game, operations: operations,
+                enabled: DiscoverBrowse.canReviewInstall(owned: true, accessIsCurrent: false,
+                    gamePass: true, subscriptionActive: subscription, pcCandidate: true))
+            check(retainedOwnedAction.canInstall == subscription && !operations.canConfirmInstall,
+                  "REQ88: Owned-but-stale representation does not shadow independently verified subscription review")
         }
+        check(operations.installUnavailableReason == nil,
+              "REQ88: Ready operation has no invented installation blocker")
         let unknownOperations = GameOperationsController(installed: installed, paths: paths,
                                                           compatibilityCatalogue: nil)
         let unknownAction = GameInstallAction(game: game, operations: unknownOperations,
@@ -526,6 +544,9 @@ enum GameOperationChecks {
         check(operations.gamePassBusy && installed.mutationActive && !operations.canQuit
               && !operations.canStartMutation && !operations.canSignIn && !operations.canCancel,
               "B5 explicit probe reserves the existing fence and cannot be cancelled as an installation")
+        let busyInstall = GameInstallAction(game: game, operations: operations, enabled: true)
+        check(!busyInstall.canInstall && busyInstall.unavailableReason?.contains("Game Pass") == true,
+              "REQ88: Current title access cannot bypass operation-busy fences; the blocking check is explained")
         check(operations.isBusy && !operations.hasDownloadStatus,
               "Downloads keeps its empty action during unrelated Game Pass work")
         operations.checkGamePass(discoveryProducts: discoveryProducts, ownedGames: [game])
@@ -676,7 +697,26 @@ enum GameOperationChecks {
         }
         check(operations.setupError == GameScriptError.statusMismatch.localizedDescription,
               "B8 conflicting process/status results remain explicit, not readiness defaults")
+        try writeMode("setupfailure")
+        operations.repairSetup()
+        await operations.waitForSetup()
+        check(operations.setupResult?.ready == false && operations.setupResult?.items.count == 4
+              && operations.setupError == GameScriptError.failed(31).localizedDescription
+              && operations.setupNeedsAttention && !installed.runtimeRepairActive && operations.canQuit,
+              "Nonzero setup repair keeps validated unready items and actionable failure without reporting success")
+        do {
+            _ = try GameSetupResult.parse(GameScriptOutcome(code: 31, result: Data(setupData.utf8), log: nil))
+            check(false, "Nonzero setup cannot publish a contradictory Ready result")
+        } catch {
+            check(error as? GameScriptError == .statusMismatch,
+                  "Nonzero setup cannot publish a contradictory Ready result")
+        }
         let setupValidation = GameScriptRunner(paths: paths)
+        try writeMode("setup31")
+        let failedSetup = try await setupValidation.run(command: .setup, runID: InstalledGamesController.runID(),
+                                                        arguments: ["repair"])
+        check(failedSetup.code == 31 && failedSetup.result != nil,
+              "Nonzero setup preserves a present bounded result receipt for truthful consumer decoding")
         for arguments in [[], ["install"], ["check", "repair"], ["../repair"]] {
             do {
                 _ = try await setupValidation.run(command: .setup, runID: InstalledGamesController.runID(), arguments: arguments)
@@ -895,6 +935,194 @@ enum GameOperationChecks {
         check(!operations.checkingCompatibility && !installed.mutationActive && operations.canQuit
               && operations.installConsent == nil && installed.games.isEmpty,
               "B3: Consent cancellation joins its check and releases the fence without registration or game files")
+        try writeMode("0")
+        let installAction = GameInstallAction(game: game, operations: operations)
+        await installAction.requestInstall()
+        check(operations.presentedInstallConsent?.game.id == game.id
+              && operations.canConfirmInstall && !operations.installingDirectly
+              && operations.operation == nil && !installed.mutationActive
+              && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
+              && !FileManager.default.fileExists(atPath: paths.journal.path),
+              "COR89 actual Install button presents a fresh visible review without automatically starting installation")
+        await operations.cancelInstallConsent()
+        check(operations.presentedInstallConsent == nil && operations.operation == nil
+              && installed.games.isEmpty && !installed.mutationActive
+              && !FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
+              && !FileManager.default.fileExists(atPath: paths.journal.path),
+              "COR89 cancelling actual Install review performs no installation, registration or journal write")
+        let blockedInstallAction = GameInstallAction(game: game, operations: operations, enabled: false)
+        await blockedInstallAction.requestInstall()
+        check(operations.installConsent == nil && operations.operation == nil,
+              "COR89 actual Install action retains its access gate before presenting review")
+        let pendingReview = GameDetailInstallRequest(game: game, accountHash: String(repeating: "a", count: 64))
+        check(pendingReview.resolve(accountHash: String(repeating: "a", count: 64))?.id == game.id
+              && pendingReview.resolve(accountHash: String(repeating: "b", count: 64)) == nil
+              && pendingReview.resolve(accountHash: nil) == nil,
+              "COR89 pending detail review retains its exact account and rejects account-switch/sign-out handoff")
+        let locationSuite = "Xodus.install-location-checks.\(UUID().uuidString)"
+        guard let locationDefaults = UserDefaults(suiteName: locationSuite) else { throw GameScriptError.storage }
+        defer { locationDefaults.removePersistentDomain(forName: locationSuite) }
+        let firstRoot = root.appendingPathComponent("first drive")
+        let secondRoot = root.appendingPathComponent("second drive")
+        for directory in [firstRoot, secondRoot] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        }
+        let firstLocation = try await Task.detached { try GameInstallLocation(folder: firstRoot) }.value
+        locationDefaults.set(try JSONEncoder().encode(firstLocation), forKey: GameInstallLocation.preferenceKey)
+        let locationOperations = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue, installLocationDefaults: locationDefaults)
+        await locationOperations.prepareInstall(game)
+        guard let defaultConsent = locationOperations.installConsent else { throw GameScriptError.invalidDestination }
+        check(defaultConsent.destination.deletingLastPathComponent().path == firstRoot.path
+              && locationOperations.presentedInstallConsent != nil && locationOperations.operation == nil,
+              "REQ92: Persisted default prefills the actual review without installation")
+        let typedRoot = root.appendingPathComponent("Typed drive É")
+        try FileManager.default.createDirectory(at: typedRoot, withIntermediateDirectories: false)
+        check(try defaultConsent.destination(forRootPath: typedRoot.path).deletingLastPathComponent().path == typedRoot.path
+              && locationOperations.installConsent?.destination == defaultConsent.destination,
+              "REQ110: The view-facing Destination follows the edited root immediately, before blur validation commits consent")
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: typedRoot.path)
+        let displayedTypedDestination = try locationOperations.installConsent?.destination(forRootPath: typedRoot.path)
+        check(locationOperations.installConsent?.destination.deletingLastPathComponent().path == typedRoot.path
+              && displayedTypedDestination?.path == locationOperations.installConsent?.destination.path
+              && locationOperations.installLocationError == nil,
+              "REQ110: Typed install root preserves spaces/Unicode and resolves the separate game destination")
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: "relative/folder")
+        if let retained = locationOperations.installConsent { locationOperations.confirmInstall(retained) }
+        check(locationOperations.installLocationError != nil && locationOperations.operation == nil
+              && locationOperations.installConsent?.destination.deletingLastPathComponent().path == typedRoot.path,
+              "REQ110: Invalid typed root cannot silently confirm into the previous destination")
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: root.appendingPathComponent("missing drive").path)
+        check(locationOperations.installLocationError != nil
+              && locationOperations.installConsent?.destination.deletingLastPathComponent().path == typedRoot.path,
+              "REQ110: An unavailable typed drive reports failure and retains the choice without a fallback")
+        let readOnlyRoot = root.appendingPathComponent("read-only drive")
+        try FileManager.default.createDirectory(at: readOnlyRoot, withIntermediateDirectories: false)
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: readOnlyRoot.path)
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: readOnlyRoot.path)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: readOnlyRoot.path)
+        check(locationOperations.installLocationError == GameInstallLocationError.notWritable.localizedDescription,
+              "REQ110: A read-only install folder reports its actual writable-folder recovery")
+        await locationOperations.updateInstallLocation(defaultConsent, root: secondRoot)
+        let retainedDefault = try GameInstallLocation.load(locationDefaults)
+        check(locationOperations.installConsent?.destination.deletingLastPathComponent().path == secondRoot.path
+              && locationOperations.installConsent?.id == defaultConsent.id
+              && retainedDefault == firstLocation
+              && locationOperations.operation == nil && installed.games.isEmpty,
+              "REQ92: Per-install override updates the reviewed destination, not the default or existing paths")
+        let occupiedDestination = try paths.destination(title: game.title, productID: game.id, root: typedRoot)
+        try FileManager.default.createDirectory(at: occupiedDestination, withIntermediateDirectories: false)
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: typedRoot.path)
+        check(locationOperations.installLocationError == GameInstallLocationError.destinationExists.localizedDescription
+              && locationOperations.installConsent?.destination.deletingLastPathComponent().path == secondRoot.path,
+              "H1: Selecting an unscanned root refuses an existing empty or unrecognized game destination")
+        try FileManager.default.removeItem(at: occupiedDestination)
+        let racedDestination = try paths.destination(title: game.title, productID: game.id, root: secondRoot)
+        try FileManager.default.createDirectory(at: racedDestination, withIntermediateDirectories: false)
+        await locationOperations.confirmInstallLocation(defaultConsent, path: secondRoot.path)
+        check(locationOperations.operation == nil
+              && locationOperations.installLocationError == GameInstallLocationError.destinationExists.localizedDescription,
+              "H1: Final confirmation rechecks exact destination existence after an initially valid root selection")
+        try FileManager.default.removeItem(at: racedDestination)
+        await locationOperations.updateInstallLocation(defaultConsent, root: secondRoot)
+        locationOperations.confirmInstall(defaultConsent)
+        check(locationOperations.operation == nil && locationOperations.installConsent != nil,
+              "REQ92: A retained pre-override consent cannot install into the old destination")
+        await locationOperations.cancelInstallConsent()
+        let cancelledDefault = try GameInstallLocation.load(locationDefaults)
+        check(locationOperations.operation == nil && locationOperations.installConsent == nil
+              && cancelledDefault == firstLocation && installed.games.isEmpty,
+              "REQ110: Cancelling destination review changes no default, installed entry or operation")
+        let destinationStore = InstalledGameStore(file: root.appendingPathComponent("typed-install-registry/games.json"))
+        let destinationLibrary = InstalledGamesController(store: destinationStore, inspectPackage: { _ in .win32 })
+        await destinationLibrary.load()
+        let destinationPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed, logs: paths.logs,
+            games: paths.games, journal: root.appendingPathComponent("typed-install-operation.json"))
+        let destinationOperations = GameOperationsController(installed: destinationLibrary, paths: destinationPaths,
+            compatibilityCatalogue: catalogue)
+        await destinationOperations.prepareInstall(game)
+        guard let destinationConsent = destinationOperations.installConsent else { throw GameScriptError.invalidDestination }
+        await destinationOperations.confirmInstallLocation(destinationConsent, path: typedRoot.path)
+        let confirmedDestination = try destinationPaths.destination(title: game.title, productID: game.id, root: typedRoot)
+        check(destinationOperations.operation?.destination == confirmedDestination.path,
+              "REQ110: Confirmed typed root reaches the actual operation rather than changing only its display")
+        await destinationOperations.waitForMutation()
+        let destinationArguments = try String(contentsOf: root.appendingPathComponent("arguments"), encoding: .utf8)
+            .components(separatedBy: "\n")
+        check(destinationArguments[3] == confirmedDestination.path
+              && destinationLibrary.games.first?.folder == confirmedDestination.path
+              && destinationLibrary.games.first.map { destinationLibrary.launchableIDs.contains($0.id) } == true,
+              "REQ110: Disposable install propagates the confirmed path through child arguments, registration and independent readiness")
+        try FileManager.default.removeItem(at: root.appendingPathComponent("arguments"))
+        let partialRoot = root.appendingPathComponent("partial resume drive")
+        try FileManager.default.createDirectory(at: partialRoot, withIntermediateDirectories: false)
+        let partialStore = InstalledGameStore(file: root.appendingPathComponent("partial-registry/games.json"))
+        let partialLibrary = InstalledGamesController(store: partialStore, inspectPackage: { _ in .win32 })
+        await partialLibrary.load()
+        let partialPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed, logs: paths.logs,
+            games: paths.games, journal: root.appendingPathComponent("partial-operation.json"))
+        let partialOperations = GameOperationsController(installed: partialLibrary, paths: partialPaths,
+            compatibilityCatalogue: catalogue)
+        try writeMode("partialslow")
+        await partialOperations.prepareInstall(game)
+        guard let partialConsent = partialOperations.installConsent else { throw GameScriptError.invalidDestination }
+        await partialOperations.confirmInstallLocation(partialConsent, path: partialRoot.path)
+        let partialDestination = try paths.destination(title: game.title, productID: game.id, root: partialRoot)
+        try await wait { FileManager.default.fileExists(atPath: partialDestination.appendingPathComponent("MicrosoftGame.config").path) }
+        await partialOperations.cancelInstall()
+        await partialOperations.waitForMutation()
+        let resumedOperations = GameOperationsController(installed: partialLibrary, paths: partialPaths,
+            compatibilityCatalogue: catalogue)
+        await resumedOperations.restore()
+        check(!resumedOperations.recoveryRequired && resumedOperations.canStartMutation
+              && resumedOperations.resumableInstallations[game.id]?.destination == partialDestination.path
+              && partialLibrary.games.isEmpty,
+              "M2: Cancelling a config-bearing partial install preserves a durable exact-product/destination resume without registering or globally locking")
+        check(GameInstallAction(game: game, operations: resumedOperations)
+                .registrationStatusTitle(installed: false) == "Partially installed",
+              "COR178: Retained partial data is labeled Partially installed beside Resume, never Not installed")
+        try writeMode("success")
+        await resumedOperations.prepareInstall(game)
+        guard let resumedConsent = resumedOperations.installConsent else { throw GameScriptError.invalidDestination }
+        check(resumedConsent.resuming && resumedConsent.destination.path == partialDestination.path,
+              "M2: Reloaded Resume returns to the original managed partial folder instead of the current default")
+        await resumedOperations.confirmInstallLocation(resumedConsent, path: firstRoot.path)
+        await resumedOperations.waitForMutation()
+        check(partialLibrary.games.first?.folder == partialDestination.path
+              && resumedOperations.resumableInstallations[game.id] == nil,
+              "M2: Resume installs only to its retained destination and retires the resume record after verified registration")
+        try FileManager.default.removeItem(at: root.appendingPathComponent("arguments"))
+        let secondLocation = try await Task.detached { try GameInstallLocation(folder: secondRoot) }.value
+        locationDefaults.set(try JSONEncoder().encode(secondLocation), forKey: GameInstallLocation.preferenceKey)
+        let reloadedDefaults = UserDefaults(suiteName: locationSuite)!
+        let reloadedLocations = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue, installLocationDefaults: reloadedDefaults)
+        check(try await reloadedLocations.installDestination(for: game).deletingLastPathComponent().path == secondRoot.path,
+              "REQ92: A new preference/controller instance retains the selected default")
+        locationDefaults.set(Data("invalid".utf8), forKey: GameInstallLocation.preferenceKey)
+        do {
+            _ = try await locationOperations.installDestination(for: game)
+            check(false, "REQ92: Invalid saved location never silently falls back to another drive")
+        } catch { check(true, "REQ92: Invalid saved location never silently falls back to another drive") }
+        let unavailableLocation = Data("""
+            {"folder":"/Volumes/REQ92-Synthetic-Unmounted/Games","volume":{"path":"/Volumes/REQ92-Synthetic-Unmounted"}}
+            """.utf8)
+        locationDefaults.set(unavailableLocation, forKey: GameInstallLocation.preferenceKey)
+        do {
+            _ = try await locationOperations.installDestination(for: game)
+            check(false, "REQ92: Unmounted selected drive is rejected without creating a substitute directory")
+        } catch {
+            check(error as? GameInstallLocationError == .driveUnavailable,
+                  "REQ92: Unmounted selected drive is rejected without creating a substitute directory")
+        }
+        try await InstalledGameChecks.storageLocationChecks(check: check)
+        if ProcessInfo.processInfo.environment["XODUS_NATIVE_CONSENT_PRESENTATION_CHECK"] == "1" {
+            try await NativeUIChecks.checkInstallSheetPresentation(operations: operations, game: game, check: check)
+            check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
+                  && !FileManager.default.fileExists(atPath: paths.journal.path) && installed.games.isEmpty,
+                  "COR89 native presenter: dismiss/review/cancel runs no installer, journal or registry mutation")
+        }
+        try writeMode("checkslow")
         let directCheck = Task { await operations.install(game) }
         try await wait { operations.checkingCompatibility }
         check(operations.installingDirectly && operations.presentedInstallConsent == nil
@@ -975,7 +1203,7 @@ enum GameOperationChecks {
         }
         await cancellingInstall.value
         await operations.waitForMutation()
-        check(!operations.isBusy && !installed.mutationActive && operations.error == GameScriptError.failed(14).localizedDescription
+        check(!operations.isBusy && !installed.mutationActive && operations.error == nil && operations.notice != nil
               && operations.log != nil && installed.games.isEmpty,
               "S5 SIGTERM joins the script, consumes code 14 and keeps partial files unregistered")
         // M7: a queue-originated pause/cancel also stops the engine with code 14, but unlike an
@@ -1070,7 +1298,25 @@ enum GameOperationChecks {
             check(blocked.operation == nil && blocked.error?.contains(technology) == true,
                   "UI-5: Direct installed repair cannot bypass attention-panel admission")
         }
-        await installed.play(imported)
+        for provider in [RuntimeProviderKind.crossover, .gptk3, .gptk4, .standaloneWine] {
+            await installed.setEngineOverride(provider, for: imported)
+            guard let historical = installed.games.first(where: { $0.id == imported.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            await installed.play(historical)
+            check(installed.runningGameID == nil
+                  && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
+                  "REQ95 current per-game \(provider.rawValue) choice refuses before spawning a legacy launcher")
+        }
+        await installed.setEngineOverride(nil, for: imported)
+        guard let policyGame = installed.games.first(where: { $0.id == imported.id }) else {
+            throw GameScriptError.invalidReceipt
+        }
+        await installed.play(policyGame)
+        check(installed.runningGameID == nil
+              && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
+              "REQ95 current Play refuses historical CrossOver execution before spawning its legacy script")
+        await installed.playHistoricalFixture(policyGame)
         check(installed.runningGameID == imported.id && !operations.canSignIn,
               "S3 game-service restart is disabled while a game is running")
         check(!operations.canRepairSetup, "B8 environment recreation is disabled for every tracked running game")
@@ -1084,6 +1330,15 @@ enum GameOperationChecks {
         await installed.waitForSessionPersistence()
         guard let played = installed.games.first else { throw GameScriptError.invalidReceipt }
         let history = played.lastPlayedAt
+        await reloadedLocations.prepareInstall(game, repairing: played)
+        guard let locationRepair = reloadedLocations.installConsent else { throw GameScriptError.invalidDestination }
+        await reloadedLocations.updateInstallLocation(locationRepair, root: secondRoot)
+        check(reloadedLocations.installConsent?.destination.path == played.folder
+              && reloadedLocations.installConsent?.installedID == played.id
+              && installed.games.first?.folder == played.folder
+              && installed.games.first?.lastPlayedAt == history,
+              "REQ92: Changed or unavailable default never redirects repair, and repair rejects folder overrides")
+        await reloadedLocations.cancelInstallConsent()
         await operations.prepareInstall(game, repairing: played)
         guard let repair = operations.installConsent else { throw GameScriptError.invalidDestination }
         check(repair.destination.path == played.folder && repair.installedID == played.id,
@@ -1097,7 +1352,7 @@ enum GameOperationChecks {
         try writeMode("setupslow")
         operations.repairSetup()
         guard let launchDuringRepair = installed.games.first else { throw GameScriptError.invalidReceipt }
-        await installed.play(launchDuringRepair)
+        await installed.playHistoricalFixture(launchDuringRepair)
         check(installed.runningGameID == nil && installed.runtimeRepairActive,
               "B8 no game can start while the shared environment is being rebuilt")
         await operations.waitForSetup()
@@ -1116,7 +1371,7 @@ enum GameOperationChecks {
         for mode in ["stopbefore", "stopafter", "stop21", "stopwrongid", "stopfalse", "stopmissing", "stopmismatch"] {
             try writeMode(mode)
             guard let candidate = installed.games.first else { throw GameScriptError.invalidReceipt }
-            await installed.play(candidate)
+            await installed.playHistoricalFixture(candidate)
             try await wait { FileManager.default.fileExists(atPath: root.appendingPathComponent("launcher-pid").path) }
             check(installed.canStop(candidate) && operations.canQuit,
                   "B9 only a live Xodus-launched session can Stop; ordinary gameplay Quit is unchanged")
@@ -1176,13 +1431,44 @@ enum GameOperationChecks {
               && afterUninstall.facts.badgeLabels() == ["In your library"]
               && GameInstallAction(game: game, operations: operations).canInstall,
               "REQ-50: Only explicit uninstall invokes its transport; success withdraws installed facts but preserves held reinstall eligibility")
+        await operations.prepareInstall(game)
+        check(operations.installConsent == nil
+              && operations.error == GameInstallLocationError.destinationExists.localizedDescription,
+              "H1: Removing registration never grants Install permission to overwrite the retained unmanaged folder")
+        try FileManager.default.removeItem(at: URL(fileURLWithPath: repaired.folder))
         for code in [10, 11, 12, 14] {
             try writeMode(String(code))
             try await install()
-            check(operations.error == GameScriptError.failed(code).localizedDescription && operations.log != nil
+            check((code == 14 ? (operations.error == nil && operations.notice != nil)
+                               : operations.error == GameScriptError.failed(code).localizedDescription) && operations.log != nil
                   && installed.games.isEmpty && !operations.isBusy,
-                  "S5 code \(code) has a specific error/recovery and cannot become installed")
+                  "S5 code \(code) has truthful failure/cancellation feedback and cannot become installed")
         }
+        try writeMode("resultfailure")
+        try await install()
+        check(operations.failureCode == 13 && operations.error == GameScriptError.failed(13).localizedDescription
+              && installed.games.isEmpty && !operations.isBusy,
+              "Present install result on nonzero exit is decoded without registering a false installed success")
+        let failedReload = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue)
+        await failedReload.restore()
+        check(failedReload.resumableInstallations[game.id]?.destination == repaired.folder
+              && !failedReload.recoveryRequired && installed.games.isEmpty,
+              "Retry: Integrity failure keeps its exact managed destination across reload without registration")
+        try writeMode("networkfailure")
+        await failedReload.install(game)
+        await failedReload.waitForMutation()
+        check(failedReload.failureCode == 11 && failedReload.error != GameInstallLocationError.destinationExists.localizedDescription
+              && failedReload.resumableInstallations[game.id]?.destination == repaired.folder,
+              "Retry: Reloaded code-13 install reaches its original destination and retains ownership after a midstream network failure")
+        let networkReload = GameOperationsController(installed: installed, paths: paths,
+            compatibilityCatalogue: catalogue)
+        await networkReload.restore()
+        await networkReload.prepareInstall(game)
+        check(networkReload.installConsent?.destination.path == repaired.folder
+              && networkReload.installConsent?.resuming == true && installed.games.isEmpty,
+              "Retry: Midstream failure reload offers same-destination retry instead of treating its own payload as unmanaged")
+        await networkReload.cancelInstallConsent()
         let unsupportedCache = compatibilityData.replacingOccurrences(of: "\"supported\":true", with: "\"supported\":false")
             .replacingOccurrences(of: "\"reason\":null", with: "\"reason\":\"Neutral Xbox feature is not supported.\"")
         try privateFile(cached, unsupportedCache)
@@ -1329,17 +1615,17 @@ enum GameOperationChecks {
                 detectAvailability: { RunnerAvailability([.crossover]) })
             await consentLibrary.load()
             let consentPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed,
-                logs: paths.logs, games: paths.games,
+                logs: paths.logs, games: root.appendingPathComponent("\(label)/games"),
                 journal: root.appendingPathComponent("\(label)/operation.json"))
             let controller = GameOperationsController(installed: consentLibrary, paths: consentPaths,
                                                       compatibilityCatalogue: catalogue)
             let a = PCGame(id: "FIXTURE00004", title: "Consent A", artwork: nil)
             let b = PCGame(id: "FIXTURE00005", title: "Queued B", artwork: nil)
-            let aFolder = try paths.destination(title: a.title, productID: a.id)
+            let aFolder = try consentPaths.destination(title: a.title, productID: a.id)
             func queuedRecord(_ game: PCGame) throws -> GameOperationRecord {
                 GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
                     productID: game.id, title: game.title,
-                    destination: try paths.destination(title: game.title, productID: game.id).path, installedID: nil)
+                    destination: try consentPaths.destination(title: game.title, productID: game.id).path, installedID: nil)
             }
             try writeMode("success")
             if repairing {

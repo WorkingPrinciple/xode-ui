@@ -62,7 +62,7 @@ enum SearchPresentationChecks {
         let keyboardCard = GameCard(title: "Neutral keyboard game", openLabel: "View",
                                    open: { opened += 1 }) {
             Color.clear
-        } status: { EmptyView() } actions: { EmptyView() }
+        } status: { EmptyView() }
         let keyResult = keyboardCard.openFromKeyboard()
         check(opened == 1 && keyResult == .handled,
               "REQ-73: Poster Return invokes its detail action once and consumes the event")
@@ -149,9 +149,12 @@ enum SearchPresentationChecks {
                   "REQ-73: Compact title and collapsed scope menu share one header row")
             check(!labels.contains { $0.contains("Compatibility") || $0.contains("Package not supported") },
                   "REQ-73: Search composition excludes browse Compatibility and per-card blocker diagnostics")
+            check(!labels.contains { $0.contains(DiscoverCopy.partial) || $0 == "Retry" },
+                  "REQ100 normal partial public query renders no default missing-results warning or Retry")
             if library.representedGames.count <= 5 || size.height >= 1231 {
-                check(labels.contains { $0.contains("View details") },
-                      "REQ-73: Visible blocked public result offers details instead of an install action")
+                check(labels.contains { $0.filter { !$0.isWhitespace } == session.products[0].title.filter { !$0.isWhitespace } }
+                      && !labels.contains { $0 == "View details" },
+                      "REQ-73/85: The blocked public poster retains its title without a persistent details-button row")
             }
             check(!labels.contains { $0.contains("EAppx") || $0.contains("MSIXVC")
                       || $0.contains("GB download") || $0.contains("Buy") || $0.contains("19.99") },
@@ -231,10 +234,11 @@ enum SearchPresentationChecks {
                 let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
                 let renderedText = labels.joined(separator: " ").lowercased()
                 check(labels.contains { $0.localizedCaseInsensitiveContains("Installed") }
-                      && labels.contains { $0.localizedCaseInsensitiveContains("View details") }
+                      && labels.contains { $0.filter { !$0.isWhitespace } == session.products[0].title.filter { !$0.isWhitespace } }
+                      && !labels.contains { $0 == "View details" }
                       && !renderedText.contains(inlineError.lowercased())
                       && !renderedText.contains("folder is no longer available"),
-                      "REQ-59: Search at \(Int(size.width))x\(Int(size.height)) keeps installed state and a details action visible without per-card diagnostics: \(labels)")
+                      "REQ-59/85: Search at \(Int(size.width))x\(Int(size.height)) keeps the installed poster/title visible without action rows or per-card diagnostics: \(labels)")
                 check(diagnosticInstalled.playErrors[installedFixture.id] == inlineError
                       && !window.isVisible && !window.isKeyWindow,
                       "REQ-59: Search at \(Int(size.width))x\(Int(size.height)) preserves the underlying reason and remains offscreen")

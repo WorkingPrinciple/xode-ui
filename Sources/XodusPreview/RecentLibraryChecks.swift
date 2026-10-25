@@ -161,9 +161,10 @@ enum RecentLibraryChecks {
                       && value.catalogEmptyTitle == "No Store matches" && value.selectedProduct == nil,
                       "A genuine zero-candidate search stays the existing honest empty result")
             } else {
-                check(value.products.isEmpty && value.catalogError != nil && !value.discoveryFailures.isEmpty
+                check(value.products.isEmpty && value.catalogError == nil && !value.discoveryFailures.isEmpty
+                      && value.nextCursor != nil && value.canLoadMoreCatalog
                       && value.catalogEmptyTitle != "No Store matches" && value.selectedProduct == nil,
-                      "Failed catalog candidate checking stays a visible partial/error state, not a false empty match")
+                      "Rejected catalog candidates preserve usable continuation, not a false empty match or terminal error")
             }
             check(await value.disconnect(), "Neutral title-name Store navigation owner closes")
         }

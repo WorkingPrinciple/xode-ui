@@ -6,10 +6,14 @@ public struct ContractValidator: Sendable {
     private let root: JSONValue
 
     public init() throws {
+        try self.init(schemaURL: Self.bundledSchemaURL(), schemaIdentifier: "urn:xodus:management:1.0")
+    }
+
+    static func bundledSchemaURL() throws -> URL {
         guard let url = Bundle.module.url(forResource: "management-v1.schema", withExtension: "json") else {
             throw ManagementError.unsupportedSchema
         }
-        try self.init(schemaURL: url, schemaIdentifier: "urn:xodus:management:1.0")
+        return url
     }
 
     public init(schemaURL: URL, schemaIdentifier: String) throws {

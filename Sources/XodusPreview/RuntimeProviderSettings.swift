@@ -16,6 +16,7 @@ final class RuntimeProviderSettings: ObservableObject {
     private var explicitSelection: Bool
     private let detectCrossOver: @Sendable () async -> CrossOverDependencyState
     private let client = RuntimePlanClient()
+    let providerInspector = EngineInspectionClient()
     private var task: Task<Void, Never>?
     private var revision = UUID()
 
@@ -41,20 +42,16 @@ final class RuntimeProviderSettings: ObservableObject {
         }
         if observed != previous { invalidate() }
         crossOverDependency = observed
-        if configuration == nil, !explicitSelection, case .installed(let app) = observed {
-            var value = RuntimeProviderConfiguration.preset(.crossover)
-            value.providerVersion = app.version
-            configuration = value
-        } else if configuration?.provider == .crossover, case .installed(let app) = observed {
+        if configuration?.provider == .crossover, case .installed(let app) = observed {
             configuration?.providerVersion = app.version
         } else if configuration?.provider == .crossover, !observed.isVerified {
             configuration?.providerVersion = nil
         }
     }
 
-    static let providerChoices: [RuntimeProviderKind] = [.crossover, .gptk4, .gptk3, .standaloneWine]
+    static let providerChoices: [RuntimeProviderKind] = [.calimocho]
     static func providerLabel(_ provider: RuntimeProviderKind) -> String {
-        provider == .crossover ? "Official CrossOver (first release)" : "\(provider.label) (Experimental)"
+        provider == .calimocho ? "Calimocho (verified local build)" : "\(provider.label) (Experimental)"
     }
 
     var requiresExperimentalAcknowledgement: Bool {
@@ -64,6 +61,9 @@ final class RuntimeProviderSettings: ObservableObject {
 
     var planningBlocker: String? {
         guard let configuration else { return "Choose a runtime configuration first." }
+        if configuration.provider == .calimocho {
+            return "Calimocho uses the verified registry selection above. The legacy configuration-only planner does not support this provider."
+        }
         if checkingDependency { return "Wait for the CrossOver app check before requesting a plan." }
         if configuration.provider == .crossover && !crossOverDependency.isVerified {
             return "Verify a separately installed official CrossOver app before planning this first-release configuration."
@@ -173,7 +173,9 @@ final class RuntimeProviderSettings: ObservableObject {
         }
         do {
             try await client.closeOwnedProcess()
+            try await providerInspector.closeOwnedProcess()
             guard !(await client.hasOwnedProcess) else { throw RuntimePlanningError.shutdownFailed }
+            guard !(await providerInspector.hasOwnedProcess) else { throw RuntimePlanningError.shutdownFailed }
             return true
         } catch {
             errorMessage = RuntimePlanningError.shutdownFailed.localizedDescription
@@ -192,9 +194,6 @@ struct RuntimeProviderSection: View {
     var body: some View {
         Section("Runtime configuration") {
             RuntimeDependencyStatus(settings: settings, allowsCheck: allowsInstallationCheck)
-            DisclosureGroup("Account-bound game engines") {
-                NativeEngineSettings(allowsFileReads: allowsInstallationCheck)
-            }
             Picker("Runtime provider", selection: Binding(
                 get: { settings.configuration?.provider }, set: { settings.select($0) })) {
                 Text("Choose a provider").tag(Optional<RuntimeProviderKind>.none)
@@ -204,8 +203,6 @@ struct RuntimeProviderSection: View {
 
             }
             .disabled(settings.planning || settings.applicationTerminating)
-            Text("Configuration only. This does not inspect, download or license a runtime, create a prefix, or enable Play.")
-                .foregroundStyle(.secondary)
             if let configuration = settings.configuration {
                 if configuration.provider == .crossover {
                     Text("Use your own legitimately installed and licensed CrossOver. Ode to X does not include or copy CrossOver.")
@@ -254,8 +251,6 @@ struct RuntimeProviderSection: View {
                     }
                 }
                 .disabled(settings.planning || settings.applicationTerminating)
-                Text("Versions and hashes are your declarations, not installation or gameplay evidence. Engine and graphics identities are independent; changing either requires a fresh isolated plan.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             if settings.requiresExperimentalAcknowledgement {
                 Toggle("I understand this configuration is Experimental and not first-release supported",
@@ -279,10 +274,6 @@ struct RuntimeProviderSection: View {
             }
             if let plan = settings.plan {
                 LabeledContent("Planned generation", value: plan.generationID)
-                Text("This plan does not change the engine used by installed games. The separate CrossOver app check is not device preflight or game verification.")
-                    .foregroundStyle(.secondary)
-                Text("No existing bottle, prefix or saves were reused, migrated or deleted. This plan creates no files.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             if let error = settings.errorMessage {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)

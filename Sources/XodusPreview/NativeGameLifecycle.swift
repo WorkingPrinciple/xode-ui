@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
 import Foundation
+import OSLog
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "3121df540f1ef9bb6d161f02f3c6ac958d74aa1559502304147542ad735da5b6"
+    static let cliSHA256 = "358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
@@ -26,10 +27,13 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     var error: String? = nil
     var popupMonitorError: String? = nil
     var warnings: [Warning]? = nil
+    var wineExitCode: Int32? = nil
+    var wineTerminationSignal: Int32? = nil
 
     private enum CodingKeys: String, CodingKey {
         case version, operation, product, success, error, warnings
         case popupMonitorError = "popup_monitor_error"
+        case wineExitCode = "wine_exit_code", wineTerminationSignal = "wine_termination_signal"
         case runID = "run_id", exitCode = "exit_code", errorCode = "error_code"
         case gameDirectory = "game_dir", logDirectory = "log_dir"
         case resultPath = "result_path", progressPath = "progress_path"
@@ -51,18 +55,79 @@ struct NativeGameResult: Codable, Equatable, Sendable {
 
     static let failureCodes: Set<String> = [
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
-        "RESOURCE_BUSY"
+        "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID"
     ]
 
     var failureMessage: String {
+        if operation == "launch" { return InstalledGameActionCopy.launchUnavailable }
+        return operationFailureMessage
+    }
+
+    func installationFailureMessage() async -> String {
+        guard !success, operation != "launch", errorCode == "OPERATION_FAILED" else { return failureMessage }
+        let diagnosticURL = URL(fileURLWithPath: logDirectory).appendingPathComponent("stderr.log")
+        do {
+            let diagnostic = try await Task.detached {
+                try GameScriptFiles.checkPath(diagnosticURL)
+                let data = try InstalledGameFiles.readRegular(diagnosticURL, maximumBytes: 4_194_304)
+                return String(decoding: data, as: UTF8.self)
+            }.value
+            return NativeDiskSpaceFailure.parse(diagnostic)?.message ?? failureMessage
+        } catch {
+            Logger(subsystem: "io.github.dragoshont.xodus", category: "GameOperation")
+                .error("Optional installation diagnostic unavailable or rejected for run \(runID, privacy: .public); retaining backend failure")
+            return failureMessage
+        }
+    }
+
+    private var operationFailureMessage: String {
         switch errorCode {
         case "ACCOUNT_UNAVAILABLE": "Your Xbox sign-in couldn't be read. Check Account and approve any macOS Keychain prompt."
         case "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED": "Your Xbox account changed. Refresh your library before trying again."
         case "CANCELLED": "The operation was cancelled. Partial files are kept; you can retry the installation."
-        case "TIMEOUT": "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
+        case "TIMEOUT":
+            operation == "launch"
+                ? "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
+                : "The \(operation) operation took too long. Check its log before trying again; completion wasn't confirmed."
         case "RESOURCE_BUSY": "This installation is in use. Wait for its current operation to finish and try again."
+        case "DISK_SPACE_FLOOR": "There isn't enough free space to continue safely. Free space on the installation drive before retrying."
+        case "DISK_SPACE_FLOOR_INVALID": "The free-space limit is invalid. Check the operation log before retrying."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
+    }
+
+    struct NativeDiskSpaceFailure: Equatable, Sendable {
+        let requiredBytes: Int64
+        let availableBytes: Int64
+        var code: String { "DISK_SPACE" }
+        var message: String {
+            let required = ByteCountFormatter.string(fromByteCount: requiredBytes, countStyle: .file)
+            let available = ByteCountFormatter.string(fromByteCount: availableBytes, countStyle: .file)
+            return "Not enough space. This installation needs \(required); \(available) is available. Free space on the installation drive, then resume. Partial files are kept."
+        }
+
+        static func parse(_ diagnostic: String) -> Self? {
+            for line in diagnostic.split(whereSeparator: \.isNewline) {
+                let prefix = "Streaming failed: not enough free disk space: need "
+                guard line.hasPrefix(prefix), line.hasSuffix(" bytes") else { continue }
+                let counts = line.dropFirst(prefix.count).dropLast(" bytes".count)
+                    .components(separatedBy: " bytes, have ")
+                guard counts.count == 2,
+                      counts.allSatisfy({ !$0.isEmpty && $0.utf8.allSatisfy { (48...57).contains($0) } }),
+                      let required = Int64(counts[0]), let available = Int64(counts[1]),
+                      required > available else { continue }
+                return Self(requiredBytes: required, availableBytes: available)
+            }
+            return nil
+        }
+    }
+
+    func launchFailureMessage(stoppedByUser: Bool) -> String? {
+        guard operation == "launch" else { return success ? nil : failureMessage }
+        if stoppedByUser, errorCode == "CANCELLED" || errorCode == "OPERATION_FAILED" { return nil }
+        if errorCode == "OPERATION_FAILED", error == "Account broker did not shut down cleanly",
+           wineExitCode == 0, wineTerminationSignal == nil { return nil }
+        return success ? nil : InstalledGameActionCopy.launchUnavailable
     }
 
     func playerMessage() async throws -> String? {
@@ -91,6 +156,16 @@ struct NativeGameResult: Codable, Equatable, Sendable {
             diagnostic: observations.0, windowRecorded: observations.1,
             monitorReliable: popupMonitorError == nil && (warnings ?? []).isEmpty,
             success: success)
+    }
+}
+
+enum NativeLifecycleCancellation: Error {
+    case launchStopped
+
+    static func check(operation: String, cancelled: Bool) throws {
+        guard cancelled else { return }
+        if operation == "launch" { throw Self.launchStopped }
+        throw GameScriptError.failed(14)
     }
 }
 
@@ -124,6 +199,7 @@ struct NativeGameProgress {
     private(set) var bytesDone: Int64 = 0
     private(set) var bytesTotal: Int64?
     private(set) var phase: GameScriptProgress.Phase = .preparing
+    private var readingPackage = false
 
     mutating func consume(_ line: Data) throws {
         let event = try JSONDecoder().decode(Event.self, from: line)
@@ -131,8 +207,12 @@ struct NativeGameProgress {
         case "bytes":
             guard event.id != nil, let delta = event.delta_bytes, delta >= 0,
                   bytesDone <= Int64.max - delta else { throw GameScriptError.invalidProgress }
-            if event.id != UInt64.max { bytesDone += delta }
-            phase = .downloading
+            if event.id == UInt64.max {
+                readingPackage = true
+            } else {
+                bytesDone += delta
+                phase = .downloading
+            }
             if let total = bytesTotal, bytesDone > total { bytesTotal = nil }
         case "remaining":
             guard let remaining = event.remaining_bytes, remaining >= 0,
@@ -140,8 +220,11 @@ struct NativeGameProgress {
             bytesTotal = bytesDone + remaining
         case "phase":
             guard let text = event.phase, !text.isEmpty else { throw GameScriptError.invalidProgress }
-            phase = text.localizedCaseInsensitiveContains("verif") ? .verifying : .downloading
-        case "file_started", "file_finished", "completed":
+            if text.localizedCaseInsensitiveContains("verif") { phase = .verifying }
+            else if bytesDone > 0 { phase = .downloading }
+        case "file_started":
+            if let id = event.id, id != UInt64.max { phase = .downloading }
+        case "file_finished", "completed":
             break
         default:
             throw GameScriptError.invalidProgress
@@ -149,7 +232,8 @@ struct NativeGameProgress {
     }
 
     var value: GameScriptProgress {
-        GameScriptProgress(phase: phase, bytesDone: bytesDone, bytesTotal: bytesTotal, message: nil)
+        GameScriptProgress(phase: phase, bytesDone: bytesDone, bytesTotal: bytesTotal,
+                           message: phase == .preparing && readingPackage ? "Reading package" : nil)
     }
 }
 
@@ -163,6 +247,7 @@ final class NativeGameLifecycle {
     private var cancellationRequested = false
     private(set) var started = false
     private(set) var stateDirectory: URL?
+    private(set) var completedResult: NativeGameResult?
     var isRunning: Bool { process?.isRunning == true }
     var processIdentifier: Int32? { process?.isRunning == true ? process?.processIdentifier : nil }
 
@@ -176,6 +261,7 @@ final class NativeGameLifecycle {
              stateRoot: URL? = nil, launchArguments: [String] = [],
              launchEnvironment: [String: String] = [:],
              unsetLaunchEnvironment: [String] = [],
+             engineSelection: AdmittedEngineSelection? = nil,
              onStarted: () -> Void = {},
              onProgress: (GameScriptProgress) -> Void = { _ in }) async throws -> NativeGameResult {
         guard !active, ["install", "repair", "uninstall", "launch"].contains(operation),
@@ -184,6 +270,8 @@ final class NativeGameLifecycle {
         active = true
         cancellationRequested = false
         started = false
+        completedResult = nil
+        stateDirectory = nil
         defer { active = false }
 #if XODUS_SHIPPING
         guard configuration.executableIdentity != nil else { throw GameScriptError.runtimeUnavailable }
@@ -192,7 +280,14 @@ final class NativeGameLifecycle {
             guard identity.executable == configuration.executable else { throw GameScriptError.runtimeUnavailable }
             _ = try await Task.detached { try identity.validatedArguments() }.value
         }
-        guard !cancellationRequested, !Task.isCancelled else { throw GameScriptError.failed(14) }
+        try NativeLifecycleCancellation.check(operation: operation,
+            cancelled: cancellationRequested || Task.isCancelled)
+        if launchArguments.contains("--expected-registry-sha256") {
+            try await EngineInspectionClient().validateLaunch(configuration: configuration,
+                arguments: launchArguments, selection: engineSelection)
+            try NativeLifecycleCancellation.check(operation: operation,
+                cancelled: cancellationRequested || Task.isCancelled)
+        }
         try GameScriptFiles.checkPath(gameDirectory, allowMissing: operation == "install")
         let state = stateRoot ?? Self.directory(runID: runID)
         try GameScriptFiles.checkPath(state, allowMissing: true)
@@ -247,8 +342,12 @@ final class NativeGameLifecycle {
         while try readProgress(state: state, onProgress: onProgress) {}
         guard pending.isEmpty else { throw GameScriptError.invalidProgress }
         try output.synchronize()
-        return try Self.readResult(state: state, operation: operation, product: product,
-                                   gameDirectory: gameDirectory, exitCode: child.terminationStatus)
+        let result = try Self.readResult(state: state, operation: operation, product: product,
+                                        gameDirectory: gameDirectory, exitCode: child.terminationStatus)
+        completedResult = result
+        try NativeLifecycleCancellation.check(operation: operation,
+            cancelled: cancellationRequested || Task.isCancelled)
+        return result
     }
 
     static func readResult(state: URL, operation: String, product: String,

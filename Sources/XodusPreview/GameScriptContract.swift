@@ -300,13 +300,13 @@ struct GameScriptPaths: Sendable {
         return processed.appendingPathComponent(runID + "." + suffix)
     }
 
-    func destination(title: String, productID: String) throws -> URL {
+    func destination(title: String, productID: String, root: URL? = nil) throws -> URL {
         guard PCGamesClient.validProductID(productID) else { throw GameScriptError.invalidDestination }
         let safeTitle = String(title.unicodeScalars.filter {
             (48...57).contains($0.value) || (65...90).contains($0.value) || (97...122).contains($0.value)
         }.prefix(96))
         guard !safeTitle.isEmpty else { throw GameScriptError.invalidDestination }
-        return games.appendingPathComponent(safeTitle + "-Xbox", isDirectory: true)
+        return (root ?? games).appendingPathComponent(safeTitle + "-Xbox", isDirectory: true)
     }
 }
 
@@ -542,9 +542,10 @@ actor GameScriptRunner {
             let value = try GameScriptProgress.parse(data)
             if value.phase == .failed { await progress(value) }
         }
-        let result = code == 0 && [.install, .serviceStatus, .serviceSignOut, .check, .gamePassStatus, .gameStats,
-                                   .xboxCompanion, .xboxAchievements, .stop, .setup].contains(command)
-            ? try GameScriptFiles.read(paths.receipt(runID, suffix: "result.json")) : nil
+        let returnsResult: [GameScriptCommand] = [.install, .serviceStatus, .serviceSignOut, .check,
+            .gamePassStatus, .gameStats, .xboxCompanion, .xboxAchievements, .stop, .setup]
+        let result = returnsResult.contains(command)
+            ? try GameScriptFiles.read(paths.receipt(runID, suffix: "result.json"), missingAllowed: code != 0) : nil
         return GameScriptOutcome(code: code, result: result, log: GameScriptFiles.log(runID: runID, paths: paths))
     }
 }
@@ -591,5 +592,37 @@ actor GameOperationJournal {
 
     func clear() throws {
         if unlink(file.path) != 0 && errno != ENOENT { throw GameScriptError.storage }
+    }
+
+    private var resumableFile: URL { file.appendingPathExtension("resumable.json") }
+
+    func loadResumable() throws -> [String: GameOperationRecord] {
+        guard let data = try GameScriptFiles.read(resumableFile, maximumBytes: 512 * 1024,
+                                                  missingAllowed: true) else { return [:] }
+        let records = try JSONDecoder().decode([String: GameOperationRecord].self, from: data)
+        guard records.count <= 128 else { throw GameScriptError.storage }
+        for (product, record) in records {
+            try record.validate()
+            guard product == record.productID, record.kind == .install, record.installedID == nil else {
+                throw GameScriptError.storage
+            }
+        }
+        return records
+    }
+
+    func retainResumable(_ record: GameOperationRecord) throws {
+        try record.validate()
+        guard record.kind == .install, record.installedID == nil else { return }
+        var records = try loadResumable()
+        records[record.productID] = record
+        guard records.count <= 128 else { throw GameScriptError.storage }
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records), to: resumableFile)
+    }
+
+    func removeResumable(_ record: GameOperationRecord) throws {
+        var records = try loadResumable()
+        guard records[record.productID]?.destination == record.destination else { return }
+        records[record.productID] = nil
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records), to: resumableFile)
     }
 }

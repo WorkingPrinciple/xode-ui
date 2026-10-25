@@ -2,132 +2,105 @@
 import AppKit
 import SwiftUI
 import XodusCore
+import XodusManagement
 
 struct RuntimeInstallationPicker: View {
     @ObservedObject var settings: RuntimeProviderSettings
-    @State private var provider: RuntimeProviderKind? = EngineDefaults.defaultEngine()
-    @State private var paths = EngineDefaults.runnerPaths()
-    @State private var crossOver = EngineDefaults.crossOverApplication()
-    @State private var prefixes: [RuntimeProviderKind: String] = [:]
+    @ObservedObject private var installed: InstalledGamesController
+    var backendPath = ""
+    var embeddedInSettings = false
+    var showsAdvanced = true
+    @ObservedObject var userEngineModel: UserEngineModel
+    @AppStorage(NativeEngineDefaults.preferenceKey) private var savedAdmission = Data()
+    @ObservedObject private var registryObservation: EngineRegistryObservation
     @State private var error: String?
+    @State private var settingDefault = false
+
+    init(settings: RuntimeProviderSettings, backendPath: String = "",
+         installed: InstalledGamesController? = nil, embeddedInSettings: Bool = false,
+         showsAdvanced: Bool = true, registryObservation: EngineRegistryObservation? = nil,
+         userEngineModel: UserEngineModel = UserEngineModel()) {
+        self.settings = settings
+        self.backendPath = backendPath
+        self.installed = installed ?? InstalledGamesController()
+        self.embeddedInSettings = embeddedInSettings
+        self.showsAdvanced = showsAdvanced
+        self.userEngineModel = userEngineModel
+        _registryObservation = ObservedObject(wrappedValue:
+            registryObservation ?? EngineRegistryObservation(inspector: settings.providerInspector))
+    }
+
+    private var allowsFileReads: Bool { !settings.applicationTerminating }
+
+    private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
+        let defaultID = try? NativeEngineSettings.defaultAdmissionName()
+        return EngineConfiguratorForm(
+            choices: installed.availableEngineOverrides.compactMap { selection in
+                selection.inspection.engineName.map {
+                    EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: true)
+                }
+            } + installed.failedEngineOverrides.sorted().map {
+                EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: false)
+            }, defaultID: defaultID, defaultName: defaultID.map { InstalledGamesController.readableEngineName($0) } ?? "Unavailable",
+            checking: installed.checkingEngineOverrides || settingDefault,
+            error: error ?? (defaultID == nil ? "The default engine selection couldn't be read. Refresh engines and try again." : nil),
+            settings: settings, allowsFileReads: allowsFileReads, userEngineModel: userEngineModel,
+            setDefault: { name in
+                guard !settingDefault, allowsFileReads else { return }
+                settingDefault = true
+                Task {
+                    defer { settingDefault = false }
+                    await installed.refreshEngineOverrides(force: true)
+                    guard allowsFileReads, !Task.isCancelled,
+                          let selection = installed.availableEngineOverrides.first(where: {
+                              $0.inspection.engineName == name
+                          }) else {
+                        error = "This engine couldn't be verified. Refresh engines and try again."
+                        return
+                    }
+                    do {
+                        try NativeEngineSettings.persistDefaultAdmission(selection)
+                        error = nil
+                    } catch {
+                        self.error = "This engine couldn't be set as default. Refresh engines and try again."
+                    }
+                }
+            }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } },
+            showsAdvanced: showsAdvanced) {
+            NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
+                                 observation: registryObservation, showsEntries: false)
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Picker("Default game engine", selection: Binding(
-                get: { provider }, set: { provider = $0; EngineDefaults.setDefaultEngine($0) })) {
-                Text("Automatic").tag(Optional<RuntimeProviderKind>.none)
-                ForEach(RuntimeProviderSettings.providerChoices, id: \.self) { kind in
-                    Text(RuntimeProviderSettings.providerLabel(kind)).tag(Optional(kind))
-                }
-            }
-            HStack {
-                Text(crossOver.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "CrossOver: automatic detection")
-                    .lineLimit(1).truncationMode(.middle)
-                Spacer()
-                Button("Choose CrossOver app…") { chooseCrossOver() }
-            }
-            if crossOver != nil {
-                Button("Use automatic CrossOver detection") {
-                    EngineDefaults.setCrossOverApplication(nil)
-                    crossOver = nil
-                    Task { await settings.refreshCrossOverDependency() }
-                }
-            }
-            DisclosureGroup("Wine, GPTK and existing bottles") {
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(RuntimeProviderSettings.providerChoices, id: \.self) { kind in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(kind.label).font(.headline)
-                            if kind != .crossover {
-                                Text(paths[kind] ?? "No executable selected")
-                                    .font(.caption).foregroundStyle(.secondary)
-                                    .lineLimit(2).truncationMode(.middle)
-                                HStack {
-                                    Button("Choose installation…") { chooseRunner(kind) }
-                                    if paths[kind] != nil {
-                                        Button("Clear executable") {
-                                            EngineDefaults.setRunnerPath("", for: kind)
-                                            paths[kind] = nil
-                                        }
-                                    }
-                                }
-                            }
-                            Text(prefixes[kind] ?? EngineDefaults.prefixPath(kind) ?? "No existing bottle selected")
-                                .font(.caption).foregroundStyle(.secondary)
-                                .lineLimit(2).truncationMode(.middle)
-                            HStack {
-                                Button("Choose bottle or prefix…") { choosePrefix(kind) }
-                                if prefixes[kind] != nil || EngineDefaults.prefixPath(kind) != nil {
-                                    Button("Clear bottle") {
-                                        EngineDefaults.setPrefixPath(nil, for: kind)
-                                        prefixes[kind] = nil
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Text("Select your installed Wine/GPTK executable or its containing folder. Bottles are identified by their existing layout; nothing is created, migrated or deleted. Versions and licenses of custom engines are not inferred from their filename.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    Link("About Apple's Game Porting Toolkit",
-                         destination: URL(string: "https://developer.apple.com/games/game-porting-toolkit/")!)
-                }.padding(.top, 10)
-            }
-            Text("Selections are saved for launch routing. This development build's game-launch integration is still unavailable; selecting a runtime or bottle does not enable Play.")
-                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
+        Group {
+            if embeddedInSettings { configurator.sections }
+            else { configurator }
         }
         .disabled(settings.planning || settings.applicationTerminating)
-    }
-
-    private func chooseCrossOver() {
-        let panel = NSOpenPanel()
-        panel.message = "Choose your official CrossOver application."
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowsMultipleSelection = false
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        Task {
-            let observed = await Task.detached(priority: .utility) { CrossOverDetector.inspect(url) }.value
-            guard observed.isVerified else {
-                error = "This app couldn't be verified as official CrossOver. Choose the CodeWeavers app or install its trial."
-                return
-            }
-            EngineDefaults.setCrossOverApplication(url.path)
-            crossOver = url.path
-            error = nil
+        .task {
+            await installed.refreshEngineOverrides(force: false)
             await settings.refreshCrossOverDependency()
         }
+        .onChange(of: savedAdmission) { _, _ in error = nil }
     }
 
-    private func chooseRunner(_ kind: RuntimeProviderKind) {
-        let panel = NSOpenPanel()
-        panel.message = "Choose the \(kind.label) executable, application or installation folder."
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        guard let executable = RunnerAvailabilityDetector.executable(in: url) else {
-            error = "No Wine executable was found in that selection. Choose its wine or wine64 executable directly."
-            return
-        }
-        EngineDefaults.setRunnerPath(executable.path, for: kind)
-        paths[kind] = executable.path
-        error = nil
+    static func defaultEngineName(provider: String, calimocho: String,
+                                  entries: [NativeEngineRegistry.Entry]) -> String {
+        guard provider == RuntimeProviderKind.calimocho.rawValue, !calimocho.isEmpty else { return "None" }
+        return entries.first { $0.name == calimocho }?.engine_label ?? calimocho
     }
 
-    private func choosePrefix(_ kind: RuntimeProviderKind) {
-        let panel = NSOpenPanel()
-        panel.message = "Choose an existing \(kind.label) bottle or Wine prefix. It will not be modified."
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        guard RunnerAvailabilityDetector.isPrefix(url) else {
-            error = "This folder isn't an identifiable Wine prefix or CrossOver bottle. Choose the folder containing drive_c and system.reg or cxbottle.conf."
-            return
+    static func isLaunchReady(_ inspection: EngineInspection) -> Bool {
+        inspection.ready && inspection.admittedProvider == "calimocho"
+    }
+
+    /// Calimocho registry records: admitted builds and declared Calimocho records, in registry order.
+    static func calimochoEntries(_ entries: [NativeEngineRegistry.Entry],
+                                 inspections: [String: EngineInspection]) -> [NativeEngineRegistry.Entry] {
+        entries.filter {
+            inspections[$0.name].map(isLaunchReady) == true
+                || EngineManagementPolicy.matches($0, provider: .calimocho)
         }
-        EngineDefaults.setPrefixPath(url.path, for: kind)
-        prefixes[kind] = url.path
-        error = nil
     }
 }

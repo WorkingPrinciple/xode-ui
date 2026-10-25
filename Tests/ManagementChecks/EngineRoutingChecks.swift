@@ -36,10 +36,10 @@ extension Checks {
             defaultEngine: .crossover, availability: RunnerAvailability([.crossover]))) ==
             .unavailable(.overrideNotInstalled(.standaloneWine)),
               "An uninstalled override refuses launch instead of substituting the installed default")
-        let kinds: [RuntimeProviderKind] = [.crossover, .gptk4, .gptk3, .standaloneWine]
+        let kinds: [RuntimeProviderKind] = [.calimocho, .crossover, .gptk4, .gptk3, .standaloneWine]
         let choices: [RuntimeProviderKind?] = [nil] + kinds.map { Optional($0) }
         for type in PackageType.allCases {
-            for mask in 0..<16 {
+            for mask in 0..<(1 << kinds.count) {
                 let installed = kinds.enumerated().compactMap { (mask & (1 << $0.offset)) != 0 ? $0.element : nil }
                 for override in choices {
                     for preferred in choices {
@@ -50,8 +50,8 @@ extension Checks {
                         } else if let preferred {
                             expected = installed.contains(preferred) ? .routed(preferred, .configuredDefault)
                                 : .unavailable(.defaultNotInstalled(preferred))
-                        } else if let first = installed.first {
-                            expected = .routed(first, .installedFallback)
+                        } else if installed.contains(.calimocho) {
+                            expected = .routed(.calimocho, .installedFallback)
                         } else { expected = .unavailable(.noRunnerInstalled) }
                         check(EngineRouting.decide(.init(packageType: type, override: override,
                             defaultEngine: preferred, availability: RunnerAvailability(installed))) == expected,

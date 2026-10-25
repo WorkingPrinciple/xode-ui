@@ -7,15 +7,18 @@ import XodusManagement
 @MainActor
 enum NativeChecks {
     static func launch(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
-                       libraryAccessOnly: Bool = false) -> Never {
+                       libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false,
+                       engineSelectionOnly: Bool = false, settingsOnly: Bool = false) -> Never {
         Task { exit(await run(gameOperationsOnly: gameOperationsOnly, mediaOnly: mediaOnly, statsOnly: statsOnly,
-                              libraryAccessOnly: libraryAccessOnly) ? 0 : 1) }
+                              libraryAccessOnly: libraryAccessOnly, accountPresentationOnly: accountPresentationOnly,
+                              engineSelectionOnly: engineSelectionOnly, settingsOnly: settingsOnly) ? 0 : 1) }
         CFRunLoopRun()
         fatalError("The native check run loop ended before completion.")
     }
 
     static func run(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
-                    libraryAccessOnly: Bool = false) async -> Bool {
+                    libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false,
+                    engineSelectionOnly: Bool = false, settingsOnly: Bool = false) async -> Bool {
         var count = 0, failures = 0
         func check(_ condition: Bool, _ name: String) {
             count += 1
@@ -51,6 +54,79 @@ enum NativeChecks {
             }
         }
         do {
+            if settingsOnly {
+                try NativeUIChecks.checkSettingsLayouts(check: check)
+                print("\(count) Settings layout checks, \(failures) failures. Detached views; isolated preferences; no sign-in or network requests.")
+                return failures == 0
+            }
+            if engineSelectionOnly {
+                try NativeLifecycleChecks.launchOutcomeChecks(check: check)
+                try await NativeLifecycleChecks.run(check: check)
+                let signedOutConfiguration = configuration("odeunifiedsignedout")
+                let signedOut = LiveSession(configuration: signedOutConfiguration)
+                await signedOut.connect()
+                let settingsSuite = "XodusUnifiedSignedOut-\(UUID().uuidString)"
+                guard let settingsDefaults = UserDefaults(suiteName: settingsSuite) else {
+                    check(false, "COR174 signed-out unified routing uses isolated preferences")
+                    return failures == 0
+                }
+                defer { settingsDefaults.removePersistentDomain(forName: settingsSuite) }
+                let accountState = AppState(settingsDefaults: settingsDefaults)
+                let configured = accountState.configureUnifiedAccountMode(session: signedOut)
+                let signedOutTraceURL = signedOutConfiguration.stateDirectory.appendingPathComponent("lifecycle.log")
+                let signedOutTrace = FileManager.default.fileExists(atPath: signedOutTraceURL.path)
+                    ? try trace(signedOutConfiguration) : []
+                check(signedOut.isReady && signedOut.supports(.odeAccountRead)
+                      && signedOut.authentication == nil && !signedOut.hasConfirmedSignIn
+                      && signedOutTrace.filter { $0.hasPrefix("auth.") }.isEmpty,
+                      "COR174 signed-out unified backend is identified by capability without auth requests (ready \(signedOut.isReady), capability \(signedOut.supports(.odeAccountRead)), auth \(signedOut.authentication != nil), phase \(signedOut.phase), error \(signedOut.errorMessage ?? "none"))")
+                check(configured && accountState.gameOperations.usesUnifiedAccount
+                      && accountState.pcGames.usesUnifiedAccount
+                      && accountState.gameOperations.serviceSignInActionTitle == nil
+                      && accountState.gameOperations.serviceLabel == "Check Xbox account connection",
+                      "COR174 signed-out unified mode suppresses the legacy Microsoft sign-in and reports the connection honestly (configured \(configured), service sign-in \(accountState.gameOperations.serviceSignInActionTitle ?? "none"), label \(accountState.gameOperations.serviceLabel))")
+                var openedOdeAccount = false
+                let signedOutAccess = GameServiceSignInActions(
+                    operations: accountState.gameOperations, statusText: "",
+                    statusIdentifier: "test.status", checkIdentifier: "test.check",
+                    signInIdentifier: "test.signIn", errorIdentifier: "test.error",
+                    logIdentifier: "test.log", verifyIdentifier: "test.verify",
+                    onOpenOdeAccount: { accountState.openAccount(); openedOdeAccount = true })
+                signedOutAccess.openOdeAccount()
+                check(openedOdeAccount && accountState.showingAccount,
+                      "COR174 unified Xbox access recovery opens the existing Ode account flow")
+                check(await signedOut.disconnect(), "COR174 closes only its signed-out mock backend")
+                if FileManager.default.fileExists(atPath: signedOutTraceURL.path) {
+                    try cleanLifecycle(signedOutConfiguration)
+                }
+                try await EngineManagementChecks.routingOnly(check: check)
+                try await EngineConfiguratorChecks.run(check: check)
+                try await InstalledGameChecks.legacyNativeReadiness(check: check)
+                try await InstalledGameChecks.externalDiscoveryChecks(check: check)
+                try await InstalledGameChecks.discoveryIsolationChecks(check: check)
+                InstalledGameChecks.descriptionChecks(check: check)
+                print("\(count) non-UI engine selection checks, \(failures) failures. No windows, account or game launches.")
+                return failures == 0
+            }
+            if accountPresentationOnly {
+                try await AccountCountryChecks.run(configuration: configuration, check: check)
+                let pendingConfiguration = configuration("statuspermission")
+                let pending = LiveSession(configuration: pendingConfiguration)
+                await pending.connect()
+                await pending.refreshAccount()
+                let reading = Task { await pending.revalidateAccountOnForeground() }
+                try await wait { pending.accountStatusChecking }
+                try await NativeUIChecks.checkAccountDismissalWhileLoading(session: pending, check: check)
+                await reading.value
+                check(pending.hasConfirmedSignIn && !pending.accountBusy,
+                      "COR95: The unrelated account read completes normally after dismissal")
+                check(try trace(pendingConfiguration).filter { $0.hasPrefix("auth.") } == ["auth.status", "auth.status"],
+                      "COR95: Dismissal issues no sign-in, cancellation, logout or replacement read")
+                check(await pending.disconnect(), "COR95: The check retires only its synthetic management child")
+                try cleanLifecycle(pendingConfiguration)
+                print("\(count) Account presentation checks, \(failures) failures. Detached views and mock child only.")
+                return failures == 0
+            }
             let navigation = AppState()
             navigation.query = "Library search"
             navigation.navigate(.discover)
@@ -179,6 +255,164 @@ enum NativeChecks {
             try await PublicDescriptorChecks.run(check: check)
             try await OdeRuntimeChecks.run(check: check)
             if libraryAccessOnly {
+                try await SearchPerformanceChecks.queryCache(configuration: configuration, check: check)
+                do {
+                    let config = configuration("queryforzareal")
+                    try FileManager.default.createDirectory(at: config.stateDirectory, withIntermediateDirectories: true)
+                    let consumer = LiveSession(configuration: config)
+                    await consumer.connect()
+                    consumer.market = "RO"
+                    consumer.language = "en-US"
+                    await consumer.refreshCatalog("Forza")
+                    let baseIDs = Set(consumer.products.map(\.id))
+                    check(baseIDs.count == 7 && consumer.discoveryFailures.count == 16
+                          && !consumer.catalogHasQueryWarning,
+                          "REQ100 captured Forza first page retains seven PC games without warnings for rejected non-PC candidates")
+                    let selection = DiscoverSelection()
+                    await selection.loadMoreSearch(session: consumer, query: "Forza") {
+                        Set(consumer.products.map(\.id)).intersection(baseIDs)
+                    }
+                    check(consumer.products.count == 15 && consumer.discoveryFailures.count == 57
+                          && consumer.catalogError == nil && consumer.nextCursor != nil,
+                          "REQ100 captured Forza DLC-only pages and failed-page details advance exactly four bounded requests (products \(consumer.products.count), failures \(consumer.discoveryFailures.count), error \(consumer.catalogError ?? "none"))")
+                    check(selection.continuationNotice(session: consumer, query: "Forza")
+                          == "No additional games found in the next four result pages." && !selection.pagingSearch,
+                          "REQ100 no-new-visible-games bound replaces the no-op More control without falsely claiming source exhaustion")
+                    check(selection.canSearchFurther(session: consumer, query: "Forza"),
+                          "REQ100 retained cursor offers explicit Search further after the bounded no-match pass")
+                    selection.scope = .installed
+                    check(selection.continuationNotice(session: consumer, query: "Forza") == nil,
+                          "REQ100 bounded continuation stop belongs only to its active search scope")
+                    selection.scope = .allGames
+                    await consumer.refreshCatalog("Forza", more: true)
+                    check(consumer.products.count == 15 && consumer.discoveryFailures.count == 73
+                          && consumer.catalogError == nil && consumer.nextCursor != nil
+                          && selection.continuationNotice(session: consumer, query: "Forza") == nil,
+                          "REQ100 captured sixth all-rejected page still preserves its advanced details cursor")
+                    await selection.loadMoreSearch(session: consumer, query: "Forza") {
+                        Set(consumer.products.map(\.id)).intersection(baseIDs)
+                    }
+                    check(consumer.nextCursor == nil
+                          && selection.continuationNotice(session: consumer, query: "Forza") == "No more games in this search scope."
+                          && !selection.canSearchFurther(session: consumer, query: "Forza"),
+                          "REQ100 only actual source exhaustion removes the explicit continuation action")
+                    check(await consumer.disconnect(), "REQ100 real-order fixture closes its synthetic backend")
+                    try cleanLifecycle(config)
+                    let progressConfig = configuration("queryforzareal")
+                    try FileManager.default.createDirectory(at: progressConfig.stateDirectory, withIntermediateDirectories: true)
+                    let progress = LiveSession(configuration: progressConfig)
+                    await progress.connect()
+                    progress.market = "RO"
+                    progress.language = "en-US"
+                    await progress.refreshCatalog("Forza")
+                    let progressSelection = DiscoverSelection()
+                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") {
+                        Set(progress.products.map(\.id))
+                    }
+                    check(progress.products.count == 9 && progress.discoveryFailures.count == 24
+                          && progressSelection.continuationNotice(session: progress, query: "Forza") == nil,
+                          "REQ100 paging stops after one page when that active scope gains real results")
+                    if let alreadyOwned = progress.products.last {
+                        let key = CatalogProjectionKey(accountHash: progress.accountHash, query: "Forza",
+                            owned: [PCGame(id: alreadyOwned.id, title: alreadyOwned.title, artwork: nil)],
+                            products: progress.products, gamePass: [], gamePassIDs: [],
+                            installed: [], accessIsCurrent: false, metadataRevision: 0,
+                            compatibility: [:], genre: nil, showsUnsupported: false)
+                        let facts = Dictionary(uniqueKeysWithValues: progress.products.map {
+                            ($0.id, LibraryCatalogFacts(genres: [], isBaseGame: true))
+                        })
+                        let current = CatalogProjection(key: key, facts: facts, isVisible: { _ in true })
+                        check(current.visible.count == 8 && !current.visible.contains { $0.id == alreadyOwned.id },
+                              "REQ100 exact paging projection does not count an already-visible Library identity as a new public game")
+                        var incompleteFacts = facts
+                        incompleteFacts.removeValue(forKey: progress.products[0].id)
+                        let incomplete = CatalogProjection(key: key, facts: incompleteFacts, isVisible: { _ in true })
+                        check(incomplete.unresolvedClassificationCount == 1 && incomplete.visible.count == 7,
+                              "REQ100 one missing descriptor leaves other classified games visible")
+                    }
+                    let beforeMissingDetails = progress.catalogRequestVersion
+                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") { nil }
+                    check(progress.catalogRequestVersion == beforeMissingDetails + 4
+                          && progressSelection.continuationNotice(session: progress, query: "Forza")
+                            == "No additional games found in the next four result pages."
+                          && progress.nextCursor != nil
+                          && progressSelection.canSearchFurther(session: progress, query: "Forza"),
+                          "REQ100 unavailable classification still advances four bounded pages and keeps Search further reachable")
+                    await progressSelection.loadMoreSearch(session: progress, query: "Forza") { nil }
+                    check(progress.nextCursor == nil && !progressSelection.canSearchFurther(session: progress, query: "Forza"),
+                          "REQ100 Search further after unavailable classification reaches actual source exhaustion")
+                    check(await progress.disconnect(), "REQ100 progress fixture closes its synthetic backend")
+                    try cleanLifecycle(progressConfig)
+                    let scopeConfig = configuration("queryforzareal")
+                    try FileManager.default.createDirectory(at: scopeConfig.stateDirectory, withIntermediateDirectories: true)
+                    let scoped = LiveSession(configuration: scopeConfig)
+                    await scoped.connect()
+                    scoped.market = "RO"
+                    scoped.language = "en-US"
+                    await scoped.refreshCatalog("Forza")
+                    let scopedSelection = DiscoverSelection()
+                    let version = scoped.catalogRequestVersion
+                    await scopedSelection.loadMoreSearch(session: scoped, query: "Forza") {
+                        scoped.market = "GB"
+                        return []
+                    }
+                    check(scoped.catalogRequestVersion == version + 1 && !scopedSelection.pagingSearch
+                          && scopedSelection.continuationNotice(session: scoped, query: "Forza") == nil,
+                          "REQ100 scope withdrawal during metadata loading cannot request or publish stale continuation")
+                    check(await scoped.disconnect(), "REQ100 scope fixture closes its synthetic backend")
+                    try cleanLifecycle(scopeConfig)
+                }
+                for scenario in ["querybudget", "querysourceretry", "querysourcewarning", "querysourcefailed"] {
+                    let config = configuration(scenario)
+                    try FileManager.default.createDirectory(at: config.stateDirectory, withIntermediateDirectories: true)
+                    let consumer = LiveSession(configuration: config)
+                    await consumer.connect()
+                    await consumer.refreshCatalog("Forza")
+                    if scenario == "querybudget" {
+                        check(!consumer.catalogHasQueryWarning && !consumer.catalogCanRetryQueryWarning,
+                              "REQ100 expected non-PC candidate rejections do not produce a generic search warning or Retry")
+                        check(consumer.discoveryFailures.count == 16 && consumer.nextCursor == "q1-aa"
+                              && consumer.canLoadMoreCatalog && consumer.catalogError == nil && consumer.products.isEmpty,
+                              "REQ100 16 rejected candidates preserve real More continuation, not global search unavailable")
+                        await consumer.refreshCatalog("Forza", more: true)
+                        check(consumer.products.count == 1 && consumer.nextCursor == nil
+                              && consumer.discoveryFailures.count == 16 && consumer.catalogError == nil,
+                              "REQ100 More resumes exact cursor and appends useful PC results without restarting")
+                    } else {
+                        check(consumer.catalogHasQueryWarning
+                              && consumer.catalogCanRetryQueryWarning == (scenario == "querysourceretry"),
+                              "REQ100 source degradation is disclosed with Retry only when the source is retryable")
+                        check(consumer.catalogSourceFailure?.code == (scenario == "querysourceretry" ? .networkUnavailable : .packageUnavailable)
+                              && consumer.catalogEmptyTitle != "No Store matches"
+                              && (scenario != "querysourcefailed"
+                                  ? consumer.products.count == 1 && consumer.catalogError == nil
+                                  : consumer.products.isEmpty && consumer.discoveryFailures.count == 1),
+                              "REQ100 optional source warning survives actual \(scenario) decode and consumer presentation")
+                        if scenario == "querysourcewarning" {
+                            await consumer.refreshCatalog("Halo")
+                            check(consumer.catalogSourceFailure == nil && consumer.products.count == 1,
+                                  "REQ100 a new complete query retires the earlier source warning")
+                            check(!consumer.catalogHasQueryWarning,
+                                  "REQ100 normal partial public search has no default warning")
+                            let stopped = Task { await consumer.refreshCatalog("Halo") }
+                            for _ in 0..<1_000 where !consumer.searching { await Task.yield() }
+                            check(consumer.searching, "REQ100 stopped-query fixture reached its owned read")
+                            consumer.stopCatalogSearch()
+                            await stopped.value
+                            await consumer.refreshCatalog("Halo")
+                            check(consumer.gamePassCatalogError != nil && !consumer.catalogHasQueryWarning,
+                                  "REQ100 stale browse-catalog failure cannot brand a normal query as partial failure")
+                            await consumer.refreshCatalog("Forza")
+                            check(consumer.catalogSourceFailure != nil, "REQ100 source warning binds to its new query")
+                        }
+                        consumer.market = "GB"
+                        check(consumer.catalogSourceFailure == nil,
+                              "REQ100 source warning retires with its query scope")
+                    }
+                    check(await consumer.disconnect(), "REQ100 synthetic query consumer closes owned backend")
+                    check(consumer.catalogSourceFailure == nil, "REQ100 disconnected account retains no query source warning")
+                    try cleanLifecycle(config)
+                }
                 try await CatalogDetailLoadingChecks.run(check: check)
                 try await InstalledProductAccessChecks.run(check: check)
                 try await PCGamesChecks.run(check: check)
@@ -196,11 +430,14 @@ enum NativeChecks {
                 catch {
                     check(false, "Public-media fixture failed: \(error.localizedDescription)")
                 }
-                print("\(count) public-media checks, \(failures) failures. Synthetic transport only.")
+                let source = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_CHECK_CLI"] == nil
+                    ? "Synthetic transport only." : "Synthetic fixtures plus neutral source CLI envelope; no account operations."
+                print("\(count) public-media checks, \(failures) failures. \(source)")
                 return failures == 0
             }
             if gameOperationsOnly {
                 try await NativeLifecycleChecks.run(check: check)
+                try await EngineManagementChecks.run(check: check)
                 try await GameOperationChecks.run(check: check)
                 print("\(count) game operation checks, \(failures) failures. Synthetic scripts only.")
                 return failures == 0
@@ -288,6 +525,7 @@ enum NativeChecks {
                       "Exact \(reason) boundary wording requires the unchanged approved failure tuple")
             }
             try await CrossOverDependencyChecks.run(check: check)
+            try await EngineManagementChecks.run(check: check)
             try await ApplicationTerminationChecks.run(check: check)
             try await RecentLibraryChecks.run(check: check)
             try await CatalogMediaChecks.run(check: check)
@@ -363,13 +601,14 @@ enum NativeChecks {
             let neutralBinding = NativeAuthHostBinding(executable: neutralHelper,
                 sha256: SHA256.hash(data: helperBytes).map { String(format: "%02x", $0) }.joined())
             let unpairedMessage = "Sign-in is unavailable in this copy of Ode to X. A matching app and sign-in service are required."
-            let serviceMessage = "Ode to X couldn't connect to its sign-in service. If another copy of Ode to X is open, close it normally, then sign in again."
+            let serviceMessage = "Ode couldn't connect to its sign-in service. Choose Sign in with Xbox Live to reconnect."
             let retryBase = configuration("welcomeretry")
             let retryConfiguration = BackendConfiguration(executable: retryBase.executable,
                 stateDirectory: retryBase.stateDirectory, nativeAuthHost: neutralBinding)
             let retryWelcome = LiveSession(configuration: retryConfiguration)
             await retryWelcome.prepareWelcome()
             check(retryWelcome.phase == .failed && retryWelcome.welcomeMessage == serviceMessage
+                  && retryWelcome.welcomeNotice == serviceMessage
                   && retryWelcome.errorMessage == ManagementError.invalidFrame.localizedDescription
                   && !retryWelcome.hasConfirmedSignIn && !retryWelcome.nativeSignInHostAdmitted
                   && !retryWelcome.canStartWelcomeSignIn,
@@ -843,9 +1082,18 @@ enum NativeChecks {
                   "Successful continuation retains earlier failures without ownership promotion")
             await discovery.disconnect()
 
-            let hundreds = session("discoveryhundreds")
+            let hundredsConfiguration = configuration("discoveryhundreds")
+            let hundreds = LiveSession(configuration: hundredsConfiguration)
             await hundreds.connect()
             await hundreds.loadGamePassCatalog()
+            check(hundreds.products.count == 16 && hundreds.nextCursor != nil,
+                  "REQ-81: First useful Discover load resolves one sixteen-game page, not the 300-game catalogue")
+            check(try trace(hundredsConfiguration).filter { $0 == "catalog.discover" }.count == 1,
+                  "REQ-81: First view has exactly one catalogue request")
+            await hundreds.loadCatalogOnEntry("")
+            check(try trace(hundredsConfiguration).filter { $0 == "catalog.discover" }.count == 1,
+                  "REQ-81: Warm Discover entry performs zero additional catalogue requests")
+            for _ in 0..<18 { await hundreds.loadGamePassCatalog() }
             check(hundreds.gamePassProducts.count == 300
                   && hundreds.gamePassProductIDs.count == 300
                   && hundreds.nextCursor == nil && !hundreds.gamePassCatalogHasMore
@@ -865,13 +1113,21 @@ enum NativeChecks {
             await hundreds.loadGamePassCatalog()
             check(hundreds.gamePassProducts.count == 300 && !hundreds.gamePassCatalogPaging,
                   "Completed Game Pass paging is reused without render-triggered reload or duplicate games")
+            await hundreds.refreshCatalog("")
+            check(hundreds.products.count == 300 && Set(hundreds.products.map(\.id)) == Set(retainedIDs),
+                  "REQ-81: Retry of page one preserves later-page successes needed by the selected genre")
+            await hundreds.refreshCatalog("", more: true)
+            check(hundreds.products.count == 300 && hundreds.catalogError == nil,
+                  "REQ-81: Continuation after retry deduplicates retained games instead of a false revision error")
             await hundreds.disconnect()
             check(!hundreds.gamePassCatalogPaging && !hundreds.gamePassCatalogHasMore
                   && !hundreds.gamePassCatalogExhausted && hundreds.gamePassProducts.isEmpty,
                   "Disconnect retires the full catalogue scope and paging state")
+            try cleanLifecycle(hundredsConfiguration)
 
             let repeatedPage = session("discoveryrepeatedpage")
             await repeatedPage.connect()
+            await repeatedPage.loadGamePassCatalog()
             await repeatedPage.loadGamePassCatalog()
             check(repeatedPage.gamePassProducts.count == 16
                   && repeatedPage.gamePassCatalogError != nil && !repeatedPage.gamePassCatalogPaging,
@@ -881,7 +1137,7 @@ enum NativeChecks {
             let boundedConfiguration = configuration("discoverybounded")
             let boundedCatalogue = LiveSession(configuration: boundedConfiguration)
             await boundedCatalogue.connect()
-            await boundedCatalogue.loadGamePassCatalog()
+            for _ in 0..<32 { await boundedCatalogue.loadGamePassCatalog() }
             check(boundedCatalogue.gamePassProducts.count == 512
                   && boundedCatalogue.nextCursor != nil && !boundedCatalogue.gamePassCatalogHasMore
                   && boundedCatalogue.gamePassCatalogError?.contains("limit") == true,
@@ -889,6 +1145,7 @@ enum NativeChecks {
             check(!boundedCatalogue.canLoadMoreCatalog,
                   "Discover does not offer More games when the catalogue bound prevents another page")
             let readsAtLimit = try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count
+            check(readsAtLimit == 32, "REQ-81: Reaching the 512 bound requires exactly 32 individually demanded pages")
             await boundedCatalogue.refreshCatalog("", more: true)
             check(try trace(boundedConfiguration).filter { $0 == "catalog.discover" }.count == readsAtLimit
                   && boundedCatalogue.catalogError == nil,
@@ -903,6 +1160,8 @@ enum NativeChecks {
             await partialFeed.connect()
             await partialFeed.refreshCatalog("")
             let retainedFeedIDs = partialFeed.gamePassProductIDs
+            check(partialFeed.gamePassBadgeProductIDs == retainedFeedIDs && !retainedFeedIDs.isEmpty,
+                  "COR101: Fresh validated PC catalog membership supplies exact-title cover badges without an account grant")
             let retainedVisibleIDs = Set(partialFeed.products.map(\.id))
             check(!retainedFeedIDs.isEmpty && partialFeed.gamePassCatalogError == nil,
                   "SDD-LIB-06: partial PC discovery records remain metadata, not a personal access grant")
@@ -914,10 +1173,68 @@ enum NativeChecks {
                   && partialFeed.gamePassLibraryNotice.contains("retained")
                   && !partialFeed.gamePassCatalogLoading,
                   "SDD-LIB-06: all-failure partial refresh retains bounded catalog records with explicit stale/error state")
+            check(partialFeed.gamePassBadgeProductIDs.isEmpty,
+                  "COR101: Failed refresh retains browse records but removes unconfirmed cover membership badges")
+            partialFeed.market = "GB"
+            check(partialFeed.gamePassBadgeProductIDs.isEmpty,
+                  "COR101: Market invalidation clears cover membership evidence")
             await partialFeed.disconnect()
             check(partialFeed.gamePassProductIDs.isEmpty && partialFeed.gamePassProducts.isEmpty
                   && partialFeed.gamePassCatalogError == nil && !partialFeed.gamePassCatalogLoading,
                   "SDD-LIB-06: disconnect retires prior catalog scope and transient refresh state")
+
+            let partialRetry = session("discoverypartialretry")
+            await partialRetry.connect()
+            await partialRetry.refreshCatalog("")
+            let classics = partialRetry.products
+            let classicsFacts = Dictionary(uniqueKeysWithValues: classics.map {
+                ($0.id, LibraryCatalogFacts(genres: ["Classics"], isBaseGame: true))
+            })
+            let genreSelection = DiscoverSelection()
+            genreSelection.genre = "Classics"
+            check(classics.count == 6 && !partialRetry.discoveryFailures.isEmpty,
+                  "REQ-81: Reproduce six useful games plus partial-results Retry")
+            await partialRetry.refreshCatalog("")
+            let retryKey = CatalogProjectionKey(accountHash: nil, query: "", owned: [],
+                products: partialRetry.products, gamePass: partialRetry.gamePassProducts,
+                gamePassIDs: partialRetry.gamePassProductIDs, installed: [], accessIsCurrent: false,
+                metadataRevision: 1, compatibility: [:], genre: genreSelection.genre, showsUnsupported: true)
+            let retryProjection = CatalogProjection(key: retryKey, facts: classicsFacts, isVisible: { _ in true })
+            check(partialRetry.products.count == 7 && retryProjection.visible.count == 6
+                  && genreSelection.genre == "Classics" && partialRetry.nextCursor != nil
+                  && !partialRetry.discoveryFailures.isEmpty,
+                  "REQ-81: Partial Retry retains all six Classics, genre intent and continuation instead of false Games(0)")
+            await partialRetry.disconnect()
+
+            let failedRetry = session("discoveryretryfailure")
+            await failedRetry.connect()
+            await failedRetry.refreshCatalog("")
+            await failedRetry.refreshCatalog("", more: true)
+            let loadedBeforeRetry = failedRetry.products
+            let cursorBeforeRetry = failedRetry.nextCursor
+            let retryGenre = DiscoverSelection()
+            retryGenre.genre = "Classics"
+            let retryFacts = Dictionary(uniqueKeysWithValues: loadedBeforeRetry.map {
+                ($0.id, LibraryCatalogFacts(genres: ["Classics"], isBaseGame: true))
+            })
+            check(loadedBeforeRetry.count == 32 && cursorBeforeRetry != nil,
+                  "REQ-81: Failed page-one Retry fixture first admits two pages and a continuation")
+            await failedRetry.refreshCatalog("")
+            let failedRetryKey = CatalogProjectionKey(accountHash: nil, query: "", owned: [],
+                products: failedRetry.products, gamePass: failedRetry.gamePassProducts,
+                gamePassIDs: failedRetry.gamePassProductIDs, installed: [], accessIsCurrent: false,
+                metadataRevision: 1, compatibility: [:], genre: retryGenre.genre, showsUnsupported: true)
+            let failedRetryProjection = CatalogProjection(key: failedRetryKey, facts: retryFacts, isVisible: { _ in true })
+            check(failedRetry.products.map(\.id) == loadedBeforeRetry.map(\.id)
+                  && failedRetry.nextCursor == cursorBeforeRetry && failedRetry.canLoadMoreCatalog
+                  && failedRetry.catalogError != nil && failedRetryProjection.visible.count == 32
+                  && retryGenre.genre == "Classics",
+                  "REQ-81: Retry failure without page details preserves loaded games, genre and usable continuation")
+            await failedRetry.refreshCatalog("", more: true)
+            check(failedRetry.products.count == 48 && failedRetry.catalogError == nil
+                  && failedRetry.nextCursor != cursorBeforeRetry,
+                  "REQ-81: Continuation after detail-free Retry failure uses retained revision and cursor")
+            await failedRetry.disconnect()
 
             let feed = session("discoverypcflag")
             await feed.connect()
@@ -938,6 +1255,8 @@ enum NativeChecks {
             await feed.disconnect()
             check(feed.gamePassProductIDs.isEmpty && feed.gamePassProducts.isEmpty,
                   "B2/B5: Disconnection discards the in-memory feed and shelf evidence")
+            check(feed.gamePassBadgeProductIDs.isEmpty,
+                  "COR101: Unknown/console-only and disconnected catalog cannot advertise PC Game Pass")
 
             let publicCatalog = session("publiccapture")
             await publicCatalog.connect()
@@ -1144,6 +1463,7 @@ enum NativeChecks {
                   "Latest queued query retains its captured market/language instead of old request scope")
             await coalesced.disconnect()
 
+            try await SearchPerformanceChecks.queryCache(configuration: configuration, check: check)
             let dropped = session("querycoalesce")
             await dropped.connect()
             let active = Task { await dropped.refreshCatalog("Active original query") }
@@ -1307,6 +1627,8 @@ enum NativeChecks {
             check(diagnostics.diagnosticExportError != nil && !FileManager.default.fileExists(atPath: output.path),
                   "Diagnostic export requires a current reviewed preview and creates no unreviewed file")
             await diagnostics.previewDiagnostics()
+            check(diagnostics.descriptorMetricCounts == nil && !diagnostics.descriptorMetricIntervalCompleted,
+                  "Ordinary diagnostic preview keeps opt-in descriptor measurement disabled")
             guard let reviewed = diagnostics.diagnosticPreview else { throw ManagementError.invalidPayload }
             await diagnostics.saveDiagnosticSummary(to: output)
             check(try String(contentsOf: output, encoding: .utf8) == reviewed && diagnostics.diagnosticSaved,
@@ -1319,6 +1641,38 @@ enum NativeChecks {
             await diagnostics.saveDiagnosticSummary(to: remote)
             check(diagnostics.diagnosticExportError != nil && !diagnostics.diagnosticSaved,
                   "Diagnostic export rejects nonlocal destinations without writing")
+
+            for scenario in ["metricsearly", "metricsmissing"] {
+                let measured = session(scenario)
+                let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+                setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
+                await measured.connect()
+                if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                await measured.previewDiagnostics()
+                check(measured.descriptorMetricCounts?.checkpoint == 2
+                      && !measured.descriptorMetricIntervalCompleted
+                      && measured.diagnosticPreview != nil && !measured.diagnosticSaved,
+                      "Existing diagnostic preview captures baseline on the same opted-in app-owned session without file export")
+                let priorPreview = measured.diagnosticPreview
+                let priorAccount = measured.accountHash
+                if scenario == "metricsmissing" { measured.errorMessage = "Retained synthetic status" }
+                await measured.loadCatalogOnEntry("")
+                await measured.previewDiagnostics()
+                if scenario == "metricsmissing" {
+                    check(measured.descriptorMetricCounts == nil && !measured.descriptorMetricIntervalCompleted
+                          && measured.errorMessage == "Retained synthetic status"
+                          && measured.diagnosticPreview == priorPreview && measured.accountHash == priorAccount,
+                          "Missing session end marker reports incomplete proof without corrupting the redacted summary or error state")
+                } else {
+                    check(measured.descriptorMetricCounts?.checkpoint == 3
+                          && measured.descriptorMetricIntervalCompleted && measured.diagnosticPreview != nil,
+                          "Second existing preview certifies a bounded interval on the original Library/Discover manager")
+                }
+                await measured.disconnect()
+                check(measured.descriptorMetricCounts == nil && !measured.descriptorMetricIntervalCompleted,
+                      "Session retirement clears descriptor interval ownership")
+            }
             await diagnostics.disconnect()
             await diagnostics.saveDiagnosticSummary(to: output)
             check(diagnostics.diagnosticExportError != nil && !diagnostics.diagnosticSaved,
@@ -1327,7 +1681,10 @@ enum NativeChecks {
             check(false, (error as? LocalizedError)?.errorDescription
                   ?? "Native fixture regression did not complete: \(String(describing: error))")
         }
-        print("\(count) native session checks, \(failures) failures. Mock children only; no Keychain or Microsoft operation.")
+        let source = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_CHECK_CLI"] == nil
+            ? "Mock children only; no Keychain or Microsoft operation."
+            : "Mock fixtures plus neutral source CLI envelope; no account operations."
+        print("\(count) native session checks, \(failures) failures. \(source)")
         return failures == 0
     }
 

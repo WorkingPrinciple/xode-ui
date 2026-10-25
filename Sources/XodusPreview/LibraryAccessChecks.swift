@@ -5,6 +5,46 @@ import XodusManagement
 @MainActor
 enum LibraryAccessChecks {
     static func run(check: (Bool, String) -> Void) throws {
+        check(GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: "Wait for the Game Pass access check to finish.")
+                  == "Wait for the Game Pass access check to finish."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true,
+                  libraryNotice: "Approve Keychain access in Account settings.",
+                  operationNotice: "Wait for the current game operation.") == "Approve Keychain access in Account settings."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: false, libraryNotice: nil,
+                  operationNotice: nil) == "Wait for Ode to X to finish starting."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: nil) == nil,
+              "COR88: Actual Game Pass action caption covers operation-only, account, startup and ready gates")
+        let utc = TimeZone(secondsFromGMT: 0)!
+        func seasonalDate(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0,
+                          timeZone: TimeZone = TimeZone(secondsFromGMT: 0)!) -> Date {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = timeZone
+            return calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+        }
+        for (year, lastMonth, lastDay, hiddenDay) in [
+            (2024, 11, 3, 4), (2025, 11, 2, 3), (2026, 11, 1, 2),
+            (2027, 10, 31, 1), (2028, 11, 5, 6), (2029, 11, 4, 5), (2033, 11, 6, 7)
+        ] {
+            check(!HalloweenShelf.isActive(on: seasonalDate(year, 9, 30, hour: 23), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, 10, 1), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, 10, 31, hour: 23), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, lastMonth, lastDay, hour: 23), timeZone: utc)
+                  && !HalloweenShelf.isActive(on: seasonalDate(year, 11, hiddenDay), timeZone: utc)
+                  && !HalloweenShelf.isActive(on: seasonalDate(year + 1, 1, 1), timeZone: utc),
+                  "REQ89: Annual local Halloween window includes Oct1 through Sunday, never following Monday or year rollover (\(year))")
+        }
+        let losAngeles = TimeZone(identifier: "America/Los_Angeles")!
+        let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+        let localBoundary = seasonalDate(2026, 10, 1, timeZone: tokyo)
+        check(HalloweenShelf.isActive(on: localBoundary, timeZone: tokyo)
+              && !HalloweenShelf.isActive(on: localBoundary, timeZone: losAngeles),
+              "REQ89: The same instant follows the Mac's local season rather than a UTC date")
+        let dstMonday = seasonalDate(2026, 11, 2, timeZone: losAngeles)
+        check(HalloweenShelf.isActive(on: dstMonday.addingTimeInterval(-1), timeZone: losAngeles)
+              && !HalloweenShelf.isActive(on: dstMonday, timeZone: losAngeles),
+              "REQ89: Local Sunday stays inclusive across daylight-saving transition, ending exactly at Monday")
         check(InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: false) == "View details",
               "An app-wide launch gate is not labelled as a broken game")
         check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
@@ -447,6 +487,33 @@ enum LibraryAccessChecks {
             market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: true)
         let console = try LibraryGame.details(id: "FIXTURE00004", title: "Console candidate",
             market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: false)
+        let halloweenDate = seasonalDate(2026, 10, 24)
+        let editorialPC = try LibraryGame.details(id: "9N9097G0XZMB", title: "Editorial PC fixture",
+            market: "GB", language: "en-US", source: "MicrosoftDisplayCatalog:v7", pcCandidate: true)
+        check(HalloweenShelf.products([editorialPC], facts: [:],
+                on: halloweenDate, timeZone: utc).map(\.id) == [editorialPC.id],
+              "REQ89: Verified editorial PC selection does not depend on the first Discover page or English category words")
+        let seasonalFacts = [
+            publicPC.id: LibraryCatalogFacts(genres: ["Survival Horror"]),
+            console.id: LibraryCatalogFacts(genres: ["Horror"])
+        ]
+        check(HalloweenShelf.products([publicPC, publicPC, console], facts: seasonalFacts,
+                on: halloweenDate, timeZone: utc).map(\.id) == [publicPC.id],
+              "REQ89: Seasonal shelf deduplicates exact loaded PC products using existing public category metadata")
+        check(HalloweenShelf.products([], facts: seasonalFacts, on: halloweenDate, timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: [:], on: halloweenDate, timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: seasonalFacts,
+                  on: seasonalDate(2026, 11, 2), timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: [
+                  publicPC.id: LibraryCatalogFacts(genres: ["Action & adventure"])
+              ], on: halloweenDate, timeZone: utc).isEmpty,
+              "REQ89: Empty, missing, non-themed metadata and out-of-season selections omit the shelf without inventing genres")
+        for category in ["Horror", "Psychological horror", "Halloween", "Spooky"] {
+            check(HalloweenShelf.products([publicPC], facts: [
+                publicPC.id: LibraryCatalogFacts(genres: [category])
+            ], on: halloweenDate, timeZone: utc).map(\.id) == [publicPC.id],
+                  "REQ89: Explicit catalogue category \(category) is a theme, not an entitlement or compatibility claim")
+        }
         let collection = LibraryGame.collection(installed: [local], owned: [held, held],
             products: [publicPC], gamePass: [publicPC, console], active: true)
         check(collection.map(\.id) == [held.id],

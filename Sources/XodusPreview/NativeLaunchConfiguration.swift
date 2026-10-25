@@ -7,13 +7,20 @@ import XodusManagement
 struct NativeEngineRegistry: Decodable {
     struct Entry: Decodable, Identifiable {
         struct SmokeTest: Decodable { let status: String }
+        struct Provider: Decodable { let id: String; let contract_version: Int }
         let name: String
         let kind: String
         let wine: String
+        let wineserver: String?
+        let sha256: String?
+        let wineserver_sha256: String?
         let smoke_test: SmokeTest
         let presentation_validation: SmokeTest?
         let engine_label: String?
         let environment: [String: String]?
+        let version: String?
+        let source_url: String?
+        let provider: Provider?
         var id: String { name }
         var isAvailable: Bool {
             smoke_test.status == "pass" && presentation_validation?.status != "failed"
@@ -21,16 +28,20 @@ struct NativeEngineRegistry: Decodable {
         }
     }
     let engines: [Entry]
+    private(set) var byteDigest: String = ""
+    enum CodingKeys: String, CodingKey { case engines }
 
     static func read(_ url: URL) throws -> Self {
         try GameScriptFiles.checkPath(url)
         let bytes = try InstalledGameFiles.readRegular(url, maximumBytes: 2_097_152)
-        let registry = try JSONDecoder().decode(Self.self, from: bytes)
+        var registry = try JSONDecoder().decode(Self.self, from: bytes)
+        registry.byteDigest = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
         guard Set(registry.engines.map(\.name)).count == registry.engines.count,
               registry.engines.allSatisfy({
                   !$0.name.isEmpty && $0.name.utf8.count <= 128
                       && $0.name.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0)
                           || (97...122).contains($0) || [45, 46, 95].contains($0) }
+                      && ($0.provider.map { !$0.id.isEmpty && $0.id.utf8.count <= 64 && $0.contract_version == 1 } ?? true)
               }) else { throw GameScriptError.runtimeUnavailable }
         return registry
     }
@@ -164,7 +175,7 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "17d6f2511662001c59205ee89b64ae9110a94bfe01806e959720d13e689baebe" else {
+                    == "c7835352b6136626195f637c7b44ca3ab7fcb3643cedba119de7fed7b1212ca7" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
@@ -212,6 +223,8 @@ struct NativeTitleLaunchProfile: Codable {
     var provider: RuntimeProviderKind? = nil
     var dllOverrides: String? = nil
     var dllOverrideEvidence: DLLOverrideEvidence? = nil
+    var preservedPrefixPath: String? = nil
+    var registrySHA256: String? = nil
 
     struct DLLOverrideEvidence: Codable {
         let runID: String
@@ -333,6 +346,19 @@ struct NativeTitleLaunchProfile: Codable {
                 && !path.split(separator: "/", omittingEmptySubsequences: false).contains(where: { ["", ".", ".."].contains(String($0)) })
         }
         let mirrored = crossOverEnvironment ?? [:]
+        if preservedPrefixPath != nil || registrySHA256 != nil {
+            guard productID == "BQVQTL3PCH05",
+                  engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+                  preservedPrefixPath == "${HOME}/Library/Application Support/XodusCLI/prefixes/req71-nms-calimocho-port11b-v1",
+                  registrySHA256 == "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
+                  executable == "Binaries/NMS.exe", noAutoDismiss == true,
+                  environment == ["XODUS_PRIVATE_LOCAL_SAVES": "1", "XODUS_XBL_ONLINE": "1"],
+                  runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+                  runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+                  prefixRegistryImports == nil, prefixOverlays == nil, dllOverrides == nil else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
         guard version == 1, self.productID == productID, PCGamesClient.validProductID(productID),
               environment.count <= 64, mirrored.count <= 64,
               environment.merging(mirrored, uniquingKeysWith: { first, _ in first }).allSatisfy({ key, value in
@@ -443,16 +469,95 @@ struct NativeLaunchConfiguration {
     let runtime: NativeRuntimeReference
     let profile: NativeTitleLaunchProfile?
     let shims: NativeShimReference
+    var admittedSelection: AdmittedEngineSelection? = nil
+
+    static func validateOverride(_ selection: AdmittedEngineSelection, game: InstalledGame,
+                                 defaults: UserDefaults = .standard) throws {
+        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
+                                                       provider: .calimocho)
+        if let profile {
+            guard profile.engine == selection.inspection.engineName,
+                  profile.registrySHA256.map({ $0 == selection.inspection.registrySha256 }) ?? true else {
+                throw NativeLaunchError.configurationConflict
+            }
+        }
+    }
+
+    @MainActor static func resolveDefault(game: InstalledGame, configuration: BackendConfiguration,
+                               provider: RuntimeProviderKind?, defaults: UserDefaults = .standard,
+                               runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
+                               evidence: MacGameEvidence.Game? = nil,
+                               engineDefaults: NativeEngineDefaults? = nil) async throws -> Self {
+        guard provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
+        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
+                                                       provider: .calimocho, evidence: evidence)
+        let saved = try defaults.data(forKey: NativeEngineDefaults.preferenceKey)
+            .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+        let catalog = try engineDefaults ?? NativeEngineDefaults.read()
+        let selection: AdmittedEngineSelection
+        if let override = game.engineOverrideV2 {
+            guard override.version == 2, override.chosenAt.timeIntervalSince1970.isFinite else {
+                throw NativeLaunchError.selectionChanged
+            }
+            selection = override.selection
+            try validateOverride(selection, game: game, defaults: defaults)
+        } else if let titleEngine = profile?.engine {
+            guard let binding = catalog.bindings.first(where: { $0.engineName == titleEngine }),
+                  profile?.registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
+                throw NativeLaunchError.engineUnavailable
+            }
+            selection = try await binding.inspect(configuration: configuration)
+        } else if let saved {
+            selection = saved
+        } else {
+            guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
+                throw NativeLaunchError.engineNotSelected
+            }
+            selection = try await binding.inspect(configuration: configuration)
+        }
+        guard let engine = selection.inspection.engineName,
+              let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+        try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
+            "--registry", selection.registryPath, "--engine", engine, "--expected-registry-sha256", digest
+        ], selection: selection)
+        if game.engineOverrideV2 == nil, saved == nil {
+            guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
+                throw NativeLaunchError.engineNotSelected
+            }
+            let defaultSelection = engine == binding.engineName ? selection : try await binding.inspect(configuration: configuration)
+            defaults.set(try JSONEncoder().encode(defaultSelection), forKey: NativeEngineDefaults.preferenceKey)
+            if provider == nil { EngineDefaults.setDefaultEngine(.calimocho, defaults) }
+        }
+        // Per-game records are retained as history, never used to route a current launch.
+        var effective = game
+        effective.engineOverride = .calimocho
+        effective.engineSelection = selection
+        return try resolve(game: effective, provider: .calimocho, defaults: defaults,
+                           runtime: runtime, evidence: evidence)
+    }
 
     static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
                         defaults: UserDefaults = .standard,
                         runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
                         shims: NativeShimReference = .approved,
-                        provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil) throws -> Self {
+                        provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
+                        detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
+        let selected: AdmittedEngineSelection?
+        if game.engineOverride == .calimocho {
+            guard let saved = game.engineSelection else { throw NativeLaunchError.engineNotSelected }
+            selected = saved
+        } else if provider == .calimocho {
+            selected = try AdmittedEngineSelection.read(defaults: defaults)
+        } else {
+            selected = nil
+        }
         var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: provider, evidence: evidence)
+        if let selected, let engine = profile?.engine, engine != selected.inspection.engineName {
+            throw NativeLaunchError.configurationConflict
+        }
         let qualified = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence)
         let candidate = qualified != nil ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
@@ -462,13 +567,27 @@ struct NativeLaunchConfiguration {
             }
         }
         guard let runtime = profile?.runtime?.reference ?? runtime ?? localRuntime else { throw NativeLaunchError.runtimeNotQualified }
-        guard let registryPath = defaults.string(forKey: "Xodus.lifecycle.registry"),
+        guard let registryPath = selected?.registryPath ?? defaults.string(forKey: "Xodus.lifecycle.registry"),
               registryPath.hasPrefix("/") else { throw NativeLaunchError.registryMissing }
         let registryURL = URL(fileURLWithPath: registryPath)
         let registry = try NativeEngineRegistry.read(registryURL)
+        if let selected {
+            guard let engine = selected.inspection.engineName else { throw NativeLaunchError.engineUnavailable }
+            try selected.validate(registryPath: registryPath, engineName: engine, registryDigest: registry.byteDigest)
+        }
+        if let digest = profile?.registrySHA256 {
+            guard selected != nil, digest == registry.byteDigest else { throw NativeLaunchError.engineUnavailable }
+        }
         var entry = try selectEngine(registry: registry,
-                                     provider: qualified != nil || profile?.engine != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
-                                     provenEngine: profile?.engine ?? provenEngine)
+                                     provider: selected != nil || qualified != nil || profile?.engine != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
+                                     provenEngine: selected?.inspection.engineName ?? profile?.engine ?? provenEngine)
+        if let selected {
+            guard entry.sha256 == selected.inspection.wineSha256,
+                  entry.wineserver_sha256 == selected.inspection.wineserverSha256,
+                  entry.wineserver?.hasPrefix("/") == true else {
+                throw NativeLaunchError.selectionChanged
+            }
+        }
         try candidate?.validateEngine(entry, fallback: defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)"))
         if let qualified {
             guard let profile else { throw NativeLaunchError.invalidProfile }
@@ -489,6 +608,9 @@ struct NativeLaunchConfiguration {
                 throw NativeLaunchError.invalidProfile
             }
         }
+        if selected != nil, defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)") != nil {
+            throw NativeLaunchError.configurationConflict
+        }
         if let selected = defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)") {
             let titleProfile = profile ?? NativeTitleLaunchProfile(version: 1, productID: game.storeId,
                 engine: entry.name, shimDirectory: nil, environment: [:])
@@ -508,14 +630,33 @@ struct NativeLaunchConfiguration {
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable
         }
-        let prefix = qualified?.prefix ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+        if entry.kind.lowercased() == "crossover", !detectCrossOver().isVerified {
+            throw NativeLaunchError.engineUnavailable
+        }
+        if profile?.preservedPrefixPath != nil {
+            guard game.folder == NSHomeDirectory() + "/Games/Xodus/NoMansSky-Xbox" else {
+                throw NativeLaunchError.configurationConflict
+            }
+        }
+        let prefix = profile?.preservedPrefixPath.map { URL(fileURLWithPath: NativeTitleLaunchProfile.expand($0)) }
+            ?? qualified?.prefix ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
             "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         if let selected = profile?.shimDirectory, selected != shims.directory.path {
             throw NativeLaunchError.invalidProfile
         }
+        var admitted = selected
+        if admitted == nil, entry.provider?.id == "calimocho" {
+            guard let bytes = defaults.data(forKey: AdmittedEngineSelection.preferenceKey) else {
+                throw NativeLaunchError.engineUnavailable
+            }
+            let selection = try JSONDecoder().decode(AdmittedEngineSelection.self, from: bytes)
+            try selection.validate(registryPath: registryURL.path, engineName: entry.name,
+                                   registryDigest: registry.byteDigest)
+            admitted = selection
+        }
         return Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
-                        profile: profile, shims: shims)
+                        profile: profile, shims: shims, admittedSelection: admitted)
     }
 
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
@@ -524,30 +665,75 @@ struct NativeLaunchConfiguration {
         if provider != nil || provenEngine != nil {
             guard let name = provider != nil ? selected : provenEngine,
                   let entry = registry.engines.first(where: { $0.name == name }),
+                  provider.map({ EngineManagementPolicy.matches(entry, provider: $0)
+                      || ($0 == .standaloneWine && entry.provider?.id == "calimocho"
+                          && defaults.data(forKey: AdmittedEngineSelection.preferenceKey) != nil) }) ?? true,
                   entry.isAvailable else {
                 throw NativeLaunchError.engineUnavailable
             }
             return entry
         }
-        let available = registry.engines.filter(\.isAvailable)
-        guard let entry = available.first(where: { $0.engine_label == "Free Wine" || $0.kind.lowercased() == "free" })
-                ?? available.first else { throw NativeLaunchError.engineUnavailable }
-        return entry
+        throw NativeLaunchError.engineNotSelected
     }
 
     func arguments() async throws -> [String] {
+        _ = try await prefixNotice()
+        if admittedSelection != nil {
+            guard profile?.prefixRegistryImports == nil, profile?.prefixOverlays == nil,
+                  profile?.dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
+        }
         let dll = try await runtime.validate()
         try await shims.validate()
         let selectedRegistry = try await profile?.registryForLaunch(base: registry, engine: engine) ?? registry
+        if let admittedSelection {
+            guard selectedRegistry == registry, let digest = admittedSelection.inspection.registrySha256 else {
+                throw NativeLaunchError.engineUnavailable
+            }
+            return ["--engine", engine, "--registry", selectedRegistry.path,
+                    "--expected-registry-sha256", digest, "--prefix", prefix.path,
+                    "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+        }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
                 "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+    }
+
+    func prefixNotice() async throws -> String? {
+        guard let selection = admittedSelection else { return nil }
+        return try await Task.detached {
+            try GameScriptFiles.checkPath(prefix, allowMissing: true)
+            let marker = prefix.deletingLastPathComponent()
+                .appendingPathComponent(".\(prefix.lastPathComponent).xodus-engine-owner.json")
+            try GameScriptFiles.checkPath(marker, allowMissing: true)
+            if FileManager.default.fileExists(atPath: marker.path) {
+                let bytes = try InstalledGameFiles.readRegular(marker, maximumBytes: 4_096)
+                let value = try JSONValue.decodeUnique(bytes, maximumBytes: 4_096)
+                guard case .object(let fields) = value,
+                      Set(fields.keys) == ["version", "engine", "wine_sha256"],
+                      fields["version"]?.uint64 == 1,
+                      fields["engine"]?.string == engine,
+                      fields["wine_sha256"]?.string == selection.inspection.wineSha256 else {
+                    throw NativeLaunchError.prefixConflict
+                }
+                return nil
+            }
+            var directory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: prefix.path, isDirectory: &directory) {
+                guard directory.boolValue else { throw NativeLaunchError.prefixConflict }
+                let members = try FileManager.default.contentsOfDirectory(atPath: prefix.path)
+                if !members.isEmpty {
+                    return "This existing prefix is legacy-unclaimed. It will be used as-is, without claiming ownership, migrating files or moving saves."
+                }
+            }
+            return nil
+        }.value
     }
 }
 
 enum NativeLaunchError: Error, LocalizedError {
     case candidateBlocked(String)
     case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable,
-         installationNotReady
+         installationNotReady, configurationConflict, legacyLauncher, prefixConflict, providerPolicy,
+         selectionChanged, providerNotAdmitted
     var errorDescription: String? {
         switch self {
         case .candidateBlocked(let reason): reason
@@ -556,7 +742,19 @@ enum NativeLaunchError: Error, LocalizedError {
         case .registryMissing:
             "Choose the engine registry in Runtime settings before playing."
         case .engineNotSelected:
-            "Choose a tested registry engine for this provider in Runtime settings. No other engine was substituted."
+            "Choose a verified Calimocho build in Engines before playing. No CrossOver or GPTK engine was substituted."
+        case .configurationConflict:
+            "This game's launch recipe does not match the selected Calimocho configuration. No engine or prefix was substituted. Choose a matching verified configuration."
+        case .legacyLauncher:
+            "This legacy launch script cannot verify the selected Calimocho configuration. Use the connected Ode lifecycle service; the script was not started."
+        case .prefixConflict:
+            "This prefix is owned by another engine or has an invalid ownership record. It was not changed. Choose a matching configuration; no migration was attempted."
+        case .providerPolicy:
+            "Only a verified Calimocho configuration can be launched in Ode. Historical CrossOver, GPTK and generic Wine choices are retained but cannot run. Choose Calimocho in Engines."
+        case .selectionChanged:
+            "The saved Calimocho configuration has changed. Refresh and explicitly select the verified build again. No other engine was substituted."
+        case .providerNotAdmitted:
+            "This Calimocho configuration has not passed artifact admission. Refresh its registry in Engines. It cannot launch or fall back to another provider."
         case .engineUnavailable:
             "The selected registry engine is no longer available. Restore it or choose another engine in Runtime settings."
         case .invalidProfile:

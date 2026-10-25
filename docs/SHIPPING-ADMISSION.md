@@ -79,6 +79,285 @@ claims Apple acceptance. There is no independent stale exception tuple.
 Existing r7 build/source receipts resolve its provenance rather than requiring
 reconstruction of older evidence. Outer app/DMG acceptance remains mandatory.
 
+### REQ103 r7 source candidate: Stop lifecycle and orphan safety
+
+The current reviewed producer source is
+`01d4cfd625764c2a8ec4d60824ef4f277b30b9e9`, tree
+`97a18c1f2c680cd4bce32a9bc2f0818b48977e64`. It includes the separate broker
+process group, owner Stop classification, bounded parent-death pipe regression,
+and the r6 fourth engine admission. It does not include REQ104/108 admissions.
+
+The sealed signed CLI is
+`358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9`
+(28,758,848 bytes), paired Windows helper
+`847ad6f535cc5a32cd33cdc687c330aa66cad45d4c2577fd4c035033b029c78d`
+(20,480 bytes), and producer manifest
+`4945099d043aed748d25e5908f7c6be26136ad67be18de8cd97c01161deac1fe`
+(19,730 bytes). The app source and current runtime-recipe CLI binding use this
+exact producer; historical gameplay identities remain unchanged. The management
+schema is unchanged. Artifact verification and source checks are not installation,
+native Stop acceptance, notarization, or title qualification.
+
+### Retained REQ102 r5 source candidate: sibling-region descriptor localization
+
+The previously accepted backend source is
+`ad31a91e60306811aa0c9649cf70b06f592ee412`, tree
+`ea434803e638599006b9bf2146f6f4ff9e87cebd`. Descriptor localization selects
+exact locale, base language, lowest same-base regional tag, then neutral;
+unrelated languages remain rejected. The wire schema is unchanged.
+
+The genuine canonical app producer has signed CLI
+`59ebf56f69aa895282c3f960ea48181a9bc5d274dedfcf6479738db03e13b594`
+(28,739,664 bytes), Windows helper
+`803549253613ad008d8d653574fa167a31ce19e97c72f3a11a04a5b87f0d8d7f`
+(20,480 bytes), and manifest
+`8e212aea448a144ed52fe4189dd0f2c1ac5174ad6b50ae0d8f72e82fa94cbbf7`
+(16,989 bytes). Unsigned input
+`d81b4d5975aba989aab8b460db02bfa09475fdda00285ef968bb8e5e5662dd06`
+(28,889,376 bytes) and provenance
+`478e89d3d4a1c9fd17ce8bcbc4df9c7c37186d6165b9762455490dd235fa273b`
+(2,197 bytes) pass the sealed-input verifier with only its source/tree predicates
+changed in memory before repinning. Owned artifact hashes, sizes, strict
+fixed-leaf/team signature and three exact helper embeddings were independently
+checked. Only current producer and recipe bindings change; historical gameplay
+identities remain intact. Artifact admission is not installed/native acceptance,
+notarization or game qualification.
+
+### Retained REQ101 r4 source candidate: numeric Xbox account identity
+
+The previously accepted backend source is
+`b9946865fe500b20013d2d4875a6aa564bfa0809`, tree
+`dfb28e8deac90b17f298e981701c0179940364d2`. It accepts canonical numeric
+or string provider XUIDs while retaining exact authenticated-account equality.
+Mismatches still fail as ProfileChanged; malformed identities remain unknown.
+The profile schema is unchanged from r3.
+
+The genuine separate canonical app producer has signed CLI
+`f50938a9e3bfd5f5fbc3fa173f02ad0a26b3b50cab16149a4bca74ec60413ab6`
+(28,701,424 bytes), Windows helper
+`03134ed80f1dcfbd47b75d7ac524e95b0ab94ba3338a8b29133ecc1e7a6fc656`
+(20,480 bytes), and manifest
+`57e78daf5151cbc44cb9ebde995e60df07328a50dd37e8d85d95475143322406`
+(16,337 bytes). Unsigned input
+`13c7500f1ed4391018f1be0c84ebb34fa565a747aaf5c2f93b0095934c1807b8`
+(28,850,912 bytes) and provenance
+`0cf64043dddec8b5f15d829e081ac647a5fbc21ac6aa37c6c7141f192719d300`
+(2,197 bytes) pass the sealed-input verifier with only its source/tree predicates
+changed in memory before repinning. Owned hashes, sizes, modes, fixed-leaf/team
+signature and three exact helper embeddings were independently checked.
+Both schemas remain SHA256
+`1118d0e831baa22d31b803e65e0ee4a5c12d8735fb183cecd24b3f8f25cdd4e9`.
+Current recipe binding changes; historical gameplay identities remain intact.
+Artifact admission is not installed acceptance, notarization or game qualification.
+
+### Retained REQ101 / REQ80 COR126 candidate: account country and DIRT5 engine
+
+The previously accepted backend source is
+`a7c1b7adc3884899f4607fb8eaa8431bee0f3509`, tree
+`8fadec7f4b3140aeafd8f670e9f58d32dc287c14`. It retains the reviewed NFS recovery
+and adds the account-bound `profile.accountCountry` contract and the DIRT5-named
+Calimocho engine admission. That engine's override is engine-scoped, not enforced
+per title. This does not qualify any game.
+
+The genuine separate canonical app producer has signed CLI
+`197769abee55414cfaab3545f10c4d96af46357ea31444a6cc859d204307fcc0`
+(28,699,920 bytes), Windows helper
+`d09c8d5a1c4700acf334e76b2bb9a296602ca099a34fef98c1911c0df07ae7d5`
+(20,480 bytes), and manifest
+`732cd4037ed5dfc8369f3a0c7ac7c27601f962d154b64aaf6a15ffb2e5d9fce6`
+(15,712 bytes). Unsigned input
+`5e71ee04325feabb0ef5a9573ebd6d14fd2828cedcd230b6df461e5ccd069d84`
+(28,849,376 bytes) and provenance
+`339cd53327cb855bd33f8125e7fc33510ad9b3964d8c46e59e0419464843446d`
+(2,203 bytes) pass the unchanged sealed-input verifier using that source/tree.
+Actual owned hashes, sizes, modes, fixed-leaf/team signature and all three exact
+helper embeddings were independently checked before repinning. Both schema
+copies match canonical SHA256
+`1118d0e831baa22d31b803e65e0ee4a5c12d8735fb183cecd24b3f8f25cdd4e9`.
+Only the current recipe CLI binding and its bound resource digest change;
+historical gameplay evidence stays intact. No installation, native acceptance,
+notarization or game qualification follows from this artifact admission.
+
+### Retained REQ102 COR124 candidate: NFS finalize recovery producer
+
+The previously accepted backend source is
+`2cb12a443fc446193282eead6b76cd3b4c73eca5`, tree
+`c558c024854875deacf2f60cbf076dd7171ee8f4`. It retains the query contract and
+adds the reviewed no-overwrite hardlink fallback for NFS finalize recovery.
+The genuine separate canonical app producer has signed CLI
+`8c47a69f6a176a9feed4d98e0ca2c3e686ee6c5f282f5518f2765c1b29da5c82`
+(28,725,824 bytes), Windows helper
+`32414367081e4dda4048c9260965b3a5433bc8ff1ad22e130dbb6549bcc0dd9a`
+(20,480 bytes), and manifest
+`ef77d022a8b3e22310bfd28aee1e33e72e27d1cd43418de8bef3326c346b98f4`
+(14,157 bytes). Unsigned input
+`cdfe154841437245f47dbe80f591de9798797756d726c98e78f9bba5a4d7c617`
+(28,875,440 bytes) and provenance
+`2d02e636fa39efb1af8c923935a4687ceeb96b5b27ea80f5a06e01123e5865d0`
+(2,199 bytes) pass the unchanged sealed-input verifier with that source/tree.
+Actual signed hashes, sizes, ownership/modes, all three exact helper embeddings,
+and strict fixed-leaf signature were independently checked before repinning.
+Both schema copies remain byte-identical to canonical SHA256
+`8b35109843a37023491add7e385f51c795300df5a838194c484dd7d6b9b3d1bd`.
+Only the current runtime catalogue CLI binding changes; historical gameplay
+evidence stays intact. This is source/artifact admission, not proof of actual
+NFS promotion, installation, gameplay or native search acceptance. The stopped
+9139 producer and the separate standalone 2cb producer are not relabelled.
+
+### Retained REQ100 candidate: accepted query producer
+
+The accepted backend source is `a31f63df2bf265db46a8d28ed2e8ac1e60181beb`,
+tree `1eb7713816f4748fa821bf9d14faff3d8498bbfa`. The sealed-input source/tree
+predicate targets that exact revision; command, feature/profile, ownership and
+seal validation are unchanged. The observed signed tuple is CLI
+`f59ba1be087356efa6757ab38002de1cb884ab60420c15185e1a4c1a8f0fecc9`
+(28,703,504 bytes), Windows helper
+`3e2e8b8ce7bad9f1f283bdf01d79ef7b7dda568a585fe6958e9fd263e4ebc39a`
+(20,480 bytes), and manifest
+`f37bbaaa8b294e6e48010327fbe5bc7c2019665f7091737df182890e4c6df258`
+(12,169 bytes). Unsigned input
+`47e36b37625dec4c41cb22f14a3916362da58f31d0e0c311fdf95a9697f4b641`
+(28,852,992 bytes) and provenance
+`cfbb2baeb8e5a46569effa378929ca2dc525246c2b3c8b8eb416cd35d5526f6f`
+(2,199 bytes) pass the unchanged sealed-input verifier. Signed artifact hashes,
+all three exact helper embeddings and strict fixed-leaf signature were checked
+independently before binding these pins. The runtime catalogue changes only its
+current CLI hash; historical gameplay evidence identities remain unchanged.
+This is source/artifact binding, not installed acceptance or a relabel of the
+immutable REQ95 signed candidate.
+
+### Frozen REQ95 candidate: compliant settings producer
+
+The reviewed successor uses the same producer source/tree below, genuinely built
+with the canonical sealed-input command. Current signed CLI is
+`3b6f44c6b2cf45a5c554daaae2ddbb5034b79ade0aa6df19c8308ad96c544a39`
+(28,676,640 bytes), helper
+`44b72c0753c0042f1f23f469d4029584af0baa6f42003a33155b54eb198c2027`
+(20,480 bytes), and manifest
+`434d34898e08cd9a1d3cb3df0eef6128a113fe558e528833c0fe162c48637cdc`
+(8,003 bytes). Unsigned input
+`068074f1b65013f1b3eb4d5eac4739df934c9099b232891a3faa04c83cbbbf47`
+(28,825,968 bytes) and provenance
+`c6f2b8a46a1316e5a47166e7d1b2ac72fa5ddcc89fa2882ff14580d4bb0e5d0d`
+(2,210 bytes) passed the unchanged `shipping_pair.verify_input` at that freeze.
+The complete actual helper differs from the older 42560b3e artifact at only
+offsets 136/137/138 (COFF timestamp) and 216 (PE checksum). This is a new genuine
+compiler output, explicitly accepted by the coordinator, not a rewritten old
+artifact or a claim of historical compiler identity. All three embedded helper
+copies match the new paired helper. Fixed-leaf strict verification passed.
+Source review and coherent staging remain separate from installation/runtime.
+
+The superseded standalone-only tuple is retained below for provenance:
+
+The superseded consumer source pinned producer `9f385203b9a38605beedd83d57e77253014c2190`,
+tree `4c5e06fa2863d82512df2aea19b540c2b51d455e`, signed CLI
+`d761d8514375fad4aa83362c98a607542e8cf3c676b997e9dd286d30004c702e`
+(28,674,576 bytes), unchanged helper
+`42560b3e33a258c8af43146034d6f5140d939f855d682739bc82ea1d8962ff65`
+(20,480 bytes), and manifest
+`45c2ea46bb1609880d046dab41a4a9541f0057655564df5b91c8853f619e98ea`
+(7,512 bytes). Actual hashes and strict signature were independently read.
+Its unsigned provenance is
+`771aa1b1a9448034a00713b171de4febe066db8df2c76353b785a377698b18b0`.
+Historical recipe evidence CLI identities are unchanged.
+
+This tuple is accepted for standalone/source integration only:
+`buildAppExactCommandCompatible:false`. It is not permission to bypass the sealed
+input validator through the selected-signed refresh. The canonical predicate in
+`shipping_pair.verify_input` requires the actual command
+`cargo build --release --offline --locked -q -p xodus-cli --bin xodus-cli --target aarch64-apple-darwin --no-default-features --message-format=json`,
+matching native feature/profile metadata before and after build, and
+`metadataPlatformFilter:aarch64-apple-darwin`, plus its existing ownership,
+mode, seal, source/tree, hash and byte-count checks. A genuinely compliant new
+producer artifact and provenance were required before staging; the successor
+documented above satisfies that predicate.
+No validator or command predicate is weakened. Signed UI stage `3c0648b` remains
+immutable and does not contain this source work. Source verification does not
+claim installed engine parity, game acceptance or permission to deploy.
+
+### Current paired schema reconciliation
+
+Both app contract copies now use the exact canonical management contract from
+producer `a31f63df2bf265db46a8d28ed2e8ac1e60181beb`, tree
+`1eb7713816f4748fa821bf9d14faff3d8498bbfa`, SHA256
+`8b35109843a37023491add7e385f51c795300df5a838194c484dd7d6b9b3d1bd`.
+Relative to the previous bundled contract, only the optional `sourceFailure`
+object was added to successful and failed query pages. No bundled app-only
+content was dropped; the stale docs copy gains the existing descriptor and
+combined Xbox/Store contract as well. Both legacy Store Edge and combined
+sources remain valid; page freshness is live and products remain PC candidates.
+`tools/sync_contract.py` now verifies equality without copying. Its focused
+regression proves matching, mismatched `check.sh`, and missing-file paths leave
+files unchanged.
+
+Focused source verification compares the bundled resource byte-for-byte and
+validates supported producer fixtures through both contracts:
+
+```sh
+swift run XodusManagementChecks --contract-schema-checks /absolute/frozen-producer/docs/contracts/management-v1.schema.json
+```
+
+Schema parity does not admit a new executable. The existing debug CLI
+`8ba24aed...` was built at `891b941`, not at this schema-only successor.
+Signed CLI, embedded helper, producer manifest and lifecycle pins must be
+reconciled from actual reviewed artifacts before paired packaging. Source
+`ShippingPairPins.approved` stays nil; packaging generates exact pair identities
+only in its isolated stage. App-only refresh retaining CLI3121 cannot claim
+delivery of the shared descriptor backend.
+
+The owner-approved port-11 selected-signed-CLI refresh tuple is observed, not predicted:
+CLI SHA256 `fd6c7a6427a7317e92ebfcd5d49a5f6b5ff75e3b7330ff2bcad887262ca06dd8`
+(28,535,616 bytes), actual release embedded Windows helper SHA256
+`42560b3e33a258c8af43146034d6f5140d939f855d682739bc82ea1d8962ff65`
+(20,480 bytes), and sibling producer manifest SHA256
+`ffe2fb56897fc453c37ff680c0a14ecb70577dbc6b0aa829b9eb4b403c5d3aff`
+(8,577 bytes).
+The signed CLI passed strict fixed-leaf verification with the existing approved
+identity. Its actual producer command was
+`CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo build --offline --locked --release -p xodus-cli`;
+the unsigned provenance truthfully records that command, not the distinct
+sealed-input recipe's command. Use the explicit selected signed CLI refresh
+path with its paired helper and manifest. No integrity check is waived.
+These pins permit exact candidate packaging; installation, observed capabilities
+and gameplay remain distinct evidence. The producer admits only the exact
+`a5d37d2909f56abe75f9b6096cf39b4d75c91a7f6aac75154488d4c35b5ff28a`
+registry entry for `calimocho-wine11.20-gptk4b3-tls-vulkan`; static admission
+does not establish gameplay qualification or general Calimocho support.
+The unsigned provenance is not compatible with `build_app.sh`'s exact sealed-input
+command validator. That validator and its command pins remain unchanged.
+The existing selected-signed-CLI refresh rebuilds and signs the app and AuthHost;
+their executable bytes are not preserved. The pin-only consumer
+`d7e36f3be2632b0b9fc45aa2ff434ba3d9088d50` was based on delivered
+`023904cc620b27311e0fee4310d62cfbc3003f04`, with producer-binding changes only.
+That describes the historical pin-only packet, not corrected UI source
+`950145d04c4a1203926fa77baf0b41b08893aba6`. The corrected UI retains the
+exact-ID access and detail-dismiss/visible-consent corrections, including the
+account-bound handoff from `329ef9789c071ee53b8d06fc706c5bdea80a9f58`,
+and integrates the reviewed six-file producer-binding delta from `d7e36f3`.
+These remain distinct candidates; source ancestry or a signed stage does not
+establish installation, deployment ordering or gameplay acceptance.
+
+The runtime catalogue's `cliSha256` also binds the selected signed CLI above.
+Its bundled SHA256 is
+`7c1b713e0a7cdb1879c7a528ee02c20224bd1c114caf4af06618713ea65e7878`;
+both the byte digest and lifecycle equality checks remain mandatory. This
+packaging binding does not rewrite `evidenceCliSha256` or any title's observed
+recipe/evidence, and does not establish gameplay qualification with the new CLI.
+Current CLIfd6c title/runtime qualification remains pending. Its retained launch
+arguments do not prove equivalent behavior: provider admission, prefix ownership,
+staging and the popup monitor changed since the historical CLIadf8 title runs.
+Leaving the catalogue bound to CLI3121 while updating the lifecycle pin rejects
+all profile resolution, including otherwise unrelated titles.
+
+The new pair adds exact-opt-in descriptor count telemetry and the existing
+diagnostics-export checkpoint fence. It is not a fix for the historical
+management overflow: that incident remains unresolved/non-reproduced with the
+diagnostic-only d0c7019/5bd7 pair installed until separately replaced by the
+exclusive deployment owner. The new signed producer does not imply installed
+measurement acceptance; see `NATIVE_UI_PROCEDURES.md` for the bounded same-session
+count collection path. The schema, helper and historical CLIadf8 gameplay proof
+remain unchanged.
+
 ### Header search regression (#40)
 
 The collapsed header lens is an explicit accessible button, not a 32-point

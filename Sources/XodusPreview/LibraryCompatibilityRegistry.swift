@@ -19,10 +19,10 @@ struct LibraryCompatibilityIssue: Identifiable, Hashable, Sendable {
     let detail: String
     let source: URL?
     var id: String { "\(kind.rawValue):\(title)" }
-    var browseTitle: String { kind == .packageType ? "Package not supported yet" : title }
+    var browseTitle: String { kind == .packageType ? "Not supported on Mac yet" : title }
     var browseDetail: String {
         kind == .packageType
-            ? "This game uses a Windows package this version can't run yet. Open game details for the format."
+            ? "This game can't run on this Mac with the current version of Ode to X."
             : detail
     }
 }

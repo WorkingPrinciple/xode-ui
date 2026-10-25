@@ -224,11 +224,6 @@ final class LibrarySelection: ObservableObject {
     var requestedGamePassScope: String?
 }
 
-@MainActor
-final class LibraryCoverInteraction: ObservableObject {
-    @Published var hovered = false
-}
-
 struct LibraryGame: Identifiable {
     let id: String
     let title: String
@@ -239,7 +234,14 @@ struct LibraryGame: Identifiable {
     let gamePass: Bool
     var accessIsCurrent = true
     static func displayedCount(qualified: [Self], local: [Self], native: Bool) -> Int {
-        qualified.count + local.count + (native ? 1 : 0)
+        qualified.count + installedCount(local: local, native: native)
+    }
+    static func installedCount(local: [Self], native: Bool) -> Int {
+        local.count + (native ? 1 : 0)
+    }
+    static func collectionTargets(qualified: [Self], local: [Self], native: Bool) -> Set<String> {
+        Set(qualified.map { "library-card-\($0.id)" } + local.map { "library-local-\($0.id)" }
+            + (native ? ["library-native-minecraft"] : []))
     }
     var cover: CatalogArtworkReference? {
         if let art = pc?.artwork, [.boxArt, .poster].contains(art.role),
@@ -302,12 +304,17 @@ struct LibraryGame: Identifiable {
     }
 
     static func localRecords(installed: [InstalledGame], qualified: [Self],
-                             query: String, sort: LibrarySort) -> [Self] {
+                             query: String, sort: LibrarySort, includingQualified: Bool = false) -> [Self] {
         let qualifiedInstallations = Set(qualified.compactMap { $0.installed?.id })
-        let records = installed.filter { !qualifiedInstallations.contains($0.id) }.map {
+        let qualifiedByInstallation = Dictionary(qualified.compactMap { game in
+            game.installed.map { ($0.id, game) }
+        }, uniquingKeysWith: { first, _ in first })
+        let records = installed.filter { includingQualified || !qualifiedInstallations.contains($0.id) }.map {
+            let current = includingQualified ? qualifiedByInstallation[$0.id] : nil
             // UUID keeps separate imports reachable even if Store IDs overlap.
-            Self(id: $0.id.uuidString, title: $0.title, installed: $0, pc: nil, product: nil,
-                 owned: false, gamePass: false, accessIsCurrent: false)
+            return Self(id: $0.id.uuidString, title: $0.title, installed: $0, pc: current?.pc, product: current?.product,
+                 owned: current?.owned ?? false, gamePass: current?.gamePass ?? false,
+                 accessIsCurrent: current?.accessIsCurrent ?? false)
         }
         return visible(records, query: query, filter: .installed, sort: sort)
     }
@@ -386,6 +393,7 @@ struct LibraryControls: View {
     @Binding var sort: LibrarySort
     @Binding var showsUnsupportedGames: Bool
     var allowsSorting = true
+    var allowsAccountFilters = true
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -413,10 +421,11 @@ struct LibraryControls: View {
     }
     private var filters: some View {
         Picker("Filter games", selection: $filter) {
-            ForEach(LibraryFilter.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(allowsAccountFilters ? LibraryFilter.allCases : [.installed]) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 400)
         .accessibilityIdentifier("xodus.library.filter")
+        .disabled(!allowsAccountFilters)
     }
     private var supportFilter: some View {
         LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount, showsUnsupportedGames: $showsUnsupportedGames)
@@ -456,6 +465,9 @@ struct LibrarySupportMenu: View {
 }
 
 enum LibrarySupportVisibility {
+    static let preferenceKey = "Xodus.showUnsupportedGames"
+    static let defaultShowsUnsupported = false
+
     static func issues(productID: String, installed: Bool, packageFormat: String?,
                        compatibility: GameCompatibilityResult?,
                        catalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) -> [LibraryCompatibilityIssue] {
@@ -544,10 +556,6 @@ struct GameCompatibilityFacts: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(GameCompatibilityFactsCopy.heading).font(.headline)
-            if let package = GameSupportPolicy.packageFormat(
-                observed: packageFormat, classified: offline?.packageFormat) {
-                LabeledContent("Windows package", value: package)
-            }
             if let packageListing {
                 LabeledContent("Microsoft Store", value: packageListing ? "PC package listed" : "No PC listing")
             }
@@ -559,7 +567,7 @@ struct GameCompatibilityFacts: View {
                     .font(.callout.weight(.semibold))
             }
             ForEach(issues) { issue in
-                Text(issue.detail).foregroundStyle(.secondary)
+                Text(issue.browseDetail).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let source = issue.source { Link("Learn more", destination: source) }
             }
@@ -952,51 +960,39 @@ struct LibraryScrollEdge: ViewModifier {
     }
 }
 
-struct GameCard<Artwork: View, Actions: View, Status: View>: View {
+struct GameCard<Artwork: View, Status: View>: View {
     let title: String
     var gameFacts = GameFacts()
+    var compatibilityIssues: [LibraryCompatibilityIssue] = []
+    var showsGamePassCatalogBadge = false
     var openLabel = "Open"
     var searchFocus: (FocusState<String?>.Binding, String)? = nil
     var focusReturn: (FocusState<String?>.Binding, String)? = nil
-    var alwaysShowsActions = false
     let open: () -> Void
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let status: () -> Status
-    @ViewBuilder let actions: () -> Actions
-    @StateObject private var interaction = LibraryCoverInteraction()
-    @FocusState private var focused: Bool
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    private var showsActions: Bool { alwaysShowsActions || interaction.hovered || focused || voiceOver }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let (binding, id) = searchFocus {
                 artworkButton
-                    .focusable()
                     .focused(binding, equals: id)
                     .focusEffectDisabled()
-                    .onKeyPress(.return, action: openFromKeyboard)
                     .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
             } else if let (binding, id) = focusReturn {
                 artworkButton
                     .focused(binding, equals: id)
-                    .onKeyPress(.return, action: openFromKeyboard)
+                    .focusEffectDisabled()
+                    .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
             } else {
-                ZStack(alignment: .bottomTrailing) {
-                    artworkButton
-                }
-                .focused($focused)
+                artworkButton
             }
             Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
             status().font(.subheadline).foregroundStyle(.primary)
-            actions().controlSize(.small).buttonBorderShape(.capsule)
-                .fixedSize(horizontal: false, vertical: true)
-                .opacity(showsActions ? 1 : 0)
-                .allowsHitTesting(showsActions)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .onHover { interaction.hovered = $0 }
         .accessibilityElement(children: .contain)
+        .contextMenu { Button("View details", action: open) }
     }
 
     func openFromKeyboard() -> KeyPress.Result {
@@ -1011,12 +1007,46 @@ struct GameCard<Artwork: View, Actions: View, Status: View>: View {
             artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .bottomLeading) {
-                    AccessBadges(facts: gameFacts).padding(10)
+                    if showsGamePassCatalogBadge {
+                        Text("GAME PASS")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(Color(white: 0.12).opacity(0.9),
+                                        in: RoundedRectangle(cornerRadius: 4))
+                            .padding(8)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .overlay(alignment: .topTrailing) {
+                    HStack(spacing: 4) {
+                        ForEach(compatibilityIssues) { issue in
+                            Image(systemName: issue.kind.symbol)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(6)
+                                .background(Color(white: 0.12).opacity(0.9), in: Circle())
+                        }
+                    }
+                    .padding(8)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 }
                 .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain).accessibilityLabel(artworkAccessibilityLabel)
-        .accessibilityValue(gameFacts.badgeLabels().joined(separator: ", "))
+        .help(coverStatusDescription)
+        .accessibilityValue(coverStatusDescription)
+        .accessibilityHint("Open game details for play, installation and compatibility")
+        .focusable()
+        .onKeyPress(.return, action: openFromKeyboard)
+    }
+
+    var coverStatusDescription: String {
+        ((showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
+            + compatibilityIssues.map { "\($0.browseTitle). \($0.browseDetail)" })
+            .joined(separator: ", ")
     }
 }
 

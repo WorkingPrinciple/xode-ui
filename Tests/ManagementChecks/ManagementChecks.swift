@@ -21,6 +21,16 @@ enum ManagementChecks {
                     discover: CommandLine.arguments.contains("--probe-discovery"),
                     query: CommandLine.arguments.contains("--probe-query"),
                     inspect: CommandLine.arguments.contains("--probe-inspect"))
+            } else if CommandLine.arguments.contains("--descriptor-metrics-checks") {
+                try await checks.descriptorMetricsChecks()
+            } else if CommandLine.arguments.contains("--overflow-checks") {
+                try await checks.overflowChecks()
+            } else if let index = CommandLine.arguments.firstIndex(of: "--contract-schema-checks") {
+                guard CommandLine.arguments.indices.contains(index + 1) else {
+                    throw ManagementError.invalidPayload
+                }
+                try await checks.contractSchemaChecks(canonicalURL:
+                    URL(fileURLWithPath: CommandLine.arguments[index + 1]))
             } else if CommandLine.arguments.contains("--install-plan-development-checks") {
                 try await checks.registryDevelopmentChecks()
                 try await checks.installPlanDevelopmentChecks()
@@ -63,7 +73,634 @@ actor Checks {
         return failures == 0
     }
 
+    func overflowChecks() async throws {
+        let diagnostics = try ManagementClient()
+        for _ in 0..<256 {
+            try await diagnostics.consumeDiagnostics(Data(repeating: 10, count: 4096))
+        }
+        check(await diagnostics.lastOverflow == nil,
+              "Cumulative diagnostics admit exactly the unchanged 1MiB lifetime boundary")
+        do {
+            try await diagnostics.consumeDiagnostics(Data([10]))
+            check(false, "Cumulative stderr overflow is distinguished")
+        } catch {
+            let failure = await diagnostics.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .diagnosticLifetime
+                  && failure?.count == JSONLineFramer.maximumBytes + 1,
+                  "Cumulative stderr overflow is distinguished without logging payload")
+        }
+        do {
+            try await diagnostics.consumeDiagnostics(Data([10, 10]))
+            check(false, "First overflow origin/count is retained once")
+        } catch {
+            check(await diagnostics.lastOverflow?.count == JSONLineFramer.maximumBytes + 1,
+                  "First overflow origin/count is retained once")
+        }
+        check(await diagnostics.close(), "Isolated diagnostic client closes")
+        let stderrClient = try ManagementClient()
+        _ = try await stderrClient.connect(mockConfiguration("diagnosticlifetime"))
+        do {
+            _ = try await stderrClient.request(.jobs)
+            check(false, "Actual fixture stderr lifetime overflow retires the owned transport")
+        } catch {
+            let failure = await stderrClient.lastOverflow
+            check(error as? ManagementError == .outputOverflow && failure?.origin == .diagnosticLifetime,
+                  "Actual fixture stderr lifetime overflow retires the owned transport")
+        }
+        check(await stderrClient.close(), "Owned cumulative-stderr fixture joins")
+
+        guard let eventValue = try fixture("positive").array?.first(where: { $0["kind"]?.string == "event" }) else {
+            throw ManagementError.invalidPayload
+        }
+        let event = try eventValue.decode(ManagementEvent.self)
+        let events = try ManagementClient()
+        for _ in 0..<128 { try await events.enqueueEvent(event) }
+        do {
+            try await events.enqueueEvent(event)
+            check(false, "Unread events retain their unchanged bounded queue")
+        } catch {
+            let failure = await events.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .eventQueue,
+                  "Unread events retain their unchanged bounded queue")
+        }
+        check(await events.close(), "Isolated event client closes")
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ManagementOverflowChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Owned overflow fixtures cleaned") }
+        }
+        let burstFile = root.appendingPathComponent("delayed-consumer-stdout")
+        guard let value = try fixture("positive").array?.first else { throw ManagementError.invalidFrame }
+        var frame = try JSONEncoder().encode(value)
+        frame.append(10)
+        var burst = Data()
+        var expectedFrames = 0
+        while burst.count < 3 * JSONLineFramer.maximumBytes {
+            burst.append(frame)
+            expectedFrames += 1
+        }
+        try burst.write(to: burstFile)
+        let burstHandle = try FileHandle(forReadingFrom: burstFile)
+        let burstStream = ManagementClient.chunks(burstHandle, origin: .stdoutQueue)
+        var receivedBytes = 0
+        var receivedHash = SHA256()
+        var receivedFrames = 0
+        var framer = JSONLineFramer()
+        let validator = try ContractValidator()
+        do {
+            for try await bytes in burstStream {
+                try await Task.sleep(for: .milliseconds(1))
+                receivedBytes += bytes.count
+                receivedHash.update(data: bytes)
+                for line in try framer.append(bytes) {
+                    try validator.validate(JSONDecoder().decode(JSONValue.self, from: line))
+                    receivedFrames += 1
+                }
+            }
+            try framer.finish()
+            check(receivedBytes == burst.count && receivedFrames == expectedFrames
+                  && receivedHash.finalize() == SHA256.hash(data: burst),
+                  "REQ94: A delayed stdout consumer receives every byte beyond 128 chunks without overflow or loss")
+        } catch {
+            check(false, "REQ94: A delayed stdout consumer receives every byte beyond 128 chunks without overflow or loss")
+        }
+        try await pressuredPipeChecks(file: burstFile, expected: burst, expectedFrames: expectedFrames)
+        for origin in [ManagementClient.OverflowOrigin.stdoutQueue, .stderrQueue] {
+            let file = root.appendingPathComponent(origin.rawValue)
+            try Data(repeating: 32, count: 2 * JSONLineFramer.maximumBytes).write(to: file)
+            let handle = try FileHandle(forReadingFrom: file)
+            let stream = ManagementClient.chunks(handle, origin: origin)
+            let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while stream.bufferedChunkCount < 128, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            check(stream.bufferedChunkCount == 128
+                  && (try? handle.offset()) == UInt64(128 * 8192),
+                  "REQ94: Unread \(origin.rawValue) pauses its reader at the unchanged 128-chunk limit")
+            stream.cancel()
+            while (try? handle.offset()) != nil, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            check((try? handle.offset()) == nil,
+                  "REQ94: Cancelling a full \(origin.rawValue) queue wakes and closes its owned reader")
+        }
+
+        try await requestPressureChecks()
+    }
+
+    private func pressuredPipeChecks(file: URL, expected: Data, expectedFrames: Int) async throws {
+        for cancelling in [false, true] {
+            let pipe = Pipe()
+            let descriptor = pipe.fileHandleForReading.fileDescriptor
+            let stream = ManagementClient.chunks(pipe.fileHandleForReading, origin: .stdoutQueue)
+            let child = Process()
+            child.executableURL = URL(fileURLWithPath: "/bin/cat")
+            child.arguments = [file.path]
+            child.standardInput = FileHandle.nullDevice
+            child.standardOutput = pipe
+            child.standardError = FileHandle.nullDevice
+            try child.run()
+            let watchdog = Task {
+                do { try await Task.sleep(for: .seconds(15)) }
+                catch { return }
+                stream.cancel()
+                if child.isRunning { child.terminate() }
+            }
+            defer {
+                watchdog.cancel()
+                stream.cancel()
+                if child.isRunning { child.terminate() }
+            }
+            let fullDeadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while stream.bufferedChunkCount < 128, child.isRunning, ContinuousClock.now < fullDeadline {
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            try await Task.sleep(for: .milliseconds(25))
+            check(stream.bufferedChunkCount == 128 && child.isRunning,
+                  "REQ94 pipe \(cancelling ? "cancel" : "drain"): A live writer is backpressured at exactly 128 unread chunks")
+            if cancelling {
+                stream.cancel()
+            } else {
+                var count = 0, frames = 0, chunks = 0
+                var shortRead = false
+                var hash = SHA256()
+                var framer = JSONLineFramer()
+                let validator = try ContractValidator()
+                do {
+                    for try await bytes in stream {
+                        try await Task.sleep(for: .milliseconds(1))
+                        count += bytes.count
+                        chunks += 1
+                        shortRead = shortRead || bytes.count < 8192
+                        hash.update(data: bytes)
+                        for line in try framer.append(bytes) {
+                            try validator.validate(JSONDecoder().decode(JSONValue.self, from: line))
+                            frames += 1
+                        }
+                    }
+                    try framer.finish()
+                    check(count == expected.count && chunks > 128 && shortRead && frames == expectedFrames
+                          && hash.finalize() == SHA256.hash(data: expected),
+                          "REQ94 pipe drain: Short reads preserve every byte/hash and validated frame beyond 128 chunks through EOF")
+                } catch {
+                    check(false, "REQ94 pipe drain: Short reads preserve every byte/hash and validated frame beyond 128 chunks through EOF")
+                    stream.cancel()
+                }
+            }
+            let exitDeadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while child.isRunning, ContinuousClock.now < exitDeadline {
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            check(!child.isRunning && (cancelling ? child.terminationStatus != 0 : child.terminationStatus == 0),
+                  "REQ94 pipe \(cancelling ? "cancel" : "drain"): The owned writer exits within the bound without hanging or replay")
+            let closeDeadline = ContinuousClock.now.advanced(by: .seconds(1))
+            while fcntl(descriptor, F_GETFD) != -1, ContinuousClock.now < closeDeadline {
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            check(fcntl(descriptor, F_GETFD) == -1 && errno == EBADF,
+                  "REQ94 pipe \(cancelling ? "cancel" : "drain"): The owned pipe reader closes after full-queue cancellation or orderly EOF")
+        }
+    }
+
+    func descriptorMetricsChecks() async throws {
+            let prefix = "Ode descriptor metrics v1 "
+            let enabled = prefix + "enabled seq=1 budget=65536\n"
+            let valid = enabled + prefix + "checkpoint seq=2\n"
+                + prefix + "lookup seq=3 hit=0 forced=1 coalesced=1\n"
+                + prefix + "attempt seq=4 fetch=1\n"
+                + prefix + "terminal seq=5 fetch=1 ok=1\n"
+                + prefix + "lookup seq=6 hit=1 forced=0 coalesced=0\n"
+                + prefix + "checkpoint seq=7\n"
+            let bytes = Data(valid.utf8)
+            for split in 0...bytes.count {
+                var framer = ManagementClient.DescriptorMetricsFramer()
+                let first = framer.append(bytes.prefix(split))
+                let second = framer.append(bytes.dropFirst(split))
+                check(first.count + second.count == 7 && framer.status == .provisional
+                      && framer.checkpoint == 7 && framer.lookups == 2 && framer.hits == 1
+                      && framer.attempts == 1 && framer.terminals == 1 && framer.successes == 1
+                      && framer.active.isEmpty,
+                      "Count-only metrics preserve arbitrary cross-pipe chunk split \(split)")
+            }
+            for invalid in [
+                prefix + "lookup seq=1 hit=1 forced=0 coalesced=0\n",
+                enabled + prefix + "checkpoint seq=3\n",
+                enabled + prefix + "checkpoint seq=02\n",
+                enabled + prefix + "terminal seq=2 fetch=1 ok=1\n",
+                enabled + prefix + "attempt seq=2 fetch=2\n",
+                enabled + prefix + "lookup seq=2 hit=1 forced=1 coalesced=0\n",
+                enabled + prefix + "lookup seq=2 hit=1 forced=0 coalesced=1\n",
+                enabled + prefix + "attempt seq=2 fetch=1\n" + prefix + "checkpoint seq=3\n",
+                enabled + prefix + "enabled seq=2 budget=65536\n",
+                enabled + prefix + "checkpoint seq=2 extra=private\n",
+                enabled + prefix + "checkpoint seq=18446744073709551616\n",
+                enabled + "Ode descriptor metrics v2 checkpoint seq=2\n",
+                enabled + prefix + "checkpoint seq=2\r\n",
+                enabled + prefix + String(repeating: "x", count: 256) + "\n",
+                enabled + prefix + "attempt seq=2 fetch=1\n"
+                    + prefix + "terminal seq=3 fetch=1 ok=0\n"
+                    + prefix + "terminal seq=4 fetch=1 ok=0\n"
+            ] {
+                var framer = ManagementClient.DescriptorMetricsFramer()
+                _ = framer.append(Data(invalid.utf8))
+                check(framer.status == .invalid, "Malformed/uncorrelated metrics invalidate proof without retaining payload")
+            }
+            var absent = ManagementClient.DescriptorMetricsFramer()
+            check(absent.append(Data("untrusted arbitrary stderr\n".utf8)).isEmpty && absent.status == .unavailable,
+                  "Missing enabled marker is unavailable, never zero")
+            _ = absent.append(Data(enabled.utf8))
+            _ = absent.append(Data((prefix + "attempt seq=2 fetch=1\n").utf8))
+            absent.finish()
+            check(absent.status == .invalid, "Unfinished upstream fetch cannot complete count proof")
+            var exhausted = ManagementClient.DescriptorMetricsFramer()
+            _ = exhausted.append(Data((enabled + prefix + "exhausted seq=2\n").utf8))
+            check(exhausted.status == .exhausted, "Explicit exhausted marker invalidates measurement completeness")
+            var bounded = ManagementClient.DescriptorMetricsFramer()
+            _ = bounded.append(Data(enabled.utf8))
+            for sequence in 2...3000 {
+                _ = bounded.append(Data((prefix + "lookup seq=\(sequence) hit=1 forced=0 coalesced=0\n").utf8))
+            }
+            check(bounded.status == .invalid, "Metrics enforce the independent 64KiB lifetime budget")
+            for value in [nil, "", "0", "true", "01", "1 ", "1"] as [String?] {
+                var environment = ["HOME": "/neutral", "SECRET": "never-forward", "RUST_LOG": "trace"]
+                environment["XODUS_DESCRIPTOR_METRICS"] = value
+                let selected = ManagementClient.operationalEnvironment(environment)
+                check(selected["HOME"] == "/neutral" && selected["SECRET"] == nil && selected["RUST_LOG"] == "error"
+                      && selected["XODUS_DESCRIPTOR_METRICS"] == (value == "1" ? "1" : nil),
+                      "Owned launcher permits only exact metrics opt-in and preserves environment restrictions")
+            }
+            let savedOptIn = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+            setenv("XODUS_DESCRIPTOR_METRICS", "true", 1)
+            let disabled = try ManagementClient()
+            do { _ = try await disabled.connect(mockConfiguration("metricsearly")) }
+            catch {
+                if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                throw error
+            }
+            if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
+            else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+            do {
+                _ = try await disabled.descriptorMetricsCheckpoint()
+                check(false, "Nonexact opt-in keeps actual owned transport measurement disabled")
+            } catch {
+                check(error as? ManagementError == .invalidRequest,
+                      "Nonexact opt-in keeps actual owned transport measurement disabled")
+            }
+            _ = try await disabled.request(.jobs)
+            check(await disabled.close(), "Disabled measurement preserves ordinary owned transport")
+            for scenario in ["metricsearly", "metricslate", "metricsmissing", "metricsstale", "metricsdrainfail",
+                             "metricsbusy", "metricsbusytimeout", "metricsbusycap", "metricsbarrier"] {
+                let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
+                setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
+                let client = try ManagementClient()
+                do { _ = try await client.connect(mockConfiguration(scenario)) }
+                catch {
+                    if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                    else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                    throw error
+                }
+                if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
+                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                if scenario == "metricsbarrier" {
+                    let prior = Task { try await client.request(.jobs) }
+                    while await client.pendingRequestCount == 0 { await Task.yield() }
+                    let fence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending, !fence.isCancelled {
+                        if await client.pendingRequestCount == 0 { break }
+                        await Task.yield()
+                    }
+                    let later = Task { try await client.request(.jobs) }
+                    do {
+                        let counts = try await fence.value
+                        check(counts.checkpoint == 2,
+                              "Checkpoint drains prior work and fences later request admission")
+                    } catch {
+                        check(false, "Checkpoint drains prior work and fences later request admission")
+                    }
+                    _ = try await prior.value
+                    _ = try await later.value
+                    check(await client.close(), "Owned admission boundary fixture closes")
+                    continue
+                } else if scenario.hasPrefix("metricsbusy") {
+                    let held = Task { try await client.request(.jobs) }
+                    let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                    while await client.pendingRequestCount == 0, ContinuousClock.now < deadline {
+                        try await Task.sleep(for: .milliseconds(10))
+                    }
+                    let fence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending { await Task.yield() }
+                    if scenario == "metricsbusytimeout" {
+                        do {
+                            _ = try await client.request(.jobs, timeout: .milliseconds(20))
+                            check(false, "Queued request retains its original timeout budget")
+                        } catch {
+                            check(error as? ManagementError == .requestTimedOut,
+                                  "Queued request retains its original timeout budget")
+                        }
+                        _ = try? await fence.value
+                        _ = try? await held.value
+                        check(await client.close(), "Timed-out boundary transport closes")
+                        continue
+                    }
+                    if scenario == "metricsbusycap" {
+                        let queued = (0..<63).map { _ in Task { try await client.request(.jobs) } }
+                        while await client.descriptorQueuedRequestCount < 63 { await Task.yield() }
+                        do {
+                            _ = try await client.request(.jobs)
+                            check(false, "Boundary waiters share the unchanged 64-request limit")
+                        } catch {
+                            check(error as? ManagementError == .outputOverflow,
+                                  "Boundary waiters share the unchanged 64-request limit")
+                        }
+                        for task in queued { task.cancel() }
+                        for task in queued { _ = try? await task.value }
+                        fence.cancel()
+                        _ = try? await fence.value
+                        check(await client.close(), "Capped boundary fixture closes")
+                        _ = try? await held.value
+                        continue
+                    }
+                    let cancelled = Task { try await client.request(.jobs) }
+                    cancelled.cancel()
+                    do { _ = try await cancelled.value; check(false, "Queued boundary request preserves cancellation") }
+                    catch { check(error is CancellationError, "Queued boundary request preserves cancellation") }
+                    fence.cancel()
+                    do { _ = try await fence.value; check(false, "Cancelled boundary cannot certify pending work") }
+                    catch { check(error is CancellationError, "Cancelled boundary cannot certify pending work") }
+                    let disconnectFence = Task { try await client.descriptorMetricsCheckpoint() }
+                    while await !client.descriptorCheckpointPending { await Task.yield() }
+                    let queued = Task { try await client.request(.jobs) }
+                    check(await client.close(), "Owned busy metrics fixture closes")
+                    do { _ = try await queued.value; check(false, "Disconnect releases queued boundary requests") }
+                    catch { check(error as? ManagementError == .disconnected, "Disconnect releases queued boundary requests") }
+                    _ = try? await disconnectFence.value
+                    _ = try? await held.value
+                    continue
+                }
+                if scenario == "metricsstale" {
+                    _ = try await client.request(.diagnostics)
+                    do {
+                        _ = try await client.descriptorMetricsCheckpoint()
+                        check(false, "Delayed prior export marker cannot certify a new missing checkpoint")
+                    } catch {
+                        check(error as? ManagementError == .invalidPayload,
+                              "Delayed prior export marker cannot certify a new missing checkpoint")
+                    }
+                } else if scenario == "metricsdrainfail" {
+                    do {
+                        _ = try await client.descriptorMetricsCheckpoint()
+                        check(false, "Drain failure cannot certify a checkpoint")
+                    } catch {
+                        check(error as? ManagementError == .backendError("NETWORK_UNAVAILABLE", retryable: false),
+                              "Drain failure cannot certify a checkpoint")
+                    }
+                } else {
+                    let first = try await client.descriptorMetricsCheckpoint()
+                    check(first.checkpoint == 2 && first.lookups == 0 && first.attempts == 0,
+                          "Actual owned fixture correlates checkpoint and result across \(scenario) pipes")
+                    if scenario == "metricsmissing" {
+                        do {
+                            _ = try await client.descriptorMetricsCheckpoint()
+                            check(false, "An earlier checkpoint cannot certify a later export with a missing marker")
+                        } catch {
+                            check(error as? ManagementError == .invalidPayload,
+                                  "An earlier checkpoint cannot certify a later export with a missing marker")
+                        }
+                    } else if scenario == "metricslate" {
+                        let second = Task { try await client.descriptorMetricsCheckpoint() }
+                        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                        while await !client.descriptorCheckpointPending, ContinuousClock.now < deadline {
+                            try await Task.sleep(for: .milliseconds(1))
+                        }
+                        do {
+                            _ = try await client.descriptorMetricsCheckpoint()
+                            check(false, "Concurrent exports cannot share one fresh checkpoint")
+                        } catch {
+                            check(error as? ManagementError == .invalidRequest,
+                                  "Concurrent exports cannot share one fresh checkpoint")
+                        }
+                        check(try await second.value.checkpoint == 3,
+                              "Late stderr marker still certifies only its own completed export")
+                    } else {
+                        let second = try await client.descriptorMetricsCheckpoint()
+                        check(second.checkpoint == 3, "Multiple exports require fresh monotonic checkpoints")
+                    }
+                }
+                check(await client.close(), "Owned count-only metrics fixture closes")
+            }
+        }
+
+    func requestPressureChecks() async throws {
+        let requests = try ManagementClient()
+        _ = try await requests.connect(mockConfiguration("requestpressure"))
+        let held = (0..<64).map { _ in Task {
+            do { _ = try await requests.request(.jobs); return false }
+            catch { return error as? ManagementError == .disconnected }
+        } }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while await requests.pendingRequestCount < 64, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(await requests.pendingRequestCount == 64, "Fixture holds sixty-four actual requests")
+        do {
+            _ = try await requests.request(.jobs)
+            check(false, "Request pressure is distinguished before dispatch")
+        } catch {
+            let failure = await requests.lastOverflow
+            check(error as? ManagementError == .outputOverflow
+                  && failure?.origin == .requestBudget,
+                  "Request pressure is distinguished before dispatch")
+        }
+        check(await requests.close(), "Owned request-pressure fixture closes")
+        for task in held { check(await task.value, "Held read terminates on owned close") }
+    }
+
+    func contractSchemaChecks(canonicalURL: URL) throws {
+        let bundledURL = try ContractValidator.bundledSchemaURL()
+        let canonical = try Data(contentsOf: canonicalURL)
+        let bundled = try Data(contentsOf: bundledURL)
+        check(bundled == canonical, "App contract bytes exactly match the frozen canonical producer schema")
+        let validator = try ContractValidator()
+        let producer = try ContractValidator(schemaURL: canonicalURL, schemaIdentifier: "urn:xodus:management:1.0")
+        let positive = try fixture("positive").array ?? []
+        for frame in positive {
+            try validator.validate(frame)
+            try producer.validate(frame)
+        }
+        check(positive.count == 102, "App and canonical validators preserve all 102 supported producer frames")
+        let sourceWarnings = try fixture("query-source-failure").array ?? []
+        for (index, frame) in (try fixture("forza-more-pages").array ?? []).enumerated() {
+            try validator.validate(frame)
+            check(true, "REQ100 captured public Forza page \(index + 1) passes wire schema")
+            let payload = frame["data"] ?? frame["error"]?["details"] ?? .null
+            let page = try payload.decode(CatalogQuery.self)
+            try page.validatePublicScope(query: "Forza", market: "RO", language: "en-US", limit: 8)
+            check(true, "REQ100 captured public Forza page \(index + 1) validates its exact wire and scope")
+            if index == 2, var data = payload.object,
+               var product = data["products"]?.array?.first?.object,
+               var listing = product["gamePass"]?.object {
+                listing["status"] = .string("known")
+                product["gamePass"] = .object(listing)
+                data["products"] = .array([.object(product)])
+                do {
+                    try JSONValue.object(data).decode(CatalogQuery.self).validatePublicScope(
+                        query: "Forza", market: "RO", language: "en-US", limit: 8)
+                    check(false, "REQ100 Edge-only source cannot claim known Game Pass membership")
+                } catch ManagementError.invalidPayload {
+                    check(true, "REQ100 Edge-only source cannot claim known Game Pass membership")
+                }
+            }
+        }
+        check(sourceWarnings.count == 2, "REQ100 retains both exact a31f63df producer source-warning fixtures")
+        for frame in sourceWarnings {
+            try validator.validate(frame)
+            try producer.validate(frame)
+            guard let payload = frame["data"] ?? frame["error"]?["details"] else {
+                throw ManagementError.invalidPayload
+            }
+            let query = try payload.decode(CatalogQuery.self)
+            check(query.sourceFailure?.code == .packageUnavailable && query.nextCursor != nil,
+                  "REQ100 canonical \(frame["requestID"]?.string ?? "") retains warning and opaque cursor")
+        }
+        for definition in ["queryData", "failedQueryData"] {
+            guard var page = positive.first(where: {
+                let value = definition == "queryData" ? $0["data"] : $0["error"]?["details"]
+                return value?["corpus"]?.string == "publicMicrosoftStoreSearch"
+            }).flatMap({ definition == "queryData" ? $0["data"]?.object : $0["error"]?["details"]?.object }) else {
+                throw ManagementError.invalidPayload
+            }
+            for source in ["MicrosoftStoreEdge:v9.0/searchResults",
+                           "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults"] {
+                page["source"] = .string(source)
+                try validator.validate(.object(page), definition: definition)
+                try producer.validate(.object(page), definition: definition)
+                check(true, "Both contracts accept actual producer \(definition) source \(source)")
+                if definition == "queryData", var product = page["products"]?.array?.first?.object {
+                    let originalProducts = page["products"]
+                    product["freshness"] = .string("cached")
+                    page["products"] = .array([.object(product)])
+                    try validator.validate(.object(page), definition: definition)
+                    try producer.validate(.object(page), definition: definition)
+                    check(true, "Both contracts preserve cached product descriptors under live query source \(source)")
+                    for invalid in ["pageFreshness", "pcCandidate"] {
+                        var rejected = page
+                        if invalid == "pageFreshness" { rejected["freshness"] = .string("cached") }
+                        else {
+                            var nonPC = product
+                            nonPC["pcCatalogCandidate"] = .bool(false)
+                            rejected["products"] = .array([.object(nonPC)])
+                        }
+                        for contract in [validator, producer] {
+                            do {
+                                try contract.validate(.object(rejected), definition: definition)
+                                check(false, "Query contract rejects \(invalid) despite cached descriptor compatibility")
+                            } catch ManagementError.invalidPayload {
+                                check(true, "Query contract rejects \(invalid) despite cached descriptor compatibility")
+                            }
+                        }
+                    }
+                    page["products"] = originalProducts
+                }
+            }
+            for code in ["PACKAGE_UNAVAILABLE", "NETWORK_UNAVAILABLE"] {
+                let warning: [String: JSONValue] = [
+                    "code": .string(code), "message": .string(String(repeating: "x", count: 1_024)),
+                    "retryable": .bool(code == "NETWORK_UNAVAILABLE")
+                ]
+                page["sourceFailure"] = .object(warning)
+                for contract in [validator, producer] {
+                    try contract.validate(.object(page), definition: definition)
+                }
+                let decoded = try JSONValue.object(page).decode(CatalogQuery.self)
+                check(decoded.sourceFailure?.code.rawValue == code && decoded.sourceFailure?.message.count == 1_024,
+                      "REQ100 \(definition) decodes bounded \(code) source warning")
+                for invalid in ["null", "unknownCode", "emptyMessage", "longMessage", "extraField", "missingRetryable"] {
+                    var rejected = page
+                    var badWarning = warning
+                    switch invalid {
+                    case "unknownCode": badWarning["code"] = .string("AUTH_INVALID")
+                    case "emptyMessage": badWarning["message"] = .string("")
+                    case "longMessage": badWarning["message"] = .string(String(repeating: "x", count: 1_025))
+                    case "extraField": badWarning["details"] = .object([:])
+                    case "missingRetryable": badWarning.removeValue(forKey: "retryable")
+                    default: break
+                    }
+                    rejected["sourceFailure"] = invalid == "null" ? .null : .object(badWarning)
+                    for contract in [validator, producer] {
+                        do {
+                            try contract.validate(.object(rejected), definition: definition)
+                            check(false, "REQ100 \(definition) refuses \(invalid) source warning")
+                        } catch ManagementError.invalidPayload {
+                            check(true, "REQ100 \(definition) refuses \(invalid) source warning")
+                        }
+                    }
+                }
+            }
+            page.removeValue(forKey: "sourceFailure")
+            if definition == "queryData", var product = page["products"]?.array?.first?.object {
+                product["source"] = .string("syntheticPublicSource")
+                var budgetPage = page
+                budgetPage["products"] = .array([.object(product)])
+                let failures: [JSONValue] = (0..<16).map { index in
+                    .object(["productID": .string(String(format: "9REJ%08d", index)),
+                        "error": .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                            "message": .string("Synthetic rejected candidate."), "retryable": .bool(false)])])
+                }
+                budgetPage["failures"] = .array(failures)
+                for contract in [validator, producer] {
+                    try contract.validate(.object(budgetPage), definition: definition)
+                }
+                let decoded = try JSONValue.object(budgetPage).decode(CatalogQuery.self)
+                guard let product = decoded.products.first else { throw ManagementError.invalidPayload }
+                try decoded.validatePublicScope(query: decoded.query, market: product.market,
+                                                language: product.language, limit: 1)
+                check(true, "REQ100 product page limit is independent of its sixteen rejected candidates")
+                budgetPage["failures"] = .array(failures + [
+                    .object(["productID": .string("9REJ00000016"),
+                        "error": .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                            "message": .string("Synthetic overflow candidate."), "retryable": .bool(false)])])
+                ])
+                do {
+                    try JSONValue.object(budgetPage).decode(CatalogQuery.self).validatePublicScope(
+                        query: decoded.query, market: product.market, language: product.language, limit: 1)
+                    check(false, "REQ100 rejects seventeen candidate failures")
+                } catch ManagementError.invalidPayload {
+                    check(true, "REQ100 rejects seventeen candidate failures")
+                }
+            }
+            page["source"] = .string("untrustedSource")
+            for contract in [validator, producer] {
+                do {
+                    try contract.validate(.object(page), definition: definition)
+                    check(false, "Contract rejects unknown query source in \(definition)")
+                } catch ManagementError.invalidPayload {
+                    check(true, "Contract rejects unknown query source in \(definition)")
+                }
+            }
+        }
+        for item in try fixture("negative").array ?? [] {
+            guard let frame = item["frame"] else { throw ManagementError.invalidPayload }
+            for contract in [validator, producer] {
+                do {
+                    try contract.validate(frame)
+                    check(false, "Contract retains negative fixture rejection")
+                } catch ManagementError.invalidFrame {
+                    check(true, "Contract retains negative fixture rejection")
+                }
+            }
+        }
+    }
+
     func run() async throws {
+        try await descriptorMetricsChecks()
+        try await overflowChecks()
         try odeAccountChecks()
         try accountTierChecks()
         try registryDevelopmentChecks()
@@ -1021,7 +1658,8 @@ enum MockBackend {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
                                      "savedpermission", "startupquery", "uifailures",
-                                     "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded"].contains(scenario) || scenario.hasPrefix("recent") || scenario.hasPrefix("ode")
+                                     "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded",
+                                     "discoveryhundreds"].contains(scenario) || scenario.hasPrefix("recent") || scenario.hasPrefix("ode")
             func trace(_ entry: String) throws {
                 guard lifecycleScenario else { return }
                 try FileManager.default.createDirectory(at: lifecycleDirectory, withIntermediateDirectories: true,
@@ -1052,13 +1690,15 @@ enum MockBackend {
             }
             var hello = frames.first(where: { $0["data"]?["schema"] != nil })?["data"]?.object ?? [:]
             var supported: Set<ManagementCommand> = [.authStatus, .authLogout, .jobs]
+            if scenario.hasPrefix("descriptors") { supported.insert(.descriptors) }
             if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
-            if scenario == "diagnostics" { supported.insert(.diagnostics) }
+            if scenario == "diagnostics" || scenario.hasPrefix("metrics") { supported.insert(.diagnostics) }
             if ["discoveryfail", "discoveryrecover", "discoverypcflag", "discoveryrefresh",
-                "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario) { supported.insert(.discover) }
-            if ["queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
+                "discoveryhundreds", "discoveryrepeatedpage", "discoverybounded",
+                "discoverypartialretry", "discoveryretryfailure"].contains(scenario) { supported.insert(.discover) }
+            if ["queryforzareal", "querybudget", "querysourceretry", "querysourcewarning", "querysourcefailed", "queryfail", "badqueryfail", "queryempty", "queryslow", "querynodetails",
                 "querynulldetails", "querycoalesce", "querypagination", "queryrefreshfailure",
                 "startupquery", "publiccapture", "uifailures", "discoverypcflag"].contains(scenario) { supported.insert(.query) }
             if scenario == "startupquery" { supported.insert(.search) }
@@ -1074,9 +1714,11 @@ enum MockBackend {
             }
             var loggedOut = false, flowStarted = false, cancelledLate = false
             var catalogQueryReads = 0
+            var descriptorReads = 0
             var flowReads = 0, discoveryReads = 0, profileReads = 0
             var activityReads = 0, registryReads = 0
             var recentReads = 0, accountLibraryReads = 0
+            var metricSequence = 1
             var gatedAttempts = 0
             hello["capabilities"] = .array(ManagementCommand.allCases.map { command in .object([
                 "command": .string(command.rawValue), "supported": .bool(supported.contains(command)),
@@ -1087,6 +1729,10 @@ enum MockBackend {
                 let request = try JSONDecoder().decode(JSONValue.self, from: Data(line.utf8))
                 let command = request["command"]?.string ?? ""
                 if command == "hello" {
+                    if scenario.hasPrefix("metrics"), ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"] == "1" {
+                        try FileHandle.standardError.write(contentsOf:
+                            Data("Ode descriptor metrics v1 enabled seq=1 budget=65536\n".utf8))
+                    }
                     if scenario == "welcomeretry" {
                         let marker = lifecycleDirectory.appendingPathComponent("hello-rejected")
                         if !FileManager.default.fileExists(atPath: marker.path) {
@@ -1110,6 +1756,38 @@ enum MockBackend {
                     if scenario == "mismatch" { result["protocol"] = .object(["major": .integer(2), "minor": .integer(0)]) }
                     try emit(.object(result))
                 } else {
+                    if scenario == "metricsbarrier", command == ManagementCommand.jobs.rawValue {
+                        activityReads += 1
+                        usleep(100_000)
+                    }
+                    if scenario.hasPrefix("metricsbusy"), command == ManagementCommand.jobs.rawValue { continue }
+                    if scenario.hasPrefix("metrics"), command == ManagementCommand.diagnostics.rawValue {
+                        if scenario == "metricsdrainfail" {
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE")
+                            continue
+                        }
+                        let marker = Data("Ode descriptor metrics v1 checkpoint seq=\(metricSequence + 1)\n".utf8)
+                        if scenario == "metricsearly" { try FileHandle.standardError.write(contentsOf: marker) }
+                        guard let diagnostic = frames.first(where: { $0["data"]?["reportVersion"] != nil })?["data"] else {
+                            throw ManagementError.invalidPayload
+                        }
+                        try emit(.object(result(request, data: diagnostic)))
+                        if scenario == "metricslate" || scenario == "metricsstale" { usleep(100_000) }
+                        if scenario != "metricsearly",
+                           scenario != "metricsbarrier" || activityReads == 1,
+                           !["metricsmissing", "metricsstale"].contains(scenario) || metricSequence == 1 {
+                            try FileHandle.standardError.write(contentsOf: marker)
+                        }
+                        metricSequence += 1
+                        continue
+                    }
+                    if scenario == "requestpressure", command == ManagementCommand.jobs.rawValue { continue }
+                    if scenario == "diagnosticlifetime", command == ManagementCommand.jobs.rawValue {
+                        for _ in 0..<257 {
+                            try FileHandle.standardError.write(contentsOf: Data(repeating: 10, count: 4096))
+                            usleep(2_000)
+                        }
+                    }
                     if scenario.hasPrefix("ode") {
                         try trace(command)
                         if command == "auth.status" {
@@ -1118,6 +1796,7 @@ enum MockBackend {
                         }
                         if command == "ode.account.read.v1" {
                             let section = request["params"]?["section"]?.string ?? ""
+                            try trace("\(section):\(request["params"]?["market"]?.string ?? "")")
                             if section == "library" { accountLibraryReads += 1 }
                             let warm = scenario.hasPrefix("odelibrary")
                             if warm, accountLibraryReads > 1 { Thread.sleep(forTimeInterval: 0.15) }
@@ -1146,14 +1825,22 @@ enum MockBackend {
                             } else {
                                 payload = section == "library" ? .object(["items": .array(items)])
                                     : .object(["gamertag": .string("Fixture"), "displayName": .null,
-                                        "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null])
+                                        "avatarURL": .null, "gamerscore": .integer(42), "bio": .null, "location": .null,
+                                        "accountCountry": .object([
+                                            "status": .string(scenario == "odecountryunknown" ? "unknown" : "verified"),
+                                            "countryCode": scenario == "odecountryunknown" ? .null
+                                                : .string(scenario.hasPrefix("odecountry") ? "UK" : "US"),
+                                            "locale": scenario == "odecountryunknown" ? .null : .string("en-GB"),
+                                            "source": .string("xboxAccount.legalCountry"),
+                                            "reason": scenario == "odecountryunknown" ? .string("providerUnavailable") : .null
+                                        ])])
                             }
                             let response = result(request, data: .object([
                                 "section": .string(section),
                                 "accountHash": .string(String(repeating: scenario == "odemismatch" ? "b" : "a", count: 64)),
                                 "checkedAt": .string("2026-10-19T12:00:00Z"), "payload": payload
                             ]))
-                            if scenario == "odeslow" {
+                            if scenario == "odeslow" || (scenario == "odecountryslow" && section == "library") {
                                 DispatchQueue.global().async {
                                     Thread.sleep(forTimeInterval: 0.3)
                                     do { try emit(.object(response)) } catch { exit(3) }
@@ -1268,7 +1955,8 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired"].contains(scenario) { try trace(command) }
+                    if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired",
+                        "discoveryhundreds", "discoverybounded"].contains(scenario) { try trace(command) }
                     if scenario == "foregroundexpired", command == "auth.status" {
                         profileReads += 1
                         try emit(.object(result(request, data: authStatus(
@@ -1435,6 +2123,158 @@ enum MockBackend {
                         }
                         continue
                     }
+                    if scenario.hasPrefix("descriptors"), command == "catalog.descriptors" {
+                        descriptorReads += 1
+                        if scenario.hasPrefix("descriptorscommand") {
+                            if scenario == "descriptorscommandmalformed" {
+                                try emit(.object(result(request, data: .object([:]))))
+                                continue
+                            }
+                            if descriptorReads < 3 || scenario != "descriptorscommandretry" {
+                                var frame = result(request, data: .null)
+                                frame.removeValue(forKey: "data")
+                                frame["ok"] = .bool(false)
+                                frame["error"] = .object([
+                                    "code": .string(scenario == "descriptorscommandauth"
+                                        ? "AUTH_INVALID" : "NETWORK_UNAVAILABLE"),
+                                    "message": .string("Synthetic descriptor command failure."),
+                                    "retryable": .bool(scenario != "descriptorscommandpermanent")
+                                ])
+                                try emit(.object(frame))
+                                continue
+                            }
+                        }
+                        let params = request["params"] ?? .null
+                        let ids = params["productIDs"]?.array?.compactMap(\.string) ?? []
+                        let timestamp = ISO8601DateFormatter()
+                        let now = Date().addingTimeInterval(params["refresh"]?.string == "network" ? 0 : -240)
+                        if scenario == "descriptorssplitfailure", ids == ["9DESC0000002"] {
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE")
+                            continue
+                        }
+                        let recovering = ["descriptorsretry", "descriptorscapacity", "descriptorsauth",
+                                          "descriptorsretryexhausted"].contains(scenario)
+                        if recovering, descriptorReads > 1, ids != ["9DESC0000002"] { exit(3) }
+                        let failed = scenario == "descriptorsunavailable" ? ids.filter { $0 == "9DESC0000002" }
+                            : recovering && (descriptorReads < 3 || scenario == "descriptorsauth"
+                            || scenario == "descriptorsretryexhausted")
+                            ? ids.filter { $0 == "9DESC0000002" }
+                            : scenario == "descriptorsoversized" ? ids
+                            : scenario == "descriptorssplitfailure" && ids.count > 1 ? Array(ids.dropFirst()) : []
+                        let records = ids.filter { !failed.contains($0) }.map { id -> JSONValue in
+                            .object([
+                                "productID": .string(id), "market": params["market"] ?? .null,
+                                "language": params["language"] ?? .null,
+                                "checkedAt": .string(timestamp.string(from: now)),
+                                "expiresAt": .string(timestamp.string(from: now.addingTimeInterval(300))),
+                                "freshness": .string("cached"),
+                                "product": .object([
+                                    "ProductId": .string(id), "ProductType": .string("Game"),
+                                    "ProductKind": .string("Game"),
+                                    "LocalizedProperties": .array([.object([
+                                        "ProductTitle": .string("Synthetic managed game"), "Images": .array([]),
+                                        "ProductDescription": .string("Managed public descriptor.")
+                                    ])]),
+                                    "DisplaySkuAvailabilities": .array([.object([
+                                        "Sku": .object([
+                                            "SkuId": .string("synthetic"),
+                                            "Properties": .object(["Packages": .array([.object([
+                                                "PlatformDependencies": .array([.object([
+                                                    "PlatformName": .string("Windows.Desktop")
+                                                ])])
+                                            ])])])
+                                        ]),
+                                        "Availabilities": .array([])
+                                    ])])
+                                ])
+                            ])
+                        }
+                        let failures = failed.map { id -> JSONValue in
+                            .object(["productID": .string(id), "error": .object([
+                                "code": .string(["descriptorsretry", "descriptorsretryexhausted"].contains(scenario)
+                                    ? "NETWORK_UNAVAILABLE"
+                                    : scenario == "descriptorsauth" ? "AUTH_INVALID"
+                                    : scenario == "descriptorsunavailable" ? "PACKAGE_UNAVAILABLE" : "LIMIT_EXCEEDED"),
+                                "message": .string("Synthetic public descriptor failure"),
+                                "retryable": .bool(recovering)
+                            ])])
+                        }
+                        try emit(.object(result(request, data: .object([
+                            "descriptors": .array(records), "failures": .array(failures)
+                        ]))))
+                        continue
+                    }
+                    if scenario == "queryforzareal", command == "catalog.query" {
+                        let pages = try fixture("forza-more-pages").array ?? []
+                        guard catalogQueryReads <= pages.count else { exit(3) }
+                        let previous = catalogQueryReads == 0 ? JSONValue.null
+                            : (pages[catalogQueryReads - 1]["data"]?["nextCursor"]
+                               ?? pages[catalogQueryReads - 1]["error"]?["details"]?["nextCursor"] ?? .null)
+                        guard request["params"]?["cursor"] == previous else { exit(3) }
+                        if catalogQueryReads == pages.count {
+                            // Synthetic source exhaustion after the six unchanged captured pages.
+                            guard var page = pages.last?["error"]?["details"]?.object else { exit(3) }
+                            page["failures"] = .array([])
+                            page["nextCursor"] = .null
+                            catalogQueryReads += 1
+                            try emit(.object(result(request, data: .object(page))))
+                            continue
+                        }
+                        guard var frame = pages[catalogQueryReads].object else { exit(3) }
+                        catalogQueryReads += 1
+                        frame["requestID"] = request["requestID"]
+                        try emit(.object(frame))
+                        continue
+                    }
+                    if ["querybudget", "querysourceretry", "querysourcewarning", "querysourcefailed"].contains(scenario),
+                       command == "catalog.query" {
+                        catalogQueryReads += 1
+                        let params = request["params"] ?? .null
+                        guard var page = frames.first(where: {
+                            $0["data"]?["corpus"]?.string == "publicMicrosoftStoreSearch"
+                                && $0["data"]?["products"]?.array?.isEmpty == false
+                        })?["data"]?.object else { exit(3) }
+                        page["query"] = params["query"]
+                        page["source"] = .string("XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults")
+                        page["failures"] = .array([])
+                        page["nextCursor"] = .null
+                        page["products"] = .array((page["products"]?.array ?? []).prefix(1).map {
+                            var value = $0.object ?? [:]
+                            value["market"] = params["market"]
+                            value["language"] = params["language"]
+                            value["resolvedLanguage"] = .string("neutral")
+                            value["source"] = .string("syntheticPublicSource")
+                            return .object(value)
+                        })
+                        if scenario != "querybudget", params["query"] == .string("Forza") {
+                            page["sourceFailure"] = .object([
+                                "code": .string(scenario == "querysourceretry" ? "NETWORK_UNAVAILABLE" : "PACKAGE_UNAVAILABLE"),
+                                "message": .string("One public source returned a non-search page."),
+                                "retryable": .bool(scenario == "querysourceretry")
+                            ])
+                        }
+                        if scenario == "querysourcefailed" || (scenario == "querybudget" && catalogQueryReads == 1) {
+                            page["products"] = .array([])
+                            page["failures"] = .array((0..<(scenario == "querybudget" ? 16 : 1)).map { index in
+                                .object(["productID": .string(String(format: "9REJ%08d", index)),
+                                    "error": .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                                        "message": .string("Synthetic non-PC candidate."),
+                                        "retryable": .bool(false)])])
+                            })
+                            if scenario == "querybudget" { page["nextCursor"] = .string("q1-aa") }
+                            var response = result(request, data: .null)
+                            response.removeValue(forKey: "data")
+                            response["ok"] = .bool(false)
+                            response["error"] = .object(["code": .string("PACKAGE_UNAVAILABLE"),
+                                "message": .string("No PC games in this candidate page."),
+                                "retryable": .bool(false), "details": .object(page)])
+                            try emit(.object(response))
+                        } else {
+                            if scenario == "querybudget", params["cursor"] != .string("q1-aa") { exit(3) }
+                            try emit(.object(result(request, data: .object(page))))
+                        }
+                        continue
+                    }
                     if scenario == "querynodetails", command == "catalog.query" {
                         try emitFailure(request, code: "PACKAGE_UNAVAILABLE")
                         continue
@@ -1587,8 +2427,15 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["discoveryhundreds", "discoveryrepeatedpage", "discoverybounded"].contains(scenario),
+                    if ["discoveryhundreds", "discoveryrepeatedpage", "discoverybounded", "discoveryretryfailure"].contains(scenario),
                        command == "catalog.discover" {
+                        discoveryReads += 1
+                        if scenario == "discoveryretryfailure", discoveryReads == 3 {
+                            guard request["params"]?["cursor"] == .null else { exit(3) }
+                            try emitFailure(request, code: "NETWORK_UNAVAILABLE",
+                                message: "Synthetic retry failure without page details")
+                            continue
+                        }
                         guard request["params"]?["limit"]?.uint64 == 16,
                               var page = frames.first(where: {
                                   $0["data"]?["corpus"]?.string == "pcGamePassDiscovery"
@@ -1625,6 +2472,37 @@ enum MockBackend {
                         page["failures"] = .array([])
                         let next = scenario == "discoveryrepeatedpage" && start > 0 ? start : end
                         page["nextCursor"] = next < total ? .string("\(prefix)\(next)") : .null
+                        try emit(.object(result(request, data: .object(page))))
+                        continue
+                    }
+                    if scenario == "discoverypartialretry", command == "catalog.discover" {
+                        discoveryReads += 1
+                        guard var page = frames.first(where: {
+                            $0["data"]?["corpus"]?.string == "pcGamePassDiscovery"
+                        })?["data"]?.object,
+                              let template = page["products"]?.array?.first?.object else { exit(3) }
+                        let range = discoveryReads == 1 ? 0..<6 : 6..<7
+                        page["products"] = .array(range.map { index in
+                            let id = String(format: "RETRY%07d", index)
+                            var item = template
+                            item["productID"] = .string(id)
+                            item["title"] = .string("Synthetic retry game \(index)")
+                            item["source"] = .string("syntheticPublicSource")
+                            item["pcCatalogCandidate"] = .bool(true)
+                            item["editions"] = .array((item["editions"]?.array ?? []).map { edition in
+                                var value = edition.object ?? [:]
+                                value["productID"] = .string(id)
+                                return .object(value)
+                            })
+                            return .object(item)
+                        })
+                        page["failures"] = .array([.object([
+                            "productID": .string("RETRY9999999"), "error": .object([
+                                "code": .string("NETWORK_UNAVAILABLE"), "message": .string("Synthetic partial failure"),
+                                "retryable": .bool(true)
+                            ])
+                        ])])
+                        page["nextCursor"] = .string("d1-\(page["corpusRevision"]?.string ?? "")-16")
                         try emit(.object(result(request, data: .object(page))))
                         continue
                     }

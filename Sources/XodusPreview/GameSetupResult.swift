@@ -29,6 +29,13 @@ struct GameSetupResult: Decodable, Sendable {
         return value
     }
 
+    static func parse(_ outcome: GameScriptOutcome) throws -> Self {
+        guard let data = outcome.result else { throw GameScriptError.failed(outcome.code) }
+        let result = try parse(data)
+        guard outcome.code == 0 || !result.ready else { throw GameScriptError.statusMismatch }
+        return result
+    }
+
     private static func validText(_ text: String) -> Bool {
         text.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) }
     }

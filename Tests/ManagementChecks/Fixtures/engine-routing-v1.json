@@ -21,24 +21,24 @@
       "expected": {"outcome": "unavailable", "unavailable": "defaultNotInstalled", "kind": "gptk3"}
     },
     {
-      "name": "fallback prefers CrossOver",
+      "name": "unspecified refuses CrossOver and toolkit substitution",
       "request": {"packageType": "uwp", "override": null, "defaultEngine": null, "availability": {"installed": ["crossover", "gptk4", "gptk3", "standaloneWine"]}},
-      "expected": {"outcome": "routed", "runner": "crossover", "reason": "installedFallback"}
+      "expected": {"outcome": "unavailable", "unavailable": "noRunnerInstalled"}
     },
     {
-      "name": "fallback skips absent CrossOver to GPTK4",
+      "name": "unspecified refuses GPTK4 substitution",
       "request": {"packageType": "appx", "override": null, "defaultEngine": null, "availability": {"installed": ["gptk3", "gptk4", "standaloneWine"]}},
-      "expected": {"outcome": "routed", "runner": "gptk4", "reason": "installedFallback"}
+      "expected": {"outcome": "unavailable", "unavailable": "noRunnerInstalled"}
     },
     {
-      "name": "fallback to GPTK3 when only older toolkit and Wine present",
+      "name": "unspecified refuses older toolkit substitution",
       "request": {"packageType": "win32", "override": null, "defaultEngine": null, "availability": {"installed": ["gptk3", "standaloneWine"]}},
-      "expected": {"outcome": "routed", "runner": "gptk3", "reason": "installedFallback"}
+      "expected": {"outcome": "unavailable", "unavailable": "noRunnerInstalled"}
     },
     {
-      "name": "fallback to standalone Wine as last resort",
+      "name": "generic Wine is not silently Calimocho",
       "request": {"packageType": "win32", "override": null, "defaultEngine": null, "availability": {"installed": ["standaloneWine"]}},
-      "expected": {"outcome": "routed", "runner": "standaloneWine", "reason": "installedFallback"}
+      "expected": {"outcome": "unavailable", "unavailable": "noRunnerInstalled"}
     },
     {
       "name": "nothing installed refuses launch",

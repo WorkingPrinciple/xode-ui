@@ -39,11 +39,13 @@ struct LiveLibraryView: View {
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var detailFocusReturnID: String?
     @FocusState private var focusedGameID: String?
-    @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
-    private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
+    @AppStorage(LibrarySupportVisibility.preferenceKey)
+    private var showsUnsupportedGames = LibrarySupportVisibility.defaultShowsUnsupported
+    private var countryUnresolved: Bool { session.hasConfirmedSignIn && !session.accountCountryReady }
+    private var artworkAllowed: Bool { !countryUnresolved && (allowsArtworkLoading ?? allowsStartupTasks) }
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
     private var filter: LibraryFilter {
-        get { selection.filter }
+        get { countryUnresolved ? .installed : selection.filter }
         nonmutating set { changeScope(filter: newValue, showsUnsupported: showsUnsupportedGames) }
     }
     private var sort: LibrarySort {
@@ -64,7 +66,7 @@ struct LiveLibraryView: View {
         nativeMinecraft.installation.appears(in: filter, query: query)
     }
     private var visibleLocalRecords: [LibraryGame] {
-        [.all, .installed].contains(filter) ? localRecords.filter(isVisible) : []
+        LibraryGame.visible(localRecords, query: "", filter: filter, sort: sort).filter(isVisible)
     }
     private var accountCollectionIncomplete: Bool {
         !library.accessIsCurrent || library.snapshot?.isComplete != true
@@ -73,9 +75,12 @@ struct LiveLibraryView: View {
         LibraryLoadingPresentation.showsPlaceholders(
             library: library, loadingInstalled: installed.loading,
             checkingAccess: installed.productAccess.checking,
-            hasUsableContent: !collection.isEmpty || !localRecords.isEmpty
-                || (showsNativeMinecraft && [.ready, .repair].contains(nativeMinecraft.installation.state)),
+            hasUsableContent: hasUsableLibraryContent,
             query: query) && installed.error == nil
+    }
+    private var hasUsableLibraryContent: Bool {
+        !collection.isEmpty || !localRecords.isEmpty
+            || (showsNativeMinecraft && [.ready, .repair].contains(nativeMinecraft.installation.state))
     }
     private var purchaseNotice: String? {
         guard filter == .owned else { return nil }
@@ -101,11 +106,10 @@ struct LiveLibraryView: View {
         let key = projectionKey(filter: nextFilter, showsUnsupported: showsUnsupported)
         let next = LibraryProjection(key: key,
             isVisible: { showsUnsupported || unsupportedIssues($0).isEmpty }, recommendable: recommendable)
-        var targets = Set(next.visible.map { "library-card-\($0.id)" })
-        if [.all, .installed].contains(nextFilter) {
-            targets.formUnion(next.local.filter { showsUnsupported || unsupportedIssues($0).isEmpty }
-                .map { "library-local-\($0.id)" })
-        }
+        let targets = LibraryGame.collectionTargets(qualified: next.visible,
+            local: LibraryGame.visible(next.local, query: "", filter: nextFilter, sort: sort)
+                .filter { showsUnsupported || unsupportedIssues($0).isEmpty },
+            native: nativeMinecraft.installation.appears(in: nextFilter, query: query))
         let target = selection.collectionTarget(remaining: targets)
         selection.beginScopeMeasurement(filter: nextFilter, target: target)
         withTransaction(Transaction(animation: nil)) {
@@ -130,9 +134,6 @@ struct LiveLibraryView: View {
             VStack(alignment: .leading, spacing: 0) {
             if query.isEmpty, !heroGames.isEmpty {
                 heroCarousel
-                if let game = heroGames.first(where: { $0.id == selection.heroID })?.installed {
-                    InstalledPlayError(library: installed, game: game).padding(.horizontal, 56)
-                }
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
@@ -154,9 +155,22 @@ struct LiveLibraryView: View {
                 if let error = installed.discoveryError {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
-                PCGamesView(library: library, installed: installed, operations: operations,
+                if countryUnresolved {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Your installed games stay visible. Confirm your account country to browse the catalogue and Game Pass.")
+                                .font(.callout).foregroundStyle(.secondary)
+                            AccountCountrySettings()
+                        }
+                    } label: {
+                        Label("Account country for browsing", systemImage: "globe")
+                    }
+                    .accessibilityIdentifier("xodus.library.countryNotice")
+                } else {
+                    PCGamesView(library: library, installed: installed, operations: operations,
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
+                }
                 VStack(alignment: .leading, spacing: 22) {
                 VStack(spacing: 0) {
                 LibraryControls(count: LibraryGame.displayedCount(
@@ -166,7 +180,7 @@ struct LiveLibraryView: View {
                                 showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: {
                                     changeScope(filter: filter, showsUnsupported: $0)
                                 }),
-                                allowsSorting: true)
+                                allowsSorting: true, allowsAccountFilters: !countryUnresolved)
                     .id("library-games")
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
                         selection.measureHeader($0)
@@ -180,7 +194,10 @@ struct LiveLibraryView: View {
                         .accessibilityIdentifier("xodus.library.purchaseProvenance")
                 }
                 if installed.loading { OdeLoadingStatus(title: "Loading installed games") }
-                if installed.productAccess.checking { OdeLoadingStatus(title: "Checking game access") }
+                if LibraryLoadingPresentation.showsAccessProgress(
+                    checking: installed.productAccess.checking, hasUsableContent: hasUsableLibraryContent) {
+                    OdeLoadingStatus(title: "Checking game access")
+                }
                 if showsLoadingPlaceholders {
                     LibraryLoadingPlaceholders()
                 } else if visible.isEmpty && !showsNativeMinecraft && visibleLocalRecords.isEmpty {
@@ -233,20 +250,21 @@ struct LiveLibraryView: View {
                 if let error = xboxStats.error {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
-                if !visibleLocalRecords.isEmpty {
+                if !visibleLocalRecords.isEmpty || showsNativeMinecraft {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Local installations (\(visibleLocalRecords.count))").font(.title2.weight(.semibold))
+                        Text("Installed games (\(LibraryGame.installedCount(local: visibleLocalRecords, native: showsNativeMinecraft)))")
+                            .font(.title2.weight(.semibold))
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
                             ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
+                            if showsNativeMinecraft {
+                                NativeMinecraftCard {
+                                    CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
+                                        status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
+                                }.id("library-native-minecraft")
+                            }
                         }
                         .scrollTargetLayout()
                     }
-                }
-                if showsNativeMinecraft {
-                    NativeMinecraftCard {
-                        CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
-                            status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
-                    }.frame(maxWidth: 220)
                 }
                 }
                 }
@@ -273,13 +291,15 @@ struct LiveLibraryView: View {
             selection.measureAncestor("root", frame: $0)
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
-        .sheet(item: $selection.localDetail, onDismiss: {
+        .gameDetailSheet(item: $selection.localDetail, operations: operations, allowed: allowsStartupTasks,
+                         accountHash: session.accountHash, onDismiss: {
             restoreDetailFocus()
-        }) { entry in
+        }) { entry, reviewInstall in
             if let product = entry.product {
                 LiveProductView(product: product, library: library, installedLibrary: installed,
                     operations: operations, installationID: entry.game.id,
-                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed)
+                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed,
+                    reviewInstall: reviewInstall)
             } else {
                 LocalInstalledGameView(game: entry.game, installed: installed, operations: operations)
             }
@@ -293,15 +313,24 @@ struct LiveLibraryView: View {
             selection.heroPlaying = false
             selection.localDetail = nil
         }
-        .task(id: allowsStartupTasks) { if allowsStartupTasks { await library.loadOnAppear() } }
+        .task(id: "\(allowsStartupTasks):\(countryUnresolved)") {
+            if allowsStartupTasks && !countryUnresolved { await library.loadOnAppear() }
+        }
         .task(id: allowsStartupTasks) {
             guard allowsStartupTasks else { return }
             while !Task.isCancelled {
                 await macEvidence.refresh()
-                await installed.discoverNativeInstallations()
-                await NativeMinecraft.shared.refresh()
                 if NSApp.isActive { await installed.refreshNativeInstallationStatuses() }
+                await NativeMinecraft.shared.refresh()
                 do { try await Task.sleep(for: .seconds(5)) }
+                catch { return }
+            }
+        }
+        .task(id: allowsStartupTasks) {
+            guard allowsStartupTasks else { return }
+            while !Task.isCancelled {
+                await installed.discoverNativeInstallations()
+                do { try await Task.sleep(for: .seconds(30)) }
                 catch { return }
             }
         }
@@ -401,16 +430,19 @@ struct LiveLibraryView: View {
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else if let match = game.installed {
                 InstalledPlayButton(library: installed, operations: operations, game: match,
-                                    usesGlass: true, heroStyle: true)
+                                    displayTitle: game.title, usesGlass: true, heroStyle: true, showsDiagnostics: false)
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else {
                 if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
                     GameInstallAction(game: pc, operations: operations,
                         enabled: allowsStartupTasks && DiscoverBrowse.canReviewInstall(
-                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent,
+                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
                             gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: true))
+                            pcCandidate: true),
+                        showsDiagnostics: false,
+                        disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
+                            : "Wait for Ode to X to finish starting.")
                 }
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
                 if operations.precheckingProductID == game.id {
@@ -418,11 +450,6 @@ struct LiveLibraryView: View {
                 }
             }
         }
-    }
-
-    private func unsupportedReason(_ game: LibraryGame) -> String? {
-        let issues = unsupportedIssues(game)
-        return issues.isEmpty ? nil : issues.map(\.detail).joined(separator: " ")
     }
 
     private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
@@ -501,15 +528,28 @@ struct LiveLibraryView: View {
                 LazyHStack(alignment: .top, spacing: 20) {
                     ForEach(continuing) { game in
                         VStack(alignment: .leading, spacing: 10) {
-                            LibraryLandscapeView(references: art.images[game.storeId]?.landscape ?? [],
-                                                 installed: game, allowsLoading: artworkAllowed)
-                                .frame(width: 260, height: 110).clipped()
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(alignment: .bottomTrailing) {
-                                    InstalledPlayButton(library: installed, operations: operations, game: game,
-                                                        usesGlass: true, prominent: false)
-                                        .padding(12)
-                                }
+                            Button {
+                                open(recentGame(game), focusID: "recent-\(game.id)")
+                            } label: {
+                                LibraryLandscapeView(references: art.images[game.storeId]?.landscape ?? [],
+                                                     installed: game, allowsLoading: artworkAllowed)
+                                    .frame(width: 260, height: 110).clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .focusable()
+                            .focused($focusedGameID, equals: "recent-\(game.id)")
+                            .focusEffectDisabled()
+                            .onKeyPress(.return) {
+                                open(recentGame(game), focusID: "recent-\(game.id)")
+                                return .handled
+                            }
+                            .modifier(SearchResultFocusRing(focused: focusedGameID == "recent-\(game.id)"))
+                            .accessibilityLabel("View \(game.title)")
+                            .accessibilityHint("Open game details to play")
+                            .contextMenu {
+                                Button("View details") { open(recentGame(game), focusID: "recent-\(game.id)") }
+                            }
                             Text(game.title).font(.headline).lineLimit(1)
                             if let facts = projection.byID[game.storeId]?.facts { AccessBadges(facts: facts) }
                             if let date = game.lastPlayedAt {
@@ -530,22 +570,26 @@ struct LiveLibraryView: View {
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
                 selection.measureAncestor("horizontal", frame: $0)
             }
-            ForEach(continuing) { game in
-                InstalledPlayError(library: installed, game: game)
-            }
         }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
             selection.measureAncestor("lane", frame: $0)
         }
     }
 
-    private func open(_ game: LibraryGame) {
+    private func recentGame(_ game: InstalledGame) -> LibraryGame {
+        (collection + localRecords).first { $0.installed?.id == game.id }
+            ?? LibraryGame(id: game.id.uuidString, title: game.title, installed: game,
+                           pc: nil, product: nil, owned: false, gamePass: false, accessIsCurrent: false)
+    }
+
+    private func open(_ game: LibraryGame, focusID: String? = nil) {
         detailFocusReturnID = nil
+        focusedGameID = nil
         do {
             let productID = game.installed?.storeId ?? game.id
             guard PCGamesClient.validProductID(productID) else {
                 if let local = game.installed {
-                    detailFocusReturnID = game.id
+                    detailFocusReturnID = focusID ?? game.id
                     selection.localDetail = InstalledGameDetailSelection(game: local, product: nil)
                 }
                 else { session.errorMessage = "Game details couldn't be opened." }
@@ -557,10 +601,10 @@ struct LiveLibraryView: View {
                                     source: game.owned ? "AccountPCLibrary:identityOnly" : "LocalInstalledRegistry:identityOnly",
                                     pcCandidate: false)
             if let local = game.installed {
-                detailFocusReturnID = game.id
+                detailFocusReturnID = focusID ?? game.id
                 selection.localDetail = InstalledGameDetailSelection(game: local, product: product)
             } else {
-                detailFocusReturnID = game.id
+                detailFocusReturnID = focusID ?? game.id
                 session.selectedProduct = product
             }
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
@@ -568,7 +612,7 @@ struct LiveLibraryView: View {
 
     private func restoreDetailFocus() {
         guard let detailFocusReturnID else { return }
-        let available = Set((visible + visibleLocalRecords).map(\.id))
+        let available = Set((visible + visibleLocalRecords).map(\.id) + continuing.map { "recent-\($0.id)" })
         focusedGameID = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
                                                                   available: available)
         self.detailFocusReturnID = nil
@@ -588,52 +632,20 @@ struct LiveLibraryView: View {
     private func card(_ game: LibraryGame) -> some View {
         let artworkID = game.installed?.storeId ?? game.id
         return GameCard(title: game.title, gameFacts: game.facts,
+                     compatibilityIssues: unsupportedIssues(game),
+                     showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(artworkID),
                      openLabel: "View",
                      focusReturn: ($focusedGameID, game.id),
-                     alwaysShowsActions: true,
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
-        } status: {
-            if !unsupportedIssues(game).isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
-            }
-            if let match = game.installed {
-                InstalledPlayError(library: installed, game: match)
-            }
-        } actions: {
-            LibraryGlassCluster {
-                if let match = game.installed {
-                    if unsupportedIssues(game).isEmpty {
-                        InstalledPlayButton(library: installed, operations: operations, game: match,
-                                            usesGlass: true, prominent: false)
-                    }
-                    InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true,
-                                         details: { open(game) })
-                } else if unsupportedReason(game) != nil {
-                    EmptyView()
-                } else if let pc = game.pc {
-                    GameInstallAction(game: pc, operations: operations,
-                        enabled: allowsStartupTasks && library.accessIsCurrent, primary: false)
-                } else if game.gamePass, let product = game.product {
-                    GameInstallAction(game: PCGame(product: product), operations: operations,
-                        enabled: allowsStartupTasks &&
-                        DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
-                            gamePass: true, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: product.pcCatalogCandidate), primary: false)
-                } else {
-                    GameInstallAction(game: PCGame(id: game.id, title: game.title, artwork: game.cover),
-                        operations: operations, enabled: allowsStartupTasks && library.accessIsCurrent,
-                        primary: false)
-                }
-            }
-        }
+        } status: { EmptyView() }
         .contextMenu {
+            Button("View details") { open(game) }
             if let match = game.installed {
-                InstalledEngineOverride(library: installed, game: match)
                 InstalledGameManagement(library: installed, operations: operations, game: match)
                 Button("Show in Finder") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: match.folder) }
-            } else { Button("View game") { open(game) } }
+            }
         }
     }
 }
