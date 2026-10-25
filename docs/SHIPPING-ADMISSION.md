@@ -2,9 +2,36 @@
 
 ## Purpose and authorization
 
-### REQ101 / REQ80 COR126 source candidate: account country and DIRT5 engine
+### REQ101 r4 source candidate: numeric Xbox account identity
 
 The current accepted backend source is
+`b9946865fe500b20013d2d4875a6aa564bfa0809`, tree
+`dfb28e8deac90b17f298e981701c0179940364d2`. It accepts canonical numeric
+or string provider XUIDs while retaining exact authenticated-account equality.
+Mismatches still fail as ProfileChanged; malformed identities remain unknown.
+The profile schema is unchanged from r3.
+
+The genuine separate canonical app producer has signed CLI
+`f50938a9e3bfd5f5fbc3fa173f02ad0a26b3b50cab16149a4bca74ec60413ab6`
+(28,701,424 bytes), Windows helper
+`03134ed80f1dcfbd47b75d7ac524e95b0ab94ba3338a8b29133ecc1e7a6fc656`
+(20,480 bytes), and manifest
+`57e78daf5151cbc44cb9ebde995e60df07328a50dd37e8d85d95475143322406`
+(16,337 bytes). Unsigned input
+`13c7500f1ed4391018f1be0c84ebb34fa565a747aaf5c2f93b0095934c1807b8`
+(28,850,912 bytes) and provenance
+`0cf64043dddec8b5f15d829e081ac647a5fbc21ac6aa37c6c7141f192719d300`
+(2,197 bytes) pass the sealed-input verifier with only its source/tree predicates
+changed in memory before repinning. Owned hashes, sizes, modes, fixed-leaf/team
+signature and three exact helper embeddings were independently checked.
+Both schemas remain SHA256
+`1118d0e831baa22d31b803e65e0ee4a5c12d8735fb183cecd24b3f8f25cdd4e9`.
+Current recipe binding changes; historical gameplay identities remain intact.
+Artifact admission is not installed acceptance, notarization or game qualification.
+
+### Retained REQ101 / REQ80 COR126 candidate: account country and DIRT5 engine
+
+The previously accepted backend source is
 `a7c1b7adc3884899f4607fb8eaa8431bee0f3509`, tree
 `8fadec7f4b3140aeafd8f670e9f58d32dc287c14`. It retains the reviewed NFS recovery
 and adds the account-bound `profile.accountCountry` contract and the DIRT5-named
