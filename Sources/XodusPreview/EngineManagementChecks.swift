@@ -88,20 +88,24 @@ enum EngineManagementChecks {
             let folder = engines.appendingPathComponent(name)
             try? FileManager.default.removeItem(at: folder)
             try FileManager.default.createDirectory(at: folder.appendingPathComponent("bin"), withIntermediateDirectories: true)
-            for (file, body) in [("bin/wine", "wine"), ("bin/wineserver", "server")] {
+            try FileManager.default.createDirectory(at: folder.appendingPathComponent("lib"), withIntermediateDirectories: true)
+            var listing = ""
+            for (file, body) in [("bin/wine", "wine"), ("bin/wineserver", "server"), ("lib/libcalimocho.dylib", "library")] {
                 try Data(body.utf8).write(to: folder.appendingPathComponent(file))
                 chmod(folder.appendingPathComponent(file).path, 0o755)
+                listing += "\(CalimochoReleaseEngines.digest(Data(body.utf8)))  \(file)\n"
             }
             let manifest: [String: Any] = ["schema": "calimocho-engine/1", "engine_id": name, "version": "11.20-4.0b3-01",
                 "provider": ["id": "calimocho", "contract_version": 1], "paths": ["wine": wine, "wineserver": "bin/wineserver"],
                 "environment": environment, "signing": ["team_id": "M62Z4M5EUY"]]
             let json = try JSONSerialization.data(withJSONObject: manifest)
             try json.write(to: folder.appendingPathComponent("calimocho-engine.json"))
-            try Data("listing".utf8).write(to: folder.appendingPathComponent("MANIFEST.sha256"))
+            listing += "\(CalimochoReleaseEngines.digest(json))  calimocho-engine.json\n"
+            try Data(listing.utf8).write(to: folder.appendingPathComponent("MANIFEST.sha256"))
             return CalimochoReleasePin(engineName: name, wineSha256: CalimochoReleaseEngines.digest(Data("wine".utf8)),
                 wineserverSha256: CalimochoReleaseEngines.digest(Data("server".utf8)),
                 engineJSONSha256: CalimochoReleaseEngines.digest(json),
-                manifestSha256: CalimochoReleaseEngines.digest(Data("listing".utf8)), teamID: "M62Z4M5EUY",
+                manifestSha256: CalimochoReleaseEngines.digest(Data(listing.utf8)), teamID: "M62Z4M5EUY",
                 renderer: "apple-4.0b3", attestation: "fixture")
         }
         let signed: (URL, String) -> Bool = { _, requirement in requirement.contains("\"M62Z4M5EUY\"") }
@@ -119,11 +123,30 @@ enum EngineManagementChecks {
 
         let pin = try build()
         let verified = try CalimochoReleaseEngines.verify(pin, root: engines, signature: signed)
-        check(CalimochoAvailability.verifiedRelease(pin, root: engines.appendingPathComponent("absent"), signature: signed) == .missing
-              && CalimochoAvailability.verifiedRelease(pin, root: engines, signature: signed) == .ready
-              && CalimochoAvailability.verifiedRelease(pin, root: engines, signature: { _, _ in false })
+        func inspection(admitted: Bool) -> EngineInspection {
+            EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+                registrySha256: String(repeating: "a", count: 64), engineName: name, declaredProvider: "calimocho",
+                admittedProvider: admitted ? "calimocho" : nil, admission: admitted ? "admitted" : "denied",
+                ready: admitted, qualified: false, wineSha256: pin.wineSha256, wineserverSha256: pin.wineserverSha256,
+                error: admitted ? nil : .init(code: "PROVIDER_NOT_ADMITTED", message: "manifest entry mismatch"))
+        }
+        let admitted = inspection(admitted: true), denied = inspection(admitted: false)
+        check(CalimochoAvailability.verifiedRelease(pin, root: engines.appendingPathComponent("absent"), signature: signed,
+                                                    admission: admitted) == .missing
+              && CalimochoAvailability.verifiedRelease(pin, root: engines, signature: signed, admission: admitted) == .ready
+              && CalimochoAvailability.verifiedRelease(pin, root: engines, signature: { _, _ in false }, admission: admitted)
                 != .ready,
-              "REQ115 B3: Engines availability is ready only for a verified release, missing when absent, invalid when unsigned")
+              "REQ115 B3: Engines availability is ready only for a verified, admitted release, missing when absent, invalid when unsigned")
+        check(CalimochoAvailability.verifiedRelease(pin, root: engines, signature: signed, admission: nil)
+                == .invalid(CalimochoAvailability.notAdmittedReason),
+              "REQ115 M3: a locally verified engine is never Ready before backend engine-inspect admits it")
+        let library = engines.appendingPathComponent(name).appendingPathComponent("lib/libcalimocho.dylib")
+        try Data("tampered".utf8).write(to: library)
+        check(outcome(pin) == nil
+              && CalimochoAvailability.verifiedRelease(pin, root: engines, signature: signed, admission: denied)
+                == .invalid(CalimochoAvailability.notAdmittedReason),
+              "REQ115 M3: a corrupted manifest entry passes only the app pre-filter; with the backend refusing admission it never yields Ready")
+        try Data("library".utf8).write(to: library)
         let rendered = try CalimochoReleaseEngines.renderRegistry(verified, registries: registries)
         let registry = try NativeEngineRegistry.read(rendered.url)
         let entry = registry.engines.first

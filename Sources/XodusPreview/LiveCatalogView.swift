@@ -993,6 +993,7 @@ struct LiveCatalogView: View {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
+            GameCardDownloadStatus(operations: operations, productID: game.id)
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
         }
     }

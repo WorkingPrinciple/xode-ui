@@ -387,7 +387,7 @@ struct LiveProductView: View {
                         } else if let installed {
                             if installedLibrary.placeholderIDs.contains(installed.id), let owned {
                                 Button {
-                                    Task { await operations.repair(owned, installed: installed) }
+                                    Task { await operations.repair(owned, installed: installed, intent: .downloadFullGame) }
                                 } label: {
                                     Label("Download full game", systemImage: "icloud.and.arrow.down")
                                 }

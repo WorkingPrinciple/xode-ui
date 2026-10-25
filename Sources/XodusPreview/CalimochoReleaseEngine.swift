@@ -239,18 +239,34 @@ enum CalimochoReleaseEngines {
 }
 
 extension CalimochoAvailability {
-    /// Local release verification (manifest digests and Team ID) for the Engines pane. It reads and hashes
-    /// the engine, so call it off the main actor. Backend `engine-inspect` admission remains the launch gate.
+    static let notAdmittedReason = "The engine check didn't confirm this Calimocho engine, so it can't be used. Reinstall it from the official release, then check again."
+
+    /// Ready only when the fast local pre-filter (descriptor, MANIFEST.sha256 file, Wine digests, Team ID) passes
+    /// AND backend `engine-inspect` admitted this exact engine. The backend verifies every manifest entry and the
+    /// tree; the app does not. Reads and hashes the engine, so call it off the main actor.
     static func verifiedRelease(_ pin: CalimochoReleasePin = .release01,
                                 root: URL = CalimochoReleaseEngines.defaultEnginesRoot,
-                                signature: (URL, String) -> Bool = CalimochoReleaseEngines.codeSignatureValid) -> Self {
+                                signature: (URL, String) -> Bool = CalimochoReleaseEngines.codeSignatureValid,
+                                admission: EngineInspection?) -> Self {
         do {
-            _ = try CalimochoReleaseEngines.verify(pin, root: root, signature: signature)
-            return .ready
+            let engine = try CalimochoReleaseEngines.verify(pin, root: root, signature: signature)
+            return CalimochoReleaseEngines.admits(admission, engine: engine) ? .ready : .invalid(notAdmittedReason)
         } catch CalimochoReleaseError.notInstalled {
             return .missing
         } catch {
             return .invalid(error.localizedDescription)
         }
+    }
+}
+
+extension CalimochoReleaseEngines {
+    /// Backend admission for this exact release engine: identity and integrity only, never title qualification.
+    static func admits(_ inspection: EngineInspection?, engine: VerifiedCalimochoEngine) -> Bool {
+        guard let inspection else { return false }
+        return inspection.error == nil && inspection.ready && inspection.admission == "admitted"
+            && inspection.admittedProvider == "calimocho" && inspection.declaredProvider == "calimocho"
+            && inspection.engineName == engine.pin.engineName
+            && inspection.wineSha256 == engine.pin.wineSha256
+            && inspection.wineserverSha256 == engine.pin.wineserverSha256
     }
 }

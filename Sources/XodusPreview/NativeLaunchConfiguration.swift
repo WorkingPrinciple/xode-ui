@@ -753,11 +753,11 @@ enum NativeLaunchError: Error, LocalizedError {
         case .configurationConflict:
             "This game's launch recipe does not match the selected Calimocho configuration. No engine or prefix was substituted. Choose a matching verified configuration."
         case .legacyLauncher:
-            "This legacy launch script cannot verify the selected Calimocho configuration. Use the connected Ode lifecycle service; the script was not started."
+            "This legacy launch script cannot verify the selected Calimocho configuration. Use the connected \(AppBrand.displayName) lifecycle service; the script was not started."
         case .prefixConflict:
             "This prefix is owned by another engine or has an invalid ownership record. It was not changed. Choose a matching configuration; no migration was attempted."
         case .providerPolicy:
-            "Only a verified Calimocho configuration can be launched in Ode. Historical CrossOver, GPTK and generic Wine choices are retained but cannot run. Choose Calimocho in Engines."
+            "Only a verified Calimocho configuration can be launched in \(AppBrand.displayName). Historical CrossOver, GPTK and generic Wine choices are retained but cannot run. Choose Calimocho in Engines."
         case .selectionChanged:
             "The saved Calimocho configuration has changed. Refresh and explicitly select the verified build again. No other engine was substituted."
         case .providerNotAdmitted:
@@ -769,7 +769,7 @@ enum NativeLaunchError: Error, LocalizedError {
         case .shimsUnavailable:
             "The native sign-in components are missing or have changed. Restore native-web-shims-v1 before playing."
         case .installationNotReady:
-            "This installation isn't verified complete. Check it, resume the download or repair it before playing."
+            "This installation isn't verified complete. Check it, download it again or repair it before playing."
         }
     }
 }

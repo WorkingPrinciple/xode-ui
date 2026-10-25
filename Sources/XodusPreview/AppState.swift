@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import AppKit
 import Foundation
 import SwiftUI
 import XodusCore
@@ -83,8 +84,19 @@ final class AppState: ObservableObject {
     let discoverSelection = DiscoverSelection()
     private let gameScriptPaths: GameScriptPaths
     private let settingsDefaults: UserDefaults
-    lazy var gameOperations = GameOperationsController(installed: installedGames, paths: gameScriptPaths,
-                                                       installLocationDefaults: .standard)
+    lazy var gameOperations: GameOperationsController = {
+        let operations = GameOperationsController(installed: installedGames, paths: gameScriptPaths,
+                                                  installLocationDefaults: .standard)
+        operations.confirmLifecycle = { request in
+            let alert = NSAlert()
+            alert.messageText = request.messageText
+            alert.informativeText = request.informativeText
+            alert.addButton(withTitle: request.actionTitle)
+            alert.addButton(withTitle: "Cancel")
+            return alert.runModal() == .alertFirstButtonReturn
+        }
+        return operations
+    }()
     lazy var downloadQueue = DownloadQueueController(
         driver: GameOperationsInstallDriver(operations: gameOperations))
 #if !XODUS_SHIPPING

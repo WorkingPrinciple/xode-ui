@@ -432,6 +432,9 @@ struct LiveRootView: View {
                             dismiss: dismissDiscoverRecentSearches))) {
                 state.openAccount()
             }
+            ToolbarItem(placement: .primaryAction) {
+                GameDownloadToolbarIndicator(operations: state.gameOperations)
+            }
             if state.destination == .discover {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Refresh Discover", systemImage: "arrow.clockwise") {

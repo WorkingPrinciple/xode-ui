@@ -838,7 +838,7 @@ struct InstalledGameManagement: View {
             if library.updateStatus(for: game).hasUpdate {
                 Button("Update") {
                     Task { await operations.repair(PCGame(id: game.storeId, title: game.title, artwork: nil),
-                                                  installed: game) }
+                                                  installed: game, intent: .update) }
                 }
                 .disabled(!canRepair)
                 .accessibilityIdentifier("xodus.installed.update")
@@ -932,6 +932,85 @@ struct StoppedDownloadsSection: View {
             } message: { record in
                 Text(GameDownloadCopy.discardMessage(title: record.title, folder: record.destination))
             }
+        }
+    }
+}
+
+/// UX-M2: a compact toolbar indicator for the running download, with details and Stop in a popover.
+struct GameDownloadToolbarIndicator: View {
+    @ObservedObject var operations: GameOperationsController
+    @State private var showsDetails = false
+
+    var body: some View {
+        if let indicator = operations.downloadIndicator {
+            Button { showsDetails.toggle() } label: {
+                ZStack {
+                    if let fraction = indicator.fraction {
+                        ProgressView(value: fraction).progressViewStyle(.circular)
+                    } else {
+                        ProgressView().progressViewStyle(.circular)
+                    }
+                    Image(systemName: "arrow.down").font(.system(size: 9, weight: .bold))
+                }
+                .controlSize(.small)
+                .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.borderless)
+            .help(indicator.accessibilityLabel)
+            .accessibilityLabel("Download progress for \(indicator.title)")
+            .accessibilityValue(indicator.summary)
+            .accessibilityIdentifier("xodus.download.indicator")
+            .popover(isPresented: $showsDetails, arrowEdge: .bottom) {
+                GameDownloadIndicatorDetails(operations: operations, indicator: indicator)
+            }
+        }
+    }
+}
+
+private struct GameDownloadIndicatorDetails: View {
+    @ObservedObject var operations: GameOperationsController
+    let indicator: GameDownloadIndicator
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(indicator.title).font(.headline)
+            if let fraction = indicator.fraction {
+                ProgressView(value: fraction)
+            } else {
+                ProgressView()
+            }
+            Text(indicator.summary).font(.callout).foregroundStyle(.secondary)
+            if operations.canCancel {
+                Button(operations.operation?.kind == .repair ? GameDownloadCopy.stopRepair : GameDownloadCopy.stopDownload) {
+                    Task { await operations.cancelInstall() }
+                }
+                Text(GameDownloadCopy.stopNote)
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(width: 260, alignment: .leading)
+    }
+}
+
+/// UX-M2: progress shown under the cover of the game being downloaded.
+struct GameCardDownloadStatus: View {
+    @ObservedObject var operations: GameOperationsController
+    let productID: String
+
+    var body: some View {
+        if let indicator = operations.downloadIndicator, indicator.productID == productID {
+            VStack(alignment: .leading, spacing: 4) {
+                if let fraction = indicator.fraction {
+                    ProgressView(value: fraction)
+                } else {
+                    ProgressView().progressViewStyle(.linear)
+                }
+                Text(indicator.summary).font(.caption).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Download progress for \(indicator.title)")
+            .accessibilityValue(indicator.summary)
         }
     }
 }

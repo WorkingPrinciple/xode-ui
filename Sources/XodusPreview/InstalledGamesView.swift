@@ -113,7 +113,7 @@ struct InstalledUpdateBadge: View {
                 Button("Update") {
                     Task {
                         await operations.repair(
-                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game)
+                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game, intent: .update)
                     }
                 }
                 .disabled(!operations.canRepair(game))
@@ -333,7 +333,8 @@ struct InstalledPlayButton: View {
                 let product = PCGame(id: game.storeId, title: game.title, artwork: nil)
                 switch action {
                 case .check: await library.checkInstallation(game)
-                case .install, .resume: await operations.resume(product, installed: game)
+                case .install: await operations.repair(product, installed: game, resuming: true, intent: .downloadFullGame)
+                case .resume: await operations.resume(product, installed: game)
                 case .repair: await operations.repair(product, installed: game)
                 case .play: await library.play(game)
                 }
