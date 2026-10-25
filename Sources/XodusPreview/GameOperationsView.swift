@@ -460,6 +460,13 @@ struct GameInstallConsentView: View {
     @ObservedObject var operations: GameOperationsController
     let consent: GameInstallConsent
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
+    @State private var installRootPath: String
+
+    init(operations: GameOperationsController, consent: GameInstallConsent) {
+        self.operations = operations
+        self.consent = consent
+        _installRootPath = State(initialValue: consent.destination.deletingLastPathComponent().path)
+    }
 
     var body: some View {
         let consent = operations.installConsent ?? self.consent
@@ -472,18 +479,26 @@ struct GameInstallConsentView: View {
                     if consent.installedID != nil { Text(consent.game.title).font(.headline) }
                 }
                 Section("Storage") {
+                    if consent.installedID == nil, !consent.resuming {
+                        LabeledContent("Install folder") {
+                            HStack {
+                                TextField("Install folder", text: $installRootPath)
+                                    .textFieldStyle(.roundedBorder)
+                                    .accessibilityIdentifier("xodus.install.root")
+                                    .onSubmit {
+                                        Task { await operations.updateTypedInstallLocation(consent, path: installRootPath) }
+                                    }
+                                Button("Browse…") {
+                                    Task { await operations.chooseInstallLocation(consent) }
+                                }
+                                .accessibilityIdentifier("xodus.install.chooseLocation")
+                            }
+                            .disabled(operations.checkingCompatibility || operations.choosingInstallLocation)
+                        }
+                    }
                     LabeledContent("Destination") {
                         Text(consent.destination.path).textSelection(.enabled)
                             .multilineTextAlignment(.trailing)
-                    }
-                    if consent.installedID == nil, !consent.resuming {
-                        Button("Choose another folder…") {
-                            Task { await operations.chooseInstallLocation(consent) }
-                        }
-                        .disabled(operations.checkingCompatibility || operations.choosingInstallLocation)
-                        .accessibilityIdentifier("xodus.install.chooseLocation")
-                        Text("Only this installation changes. Your default folder and existing games stay where they are.")
-                            .font(.callout).foregroundStyle(.secondary)
                     }
                     if let error = operations.installLocationError {
                         Label(error, systemImage: "exclamationmark.circle")
@@ -541,7 +556,7 @@ struct GameInstallConsentView: View {
                 Button("Cancel") { Task { await operations.cancelInstallConsent() } }.keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("xodus.install.cancelConsent")
                 Button(consent.resuming ? "Resume" : consent.installedID == nil ? "Install" : "Check and repair") {
-                    operations.confirmInstall(consent)
+                    Task { await operations.confirmInstallLocation(consent, path: installRootPath) }
                 }
                     .disabled(!operations.canConfirmInstall || operations.choosingInstallLocation).keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
@@ -552,6 +567,9 @@ struct GameInstallConsentView: View {
         .frame(minWidth: 520, idealWidth: 560, maxWidth: 640,
                minHeight: 440, idealHeight: 560, maxHeight: 680)
         .modifier(InstallFormPresentation())
+        .onChange(of: operations.installConsent?.destination) { _, destination in
+            if let destination { installRootPath = destination.deletingLastPathComponent().path }
+        }
     }
 }
 

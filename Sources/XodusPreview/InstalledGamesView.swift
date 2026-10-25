@@ -142,6 +142,7 @@ struct InstallationWarning: View {
         Image(systemName: "exclamationmark.triangle")
             .foregroundStyle(.secondary)
             .help(message)
+            .focusable()
             .accessibilityLabel(message)
             .accessibilityIdentifier("xodus.installed.detailWarning")
     }
@@ -291,7 +292,11 @@ struct InstalledPlayButton: View {
     }
 
     @ViewBuilder var body: some View {
-        if operations.operation?.productID == game.storeId
+        if launching && !library.launchStarted {
+            ProgressView(library.checkingInstallations.contains(game.id) ? "Checking installation" : "Preparing game")
+                .controlSize(.small)
+            Button("Cancel") { library.cancelInstallationCheck(game) }
+        } else if operations.operation?.productID == game.storeId
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
             GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
                               operations: operations, enabled: false, primary: prominent, showsDiagnostics: showsDiagnostics)

@@ -116,7 +116,7 @@ enum InstalledGameChecks {
               && !isolated.launchableIDs.contains(game.id) && tileHeight() == readyHeight,
               "COR156: Missing-folder truth disables unsafe Play without adding diagnostic text or icons to catalogue card layout")
         check(InstalledGameFiles.folderReadError(NSError(domain: NSCocoaErrorDomain,
-            code: NSFileReadNoPermissionError)) == .folderUnavailable
+            code: NSFileReadNoPermissionError)) == .folderPermission
               && InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain,
                   code: Int(ETIMEDOUT))) == .folderUnavailable
               && InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain,
@@ -126,6 +126,30 @@ enum InstalledGameChecks {
         warning.layoutSubtreeIfNeeded()
         check(warning.fittingSize.height > 0 && warning.fittingSize.height <= 24,
               "COR156: Detail recovery uses a compact warning with help and accessible label, not an inline paragraph")
+        let mountedGame = InstalledGame(id: UUID(), title: "Large mounted fixture", identityName: "Fixture",
+            version: "1.0.0.0", storeId: "9NR1R1XWLCNB", folder: "/Volumes/REQ106Fixture/FH6",
+            launcher: "", importedAt: Date(), usesNativeLifecycle: true,
+            storageVolume: GameStorageVolume(path: "/Volumes/REQ106Fixture"))
+        let mountedStore = InstalledGameStore(file: root.appendingPathComponent("mounted/games.json"))
+        try await mountedStore.save([mountedGame])
+        let mounted = InstalledGamesController(store: mountedStore, mountedStorageRoots: { [] })
+        await mounted.load()
+        let status = NativeInstallationStatus(version: 1, operation: "install-status", product: mountedGame.storeId,
+            runID: UUID().uuidString, gameDirectory: mountedGame.folder, logDirectory: "/fixture",
+            resultPath: "/fixture/result.json", success: true, exitCode: 0, errorCode: nil, status: .complete,
+            reasonCode: nil, detail: nil, filesTotal: 1, contentID: nil)
+        try mounted.recordInstallationStatus(status, for: mountedGame)
+        check(mounted.hasFreshCompleteInstallation(mountedGame)
+              && mounted.installationStatuses[mountedGame.id]?.action == .play
+              && mounted.launchableIDs.contains(mountedGame.id),
+              "REQ106: Verified mounted completeness publishes fresh Play immediately without waiting for skipped bulk inspection")
+        check(InstalledGamesController.inspectionTimeout(for: mountedGame) == .seconds(900)
+              && InstalledGamesController.inspectionTimeout(for: game, explicitCheck: true) == .seconds(900)
+              && InstalledGamesController.inspectionTimeout(for: game) == .seconds(120),
+              "REQ106: Necessary mounted launch checks and explicit checks retain the large-install budget, never the 120-second background limit")
+        check(!InstalledGamesController.permitsNativeInspection(activeChecks: 2, preparingLaunch: false)
+              && InstalledGamesController.permitsNativeInspection(activeChecks: 2, preparingLaunch: true),
+              "REQ106: Two background checks cannot consume the separate single foreground launch inspection slot")
     }
 
     static func descriptionChecks(check: (Bool, String) -> Void) {
@@ -197,6 +221,15 @@ enum InstalledGameChecks {
         check(!InstalledGamesController.permitsInstallation(productID: "9NR1R1XWLCNB", destination: nil,
               candidates: [:], pendingRoots: [library.path]),
               "REQ106: A timed-out or pending mount scan blocks blind Install even before product identity returns")
+        check(InstalledGamesController.permitsInstallation(productID: "FIXTURE00001",
+                  destination: home.appendingPathComponent("local/game").path,
+                  candidates: [:], pendingRoots: [library.path])
+              && !InstalledGamesController.permitsInstallation(productID: "FIXTURE00001",
+                  destination: folder.path, candidates: [:], pendingRoots: [library.path])
+              && !InstalledGamesController.permitsInstallation(productID: "9NR1R1XWLCNB",
+                  destination: home.appendingPathComponent("local/game").path,
+                  candidates: [folder.path: "9NR1R1XWLCNB"], pendingRoots: [library.path]),
+              "COR161: Pending external roots gate only their destination while known same-product candidates still prevent duplication")
         check(GameInstallationDiscovery.mountedLibraryRoots([], home: home.path).isEmpty,
               "REQ106: Unmounted volumes are never guessed or auto-mounted for discovery")
         let observed = try await GameStorageProbe().read {
@@ -210,7 +243,7 @@ enum InstalledGameChecks {
                 mountedRoots: [volume.path], inspectPackage: { _ in throw InstalledGameError.invalidConfig })
         }
         check(refused.candidates.isEmpty && refused.identifiedInstallations[folder.path] == "9NR1R1XWLCNB"
-              && refused.errors.isEmpty,
+              && !refused.errors.isEmpty,
               "REQ106: Package-inspection failure retains a known matching identity for duplicate-download protection")
         do {
             _ = try MicrosoftGameConfig.configurationFile(in: [
@@ -236,6 +269,8 @@ enum InstalledGameChecks {
         await blockedMounts.discoverNativeInstallations(root: library)
         check(blockedMounts.discoveringMounts
               && !blockedMounts.canCreateInstallation(productID: "9NR1R1XWLCNB")
+              && blockedMounts.canCreateInstallation(productID: "FIXTURE00001",
+                  destination: home.appendingPathComponent("local/game").path)
               && blockedMounts.discoveryError == nil,
               "REQ106: Dead mount enumeration times out off-main and keeps unknown-root Install fail-closed")
         gate.release()
@@ -252,13 +287,23 @@ enum InstalledGameChecks {
         check(controller.games.isEmpty && controller.hasUnverifiedInstallation(productID: "9NR1R1XWLCNB")
               && !controller.canCreateInstallation(productID: "9NR1R1XWLCNB"),
               "REQ106: Failed completeness neither imports an external payload nor allows a duplicate default-root download")
-        check(controller.canCreateInstallation(productID: "9NR1R1XWLCNB", destination: folder.path)
+        let configuration = folder.appendingPathComponent("MicrosoftGame.Config")
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: configuration.path)
+        await controller.discoverNativeInstallations(root: library)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configuration.path)
+        check(controller.hasUnverifiedInstallation(productID: "9NR1R1XWLCNB")
+              && !controller.canCreateInstallation(productID: "9NR1R1XWLCNB") && controller.discoveryError == nil,
+              "REQ106: A transient unreadable config retains its known candidate and Check installation without reopening blind Install")
+        check(!controller.canCreateInstallation(productID: "9NR1R1XWLCNB", destination: folder.path)
+              && controller.canCreateInstallation(productID: "9NR1R1XWLCNB", destination: folder.path,
+                  resumingManagedOperation: true)
               && !controller.canCreateInstallation(productID: "9NR1R1XWLCNB",
                                                     destination: home.appendingPathComponent("default/game").path),
-              "REQ106: A partial installation can resume at its exact candidate destination but never redownload elsewhere")
+              "COR161: An unmanaged same-product folder stays Check; only a matching managed operation can resume its exact destination")
         let resume = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
             productID: "9NR1R1XWLCNB", title: "Forza Horizon 6", destination: folder.path, installedID: nil)
-        check(controller.canCreateInstallation(productID: resume.productID, destination: resume.destination),
+        check(controller.canCreateInstallation(productID: resume.productID, destination: resume.destination,
+                  resumingManagedOperation: true),
               "REQ106: A queued partial-install record is admitted at its original destination")
         check(InstalledGamesController.readableEngineName("calimocho-wine11.20-gptk4b3-tls-vulkan-private")
               == "Calimocho 11.20 (Private)"
@@ -272,8 +317,8 @@ enum InstalledGameChecks {
             processed: home.appendingPathComponent("processed"), logs: home.appendingPathComponent("logs"),
             games: library, journal: home.appendingPathComponent("operation.json"))
         let resumeOperations = GameOperationsController(installed: controller, paths: resumePaths)
-        check(GameInstallAction(game: game, operations: resumeOperations).actionTitle == "Install",
-              "REQ106: A matching partial default-root destination keeps the resumable install action instead of Check installation")
+        check(GameInstallAction(game: game, operations: resumeOperations).actionTitle == "Check installation",
+              "COR161: A discovered unmanaged folder never becomes a new Install just because it matches the default destination")
         check(GameInstallAction(game: game, operations: operations).actionTitle == "Check installation",
               "REQ106: Unverified matching package uses existing Check installation action, not blind Install")
         await GameInstallAction(game: game, operations: operations).requestInstall()

@@ -559,8 +559,12 @@ unverified. Do not create mocks or damage installations to claim acceptance.
 ## Game storage (REQ-92)
 
 Settings offers a persistent default install folder and a return to the original
-`~/Games/Xodus` default. A new game's actual review shows the resolved full path
-and offers **Choose another folder** for that installation only. Folder selection
+`~/Games/Xodus` default. Under REQ110, a new game's actual review shows an editable
+**Install folder** root and native **Browse…**, with the resolved game destination
+shown separately. Typed roots support absolute paths, spaces, Unicode and `~`;
+unavailable or unwritable roots require correction rather than a fallback.
+Confirmation revalidates the selected root off-main and carries its destination
+through the operation, installer arguments and registration. Folder selection
 does not install anything. The explicit confirmation remains required; Cancel
 does not register or download a game. Repair and resume retain their recorded
 destination and do not offer a location override. Changing the default never
@@ -597,8 +601,14 @@ their notice.
 Library, catalogue and recent/hero cards contain no readiness diagnostic text or
 warning icons. Explicitly opened game details expose recovery through a compact
 warning's tooltip and equivalent accessible label, not an inline paragraph.
-Only a confirmed missing-path error is classified as a missing folder;
-permission, timeout and other unreadable-path failures stay unverified.
+Only a confirmed missing-path error is classified as a missing folder.
+Permission failures have permission-specific recovery; timeout and other
+unreadable-path failures stay unverified. A transient config-read failure retains
+an already known candidate and its Check action instead of reopening Install.
+Pending external roots gate only destinations under those roots, not unrelated
+local install reviews. A known same-product folder still prevents a duplicate
+elsewhere. An unmanaged folder remains Check/Import even at the default path;
+resume writes require a matching validated Ode operation product and destination.
 
 Config and package classification are not completion proof. Before a new folder
 is registered, the existing pinned CLI's exact-product/exact-folder
@@ -609,6 +619,12 @@ The config identity must still match the scan after the status check. Discovery
 does not establish entitlement, cryptographic payload integrity or launchability,
 and does not move prefixes, bottles, CLI state or saves away from local storage.
 No new root marker, registry or migration is introduced.
+An explicit candidate Check uses a cancellable 15-minute status deadline and
+publishes its verified completion immediately on registration. A fresh complete
+receipt is reused for 120 seconds; launch still revalidates config identity and
+recorded volume off-main. Necessary mounted launch rechecks retain the 15-minute
+budget. Two background checks cannot consume the single foreground launch
+inspection slot. Timeout leaves the candidate at Check, never Install.
 
 Storage checks run off the main actor with a 15-second waiter deadline and one
 reserved worker per probe. Timeout or cancellation releases the UI waiter, not

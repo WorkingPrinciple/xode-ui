@@ -278,8 +278,15 @@ final class GameOperationsController: ObservableObject {
                              includeRuntime: false).isEmpty
     }
 
-    private func admitInstall(productID: String, installedID: UUID? = nil, destination: String? = nil) -> Bool {
-        guard installedID != nil || installed.canCreateInstallation(productID: productID, destination: destination) else {
+    private func admitInstall(productID: String, installedID: UUID? = nil, destination: String? = nil,
+                              managedOperation: GameOperationRecord? = nil) -> Bool {
+        let record = managedOperation ?? operation
+        let resumingManagedOperation = record.map {
+            $0.kind != .uninstall && $0.productID == productID && $0.destination == destination
+                && (try? $0.validate()) != nil
+        } == true
+        guard installedID != nil || installed.canCreateInstallation(productID: productID, destination: destination,
+            resumingManagedOperation: resumingManagedOperation) else {
             if operation == nil && !checkingCompatibility { resetFeedback(productID: productID) }
             error = installed.hasUnverifiedInstallation(productID: productID)
                 ? "The installation couldn't be checked. Try again."
@@ -865,7 +872,6 @@ final class GameOperationsController: ObservableObject {
     }
 
     func installationCheckRequired(for game: PCGame) -> Bool {
-        guard !installed.discoveringMounts else { return true }
         do {
             let location = try installLocationDefaults.flatMap { try GameInstallLocation.load($0) }
             let destination = try paths.destination(title: game.title, productID: game.id,
@@ -924,6 +930,27 @@ final class GameOperationsController: ObservableObject {
         await updateInstallLocation(consent, root: root)
     }
 
+    func updateTypedInstallLocation(_ consent: GameInstallConsent, path: String) async {
+        guard !choosingInstallLocation, !checkingCompatibility, canStartMutation,
+              installConsent?.id == consent.id, consent.installedID == nil, !consent.resuming else { return }
+        choosingInstallLocation = true
+        defer { choosingInstallLocation = false }
+        do {
+            let root = try GameInstallLocation.rootURL(path: path)
+            await updateInstallLocation(consent, root: root)
+        } catch {
+            installLocationError = "Choose an existing writable folder using an absolute path or Browse."
+        }
+    }
+
+    func confirmInstallLocation(_ consent: GameInstallConsent, path: String) async {
+        if consent.installedID == nil, !consent.resuming {
+            await updateTypedInstallLocation(consent, path: path)
+        }
+        guard let current = installConsent, current.id == consent.id, installLocationError == nil else { return }
+        confirmInstall(current)
+    }
+
     func updateInstallLocation(_ consent: GameInstallConsent, root: URL) async {
         guard installConsent?.id == consent.id, consent.installedID == nil, !consent.resuming,
               !checkingCompatibility, canStartMutation else { return }
@@ -948,6 +975,7 @@ final class GameOperationsController: ObservableObject {
 
     func confirmInstall(_ consent: GameInstallConsent) {
         guard installConsent?.id == consent.id, installConsent?.destination == consent.destination,
+              installLocationError == nil,
               !choosingInstallLocation, canStartMutation, !recoveryRequired,
               consentAdmitted(consent) else { return }
         guard admitInstall(productID: consent.game.id, installedID: consent.installedID,
@@ -1026,7 +1054,7 @@ final class GameOperationsController: ObservableObject {
             return
         }
         guard record.kind == .uninstall || admitInstall(productID: record.productID, installedID: record.installedID,
-                                                       destination: record.destination) else {
+                                                       destination: record.destination, managedOperation: record) else {
             return
         }
         resetFeedback(productID: record.productID)
@@ -1243,7 +1271,8 @@ final class GameOperationsController: ObservableObject {
         var record = record
         if usesUnifiedAccount { record.nativeAccountHash = nativeAccount }
         guard record.kind == .install, (try? record.validate()) != nil else { return .fail(code: -1) }
-        guard admitInstall(productID: record.productID, destination: record.destination) else { return .fail(code: 12) }
+        guard admitInstall(productID: record.productID, destination: record.destination,
+                           managedOperation: record) else { return .fail(code: 12) }
         while !canStartMutation || operation != nil || mutationTask != nil {
             if terminating { return .fail(code: -1) }
             if abandonedQueuedRuns.remove(record.id) != nil { return .cancel }
@@ -1254,7 +1283,8 @@ final class GameOperationsController: ObservableObject {
         if usesUnifiedAccount { await installed.discoverNativeInstallations() }
         if Task.isCancelled || abandonedQueuedRuns.remove(record.id) != nil { return .cancel }
         guard !terminating, canStartMutation,
-              admitInstall(productID: record.productID, destination: record.destination) else { return .fail(code: 12) }
+              admitInstall(productID: record.productID, destination: record.destination,
+                           managedOperation: record) else { return .fail(code: 12) }
         queueProgressObserver = onProgress
         defer { queueProgressObserver = nil }
         begin(record)

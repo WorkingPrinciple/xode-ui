@@ -970,6 +970,28 @@ enum GameOperationChecks {
         check(defaultConsent.destination.deletingLastPathComponent().path == firstRoot.path
               && locationOperations.presentedInstallConsent != nil && locationOperations.operation == nil,
               "REQ92: Persisted default prefills the actual review without installation")
+        let typedRoot = root.appendingPathComponent("Typed drive É")
+        try FileManager.default.createDirectory(at: typedRoot, withIntermediateDirectories: false)
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: typedRoot.path)
+        check(locationOperations.installConsent?.destination.deletingLastPathComponent().path == typedRoot.path
+              && locationOperations.installLocationError == nil,
+              "REQ110: Typed install root preserves spaces/Unicode and resolves the separate game destination")
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: "relative/folder")
+        if let retained = locationOperations.installConsent { locationOperations.confirmInstall(retained) }
+        check(locationOperations.installLocationError != nil && locationOperations.operation == nil
+              && locationOperations.installConsent?.destination.deletingLastPathComponent().path == typedRoot.path,
+              "REQ110: Invalid typed root cannot silently confirm into the previous destination")
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: root.appendingPathComponent("missing drive").path)
+        check(locationOperations.installLocationError != nil
+              && locationOperations.installConsent?.destination.deletingLastPathComponent().path == typedRoot.path,
+              "REQ110: An unavailable typed drive reports failure and retains the choice without a fallback")
+        let readOnlyRoot = root.appendingPathComponent("read-only drive")
+        try FileManager.default.createDirectory(at: readOnlyRoot, withIntermediateDirectories: false)
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: readOnlyRoot.path)
+        await locationOperations.updateTypedInstallLocation(defaultConsent, path: readOnlyRoot.path)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: readOnlyRoot.path)
+        check(locationOperations.installLocationError == GameInstallLocationError.notWritable.localizedDescription,
+              "REQ110: A read-only install folder reports its actual writable-folder recovery")
         await locationOperations.updateInstallLocation(defaultConsent, root: secondRoot)
         let retainedDefault = try GameInstallLocation.load(locationDefaults)
         check(locationOperations.installConsent?.destination.deletingLastPathComponent().path == secondRoot.path
@@ -981,6 +1003,31 @@ enum GameOperationChecks {
         check(locationOperations.operation == nil && locationOperations.installConsent != nil,
               "REQ92: A retained pre-override consent cannot install into the old destination")
         await locationOperations.cancelInstallConsent()
+        let cancelledDefault = try GameInstallLocation.load(locationDefaults)
+        check(locationOperations.operation == nil && locationOperations.installConsent == nil
+              && cancelledDefault == firstLocation && installed.games.isEmpty,
+              "REQ110: Cancelling destination review changes no default, installed entry or operation")
+        let destinationStore = InstalledGameStore(file: root.appendingPathComponent("typed-install-registry/games.json"))
+        let destinationLibrary = InstalledGamesController(store: destinationStore, inspectPackage: { _ in .win32 })
+        await destinationLibrary.load()
+        let destinationPaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed, logs: paths.logs,
+            games: paths.games, journal: root.appendingPathComponent("typed-install-operation.json"))
+        let destinationOperations = GameOperationsController(installed: destinationLibrary, paths: destinationPaths,
+            compatibilityCatalogue: catalogue)
+        await destinationOperations.prepareInstall(game)
+        guard let destinationConsent = destinationOperations.installConsent else { throw GameScriptError.invalidDestination }
+        await destinationOperations.confirmInstallLocation(destinationConsent, path: typedRoot.path)
+        let confirmedDestination = try destinationPaths.destination(title: game.title, productID: game.id, root: typedRoot)
+        check(destinationOperations.operation?.destination == confirmedDestination.path,
+              "REQ110: Confirmed typed root reaches the actual operation rather than changing only its display")
+        await destinationOperations.waitForMutation()
+        let destinationArguments = try String(contentsOf: root.appendingPathComponent("arguments"), encoding: .utf8)
+            .components(separatedBy: "\n")
+        check(destinationArguments[3] == confirmedDestination.path
+              && destinationLibrary.games.first?.folder == confirmedDestination.path
+              && destinationLibrary.games.first.map { destinationLibrary.launchableIDs.contains($0.id) } == true,
+              "REQ110: Disposable install propagates the confirmed path through child arguments, registration and independent readiness")
+        try FileManager.default.removeItem(at: root.appendingPathComponent("arguments"))
         let secondLocation = try await Task.detached { try GameInstallLocation(folder: secondRoot) }.value
         locationDefaults.set(try JSONEncoder().encode(secondLocation), forKey: GameInstallLocation.preferenceKey)
         let reloadedDefaults = UserDefaults(suiteName: locationSuite)!

@@ -46,7 +46,7 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
         if errorCode == "RESOURCE_BUSY" {
             return "This installation is in use. Wait for its current operation to finish, then check again."
         }
-        if !success { return "The installation couldn't be checked. Try again or open its log." }
+        if !success { return "The installation couldn't be checked. Try again." }
         return detail
     }
 
@@ -69,6 +69,7 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
 @MainActor
 final class NativeInstallationQuery {
     static let defaultTimeout: Duration = .seconds(120)
+    static let largeInstallTimeout: Duration = .seconds(900)
     private var process: Process?
     private let storageProbe = GameStorageProbe()
     var isRunning: Bool { process?.isRunning == true }

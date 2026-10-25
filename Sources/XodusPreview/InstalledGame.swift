@@ -39,13 +39,14 @@ struct GameEngineOverride: Codable, Equatable, Sendable {
 }
 
 enum InstalledGameError: Error, LocalizedError {
-    case invalidConfig, missingFolder, folderUnavailable, missingLauncher, placeholderContent, invalidRegistry, storage, launch
+    case invalidConfig, missingFolder, folderPermission, folderUnavailable, missingLauncher, placeholderContent, invalidRegistry, storage, launch
 
     var errorDescription: String? {
         switch self {
         case .invalidConfig: "This folder doesn't contain a valid MicrosoftGame.config. Choose the installed Xbox game folder."
         case .missingFolder: "The game folder is no longer available. Reconnect its drive or import the game again."
         case .folderUnavailable: "The installation couldn't be checked. Try again."
+        case .folderPermission: "Ode to X can't read this folder. Check its permissions and try again."
         case .missingLauncher: "The launch script is missing or isn't an executable file. Import the game again to choose its script."
         case .placeholderContent: "This installation contains only Minecraft's placeholder, not a playable game. Install the full Minecraft Launcher package before playing. Signing in again won't replace these files."
         case .invalidRegistry: "The installed games list couldn't be read. Your game files haven't been changed."
@@ -198,6 +199,8 @@ enum InstalledGameFiles {
     }
 
     static func folderReadError(_ error: NSError) -> InstalledGameError {
+        if error.domain == NSCocoaErrorDomain, error.code == NSFileReadNoPermissionError { return .folderPermission }
+        if error.domain == NSPOSIXErrorDomain, [Int(EACCES), Int(EPERM)].contains(error.code) { return .folderPermission }
         if error.domain == NSCocoaErrorDomain,
            [NSFileNoSuchFileError, NSFileReadNoSuchFileError].contains(error.code) { return .missingFolder }
         if error.domain == NSPOSIXErrorDomain, [Int(ENOENT), Int(ENOTDIR)].contains(error.code) { return .missingFolder }

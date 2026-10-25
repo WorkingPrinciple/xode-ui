@@ -37,11 +37,24 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
     init(folder: URL) throws {
         try GameScriptFiles.checkPath(folder)
         try InstalledGameFiles.checkFolder(folder)
+        let values = try folder.resourceValues(forKeys: [.volumeIsReadOnlyKey])
+        guard values.volumeIsReadOnly != true, FileManager.default.isWritableFile(atPath: folder.path) else {
+            throw GameInstallLocationError.notWritable
+        }
         guard let volume = GameStorageVolume.read(at: folder) else {
             throw GameScriptError.invalidDestination
         }
         self.folder = folder.standardizedFileURL.path
         self.volume = volume
+    }
+
+    static func rootURL(path: String) throws -> URL {
+        let expanded = (path as NSString).expandingTildeInPath
+        guard expanded.hasPrefix("/"), expanded.utf8.count <= 4096,
+              !expanded.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains) else {
+            throw GameScriptError.invalidDestination
+        }
+        return URL(fileURLWithPath: expanded, isDirectory: true)
     }
 
     static func load(_ defaults: UserDefaults) throws -> Self? {
@@ -74,9 +87,12 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
 }
 
 enum GameInstallLocationError: Error, LocalizedError {
-    case driveUnavailable
+    case driveUnavailable, notWritable
 
     var errorDescription: String? {
-        "The selected install drive is unavailable. Reconnect it or choose another folder in Settings."
+        switch self {
+        case .driveUnavailable: "The selected install drive is unavailable. Reconnect it or choose another folder."
+        case .notWritable: "The selected folder isn't writable. Choose another folder."
+        }
     }
 }

@@ -95,9 +95,7 @@ enum GameInstallationDiscovery {
                         result.candidates.append(Candidate(folder: folder, config: config,
                             package: try inspectPackage(folder), volume: storageVolume))
                     } catch {
-                        if error as? InstalledGameError != .invalidConfig {
-                            result.errors.append("\(folder.path): \(error.localizedDescription)")
-                        }
+                        result.errors.append("\(folder.path): \(error.localizedDescription)")
                     }
                 }
                 if let enumerationError { throw enumerationError }
