@@ -63,10 +63,8 @@ final class ShippingChecks: XCTestCase {
             version: "26.3", buildVersion: "26.3.0.39832"))
         let runtime = RuntimeProviderSettings(detectCrossOver: { official })
         await runtime.refreshCrossOverDependency()
-        check(runtime.configuration?.provider == .crossover && runtime.configuration?.providerVersion == "26.3"
-              && runtime.configuration?.engine.version == nil && runtime.configuration?.graphics.backend == nil
-              && runtime.plan == nil,
-              "Actual shipping configuration defaults only from a neutral verified CrossOver observation")
+        check(runtime.crossOverDependency == official && runtime.configuration == nil && runtime.plan == nil,
+              "Actual shipping CrossOver detection preserves its observation without auto-selection or silent fallback")
         runtime.select(.gptk4)
         check(runtime.requiresExperimentalAcknowledgement && runtime.planningBlocker != nil,
               "Actual shipping alternatives are acknowledgement-gated Experimental configurations")
