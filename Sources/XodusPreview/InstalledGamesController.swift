@@ -837,7 +837,17 @@ final class InstalledGamesController: ObservableObject {
               NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
                 evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil else { return }
         automaticReadinessAttempts[game.id] = key
-        guard !Task.isCancelled else { automaticReadinessAttempts[game.id] = nil; return }
+        defer {
+            if installationStatuses[game.id] == nil, installationErrors[game.id] == nil,
+               packageErrors[game.id] == nil, loaded, !accountDisconnecting, !applicationTerminating,
+               games.contains(where: { $0.id == game.id }) {
+                automaticReadinessAttempts[game.id] = nil
+                installationErrors[game.id] = Task.isCancelled
+                    ? "Installation verification was cancelled. Retry when you're ready."
+                    : "Installation verification didn't finish. Retry to verify this game."
+            }
+        }
+        guard !Task.isCancelled else { return }
         await checkInstallation(game)
     }
 

@@ -150,6 +150,55 @@ enum InstalledGameChecks {
               && InstalledPlayButton(library: automatic, operations: GameOperationsController(installed: automatic),
                   game: nativeGame).nativeActionTitle == "Retry",
               "COR170: Registered entry automatically verifies and retains a concrete disconnected-service Retry, never unsafe Play (service \(serviceFailure ?? "nil"), package \(automatic.packageErrors[nativeGame.id] ?? "nil"))")
+        for (status, reason, title) in [
+            (NativeInstallationStatus.Status.missing, "CONTENT_MISSING", "Download"),
+            (.partial, "CONTENT_INCOMPLETE", "Resume"),
+            (.partial, "MANIFEST_INVALID", "Repair")
+        ] {
+            try automatic.recordInstallationStatus(NativeInstallationStatus(version: 1, operation: "install-status",
+                product: admittedNative.storeId, runID: UUID().uuidString, gameDirectory: admittedNative.folder,
+                logDirectory: "/fixture", resultPath: "/fixture/result.json", success: true, exitCode: 0,
+                errorCode: nil, status: status, reasonCode: reason, detail: "Fixture requires \(title.lowercased()).",
+                filesTotal: nil, contentID: nil), for: admittedNative)
+            let primary = InstalledPlayButton(library: automatic,
+                operations: GameOperationsController(installed: automatic), game: admittedNative)
+            check(primary.nativeActionTitle == title && !primary.ownsInstallationCheck
+                  && InstalledGameAttentionView(installed: automatic,
+                      operations: GameOperationsController(installed: automatic), game: admittedNative,
+                      installationCheckInHeader: primary.ownsInstallationCheck, close: {}).offersInstallationCheck,
+                  "COR171 M1: \(title) names its real consent action and leaves read-only Retry available in the attention panel")
+        }
+        let cancelledGame = InstalledGame(id: UUID(), title: "Cancelled mounted fixture", identityName: "Fixture",
+            version: "1", storeId: "FIXTURE00002", folder: "/Volumes/REQ106Cancelled/game", launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        let cancelledStore = InstalledGameStore(file: root.appendingPathComponent("cancelled/games.json"))
+        try await cancelledStore.save([cancelledGame])
+        let cancellationGate = PackageInspectionInterleaving()
+        defer { cancellationGate.release() }
+        let cancelled = InstalledGamesController(store: cancelledStore,
+            inspectPackage: { try cancellationGate.inspect($0) }, mountedStorageRoots: { [] })
+        await cancelled.load()
+        guard let cancelledEntry = cancelled.games.first else {
+            check(false, "COR171 H1: Mounted cancellation fixture must load")
+            return
+        }
+        let automaticCheck = Task { await cancelled.automaticallyCheckInstallation(cancelledEntry) }
+        let cancellationDeadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !cancellationGate.isWaiting, ContinuousClock.now < cancellationDeadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(cancellationGate.isWaiting && cancelled.checkingInstallations.contains(cancelledEntry.id),
+              "COR171 H1: Mounted visible-entry verification is running before simulated view cancellation")
+        automaticCheck.cancel()
+        cancellationGate.release()
+        await automaticCheck.value
+        await cancelled.automaticallyCheckInstallation(cancelledEntry)
+        check(cancelled.installationStatuses[cancelledEntry.id] == nil
+              && cancelled.installationErrors[cancelledEntry.id]?.contains("cancelled") == true
+              && !cancelled.checkingInstallations.contains(cancelledEntry.id)
+              && InstalledPlayButton(library: cancelled, operations: GameOperationsController(installed: cancelled),
+                  game: cancelledEntry).nativeActionTitle == "Retry",
+              "COR171 H1: Cancelled mounted view re-entry retains an explained Retry, never an idle Checking spinner")
         try FileManager.default.removeItem(at: local)
         await isolated.checkInstallation(game)
         check(isolated.packageErrors[game.id] == InstalledGameError.missingFolder.localizedDescription

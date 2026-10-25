@@ -249,10 +249,10 @@ struct InstalledPlayButton: View {
         if library.checkingInstallations.contains(game.id) { return "Checking…" }
         switch nativeAction {
         case .play: return "Play"
-        case .install, .resume, .repair: return "Retry"
-        case .check:
-            return library.packageErrors[game.id] != nil || library.installationErrors[game.id] != nil
-                ? "Retry" : "Checking…"
+        case .install: return "Download"
+        case .resume: return "Resume"
+        case .repair: return "Repair"
+        case .check: return "Retry"
         }
     }
 
@@ -262,7 +262,7 @@ struct InstalledPlayButton: View {
         if library.unavailableDriveIDs.contains(game.id) { return true }
         return NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
             evidence: evidenceStore.games[game.storeId]) == nil && unsupportedIssues.isEmpty
-            && library.requiresNativeInstallationStatus(game) && nativeAction != .play
+            && library.requiresNativeInstallationStatus(game) && nativeAction == .check
     }
 
     @ViewBuilder private var nativeInstallationButton: some View {
@@ -299,7 +299,8 @@ struct InstalledPlayButton: View {
             Button("Cancel") { library.cancelInstallationCheck(game) }
         }
         if showsDiagnostics, attention == nil, !library.checkingInstallations.contains(game.id),
-           let reason = library.installationErrors[game.id] ?? library.installationStatuses[game.id]?.explanation {
+           let reason = library.installationErrors[game.id] ?? library.installationStatuses[game.id]?.explanation
+                ?? (nativeAction == .check ? "Installation verification hasn't finished. Retry to verify this game." : nil) {
             InstallationWarning(message: reason)
         }
     }
