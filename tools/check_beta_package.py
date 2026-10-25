@@ -125,6 +125,16 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
                    or command[0] == "/usr/bin/open" for command in commands)
     assert (receipt_path.parent / "package-receipt.json").exists()
 
+    inventory_path = app / "Contents/Resources/ProducerNotices/inventory.json"
+    inventory_bytes = inventory_path.read_bytes()
+    inventory_path.unlink()
+    with patch.object(beta, "distribution_blockers", return_value=[]), \
+            patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
+        rejected(lambda: create_beta_package(app, output, "zip", source,
+                                             producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                             run_command=fake_runner([])))
+    inventory_path.write_bytes(inventory_bytes)
+
     commands.clear()
     background = root / "installer.tiff"
     background.write_bytes(b"II*\x00Neutral background fixture")
