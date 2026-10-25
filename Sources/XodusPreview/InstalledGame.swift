@@ -18,13 +18,24 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
     /// Detected on-disk package format (M1). Optional so pre-M1 registries decode
     /// unchanged; it is backfilled from file evidence after load, never invented.
     var packageType: PackageType? = nil
-    /// A persisted per-game engine choice (M3). When set it takes precedence over
-    /// the configured default; a missing selected engine refuses launch, never
-    /// silently substitutes another runner.
+    /// Historical choices are preserved, but current launches read only V2.
     var engineOverride: RuntimeProviderKind? = nil
     var engineSelection: AdmittedEngineSelection? = nil
+    var engineOverrideV2: GameEngineOverride? = nil
     var usesNativeLifecycle: Bool? = nil
     var storageVolume: GameStorageVolume? = nil
+}
+
+struct GameEngineOverride: Codable, Equatable, Sendable {
+    let version: Int
+    let selection: AdmittedEngineSelection
+    let chosenAt: Date
+
+    init(selection: AdmittedEngineSelection, chosenAt: Date = Date()) {
+        version = 2
+        self.selection = selection
+        self.chosenAt = chosenAt
+    }
 }
 
 enum InstalledGameError: Error, LocalizedError {
@@ -271,6 +282,7 @@ actor InstalledGameStore {
             updated.packageType = game.packageType ?? previous.packageType
             updated.engineOverride = game.engineOverride ?? previous.engineOverride
             updated.engineSelection = game.engineSelection ?? previous.engineSelection
+            updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
             updated.storageVolume = game.storageVolume ?? previous.storageVolume
         }
         games.removeAll { $0.folder == game.folder }
@@ -331,6 +343,19 @@ actor InstalledGameStore {
         }
         games[index].engineOverride = override
         games[index].engineSelection = override == .calimocho ? selection : nil
+        try save(games)
+        return games
+    }
+
+    func setEngineOverrideV2(id: UUID, selection: AdmittedEngineSelection?) throws -> [InstalledGame] {
+        var games = try load()
+        guard let index = games.firstIndex(where: { $0.id == id }) else { throw InstalledGameError.invalidRegistry }
+        if let selection {
+            guard let name = selection.inspection.engineName,
+                  let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+            try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
+        }
+        games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }
         try save(games)
         return games
     }

@@ -639,6 +639,23 @@ struct InstalledGameActions: View {
     var body: some View {
         Menu {
             if let details { Button("Details", action: details) }
+            Menu("Engine") {
+                Button("Use default", systemImage: game.engineOverrideV2 == nil ? "checkmark" : "circle") {
+                    Task { await library.setEngineOverrideV2(nil, for: game) }
+                }
+                ForEach(library.engineOverrides(for: game), id: \.inspection.engineName) { selection in
+                    if let name = selection.inspection.engineName {
+                        Button(name, systemImage: game.engineOverrideV2?.selection == selection ? "checkmark" : "circle") {
+                            Task { await library.setEngineOverrideV2(selection, for: game) }
+                        }
+                    }
+                }
+                Divider()
+                Button("Refresh engines") { Task { await library.refreshEngineOverrides() } }
+                    .disabled(library.checkingEngineOverrides)
+            }
+            .disabled(library.editing || library.choosing || library.mutationActive
+                      || library.accountDisconnecting || library.applicationTerminating || library.runningGameID == game.id)
             InstalledGameManagement(library: library, operations: operations, game: game)
         } label: {
             if heroStyle {
@@ -652,6 +669,9 @@ struct InstalledGameActions: View {
         .buttonBorderShape(heroStyle ? .circle : .automatic)
         .fixedSize()
         .accessibilityLabel("Actions for \(game.title)")
+        .task {
+            await library.refreshEngineOverrides(force: false)
+        }
     }
 }
 

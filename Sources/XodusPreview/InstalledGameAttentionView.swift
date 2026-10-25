@@ -29,16 +29,19 @@ struct InstalledGameAttentionView: View {
     private var incomplete: Bool { installed.placeholderIDs.contains(game.id) }
     private var localIssue: Bool {
         driveUnavailable || incomplete || installed.packageErrors[game.id] != nil
-            || (installed.accountAccessAllowed && installed.playErrors[game.id] != nil)
     }
-    private var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
+    var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
+    var attentionTitle: String {
+        driveUnavailable ? "Drive unavailable" : localIssue ? "Installation needs attention"
+            : "Game launching unavailable"
+    }
     private var driveUnavailable: Bool { installed.unavailableDriveIDs.contains(game.id) }
-    var offersRepair: Bool { !driveUnavailable && repairGame != nil && operations.canRepair(game) }
+    var offersRepair: Bool { localIssue && !driveUnavailable && repairGame != nil && operations.canRepair(game) }
 
     var body: some View {
         if needsAttention {
             VStack(alignment: .leading, spacing: 12) {
-                Label(driveUnavailable ? "Drive unavailable" : localIssue ? "Installation needs attention" : "Game launching unavailable",
+                Label(attentionTitle,
                       systemImage: localIssue ? "exclamationmark.circle" : "info.circle")
                     .font(.headline)
                 Text(driveUnavailable ? InstalledGamesController.driveUnavailableMessage
@@ -51,9 +54,9 @@ struct InstalledGameAttentionView: View {
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     Button("Open settings", action: openSettings.callAsFunction)
                 }
-                if installed.checkingInstallations.contains(game.id) {
+                if localIssue && installed.checkingInstallations.contains(game.id) {
                     ProgressView("Checking installation").controlSize(.small)
-                } else {
+                } else if localIssue {
                     HStack {
                         Button(driveUnavailable ? "Check again" : "Check installation") { Task { await installed.checkInstallation(game) } }
                             .disabled(installed.editing || installed.mutationActive)
@@ -81,7 +84,6 @@ struct InstalledGameAttentionView: View {
                         Text(error).font(.callout).textSelection(.enabled)
                     }
                     InstalledPlayError(library: installed, game: game)
-                    InstalledEngineOverride(library: installed, game: game)
                 }
                 .font(.callout).foregroundStyle(.secondary)
             }

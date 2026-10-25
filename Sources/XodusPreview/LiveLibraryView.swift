@@ -645,7 +645,6 @@ struct LiveLibraryView: View {
         .contextMenu {
             Button("View details") { open(game) }
             if let match = game.installed {
-                InstalledEngineOverride(library: installed, game: match)
                 InstalledGameManagement(library: installed, operations: operations, game: match)
                 Button("Show in Finder") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: match.folder) }
             }

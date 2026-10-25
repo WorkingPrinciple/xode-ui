@@ -7,15 +7,18 @@ import XodusManagement
 @MainActor
 enum NativeChecks {
     static func launch(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
-                       libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false) -> Never {
+                       libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false,
+                       engineSelectionOnly: Bool = false) -> Never {
         Task { exit(await run(gameOperationsOnly: gameOperationsOnly, mediaOnly: mediaOnly, statsOnly: statsOnly,
-                              libraryAccessOnly: libraryAccessOnly, accountPresentationOnly: accountPresentationOnly) ? 0 : 1) }
+                              libraryAccessOnly: libraryAccessOnly, accountPresentationOnly: accountPresentationOnly,
+                              engineSelectionOnly: engineSelectionOnly) ? 0 : 1) }
         CFRunLoopRun()
         fatalError("The native check run loop ended before completion.")
     }
 
     static func run(gameOperationsOnly: Bool = false, mediaOnly: Bool = false, statsOnly: Bool = false,
-                    libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false) async -> Bool {
+                    libraryAccessOnly: Bool = false, accountPresentationOnly: Bool = false,
+                    engineSelectionOnly: Bool = false) async -> Bool {
         var count = 0, failures = 0
         func check(_ condition: Bool, _ name: String) {
             count += 1
@@ -51,6 +54,12 @@ enum NativeChecks {
             }
         }
         do {
+            if engineSelectionOnly {
+                try await EngineManagementChecks.routingOnly(check: check)
+                try await InstalledGameChecks.legacyNativeReadiness(check: check)
+                print("\(count) non-UI engine selection checks, \(failures) failures. No windows, account or game launches.")
+                return failures == 0
+            }
             if accountPresentationOnly {
                 try await AccountCountryChecks.run(configuration: configuration, check: check)
                 let pendingConfiguration = configuration("statuspermission")

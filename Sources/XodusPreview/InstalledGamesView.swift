@@ -77,7 +77,6 @@ struct InstalledGamesView: View {
                             }
                         }
                         Spacer()
-                        InstalledEngineOverride(library: library, game: game)
                         InstalledGameActions(library: library, operations: operations, game: game)
                         InstalledPlayButton(library: library, operations: operations, game: game)
                     }

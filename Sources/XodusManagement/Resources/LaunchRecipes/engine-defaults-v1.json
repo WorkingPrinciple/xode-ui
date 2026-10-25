@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "defaultEngine": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+  "bindings": [
+    {
+      "registryPath": "${HOME}/src/copilot-worktrees/calimocho/dragoshont-cautious-potato/build/winehq-11.20/metal-port-11/calimocho-wine11.20-gptk4b3-tls-vulkan.registry.local.FROZEN-a5d37d29.json",
+      "registrySha256": "a5d37d2909f56abe75f9b6096cf39b4d75c91a7f6aac75154488d4c35b5ff28a",
+      "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan",
+      "wineSha256": "f6d0546fad2d0dafaa09a9fe6cabe75bb070567df6b0933ecd3622dcb6349194",
+      "wineserverSha256": "e3ec4e7e76cee273f17d5fa3459902642f73d6921e94c576aa74e8cdbdcd7da1"
+    },
+    {
+      "registryPath": "${HOME}/src/copilot-worktrees/calimocho/dragoshont-cautious-potato/build/winehq-11.20/metal-port-11b-private-binding-01/calimocho-wine11.20-gptk4b3-tls-vulkan-private.registry.local.PERF-FROZEN-170ca4ad.json",
+      "registrySha256": "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
+      "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+      "wineSha256": "f6d0546fad2d0dafaa09a9fe6cabe75bb070567df6b0933ecd3622dcb6349194",
+      "wineserverSha256": "e3ec4e7e76cee273f17d5fa3459902642f73d6921e94c576aa74e8cdbdcd7da1"
+    },
+    {
+      "registryPath": "${HOME}/src/copilot-worktrees/calimocho/dragoshont-cautious-potato/build/winehq-11.20/metal-port-11d-ags54-02/dirt5-ags54-minidump.registry.local.ADMISSION-FROZEN.json",
+      "registrySha256": "8ba6beb40621e7ae96a1a1dab7a6c319a29abff29c4d290bbac2852449863e9b",
+      "engineName": "calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5",
+      "wineSha256": "f6d0546fad2d0dafaa09a9fe6cabe75bb070567df6b0933ecd3622dcb6349194",
+      "wineserverSha256": "e3ec4e7e76cee273f17d5fa3459902642f73d6921e94c576aa74e8cdbdcd7da1"
+    },
+    {
+      "registryPath": "${HOME}/src/copilot-worktrees/calimocho/dragoshont-cautious-potato/build/winehq-11.20/metal-port-11e-gameinput-04/witcher-gameinput.registry.local.ADMISSION-FROZEN.json",
+      "registrySha256": "0960784c2f571fa2a9b0022c83039b21c2432f429682759a258886b419b88f98",
+      "engineName": "calimocho-wine11.20-gptk4b3-gameinput-empty-witcher",
+      "wineSha256": "f6d0546fad2d0dafaa09a9fe6cabe75bb070567df6b0933ecd3622dcb6349194",
+      "wineserverSha256": "e3ec4e7e76cee273f17d5fa3459902642f73d6921e94c576aa74e8cdbdcd7da1"
+    }
+  ]
+}

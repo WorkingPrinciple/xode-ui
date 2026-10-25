@@ -8,6 +8,17 @@ import XodusManagement
 
 @MainActor
 enum EngineManagementChecks {
+    static func routingOnly(check: (Bool, String) -> Void) async throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/EngineRoutingChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "COR134: Synthetic engine routing files are cleaned") }
+        }
+        try await selectionPersistenceChecks(root: root, check: check)
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).resolvingSymlinksInPath()
             .appendingPathComponent("EngineManagementChecks-\(UUID().uuidString)")
@@ -225,11 +236,10 @@ enum EngineManagementChecks {
                 check(false, "REQ95 fresh inspection failure must stop lifecycle before launch")
             } catch {
                 let message = InstalledGamesController.nativeLaunchFailureMessage(error)
-                check(error is EngineInspectionError && message.contains(reason)
-                      && message.contains("Refresh the registry in Engines")
-                      && message.contains("No game was started") && !message.contains("launch script")
+                check(error is EngineInspectionError && error.localizedDescription.contains(reason)
+                      && message == InstalledGameActionCopy.launchUnavailable
                       && !FileManager.default.fileExists(atPath: launched.path) && lifecycle.stateDirectory == nil,
-                      "REQ95 native lifecycle rejection preserves \(reason) in Play presentation before spawn or state writes")
+                      "REQ95 native lifecycle rejection retains \(reason) diagnostically with generic Play failure before spawn or state writes")
             }
         }
         try Data("#!/bin/sh\nexit 2\n".utf8).write(to: mockCLI)
@@ -411,6 +421,12 @@ enum EngineManagementChecks {
                 [
                     "name": "exact-calimocho", "kind": "free", "wine": wine.path, "wineserver": server.path,
                     "sha256": wineHash, "wineserver_sha256": serverHash, "smoke_test": ["status": "pass"],
+                    "provider": ["id": "calimocho", "contract_version": 1],
+                ],
+                [
+                    "name": "alternate-calimocho", "kind": "free", "wine": wine.path, "wineserver": server.path,
+                    "sha256": wineHash, "wineserver_sha256": serverHash, "smoke_test": ["status": "pass"],
+                    "provider": ["id": "calimocho", "contract_version": 1],
                 ]
             ]
         ]
@@ -422,6 +438,12 @@ enum EngineManagementChecks {
             admittedProvider: "calimocho", admission: "admitted", ready: true, qualified: false,
             wineSha256: wineHash, wineserverSha256: serverHash, error: nil)
         let selection = AdmittedEngineSelection(registryPath: registry.path, inspection: inspection)
+        let alternateInspection = EngineInspection(
+            schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: hash(bytes), engineName: "alternate-calimocho", declaredProvider: "calimocho",
+            admittedProvider: "calimocho", admission: "admitted", ready: true, qualified: false,
+            wineSha256: wineHash, wineserverSha256: serverHash, error: nil)
+        let alternate = AdmittedEngineSelection(registryPath: registry.path, inspection: alternateInspection)
         defaults.set(try JSONEncoder().encode(selection), forKey: AdmittedEngineSelection.preferenceKey)
         EngineDefaults.setDefaultEngine(.calimocho, defaults)
         guard let reloadedDefaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
@@ -452,6 +474,91 @@ enum EngineManagementChecks {
         try Data("synthetic legacy".utf8).write(
             to: primary.deletingLastPathComponent().appendingPathComponent("xgameruntime_legacy.dll"))
         let runtime = try NativeRuntimeReference.capture(primary)
+        defaults.set(registry.path, forKey: "Xodus.lifecycle.registry")
+        EngineDefaults.setDefaultEngine(.calimocho, defaults)
+        let mock = root.appendingPathComponent("default-selection-cli")
+        let reply = String(decoding: try JSONEncoder().encode(inspection), as: UTF8.self)
+        let alternateReply = String(decoding: try JSONEncoder().encode(alternateInspection), as: UTF8.self)
+        try Data("""
+            #!/bin/sh
+            if [ "$2" = "--contract-version" ]; then
+              printf '%s\\n' '{"schemaVersion":1,"capability":"engineAdmissionV1","supported":true}'
+            else
+              case " $* " in
+                *" --engine alternate-calimocho "*) printf '%s\\n' '\(alternateReply)' ;;
+                *) printf '%s\\n' '\(reply)' ;;
+              esac
+            fi
+
+            """.utf8).write(to: mock)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: mock.path)
+        let backend = BackendConfiguration(executable: mock, stateDirectory: root)
+        let defaultCatalog = NativeEngineDefaults(version: 1, defaultEngine: "exact-calimocho", bindings: [
+            NativeEngineDefaults.Binding(registryPath: registry.path, registrySha256: hash(bytes),
+                engineName: "exact-calimocho", wineSha256: wineHash, wineserverSha256: serverHash)
+        ])
+        for legacy in [nil, .crossover, .gptk3, .gptk4, .standaloneWine, .calimocho] as [RuntimeProviderKind?] {
+            var savedGame = game
+            savedGame.engineOverride = legacy
+            savedGame.engineSelection = AdmittedEngineSelection(registryPath: "/removed/per-game-registry",
+                inspection: inspection)
+            let before = savedGame
+            let current = try await NativeLaunchConfiguration.resolveDefault(game: savedGame,
+                configuration: backend, provider: EngineDefaults.defaultEngine(defaults),
+                defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+            check(current.engine == "exact-calimocho" && current.registry == registry
+                  && current.admittedSelection == selection && savedGame == before,
+                  "COR132: Settings default resolves exact admitted identity and preserves ignored per-game \(String(describing: legacy)) data")
+        }
+        check(try JSONDecoder().decode(AdmittedEngineSelection.self,
+                  from: defaults.data(forKey: NativeEngineDefaults.preferenceKey) ?? Data()) == selection,
+              "COR132: First verified implicit default persists in its own settings key, not legacy registry preferences")
+        _ = try await store.setEngineOverrideV2(id: game.id, selection: alternate)
+        let explicit = try await store.load()[0]
+        check(explicit.engineOverrideV2?.version == 2 && explicit.engineOverrideV2?.selection == alternate
+              && explicit.engineSelection == game.engineSelection && explicit.engineOverride == game.engineOverride,
+              "COR134: Optional menu override survives reload in a versioned field without migrating legacy choices")
+        let explicitLaunch = try await NativeLaunchConfiguration.resolveDefault(game: explicit, configuration: backend,
+            provider: .calimocho, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+        check(explicitLaunch.admittedSelection == alternate && explicitLaunch.engine == "alternate-calimocho",
+              "COR134: Only the explicit versioned override is consumed, with fresh admission before launch")
+        _ = try await store.setEngineOverrideV2(id: game.id, selection: nil)
+        let clearedOverride = try await store.load()[0]
+        check(clearedOverride.engineOverrideV2 == nil && clearedOverride.engineSelection == game.engineSelection
+              && clearedOverride.engineOverride == game.engineOverride,
+              "COR134: Use default clears only the current optional override and preserves historical engine data")
+        let defaultLaunch = try await NativeLaunchConfiguration.resolveDefault(game: clearedOverride, configuration: backend,
+            provider: .calimocho, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+        let persistedDefault = try JSONDecoder().decode(AdmittedEngineSelection.self,
+            from: defaults.data(forKey: NativeEngineDefaults.preferenceKey) ?? Data())
+        check(defaultLaunch.admittedSelection == selection
+              && persistedDefault == selection,
+              "COR134: Clearing a different override returns to Settings default without changing that default")
+        let nms = InstalledGame(id: UUID(), title: "No Man's Sky", identityName: "HelloGames.NoMansSky",
+            version: "7.6.0.0", storeId: "BQVQTL3PCH05", folder: root.path, launcher: "", importedAt: Date())
+        do {
+            try NativeLaunchConfiguration.validateOverride(alternate, game: nms, defaults: defaults)
+            check(false, "COR134: A conflicting override cannot be offered or saved for a pinned title")
+        } catch NativeLaunchError.configurationConflict {
+            check(true, "COR134: A conflicting override cannot be offered or saved for a pinned title")
+        }
+        let nmsInspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
+            engineName: "calimocho-wine11.20-gptk4b3-tls-vulkan-private", declaredProvider: "calimocho",
+            admittedProvider: "calimocho", admission: "admitted", ready: true, qualified: false,
+            wineSha256: wineHash, wineserverSha256: serverHash, error: nil)
+        try NativeLaunchConfiguration.validateOverride(
+            AdmittedEngineSelection(registryPath: registry.path, inspection: nmsInspection), game: nms, defaults: defaults)
+        check(true, "COR134: Exact pinned title identity remains eligible for fresh admission before saving")
+        try Data((String(decoding: bytes, as: UTF8.self) + "\n").utf8).write(to: registry)
+        do {
+            _ = try await NativeLaunchConfiguration.resolveDefault(game: game, configuration: backend,
+                provider: .calimocho, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+            check(false, "COR132: Changed registry cannot reuse a default admission")
+        } catch { check(true, "COR132: Changed registry cannot reuse a default admission") }
+        try bytes.write(to: registry)
+        EngineDefaults.setDefaultEngine(.crossover, defaults)
+        defaults.set("missing-default-registry", forKey: "Xodus.lifecycle.registry")
         let resolved = try NativeLaunchConfiguration.resolve(
             game: game, provider: .calimocho,
             defaults: defaults, runtime: runtime)

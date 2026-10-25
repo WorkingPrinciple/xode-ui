@@ -202,6 +202,7 @@ struct NativeEngineSettings: View {
             guard inspection.ready, let name = inspection.engineName else { throw EngineInspectionError.failed }
             admittedSelection = try JSONEncoder().encode(AdmittedEngineSelection(
                 registryPath: registryPath, inspection: inspection))
+            UserDefaults.standard.set(admittedSelection, forKey: NativeEngineDefaults.preferenceKey)
             UserDefaults.standard.set(name, forKey: "Xodus.lifecycle.engine.calimocho")
             errorMessage = nil
             return true

@@ -260,7 +260,54 @@ enum InstalledGameChecks {
               "COR105: Discovery stops at the existing 512-child bound rather than scanning an unbounded root")
     }
 
+    static func legacyNativeReadiness(check: (Bool, String) -> Void) async throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/LegacyNativeChecks-\(UUID().uuidString)")
+        let folder = root.appendingPathComponent("game")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "REQ95: Synthetic legacy installation is cleaned") }
+        }
+        try Data("""
+            <Game><Identity Name="HelloGames.NoMansSky" Version="7.6.0.0"/>
+            <StoreId>BQVQTL3PCH05</StoreId></Game>
+            """.utf8).write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+        let game = InstalledGame(id: UUID(), title: "No Man's Sky", identityName: "HelloGames.NoMansSky",
+            version: "7.6.0.0", storeId: "BQVQTL3PCH05", folder: folder.path,
+            launcher: root.appendingPathComponent("XodusRemote/launchers/BQVQTL3PCH05.sh").path,
+            importedAt: Date(), packageType: .msixvc, storageVolume: GameStorageVolume(path: "/"))
+        let store = InstalledGameStore(file: root.appendingPathComponent("registry/games.json"))
+        try await store.save([game])
+        let controller = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
+        let session = LiveSession()
+        controller.useUnifiedAccount(session)
+        await controller.load()
+        check(game.engineSelection == nil && game.usesNativeLifecycle == nil
+              && controller.packageErrors[game.id] == nil,
+              "REQ95: NMS-shaped native record verifies folder and identity without requiring its unused legacy launcher")
+        check(!controller.launchableIDs.contains(game.id),
+              "REQ95: Local folder verification alone never bypasses native completeness or account admission")
+        controller.setAccountAccessAllowed(true)
+        await controller.play(game)
+        let attention = InstalledGameAttentionView(installed: controller,
+            operations: GameOperationsController(installed: controller), game: game, close: {})
+        check(controller.playErrors[game.id] != nil && !attention.needsAttention
+              && !attention.offersRepair,
+              "REQ95: A launch/access refusal never becomes an installation-damage claim or repair action")
+        try Data("<Game><Identity Name=\"Wrong\" Version=\"7.6.0.0\"/><StoreId>FIXTURE00001</StoreId></Game>".utf8)
+            .write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+        await controller.checkInstallation(game)
+        check(controller.packageErrors[game.id] != nil,
+              "REQ95: Native legacy records still reject a mismatched product identity")
+        let historical = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
+        await historical.load()
+        check(historical.packageErrors[game.id] != nil,
+              "REQ95: Non-native historical launch paths still require their launcher")
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
+        try await legacyNativeReadiness(check: check)
         try await LaunchAssociationChecks.run(check: check)
         let catalogue = OfflineGameCompatibility(version: 1, checkedAt: "2026-10-21T00:00:00Z",
             market: "GB", packageSource: "Synthetic unit-test classification", antiCheatReference: "Unit test",
@@ -823,7 +870,7 @@ enum InstalledGameChecks {
         guard let cleared = routing.games.first else { throw InstalledGameError.invalidRegistry }
         await routing.play(cleared)
         try await wait { routing.runningGameID == nil }
-        check(routing.playErrors[cleared.id]?.contains("Calimocho") == true,
+        check(routing.playErrors[cleared.id] == InstalledGameActionCopy.launchUnavailable,
               "REQ95 clearing an override without a configured default refuses instead of silently launching CrossOver")
         await routing.waitForSessionPersistence()
         await routing.setEngineOverride(.gptk4, for: cleared)

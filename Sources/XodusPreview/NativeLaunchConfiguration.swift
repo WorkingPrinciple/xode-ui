@@ -471,6 +471,71 @@ struct NativeLaunchConfiguration {
     let shims: NativeShimReference
     var admittedSelection: AdmittedEngineSelection? = nil
 
+    static func validateOverride(_ selection: AdmittedEngineSelection, game: InstalledGame,
+                                 defaults: UserDefaults = .standard) throws {
+        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
+                                                       provider: .calimocho)
+        if let profile {
+            guard profile.engine == selection.inspection.engineName,
+                  profile.registrySHA256.map({ $0 == selection.inspection.registrySha256 }) ?? true else {
+                throw NativeLaunchError.configurationConflict
+            }
+        }
+    }
+
+    @MainActor static func resolveDefault(game: InstalledGame, configuration: BackendConfiguration,
+                               provider: RuntimeProviderKind?, defaults: UserDefaults = .standard,
+                               runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
+                               evidence: MacGameEvidence.Game? = nil,
+                               engineDefaults: NativeEngineDefaults? = nil) async throws -> Self {
+        guard provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
+        let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
+                                                       provider: .calimocho, evidence: evidence)
+        let saved = try defaults.data(forKey: NativeEngineDefaults.preferenceKey)
+            .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+        let catalog = try engineDefaults ?? NativeEngineDefaults.read()
+        let selection: AdmittedEngineSelection
+        if let override = game.engineOverrideV2 {
+            guard override.version == 2, override.chosenAt.timeIntervalSince1970.isFinite else {
+                throw NativeLaunchError.selectionChanged
+            }
+            selection = override.selection
+            try validateOverride(selection, game: game, defaults: defaults)
+        } else if let titleEngine = profile?.engine {
+            guard let binding = catalog.bindings.first(where: { $0.engineName == titleEngine }),
+                  profile?.registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
+                throw NativeLaunchError.engineUnavailable
+            }
+            selection = try await binding.inspect(configuration: configuration)
+        } else if let saved {
+            selection = saved
+        } else {
+            guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
+                throw NativeLaunchError.engineNotSelected
+            }
+            selection = try await binding.inspect(configuration: configuration)
+        }
+        guard let engine = selection.inspection.engineName,
+              let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+        try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
+            "--registry", selection.registryPath, "--engine", engine, "--expected-registry-sha256", digest
+        ], selection: selection)
+        if game.engineOverrideV2 == nil, saved == nil {
+            guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
+                throw NativeLaunchError.engineNotSelected
+            }
+            let defaultSelection = engine == binding.engineName ? selection : try await binding.inspect(configuration: configuration)
+            defaults.set(try JSONEncoder().encode(defaultSelection), forKey: NativeEngineDefaults.preferenceKey)
+            if provider == nil { EngineDefaults.setDefaultEngine(.calimocho, defaults) }
+        }
+        // Per-game records are retained as history, never used to route a current launch.
+        var effective = game
+        effective.engineOverride = .calimocho
+        effective.engineSelection = selection
+        return try resolve(game: effective, provider: .calimocho, defaults: defaults,
+                           runtime: runtime, evidence: evidence)
+    }
+
     static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
                         defaults: UserDefaults = .standard,
                         runtime: NativeRuntimeReference? = NativeRuntimePins.approved,

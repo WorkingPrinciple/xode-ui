@@ -37,6 +37,9 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var launchableIDs: Set<UUID> = []
     @Published private(set) var placeholderIDs: Set<UUID> = []
     @Published private(set) var unavailableDriveIDs: Set<UUID> = []
+    @Published private(set) var availableEngineOverrides: [AdmittedEngineSelection] = []
+    @Published private(set) var checkingEngineOverrides = false
+    private var engineOverridesChecked = false
     @Published private(set) var mutationGameID: UUID?
     @Published private(set) var mutationActive = false
     /// Per-game update availability, recomputed from installed versions vs. `availableVersions`.
@@ -318,9 +321,12 @@ final class InstalledGamesController: ObservableObject {
     }
 
     nonisolated static func nativeLaunchFailureMessage(_ error: Error) -> String {
-        (error as? EngineInspectionError)?.localizedDescription
-            ?? (error as? NativeLaunchError)?.localizedDescription
-            ?? (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
+        if error is EngineInspectionError { return InstalledGameActionCopy.launchUnavailable }
+        if let failure = error as? NativeLaunchError {
+            if case .installationNotReady = failure { return failure.localizedDescription }
+            return InstalledGameActionCopy.launchUnavailable
+        }
+        return (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
     }
 
     nonisolated static func sessionLog(runID: String, directory: URL) -> URL? {
@@ -409,12 +415,12 @@ final class InstalledGamesController: ObservableObject {
             Self.launchLog.error("Candidate launch unavailable: \(game.storeId, privacy: .public): \(issue, privacy: .public)")
             return
         }
-        guard historicalFixture || (game.engineOverride ?? defaultEngine()) == .calimocho else {
-            playErrors[game.id] = NativeLaunchError.providerPolicy.localizedDescription
-            return
-        }
         if usesUnifiedAccount {
             await playNative(game)
+            return
+        }
+        guard historicalFixture || (game.engineOverride ?? defaultEngine()) == .calimocho else {
+            playErrors[game.id] = Self.nativeLaunchFailureMessage(NativeLaunchError.providerPolicy)
             return
         }
         guard game.usesNativeLifecycle != true else {
@@ -650,10 +656,10 @@ final class InstalledGamesController: ObservableObject {
             guard await inspectNativeInstallation(game)?.status == .complete else {
                 throw NativeLaunchError.installationNotReady
             }
-            let launch = try NativeLaunchConfiguration.resolve(game: game,
-                provider: game.engineOverride ?? defaultEngine(),
-                provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine,
+            let launch = try await NativeLaunchConfiguration.resolveDefault(game: game, configuration: configuration,
+                provider: defaultEngine(),
                 evidence: MacGameEvidenceStore.shared.games[game.storeId])
+            Self.launchLog.notice("Effective launch: \(game.storeId, privacy: .public); engine=\(launch.engine, privacy: .public); registry=\(launch.registry.path, privacy: .public); prefix=\(launch.prefix.path, privacy: .public)")
             guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
             let arguments = try await launch.arguments()
             let prefixNotice = try await launch.prefixNotice()
@@ -903,6 +909,65 @@ final class InstalledGamesController: ObservableObject {
         catch { self.error = InstalledGameError.storage.localizedDescription }
     }
 
+    func refreshEngineOverrides(force: Bool = true) async {
+        guard loaded, !checkingEngineOverrides, !applicationTerminating,
+              force || !engineOverridesChecked,
+              let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
+        checkingEngineOverrides = true
+        engineOverridesChecked = true
+        availableEngineOverrides = []
+        defer { checkingEngineOverrides = false }
+        do {
+            let catalog = try NativeEngineDefaults.read()
+            var choices: [AdmittedEngineSelection] = []
+            for binding in catalog.bindings {
+                do { choices.append(try await binding.inspect(configuration: configuration)) }
+                catch {
+                    Self.launchLog.error("Override unavailable: \(binding.engineName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+                guard !applicationTerminating, !Task.isCancelled else { return }
+            }
+            availableEngineOverrides = choices
+        } catch { self.error = Self.nativeLaunchFailureMessage(error) }
+    }
+
+    func engineOverrides(for game: InstalledGame) -> [AdmittedEngineSelection] {
+        availableEngineOverrides.filter { selection in
+            do {
+                try NativeLaunchConfiguration.validateOverride(selection, game: game)
+                return true
+            } catch {
+                Self.launchLog.debug("Override incompatible: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return false
+            }
+        }
+    }
+
+    func setEngineOverrideV2(_ selection: AdmittedEngineSelection?, for game: InstalledGame) async {
+        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating,
+              runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
+        editing = true
+        defer { editing = false }
+        do {
+            if let selection {
+                try NativeLaunchConfiguration.validateOverride(selection, game: game)
+                guard let configuration = unifiedSession?.nativeLifecycleConfiguration,
+                      let name = selection.inspection.engineName,
+                      let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+                try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
+                    "--registry", selection.registryPath, "--engine", name, "--expected-registry-sha256", digest
+                ], selection: selection)
+            }
+            guard !applicationTerminating, !accountDisconnecting else { throw GameScriptError.busy }
+            applySavedGames(try await store.setEngineOverrideV2(id: game.id, selection: selection))
+            playErrors[game.id] = nil
+            error = nil
+        } catch {
+            Self.launchLog.error("Override not saved: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            self.error = Self.nativeLaunchFailureMessage(error)
+        }
+    }
+
     func registerInstallation(folder: URL, launcher: URL, expectedStoreID: String) async throws {
         guard loaded, mutationActive, !editing, !applicationTerminating else { throw GameScriptError.busy }
         editing = true
@@ -1036,7 +1101,7 @@ final class InstalledGamesController: ObservableObject {
                 do {
                     try InstalledGameFiles.checkFolder(folder)
                     try GameScriptFiles.checkPath(folder)
-                    if game.usesNativeLifecycle != true {
+                    if !nativeIDs.contains(game.id) {
                         try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: game.launcher))
                     }
                     let config = try MicrosoftGameConfig.read(folder: folder)

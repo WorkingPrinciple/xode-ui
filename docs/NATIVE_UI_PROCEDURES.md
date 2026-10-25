@@ -29,6 +29,24 @@ failure without new evidence.
 
 ## Native interface
 
+REQ95 / COR132-134 launch routing uses the Settings default admission unless
+the user explicitly chooses an optional override in the existing game Actions
+menu. Only `engineOverrideV2` records that choice; historical `engineOverride`
+and `engineSelection` fields remain intact and are not current launch inputs.
+**Use default** removes only the V2 choice. Choices require fresh backend
+admission, and launch rechecks the exact registry digest and engine identity.
+The bundled `engine-defaults-v1.json` is the single path/digest binding source;
+a bundled entry is not proof that the installed CLI admits or can run it.
+Title profiles retain their existing runtime and prefix constraints.
+No engine explanation or recovery action is added below Play. Admission errors
+use the existing generic launch-failure surface; diagnostic logs retain the
+actual refusal. Native-path installs validate their folder and product identity,
+not an unused historical launcher. A launch refusal alone never means the
+installation is damaged. `--engine-selection-check` runs isolated synthetic
+routing/persistence/readiness checks without opening windows or launching games.
+Installed Play, menu interaction and title variants still require separately
+authorized native acceptance; do not run them while desktop control is paused.
+
 COR-97/101/102 use shared cover badges: exact compatibility symbols in the
 upper-right, current PC Game Pass catalogue membership in the lower-left.
 Neither creates a separate input target; hover and the existing cover button's

@@ -1194,7 +1194,7 @@ enum GameOperationChecks {
             }
             await installed.play(historical)
             check(installed.runningGameID == nil
-                  && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription,
+                  && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
                   "REQ95 current per-game \(provider.rawValue) choice refuses before spawning a legacy launcher")
         }
         await installed.setEngineOverride(nil, for: imported)
@@ -1203,7 +1203,7 @@ enum GameOperationChecks {
         }
         await installed.play(policyGame)
         check(installed.runningGameID == nil
-              && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription,
+              && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
               "REQ95 current Play refuses historical CrossOver execution before spawning its legacy script")
         await installed.playHistoricalFixture(policyGame)
         check(installed.runningGameID == imported.id && !operations.canSignIn,
