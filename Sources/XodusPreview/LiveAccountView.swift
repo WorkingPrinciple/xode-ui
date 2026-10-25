@@ -42,8 +42,8 @@ struct LiveAccountView: View {
                             .background(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255),
                                         in: RoundedRectangle(cornerRadius: 18))
                             .accessibilityHidden(true)
-                        Text("Ode to X").font(.title2.weight(.medium))
-                            .accessibilityLabel("Ode to X")
+                        Text("\(AppBrand.displayName)").font(.title2.weight(.medium))
+                            .accessibilityLabel("\(AppBrand.displayName)")
                             .accessibilityAddTraits(.isHeader)
                     } }
                     if session.hasConfirmedSignIn {
@@ -205,16 +205,17 @@ struct LiveSettingsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            SettingsPaneSelector(selection: selectedPane)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .accessibilityIdentifier("xodus.settings.pane")
-            selectedPaneContent
+        // Inside the Settings scene, TabView becomes the standard toolbar-tab preferences window.
+        TabView(selection: selectedPane) {
+            ForEach(SettingsPane.allCases) { pane in
+                paneContent(pane)
+                    .tabItem { Label(pane.title, systemImage: pane.symbol) }
+                    .tag(pane)
+                    .accessibilityIdentifier("xodus.settings.\(pane.rawValue)")
+            }
         }
-        .padding(.bottom, 8)
-        .frame(minWidth: 560, idealWidth: 560)
+        .accessibilityIdentifier("xodus.settings.pane")
+        .frame(minWidth: 560, idealWidth: 600, minHeight: 480, idealHeight: 640)
         .task {
             await state.runtimeSettings.refreshCrossOverDependency()
         }
@@ -227,8 +228,8 @@ struct LiveSettingsView: View {
         )
     }
 
-    @ViewBuilder private var selectedPaneContent: some View {
-        switch SettingsPane(rawValue: storedSelectedPane) ?? .general {
+    @ViewBuilder private func paneContent(_ pane: SettingsPane) -> some View {
+        switch pane {
         case .general: generalPane
         case .engines: enginesPane
         case .account: accountPane
@@ -238,9 +239,6 @@ struct LiveSettingsView: View {
 
     private var generalPane: some View {
         Form {
-            Section {
-                Text("General").font(.title2.weight(.semibold))
-            }
             Section("Game storage") {
                 GameInstallLocationSettings()
             }
@@ -274,9 +272,6 @@ struct LiveSettingsView: View {
 
     private var enginesPane: some View {
         Form {
-            Section {
-                Text("Engines").font(.title2.weight(.semibold))
-            }
             RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath,
                 installed: state.installedGames, embeddedInSettings: true, showsAdvanced: false,
                 registryObservation: engineObservation, userEngineModel: engineModel)
@@ -286,10 +281,7 @@ struct LiveSettingsView: View {
 
     private var accountPane: some View {
         Form {
-            Section {
-                Text("Account").font(.title2.weight(.semibold))
-            }
-            Section("Ode to X") {
+            Section("\(AppBrand.displayName) account") {
                 LabeledContent("Status", value: session.accountJourneyTitle)
                 Button("Open account") { state.openAccount() }
                 if session.hasConfirmedSignIn { AccountHubDestinations() }
@@ -334,9 +326,6 @@ struct LiveSettingsView: View {
 
     private var advancedPane: some View {
         Form {
-            Section {
-                Text("Advanced").font(.title2.weight(.semibold))
-            }
             Section("App connection") {
 #if XODUS_SHIPPING
                 Text("Only this app's approved bundled engine and sign-in helper can be used. Gameplay runtime certification is separate.")
@@ -449,69 +438,14 @@ struct LiveSettingsView: View {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
             }
-            Section("About Ode to X") {
+            Section("About \(AppBrand.displayName)") {
+                LabeledContent("Version", value: AppBrand.versionLabel)
+                Text(AppBrand.copyright).foregroundStyle(.secondary)
                 Button("Licenses") { openWindow(id: "licenses") }
                 Button("Acknowledgments") { openWindow(id: "acknowledgments") }
             }
         }
         .formStyle(.grouped)
-    }
-}
-
-private final class SettingsSegmentedControl: NSSegmentedControl {
-    override var intrinsicContentSize: NSSize {
-        NSSize(width: NSView.noIntrinsicMetric, height: super.intrinsicContentSize.height)
-    }
-
-    override func layout() {
-        super.layout()
-        guard segmentCount > 0, bounds.width > 0 else { return }
-        let segmentWidth = bounds.width / CGFloat(segmentCount)
-        for index in 0..<segmentCount where abs(width(forSegment: index) - segmentWidth) > 0.5 {
-            setWidth(segmentWidth, forSegment: index)
-        }
-    }
-}
-
-private struct SettingsPaneSelector: NSViewRepresentable {
-    @Binding var selection: SettingsPane
-
-    func makeCoordinator() -> Coordinator { Coordinator(selection: $selection) }
-
-    func makeNSView(context: Context) -> NSSegmentedControl {
-        let control = SettingsSegmentedControl()
-        control.segmentCount = SettingsPane.allCases.count
-        control.trackingMode = .selectOne
-        control.segmentStyle = .rounded
-        control.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        control.target = context.coordinator
-        control.action = #selector(Coordinator.selectPane(_:))
-        control.setAccessibilityLabel("Settings pane")
-        for (index, pane) in SettingsPane.allCases.enumerated() {
-            control.setLabel(pane.title, forSegment: index)
-            control.setImage(NSImage(systemSymbolName: pane.symbol, accessibilityDescription: pane.title),
-                             forSegment: index)
-        }
-        return control
-    }
-
-    func updateNSView(_ control: NSSegmentedControl, context: Context) {
-        context.coordinator.selection = $selection
-        control.selectedSegment = SettingsPane.allCases.firstIndex(of: selection) ?? 0
-    }
-
-    @MainActor
-    final class Coordinator: NSObject {
-        var selection: Binding<SettingsPane>
-
-        init(selection: Binding<SettingsPane>) {
-            self.selection = selection
-        }
-
-        @objc func selectPane(_ sender: NSSegmentedControl) {
-            guard SettingsPane.allCases.indices.contains(sender.selectedSegment) else { return }
-            selection.wrappedValue = SettingsPane.allCases[sender.selectedSegment]
-        }
     }
 }
 

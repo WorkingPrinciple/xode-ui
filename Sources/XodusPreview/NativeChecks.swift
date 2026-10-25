@@ -56,6 +56,7 @@ enum NativeChecks {
         do {
             if settingsOnly {
                 try NativeUIChecks.checkSettingsLayouts(check: check)
+                BrandUXChecks.run(check: check)
                 print("\(count) Settings layout checks, \(failures) failures. Detached views; isolated preferences; no sign-in or network requests.")
                 return failures == 0
             }
@@ -560,7 +561,7 @@ enum NativeChecks {
                   && expired.accountExplanation.contains("has not been checked"),
                   "HELLO and advertised auth support display connected-but-unchecked, never saved account evidence")
             check(expired.accountJourneyTitle == "Sign-in hasn't been checked"
-                  && expired.accountJourneyMessage.contains("Sign in with Xbox Live"),
+                  && expired.accountJourneyMessage.contains("Sign in with Microsoft"),
                   "Unchecked account copy names the next action without presenting saved sign-in")
             await expired.refreshAccount()
             check(!expired.hasConfirmedSignIn, "Expired credentials keep games behind welcome")
@@ -568,7 +569,7 @@ enum NativeChecks {
                   && expired.canDisconnectAccount && !expired.canSignIn,
                   "Expired profile exposes confirmed disconnect recovery, not rejected sign-in")
             check(expired.accountJourneyTitle == "Sign-in needs reconnecting"
-                  && expired.accountJourneyMessage == "Your saved Xbox Live sign-in needs to be refreshed. Choose Sign in with Xbox Live.",
+                  && expired.accountJourneyMessage == "Your saved Xbox Live sign-in needs to be refreshed. Choose Sign in with Microsoft.",
                   "Expired account copy explains the existing sign-out then sign-in recovery in plain language")
             await expired.signOut()
             check(!expired.hasConfirmedSignIn && !expired.canStartWelcomeSignIn,
@@ -600,8 +601,8 @@ enum NativeChecks {
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: neutralHelper.path)
             let neutralBinding = NativeAuthHostBinding(executable: neutralHelper,
                 sha256: SHA256.hash(data: helperBytes).map { String(format: "%02x", $0) }.joined())
-            let unpairedMessage = "Sign-in is unavailable in this copy of Ode to X. A matching app and sign-in service are required."
-            let serviceMessage = "Ode couldn't connect to its sign-in service. Choose Sign in with Xbox Live to reconnect."
+            let unpairedMessage = "Sign-in is unavailable in this copy of Xode. A matching app and sign-in service are required."
+            let serviceMessage = "Xode couldn't connect to its sign-in service. Choose Sign in with Microsoft to reconnect."
             let retryBase = configuration("welcomeretry")
             let retryConfiguration = BackendConfiguration(executable: retryBase.executable,
                 stateDirectory: retryBase.stateDirectory, nativeAuthHost: neutralBinding)
@@ -701,7 +702,7 @@ enum NativeChecks {
                   "Welcome completion unlocks navigation without claiming game entitlement")
             check(await saved.disconnect(), "Account presentation regression retires its owned neutral child")
             check(saved.currentCredentialState == nil && saved.accountSymbol == "person.crop.circle"
-                  && saved.accountLabel == "Connect Ode to X" && saved.accountStatusError == nil,
+                  && saved.accountLabel == "Connect Xode" && saved.accountStatusError == nil,
                   "Disconnect removes current account presentation evidence")
             let mixedBase = configuration("recentbootstrapsignedout")
             let mixedConfiguration = BackendConfiguration(executable: mixedBase.executable,
@@ -1286,7 +1287,7 @@ enum NativeChecks {
             await localEmpty.connect()
             check(localEmpty.installedSnapshot?.installations.isEmpty == true
                   && localEmpty.libraryTitle == "Your PC library isn't available yet"
-                  && localEmpty.libraryMessage == "Ode to X can't yet verify which PC games you own.",
+                  && localEmpty.libraryMessage == "Xode can't yet verify which PC games you own.",
                   "A constant-empty registry response never advertises an implemented registry or an empty Mac")
             await localEmpty.disconnect()
             let localUnavailable = session("registryunavailable")

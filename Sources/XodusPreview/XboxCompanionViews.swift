@@ -94,7 +94,7 @@ struct XboxProfileView: View {
     }
 
     private var accountScope: some View {
-        Text(companion.usesUnifiedAccount ? "Profile and achievements use the Xbox Live account signed in to Ode to X."
+        Text(companion.usesUnifiedAccount ? "Profile and achievements use the Xbox Live account signed in to \(AppBrand.displayName)."
              : "Profile and social data use your Xbox account. \(XboxCompanionCopy.accountScope)")
             .font(.callout).foregroundStyle(.secondary)
     }
@@ -426,7 +426,7 @@ struct XboxAccountSummaryView: View {
                                 ? "Xbox account needs verification" : "Xbox profile unavailable")
                         .font(.title3.weight(.semibold))
                     Text(state.gameOperations.serviceStatus?.serviceRunning == false
-                         ? "Ode to X is reconnecting automatically. Your saved account and games remain unchanged."
+                         ? "\(AppBrand.displayName) is reconnecting automatically. Your saved account and games remain unchanged."
                          : state.gameOperations.serviceSigningIn
                             ? "Finish signing in in the Microsoft window."
                          : state.gameOperations.serviceAccountNeedsVerification

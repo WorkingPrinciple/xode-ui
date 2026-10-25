@@ -66,8 +66,8 @@ struct NativeMinecraftInstallation: Equatable, Sendable {
 }
 
 enum NativeMinecraftDetailsCopy {
-    static let summary = "Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your Ode to X account."
-    static let worldPreservation = "Install or reinstall the official launcher from this page. Your worlds are not removed by Ode to X."
+    static let summary = "Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your \(AppBrand.displayName) account."
+    static let worldPreservation = "Install or reinstall the official launcher from this page. Your worlds are not removed by \(AppBrand.displayName)."
 }
 
 @MainActor

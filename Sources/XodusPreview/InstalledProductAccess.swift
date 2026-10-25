@@ -41,7 +41,31 @@ final class InstalledProductAccess: ObservableObject {
         pcCandidate && !checking && errors[productID] == nil && permits(productID, account: account, now: now)
     }
 
-    func reviewNotice(for productID: String, account: String?, now: Date = Date()) -> String? {
+    static let notIncludedNotice = "Not included in your Game Pass or purchases."
+    static let storeActionTitle = "View in Microsoft Store"
+
+    static func storeURL(productID: String) -> URL? {
+        guard PCGamesClient.validProductID(productID) else { return nil }
+        return URL(string: "https://apps.microsoft.com/detail/\(productID)")
+    }
+
+    /// True only for a current, error-free check whose license answer is missing or unknown while the
+    /// complete public PC Game Pass list also excludes the game. Transport errors never qualify.
+    func notIncluded(_ productID: String, account: String?, publicGamePassExcludes: Bool,
+                     now: Date = Date()) -> Bool {
+        guard publicGamePassExcludes, let account, accountHash == account, !checking,
+              errors[productID] == nil, let fact = facts[productID],
+              !permits(productID, account: account, now: now),
+              now.timeIntervalSince(fact.checkedAt) >= 0, now.timeIntervalSince(fact.checkedAt) < 300,
+              fact.expiresAt.map({ $0 <= now }) != true else { return false }
+        return fact.value.reason == .productNotListed || fact.value.reason == nil
+    }
+
+    func reviewNotice(for productID: String, account: String?, publicGamePassExcludes: Bool = false,
+                      now: Date = Date()) -> String? {
+        if notIncluded(productID, account: account, publicGamePassExcludes: publicGamePassExcludes, now: now) {
+            return Self.notIncludedNotice
+        }
         guard let account, accountHash == account else {
             return "Access for this account hasn't been checked for this game."
         }

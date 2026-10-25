@@ -283,7 +283,7 @@ struct LiveRootView: View {
             if unifiedAccountMode {
                 accessMessage = "Your Xbox account and game connection need to match. Check Account and refresh your library."
             } else if !session.hasConfirmedSignIn {
-                accessMessage = "Sign in with Xbox Live to play this game."
+                accessMessage = "Sign in with Microsoft to play this game."
             } else if !state.pcGames.hasSavedSignIn || state.pcGames.needsSignIn {
                 accessMessage = "Reconnect your Xbox library to play this game."
             } else if state.gameOperations.serviceStatus?.serviceRunning != true {
@@ -336,12 +336,17 @@ struct LiveRootView: View {
                 session.selectedProduct = nil
                 state.showingAccount = false
                 state.showingSetup = false
+                state.showingReadiness = false
                 state.accountDestination = .account
             }
         }
-        .sheet(isPresented: Binding(get: { requiresAccountGate || state.showingAccount },
-                                    set: { state.showingAccount = !requiresAccountGate && $0 }), onDismiss: {
+        .sheet(isPresented: Binding(get: { requiresAccountGate || state.showingAccount || state.showingReadiness },
+                                    set: { presented in
+                                        if !presented { state.showingReadiness = false }
+                                        state.showingAccount = !requiresAccountGate && presented
+                                    }), onDismiss: {
             state.showingSetup = false
+            state.showingReadiness = false
             state.accountDestination = .account
         }) {
             if requiresSignIn {
@@ -351,6 +356,14 @@ struct LiveRootView: View {
                             .frame(width: 0, height: 0)
                             .allowsHitTesting(false).accessibilityHidden(true)
                     }
+            } else if state.showingReadiness, !state.showingAccount {
+                ReadinessChecklistView(session: session, installed: state.installedGames,
+                                       allowsStatusReads: startupAllowed,
+                                       openSettingsPane: { pane in
+                                           SettingsPaneSelection.select(pane)
+                                           state.showingReadiness = false
+                                           openSettings()
+                                       }, done: { state.showingReadiness = false })
             } else {
 #if !XODUS_SHIPPING
             LiveAccountView(refreshStatusOnAppear: !PreviewExporter.liveDataRequested)
@@ -369,11 +382,9 @@ struct LiveRootView: View {
         .background {
             if !requiresSignIn { GameOperationPresentation(operations: state.gameOperations) }
         }
-        .background {
-            Button("Focus search") {
-                state.navigate(.discover)
-                searchFocused = true
-            }.keyboardShortcut("f").hidden()
+        .onChange(of: state.searchFocusRequest) { _, _ in
+            guard searchEnabled else { return }
+            searchFocused = true
         }
         }
     }
@@ -425,7 +436,7 @@ struct LiveRootView: View {
                     Button("Refresh Discover", systemImage: "arrow.clockwise") {
                         Task { await session.refreshCatalog(state.query) }
                     }
-                    .labelStyle(.iconOnly).help(refreshHelp).keyboardShortcut("r")
+                    .labelStyle(.iconOnly).help(refreshHelp)
                     .modifier(NativeToolbarIconStyle())
                     .disabled(!startupAllowed || !session.isReady || session.searching)
                     .accessibilityIdentifier("xodus.catalog.refresh")

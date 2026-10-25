@@ -244,7 +244,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                 batchErrors[product.ProductId] = nil
             } catch {
                 batchErrors[product.ProductId] =
-                    "Microsoft returned game details Ode to X couldn't read. Try again."
+                    "Microsoft returned game details \(AppBrand.displayName) couldn't read. Try again."
             }
             batchImages[product.ProductId] = Images(cover: cover, hero: heroes.first,
                 landscape: unique, logos: Self.logoReferences(in: art),

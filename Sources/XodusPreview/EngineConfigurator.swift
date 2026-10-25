@@ -466,12 +466,116 @@ extension EngineRow {
     }
 }
 
+/// User-facing engine names. Display only: engine IDs, registry names and saved selections are unchanged.
+enum EngineDisplayName {
+    struct Presentation: Equatable {
+        let name: String
+        let detail: String?
+        let titleSpecific: Bool
+    }
+
+    private static let titles: [(marker: String, title: String)] = [("dirt5", "DIRT 5"), ("witcher", "The Witcher")]
+
+    static func presentation(for id: String?) -> Presentation {
+        guard let id else { return Presentation(name: "Calimocho", detail: nil, titleSpecific: false) }
+        let lowered = id.lowercased()
+        guard lowered.hasPrefix("calimocho") else { return Presentation(name: id, detail: nil, titleSpecific: false) }
+        if let release = releaseName(lowered) {
+            return Presentation(name: release, detail: "Release engine", titleSpecific: false)
+        }
+        let wine = wineVersion(lowered).map { "Wine \($0)" }
+        if let match = titles.first(where: { lowered.contains($0.marker) }) {
+            return Presentation(name: "Calimocho for \(match.title)",
+                                detail: [wine, "Tuned for \(match.title) only"].compactMap { $0 }.joined(separator: " · "),
+                                titleSpecific: true)
+        }
+        if lowered.hasSuffix("-private") {
+            return Presentation(name: "Calimocho", detail: wine, titleSpecific: false)
+        }
+        if lowered.contains("tls-vulkan") {
+            return Presentation(name: "Calimocho (alternate build)", detail: wine, titleSpecific: false)
+        }
+        return Presentation(name: "Calimocho", detail: wine, titleSpecific: false)
+    }
+
+    static func name(_ id: String?) -> String { presentation(for: id).name }
+
+    /// "calimocho-11.20-4.0b3-01" → "Calimocho 11.20 (GPTK 4.0b3) · 01"
+    private static func releaseName(_ id: String) -> String? {
+        let parts = id.split(separator: "-").map(String.init)
+        guard parts.count == 4, parts[0] == "calimocho",
+              parts[1].range(of: #"^[0-9]+\.[0-9]+$"#, options: .regularExpression) != nil,
+              parts[2].range(of: #"^[0-9]+\.[0-9]+[a-z0-9]*$"#, options: .regularExpression) != nil,
+              parts[3].range(of: #"^[0-9]+$"#, options: .regularExpression) != nil else { return nil }
+        return "Calimocho \(parts[1]) (GPTK \(parts[2])) · \(parts[3])"
+    }
+
+    private static func wineVersion(_ id: String) -> String? {
+        guard let range = id.range(of: #"wine[0-9]+(\.[0-9]+)?"#, options: .regularExpression) else { return nil }
+        return String(id[range].dropFirst(4))
+    }
+}
+
+/// Whether Play has a launch-ready Calimocho: Ready, Missing (Get + Check Again) or Invalid (reason).
+/// Derived from the admitted choices plus a read-only presence check of the released engine.
+/// Every known engine is inspected on each check, so an empty list means no check has run yet.
+enum CalimochoAvailability: Equatable {
+    case notChecked, checking, ready, missing, invalid(String)
+
+    static let unverifiedReason = "\(AppBrand.displayName) found Calimocho but couldn't verify it. Reinstall it, then choose Check Again."
+
+    static func from(choices: [EngineChoice], checking: Bool, installed: Bool? = nil) -> Self {
+        if choices.contains(where: \.ready) { return .ready }
+        if checking { return .checking }
+        if installed == false { return .missing }
+        return choices.isEmpty ? .notChecked : .invalid(unverifiedReason)
+    }
+
+    var needsDownload: Bool {
+        switch self {
+        case .missing, .invalid: true
+        case .notChecked, .checking, .ready: false
+        }
+    }
+
+    /// Shown in place of an empty engine list, so the section is never a bare header.
+    var emptyListMessage: String? {
+        switch self {
+        case .notChecked: "Engines are checked once your account and game connection are ready."
+        case .checking: "Checking engines…"
+        case .missing: "No engines are installed yet."
+        case .ready, .invalid: nil
+        }
+    }
+
+    var message: String? {
+        switch self {
+        case .missing:
+            "Calimocho isn't installed. \(AppBrand.displayName) needs Calimocho to play games. Get it, then choose Check Again."
+        case .invalid(let reason): "Calimocho couldn't be verified. \(reason)"
+        case .notChecked, .checking, .ready: nil
+        }
+    }
+}
+
+enum EnginesCopy {
+    static let lead = "Engines run Windows games on your Mac. \(AppBrand.displayName) plays games with Calimocho. You can also add your own Wine engines."
+    static let crossOver = "\(AppBrand.displayName) detects and configures CrossOver, but Play currently uses Calimocho."
+    static let crossOverLicense = "Use your own licensed copy of CrossOver; \(AppBrand.displayName) doesn't include it."
+}
+
 /// One engine the configurator can make the launch default.
 struct EngineChoice: Identifiable, Equatable {
     let id: String
     let name: String
     var version: String? = nil
     let ready: Bool
+
+    /// A choice named from its engine ID, with the secondary line users see under it.
+    static func named(_ id: String, ready: Bool) -> Self {
+        let presentation = EngineDisplayName.presentation(for: id)
+        return EngineChoice(id: id, name: presentation.name, version: presentation.detail, ready: ready)
+    }
 }
 
 /// Native Settings-style engine configuration. Callers supply the admitted engines and the
@@ -490,6 +594,8 @@ struct EngineConfiguratorForm<Advanced: View>: View {
     let setDefault: (String) -> Void
     let refresh: () -> Void
     var showsAdvanced = true
+    /// Host-supplied Calimocho state; nil derives it from the choices alone.
+    var calimochoStatus: CalimochoAvailability? = nil
     @ViewBuilder let advanced: () -> Advanced
 
     var body: some View {
@@ -502,7 +608,8 @@ struct EngineConfiguratorForm<Advanced: View>: View {
         EngineConfiguratorSections(choices: choices, defaultID: defaultID, defaultName: defaultName,
             checking: checking, error: error, settings: settings, allowsFileReads: allowsFileReads,
             userEngineStore: userEngineStore, suggestions: suggestions, setDefault: setDefault,
-            refresh: refresh, showsAdvanced: showsAdvanced, userEngineModel: userEngineModel, advanced: advanced)
+            refresh: refresh, showsAdvanced: showsAdvanced, userEngineModel: userEngineModel,
+            calimochoStatus: calimochoStatus, advanced: advanced)
     }
 }
 
@@ -517,6 +624,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     let setDefault: (String) -> Void
     let refresh: () -> Void
     let showsAdvanced: Bool
+    let calimochoStatus: CalimochoAvailability?
     let advanced: () -> Advanced
     @StateObject private var ownedUsers: UserEngineModel
     private var users: UserEngineModel { ownedUsers }
@@ -526,7 +634,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
          settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
          suggestions: [UserEngine], setDefault: @escaping (String) -> Void, refresh: @escaping () -> Void,
          showsAdvanced: Bool = true, userEngineModel: UserEngineModel? = nil,
-         advanced: @escaping () -> Advanced) {
+         calimochoStatus: CalimochoAvailability? = nil, advanced: @escaping () -> Advanced) {
         self.choices = choices
         self.defaultID = defaultID
         self.defaultName = defaultName
@@ -537,12 +645,41 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         self.setDefault = setDefault
         self.refresh = refresh
         self.showsAdvanced = showsAdvanced
+        self.calimochoStatus = calimochoStatus
         self.advanced = advanced
         _ownedUsers = StateObject(wrappedValue:
             userEngineModel ?? UserEngineModel(store: userEngineStore, suggestions: suggestions))
     }
 
+    private var calimocho: CalimochoAvailability {
+        calimochoStatus ?? .from(choices: choices, checking: checking)
+    }
+    private var checkingAny: Bool { checking || settings.checkingDependency }
+
     var body: some View {
+        Section {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(EnginesCopy.lead)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if checkingAny { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
+                Button("Check Again") {
+                    refresh()
+                    Task { await settings.refreshCrossOverDependency() }
+                }
+                .disabled(checkingAny || !allowsFileReads || settings.applicationTerminating)
+                .accessibilityLabel("Check engines and CrossOver again")
+                .accessibilityIdentifier("xodus.engines.refresh")
+            }
+            if let message = calimocho.message {
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.engines.calimocho.missing")
+                Link(CalimochoRelease.getTitle, destination: CalimochoRelease.downloadURL)
+                    .accessibilityIdentifier("xodus.engines.calimocho.get")
+            }
+        }
         Section {
             Picker("Default Engine", selection: Binding(
                 get: { defaultID ?? "" },
@@ -561,25 +698,20 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
             }
         }
-        Section {
+        Section("Engines") {
+            if choices.isEmpty, let placeholder = calimocho.emptyListMessage {
+                Text(placeholder).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.engines.empty")
+            }
             ForEach(choices) { choice in
                 EngineRow(name: choice.name,
                           detail: choice.version.flatMap { choice.name.contains($0) ? nil : $0 },
-                          state: choice.id == defaultID ? .isDefault : choice.ready ? .ready : .unverified) {
+                          state: !choice.ready ? .unverified : choice.id == defaultID ? .isDefault : .ready) {
                     EmptyView()
                 }
             }
             UserEngineList(model: users, allowsFileReads: allowsFileReads)
-        } header: {
-            HStack {
-                Text("Engines")
-                Spacer()
-                if checking { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
-                Button("Check Again", action: refresh)
-                    .buttonStyle(.borderless)
-                    .disabled(checking || !allowsFileReads || settings.applicationTerminating)
-                    .accessibilityLabel("Check engines again")
-            }
         }
         UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
@@ -624,10 +756,12 @@ struct CrossOverLocationRow: View {
                     Button("Choose…", action: choose).disabled(!allowsCheck || fence.pending)
                         .accessibilityLabel("Choose CrossOver application")
                     if fence.pending { ProgressView().controlSize(.small).accessibilityLabel("Checking CrossOver") }
-                    Button("Use App", action: apply)
-                        .disabled(!allowsCheck || fence.pending || location.isEmpty
-                                  || location == EngineDefaults.crossOverApplication())
-                        .accessibilityLabel("Use this CrossOver application")
+                    if Self.offersUseApp(location: location, saved: EngineDefaults.crossOverApplication(),
+                                         state: settings.crossOverDependency) {
+                        Button("Use App", action: apply)
+                            .disabled(!allowsCheck || fence.pending)
+                            .accessibilityLabel("Use this CrossOver application")
+                    }
                 }
             }
             if let error {
@@ -647,21 +781,32 @@ struct CrossOverLocationRow: View {
                 }
             }
         } header: {
-            HStack {
-                Text("CrossOver")
-                Spacer()
-                Button("Check Again") { Task { await settings.refreshCrossOverDependency() } }
-                    .buttonStyle(.borderless)
-                    .disabled(!allowsCheck || settings.checkingDependency || settings.applicationTerminating)
-                    .accessibilityLabel("Check for CrossOver again")
-                    .accessibilityIdentifier("xodus.engines.refresh")
+            Text("CrossOver")
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(EnginesCopy.crossOver)
+                Text(EnginesCopy.crossOverLicense)
             }
+            .font(.callout).foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("xodus.engines.crossover.explanation")
         }
         .onChange(of: settings.crossOverDependency, initial: true) { _, state in
             guard !fence.pending else { return }
             location = CrossOverLocationRow.suggestedLocation(saved: EngineDefaults.crossOverApplication(),
                                                              state: state, current: location)
         }
+    }
+
+    /// Use App appears only when the field names an app other than the one already in use.
+    static func offersUseApp(location: String, saved: String?, state: CrossOverDependencyState) -> Bool {
+        let path = (location.trimmingCharacters(in: .whitespaces) as NSString).expandingTildeInPath
+        guard !path.isEmpty else { return false }
+        let standardized = URL(fileURLWithPath: path).standardizedFileURL.path
+        if let saved { return standardized != URL(fileURLWithPath: saved).standardizedFileURL.path }
+        if case .installed(let app) = state { return standardized != app.location.standardizedFileURL.path }
+        return true
     }
 
     /// A saved explicit location always wins; a detection only fills an empty field.
