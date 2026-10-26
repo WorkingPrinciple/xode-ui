@@ -106,6 +106,53 @@ enum HighballContract {
     }
 }
 
+extension HighballContract {
+    static let engineName = "highball-x64-crossover26.3-r27"
+    static let wineSha256 = "8cce786bce298f601a415f2e2952a82512c02243689df5b40e0af8e6e63991ca"
+    static let wineserverSha256 = "7f842c62de7cb8a0409440cafa183d7177c820bc01d117683bd7d84f311d0709"
+
+    static func engineRoot(home: String = NSHomeDirectory()) -> URL {
+        URL(fileURLWithPath: home, isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Highball/engines/\(engineID)", isDirectory: true)
+    }
+
+    struct RegistryEntry: Codable, Equatable {
+        struct Provider: Codable, Equatable { let id: String; let contract_version: Int }
+        struct SmokeTest: Codable, Equatable { let status: String; let evidence: String }
+        let name, kind, version, renderer, install_path, wine, wineserver, sha256, wineserver_sha256: String
+        let provider: Provider
+        let local_only: Bool
+        let environment: [String: String]
+        let smoke_test: SmokeTest
+    }
+
+    /// Registry bytes for a qualified verdict's own engine entry, checked against the pinned engine.
+    /// The backend re-checks the entry at engine-inspect and again before launch.
+    static func registryData(verdict: Data, product: String, exitCode: Int32,
+                             home: String = NSHomeDirectory()) throws -> Data {
+        guard case .qualified = decode(verdict, product: product, exitCode: exitCode) else {
+            throw NativeLaunchError.providerNotAdmitted
+        }
+        struct Envelope: Decodable { let registryEntry: RegistryEntry }
+        let entry = try JSONDecoder().decode(Envelope.self, from: verdict).registryEntry
+        let root = engineRoot(home: home)
+        guard entry.name == engineName, entry.provider == .init(id: "highball", contract_version: 1),
+              entry.sha256 == wineSha256, entry.wineserver_sha256 == wineserverSha256,
+              entry.install_path == root.path,
+              entry.wine == root.appendingPathComponent("engine/bin/wine").path,
+              entry.wineserver == root.appendingPathComponent("engine/bin/wineserver").path,
+              entry.environment.count <= 32 else { throw NativeLaunchError.providerNotAdmitted }
+        struct Registry: Encodable {
+            let schema_version = 1
+            let blocked: [String] = []
+            let engines: [RegistryEntry]
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes]
+        return try encoder.encode(Registry(engines: [entry]))
+    }
+}
+
 enum HighballCopy {
     static func blockerText(_ code: String?) -> String? {
         switch code {

@@ -80,11 +80,13 @@ struct EngineInspection: Codable, Equatable, Sendable {
             }
             switch value.admission {
             case "admitted":
-                guard value.declaredProvider == "calimocho", value.admittedProvider == "calimocho" else {
+                guard let provider = value.declaredProvider, AdmittedProviderScope.known.contains(provider),
+                      value.admittedProvider == provider else {
                     throw EngineInspectionError.invalidResponse
                 }
             case "genericWine":
-                guard value.admittedProvider == nil, value.declaredProvider != "calimocho" else {
+                guard value.admittedProvider == nil,
+                      value.declaredProvider.map({ !AdmittedProviderScope.known.contains($0) }) ?? true else {
                     throw EngineInspectionError.invalidResponse
                 }
             default: throw EngineInspectionError.invalidResponse
@@ -99,7 +101,8 @@ struct EngineInspection: Codable, Equatable, Sendable {
                 throw EngineInspectionError.invalidResponse
             }
             if value.admission == "unadmitted" {
-                guard value.declaredProvider == "calimocho", error.code == "PROVIDER_NOT_ADMITTED" else {
+                guard value.declaredProvider.map(AdmittedProviderScope.known.contains) == true,
+                      error.code == "PROVIDER_NOT_ADMITTED" else {
                     throw EngineInspectionError.invalidResponse
                 }
             }
@@ -128,6 +131,9 @@ struct AdmittedEngineSelection: Codable, Equatable, Sendable {
             throw NativeLaunchError.engineUnavailable
         }
         try selection.validate(registryPath: selection.registryPath, engineName: engine, registryDigest: digest)
+        guard selection.inspection.admittedProvider == AdmittedProviderScope.calimocho else {
+            throw NativeLaunchError.providerNotAdmitted
+        }
         return selection
     }
 
@@ -138,8 +144,9 @@ struct AdmittedEngineSelection: Codable, Equatable, Sendable {
         }
         guard inspection.ready, inspection.error == nil,
               inspection.schemaVersion == 1, inspection.capability == "engineAdmissionV1", !inspection.qualified,
-              inspection.admission == "admitted", inspection.admittedProvider == "calimocho",
-              inspection.declaredProvider == "calimocho" else {
+              inspection.admission == "admitted",
+              let provider = inspection.admittedProvider, AdmittedProviderScope.known.contains(provider),
+              inspection.declaredProvider == provider else {
             throw NativeLaunchError.providerNotAdmitted
         }
         guard
@@ -147,6 +154,27 @@ struct AdmittedEngineSelection: Codable, Equatable, Sendable {
               EngineInspection.validDigest(inspection.wineserverSha256) else {
             throw NativeLaunchError.engineUnavailable
         }
+    }
+}
+
+/// Providers the backend may admit. Calimocho serves every game; CrossOver and Highball are
+/// each admitted for exactly one title and can never become the global default.
+enum AdmittedProviderScope {
+    static let calimocho = "calimocho", crossOver = "crossover", highball = "highball"
+    static let known: Set<String> = [calimocho, crossOver, highball]
+    static let crossOverProductID = "BQVQTL3PCH05"
+
+    static func product(for provider: String?) -> String? {
+        switch provider {
+        case crossOver: crossOverProductID
+        case highball: HighballContract.qualifiedProductID
+        default: nil
+        }
+    }
+    static func isTitleScoped(_ provider: String?) -> Bool { product(for: provider) != nil }
+    static func permits(_ provider: String?, productID: String) -> Bool {
+        guard let provider, known.contains(provider) else { return false }
+        return product(for: provider).map { $0 == productID } ?? true
     }
 }
 
@@ -232,23 +260,49 @@ actor EngineInspectionClient {
         return try EngineInspection.decode(result.0, engine: engine, registryDigest: expectedDigest, exitCode: result.1)
     }
 
+    private func highballSupported(executable: URL, executableIdentity: NativeAuthHostBinding?) async throws -> Bool {
+        struct Capability: Decodable { let schemaVersion: Int; let capability: String; let supported: Bool }
+        let probe = try await run(executable: executable, arguments: ["highball-inspect", "--contract-version", "1"],
+                                  executableIdentity: executableIdentity)
+        guard probe.1 == 0,
+              let capability = try? JSONValue.decodeUnique(probe.0, maximumBytes: 32_768).decode(Capability.self)
+        else { return false }
+        return capability.schemaVersion == 1 && capability.capability == "highballAdmissionV1" && capability.supported
+    }
+
+    private func highballVerdict(executable: URL, product: String,
+                                 executableIdentity: NativeAuthHostBinding?) async throws -> (Data, Int32) {
+        guard try await highballSupported(executable: executable, executableIdentity: executableIdentity) else {
+            throw EngineInspectionError.unsupported
+        }
+        let result = try await run(executable: executable, arguments: ["highball-inspect", "--product", product],
+                                   executableIdentity: executableIdentity)
+        _ = try JSONValue.decodeUnique(result.0, maximumBytes: HighballContract.maximumBytes)
+        return result
+    }
+
     /// Backend `highball-inspect` verdict for one product, or nil when this backend has no
     /// `highballAdmissionV1` contract or its answer is inconsistent. Read-only on both sides.
     func highball(executable: URL, product: String = HighballContract.qualifiedProductID,
                   executableIdentity: NativeAuthHostBinding? = nil) async -> HighballState? {
-        struct Capability: Decodable { let schemaVersion: Int; let capability: String; let supported: Bool }
-        guard let probe = try? await run(executable: executable,
-                                         arguments: ["highball-inspect", "--contract-version", "1"],
-                                         executableIdentity: executableIdentity),
-              probe.1 == 0,
-              let capability = try? JSONValue.decodeUnique(probe.0, maximumBytes: 32_768).decode(Capability.self),
-              capability.schemaVersion == 1, capability.capability == "highballAdmissionV1", capability.supported,
-              let result = try? await run(executable: executable,
-                                          arguments: ["highball-inspect", "--product", product],
-                                          executableIdentity: executableIdentity)
-        else { return nil }
-        guard (try? JSONValue.decodeUnique(result.0, maximumBytes: HighballContract.maximumBytes)) != nil else { return nil }
+        guard let result = try? await highballVerdict(executable: executable, product: product,
+                                                     executableIdentity: executableIdentity) else { return nil }
         return HighballContract.decode(result.0, product: product, exitCode: result.1)
+    }
+
+    /// Renders the private registry for the qualified Highball engine from the backend verdict.
+    /// Writes only X Ode's own registries folder; Highball itself is never touched.
+    func highballRegistry(executable: URL, executableIdentity: NativeAuthHostBinding?,
+                          registries: URL) async throws -> (path: String, digest: String) {
+        let product = HighballContract.qualifiedProductID
+        let result = try await highballVerdict(executable: executable, product: product,
+                                               executableIdentity: executableIdentity)
+        let data = try HighballContract.registryData(verdict: result.0, product: product, exitCode: result.1)
+        let url = registries.appendingPathComponent("\(HighballContract.engineName).json")
+        if (try? InstalledGameFiles.readRegular(url, maximumBytes: 65_536)) != data {
+            try GameScriptFiles.writePrivate(data, to: url)
+        }
+        return (url.path, CalimochoReleaseEngines.digest(data))
     }
 
     private func run(executable: URL, arguments: [String],

@@ -499,6 +499,12 @@ struct NativeLaunchConfiguration {
         if let engine = selection.inspection.engineName {
             try NativeFH6Recipe.validate(game: game, engine: engine)
         }
+        let provider = selection.inspection.admittedProvider
+        guard AdmittedProviderScope.permits(provider, productID: game.storeId) else {
+            throw NativeLaunchError.providerNotAdmitted
+        }
+        // A title-scoped provider owns its launch contract; the title's Calimocho profile doesn't apply.
+        if AdmittedProviderScope.isTitleScoped(provider) { return }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho)
         if let profile {
@@ -605,8 +611,12 @@ struct NativeLaunchConfiguration {
         } else {
             selected = nil
         }
-        var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
-                                                       provider: provider, evidence: evidence)
+        let titleScoped = AdmittedProviderScope.isTitleScoped(selected?.inspection.admittedProvider)
+        if let selected, !AdmittedProviderScope.permits(selected.inspection.admittedProvider, productID: game.storeId) {
+            throw NativeLaunchError.providerNotAdmitted
+        }
+        var profile = titleScoped ? nil : try NativeTitleLaunchProfile.read(productID: game.storeId,
+            defaults: defaults, provider: provider, evidence: evidence)
         if let selected, let profile {
             guard profile.enginePinsMatch(selected.inspection) else { throw NativeLaunchError.configurationConflict }
         }
@@ -619,7 +629,7 @@ struct NativeLaunchConfiguration {
         } else {
             releasePinnedProfile = false
         }
-        let candidate = qualified != nil || releasePinnedProfile
+        let candidate = qualified != nil || releasePinnedProfile || titleScoped
             ? nil : try candidateOverride ?? NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
             try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))

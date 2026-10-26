@@ -24,6 +24,22 @@
       "wineSha256": "f6d0546fad2d0dafaa09a9fe6cabe75bb070567df6b0933ecd3622dcb6349194",
       "wineserverSha256": "e3ec4e7e76cee273f17d5fa3459902642f73d6921e94c576aa74e8cdbdcd7da1",
       "developerLocal": true
+    },
+    {
+      "engineName": "crossover-26.3-mvk142",
+      "provider": "crossover",
+      "registryPath": "${HOME}/Library/Application Support/XodusCLI/renderers/moltenvk-1.4.2-private-api-x86_64-cor224/crossover-26.3-mvk142.registry.json",
+      "registrySha256": "c246dd2977fc42daf933d1e39507d5c1e2b49a7aa37beaaa6fe5348bcccbf80d",
+      "wineSha256": "04da13c940c57919334520f2fee4adb2186edb41904faf8f86647a0a03114953",
+      "wineserverSha256": "f9c4ed146c7d6dfc94334255907d4e0658218585085ca2107a5181b4deb474fc",
+      "developerLocal": true
+    },
+    {
+      "engineName": "highball-x64-crossover26.3-r27",
+      "provider": "highball",
+      "wineSha256": "8cce786bce298f601a415f2e2952a82512c02243689df5b40e0af8e6e63991ca",
+      "wineserverSha256": "7f842c62de7cb8a0409440cafa183d7177c820bc01d117683bd7d84f311d0709",
+      "developerLocal": true
     }
   ]
 }

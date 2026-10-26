@@ -471,3 +471,21 @@ Shipping builds run the inspection only through the approved shipping pair
 identity, on a dedicated inspector that is closed on quit. Launch admission and
 the separate Highball prefix are backend responsibilities; this row grants no
 launch.
+
+### Title-scoped provider launch (COR-224, REQ-127)
+
+The app's `engine-inspect` decoder accepts exactly three admitted providers:
+`calimocho`, `crossover` and `highball`, and only when the declared and
+admitted providers match. Any other provider fails closed. Calimocho remains
+the only global default. CrossOver (`crossover-26.3-mvk142`, the reviewed
+signed-renderer registry `c246dd29…` already on this Mac) is offered only in
+No Man's Sky's per-game Engine menu. Highball (`highball-x64-crossover26.3-r27`)
+is offered only for Brotato. Both are developer-local catalogue bindings, and the
+app refuses either one for any other title before launch.
+
+The Highball registry has no fixed bytes. X Ode renders it into its own
+registries folder from a qualified `highball-inspect` verdict whose entry
+matches the pinned engine path and hashes. The backend re-checks it at
+`engine-inspect` and again in its launch gate (managed prefix, never a Highball
+bottle). A title-scoped selection does not apply the title's Calimocho launch
+profile. It launches on a fresh X Ode prefix for that installation and engine.

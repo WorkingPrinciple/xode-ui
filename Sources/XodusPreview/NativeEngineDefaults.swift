@@ -15,15 +15,26 @@ struct NativeEngineDefaults: Decodable {
         /// TEMPORARY (first beta, Ode decision B): a developer-local engine kept only so NMS keeps its
         /// verified engine on the owner's Mac. Elsewhere its files are absent and Play reports that.
         var developerLocal: Bool? = nil
+        /// Title-scoped provider ("crossover" or "highball"); nil means Calimocho.
+        var provider: String? = nil
+
+        var admittedProvider: String { provider ?? AdmittedProviderScope.calimocho }
+
+        /// Highball's registry has no fixed bytes: it is rendered from the backend verdict on this Mac.
+        var isHighball: Bool {
+            provider == AdmittedProviderScope.highball && registryPath == nil && registrySha256 == nil
+                && engineName == HighballContract.engineName && wineSha256 == HighballContract.wineSha256
+                && wineserverSha256 == HighballContract.wineserverSha256
+        }
 
         var release: CalimochoReleasePin? {
-            guard registryPath == nil, registrySha256 == nil, let pin = CalimochoReleasePin.named(engineName),
+            guard provider == nil, registryPath == nil, registrySha256 == nil, let pin = CalimochoReleasePin.named(engineName),
                   pin.wineSha256 == wineSha256, pin.wineserverSha256 == wineserverSha256 else { return nil }
             return pin
         }
 
         var isFH6Recipe: Bool {
-            registryPath == nil && registrySha256 == nil && developerLocal != true
+            provider == nil && registryPath == nil && registrySha256 == nil && developerLocal != true
                 && engineName == NativeFH6Recipe.engineName
                 && wineSha256 == CalimochoReleasePin.release06.wineSha256
                 && wineserverSha256 == CalimochoReleasePin.release06.wineserverSha256
@@ -53,7 +64,11 @@ struct NativeEngineDefaults: Decodable {
 
         @MainActor func inspect(configuration: BackendConfiguration,
                                 inspector: EngineInspectionClient = EngineInspectionClient()) async throws -> AdmittedEngineSelection {
-            let (path, digest) = try registry()
+            let (path, digest) = isHighball
+                ? try await inspector.highballRegistry(executable: configuration.executable,
+                    executableIdentity: configuration.executableIdentity,
+                    registries: CalimochoReleaseEngines.defaultRegistriesRoot)
+                : try registry()
             let result = try await inspector.inspect(executable: configuration.executable,
                 registry: URL(fileURLWithPath: path), engine: engineName, expectedDigest: digest,
                 executableIdentity: configuration.executableIdentity)
@@ -62,6 +77,7 @@ struct NativeEngineDefaults: Decodable {
             guard result.wineSha256 == wineSha256, result.wineserverSha256 == wineserverSha256 else {
                 throw NativeLaunchError.selectionChanged
             }
+            guard result.admittedProvider == admittedProvider else { throw NativeLaunchError.providerNotAdmitted }
             return selection
         }
     }
@@ -71,8 +87,14 @@ struct NativeEngineDefaults: Decodable {
     let bindings: [Binding]
     static let preferenceKey = "Xodus.lifecycle.defaultAdmission.v2"
 
+    /// Engines admitted for one title only; they never appear as default choices.
+    static var titleScopedEngineNames: Set<String> {
+        Set(((try? read())?.bindings ?? []).filter { $0.provider != nil }.map(\.engineName))
+    }
+
     static func permitsGlobalDefault(_ selection: AdmittedEngineSelection) -> Bool {
         selection.inspection.engineName != NativeFH6Recipe.engineName
+            && selection.inspection.admittedProvider == AdmittedProviderScope.calimocho
     }
 
     static func savedAdmission(defaults: UserDefaults) throws -> AdmittedEngineSelection? {
@@ -81,7 +103,7 @@ struct NativeEngineDefaults: Decodable {
         guard permitsGlobalDefault(saved) else {
             defaults.removeObject(forKey: preferenceKey)
             Logger(subsystem: "io.github.dragoshont.xodus", category: "EngineSelection")
-                .error("Removed invalid title-only FH6 global default; the ordinary catalogue default is used.")
+                .error("Removed an invalid title-only global default; the ordinary catalogue default is used.")
             guard defaults.object(forKey: preferenceKey) == nil else { throw GameScriptError.storage }
             return nil
         }
@@ -97,11 +119,17 @@ struct NativeEngineDefaults: Decodable {
               Set(value.bindings.map(\.engineName)).count == value.bindings.count,
               value.bindings.contains(where: { $0.engineName == value.defaultEngine }),
               value.bindings.allSatisfy({ binding in
-                  EngineInspection.validDigest(binding.wineSha256) && EngineInspection.validDigest(binding.wineserverSha256)
-                    && (binding.isFH6Recipe || binding.release != nil && binding.developerLocal != true
-                        || binding.developerLocal == true
-                            && binding.registryPath.map { NativeTitleLaunchProfile.expand($0).hasPrefix("/") } == true
-                            && EngineInspection.validDigest(binding.registrySha256))
+                  guard EngineInspection.validDigest(binding.wineSha256),
+                        EngineInspection.validDigest(binding.wineserverSha256) else { return false }
+                  let fixedRegistry = binding.developerLocal == true
+                      && binding.registryPath.map { NativeTitleLaunchProfile.expand($0).hasPrefix("/") } == true
+                      && EngineInspection.validDigest(binding.registrySha256)
+                  if binding.provider != nil {
+                      guard AdmittedProviderScope.isTitleScoped(binding.provider),
+                            binding.engineName != value.defaultEngine, binding.developerLocal == true else { return false }
+                      return binding.provider == AdmittedProviderScope.highball ? binding.isHighball : fixedRegistry
+                  }
+                  return binding.isFH6Recipe || binding.release != nil && binding.developerLocal != true || fixedRegistry
               }) else { throw NativeLaunchError.invalidProfile }
         return value
     }

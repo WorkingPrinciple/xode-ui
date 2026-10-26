@@ -53,7 +53,8 @@ struct RuntimeInstallationPicker: View {
                 EngineChoice.named($0, ready: true,
                                    playable: EngineChoice.playsInBeta(admittedProvider: selection.inspection.admittedProvider))
             }
-        } + installed.failedEngineOverrides.filter { $0 != NativeFH6Recipe.engineName }.sorted().map { EngineChoice.named($0, ready: false) }
+        } + installed.failedEngineOverrides.subtracting(NativeEngineDefaults.titleScopedEngineNames)
+            .filter { $0 != NativeFH6Recipe.engineName }.sorted().map { EngineChoice.named($0, ready: false) }
         return EngineConfiguratorForm(
             choices: choices,
             defaultID: defaultID, defaultName: defaultID.map { EngineDisplayName.name($0) } ?? "Unavailable",
