@@ -382,3 +382,33 @@ never promote these evidence states. Installed component verification,
 device/backend preflight, exact per-game/version results, authorized content,
 licensed RPS/runtime pairing and supervised launch remain separate release
 gates. No trial certificate transfers across an engine/backend generation.
+
+## Signed update index verifier (REQ-123/124, isolated candidate)
+
+`CalimochoIndexVerifier` implements the stable verifier contract from Calimocho
+`fc996c3b`: byte-exact DSSE PAE/Ed25519, explicit key-to-epoch trust,
+revoked signing keys, embedded floor, rollback and same-version equivocation
+checks, strict duplicate-free JSON and canonical base64, bounded parsing,
+whole-string patterns, exact release URLs, freshness and strictly-newer
+numeric version eligibility. Errors are explicit; verification has no engine
+mutation or launch-admission side effects.
+
+This candidate is **not connected to the update UI or network**. It embeds no
+production or test trust anchors. The strict state codec keeps `high_water`
+separate from `revoked_engines`: revoking a signer resets only the mark, and a
+revocation union over 1024 fails closed. Verification returns a new state only
+after all checks pass. Atomic persistence, network and installer integration
+remain separate work; this verifier does not write state. Static compiled
+engine pins remain authoritative.
+
+Run the standalone checks against the frozen upstream public test vectors:
+
+```sh
+swiftc Sources/XodusPreview/CalimochoIndexJSON.swift \
+  Sources/XodusPreview/CalimochoIndexVerifier.swift \
+  Tests/EngineIndexChecks/main.swift -o /tmp/calimocho-index-checks
+/tmp/calimocho-index-checks /path/to/frozen/tests/engine-index
+```
+
+The checks exercise the upstream known-answer vectors and local parser,
+state and bounds regressions without network access, installation or activation.
