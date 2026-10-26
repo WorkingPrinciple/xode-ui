@@ -14,7 +14,7 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
-    <key>NSLocalNetworkUsageDescription</key><string>X Ode discovers Xbox consoles on your local network when you request local discovery.</string>
+    <key>NSLocalNetworkUsageDescription</key><string>X Ode and the games it runs use your local network to find Xbox consoles and for multiplayer features.</string>
     <key>NSRemovableVolumesUsageDescription</key><string>X Ode stores and plays games on this drive, and the games it runs may read or save files there.</string>
     <key>NSNetworkVolumesUsageDescription</key><string>X Ode stores and plays games on this network drive, and the games it runs may read or save files there.</string>
     <key>NSDocumentsFolderUsageDescription</key><string>X Ode and the games it runs use your Documents folder to store games and save files.</string>
