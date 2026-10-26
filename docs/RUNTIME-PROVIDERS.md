@@ -411,13 +411,28 @@ whole-string patterns, exact release URLs, freshness and strictly-newer
 numeric version eligibility. Errors are explicit; verification has no engine
 mutation or launch-admission side effects.
 
-This candidate is **not connected to the update UI or network**. It embeds no
-production or test trust anchors. The strict state codec keeps `high_water`
+The Settings integration is **default-closed**. Only an explicitly labelled
+`-DXODUS_SIGNED_ENGINE_INDEX_QUALIFICATION` build uses the signed-index client
+in the existing Engines pane-open/manual check; ordinary builds keep their
+existing pinned-update behavior. The client embeds only the reviewed production
+public anchor from `fc996c3b` (trust blob SHA-256
+`035bf651ddef3b6544f4c8a28f59d8d2e60758215c8df984472d3ec1e59c9d5a`),
+never an RFC or fixture key. No production signed index is asserted to exist.
+The strict state codec keeps `high_water`
 separate from `revoked_engines`: revoking a signer resets only the mark, and a
 revocation union over 1024 fails closed. Verification returns a new state only
-after all checks pass. Atomic persistence, network and installer integration
-remain separate work; this verifier does not write state. Static compiled
-engine pins remain authoritative.
+after all checks pass. The client fetches anonymously with an ephemeral session,
+allows at most five HTTPS redirects, enforces envelope bounds while streaming,
+and serializes state updates with a private lock. It writes a private temporary
+state file, synchronizes it and renames it only after verification and eligibility
+checks succeed. An invalid, expired or unavailable index clears the offered
+signed update and reports the reason without mutating installed engines.
+
+The signed index only drives release information. A newer unpinned release gets
+release notes and compatible-app guidance, never an Install action. The existing
+compiled-pin installer and fresh backend admission remain the only activation
+path. No new index-authorized archive extraction is exposed; its stricter
+streaming extraction contract remains a separate gated implementation.
 
 Run the standalone checks against the frozen upstream public test vectors:
 

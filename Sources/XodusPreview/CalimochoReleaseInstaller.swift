@@ -599,6 +599,8 @@ final class CalimochoReleaseInstallController: ObservableObject {
     private var extractionShutdownFailed = false
     private let extractionStillRunning: @MainActor () -> Bool
     private let releaseCheck: CalimochoReleaseCheck
+    private let signedClient: CalimochoSignedUpdateClient?
+    private let appVersion: () -> String?
     private let updateDefaults: UserDefaults
     private let now: () -> Date
     private var checkTask: Task<Void, Never>?
@@ -611,15 +613,20 @@ final class CalimochoReleaseInstallController: ObservableObject {
     init(service: CalimochoReleaseInstallService = CalimochoReleaseInstallService(),
          releaseCheck: CalimochoReleaseCheck = CalimochoReleaseCheck(),
          updateDefaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init,
+         signedClient: CalimochoSignedUpdateClient? = CalimochoSignedUpdates.client(),
+         appVersion: @escaping () -> String? = { AppBrand.current.version },
          extractionStillRunning: @escaping @MainActor () -> Bool = {
              CalimochoExtractionRecovery.shared.hasLiveProcess()
          }) {
         self.service = service
         self.releaseCheck = releaseCheck
+        self.signedClient = signedClient
+        self.appVersion = appVersion
         self.updateDefaults = updateDefaults
         self.now = now
         self.extractionStillRunning = extractionStillRunning
-        self.latestCheckedVersion = updateDefaults.string(forKey: Self.lastUpdateVersionKey).flatMap(CalimochoVersion.init)
+        self.latestCheckedVersion = signedClient == nil
+            ? updateDefaults.string(forKey: Self.lastUpdateVersionKey).flatMap(CalimochoVersion.init) : nil
     }
 
     var isWorking: Bool { task != nil }
@@ -692,7 +699,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
         if let latest = latestCheckedVersion {
             updateOutcome = .decide(installed: installedReleases, pinned: pinned, latest: latest)
             updateMessage = updateOutcome?.message
-        } else if let old = installedReleases.first, old.version < pinned {
+        } else if signedClient == nil, let old = installedReleases.first, old.version < pinned {
             updateOutcome = .pinnedUpdate(old)
             updateMessage = updateOutcome?.message
         }
@@ -706,6 +713,18 @@ final class CalimochoReleaseInstallController: ObservableObject {
         let pending = Task { [self] in
             defer { checkingUpdates = false; checkTask = nil }
             do {
+                if let signedClient {
+                    guard let version = appVersion() else {
+                        throw CalimochoIndexError.invalid("the app bundle version is unavailable")
+                    }
+                    let entries = try await signedClient.check(
+                        appVersion: version, installedVersion: installedReleases.first?.version.description, now: date)
+                    try Task.checkCancellation()
+                    updateOutcome = try signedOutcome(entries, pinned: pinned)
+                    updateMessage = updateOutcome?.message
+                    applyPendingUpdateOutcome()
+                    return
+                }
                 let latest = try await releaseCheck.latest()
                 try Task.checkCancellation()
                 let outcome = CalimochoUpdateOutcome.decide(installed: installedReleases, pinned: pinned, latest: latest)
@@ -717,11 +736,31 @@ final class CalimochoReleaseInstallController: ObservableObject {
             } catch is CancellationError {
                 updateMessage = nil
             } catch {
-                updateMessage = error.localizedDescription
+                if signedClient != nil {
+                    updateOutcome = nil
+                    updateMessage = "No verified Calimocho update is available. \(error.localizedDescription) Installed engines haven't changed."
+                } else { updateMessage = error.localizedDescription }
             }
         }
         checkTask = pending
         await pending.value
+    }
+
+    private func signedOutcome(_ entries: [CalimochoIndexVerifier.Engine],
+                               pinned: CalimochoVersion) throws -> CalimochoUpdateOutcome {
+        // An index may announce a release, but only the compiled pin can authorize its installer.
+        if entries.contains(where: { $0.id == service.pin.engineName }),
+           let old = installedReleases.first, old.version < pinned {
+            return .pinnedUpdate(old)
+        }
+        let ordered = try entries.map { ($0, try CalimochoIndexVerifier.version($0.version, engine: true)) }
+            .sorted { $1.1.lexicographicallyPrecedes($0.1) }
+        if let latest = ordered.first?.0, latest.id != service.pin.engineName {
+            let text = try latest.fields.field("release_notes_url").text()
+            guard let notes = URL(string: text) else { throw CalimochoIndexError.invalid("release notes URL") }
+            return .signedAppUpdate(version: latest.version, notes: notes)
+        }
+        return installedReleases.isEmpty ? .notInstalled : .upToDate
     }
 
     private var pendingUpdate: LocalCalimochoRelease?

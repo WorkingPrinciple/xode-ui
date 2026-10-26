@@ -122,6 +122,7 @@ enum CalimochoUpdateOutcome: Equatable {
     case pinnedUpdate(LocalCalimochoRelease)
     case finishUpdate(LocalCalimochoRelease)
     case appUpdate(CalimochoVersion)
+    case signedAppUpdate(version: String, notes: URL)
     case notInstalled
 
     static func decide(installed: [LocalCalimochoRelease], pinned: CalimochoVersion,
@@ -137,11 +138,17 @@ enum CalimochoUpdateOutcome: Equatable {
         case .pinnedUpdate: "This \(AppBrand.displayName) version includes a newer pinned Calimocho release. The old engine is kept until the update is verified."
         case .finishUpdate: "The pinned Calimocho release is downloaded. Finish the update to verify and activate it."
         case .appUpdate(let version): "Calimocho \(version) is available and will come with the next \(AppBrand.displayName) update."
+        case .signedAppUpdate(let version, _):
+            "Calimocho \(version) is listed in the verified release index. It needs a compatible \(AppBrand.displayName) update before it can be installed."
         case .notInstalled: "Calimocho isn't installed. Get the release pinned by this \(AppBrand.displayName) version."
         }
     }
     var releaseNotes: URL? {
-        guard case .appUpdate(let version) = self else { return nil }
-        return URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-\(version)")
+        switch self {
+        case .appUpdate(let version):
+            URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-\(version)")
+        case .signedAppUpdate(_, let notes): notes
+        default: nil
+        }
     }
 }
