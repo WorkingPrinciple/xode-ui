@@ -93,6 +93,13 @@ struct MacGameEvidence: Decodable, Sendable {
                 && saveObservation?.normalMenuQuitObserved != false ? screenshots.first : nil
         }
 
+        var hasVerifiedWorkingQualification: Bool {
+            verdict == .working && launchAttempted != false
+                && runId.flatMap(UUID.init(uuidString:)) != nil
+                && saveObservation?.retentionVerified == true
+                && saveObservation?.normalMenuQuitObserved == true
+        }
+
         var saveVerifiedQuitPending: Bool {
             (verdict == .gameplay || verdict == .working) && launchAttempted != false
                 && saveObservation?.retentionVerified == true
@@ -125,7 +132,7 @@ struct MacGameEvidence: Decodable, Sendable {
     let games: [Game]
 
     static let bundled: Result<Self, Error> = Result {
-        try decode(Data(contentsOf: CompatibilityResources.macGameEvidenceURL()))
+        try decode(Data(contentsOf: CompatibilityResources.macGameStatusURL()))
     }
 
     func merging(_ local: Self) throws -> [String: Game] {

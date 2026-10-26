@@ -10,12 +10,11 @@ from shipping_pair import owned_bytes, require
 RUNTIME_RESOURCES = frozenset({
     "management-v1.schema.json",
     "runtime-providers-v1.schema.json",
-    "mac-game-evidence-v1.json",
+    "mac-game-status-v1.json",
     "LaunchRecipes/engine-defaults-v1.json",
     "LaunchRecipes/hollow-knight-local-saves-candidate-v1.json",
-    "LaunchRecipes/preflight-game-candidates.json",
+    "LaunchRecipes/launch-candidates-v1.json",
     "LaunchRecipes/save-locations-v1.json",
-    "LaunchRecipes/small-game-candidates.json",
     "LaunchRecipes/title-profiles-v1.json",
     "LaunchRecipes/title-runtime-v1.json",
     "CompatibilityData/AWACY-LICENSE.txt",
@@ -25,6 +24,9 @@ RUNTIME_RESOURCES = frozenset({
 PRIVATE_QA_RESOURCES = frozenset({
     "CompatibilityData/next-30-queue.json",
     "CompatibilityData/queue-inspection-v1.json",
+    "LaunchRecipes/preflight-game-candidates.json",
+    "LaunchRecipes/small-game-candidates.json",
+    "mac-game-evidence-v1.json",
 })
 
 

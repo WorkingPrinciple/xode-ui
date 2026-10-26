@@ -38,8 +38,6 @@
       "productID": "9P9VNSQK1W3K",
       "title": "Brotato",
       "qualification": "Calimocho 0.1120.4.4 title sweep passed; app E2E remains separate. Earlier Apple4 candidate evidence is not promoted by engine admission.",
-      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-brotato-retention-02/invocation.json",
-      "sourceRecipeSHA256": "a2858fb02420e6c36f974aa8fe5f70a2d8ad3ee9154c6408bd9999b910cb3414",
       "engine": "calimocho-11.20-4.0b3-04",
       "wineSha256": "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0",
       "wineserverSha256": "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9",
@@ -64,14 +62,17 @@
       "publishedSource": "xode-wine f7204ef6893439ac781190ee32bd95776fd63ec7 engines/hogwarts-qualified.json",
       "publishedSourceSHA256": "a86d88ab5d9bb5b99d43c76c9c0d7ed0046671916150d2815cc89c15a1fd8cde",
       "qualification": "S3 WORKING: admitted retained checkpoint and ordinary final quit; app E2E unobserved",
-      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/invocation.json",
-      "sourceRecipeSHA256": "a38877dd6822ba9260836ebb832d6dbb53a26d531ee540eb453c2cb5eec1c3ab",
       "engine": "apple-gptk-4.0b3",
       "executable": "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe",
       "timeoutSeconds": 600,
       "noAutoDismiss": true,
-      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
-      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"],
+      "environment": {
+        "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
+      },
+      "unsetEnvironment": [
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
         "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
@@ -85,8 +86,6 @@
       "publishedSource": "xode-wine 27b1e67160efd8460761a48e40cf7b23aacbe862 engines/small-game-candidates.json",
       "publishedSourceSHA256": "4784739ac39f595b71710fec04474cfd284f07d6e4f8d390290297d8336e91d6",
       "qualification": "Calimocho 0.1120.4.4 title sweep passed; the prior S3 retained-progression evidence is Apple4-specific, so Calimocho app qualification remains separate.",
-      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-halls-retention-02/invocation.json",
-      "sourceRecipeSHA256": "15cb88271d2dd916f55a77bb42197033f83878a12f07f811c96de4b1521f363b",
       "engine": "calimocho-11.20-4.0b3-04",
       "wineSha256": "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0",
       "wineserverSha256": "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9",
@@ -113,14 +112,17 @@
       "engine": "apple-gptk-4.0b3",
       "executable": "Mixtape.exe",
       "environment": {},
-      "unsetEnvironment": ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"],
+      "unsetEnvironment": [
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
       "dllOverrides": "msvcp140_2,vcruntime140_1=n,b",
       "dllOverrideEvidence": {
         "runID": "005115dd-7928-4fbc-9ffa-28379040292d",
         "receiptSHA256": "f0041fb14f5dc9bec12fa1368697aab72b26ae36822e0d80d59ccb1d361686bb",
         "registrySHA256": "9fe5bebba1b390f8605364085c3e917d32b2090f18bc0a59a454b6d0573204f1",
-        "scope": "Native msvcp140_2 and vcruntime140_1 loaded; Shipping bootstrap proceeded. Diagnostic also used STA1; DLL-only normal tile combination unqualified, not WORKING.",
-        "receipt": "${HOME}/Library/Application Support/XodusCLI/proofs/passive-sta-9NH0MSG29X6L-vc14-two-native/receipt.json"
+        "scope": "Native msvcp140_2 and vcruntime140_1 loaded; Shipping bootstrap proceeded. Diagnostic also used STA1; DLL-only normal tile combination unqualified, not WORKING."
       }
     },
     {
@@ -128,7 +130,6 @@
       "productID": "9P4NV23Q6QC2",
       "title": "Abiotic Factor",
       "qualification": "S2 observed title screen ac5e2934 only; no gameplay/save qualification",
-      "sourceRecipe": "xodus-macos b464aad docs/recipes/title-runtime-v1.json",
       "engine": "apple-gptk-4.0b3",
       "executable": "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
       "timeoutSeconds": 600,
@@ -148,7 +149,6 @@
       "productID": "BQVQTL3PCH05",
       "title": "No Man's Sky",
       "qualification": "Owner-directed port11b PERF run4 configuration; current app end-to-end parity unobserved",
-      "sourceRecipe": "COR108 a70 static working-tuple association; no prefix or save migration",
       "engine": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
       "executable": "Binaries/NMS.exe",
       "noAutoDismiss": true,
@@ -172,7 +172,6 @@
       "provider": "crossover",
       "title": "No Man's Sky",
       "qualification": "working direct CLI f8bb9124; app_e2e unobserved; fresh app prefix unqualified",
-      "sourceRecipe": "s3-nms-crossover-working-recipe-v1.json",
       "engine": "crossover-26.3",
       "environment": {
         "WINEDLLOVERRIDES": "xgameruntime=n,b;XCurl=n,b;windows.web=n,b",

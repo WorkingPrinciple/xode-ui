@@ -149,7 +149,6 @@ struct NativeTitleLaunchProfile: Codable {
             }
             struct Evidence: Decodable {
                 let runId: String?
-                let receiptPath: String?
                 let cliExitCode: Int?
                 let wineExitCode: Int?
             }
@@ -161,7 +160,6 @@ struct NativeTitleLaunchProfile: Codable {
             var observed: Bool {
                 !pendingTest && status == "title-screen-observed"
                     && evidence.runId.flatMap(UUID.init(uuidString:)) != nil
-                    && evidence.receiptPath?.hasPrefix("/") == true
                     && evidence.cliExitCode == 0 && evidence.wineExitCode == 0
             }
         }
@@ -175,7 +173,7 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "94f9ec1c6a03dc54fc12dd87efb41e0d9a9629551907e6670c2261369996c75c" else {
+                    == "65657e815b5d37cf4a24406e3706d944a07c8c733eeba65f5adfb2e0072149ff" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)

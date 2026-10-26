@@ -1021,7 +1021,7 @@ enum NativeLifecycleChecks {
                   "Halls' pinned Calimocho route remains separate from incomplete Apple4 qualification")
         }
         let raw = try JSONSerialization.jsonObject(with: Data(contentsOf:
-            LaunchRecipeResources.candidateProfilesURL("small-game-candidates"))) as? [String: Any] ?? [:]
+            LaunchRecipeResources.candidateLaunchCatalogueURL())) as? [String: Any] ?? [:]
         let sample = (raw["profiles"] as? [[String: Any]])?.first ?? [:]
         for change: [String: Any] in [
             ["status": "unknown-future-status"], ["ready_for_launch": false],

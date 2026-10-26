@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-22T06:00:06.423Z",
+  "games": [
+    {
+      "productId": "9PCR3Z2MSM4T",
+      "title": "Hades II",
+      "verdict": "WORKING",
+      "scope": "CLI launch and retained-save results; app end-to-end testing not observed.",
+      "engine": "crossover-26.3",
+      "runId": "80cbf59d-5b51-4241-a492-f73b79fe7e5a",
+      "retentionRunId": "80cbf59d-5b51-4241-a492-f73b79fe7e5a",
+      "normalQuitRunId": null,
+      "owner": "Working Principle",
+      "launchAttempted": true,
+      "saveObservation": {
+        "retentionVerified": true,
+        "normalMenuQuitObserved": true
+      },
+      "app_e2e": "unobserved"
+    },
+    {
+      "productId": "9P4NV23Q6QC2",
+      "title": "Abiotic Factor",
+      "verdict": "WORKING",
+      "scope": "CLI launch and retained-save results; app end-to-end testing not observed.",
+      "engine": "apple-gptk-4.0b3",
+      "runId": "18dcee0d-1705-469e-8f67-48924b239258",
+      "retentionRunId": "18dcee0d-1705-469e-8f67-48924b239258",
+      "normalQuitRunId": null,
+      "owner": "Working Principle",
+      "launchAttempted": true,
+      "saveObservation": {
+        "retentionVerified": true,
+        "normalMenuQuitObserved": true
+      },
+      "app_e2e": "unobserved"
+    },
+    {
+      "productId": "9NH0MSG29X6L",
+      "title": "Mixtape",
+      "verdict": "WORKING",
+      "scope": "CLI launch and retained-save results; app end-to-end testing not observed.",
+      "engine": "apple-gptk-4.0b3",
+      "runId": "ab231868-9878-4c39-8de7-a6dc344d5b2a",
+      "retentionRunId": "ab231868-9878-4c39-8de7-a6dc344d5b2a",
+      "normalQuitRunId": null,
+      "owner": "Working Principle",
+      "launchAttempted": true,
+      "saveObservation": {
+        "retentionVerified": true,
+        "normalMenuQuitObserved": true
+      },
+      "app_e2e": "unobserved"
+    }
+  ]
+}

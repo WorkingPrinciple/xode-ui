@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import package_beta as beta
 import shipping_pair as shipping
+from resource_inventory import NMS_DEVELOPER_LOCAL_REGISTRY
 from package_beta import (IDENTITY, TEAM_ID,
                          package_beta as create_beta_package)
 
@@ -53,6 +54,7 @@ settings = runpy.run_path(str(Path(__file__).with_name("xode_dmg_settings.py")),
                           init_globals={"defines": {
                               "app": "/tmp/X Ode.app", "install_note": "/tmp/INSTALL.txt",
                               "release_notes": "/tmp/RELEASE-NOTES.txt",
+                              "resource_inventory": "/tmp/RESOURCE-INVENTORY.json",
                               "volume_icon": "/tmp/X Ode.icns", "background": "/tmp/background.tiff",
                           }})
 assert settings["volume_name"] == "X Ode" and settings["filesystem"] == "APFS"
@@ -60,11 +62,14 @@ assert settings["format"] == "ULFO" and settings["window_rect"] == ((100, 100), 
 assert settings["icon_size"] == 128 and settings["symlinks"] == {"Applications": "/Applications"}
 assert settings["icon_locations"]["X Ode.app"] == (165, 190)
 assert settings["icon_locations"]["Applications"] == (495, 190)
+assert settings["icon_locations"]["RESOURCE-INVENTORY.json"] == (330, 330)
+assert "/tmp/RESOURCE-INVENTORY.json" in settings["files"]
 assert settings["background"] == "/tmp/background.tiff"
 with (Path(__file__).with_name("Info.plist")).open("rb") as source_info_file:
     source_info = plistlib.load(source_info_file)
 assert source_info["CFBundleIdentifier"] == beta.APP_BUNDLE_IDENTIFIER
 assert beta.APP_SIGNING_IDENTIFIER == "io.github.dragoshont.xodus"
+DMG_INVENTORY_IDENTITIES = []
 
 
 def fixture(root):
@@ -100,6 +105,16 @@ def fixture(root):
         "preservedProducerManifest": {"sha256": shipping.PRODUCER_MANIFEST_SHA256},
         "producerCargoLockSHA256": shipping.CARGO_LOCK_SHA256,
     }))
+    (app / "Contents/Resources/distribution-components.json").write_text("{}")
+    (app / "Contents/Resources/mac-game-evidence-v1.json").write_text("{}")
+    engine_defaults = (app / "Contents/Resources/XodusAppFoundation_XodusManagement.bundle/"
+                       "LaunchRecipes/engine-defaults-v1.json")
+    engine_defaults.parent.mkdir(parents=True)
+    engine_defaults.write_text(json.dumps({"bindings": [{
+        "registryPath": NMS_DEVELOPER_LOCAL_REGISTRY,
+        "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+        "developerLocal": True,
+    }]}))
     notices = app / "Contents/Resources/ProducerNotices"
     notices.mkdir()
     (notices / "inventory.json").write_bytes(INVENTORY_BYTES)
@@ -138,12 +153,37 @@ def fake_runner(calls):
             payload = Path(arguments[-2])
             assert (payload / "INSTALL.txt").is_file()
             assert (payload / "RELEASE-NOTES.txt").read_text(encoding="utf-8") == beta.RELEASE_NOTES
-            assert (payload / "X Ode.app").is_dir()
+            assert (payload / "RESOURCE-INVENTORY.json").is_file()
+            resource_inventory = json.loads((payload / "RESOURCE-INVENTORY.json").read_text())
+            assert resource_inventory["schemaVersion"] == 1
+            assert resource_inventory["exceptions"] == [{
+                "type": "approved-developer-local-engine-binding",
+                "resource": "XodusAppFoundation_XodusManagement.bundle/LaunchRecipes/engine-defaults-v1.json",
+                "path": NMS_DEVELOPER_LOCAL_REGISTRY,
+                "engine": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+            }]
+            assert resource_inventory["resources"]
+            assert all(item["classification"] == "runtime-needed"
+                       for item in resource_inventory["resources"])
+            packaged_app = payload / "X Ode.app"
+            assert packaged_app.is_dir()
+            assert not (packaged_app / "Contents/Resources/local-candidate-receipt.json").exists()
+            assert not (packaged_app / "Contents/Resources/distribution-components.json").exists()
+            assert not (packaged_app / "Contents/Resources/mac-game-evidence-v1.json").exists()
+            assert (app / "Contents/Resources/local-candidate-receipt.json").is_file()
             assert (payload / "PRIVATE-TESTER-SOURCE.tar").read_bytes() == (
                 PRODUCER_SOURCE_ARCHIVE_BYTES)
             Path(arguments[-1]).write_bytes(b"Neutral beta archive")
         elif arguments[0] == "dmgbuild":
             assert "-s" in arguments and "app=" in " ".join(arguments)
+            assert any(value.startswith("resource_inventory=") for value in arguments)
+            inventory_path = Path(next(value.split("=", 1)[1] for value in arguments
+                                       if value.startswith("resource_inventory=")))
+            inventory_bytes = inventory_path.read_bytes()
+            DMG_INVENTORY_IDENTITIES.append({
+                "sha256": hashlib.sha256(inventory_bytes).hexdigest(),
+                "bytes": len(inventory_bytes),
+            })
             assert any(value.startswith("background=") for value in arguments)
             assert "X Ode" in arguments
             Path(arguments[-1]).write_bytes(b"Neutral signed disk image")
@@ -193,6 +233,24 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
         "audience": "private-testers-only",
         "checksumFile": "PRIVATE-TESTER-SOURCE.tar.sha256",
     }
+    excluded = receipt["artifacts"]["inspectionResourcesExcluded"]
+    assert {item["path"] for item in excluded} == {
+        "Contents/Resources/distribution-components.json",
+        "Contents/Resources/local-candidate-receipt.json",
+        "Contents/Resources/mac-game-evidence-v1.json",
+    }
+    assert any(command[0] == "python3" and "signing_identity.py" in command[1]
+               and command[2] == "sign" and "--developer-id" in command
+               for command in commands)
+    excluded = receipt["artifacts"]["inspectionResourcesExcluded"]
+    assert {item["path"] for item in excluded} == {
+        "Contents/Resources/distribution-components.json",
+        "Contents/Resources/local-candidate-receipt.json",
+        "Contents/Resources/mac-game-evidence-v1.json",
+    }
+    assert any(command[0] == "python3" and "signing_identity.py" in command[1]
+               and command[2] == "sign" and "--developer-id" in command
+               for command in commands)
     private_source = receipt_path.parent / "PRIVATE-TESTER-SOURCE.tar"
     assert private_source.read_bytes() == PRODUCER_SOURCE_ARCHIVE_BYTES
     assert (receipt_path.parent / "PRIVATE-TESTER-SOURCE.tar.sha256").read_text() == (
@@ -311,6 +369,10 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
         background.read_bytes()).hexdigest()
     assert dmg_receipt["artifacts"]["volumeIcon"]["sha256"] == hashlib.sha256(
         (app / "Contents/Resources/Xodus.icns").read_bytes()).hexdigest()
+    resource_inventory_record = dmg_receipt["artifacts"]["resourceInventory"]
+    assert resource_inventory_record == {
+        "file": "RESOURCE-INVENTORY.json", **DMG_INVENTORY_IDENTITIES[-1],
+    }
     dmg_command = next(command for command in commands if command[0] == "dmgbuild")
     assert any(value.startswith("app=") and value.endswith("/X Ode.app") for value in dmg_command)
     dmg_signing = next(command for command in commands

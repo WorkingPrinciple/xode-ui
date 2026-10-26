@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 
 from distribution_manifest import distribution_blockers
+from resource_inventory import INSPECTION_JSON_NAMES, write_inventory
 from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, PRODUCER,
                            PRODUCER_MANIFEST_SHA256, PRODUCER_TREE, SOURCE_ARCHIVE_BYTES,
                            SOURCE_ARCHIVE_SHA256, WINDOWS_HELPER_BYTES,
@@ -157,6 +158,17 @@ def read_json(path):
     return json.loads(data, object_pairs_hook=unique_object)
 
 
+def exclude_inspection_resources(app):
+    excluded = []
+    for path in sorted(app.rglob("*.json")):
+        if path.name not in INSPECTION_JSON_NAMES:
+            continue
+        identity, _ = owned_bytes(path, bounded=16 * 1024 * 1024)
+        excluded.append({"path": path.relative_to(app).as_posix(), **identity})
+        path.unlink()
+    return excluded
+
+
 def app_source(app):
     receipt = read_json(app / "Contents/Resources/local-candidate-receipt.json")
     source = receipt.get("appSource")
@@ -225,11 +237,13 @@ def create_installer_dmg(payload, artifact, product_name, identity,
     require(icon_data.startswith(b"icns"), "App volume icon is not a valid ICNS file")
     settings = Path(__file__).with_name("xode_dmg_settings.py").resolve(strict=True)
     app_path = payload / (product_name + ".app")
+    resource_inventory = payload / "RESOURCE-INVENTORY.json"
     run_command([
         "dmgbuild", "-s", str(settings),
         "-D", "app=" + str(app_path),
         "-D", "install_note=" + str(payload / "INSTALL.txt"),
         "-D", "release_notes=" + str(payload / "RELEASE-NOTES.txt"),
+        "-D", "resource_inventory=" + str(resource_inventory),
         "-D", "background=" + str(background_image),
         "-D", "volume_icon=" + str(volume_icon),
         product_name, str(artifact),
@@ -375,9 +389,20 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
             packaged_app = payload / (product_name + ".app")
             run_command(["/usr/bin/ditto", str(app), str(packaged_app)])
             run_command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(packaged_app)])
+            excluded_inspection_resources = exclude_inspection_resources(packaged_app)
+            require(any(item["path"] == "Contents/Resources/local-candidate-receipt.json"
+                        for item in excluded_inspection_resources),
+                    "Candidate receipt must be recorded then excluded from the distributed app")
+            run_command([
+                "python3", str(Path(__file__).with_name("signing_identity.py").resolve(strict=True)),
+                "sign", "--kind", "app", "--path", str(packaged_app),
+                "--identity", identity, "--developer-id",
+            ])
             signatures = verify_developer_id_bundle(packaged_app, identity, TEAM_ID, run_command)
             (payload / "INSTALL.txt").write_text(INSTALL_NOTE, encoding="utf-8")
             (payload / "RELEASE-NOTES.txt").write_text(RELEASE_NOTES, encoding="utf-8")
+            resource_inventory_record = write_inventory(
+                packaged_app, payload / "RESOURCE-INVENTORY.json")
             if package_format == "zip":
                 archive_in_package = payload / "PRIVATE-TESTER-SOURCE.tar"
                 with archive_in_package.open("xb") as destination:
@@ -406,6 +431,10 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
                 "sha256": digest,
                 "checksumFile": checksum_path.name,
                 "installNote": "INSTALL.txt (included in package)",
+                "resourceInventory": {
+                    "file": "RESOURCE-INVENTORY.json", **resource_inventory_record,
+                },
+                "inspectionResourcesExcluded": excluded_inspection_resources,
             }
             if package_format == "dmg":
                 receipt["artifacts"].update(design_records)

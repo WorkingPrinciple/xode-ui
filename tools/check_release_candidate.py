@@ -217,6 +217,20 @@ class ReleaseCandidateChecks(unittest.TestCase):
         self.assertNotEqual(recipe["cliSha256"], "358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9")
         self.assertEqual(recipe["evidenceCliSha256"],
                          "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604")
+        self.assertIn("scope", recipe)
+        self.assertEqual(recipe["application"]["unknownTitlePolicy"], "No title-specific override")
+        self.assertEqual(recipe["application"]["conflictPolicy"],
+                         "Reject simultaneous enabled STA and caller-owns COM settings; do not silently pick one.")
+        self.assertNotIn("scanEvidence", recipe)
+        self.assertTrue(all(set(item.get("evidence", {})) <= {"runId", "cliExitCode", "wineExitCode"}
+                            for item in recipe["items"]))
+        self.assertNotIn("/Users/", recipe_bytes.decode("utf-8"))
+        self.assertNotIn("receiptPath", recipe_bytes.decode("utf-8"))
+        profiles = json.loads(
+            (project / "Sources/XodusManagement/Resources/LaunchRecipes/title-profiles-v1.json")
+            .read_text())
+        self.assertTrue(all("sourceRecipe" not in item and "sourceRecipeSHA256" not in item
+                            for item in profiles["profiles"] + profiles["providerOverrides"]))
         self.assertEqual(release.CLI_SHA256, refresh_tool.CLI_SHA256)
         self.assertEqual(release.HELPER_SHA256, refresh_tool.WINDOWS_HELPER_SHA256)
         self.assertEqual(release.PRODUCER_COMMIT, refresh_tool.PRODUCER)

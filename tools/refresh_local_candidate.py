@@ -153,7 +153,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     receipt = {
         "kind": "local-ui-refresh", "productionQualified": False, "notarized": False,
         "appSource": source_identity_before, "certificateSHA1": identity.upper(),
-        "preservedCLI": cli_record, "preservedCLIPath": str(old_cli),
+        "preservedCLI": cli_record,
         "producerBuildPerformed": False, "priorReceiptAvailable": False,
         "producerSourceIndependentlyVerified": False,
         "preservedProducerDeclaration": {"commit": producer, "tree": producer_tree},

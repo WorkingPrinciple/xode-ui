@@ -3,49 +3,42 @@ import Foundation
 
 public enum LaunchRecipeResources {
     public static func engineDefaultsURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "engine-defaults-v1", withExtension: "json",
-                                          subdirectory: "LaunchRecipes") else {
+        guard let url = Bundle.module.url(forResource: "engine-defaults-v1", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
     }
 
-    public static func candidateProfilesURL(_ name: String) throws -> URL {
-        guard ["small-game-candidates", "preflight-game-candidates"].contains(name),
-              let url = Bundle.module.url(forResource: name, withExtension: "json",
-                                          subdirectory: "LaunchRecipes") else {
+    public static func candidateLaunchCatalogueURL() throws -> URL {
+        guard let url = Bundle.module.url(forResource: "launch-candidates-v1", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
     }
 
     public static func saveLocationsURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "save-locations-v1", withExtension: "json",
-                                          subdirectory: "LaunchRecipes") else {
+        guard let url = Bundle.module.url(forResource: "save-locations-v1", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
     }
 
     public static func runtimeProfilesURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "title-runtime-v1", withExtension: "json",
-                                          subdirectory: "LaunchRecipes") else {
+        guard let url = Bundle.module.url(forResource: "title-runtime-v1", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
     }
 
     public static func profilesURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "title-profiles-v1", withExtension: "json",
-                                          subdirectory: "LaunchRecipes") else {
+        guard let url = Bundle.module.url(forResource: "title-profiles-v1", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
     }
 
     public static func hollowKnightSaveCandidateURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "hollow-knight-local-saves-candidate-v1", withExtension: "json",
-                                          subdirectory: "LaunchRecipes") else {
+        guard let url = Bundle.module.url(forResource: "hollow-knight-local-saves-candidate-v1", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url

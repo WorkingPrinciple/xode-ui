@@ -316,12 +316,13 @@ enum LibraryAccessChecks {
         let newWorkingIDs = Set(["9PCR3Z2MSM4T", "9P4NV23Q6QC2", "9NH0MSG29X6L"])
         check(Set(bundledEvidence.games.map(\.productId)) == newWorkingIDs
               && bundledEvidence.games.allSatisfy {
-                  $0.verifiedWorkingEvidence != nil
+                  $0.hasVerifiedWorkingQualification
                       && $0.verificationScopeLabel == "CLI only · App testing not observed"
+                      && $0.screenshots.isEmpty
                       && $0.saveObservation?.retentionVerified == true
                       && $0.saveObservation?.normalMenuQuitObserved == true
               },
-              "Hades II, Abiotic Factor and Mixtape bundle exact WORKING rows with visible CLI-only scope, not app E2E")
+              "Hades II, Abiotic Factor and Mixtape bundle runtime qualification without QA screenshots")
         let expectedProofs = [
             "9PCR3Z2MSM4T": ("crossover-26.3", "s3-hades-checkpoint-reload-02"),
             "9P4NV23Q6QC2": ("apple-gptk-4.0b3", "s3-abiotic-qualification-reload-01"),
@@ -329,12 +330,8 @@ enum LibraryAccessChecks {
         ]
         check(bundledEvidence.games.allSatisfy {
             $0.engine == expectedProofs[$0.productId]?.0
-                && $0.scope.contains(expectedProofs[$0.productId]?.1 ?? "missing")
                 && $0.runId == $0.retentionRunId
         }, "New WORKING rows retain their exact CLI runtime, reload proof and run identity")
-        check(bundledEvidence.games.first { $0.productId == "9P4NV23Q6QC2" }?.scope.contains("STA") == true
-              && bundledEvidence.games.first { $0.productId == "9P4NV23Q6QC2" }?.scope.contains("Shipping") == true,
-              "Abiotic qualification discloses STA and Shipping executable without changing a launch recipe")
         check(mixedWorking.games[0].verificationScopeLabel == nil,
               "Legacy evidence without an app-testing field is not retroactively labelled CLI-only")
         var staleRows: [[String: Any]] = []

@@ -7,6 +7,8 @@ import shutil
 
 from package_resources import resource_layout, verify_resources
 from producer_notices import verify as verify_producer_notices
+from resource_inventory import (NMS_DEVELOPER_LOCAL_REGISTRY, QA_JSON_NAMES,
+                                developer_path_present)
 from shipping_pair import owned_bytes, require, unique_object
 
 COMPONENT_PATHS = {
@@ -15,8 +17,6 @@ COMPONENT_PATHS = {
     "cli": "Contents/Resources/XodusEngine/xodus-cli",
     "windowsHelper": "Contents/Resources/XodusEngine/xodus-window-monitor.exe",
 }
-
-
 def optional_payloads(app):
     resources = app / "Contents/Resources"
     result = {}
@@ -55,6 +55,16 @@ def optional_payloads(app):
                       for path in capsule.rglob("*") if path.is_file()},
         }
     return result
+
+
+def verify_resource_json(resources):
+    for path in sorted(resources.rglob("*.json")):
+        _, data = owned_bytes(path, bounded=16 * 1024 * 1024)
+        text = data.decode("utf-8")
+        if path.name in QA_JSON_NAMES:
+            require(False, "QA/inspection JSON cannot ship: " + path.relative_to(resources).as_posix())
+        require(not developer_path_present(path.relative_to(resources).as_posix(), data),
+                "Development-machine reference: " + path.relative_to(resources).as_posix())
 
 
 def verify_payload_coverage(app, optional):
@@ -106,6 +116,7 @@ def verify_payload_coverage(app, optional):
                                    b"\xca\xfe\xba\xbf", b"\xbf\xba\xfe\xca", b"\x7fELF")
                     and not header.startswith((b"MZ", b"#!")),
                     "Executable content in non-code resource: " + relative)
+    verify_resource_json(app / "Contents/Resources")
 
 
 def write_manifest(app, source, producer, archive, producer_notices=None,
@@ -230,12 +241,6 @@ def distribution_blockers(app, approved_producer_notices_sha256=None):
     owned_bytes(app / notice_path, notice["sha256"], notice["bytes"])
     management = resources / "XodusAppFoundation_XodusManagement.bundle"
     verify_resources(management)
-    for path in sorted(resource_layout(management).rglob("*.json")):
-        _, data = owned_bytes(path, bounded=16 * 1024 * 1024)
-        # Do not expose private values; report only the affected resource name.
-        text = data.decode("utf-8")
-        if any(marker in text for marker in ("/Users/", "/src/copilot-worktrees/", ".copilot/session-state/")):
-            blockers.append("Development-machine reference: " + path.relative_to(management).as_posix())
     return blockers
 
 

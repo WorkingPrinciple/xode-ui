@@ -7,9 +7,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from distribution_manifest import (COMPONENT_PATHS, distribution_blockers,
+from distribution_manifest import (COMPONENT_PATHS, NMS_DEVELOPER_LOCAL_REGISTRY,
+                                   distribution_blockers,
                                    require_distribution_ready, write_manifest)
 from package_resources import RUNTIME_RESOURCES
+from resource_inventory import (inspect_resources, inventory as resource_inventory)
+from resource_inventory import developer_path_findings
 import release_candidate as release
 
 
@@ -107,12 +110,97 @@ class DistributionChecks(unittest.TestCase):
                 self.resolve_fixture_obligations(app)
                 resource = management / "LaunchRecipes/engine-defaults-v1.json"
                 resource.write_text(json.dumps({"bindings": [{"registryPath": private}]}))
-                blockers = self.blockers(app)
-                self.assertEqual(len(blockers), 1)
-                self.assertIn("engine-defaults-v1.json", blockers[0])
-                self.assertNotIn(private, blockers[0])
+                with self.assertRaisesRegex(ValueError, "Development-machine reference") as error:
+                    self.blockers(app)
+                self.assertIn("engine-defaults-v1.json", str(error.exception))
+                self.assertNotIn(private, str(error.exception))
                 with self.assertRaisesRegex(ValueError, "Development-machine"):
                     require_distribution_ready(app)
+
+    def test_only_the_recorded_nms_developer_local_binding_is_allowed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, management = self.fixture(Path(tmp).resolve())
+            self.resolve_fixture_obligations(app)
+            resource = management / "LaunchRecipes/engine-defaults-v1.json"
+            resource.write_text(json.dumps({"bindings": [{
+                "registryPath": NMS_DEVELOPER_LOCAL_REGISTRY,
+                "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+                "developerLocal": True,
+            }]}))
+            self.assertEqual(self.blockers(app), [])
+            for mutation in ("wrong-binding", "not-developer-local"):
+                with self.subTest(mutation=mutation):
+                    value = {"bindings": [{
+                        "registryPath": NMS_DEVELOPER_LOCAL_REGISTRY,
+                        "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+                        "developerLocal": True,
+                    }]}
+                    if mutation == "wrong-binding":
+                        value["bindings"][0]["engineName"] = "unrelated"
+                    else:
+                        value["bindings"][0]["developerLocal"] = False
+                    resource.write_text(json.dumps(value))
+                    with self.assertRaisesRegex(ValueError, "NMS developer-local exception"):
+                        self.blockers(app)
+            resource.write_text(json.dumps({"bindings": [{
+                "registryPath": NMS_DEVELOPER_LOCAL_REGISTRY,
+                "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+                "developerLocal": True,
+            }]}))
+            (app / "Contents/Resources/distribution-components.json").unlink()
+            inventory = resource_inventory(app)
+            self.assertEqual(inventory["exceptions"], [{
+                "type": "approved-developer-local-engine-binding",
+                "resource": "XodusAppFoundation_XodusManagement.bundle/LaunchRecipes/engine-defaults-v1.json",
+                "path": NMS_DEVELOPER_LOCAL_REGISTRY,
+                "engine": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+            }])
+            flat_resource = (
+                "XodusAppFoundation_XodusManagement.bundle/Contents/Resources/"
+                "engine-defaults-v1.json"
+            )
+            self.assertEqual(developer_path_findings(flat_resource, resource.read_bytes())["exceptions"][0]["resource"],
+                             flat_resource)
+
+    def test_resource_inventory_hashes_every_resource_and_rejects_qa_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, management = self.fixture(Path(tmp).resolve())
+            (app / "Contents/Resources/distribution-components.json").unlink()
+            value = resource_inventory(app)
+            paths = {item["path"] for item in value["resources"]}
+            self.assertIn("XodusAppFoundation_XodusManagement.bundle/LaunchRecipes/title-profiles-v1.json",
+                          paths)
+            self.assertTrue(all(item["classification"] == "runtime-needed"
+                                and len(item["sha256"]) == 64 and item["bytes"] > 0
+                                for item in value["resources"]))
+            qa = management / "CompatibilityData/queue-inspection-v1.json"
+            qa.write_text("{}")
+            with self.assertRaisesRegex(ValueError, "QA/inspection JSON"):
+                resource_inventory(app)
+
+    def test_resource_audit_flags_paths_without_reclassifying_runtime_policy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, management = self.fixture(Path(tmp).resolve())
+            (app / "Contents/Resources/distribution-components.json").unlink()
+            resource = management / "LaunchRecipes/title-profiles-v1.json"
+            resource.write_text(json.dumps({"receipt": "/Users/neutral"}))
+            report = inspect_resources(app)
+            item = next(entry for entry in report["resources"]
+                        if entry["path"].endswith("title-profiles-v1.json"))
+            self.assertEqual(item["classification"], "runtime-needed")
+            self.assertEqual(item["issues"], ["developer-local path reference"])
+            with self.assertRaisesRegex(ValueError, "Developer-local path"):
+                resource_inventory(app)
+
+    def test_resource_inventory_scans_non_json_resources_for_developer_paths(self):
+        for name in ("NOTICE.txt", "Xodus.icns"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp:
+                app, _ = self.fixture(Path(tmp).resolve())
+                (app / "Contents/Resources/distribution-components.json").unlink()
+                path = app / "Contents/Resources" / name
+                path.write_bytes(b"x" * 65_530 + b"/Users/neutral/private suffix")
+                with self.assertRaisesRegex(ValueError, "Developer-local path"):
+                    resource_inventory(app)
 
     def test_changed_binary_and_removed_notice_are_not_admitted(self):
         for target in ("Contents/MacOS/Xodus", "Contents/Resources/XodusAppFoundation_XodusManagement.bundle/CompatibilityData/AWACY-LICENSE.txt"):
