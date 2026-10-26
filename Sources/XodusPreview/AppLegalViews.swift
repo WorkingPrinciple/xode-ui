@@ -21,8 +21,8 @@ struct AppLicensesView: View {
                     .foregroundStyle(.secondary)
                 Text(AppLegalCopy.trademarks).foregroundStyle(.secondary)
                 Text(AppLegalCopy.d3dMetal).foregroundStyle(.secondary)
-                Link("Read the license", destination: AppLegalCopy.licenseText)
-                Link("View source code", destination: AppLegalCopy.source)
+                Link("Read the license", destination: AppLegalCopy.licenseText).accessibleLink()
+                Link("View source code", destination: AppLegalCopy.source).accessibleLink()
             }
             Section("Games and other software") {
                 Text("Games and third-party software keep their own licenses. The app's license does not grant ownership of games or permission to redistribute them.")

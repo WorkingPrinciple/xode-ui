@@ -754,6 +754,16 @@ struct GameOperationPresentation: View {
                 GameInstallConsentView(operations: operations, consent: consent)
                     .interactiveDismissDisabled(operations.checkingCompatibility)
             }
+            .confirmationDialog(operations.removalConsent.map { InstalledGameActionCopy.removeKeepingFilesTitle($0.title) } ?? "",
+                                isPresented: Binding(get: { operations.removalConsent != nil },
+                                                     set: { if !$0 { operations.removalConsent = nil } }),
+                                presenting: operations.removalConsent) { game in
+                Button(InstalledGameActionCopy.removeKeepingFilesConfirm, role: .destructive) {
+                    Task { await operations.confirmRemoval(game) }
+                }
+                .accessibilityIdentifier("xodus.installed.confirmRemove")
+                Button("Cancel", role: .cancel) { operations.removalConsent = nil }
+            } message: { game in Text(InstalledGameActionCopy.removeKeepingFilesMessage(folder: game.folder)) }
             .sheet(item: $operations.uninstallConsent) { game in
                 VStack(alignment: .leading, spacing: 18) {
                     Text("Uninstall \(game.title)?").font(.title2.bold())
@@ -862,7 +872,8 @@ struct InstalledGameManagement: View {
             }
             .disabled(!canRepair)
             .accessibilityIdentifier("xodus.installed.repair")
-            Button("Remove from list") { Task { await library.remove(game) } }
+            Button(InstalledGameActionCopy.removeKeepingFiles) { operations.prepareRemoval(game) }
+                .help(InstalledGameActionCopy.removeKeepingFilesHelp)
                 .disabled(library.editing || library.choosing || library.mutationActive
                           || library.accountDisconnecting || library.applicationTerminating
                           || library.runningGameID == game.id)

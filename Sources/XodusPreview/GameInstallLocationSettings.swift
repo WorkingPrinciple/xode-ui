@@ -59,6 +59,7 @@ struct GameInstallLocationSettings: View {
         let panel = NSOpenPanel()
         panel.title = "Choose the default game install folder"
         panel.prompt = "Choose folder"
+        panel.message = PermissionPrompt.fileSelectionMessage
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false

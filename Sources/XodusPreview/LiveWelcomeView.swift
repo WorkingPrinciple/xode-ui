@@ -90,7 +90,7 @@ struct LiveWelcomeView: View {
                         // One line: the link, then where else to find it. Works signed out and offline.
                         HStack(spacing: 3) {
                             Button(WelcomeCopy.acknowledgments, action: openAcknowledgmentsAction)
-                                .buttonStyle(.link)
+                                .buttonStyle(.link).accessibleLink()
                                 .accessibilityLabel(WelcomeCopy.acknowledgmentsAccessibility)
                                 .accessibilityHint("Also in the \(AppBrand.displayName) menu")
                                 .accessibilityIdentifier("xodus.welcome.acknowledgments")

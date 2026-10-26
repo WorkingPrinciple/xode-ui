@@ -41,7 +41,7 @@ struct CalimochoUpdateControls: View {
                     .accessibilityIdentifier("xodus.engines.calimocho.finishUpdate")
             }
             if let url = installer.updateOutcome?.releaseNotes {
-                Link("Release Notes", destination: url)
+                Link("Release Notes", destination: url).accessibleLink()
                     .accessibilityIdentifier("xodus.engines.calimocho.releaseNotes")
             }
             if let old = installer.removableOldRelease {

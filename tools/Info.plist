@@ -14,12 +14,12 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
-    <key>NSLocalNetworkUsageDescription</key><string>X Ode and the games it runs use your local network to find Xbox consoles and for multiplayer features.</string>
-    <key>NSRemovableVolumesUsageDescription</key><string>X Ode stores and plays games on this drive, and the games it runs may read or save files there.</string>
-    <key>NSNetworkVolumesUsageDescription</key><string>X Ode stores and plays games on this network drive, and the games it runs may read or save files there.</string>
-    <key>NSDocumentsFolderUsageDescription</key><string>X Ode and the games it runs use your Documents folder to store games and save files.</string>
-    <key>NSDownloadsFolderUsageDescription</key><string>X Ode and the games it runs use your Downloads folder to store games and read or save files.</string>
-    <key>NSDesktopFolderUsageDescription</key><string>X Ode and the games it runs use your Desktop to store games and read or save files.</string>
+    <key>NSLocalNetworkUsageDescription</key><string>X Ode uses Bonjour to find Xbox consoles on your local network; games it runs may use local multiplayer.</string>
+    <key>NSRemovableVolumesUsageDescription</key><string>X Ode installs games on this external drive when selected; games it runs may read or save files there.</string>
+    <key>NSNetworkVolumesUsageDescription</key><string>X Ode installs games on this network drive when selected; games it runs may read or save files there.</string>
+    <key>NSDocumentsFolderUsageDescription</key><string>X Ode may install games in Documents when selected; games it runs may read or save files there.</string>
+    <key>NSDownloadsFolderUsageDescription</key><string>X Ode may install games in Downloads when selected; games it runs may read or save files there.</string>
+    <key>NSDesktopFolderUsageDescription</key><string>X Ode may install games on your Desktop when selected; games it runs may read or save files there.</string>
     <key>NSBonjourServices</key><array><string>_xbox._tcp</string></array>
     <key>NSHumanReadableCopyright</key><string>© Working Principle. GPL-3.0-only. Beta; not a certified game runtime.</string>
 </dict>

@@ -5,6 +5,7 @@ import SwiftUI
 import CryptoKit
 import Vision
 import XodusManagement
+@preconcurrency import UserNotifications
 
 /// COR-186/REQ-114 beta UX regressions: brand, onboarding, Engines, Discover hero, toolbar
 /// accessibility, menus and jargon. Detached views and synthetic state only; no window activation,
@@ -32,6 +33,7 @@ enum BrandUXChecks {
         acknowledgments(check: check)
         credits(check: check)
         permissions(check: check)
+        AccessibilityAuditChecks.run(check: check)
         jargon(check: check)
     }
 
@@ -659,6 +661,9 @@ enum BrandUXChecks {
             check(joined.contains("Built on open source") && joined.contains("Key projects") && joined.contains("MoltenVK")
                   && joined.contains(FeaturedCredits.sectionTitle) && joined.contains("winehq.org")
                   && joined.contains("github.com/xodus-gaming/xodus") && joined.contains("CodeWeavers")
+                  && joined.contains("External engine providers") && joined.contains("Highball")
+                  && joined.contains("github.com/gauthierpiarrette/highball") && joined.contains("GPL-3.0")
+                  && joined.contains("CrossOver") && joined.contains("not bundled")
                   && (joined.range(of: FeaturedCredits.sectionTitle)?.lowerBound ?? joined.endIndex)
                     < (joined.range(of: "Key projects")?.lowerBound ?? joined.startIndex)
                   && joined.contains("Apple D3DMetal") && !joined.contains("DXVK"),
@@ -681,6 +686,16 @@ enum BrandUXChecks {
         check(about.components(separatedBy: "\n").first == FeaturedCredits.aboutLine
               && FeaturedCredits.aboutLine.contains("Wine") && FeaturedCredits.aboutLine.contains("Xodus"),
               "REQ-122: About X Ode credits Wine and Xodus in one line above the copyright")
+        let packaged = AppVersion(info: ["CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "412",
+                                         "XodeReleaseChannel": "Beta"])
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let aboutLabels = render(AboutPanelCreditSnapshot(version: packaged),
+                                     size: CGSize(width: 340, height: 220), scheme: scheme,
+                                     name: "req122-about-panel-credits-\(suffix)").joined(separator: " ")
+            check(aboutLabels.contains("Wine") && aboutLabels.contains("Xodus"),
+                  "REQ-122 About panel credit snapshot (\(suffix)): \(aboutLabels)")
+        }
         let line = WelcomeCopy.technology
         check(line.hasPrefix("X Ode runs Windows games with Wine") && line.contains("Xodus")
               && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".contains("X Ode menu") && line.count <= 70
@@ -689,8 +704,18 @@ enum BrandUXChecks {
               && FeaturedCredits.xodus.role.components(separatedBy: "backend").count == 2,
               "COR-209: The sign-in window names Wine first, then Xodus, and says where credits and licences are, in two short lines")
         let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
-        check(readme.contains(FeaturedCredits.readmeLine) && readme.contains(FeaturedCredits.helpMenu),
-              "REQ-122: README's credits use the app's exact Wine and Xodus line (fails if README.md is missing)")
+        check(readme.contains(FeaturedCredits.readmeLine)
+              && readme.contains(FeaturedCredits.readmeExternalProvidersLine)
+              && readme.contains(FeaturedCredits.helpMenu),
+              "REQ-122: README credits match the shared Wine, Xodus and external-provider copy (fails if README.md is missing)")
+        let providers = FeaturedCredits.externalProviders
+        check(providers.map(\.name) == ["Highball", "CrossOver"]
+              && providers[0].url.absoluteString == "https://github.com/gauthierpiarrette/highball"
+              && providers[0].license == "GPL-3.0" && providers[0].role.contains("User-installed")
+              && providers[1].role.contains("CodeWeavers") && providers[1].license == "Proprietary"
+              && FeaturedCredits.externalProviderDisclosure.contains("not bundled")
+              && FeaturedCredits.externalProviderDisclosure.contains("does not imply game compatibility"),
+              "External providers: Highball is credited as GPL-3.0 and user-installed; CrossOver credits CodeWeavers; neither is bundled or implied compatible")
         check(AcknowledgmentsNavigation.appMenu.map(\.title) == ["Acknowledgments…", "Open-Source Licences…"]
               && AcknowledgmentsNavigation.appMenu.map(\.focus) == [.overview, .licences]
               && AcknowledgmentsNavigation.helpMenu.map(\.title) == ["Acknowledgments and Licences"],
@@ -872,22 +897,88 @@ enum BrandUXChecks {
         let notifier = (try? String(contentsOfFile: "Sources/XodusPreview/GameReadyNotifier.swift", encoding: .utf8)) ?? ""
         let postBody = notifier.range(of: "func post(").map { String(notifier[$0.lowerBound...]) } ?? ""
         let beforePost = notifier.range(of: "func post(").map { String(notifier[..<$0.lowerBound]) } ?? notifier
+        let askBody = notifier.range(of: "private static func ask(").map { String(notifier[$0.lowerBound...]) } ?? ""
+        let app = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
+        let launch = app.range(of: "func applicationDidFinishLaunching").map { String(app[$0.lowerBound...].prefix(600)) } ?? ""
         check(!sources.isEmpty && requesters == ["XodusPreview/GameReadyNotifier.swift"]
-              && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization"),
-              "REQ-118: Notification permission is asked only when a finished install posts its ready notice, never at launch")
+              && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization")
+              && notifier.components(separatedBy: "requestAuthorization(").count == 2 && askBody.contains("requestAuthorization(")
+              && !launch.isEmpty && !launch.contains("post(") && !launch.contains("requestFromSettings"),
+              "REQ-118: Notification permission is asked only from a finished install's ready notice or Settings ▸ Ask Now, never at launch")
+        check(GameReadyNotifier.step(status: .notDetermined, deferred: false) == .explainThenAsk
+              && GameReadyNotifier.step(status: .notDetermined, deferred: true) == .skipDeferred
+              && GameReadyNotifier.step(status: .denied, deferred: false) == .skipDenied
+              && GameReadyNotifier.step(status: .authorized, deferred: true) == .add
+              && GameReadyNotifier.step(status: .provisional, deferred: false) == .add
+              && postBody.contains("case .explainThenAsk:") && postBody.contains("PermissionPrompt.confirmFirstUse(.notifications")
+              && postBody.contains("defaults.set(true, forKey: Self.deferredKey)")
+              && postBody.contains("defaults.set(true, forKey: PrivacyPermission.notificationsDeniedKey)")
+              && postBody.contains("guard !explaining else { waiting.append(request); return }")
+              && ((try? String(contentsOfFile: "Sources/XodusPreview/PrivacyPermissions.swift", encoding: .utf8)) ?? "")
+                .components(separatedBy: "GameReadyNotifier.refreshRecordedStatus()").count == 3,
+              "REQ-118: The first ready notice explains once (concurrent notices wait for that answer); Not now is remembered; Settings re-reads the real status")
+        let account = (try? String(contentsOfFile: "Sources/XodusPreview/LiveAccountView.swift", encoding: .utf8)) ?? ""
+        let findConsoles = account.range(of: "Button(\"Find consoles\")").map { String(account[$0.lowerBound...].prefix(200)) } ?? ""
+        let rootView = (try? String(contentsOfFile: "Sources/XodusPreview/LiveRootView.swift", encoding: .utf8)) ?? ""
+        let consoleExplainAt = findConsoles.range(of: "PermissionPrompt.confirmFirstUse(.localNetwork)")?.lowerBound
+        let consoleSearchAt = findConsoles.range(of: "discovery.search()")?.lowerBound
+        check(consoleExplainAt != nil && consoleSearchAt != nil && consoleExplainAt! < consoleSearchAt!
+              && rootView.components(separatedBy: "LocalNetworkDiscovery.shared.search()").count == 2
+              && rootView.contains("Xodus.localNetwork.requestOnce"),
+              "REQ-118: Local network discovery starts only after Find consoles and its explanation (plus the one-shot requestOnce test flag), never by itself at launch")
+        let pcGames = (try? String(contentsOfFile: "Sources/XodusPreview/PCGamesView.swift", encoding: .utf8)) ?? ""
+        let approve = pcGames.range(of: "Button(\"Approve Keychain access\")").map { String(pcGames[$0.lowerBound...].prefix(220)) } ?? ""
+        let explainAt = approve.range(of: "PermissionPrompt.confirmFirstUse(.keychain)")?.lowerBound
+        let migrateAt = approve.range(of: "library.approveKeychain()")?.lowerBound
+        check(explainAt != nil && migrateAt != nil && explainAt! < migrateAt!,
+              "REQ-118: X Ode explains Keychain access before the only call that can show the macOS Keychain dialog (broker migrate); presence reads stay non-interactive")
+        let panelSources = ["GameInstallLocationSettings.swift": "PermissionPrompt.fileSelectionMessage",
+                            "InstalledGamesController.swift": "PermissionPrompt.fileSelectionMessage",
+                            "LiveSession.swift": "PermissionPrompt.saveMessage"]
+        check(panelSources.allSatisfy { file, message in
+                  ((try? String(contentsOfFile: "Sources/XodusPreview/" + file, encoding: .utf8)) ?? "").contains("message = " + message)
+              },
+              "REQ-118: Game-folder and save panels explain that macOS may ask for protected folders or drives")
+        let copies = PrivacyPermission.allCases.map(PermissionPrompt.copy(for:))
+        check(copies.allSatisfy { !$0.title.isEmpty && $0.explanation.contains(AppBrand.displayName) && !$0.cancelTitle.isEmpty }
+              && PermissionPrompt.copy(for: .localNetwork).explanation.contains("No search starts")
+              && PermissionPrompt.copy(for: .notifications).explanation.contains("complete either way")
+              && PrivacyPermission.allCases.allSatisfy { !$0.requestTiming.isEmpty && $0.requestTiming.contains(AppBrand.displayName) }
+              && PrivacyPermission.notifications.requestTiming.contains("never at launch"),
+              "REQ-118: Every permission has X Ode explanation copy and a stated, feature-bound request time")
+        let promptSuite = "XodusPermissionPrompt-\(UUID().uuidString)"
+        if let suite = UserDefaults(suiteName: promptSuite) {
+            suite.set(true, forKey: PermissionPrompt.firstUseKey(for: .localNetwork))
+            check(PermissionPrompt.confirmFirstUse(.localNetwork, defaults: suite),
+                  "REQ-118: An explained permission is not explained again (no alert)")
+            suite.removePersistentDomain(forName: promptSuite)
+        }
         check(readme.contains("## " + PrivacyPermission.installNotesTitle)
-              && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) |") }
+              && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) | \($0.requestTiming) |") }
               && readme.contains(PrivacyPermission.gamesNote) && readme.contains(PrivacyPermission.keychainNote)
               && readme.contains(PrivacyPermission.microphoneKnownIssue)
               && readme.contains("System Settings ▸ Notifications") && readme.contains("Developer ID")
               && !readme.contains("| Microphone |"),
               "REQ-118 L1: The install notes exist and list every permission with the app's exact words (fails if README.md is missing)")
+        for (name, deferred, denied) in [("deferred", true, false), ("denied", false, true)] {
+            let suiteName = "XodusPermissions-\(name)-\(UUID().uuidString)"
+            guard let suite = UserDefaults(suiteName: suiteName) else { continue }
+            defer { suite.removePersistentDomain(forName: suiteName) }
+            suite.set(deferred, forKey: GameReadyNotifier.deferredKey)
+            suite.set(denied, forKey: PrivacyPermission.notificationsDeniedKey)
+            let labels = render(Form { PrivacyPermissionsSection() }.formStyle(.grouped).defaultAppStorage(suite),
+                                size: CGSize(width: 600, height: 1100), scheme: .light,
+                                name: "permissions-notifications-\(name)").joined(separator: " ")
+            check(deferred ? labels.contains("Ask Now") && labels.contains("Not now") && !labels.contains("Notifications are off")
+                           : labels.contains("Notifications are off") && !labels.contains("Ask Now"),
+                  "REQ-118 (\(name)): Settings explains notification state and offers a way to change it: \(labels)")
+        }
         for scheme in [ColorScheme.light, .dark] {
             let labels = render(Form { PrivacyPermissionsSection() }.formStyle(.grouped),
-                                size: CGSize(width: 600, height: 860), scheme: scheme,
+                                size: CGSize(width: 600, height: 1100), scheme: scheme,
                                 name: "permissions-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
-            check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Notifications")
+            check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Notifi")
                   && joined.contains("Open Local Network Settings") && !joined.contains("Open Privacy"),
                   "REQ-118 round 3 L3: Settings ▸ General lists permissions with buttons named for where they go (\(scheme)): \(labels)")
         }
@@ -1287,6 +1378,26 @@ enum BrandUXChecks {
         try? png.write(to: renderDirectory.appendingPathComponent(name + ".png"))
     }
 }
+private struct AboutPanelCreditSnapshot: View {
+    let version: AppVersion
+
+    var body: some View {
+        let options = AppBrandPresentation.aboutPanelOptions(version)
+        VStack(spacing: 8) {
+            Text(options[.applicationName] as? String ?? "")
+                .font(.system(size: 26, weight: .regular))
+            Text("Version \(options[.applicationVersion] as? String ?? "") (\(options[.version] as? String ?? ""))")
+                .font(.caption).foregroundStyle(.secondary)
+            Text((options[.credits] as? NSAttributedString)?.string ?? "")
+                .font(.system(size: 11)).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }
+        .padding(24)
+        .frame(width: 340, height: 220)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .accessibilityIdentifier("xodus.about-panel-credit-snapshot")
+    }
+}
+
 @MainActor
 private struct FakeEngineCheck: EngineCheckResults {
     var availableEngineOverrides: [AdmittedEngineSelection] = []

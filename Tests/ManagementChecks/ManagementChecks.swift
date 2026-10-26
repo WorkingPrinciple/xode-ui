@@ -1783,7 +1783,8 @@ enum MockBackend {
                     }
                     if scenario == "requestpressure", command == ManagementCommand.jobs.rawValue { continue }
                     if scenario == "diagnosticlifetime", command == ManagementCommand.jobs.rawValue {
-                        for _ in 0..<257 {
+                        // Separate stdout and stderr readers may observe the result before marginal overflow bytes.
+                        for _ in 0..<512 {
                             try FileHandle.standardError.write(contentsOf: Data(repeating: 10, count: 4096))
                             usleep(2_000)
                         }

@@ -4,6 +4,9 @@ import XodusManagement
 
 enum InstalledGameActionCopy {
     static let removeKeepingFiles = "Remove from Library (Keep Files)…"
+    static let removeKeepingFilesConfirm = "Remove (Keep Files)"
+    static let removeKeepingFilesHelp = "Removes this game from the library. The game folder and saves aren't deleted."
+    static func removeKeepingFilesTitle(_ title: String) -> String { "Remove \(title) from the library?" }
     static func removeKeepingFilesMessage(folder: String) -> String {
         "No files are deleted. The game folder stays at \(folder) with your saves, and the game can be added back later. To delete the files, use Uninstall."
     }
@@ -108,7 +111,7 @@ struct InstalledGameAttentionView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Button(InstalledGameActionCopy.removeKeepingFiles, role: .destructive) { confirmingRemoval = true }
-                    .help("Removes this game from the library. The game folder and saves aren't deleted.")
+                    .help(InstalledGameActionCopy.removeKeepingFilesHelp)
                     .disabled(installed.editing || installed.mutationActive || installed.runningGameID == game.id)
                 if let error = installed.error {
                     InstallationWarning(message: error)
@@ -120,8 +123,8 @@ struct InstalledGameAttentionView: View {
                 .font(.callout).foregroundStyle(.secondary)
             }
             .accessibilityIdentifier("xodus.game.needsAttention")
-            .confirmationDialog("Remove \(game.title) from the library?", isPresented: $confirmingRemoval) {
-                Button("Remove (Keep Files)", role: .destructive) {
+            .confirmationDialog(InstalledGameActionCopy.removeKeepingFilesTitle(game.title), isPresented: $confirmingRemoval) {
+                Button(InstalledGameActionCopy.removeKeepingFilesConfirm, role: .destructive) {
                     Task {
                         await installed.remove(game)
                         if !installed.games.contains(where: { $0.id == game.id }) { close() }
