@@ -397,15 +397,17 @@ struct LiveRootView: View {
             case .nativeMinecraft:
                 await NativeMinecraft.shared.refresh()
                 NativeMinecraft.shared.open()
-            case .play(let productID):
+            case .play(let productID, let engine):
                 guard let game = state.installedGames.games.first(where: { $0.storeId == productID }) else {
                     session.errorMessage = "The requested game isn't registered as installed on this Mac."
                     return
                 }
-                await state.installedGames.play(game)
-                if state.installedGames.runningGameID != game.id {
-                    session.errorMessage = state.installedGames.playErrors[game.id]
-                        ?? "The requested game couldn't start. Check its installation and runtime settings."
+                // Saving an engine changes this task's identity; the request must outlive that restart.
+                let installed = state.installedGames
+                Task { @MainActor in
+                    if let message = await installed.playFromLaunchRequest(game, engine: engine) {
+                        session.errorMessage = message
+                    }
                 }
             }
         }

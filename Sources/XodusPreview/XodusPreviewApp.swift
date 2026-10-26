@@ -5,13 +5,21 @@ import XodusCore
 import XodusManagement
 
 enum GameLaunchArguments: Equatable {
-    case play(String), nativeMinecraft
+    /// `engine` names a catalogue engine binding; it goes through the same per-game title scope as the
+    /// Engine menu and is never substituted.
+    case play(String, engine: String? = nil), nativeMinecraft
 
     static func parse(_ arguments: [String]) -> Self? {
         if arguments == ["--open-native-minecraft"] { return .nativeMinecraft }
-        if arguments.count == 2, arguments[0] == "--play-game",
-           PCGamesClient.validProductID(arguments[1]) { return .play(arguments[1]) }
-        return nil
+        guard arguments.count == 2 || arguments.count == 4, arguments[0] == "--play-game",
+              PCGamesClient.validProductID(arguments[1]) else { return nil }
+        if arguments.count == 2 { return .play(arguments[1]) }
+        guard arguments[2] == "--engine", validEngineName(arguments[3]) else { return nil }
+        return .play(arguments[1], engine: arguments[3])
+    }
+
+    static func validEngineName(_ name: String) -> Bool {
+        name.range(of: #"^[a-z0-9][a-z0-9._-]{0,127}$"#, options: .regularExpression) != nil
     }
 }
 

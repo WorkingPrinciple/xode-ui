@@ -701,6 +701,55 @@ final class InstalledGamesController: ObservableObject {
         return !usesUnifiedAccount || productAccess.permits(productID, account: unifiedSession?.accountHash)
     }
 
+    /// Whether the access check for this product has an answer (permitted, denied or failed) for the
+    /// current account. Until then a deep-link Play waits instead of failing.
+    func productAccessSettled(_ productID: String) -> Bool {
+        guard accountAccessAllowed else { return false }
+        if canRequestPlay(productID) { return true }
+        guard !usesUnifiedAccount || unifiedSession?.accountHash != nil else { return false }
+        return !productAccess.checking && !productAccess.pending(productID, account: unifiedSession?.accountHash)
+            && productAccess.accountHash == unifiedSession?.accountHash
+    }
+
+    /// Bounded wait for a condition, polled on the main actor; false on timeout or cancellation.
+    static func waitUntil(timeout: Duration, interval: Duration = .milliseconds(250),
+                          clock: ContinuousClock = .init(), _ condition: () -> Bool) async -> Bool {
+        let deadline = clock.now.advanced(by: timeout)
+        while !condition() {
+            guard clock.now < deadline, !Task.isCancelled else { return false }
+            try? await Task.sleep(for: interval)
+        }
+        return true
+    }
+
+    /// Deep-link Play (`--play-game`): waits up to `timeout` for the access check, then plays or reports
+    /// the actual reason. An explicit engine is applied exactly like the per-game Engine menu.
+    func playFromLaunchRequest(_ game: InstalledGame, engine: String?,
+                               timeout: Duration = .seconds(60)) async -> String? {
+        let settled = await Self.waitUntil(timeout: timeout) { productAccessSettled(game.storeId) }
+        guard canRequestPlay(game.storeId) else {
+            return settled ? (productAccessNotice(for: game) ?? "Access to this game hasn't been confirmed for your Xbox account.")
+                : "Access to this game wasn't confirmed within \(timeout.components.seconds) seconds. Open the game and try again."
+        }
+        if let engine {
+            await refreshEngineOverrides(force: false)
+            guard let selection = engineOverrides(for: game).first(where: { $0.inspection.engineName == engine }) else {
+                return "\(Self.readableEngineName(engine)) isn't available for \(game.title) on this Mac. No other engine was used."
+            }
+            await setEngineOverrideV2(selection, for: game)
+            guard let current = games.first(where: { $0.id == game.id }),
+                  current.engineOverrideV2?.selection == selection else {
+                return playErrors[game.id] ?? error ?? "\(Self.readableEngineName(engine)) couldn't be selected for \(game.title)."
+            }
+        }
+        guard let current = games.first(where: { $0.id == game.id }) else {
+            return "The requested game isn't registered as installed on this Mac."
+        }
+        await play(current)
+        return runningGameID == current.id ? nil
+            : playErrors[current.id] ?? "The requested game couldn't start. Check its installation and runtime settings."
+    }
+
     func productAccessNotice(for game: InstalledGame) -> String? {
         guard !canRequestPlay(game.storeId) else { return nil }
         return productAccess.reviewNotice(for: game.storeId, account: unifiedSession?.accountHash)
