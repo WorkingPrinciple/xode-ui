@@ -10,11 +10,17 @@ import re
 import stat
 import sys
 
-PRODUCER = "8b091460e74879980081d899b1dab349141561e0"
-PRODUCER_TREE = "a4d92a96ebc9070c2d1e9b9bec031aba8437b3b8"
-CLI_SHA256 = "3121df540f1ef9bb6d161f02f3c6ac958d74aa1559502304147542ad735da5b6"
-WINDOWS_HELPER_SHA256 = "42560b3e33a258c8af43146034d6f5140d939f855d682739bc82ea1d8962ff65"
-PRODUCER_MANIFEST_SHA256 = "d66c7a6cb55854b08e6ecda757ff1ecd10ad9bc7d5930df5424732740ca0fbfc"
+PRODUCER = "1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb"
+PRODUCER_TREE = "5ebdba190998fa2c719885dc53cf3e7d2b5c00e1"
+CLI_SHA256 = "146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3"
+CLI_BYTES = 28_974_448
+WINDOWS_HELPER_SHA256 = "7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed"
+WINDOWS_HELPER_BYTES = 20_480
+PRODUCER_MANIFEST_SHA256 = "04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b"
+CARGO_LOCK_SHA256 = "b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868"
+SOURCE_ARCHIVE_NAME = "xodus-cli-beta-1bcc1c42-source.tar"
+SOURCE_ARCHIVE_SHA256 = "6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87"
+SOURCE_ARCHIVE_BYTES = 8_980_480
 FEATURES = {"xodus": [], "xodus-cli": [], "xodus-management": ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,
@@ -78,6 +84,44 @@ def unique_object(pairs):
         require(key not in result, "Duplicate provenance key")
         result[key] = value
     return result
+
+
+def validate_producer_inventory(path, expected_digest):
+    require(isinstance(expected_digest, str) and re.fullmatch("[0-9a-f]{64}", expected_digest) is not None,
+            "Producer-notice inventory requires an exact external digest")
+    identity, data = owned_bytes(path, expected_digest, bounded=32 * 1024 * 1024)
+    inventory = json.loads(data, object_pairs_hook=unique_object)
+    expected_producer = {"commit": PRODUCER, "tree": PRODUCER_TREE}
+    require(type(inventory) is dict and inventory.get("producer") == expected_producer,
+            "Producer-notice inventory does not identify the approved source")
+    for key, expected in {
+        "cliSHA256": CLI_SHA256,
+        "helperSHA256": WINDOWS_HELPER_SHA256,
+        "producerManifestSHA256": PRODUCER_MANIFEST_SHA256,
+        "cargoLockSHA256": CARGO_LOCK_SHA256,
+    }.items():
+        require(inventory.get(key) == expected,
+                "Producer-notice inventory differs from the approved tuple: " + key)
+    source_delivery = inventory.get("sourceDelivery")
+    require(type(source_delivery) is dict,
+            "Producer-notice inventory has no corresponding-source delivery record")
+    source_archive = source_delivery.get("sourceArchive")
+    require(type(source_archive) is dict
+            and source_archive.get("file") == SOURCE_ARCHIVE_NAME
+            and source_archive.get("sha256") == SOURCE_ARCHIVE_SHA256
+            and source_archive.get("bytes") == SOURCE_ARCHIVE_BYTES
+            and source_archive.get("producer") == expected_producer,
+            "Producer-notice inventory does not bind the approved corresponding-source archive")
+    return identity
+
+
+def swift_producer_pins():
+    return f'''// Generated for this approved producer source.
+enum ShippingProducerPins {{
+    static let commit = "{PRODUCER}"
+    static let tree = "{PRODUCER_TREE}"
+}}
+'''
 
 
 def verify_input(engine, engine_hash, engine_bytes, proof_hash, proof_bytes):

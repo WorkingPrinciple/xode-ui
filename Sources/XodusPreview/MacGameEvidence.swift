@@ -35,7 +35,9 @@ struct MacGameEvidence: Decodable, Sendable {
         }
     }
     struct Screenshot: Decodable, Equatable, Sendable {
-        let path: String
+        let path: String?
+        let referenceID: String?
+        let sha256: String?
         let caption: String
     }
     struct Game: Decodable, Equatable, Sendable {
@@ -93,6 +95,13 @@ struct MacGameEvidence: Decodable, Sendable {
                 && saveObservation?.normalMenuQuitObserved != false ? screenshots.first : nil
         }
 
+        var hasVerifiedWorkingQualification: Bool {
+            verdict == .working && launchAttempted != false
+                && runId.flatMap(UUID.init(uuidString:)) != nil
+                && saveObservation?.retentionVerified == true
+                && saveObservation?.normalMenuQuitObserved == true
+        }
+
         var saveVerifiedQuitPending: Bool {
             (verdict == .gameplay || verdict == .working) && launchAttempted != false
                 && saveObservation?.retentionVerified == true
@@ -125,7 +134,7 @@ struct MacGameEvidence: Decodable, Sendable {
     let games: [Game]
 
     static let bundled: Result<Self, Error> = Result {
-        try decode(Data(contentsOf: CompatibilityResources.macGameEvidenceURL()))
+        try decode(Data(contentsOf: CompatibilityResources.macGameStatusURL()))
     }
 
     func merging(_ local: Self) throws -> [String: Game] {
@@ -159,10 +168,21 @@ struct MacGameEvidence: Decodable, Sendable {
                       && (game.runId.map { UUID(uuidString: $0) != nil } ?? true)
                       && game.screenshots.count <= 16
                       && game.screenshots.allSatisfy {
-                          validText($0.caption, limit: 1024) && $0.path.hasPrefix("/")
-                              && validText($0.path, limit: 4096)
-                              && ["png", "jpg", "jpeg", "heic"].contains(
-                                  URL(fileURLWithPath: $0.path).pathExtension.lowercased())
+                          validText($0.caption, limit: 1024)
+                              && ($0.referenceID.map {
+                                      validText($0, limit: 256)
+                                          && $0.utf8.allSatisfy {
+                                              (48...57).contains($0) || (65...90).contains($0)
+                                                  || (97...122).contains($0) || [45, 46, 58, 95].contains($0)
+                                          }
+                                  } ?? false
+                                  || $0.sha256.map { $0.range(of: "^[0-9a-f]{64}$",
+                                      options: .regularExpression) != nil } ?? false
+                                  || $0.path.map {
+                                      $0.hasPrefix("/") && validText($0, limit: 4096)
+                                          && ["png", "jpg", "jpeg", "heic"].contains(
+                                              URL(fileURLWithPath: $0).pathExtension.lowercased())
+                                  } ?? false)
                       }
               }) else { throw PCGamesError.invalidResponse }
         return value

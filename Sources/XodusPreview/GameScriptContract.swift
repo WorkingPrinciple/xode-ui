@@ -33,24 +33,24 @@ enum GameScriptError: Error, LocalizedError, Equatable {
         switch self {
         case .unavailable: "This Mac isn't ready for this game operation. Check game setup and try again."
         case .runtimeUnavailable: "The bundled game runtime could not be verified. Reinstall the approved app."
-        case .invalidReceipt: "Ode to X couldn't confirm how the operation finished. Your installed list wasn't changed. Check the log before trying again."
+        case .invalidReceipt: "\(AppBrand.displayName) couldn't confirm how the operation finished. Your installed list wasn't changed. Check the log before trying again."
         case .missingStatus: "The operation stopped without a result. Your installed list wasn't changed. Check the log before trying again."
         case .statusMismatch: "The operation returned conflicting results. Your installed list wasn't changed. Check the log before trying again."
         case .invalidProgress: "Download progress couldn't be read. The operation is stopping; partial files are kept."
-        case .storage: "Ode to X couldn't save the operation details. Check access to Application Support and try again."
+        case .storage: "\(AppBrand.displayName) couldn't save the operation details. Check access to Application Support and try again."
         case .busy: "Wait for the current game or operation to finish."
         case .timeout: "The operation didn't finish. Check the log before trying again."
         case .invalidDestination: "The game folder isn't safe to use. Choose a different installation or check game setup."
         case .failed(let code):
             switch code {
             case 10: "There isn't enough free space. Free up storage and try again."
-            case 11: "Ode to X couldn't prepare this download. This result doesn't establish whether access or sign-in failed. Check download access to retry; your library record is unchanged."
-            case 12: "This game can't be installed with Ode to X yet."
+            case 11: "\(AppBrand.displayName) couldn't prepare this download. This result doesn't establish whether access or sign-in failed. Check download access to retry; your library record is unchanged."
+            case 12: "This game can't be installed with \(AppBrand.displayName) yet."
             case 13: "The download couldn't be verified. Try installing again."
-            case 14: "Installation cancelled. Partial files are kept; installing again resumes the download."
-            case 21: "Ode to X couldn't find a running environment for this game. Check the log."
+            case 14: GameDownloadCopy.stopped(repair: false)
+            case 21: "\(AppBrand.displayName) couldn't find a running environment for this game. Check the log."
             case 22: "Quit the running game or finish the download first."
-            case 31: "Ode to X couldn't create the game environment. Check the log and try Repair game setup again."
+            case 31: "\(AppBrand.displayName) couldn't create the game environment. Check the log and try Repair game setup again."
             default: "The operation couldn't finish (code \(code)). Check the log and try again."
             }
         }
@@ -180,7 +180,7 @@ struct GameCompatibilityResult: Decodable, Equatable, Sendable {
 
     var badge: String { supported ? "Available to install" : "Installation unavailable" }
     var explanation: String {
-        supported ? "Available to install" : reason ?? "This game can't be installed with Ode to X yet."
+        supported ? "Available to install" : reason ?? "This game can't be installed with \(AppBrand.displayName) yet."
     }
     var checkedDate: Date? {
         Self.parseDate(checkedAt)
@@ -284,7 +284,7 @@ struct GameScriptPaths: Sendable {
         return Self(scripts: home.appendingPathComponent("Library/Application Support/Xodus/Runtime/scripts/macos"),
                     processed: home.appendingPathComponent("Library/Application Support/XodusRemote/processed"),
                     logs: home.appendingPathComponent("Library/Logs/XodusRemote"),
-                    games: home.appendingPathComponent("Games/Xodus"),
+                    games: home.appendingPathComponent("Games/Xode"),
                     journal: home.appendingPathComponent("Library/Application Support/Xodus/game-operation.json"))
     }
 
@@ -300,13 +300,13 @@ struct GameScriptPaths: Sendable {
         return processed.appendingPathComponent(runID + "." + suffix)
     }
 
-    func destination(title: String, productID: String) throws -> URL {
+    func destination(title: String, productID: String, root: URL? = nil) throws -> URL {
         guard PCGamesClient.validProductID(productID) else { throw GameScriptError.invalidDestination }
         let safeTitle = String(title.unicodeScalars.filter {
             (48...57).contains($0.value) || (65...90).contains($0.value) || (97...122).contains($0.value)
         }.prefix(96))
         guard !safeTitle.isEmpty else { throw GameScriptError.invalidDestination }
-        return games.appendingPathComponent(safeTitle + "-Xbox", isDirectory: true)
+        return (root ?? games).appendingPathComponent(safeTitle + "-Xbox", isDirectory: true)
     }
 }
 
@@ -542,9 +542,10 @@ actor GameScriptRunner {
             let value = try GameScriptProgress.parse(data)
             if value.phase == .failed { await progress(value) }
         }
-        let result = code == 0 && [.install, .serviceStatus, .serviceSignOut, .check, .gamePassStatus, .gameStats,
-                                   .xboxCompanion, .xboxAchievements, .stop, .setup].contains(command)
-            ? try GameScriptFiles.read(paths.receipt(runID, suffix: "result.json")) : nil
+        let returnsResult: [GameScriptCommand] = [.install, .serviceStatus, .serviceSignOut, .check,
+            .gamePassStatus, .gameStats, .xboxCompanion, .xboxAchievements, .stop, .setup]
+        let result = returnsResult.contains(command)
+            ? try GameScriptFiles.read(paths.receipt(runID, suffix: "result.json"), missingAllowed: code != 0) : nil
         return GameScriptOutcome(code: code, result: result, log: GameScriptFiles.log(runID: runID, paths: paths))
     }
 }
@@ -591,5 +592,37 @@ actor GameOperationJournal {
 
     func clear() throws {
         if unlink(file.path) != 0 && errno != ENOENT { throw GameScriptError.storage }
+    }
+
+    private var resumableFile: URL { file.appendingPathExtension("resumable.json") }
+
+    func loadResumable() throws -> [String: GameOperationRecord] {
+        guard let data = try GameScriptFiles.read(resumableFile, maximumBytes: 512 * 1024,
+                                                  missingAllowed: true) else { return [:] }
+        let records = try JSONDecoder().decode([String: GameOperationRecord].self, from: data)
+        guard records.count <= 128 else { throw GameScriptError.storage }
+        for (product, record) in records {
+            try record.validate()
+            guard product == record.productID, record.kind == .install, record.installedID == nil else {
+                throw GameScriptError.storage
+            }
+        }
+        return records
+    }
+
+    func retainResumable(_ record: GameOperationRecord) throws {
+        try record.validate()
+        guard record.kind == .install, record.installedID == nil else { return }
+        var records = try loadResumable()
+        records[record.productID] = record
+        guard records.count <= 128 else { throw GameScriptError.storage }
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records), to: resumableFile)
+    }
+
+    func removeResumable(_ record: GameOperationRecord) throws {
+        var records = try loadResumable()
+        guard records[record.productID]?.destination == record.destination else { return }
+        records[record.productID] = nil
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records), to: resumableFile)
     }
 }

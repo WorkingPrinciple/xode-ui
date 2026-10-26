@@ -11,14 +11,167 @@ import struct
 import sys
 import tarfile
 import tempfile
-from shipping_pair import COMMAND, FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, main as generate_pair, swift_pins, verify_input
+from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, COMMAND, FEATURES, PROFILE,
+                           PRODUCER, PRODUCER_MANIFEST_SHA256, PRODUCER_TREE, SOURCE_ARCHIVE_BYTES,
+                           SOURCE_ARCHIVE_NAME, SOURCE_ARCHIVE_SHA256, WINDOWS_HELPER_BYTES,
+                           WINDOWS_HELPER_SHA256, require,
+                           main as generate_pair, swift_pins, swift_producer_pins,
+                           validate_producer_inventory, verify_input)
 from verify_shipping_package import main as verify_package
 from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_capsule
 from python_runtime import approved_pin, inventory
+from package_resources import RUNTIME_RESOURCES
+from package_beta import PRODUCER_NOTICES_SHA256
+
+SUPERSEDED_PRODUCERS = (
+    "01d4" + "cfd6" + "25764c2a8ec4d60824ef4f277b30b9e9",
+    "99e20" + "addf88932de7796fc966fe09e00b71e4981",
+)
+
+
+def require_current_producer_pins(source_root):
+    for directory in ("Sources", "tools"):
+        for path in (source_root / directory).rglob("*"):
+            if path.is_file() and not path.is_symlink() and path.suffix in {
+                    ".swift", ".py", ".json", ".plist"}:
+                data = path.read_bytes()
+                if any(producer.encode() in data or producer[:8].encode() in data
+                       for producer in SUPERSEDED_PRODUCERS):
+                    raise ValueError("Superseded producer pin found in " + str(path.relative_to(source_root)))
+
+
+def require_app_shipping_pins(source_root):
+    producer_pins = (source_root / "Sources/XodusPreview/ShippingProducerPins.swift").read_text(
+        encoding="utf-8")
+    require(f'static let commit = "{PRODUCER}"' in producer_pins
+            and f'static let tree = "{PRODUCER_TREE}"' in producer_pins,
+            "App producer commit/tree differs from the approved shipping pair")
+
+    lifecycle = (source_root / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text(encoding="utf-8")
+    require(f'static let cliSHA256 = "{CLI_SHA256}"' in lifecycle,
+            "Lifecycle CLI digest differs from the approved shipping pair")
+
+    runtime_path = source_root / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    runtime_bytes = runtime_path.read_bytes()
+    runtime = json.loads(runtime_bytes)
+    require(runtime.get("cliSha256") == CLI_SHA256,
+            "Runtime catalogue CLI digest differs from the approved shipping pair")
+    runtime_hash = hashlib.sha256(runtime_bytes).hexdigest()
+    launch_configuration = (source_root / "Sources/XodusPreview/NativeLaunchConfiguration.swift").read_text(
+        encoding="utf-8")
+    require(f'== "{runtime_hash}" else' in launch_configuration,
+            "Runtime catalogue file digest is not pinned in the app")
+
+    acknowledgments = (source_root / "Sources/XodusPreview/Acknowledgments.swift").read_text(encoding="utf-8")
+    require(f'pinnedProducerInventorySHA256 = "{PRODUCER_NOTICES_SHA256}"' in acknowledgments,
+            "App producer-notice inventory digest differs from the packaging pin")
+
 
 count = 0
+project = Path(__file__).resolve().parent.parent
+require_current_producer_pins(project)
+require_app_shipping_pins(project)
+count += 1
 with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     root = Path(temporary).resolve()
+    stale_source = root / "stale-source"
+    stale_pin = stale_source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    stale_pin.parent.mkdir(parents=True)
+    for producer in SUPERSEDED_PRODUCERS:
+        stale_pin.write_text("static let commit = \"" + producer + "\"", encoding="utf-8")
+        try:
+            require_current_producer_pins(stale_source)
+            raise AssertionError("Superseded producer source pin accepted")
+        except ValueError:
+            count += 1
+        stale_pin.write_text("static let commit = \"" + producer[:8] + "\"", encoding="utf-8")
+        try:
+            require_current_producer_pins(stale_source)
+            raise AssertionError("Superseded producer prefix accepted")
+        except ValueError:
+            count += 1
+    for relative in (
+            "Sources/XodusPreview/ShippingProducerPins.swift",
+            "Sources/XodusPreview/NativeGameLifecycle.swift",
+            "Sources/XodusPreview/Acknowledgments.swift",
+            "Sources/XodusPreview/NativeLaunchConfiguration.swift",
+            "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"):
+        destination = stale_source / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(project / relative, destination)
+    stale_app_pin = stale_source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    stale_app_pin.write_text(
+        "enum ShippingProducerPins { static let commit = \"" + SUPERSEDED_PRODUCERS[1] + "\" }",
+        encoding="utf-8")
+    try:
+        require_app_shipping_pins(stale_source)
+        raise AssertionError("Mismatched app producer source pin accepted")
+    except ValueError:
+        count += 1
+    shutil.copy2(project / "Sources/XodusPreview/ShippingProducerPins.swift", stale_app_pin)
+    stale_runtime = stale_source / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    runtime_data = json.loads(stale_runtime.read_text(encoding="utf-8"))
+    runtime_data["cliSha256"] = "0" * 64
+    stale_runtime.write_text(json.dumps(runtime_data), encoding="utf-8")
+    try:
+        require_app_shipping_pins(stale_source)
+        raise AssertionError("Mismatched runtime catalogue CLI pin accepted")
+    except ValueError:
+        count += 1
+    inventory_path = root / "inventory.json"
+    producer_inventory = {
+        "producer": {"commit": PRODUCER, "tree": PRODUCER_TREE},
+        "cliSHA256": CLI_SHA256, "helperSHA256": WINDOWS_HELPER_SHA256,
+        "producerManifestSHA256": PRODUCER_MANIFEST_SHA256,
+        "cargoLockSHA256": CARGO_LOCK_SHA256,
+        "sourceDelivery": {"sourceArchive": {
+            "file": SOURCE_ARCHIVE_NAME,
+            "sha256": SOURCE_ARCHIVE_SHA256, "bytes": SOURCE_ARCHIVE_BYTES,
+            "producer": {"commit": PRODUCER, "tree": PRODUCER_TREE},
+        }},
+    }
+    def write_inventory(value):
+        inventory_path.write_text(json.dumps(value, sort_keys=True), encoding="utf-8")
+        inventory_path.chmod(0o600)
+        return hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+
+    validate_producer_inventory(inventory_path, write_inventory(producer_inventory))
+    assert CLI_BYTES == 28_974_448 and WINDOWS_HELPER_BYTES == 20_480
+    producer_pins = swift_producer_pins()
+    assert PRODUCER in producer_pins and PRODUCER_TREE in producer_pins
+    count += 1
+    for field, value in (("cliSHA256", "0" * 64), ("helperSHA256", "0" * 64),
+                         ("producerManifestSHA256", "0" * 64), ("cargoLockSHA256", "0" * 64)):
+        malformed = copy.deepcopy(producer_inventory)
+        malformed[field] = value
+        try:
+            validate_producer_inventory(inventory_path, write_inventory(malformed))
+            raise AssertionError("Mismatched producer inventory pin accepted: " + field)
+        except ValueError:
+            count += 1
+    for field, value in (("file", "wrong-source.tar"), ("sha256", "0" * 64),
+                         ("bytes", SOURCE_ARCHIVE_BYTES + 1)):
+        malformed = copy.deepcopy(producer_inventory)
+        malformed["sourceDelivery"]["sourceArchive"][field] = value
+        try:
+            validate_producer_inventory(inventory_path, write_inventory(malformed))
+            raise AssertionError("Mismatched source archive pin accepted: " + field)
+        except ValueError:
+            count += 1
+    malformed = copy.deepcopy(producer_inventory)
+    malformed["producer"]["tree"] = "0" * 40
+    try:
+        validate_producer_inventory(inventory_path, write_inventory(malformed))
+        raise AssertionError("Wrong producer source accepted")
+    except ValueError:
+        count += 1
+    malformed = copy.deepcopy(producer_inventory)
+    malformed["sourceDelivery"]["sourceArchive"]["producer"]["commit"] = "0" * 40
+    try:
+        validate_producer_inventory(inventory_path, write_inventory(malformed))
+        raise AssertionError("Wrong source archive producer accepted")
+    except ValueError:
+        count += 1
     engine = root / "neutral-engine"
     proof = Path(str(engine) + ".provenance.json")
     data = b"Neutral packaging bytes. Never executed or represented as a real CLI."
@@ -105,11 +258,14 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     helper = macos / "XodusAuthHost"
     for directory in (source / "Sources/XodusPreview", source / "tools", pair.parent, macos):
         directory.mkdir(parents=True, exist_ok=True)
-    project = Path(__file__).resolve().parent.parent
     shutil.copyfile(project / "tools/Info.plist", source / "tools/Info.plist")
     shutil.copyfile(project / "LICENSE", source / "LICENSE")
+    (source / "NOTICE").write_text("Neutral notice fixture", encoding="utf-8")
+    (source / "TRADEMARKS.md").write_text("Neutral trademark fixture", encoding="utf-8")
     shutil.copyfile(source / "tools/Info.plist", app / "Contents/Info.plist")
     shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    shutil.copyfile(source / "NOTICE", resources / "NOTICE.txt")
+    shutil.copyfile(source / "TRADEMARKS.md", resources / "TRADEMARKS.md")
     neutral = struct.pack("<II", 0xFEEDFACF, 0x0100000C) + b"Never executed neutral package bytes."
     for target in (pair, helper, macos / "Xodus"):
         target.write_bytes(neutral)
@@ -150,8 +306,12 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
                                    sort_keys=True) + "\n").encode())
     management = resources / "XodusAppFoundation_XodusManagement.bundle"
     management.mkdir()
-    for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
-        shutil.copyfile(project / "Sources/XodusManagement/Resources" / name, management / name)
+    for name in RUNTIME_RESOURCES:
+        (management / name).parent.mkdir(parents=True, exist_ok=True)
+        if name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
+            shutil.copyfile(schema_source / name, management / name)
+        else:
+            (management / name).write_bytes(b"Neutral allowlisted resource fixture")
     def package_check():
         original = sys.argv
         try:
@@ -197,7 +357,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
             target.write_bytes(original_schema)
     nested = management / "Contents/Resources"
     nested.mkdir(parents=True)
-    for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
+    for name in RUNTIME_RESOURCES:
+        (nested / name).parent.mkdir(parents=True, exist_ok=True)
         (management / name).rename(nested / name)
     package_check()
     final = json.loads((stage / "package-receipt.json").read_bytes())

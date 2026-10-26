@@ -14,6 +14,10 @@ extension FocusedValues {
     }
 }
 
+enum LibraryAccessCopy {
+    static let checking = "Checking access…"
+}
+
 struct LiveLibraryView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
@@ -30,17 +34,22 @@ struct LiveLibraryView: View {
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
     @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
+    @ObservedObject private var nativeMinecraft = NativeMinecraft.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.catalogPresentationActive) private var presentationActive
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @FocusedValue(\.libraryHeroInteraction) private var heroInteraction
     @State private var heroVisible = false
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
-    @AppStorage("Xodus.showUnsupportedGames") private var showsUnsupportedGames = false
-    private var artworkAllowed: Bool { allowsArtworkLoading ?? allowsStartupTasks }
+    @State private var detailFocusReturnID: String?
+    @FocusState private var focusedGameID: String?
+    @AppStorage(LibrarySupportVisibility.preferenceKey)
+    private var showsUnsupportedGames = LibrarySupportVisibility.defaultShowsUnsupported
+    private var countryUnresolved: Bool { session.hasConfirmedSignIn && !session.accountCountryReady }
+    private var artworkAllowed: Bool { !countryUnresolved && (allowsArtworkLoading ?? allowsStartupTasks) }
     private var heroMotionAllowed: Bool { allowsHeroAnimation && selection.localDetail == nil }
     private var filter: LibraryFilter {
-        get { selection.filter }
+        get { countryUnresolved ? .installed : selection.filter }
         nonmutating set { changeScope(filter: newValue, showsUnsupported: showsUnsupportedGames) }
     }
     private var sort: LibrarySort {
@@ -57,12 +66,27 @@ struct LiveLibraryView: View {
     }
     private var continuing: [InstalledGame] { projection.continuing }
     private var localRecords: [LibraryGame] { projection.local }
+    private var countsNativeMinecraft: Bool {
+        showsNativeMinecraft && nativeMinecraft.installation.countsAsInstalled
+    }
     private var showsNativeMinecraft: Bool {
-        [.all, .installed].contains(filter)
-            && (query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query))
+        nativeMinecraft.installation.appears(in: filter, query: query)
+    }
+    private var visibleLocalRecords: [LibraryGame] {
+        LibraryGame.visible(localRecords, query: "", filter: filter, sort: sort).filter(isVisible)
     }
     private var accountCollectionIncomplete: Bool {
         !library.accessIsCurrent || library.snapshot?.isComplete != true
+    }
+    private var showsLoadingPlaceholders: Bool {
+        LibraryLoadingPresentation.showsPlaceholders(
+            library: library, loadingInstalled: installed.loading,
+            hasUsableContent: hasUsableLibraryContent,
+            query: query) && installed.error == nil
+    }
+    private var hasUsableLibraryContent: Bool {
+        !collection.isEmpty || !localRecords.isEmpty
+            || (showsNativeMinecraft && [.ready, .repair].contains(nativeMinecraft.installation.state))
     }
     private var purchaseNotice: String? {
         guard filter == .owned else { return nil }
@@ -78,7 +102,9 @@ struct LiveLibraryView: View {
         LibraryProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
             products: session.products, gamePass: session.gamePassProducts, active: operations.gamePassActive,
             installed: installed.games, permitted: Set(installed.games.map(\.storeId).filter {
+                // REQ-119: unchecked installed games show now; only Play waits for the access check.
                 installed.productAccess.permits($0, account: session.accountHash)
+                    || installed.productAccess.pending($0, account: session.accountHash)
             }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
             filter: filter, sort: sort, showsUnsupported: showsUnsupported)
@@ -88,11 +114,10 @@ struct LiveLibraryView: View {
         let key = projectionKey(filter: nextFilter, showsUnsupported: showsUnsupported)
         let next = LibraryProjection(key: key,
             isVisible: { showsUnsupported || unsupportedIssues($0).isEmpty }, recommendable: recommendable)
-        var targets = Set(next.visible.map { "library-card-\($0.id)" })
-        if [.all, .installed].contains(nextFilter) {
-            targets.formUnion(next.local.filter { showsUnsupported || unsupportedIssues($0).isEmpty }
-                .map { "library-local-\($0.id)" })
-        }
+        let targets = LibraryGame.collectionTargets(qualified: next.visible,
+            local: LibraryGame.visible(next.local, query: "", filter: nextFilter, sort: sort)
+                .filter { showsUnsupported || unsupportedIssues($0).isEmpty },
+            native: nativeMinecraft.installation.appears(in: nextFilter, query: query))
         let target = selection.collectionTarget(remaining: targets)
         selection.beginScopeMeasurement(filter: nextFilter, target: target)
         withTransaction(Transaction(animation: nil)) {
@@ -117,13 +142,10 @@ struct LiveLibraryView: View {
             VStack(alignment: .leading, spacing: 0) {
             if query.isEmpty, !heroGames.isEmpty {
                 heroCarousel
-                if let game = heroGames.first(where: { $0.id == selection.heroID })?.installed {
-                    InstalledPlayError(library: installed, game: game).padding(.horizontal, 56)
-                }
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
-                GameOperationProgressView(operations: operations)
+                GameOperationSlimRow(operations: operations)
                 if OfflineGameCompatibility.unavailable {
                     Text("The offline compatibility catalogue couldn't be read. Live package checks remain available.")
                         .font(.callout).foregroundStyle(.secondary)
@@ -141,18 +163,32 @@ struct LiveLibraryView: View {
                 if let error = installed.discoveryError {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
-                PCGamesView(library: library, installed: installed, operations: operations,
+                if countryUnresolved {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Your installed games stay visible. Confirm your account country to browse the catalogue and Game Pass.")
+                                .font(.callout).foregroundStyle(.secondary)
+                            AccountCountrySettings()
+                        }
+                    } label: {
+                        Label("Account country for browsing", systemImage: "globe")
+                    }
+                    .accessibilityIdentifier("xodus.library.countryNotice")
+                } else {
+                    PCGamesView(library: library, installed: installed, operations: operations,
                             query: query, allowsStartupTasks: allowsStartupTasks, showsCollection: false,
                             browse: browse, recentActivity: recentActivity)
+                }
                 VStack(alignment: .leading, spacing: 22) {
                 VStack(spacing: 0) {
-                LibraryControls(count: visible.count,
+                LibraryControls(count: LibraryGame.displayedCount(
+                                    qualified: visible, local: visibleLocalRecords, native: countsNativeMinecraft),
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
                                 filter: Binding(get: { filter }, set: { filter = $0 }), sort: $selection.sort,
                                 showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: {
                                     changeScope(filter: filter, showsUnsupported: $0)
                                 }),
-                                allowsSorting: true)
+                                allowsSorting: true, allowsAccountFilters: !countryUnresolved)
                     .id("library-games")
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
                         selection.measureHeader($0)
@@ -165,23 +201,28 @@ struct LiveLibraryView: View {
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("xodus.library.purchaseProvenance")
                 }
-                if installed.loading { ProgressView("Loading installed games") }
-                if installed.productAccess.checking { ProgressView("Loading your games").controlSize(.small) }
-                if visible.isEmpty {
+                if installed.loading { OdeLoadingStatus(title: "Loading installed games") }
+                if LibraryLoadingPresentation.showsAccessProgress(
+                    checking: installed.productAccess.checking, hasUsableContent: hasUsableLibraryContent) {
+                    OdeLoadingStatus(title: "Checking game access")
+                }
+                if showsLoadingPlaceholders {
+                    LibraryLoadingPlaceholders()
+                } else if visible.isEmpty && !showsNativeMinecraft && visibleLocalRecords.isEmpty {
                     if [.owned, .gamePass].contains(filter), accountCollectionIncomplete {
                         ContentUnavailableView {
                             Label(filter == .owned ? "Purchased library unavailable" : "Game Pass library unavailable",
                                   systemImage: "books.vertical")
                         } description: {
                             Text(filter == .owned
-                                 ? "Ode to X hasn't loaded a complete current PC collection. This doesn't mean you own no games."
-                                 : "Ode to X hasn't loaded a complete current PC collection. Public catalog listings alone don't verify your account's subscription access.")
+                                 ? "\(AppBrand.displayName) hasn't loaded a complete current PC collection. This doesn't mean you own no games."
+                                 : "\(AppBrand.displayName) hasn't loaded a complete current PC collection. Public catalog listings alone don't verify your account's subscription access.")
                         }
                     } else if hiddenUnsupportedCount > 0, !showsUnsupportedGames {
                         ContentUnavailableView {
                             Label("No games verified yet", systemImage: "gamecontroller")
                         } description: {
-                            Text("Ode to X 0.1 installs MSIXVC games. Known anti-cheat is not supported. The supported filter shows verified classifications; other games may be untested on Mac.")
+                            Text("Some games have known package or anti-cheat blockers. Open game details for compatibility information, or show unsupported games.")
                         } actions: {
                             Button("Show unsupported games") { changeScope(filter: filter, showsUnsupported: true) }
                         }
@@ -217,20 +258,21 @@ struct LiveLibraryView: View {
                 if let error = xboxStats.error {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
-                if [.all, .installed].contains(filter), !localRecords.filter(isVisible).isEmpty {
+                if !visibleLocalRecords.isEmpty || showsNativeMinecraft {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Installed on this Mac").font(.title2.weight(.semibold))
+                        Text("Installed games (\(LibraryGame.installedCount(local: visibleLocalRecords, native: countsNativeMinecraft)))")
+                            .font(.title2.weight(.semibold))
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
-                            ForEach(localRecords.filter(isVisible)) { game in card(game).id("library-local-\(game.id)") }
+                            ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
+                            if showsNativeMinecraft {
+                                NativeMinecraftCard {
+                                    CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
+                                        status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
+                                }.id("library-native-minecraft")
+                            }
                         }
                         .scrollTargetLayout()
                     }
-                }
-                if showsNativeMinecraft {
-                    NativeMinecraftCard {
-                        CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
-                            status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
-                    }.frame(maxWidth: 220)
                 }
                 }
                 }
@@ -257,29 +299,46 @@ struct LiveLibraryView: View {
             selection.measureAncestor("root", frame: $0)
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
-        .sheet(item: $selection.localDetail) { entry in
+        .gameDetailSheet(item: $selection.localDetail, operations: operations, allowed: allowsStartupTasks,
+                         accountHash: session.accountHash, onDismiss: {
+            restoreDetailFocus()
+        }) { entry, reviewInstall in
             if let product = entry.product {
                 LiveProductView(product: product, library: library, installedLibrary: installed,
                     operations: operations, installationID: entry.game.id,
-                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed)
+                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed,
+                    reviewInstall: reviewInstall)
             } else {
                 LocalInstalledGameView(game: entry.game, installed: installed, operations: operations)
             }
+        }
+        .onChange(of: session.selectedProduct) { previous, current in
+            guard previous != nil, current == nil else { return }
+            restoreDetailFocus()
         }
         .onDisappear {
             selection.heroHovered = false
             selection.heroPlaying = false
             selection.localDetail = nil
         }
-        .task(id: allowsStartupTasks) { if allowsStartupTasks { await library.loadOnAppear() } }
+        .task(id: "\(allowsStartupTasks):\(countryUnresolved)") {
+            if allowsStartupTasks && !countryUnresolved { await library.loadOnAppear() }
+        }
         .task(id: allowsStartupTasks) {
             guard allowsStartupTasks else { return }
             while !Task.isCancelled {
                 await macEvidence.refresh()
-                await installed.discoverNativeInstallations()
-                await NativeMinecraft.shared.refresh()
                 if NSApp.isActive { await installed.refreshNativeInstallationStatuses() }
+                await NativeMinecraft.shared.refresh()
                 do { try await Task.sleep(for: .seconds(5)) }
+                catch { return }
+            }
+        }
+        .task(id: allowsStartupTasks) {
+            guard allowsStartupTasks else { return }
+            while !Task.isCancelled {
+                await installed.discoverNativeInstallations()
+                do { try await Task.sleep(for: .seconds(30)) }
                 catch { return }
             }
         }
@@ -370,45 +429,44 @@ struct LiveLibraryView: View {
             LibraryLandscapeView(references: art.images[id]?.cover.map { [$0] } ?? (game.cover.map { [$0] } ?? []),
                                  installed: game.installed, allowsLoading: artworkAllowed)
         } information: {
-            Text(game.pc?.acquisitionKind == .subscription ? "Included with your subscription"
-                 : game.pc != nil ? "In your library" : "Installed on this Mac")
-                .font(.callout.weight(.medium))
-            information(id: id)
+            GameHeroAccess(facts: game.facts)
+            information(id: id, showsAccessBadges: false)
             if let details = art.images[id]?.detail { GameHeroMetadata(details: details) }
-            LibraryGameSizeView(installed: game.installed, downloadBytes: art.images[id]?.facts.downloadBytes,
-                                productID: id,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: art.images[id]?.facts.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                packageFormat: art.images[id]?.facts.packageFormat,
-                                allowsMeasurement: artworkAllowed)
         } actions: {
             if !unsupportedIssues(game).isEmpty {
                 LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true)
                 Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
             } else if let match = game.installed {
                 InstalledPlayButton(library: installed, operations: operations, game: match,
-                                    usesGlass: true, heroStyle: true)
+                                    displayTitle: game.title, usesGlass: true, heroStyle: true, showsDiagnostics: false)
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else {
-                if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
+                let install = (game.pc ?? game.product.map(PCGame.init(product:))).map { pc in
                     GameInstallAction(game: pc, operations: operations,
                         enabled: allowsStartupTasks && DiscoverBrowse.canReviewInstall(
-                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent,
+                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
                             gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: true))
+                            pcCandidate: true),
+                        showsDiagnostics: false,
+                        disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
+                            : "Wait for \(AppBrand.displayName) to finish starting.")
                 }
-                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
+                let blockedReason = install?.heroReplacementReason
+                if let install, blockedReason == nil { install }
+                Button(blockedReason == nil ? "View game" : "View Details") { open(game) }
+                    .modifier(LibraryActionStyle(primary: install != nil && blockedReason != nil))
+                if let blockedReason {
+                    Label(blockedReason, systemImage: "info.circle")
+                        .font(.callout).lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.library.hero.reason")
+                }
                 if operations.precheckingProductID == game.id {
                     ProgressView().controlSize(.small).help("Checking whether this game runs on Mac")
                 }
             }
         }
-    }
-
-    private func unsupportedReason(_ game: LibraryGame) -> String? {
-        let issues = unsupportedIssues(game)
-        return issues.isEmpty ? nil : issues.map(\.detail).joined(separator: " ")
     }
 
     private func unsupportedIssues(_ game: LibraryGame) -> [LibraryCompatibilityIssue] {
@@ -449,9 +507,7 @@ struct LiveLibraryView: View {
     private var continuePlaying: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Continue Playing").font(.title2.weight(.semibold))
-                Spacer()
-                Button("See All") {
+                Button {
                     selection.beginScopeMeasurement(filter: .installed, target: "library-games")
                     withTransaction(Transaction(animation: nil)) {
                         selection.clearScopeExtent()
@@ -459,8 +515,20 @@ struct LiveLibraryView: View {
                         selection.filter = .installed
                         sort = .recentlyPlayed
                     }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Continue Playing (\(continuing.count))")
+                        Image(systemName: "chevron.right").font(.headline)
+                    }
+                    .font(.title2.weight(.semibold))
+                    .contentShape(Rectangle())
                 }
-                    .accessibilityLabel("Show installed games by last played")
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("xodus.library.continuePlaying.showAll")
+                .accessibilityLabel("Continue Playing (\(continuing.count))")
+                .accessibilityHint("Show installed games by last played")
+                .help("Show installed games by last played")
+                Spacer()
                 Button("Show next recently played game", systemImage: "chevron.right") {
                     let index = continuing.firstIndex { $0.id == selection.recentGameID } ?? 0
                     guard continuing.indices.contains(index + 1) else { return }
@@ -473,32 +541,43 @@ struct LiveLibraryView: View {
                 .help("Scroll to the next recently played game")
             }
 
-            ScrollView(.horizontal) {
+            ContinuePlayingScrollView {
                 LazyHStack(alignment: .top, spacing: 20) {
                     ForEach(continuing) { game in
                         VStack(alignment: .leading, spacing: 10) {
-                            LibraryLandscapeView(references: art.images[game.storeId]?.landscape ?? [],
-                                                 installed: game, allowsLoading: artworkAllowed)
-                                .frame(width: 260, height: 110).clipped()
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(alignment: .bottomTrailing) {
-                                    InstalledPlayButton(library: installed, operations: operations, game: game,
-                                                        usesGlass: true, prominent: false)
-                                        .padding(12)
-                                }
+                            Button {
+                                open(recentGame(game), focusID: "recent-\(game.id)")
+                            } label: {
+                                LibraryLandscapeView(references: art.images[game.storeId]?.landscape ?? [],
+                                                     installed: game, allowsLoading: artworkAllowed)
+                                    .frame(width: 260, height: 110).clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .focusable()
+                            .focused($focusedGameID, equals: "recent-\(game.id)")
+                            .focusEffectDisabled()
+                            .onKeyPress(.return) {
+                                open(recentGame(game), focusID: "recent-\(game.id)")
+                                return .handled
+                            }
+                            .modifier(SearchResultFocusRing(focused: focusedGameID == "recent-\(game.id)"))
+                            .accessibilityLabel("View \(game.title)")
+                            .accessibilityHint("Open game details to play")
+                            .contextMenu {
+                                Button("View details") { open(recentGame(game), focusID: "recent-\(game.id)") }
+                            }
                             Text(game.title).font(.headline).lineLimit(1)
+                            if let facts = projection.byID[game.storeId]?.facts { AccessBadges(facts: facts) }
                             if let date = game.lastPlayedAt {
                                 Text("Last played \(Text(date, style: .relative)) ago")
                                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                             }
-                            InstalledPlayError(library: installed, game: game)
                         }.frame(width: 260, alignment: .leading).id(game.id)
                     }
                 }
                 .scrollTargetLayout()
             }
-            .fixedSize(horizontal: false, vertical: true)
-            .scrollIndicators(.hidden).scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $selection.recentGameID, anchor: .leading)
             .onChange(of: continuing.map(\.id), initial: true) { _, ids in
                 if selection.recentGameID.map({ !ids.contains($0) }) ?? true {
@@ -514,11 +593,22 @@ struct LiveLibraryView: View {
         }
     }
 
-    private func open(_ game: LibraryGame) {
+    private func recentGame(_ game: InstalledGame) -> LibraryGame {
+        (collection + localRecords).first { $0.installed?.id == game.id }
+            ?? LibraryGame(id: game.id.uuidString, title: game.title, installed: game,
+                           pc: nil, product: nil, owned: false, gamePass: false, accessIsCurrent: false)
+    }
+
+    private func open(_ game: LibraryGame, focusID: String? = nil) {
+        detailFocusReturnID = nil
+        focusedGameID = nil
         do {
             let productID = game.installed?.storeId ?? game.id
             guard PCGamesClient.validProductID(productID) else {
-                if let local = game.installed { selection.localDetail = InstalledGameDetailSelection(game: local, product: nil) }
+                if let local = game.installed {
+                    detailFocusReturnID = focusID ?? game.id
+                    selection.localDetail = InstalledGameDetailSelection(game: local, product: nil)
+                }
                 else { session.errorMessage = "Game details couldn't be opened." }
                 return
             }
@@ -528,82 +618,104 @@ struct LiveLibraryView: View {
                                     source: game.owned ? "AccountPCLibrary:identityOnly" : "LocalInstalledRegistry:identityOnly",
                                     pcCandidate: false)
             if let local = game.installed {
+                detailFocusReturnID = focusID ?? game.id
                 selection.localDetail = InstalledGameDetailSelection(game: local, product: product)
-            } else { session.selectedProduct = product }
+            } else {
+                detailFocusReturnID = focusID ?? game.id
+                session.selectedProduct = product
+            }
         } catch { session.errorMessage = "Game details couldn't be opened. Your games haven't changed." }
     }
 
-    private func information(id: String, compact: Bool = false) -> some View {
+    private func restoreDetailFocus() {
+        guard let detailFocusReturnID else { return }
+        let available = Set((visible + visibleLocalRecords).map(\.id) + continuing.map { "recent-\($0.id)" })
+        focusedGameID = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
+                                                                  available: available)
+        self.detailFocusReturnID = nil
+    }
+
+    private func information(id: String, compact: Bool = false, showsAccessBadges: Bool = true) -> some View {
         let metadata = art.images[id]?.facts
         let xbox = xboxStats.cache?.games[id]
         let facts = metadata?.genres.isEmpty == false ? metadata :
             xbox.map { LibraryCatalogFacts(genres: $0.genres, capabilities: metadata?.capabilities ?? []) } ?? metadata
         let game = projection.byID[id]
-        return LibraryGameInformation(access: game.flatMap(LibraryAccess.init),
-                                      gamePass: game?.gamePass == true,
+        return LibraryGameInformation(gameFacts: game?.facts ?? GameFacts(),
+                                       showsAccessBadges: showsAccessBadges,
                                       facts: facts, xbox: xbox, compact: compact)
     }
 
     private func card(_ game: LibraryGame) -> some View {
         let artworkID = game.installed?.storeId ?? game.id
-        return LibraryCover(title: game.title,
+        return GameCard(title: game.title, gameFacts: game.facts,
+                     compatibilityIssues: unsupportedIssues(game),
+                     showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(artworkID),
                      openLabel: "View",
-                     alwaysShowsActions: true,
+                     focusReturn: ($focusedGameID, game.id),
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
         } status: {
-            if !unsupportedIssues(game).isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues(game))
-            }
-            if let evidence = OfflineGameCompatibility.publisherEvidence(for: artworkID) {
-                Label(evidence.technologies.joined(separator: ", "), systemImage: "shield")
-                    .accessibilityLabel("Anti-cheat: \(evidence.technologies.joined(separator: ", "))")
-            }
-            LibraryGameSizeView(installed: game.installed,
-                                downloadBytes: art.images[artworkID]?.facts.downloadBytes,
-                                productID: artworkID,
-                                pcPackageListed: LibraryPCPackageEvidence.listed(
-                                    observed: art.images[artworkID]?.facts.pcPackageListed, candidate: game.product?.pcCatalogCandidate),
-                                packageFormat: game.installed?.packageType?.label
-                                    ?? art.images[artworkID]?.facts.packageFormat,
-                                allowsMeasurement: artworkAllowed)
-            if let match = game.installed {
-                InstalledPlayError(library: installed, game: match)
-            }
-        } actions: {
-            LibraryGlassCluster {
-                if let match = game.installed {
-                    if unsupportedIssues(game).isEmpty {
-                        InstalledPlayButton(library: installed, operations: operations, game: match,
-                                            usesGlass: true, prominent: false)
-                    }
-                    InstalledGameActions(library: installed, operations: operations, game: match, usesGlass: true,
-                                         details: { open(game) })
-                } else if unsupportedReason(game) != nil {
-                    EmptyView()
-                } else if let pc = game.pc {
-                    GameInstallAction(game: pc, operations: operations,
-                        enabled: allowsStartupTasks && library.accessIsCurrent, primary: false)
-                } else if game.gamePass, let product = game.product {
-                    GameInstallAction(game: PCGame(product: product), operations: operations,
-                        enabled: allowsStartupTasks &&
-                        DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
-                            gamePass: true, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: product.pcCatalogCandidate), primary: false)
-                } else {
-                    GameInstallAction(game: PCGame(id: game.id, title: game.title, artwork: game.cover),
-                        operations: operations, enabled: allowsStartupTasks && library.accessIsCurrent,
-                        primary: false)
-                }
+            if game.installed != nil, installed.productAccess.pending(artworkID, account: session.accountHash),
+               !installed.productAccess.permits(artworkID, account: session.accountHash) {
+                Label(LibraryAccessCopy.checking, systemImage: "hourglass")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("xodus.library.card.checkingAccess")
+            } else {
+                GameCardDownloadStatus(operations: operations, productID: artworkID)
             }
         }
         .contextMenu {
+            Button("View details") { open(game) }
             if let match = game.installed {
-                InstalledEngineOverride(library: installed, game: match)
                 InstalledGameManagement(library: installed, operations: operations, game: match)
                 Button("Show in Finder") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: match.folder) }
-            } else { Button("View game") { open(game) } }
+            }
+        }
+    }
+}
+
+/// QA U3: on Library and Discover home, a running operation is one slim line under the toolbar's
+/// download indicator. Full progress and the single Stop control live in Downloads and the game's page.
+struct GameOperationSlimRow: View {
+    @ObservedObject var operations: GameOperationsController
+    static let maximumHeight: CGFloat = 28
+
+    private var line: (title: String, detail: String, fraction: Double?)? {
+        if let indicator = operations.downloadIndicator {
+            return (indicator.title, indicator.summary, indicator.fraction)
+        }
+        if operations.installingDirectly { return ("Preparing installation…", "", nil) }
+        return nil
+    }
+
+    var body: some View {
+        if let line {
+            HStack(spacing: 10) {
+                if let fraction = line.fraction {
+                    ProgressView(value: fraction).frame(width: 90)
+                } else {
+                    ProgressView().controlSize(.mini)
+                }
+                Text(line.title).fontWeight(.medium).lineLimit(1)
+                if !line.detail.isEmpty {
+                    Text(line.detail).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+            .font(.callout)
+            .frame(maxHeight: Self.maximumHeight)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Download progress for \(line.title)")
+            .accessibilityValue(line.detail)
+            .accessibilityIdentifier("xodus.operation.slim")
+        } else if let error = operations.error {
+            Label(error, systemImage: "exclamationmark.circle")
+                .font(.callout).foregroundStyle(.secondary).lineLimit(1)
+                .help(error)
+                .frame(maxHeight: Self.maximumHeight)
+                .accessibilityIdentifier("xodus.operation.slim.error")
         }
     }
 }

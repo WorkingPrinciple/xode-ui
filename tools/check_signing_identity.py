@@ -10,7 +10,8 @@ import sys
 import tempfile
 from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE
 from signing_identity import (COMPARISON_RESULT, IDENTIFIERS, compare, preflight, reuse_cli, sign,
-                              PACKAGE_RECEIPT_LIMIT, package_receipt, verify_designated_requirement)
+                              PACKAGE_RECEIPT_LIMIT, package_receipt, verify_developer_id_bundle,
+                              verify_developer_id_component, verify_designated_requirement)
 
 fingerprint = "A" * 40
 calls = []
@@ -89,6 +90,77 @@ rejected(lambda: sign("/neutral/distribution", "cli", fingerprint,
                       developer_id=True))
 
 with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
+    signed_metadata = (
+        "Identifier=neutral.component\n"
+        "Format=Mach-O thin (arm64)\n"
+        "CodeDirectory v=20500 size=123 flags=0x10000(runtime) hashes=1+2 location=embedded\n"
+        "CDHash=0123456789abcdef0123456789abcdef01234567\n"
+        "TeamIdentifier=M62Z4M5EUY\n"
+        "Timestamp=Oct 25, 2026 at 12:00:00 PM\n"
+        "Authority=Developer ID Application: Neutral (M62Z4M5EUY)\n"
+        "Authority=Developer ID Certification Authority\n"
+        "Authority=Apple Root CA\n"
+    )
+
+    neutral_certificate = b"Neutral public certificate"
+    component_identity = hashlib.sha1(neutral_certificate).hexdigest().upper()
+
+    def signed_component_command(metadata=signed_metadata):
+        def invoke(arguments):
+            extract_option = next((argument for argument in arguments
+                                   if argument.startswith("--extract-certificates=")), None)
+            if arguments[0] == "/usr/bin/codesign" and extract_option:
+                assert "--display" in arguments
+                prefix = Path(extract_option.split("=", 1)[1])
+                Path(str(prefix) + "0").write_bytes(neutral_certificate)
+                return ""
+            if arguments[0] == "/usr/bin/codesign" and "--display" in arguments:
+                return metadata
+            return ""
+        return invoke
+
+    neutral_code = Path(temporary).resolve() / "neutral-code"
+    neutral_code.write_bytes(b"Neutral signed Mach-O test fixture")
+    assert verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command())["hardenedRuntime"]
+    assert verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command())["cdhash"] == \
+        "0123456789abcdef0123456789abcdef01234567"
+    no_runtime = signed_metadata.replace("flags=0x10000(runtime)", "flags=0x0")
+    assert verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command(metadata=no_runtime),
+        hardened_runtime=False)["secureTimestamp"]
+    rejected(lambda: verify_developer_id_component(
+        neutral_code, "B" * 40, run=signed_component_command()))
+    rejected(lambda: verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command(metadata=signed_metadata.replace(
+            "Timestamp=Oct 25, 2026 at 12:00:00 PM", "Timestamp=none"))))
+    rejected(lambda: verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command(metadata=signed_metadata.replace(
+            "flags=0x10000(runtime)", "flags=0x0"))))
+    rejected(lambda: verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command(metadata=signed_metadata.replace(
+            "CDHash=0123456789abcdef0123456789abcdef01234567\n", ""))))
+    rejected(lambda: verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command(metadata=signed_metadata.replace(
+            "CDHash=0123456789abcdef0123456789abcdef01234567",
+            "CDHash=invalid"))))
+
+    app = Path(temporary).resolve() / "Neutral.app"
+    for relative in ("Contents/MacOS/Xodus", "Contents/MacOS/XodusAuthHost",
+                     "Contents/Resources/XodusEngine/xodus-cli"):
+        target = app / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"\xcf\xfa\xed\xfe" + b"Neutral signed Mach-O test fixture")
+    signature_inventory = verify_developer_id_bundle(
+        app, component_identity, run=signed_component_command())
+    assert signature_inventory["app"]["cdhash"] == \
+        "0123456789abcdef0123456789abcdef01234567"
+    assert {"app", "Contents/MacOS/Xodus", "Contents/MacOS/XodusAuthHost",
+            "Contents/Resources/XodusEngine/xodus-cli"} == set(signature_inventory)
+    (app / "Contents/Resources/Linked").symlink_to("missing")
+    rejected(lambda: verify_developer_id_bundle(app, component_identity, run=signed_component_command()))
+
     first, second = Path(temporary).resolve() / "first", Path(temporary).resolve() / "second"
     first.write_bytes(b"Same neutral payload; simulated signature A. Never executed.")
     second.write_bytes(b"Same neutral payload; simulated signature B. Never executed.")

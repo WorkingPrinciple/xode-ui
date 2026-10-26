@@ -5,6 +5,7 @@ import XodusManagement
 
 @MainActor
 final class InstalledProductAccess: ObservableObject {
+    private var catalogScope: String?
     struct Fact {
         let value: OdeProductAccess
         let checkedAt: Date
@@ -28,12 +29,69 @@ final class InstalledProductAccess: ObservableObject {
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
 
+    /// REQ-119: not checked yet for this account (no result and no error); the tile shows, Play waits.
+    func pending(_ productID: String, account: String?) -> Bool {
+        guard let account, accountHash == nil || accountHash == account else { return false }
+        return facts[productID] == nil && errors[productID] == nil
+    }
+
     func permits(_ productID: String, account: String?, now: Date = Date()) -> Bool {
         guard let account, accountHash == account, let fact = facts[productID],
               now.timeIntervalSince(fact.checkedAt) >= 0,
               now.timeIntervalSince(fact.checkedAt) < 300 else { return false }
         return fact.value.access == .permitted && fact.value.reason == nil
             && (fact.value.expiresAt == nil || fact.expiresAt.map { $0 > now } == true)
+    }
+
+    func permitsReview(_ productID: String, account: String?, pcCandidate: Bool, now: Date = Date()) -> Bool {
+        pcCandidate && !checking && errors[productID] == nil && permits(productID, account: account, now: now)
+    }
+
+    /// QA A1: the one source for settled "not in this account" and service-failure access copy, used by
+    /// the game page, its install control and any tile or tooltip. No store or purchase links (REQ-22/26/61).
+    static let notIncludedTitle = "Not included with your account"
+    static let notIncludedDetail = "This game isn't in your Microsoft account's games or your PC Game Pass plan. If you own it, check that you're signed in with the right account."
+    static var notIncludedNotice: String { "\(notIncludedTitle). \(notIncludedDetail)" }
+    static let unavailableNotice = "Couldn't confirm access right now. Try again."
+    static let tryAgainTitle = "Try Again"
+
+    /// True for a current, error-free check that settled without this game: the account response didn't
+    /// list it, or its answer is unknown while the complete public PC Game Pass list also excludes it.
+    /// Transport errors never qualify.
+    func notIncluded(_ productID: String, account: String?, publicGamePassExcludes: Bool,
+                     now: Date = Date()) -> Bool {
+        guard let account, accountHash == account, !checking,
+              errors[productID] == nil, let fact = facts[productID],
+              !permits(productID, account: account, now: now),
+              now.timeIntervalSince(fact.checkedAt) >= 0, now.timeIntervalSince(fact.checkedAt) < 300,
+              fact.expiresAt.map({ $0 <= now }) != true else { return false }
+        return fact.value.reason == .productNotListed || (fact.value.reason == nil && publicGamePassExcludes)
+    }
+
+    func reviewNotice(for productID: String, account: String?, publicGamePassExcludes: Bool = false,
+                      now: Date = Date()) -> String? {
+        if notIncluded(productID, account: account, publicGamePassExcludes: publicGamePassExcludes, now: now) {
+            return Self.notIncludedNotice
+        }
+        guard let account, accountHash == account else {
+            return "Access for this account hasn't been checked for this game."
+        }
+        if checking { return "Checking access for this game." }
+        if errors[productID] != nil { return Self.unavailableNotice }
+        if permits(productID, account: account, now: now) { return nil }
+        guard let fact = facts[productID] else { return "Access for this game hasn't been checked." }
+        if now.timeIntervalSince(fact.checkedAt) < 0 || now.timeIntervalSince(fact.checkedAt) >= 300
+            || fact.expiresAt.map({ $0 <= now }) == true {
+            return "The access check for this game has expired. Check access again."
+        }
+        switch fact.value.reason {
+        case .providerDenied: return "The account provider didn't grant access to this game."
+        case .productNotListed: return Self.notIncludedNotice
+        case .validityUnavailable: return "The account provider couldn't confirm a valid access period for this game."
+        case .grantExpired: return "The access grant returned for this game has expired."
+        case .grantNotStarted: return "The access grant returned for this game isn't active yet."
+        case nil: return "Access for this game hasn't been confirmed."
+        }
     }
 
     func retire() {
@@ -50,18 +108,30 @@ final class InstalledProductAccess: ObservableObject {
         checking = false
     }
 
-    func refresh(session: LiveSession, installedIDs: [String], now: Date = Date()) async {
+    func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false,
+                 selectedProductID: String? = nil) async {
+        let scope = session.accountCatalogScope
+        if catalogScope != scope {
+            retire()
+            catalogScope = scope
+        }
+        guard session.accountCountryReady else { return }
         let account = session.hasConfirmedSignIn ? session.accountHash : nil
         guard account == nil || session.nativeLifecycleConfiguration != nil else { return }
-        await refresh(account: account, installedIDs: installedIDs, now: now) { id in
-            for _ in 0..<100 where session.accountBusy {
+        await refresh(account: account, installedIDs: installedIDs, now: now, force: force,
+                      selectedProductID: selectedProductID) { id in
+            for _ in 0..<100 where session.accountBusy || session.yieldsToLibraryRead {
                 try await Task.sleep(for: .milliseconds(100))
             }
-            return try await session.readUnifiedAccount(.license, productID: id)
+            guard session.accountCatalogScope == scope else { throw CancellationError() }
+            let result = try await session.readUnifiedAccount(.license, productID: id)
+            guard session.accountCatalogScope == scope else { throw CancellationError() }
+            return result
         }
     }
 
-    func refresh(account: String?, installedIDs: [String], now: Date = Date(),
+    func refresh(account: String?, installedIDs: [String], now: Date = Date(), force: Bool = false,
+                 selectedProductID: String? = nil,
                  read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
         if account != accountHash {
             let old = operation
@@ -85,8 +155,15 @@ final class InstalledProductAccess: ObservableObject {
             errors = errors.filter { installed.contains($0.key) }
         }
         attempts = attempts.filter { installed.contains($0.key) }
-        if let operation { await operation.value; return }
-        let ids = installed.sorted().filter { id in
+        // A request made during a scan (e.g. a just-installed title) is re-evaluated afterwards rather than dropped.
+        let requestEpoch = generation
+        while let operation {
+            await operation.value
+            guard !Task.isCancelled, generation == requestEpoch, accountHash == account else { return }
+        }
+        let ids = installed.sorted { (attempts[$0] == nil ? 0 : 1, $0) < (attempts[$1] == nil ? 0 : 1, $1) }.filter { id in
+            if let selectedProductID, id != selectedProductID { return false }
+            if force { return true }
             guard let last = attempts[id] else { return true }
             return now.timeIntervalSince(last) >= 60
                 && (errors[id] != nil || !permits(id, account: account, now: now)
@@ -128,8 +205,7 @@ final class InstalledProductAccess: ObservableObject {
                     errors[id] = LiveSession.describe(error)
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
-                do { try await Task.sleep(for: .milliseconds(100)) }
-                catch { return }
+                await Task.yield()
             }
         }
         await operation?.value

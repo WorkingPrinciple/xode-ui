@@ -65,10 +65,8 @@ public enum EngineRoutingOutcome: Equatable, Sendable {
 }
 
 public enum EngineRouting {
-    /// Ordered fallback preference used only when neither a per-game override nor a
-    /// configured default applies. CrossOver is the first-release runner; the others
-    /// remain Experimental and are tried in descending preference.
-    public static let fallbackOrder: [RuntimeProviderKind] = [.crossover, .gptk4, .gptk3, .standaloneWine]
+    /// Unspecified routing never substitutes a different provider for Calimocho.
+    public static let fallbackOrder: [RuntimeProviderKind] = [.calimocho]
 
     /// Pure routing decision. Precedence:
     /// 1. A per-game override must be installed, else the launch fails explicitly

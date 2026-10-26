@@ -1,0 +1,119 @@
+[
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-query-source-failure",
+    "ok": true,
+    "data": {
+      "corpus": "publicMicrosoftStoreSearch",
+      "completeness": "partial",
+      "source": "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults",
+      "checkedAt": "2026-10-03T12:00:00Z",
+      "freshness": "live",
+      "query": "Fixture Harbor",
+      "products": [
+        {
+          "productID": "FIXTURE00001",
+          "title": "Fixture Harbor",
+          "market": "US",
+          "language": "en-US",
+          "source": "fixture",
+          "checkedAt": "2026-10-03T12:00:00Z",
+          "freshness": "cached",
+          "editions": [
+            {
+              "productID": "FIXTURE00001",
+              "editionID": "fixture-edition",
+              "entitlement": {
+                "kind": "unknown",
+                "source": "notQueried",
+                "checkedAt": null
+              },
+              "installability": {
+                "kind": "unknown",
+                "reason": "Package authorization not established."
+              },
+              "compatibility": {
+                "kind": "unknown",
+                "source": "notCertified",
+                "checkedAt": null
+              },
+              "installation": {
+                "kind": "notInstalled"
+              },
+              "inventory": {
+                "completeness": "unknown",
+                "checkedAt": null,
+                "lastCompleteAt": null,
+                "source": "notQueried",
+                "reason": "No complete entitlement source."
+              }
+            }
+          ],
+          "pcCatalogCandidate": true,
+          "artwork": [],
+          "artworkStatus": "notQueried",
+          "resolvedLanguage": "en"
+        }
+      ],
+      "failures": [
+        {
+          "productID": "FIXTURE00002",
+          "error": {
+            "code": "NETWORK_UNAVAILABLE",
+            "message": "Sanitized fixture lookup failure.",
+            "retryable": true
+          }
+        }
+      ],
+      "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2266623666313762313664626463306135653861626361333438366234323261633963363461303332383634636530653762336561613465366635333963663334222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f70616765732f736561726368526573756c74733f6d61726b65743d5553266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466978747572652b486172626f72266d65646961547970653d67616d6573222c226f6666736574223a382c227265766973696f6e223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161227d",
+      "sourceFailure": {
+        "code": "PACKAGE_UNAVAILABLE",
+        "message": "Some Microsoft Store results are temporarily unavailable; showing xbox.com source candidates only.",
+        "retryable": false
+      }
+    }
+  },
+  {
+    "kind": "result",
+    "protocol": {
+      "major": 1,
+      "minor": 0
+    },
+    "requestID": "fixture-query-source-failure-all-failed",
+    "ok": false,
+    "error": {
+      "code": "PACKAGE_UNAVAILABLE",
+      "message": "No PC metadata resolved.",
+      "retryable": true,
+      "details": {
+        "corpus": "publicMicrosoftStoreSearch",
+        "completeness": "partial",
+        "source": "XboxComSearch+MicrosoftStoreEdge:v9.0/searchResults",
+        "checkedAt": "2026-10-03T12:00:00Z",
+        "freshness": "live",
+        "query": "Fixture Harbor",
+        "products": [],
+        "failures": [
+          {
+            "productID": "FIXTURE00002",
+            "error": {
+              "code": "NETWORK_UNAVAILABLE",
+              "message": "Sanitized fixture lookup failure.",
+              "retryable": true
+            }
+          }
+        ],
+        "nextCursor": "q1-7b2276657273696f6e223a312c2273636f7065223a2266623666313762313664626463306135653861626361333438366234323261633963363461303332383634636530653762336561613465366635333963663334222c2270616765223a2268747470733a2f2f73746f72656564676566642e6473782e6d702e6d6963726f736f66742e636f6d2f76392e302f70616765732f736561726368526573756c74733f6d61726b65743d5553266c6f63616c653d656e2d55532664657669636546616d696c793d77696e646f77732e6465736b746f702671756572793d466978747572652b486172626f72266d65646961547970653d67616d6573222c226f6666736574223a382c227265766973696f6e223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161227d",
+        "sourceFailure": {
+          "code": "PACKAGE_UNAVAILABLE",
+          "message": "Some Microsoft Store results are temporarily unavailable; showing xbox.com source candidates only.",
+          "retryable": false
+        }
+      }
+    }
+  }
+]

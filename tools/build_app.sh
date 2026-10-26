@@ -4,7 +4,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 if [ "$#" -lt 9 ]; then
-    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path] [--python-runtime-archive path]' >&2
+    printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path] [--python-runtime-archive path] [--producer-notices path --producer-notices-sha256 approvedSHA256] [--engine-notice path]' >&2
     exit 2
 fi
 engine=$1
@@ -22,6 +22,9 @@ signed_cli=
 credential_broker=
 launch_association_capsule=
 python_runtime_archive=
+producer_notices=
+producer_notices_sha256=
+engine_notice=
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --signing-identity)
@@ -60,9 +63,34 @@ while [ "$#" -gt 0 ]; do
             test -z "$python_runtime_archive"
             python_runtime_archive=$2
             shift 2 ;;
+        --producer-notices)
+            test "$#" -ge 2
+            test -z "$producer_notices"
+            producer_notices=$2
+            shift 2 ;;
+        --producer-notices-sha256)
+            test "$#" -ge 2
+            test -z "$producer_notices_sha256"
+            producer_notices_sha256=$2
+            shift 2 ;;
+        --engine-notice)
+            test "$#" -ge 2
+            test -z "$engine_notice"
+            engine_notice=$2
+            shift 2 ;;
         *) printf '%s\n' 'Unknown signing option; no fallback.' >&2; exit 2 ;;
     esac
 done
+if [ -n "$engine_notice" ]; then
+    engine_notice=$(python3 - "$engine_notice" <<'PY'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+if not path.is_absolute():
+    path = pathlib.Path.cwd() / path
+print(path.resolve(strict=True))
+PY
+)
+fi
 if [ "$local_ad_hoc" = true ]; then
     test -z "$signer"
     set -- --local-ad-hoc
@@ -158,7 +186,9 @@ XODUS_SHIPPING=1 swift build --jobs 1 -c release --product XodusPreview
 cp "$bin/XodusPreview" "$app/Contents/MacOS/Xodus"
 cp tools/Info.plist "$app/Contents/Info.plist"
 cp LICENSE "$app/Contents/Resources/LICENSE.txt"
-ditto "$bin/XodusAppFoundation_XodusManagement.bundle" \
+cp NOTICE "$app/Contents/Resources/NOTICE.txt"
+cp TRADEMARKS.md "$app/Contents/Resources/TRADEMARKS.md"
+python3 tools/package_resources.py "$bin/XodusAppFoundation_XodusManagement.bundle" \
     "$app/Contents/Resources/XodusAppFoundation_XodusManagement.bundle"
 python3 - "$stage/paired-inputs.json" "$app/Contents/Resources/XodusAuthHost.json" <<'PY'
 import json, pathlib, sys
@@ -178,6 +208,29 @@ if [ -n "$python_runtime_archive" ]; then
     python3 tools/python_runtime.py "$python_runtime_archive" \
         "$app/Contents/Resources/XodusPython" "$stage/paired-inputs.json" "$@"
 fi
+if [ -n "$engine_notice" ]; then
+    python3 - "$engine_notice" "$app/Contents/Resources/EngineNotices/NOTICE.txt" <<'PY'
+import pathlib, sys
+sys.path.insert(0, "tools")
+from shipping_pair import owned_bytes, require
+source, destination = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+identity, data = owned_bytes(source, bounded=2 * 1024 * 1024)
+text = data.decode("utf-8")
+require(bool(text.strip()) and "\x00" not in text, "Engine NOTICE must be non-empty UTF-8 text")
+destination.parent.mkdir(parents=True, exist_ok=False)
+destination.write_bytes(data)
+owned_bytes(destination, identity["sha256"], identity["bytes"])
+PY
+fi
+python3 - "$app" "$stage/source.tar" "$source" "$tree" "$producer_notices" "$producer_notices_sha256" <<'PY'
+import pathlib, sys
+sys.path.insert(0, "tools")
+from distribution_manifest import write_manifest
+from shipping_pair import PRODUCER, PRODUCER_TREE
+write_manifest(pathlib.Path(sys.argv[1]), {"commit": sys.argv[3], "tree": sys.argv[4]},
+               {"commit": PRODUCER, "tree": PRODUCER_TREE}, pathlib.Path(sys.argv[2]),
+               pathlib.Path(sys.argv[5]) if sys.argv[5] else None, sys.argv[6] or None)
+PY
 python3 tools/signing_identity.py sign --kind app --path "$app" "$@"
 codesign --verify --deep --strict "$app"
 plutil -lint "$app/Contents/Info.plist"

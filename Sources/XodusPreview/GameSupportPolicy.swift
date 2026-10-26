@@ -19,13 +19,14 @@ enum GameSupportPolicy {
         if !blockers.isEmpty {
             let format = blockers.joined(separator: " / ")
             issues.append(LibraryCompatibilityIssue(kind: .packageType, title: format,
-                detail: "\(format). Ode to X 0.1 supports MSIXVC packages only.", source: nil))
+                detail: "This game comes as a \(format) package, which \(AppBrand.displayName) can't install yet.",
+                source: nil))
         }
         let technology = antiCheat?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let technology, !technology.isEmpty,
            !["none", "unknown", "unspecified"].contains(technology.lowercased()) {
             issues.append(LibraryCompatibilityIssue(kind: .antiCheat, title: "Uses \(technology)",
-                detail: "\(technology) is not supported by Ode to X 0.1.", source: nil))
+                detail: "Games that use \(technology) can't run in \(AppBrand.displayName) yet.", source: nil))
         }
         return issues
     }

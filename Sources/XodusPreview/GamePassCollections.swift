@@ -124,7 +124,15 @@ final class GamePassCollections: ObservableObject {
     }
 
     func load(market: String, language: String, refresh: Bool = false) async {
-        let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language))"
+        guard let market = PCGamesClient.market(market) else {
+            revision = UUID()
+            scope = nil
+            collections = []
+            loading = false
+            error = "Confirm your account country before loading Game Pass."
+            return
+        }
+        let nextScope = "\(market):\(PCGamesClient.language(language))"
         guard refresh || scope != nextScope else { return }
         let owner = UUID()
         revision = owner
@@ -166,11 +174,12 @@ final class GamePassCollections: ObservableObject {
             if revision == owner, collections.indices.contains(index) { collections[index].loading = false }
         }
         do {
+            guard let market = PCGamesClient.market(market) else { throw PCGamesError.invalidResponse }
             var ids = definition.productIDs
             if ids.isEmpty {
                 var url = URLComponents(string: "https://catalog.gamepass.com/sigls/v3")!
                 url.queryItems = [
-                    .init(name: "id", value: definition.feedID), .init(name: "market", value: PCGamesClient.market(market)),
+                    .init(name: "id", value: definition.feedID), .init(name: "market", value: market),
                     .init(name: "language", value: PCGamesClient.language(language)),
                     .init(name: "platformContext", value: "pc"), .init(name: "subscriptionContext", value: "cfq7ttc0kgq8")
                 ]

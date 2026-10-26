@@ -2,8 +2,8 @@
 import Foundation
 
 public enum CompatibilityResources {
-    public static func macGameEvidenceURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "mac-game-evidence-v1", withExtension: "json") else {
+    public static func macGameStatusURL() throws -> URL {
+        guard let url = Bundle.module.url(forResource: "mac-game-status-v1", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
@@ -23,5 +23,11 @@ public enum CompatibilityResources {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
+    }
+
+    /// The AreWeAntiCheatYet MIT notice shipped with the compatibility data.
+    public static func antiCheatReferenceLicenseURL() -> URL? {
+        Bundle.module.url(forResource: "AWACY-LICENSE", withExtension: "txt",
+                          subdirectory: "CompatibilityData")
     }
 }

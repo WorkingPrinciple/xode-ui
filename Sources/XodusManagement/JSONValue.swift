@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import XodusCore
 
 public enum JSONValue: Codable, Equatable, Sendable {
     case object([String: JSONValue]), array([JSONValue]), string(String)
@@ -88,32 +89,32 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidFrame, .invalidPayload:
-            "Xodus returned an invalid management response. Update the paired app and engine."
+            "\(AppBrand.displayName) returned an invalid management response. Update the paired app and engine."
         case .invalidRequest:
             "This input does not match the engine's management contract. Check the selected scope and values."
         case .frameTooLarge, .outputOverflow:
             "The engine exceeded its output limit. The connection was stopped safely."
         case .truncatedFrame: "The engine ended a response before it was complete. Reconnect to recover."
         case .unsupportedSchema: "The bundled management contract is unavailable or incompatible."
-        case .backendUnavailable: "Choose an executable Xodus management build in Settings."
+        case .backendUnavailable: "Choose an executable \(AppBrand.displayName) management build in Settings."
         case .nativeAuthHostUnavailable:
             "This app's native sign-in helper is missing or does not match its recorded version and hash. Rebuild or reinstall the paired development app. No sign-in was started."
         case .pairedEngineUnavailable:
             "This app has no approved matching engine and sign-in helper, or the bundled files have changed. Install an approved paired build. No engine or sign-in was started."
         case .credentialStoreUnavailable:
-            "Xodus cannot access your Mac's Keychain. Review its native permission prompt or unlock the Keychain, then check status again. Your saved credentials were not replaced."
-        case .startFailed: "The Xodus engine could not start. Check the selected build and state directory."
+            "\(AppBrand.displayName) cannot access your Mac's Keychain. Review its native permission prompt or unlock the Keychain, then check status again. Your saved credentials were not replaced."
+        case .startFailed: "\(AppBrand.displayName)'s game service couldn't start. Check the selected build and state directory."
         case .alreadyConnected: "An engine is already connected."
-        case .disconnected: "The Xodus connection ended. Reconnect before taking another action."
-        case .requestTimedOut: "Xodus did not respond in time. Reconnect to recover its durable state."
-        case .unexpectedResult: "Xodus returned a response for an unexpected request. The connection was stopped."
-        case .writeFailed: "The request could not reach Xodus. Reconnect before retrying."
-        case .shutdownFailed: "Xodus has not finished shutting down. Wait, then reconnect or try closing again; another engine was not started."
+        case .disconnected: "The connection to \(AppBrand.displayName)'s game service ended. Reconnect before taking another action."
+        case .requestTimedOut: "\(AppBrand.displayName)'s game service didn't respond in time. Reconnect to recover its durable state."
+        case .unexpectedResult: "\(AppBrand.displayName)'s game service returned a response for an unexpected request. The connection was stopped."
+        case .writeFailed: "The request couldn't reach \(AppBrand.displayName)'s game service. Reconnect before retrying."
+        case .shutdownFailed: "\(AppBrand.displayName)'s game service hasn't finished shutting down. Wait, then reconnect or try closing again; another engine was not started."
         case .stateLocked:
-            "Another copy of Ode to X is using its sign-in service. Close that copy normally, then sign in again."
+            "Another copy of \(AppBrand.displayName) is using its sign-in service. Close that copy normally, then sign in again."
         case .capabilityMissing(let command): "This engine does not provide \(command)."
-        case .backendStopped(let status): "The Xodus engine stopped (exit \(status)). Reconnect to recover."
-        case .backendError(let code, _): "Xodus reported \(code). No success was assumed."
+        case .backendStopped(let status): "\(AppBrand.displayName)'s game service stopped (exit \(status)). Reconnect to recover."
+        case .backendError(let code, _): "\(AppBrand.displayName) reported \(code). No success was assumed."
         case .discoveryFailed: "The attempted public products could not be checked. Their failures are listed; no empty owned library or successful discovery was assumed."
         case .queryFailed: "The Store search results could not be checked. Their failures are listed; no successful empty search or ownership was assumed."
         case .authenticatedReadFailed(let failure): failure.message

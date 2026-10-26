@@ -5,6 +5,39 @@ import OSLog
 import XodusCredentials
 import XodusManagement
 
+enum PCGamesAccountReadiness {
+    case ready, closing, updating, keychainApproval, signIn, unavailable, accountMismatch
+
+    var notice: String? {
+        switch self {
+        case .ready: nil
+        case .closing: "Account access is closing. Installation is unavailable."
+        case .updating: "Wait for your library to finish updating before installing."
+        case .keychainApproval: "Approve Keychain access in Account settings, then refresh your library."
+        case .signIn: "Sign in in Account settings, then refresh your library to check access."
+        case .unavailable: "Your library couldn't be updated. Refresh your library to check access before installing."
+        case .accountMismatch: "Refresh your library for the current account before installing."
+        }
+    }
+
+    func gamePassCheckNotice(libraryIsComplete: Bool) -> String? {
+        notice ?? (libraryIsComplete ? nil : "Refresh your PC library before checking Game Pass access.")
+    }
+}
+
+enum PCGamesInstallRecovery {
+    case none, accountSettings, refreshLibrary, retryLibrary
+
+    var title: String? {
+        switch self {
+        case .none: nil
+        case .accountSettings: "Account settings"
+        case .refreshLibrary: "Refresh library"
+        case .retryLibrary: "Try loading library again"
+        }
+    }
+}
+
 @MainActor
 final class PCGamesController: ObservableObject {
     @Published private(set) var hasSavedSignIn = false
@@ -19,6 +52,8 @@ final class PCGamesController: ObservableObject {
     @Published private(set) var legacyKeychainRetained = false
     @Published private(set) var restoringPresence = false
     @Published private(set) var presenceUnavailable = false
+    /// REQ-119: this scope's collection read has been sent, or can't be; background account reads wait for it.
+    @Published private(set) var collectionReadStarted = false
     private(set) var accountDisconnecting = false
     private let store: any PCGamesRefreshStore
     private let client: PCGamesClient
@@ -33,27 +68,32 @@ final class PCGamesController: ObservableObject {
     private weak var unifiedSession: LiveSession?
     private(set) var usesUnifiedAccount = false
     private var lastAutomaticAttempt: (account: String, date: Date)?
+    private var snapshotScope: String?
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
 
     func useUnifiedAccount(_ session: LiveSession) {
+        if usesUnifiedAccount, unifiedSession === session { return }
         guard !busy, !restoringPresence else { return }
         unifiedSession = session
         usesUnifiedAccount = true
     }
 
-    var representedGames: [PCGame] {
-        guard !needsSignIn else { return [] }
+    /// The snapshot only while it belongs to the current account, country and market.
+    var representedSnapshot: PCGamesSnapshot? {
+        guard !needsSignIn else { return nil }
         if usesUnifiedAccount {
             guard unifiedSession?.hasConfirmedSignIn == true,
-                  accountHash == unifiedSession?.accountHash else { return [] }
+                  unifiedSession?.accountCountryReady == true,
+                  snapshotScope == unifiedSession?.accountCatalogScope,
+                  accountHash == unifiedSession?.accountHash else { return nil }
         }
-        return snapshot?.games ?? []
+        return snapshot
     }
+    var representedGames: [PCGame] { representedSnapshot?.games ?? [] }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var resolutionNotice: String? {
-        guard let snapshot, snapshot.unresolvedCount > 0 else { return nil }
-        if busy { return "Checking game classification and PC availability for \(snapshot.unresolvedCount) library items." }
-        return "Game classification or PC availability couldn't be checked for \(snapshot.unresolvedCount) library items. Your library may be incomplete."
+        guard !busy, let snapshot, snapshot.detailFailureCount > 0 else { return nil }
+        return "Some game details are unavailable. Your available games are still here."
     }
     var retainedLibraryNotice: String? {
         guard error != nil, let snapshot else { return nil }
@@ -61,14 +101,51 @@ final class PCGamesController: ObservableObject {
             : "Showing available details from an incomplete library."
     }
     var accessIsCurrent: Bool {
-        snapshot?.isComplete == true && hasSavedSignIn && !needsSignIn && !busy && !restoringPresence
-            && !presenceUnavailable && error == nil && !needsKeychainApproval
-            && (!usesUnifiedAccount || (unifiedSession?.hasConfirmedSignIn == true
-                && accountHash == unifiedSession?.accountHash))
+        snapshot?.isComplete == true && accountAccessIsCurrent
+    }
+    private var accountAccessIsCurrent: Bool {
+        accountReadiness == .ready
+    }
+    var accountReadiness: PCGamesAccountReadiness {
+        if accountDisconnecting || terminating { return .closing }
+        if busy || restoringPresence { return .updating }
+        if needsKeychainApproval { return .keychainApproval }
+        if presenceUnavailable { return .unavailable }
+        if !hasSavedSignIn || needsSignIn { return .signIn }
+        if error != nil { return .unavailable }
+        if usesUnifiedAccount && (unifiedSession?.hasConfirmedSignIn != true
+            || unifiedSession?.accountCountryReady != true
+            || snapshotScope != unifiedSession?.accountCatalogScope
+            || accountHash != unifiedSession?.accountHash) { return .accountMismatch }
+        return .ready
+    }
+    var gamePassCheckNotice: String? {
+        accountReadiness.gamePassCheckNotice(libraryIsComplete: snapshot?.isComplete == true)
+    }
+    func installRecovery(for productID: String) -> PCGamesInstallRecovery {
+        switch accountReadiness {
+        case .closing, .updating: return .none
+        case .keychainApproval, .signIn: return .accountSettings
+        case .unavailable: return presenceUnavailable ? .retryLibrary : .refreshLibrary
+        case .accountMismatch: return .refreshLibrary
+        case .ready:
+            return snapshot?.unresolvedIDs.contains(productID) == true ? .refreshLibrary : .accountSettings
+        }
+    }
+    func accessIsCurrent(for productID: String) -> Bool {
+        accountAccessIsCurrent && snapshot?.hasResolvedGame(productID) == true
+    }
+    func installAccessNotice(for productID: String) -> String? {
+        guard !accessIsCurrent(for: productID) else { return nil }
+        if let notice = accountReadiness.notice { return notice }
+        if snapshot?.unresolvedIDs.contains(productID) == true {
+            return "PC game details for this title couldn't be loaded. Refresh your library to try again."
+        }
+        return "Current ownership or active PC Game Pass access is required to install this game."
     }
 
     init(store: any PCGamesRefreshStore = PCGamesCredentialStore(), client: PCGamesClient = PCGamesClient(),
-         market: String = PCGamesClient.market(Locale.current.region?.identifier),
+         market: String = "US",
          language: String = PCGamesClient.language(Locale.preferredLanguages.first ?? "en-US")) {
         self.store = store
         self.client = client
@@ -241,13 +318,27 @@ final class PCGamesController: ObservableObject {
         operation = Task {
             defer { finish(token) }
             do {
+                if !session.accountCountryReady { await session.refreshAccountCountry() }
+                try current(token)
+                guard session.accountCountryReady else {
+                    error = session.accountCountryError ?? "Confirm your account country to load your PC library."
+                    return
+                }
+                let market = session.market, language = session.language
+                let scope = session.accountCatalogScope
+                if snapshotScope != scope { snapshot = nil }
+                snapshotScope = scope
                 // This task has not entered readUnifiedAccount yet, so accountBusy cannot include itself.
+                session.beginLibraryReadPriority()
+                var prioritized = true
+                defer { if prioritized { session.endLibraryReadPriority() } }
                 let deadline = ContinuousClock.now.advanced(by: .seconds(30))
                 while session.accountBusy {
                     try current(token)
                     guard session.hasConfirmedSignIn, session.accountHash == account else {
                         throw PCGamesError.identityMismatch
                     }
+                    guard session.accountCatalogScope == scope else { throw CancellationError() }
                     guard ContinuousClock.now < deadline else {
                         logger.warning("Account collection admission timed out before dispatch")
                         throw PCGamesError.libraryReadBusy
@@ -258,12 +349,18 @@ final class PCGamesController: ObservableObject {
                 guard session.hasConfirmedSignIn, session.accountHash == account else {
                     throw PCGamesError.identityMismatch
                 }
+                guard session.accountCatalogScope == scope else { throw CancellationError() }
+                session.endLibraryReadPriority()
+                prioritized = false
+                collectionReadStarted = true
                 logger.notice("Account collection dispatch")
+                FirstLoadTimeline.mark("collectionDispatch")
                 let read = try await session.readUnifiedAccount(.library, market: market, language: language)
                 let collection = try read.payload.decode(OdeAccountCollection.self)
                 try collection.validate()
                 try current(token)
                 logger.notice("Account collection candidates: \(collection.items.count), purchased: \(collection.items.filter { $0.acquisitionKind == .purchased }.count), subscription: \(collection.items.filter { $0.acquisitionKind == .subscription }.count), unknown: \(collection.items.filter { $0.acquisitionKind == .unknown }.count)")
+                FirstLoadTimeline.mark("collectionCandidates", "count=\(collection.items.count)")
                 let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,
@@ -271,19 +368,24 @@ final class PCGamesController: ObservableObject {
                     accountHash: read.accountHash) { [weak self, weak session] partial in
                         guard let self, let session, self.generation == token,
                               !self.terminating, !self.accountDisconnecting,
-                              session.hasConfirmedSignIn, session.accountHash == read.accountHash else { return }
+                              session.hasConfirmedSignIn, session.accountHash == read.accountHash,
+                              session.accountCatalogScope == scope else { return }
                         self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                        if !partial.games.isEmpty { FirstLoadTimeline.mark("firstGames", "count=\(partial.games.count)") }
                     }
                 try current(token)
                 guard session.hasConfirmedSignIn, session.accountHash == read.accountHash else {
                     throw PCGamesError.identityMismatch
                 }
+                guard session.accountCatalogScope == scope else { throw CancellationError() }
                 snapshot = result.retainingUnresolved(from: snapshot)
+                FirstLoadTimeline.mark("libraryResolved", "games=\(result.games.count)")
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 hasSavedSignIn = true
                 needsSignIn = false
             } catch is CancellationError { }
             catch {
+                collectionReadStarted = true
                 guard generation == token, !terminating else { return }
                 if accountHash != session.accountHash || !session.hasConfirmedSignIn { snapshot = nil }
                 if error as? PCGamesError == .libraryReadBusy {
@@ -301,17 +403,21 @@ final class PCGamesController: ObservableObject {
 
     func retireUnifiedAccount() async {
         guard usesUnifiedAccount else { return }
-        generation = UUID()
+        let token = UUID()
+        generation = token
         let old = operation
         old?.cancel()
         snapshot = nil
+        snapshotScope = nil
+        collectionReadStarted = false
+        lastAutomaticAttempt = nil
         hasSavedSignIn = false
         restored = false
         attemptedAutomaticLoad = false
-        lastAutomaticAttempt = nil
         needsSignIn = false
         error = nil
         await old?.value
+        guard generation == token else { return }
         operation = nil
         busy = false
     }

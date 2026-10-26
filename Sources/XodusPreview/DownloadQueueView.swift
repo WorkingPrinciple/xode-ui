@@ -37,18 +37,21 @@ struct DownloadQueueRow: View {
             if job.phase.occupiesSlot {
                 if let fraction = job.progress?.fraction {
                     ProgressView(value: fraction)
+                        .accessibilityLabel(Self.progressLabel(job.title))
                         .accessibilityValue(Text("\(Int((fraction * 100).rounded())) percent"))
                 } else {
                     ProgressView().controlSize(.small)
+                        .accessibilityLabel(Self.progressLabel(job.title))
                 }
             }
             HStack(spacing: 12) {
                 if job.phase.canPause {
-                    Button("Pause") { queue.pause(job.id) }
+                    Button("Stop Download") { queue.pause(job.id) }
+                        .help("Stops the download. Downloading again will start over.")
                         .accessibilityIdentifier("xodus.queue.pause")
                 }
                 if job.phase.canResume {
-                    Button("Resume") { queue.resume(job.id) }
+                    Button(GameDownloadCopy.downloadAgain) { queue.resume(job.id) }
                         .accessibilityIdentifier("xodus.queue.resume")
                 }
                 if job.phase.canCancel {
@@ -62,6 +65,8 @@ struct DownloadQueueRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(job.title), \(statusLabel)")
     }
+
+    static func progressLabel(_ title: String) -> String { "Download progress for \(title)" }
 
     private var statusLabel: String {
         switch job.phase {

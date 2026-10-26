@@ -84,10 +84,8 @@ enum CrossOverDependencyChecks {
         check(fresh.configuration == nil && fresh.crossOverDependency == .notChecked,
               "RT02 A new profile starts unchecked rather than inventing an installation")
         await fresh.refreshCrossOverDependency()
-        check(fresh.configuration?.provider == .crossover && fresh.configuration?.providerVersion == "26.3"
-              && fresh.configuration?.engine.version == nil && fresh.configuration?.graphics.backend == nil
-              && fresh.plan == nil && !fresh.requiresExperimentalAcknowledgement,
-              "RT02 Verified official CrossOver defaults only the new provider, never Wine, graphics or a launch plan")
+        check(fresh.configuration == nil && fresh.plan == nil && !fresh.requiresExperimentalAcknowledgement,
+              "RT02 Detecting CrossOver does not silently select it as the default runtime")
         fresh.select(nil)
         await fresh.refreshCrossOverDependency()
         check(fresh.configuration == nil,
@@ -174,10 +172,10 @@ enum CrossOverDependencyChecks {
                       "RT04 Actual shared native dependency view lays out at constrained widths without a window")
             }
         }
-        check(RuntimeProviderSettings.providerChoices.first == .crossover
-              && RuntimeProviderKind.allCases.filter { $0 != .crossover }.allSatisfy {
+        check(RuntimeProviderSettings.providerChoices.first == .calimocho
+              && RuntimeProviderKind.allCases.filter { $0 != .calimocho }.allSatisfy {
                   RuntimeProviderSettings.providerLabel($0).contains("Experimental")
-              }, "RT04 First-release provider is first; every alternative is explicitly Experimental")
+              }, "RT04 Calimocho is prominent and legacy alternatives do not silently become defaults")
     }
 
     private static func waitForObservation(_ gate: CrossOverObservationGate) async throws {

@@ -33,6 +33,7 @@ struct XboxProminentButton: ViewModifier {
 
 struct AccountHubDestinations: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
             VStack(alignment: .leading, spacing: 16) {
@@ -49,7 +50,12 @@ struct AccountHubDestinations: View {
 
     private func destination(_ value: AccountDestination, symbol: String, detail: String) -> some View {
         Button {
-            state.accountDestination = value
+            if value == .engines {
+                state.openAccount(.engines)
+                openSettings()
+            } else {
+                state.openAccount(value)
+            }
         } label: {
             HStack {
                 Label(value.rawValue, systemImage: symbol)
@@ -88,7 +94,7 @@ struct XboxProfileView: View {
     }
 
     private var accountScope: some View {
-        Text(companion.usesUnifiedAccount ? "Profile and achievements use the Xbox Live account signed in to Ode to X."
+        Text(companion.usesUnifiedAccount ? "Profile and achievements use the Xbox Live account signed in to \(AppBrand.displayName)."
              : "Profile and social data use your Xbox account. \(XboxCompanionCopy.accountScope)")
             .font(.callout).foregroundStyle(.secondary)
     }
@@ -114,6 +120,9 @@ struct XboxProfileView: View {
                         if let bio = profile.bio { Text(bio).fixedSize(horizontal: false, vertical: true) }
                         if let location = profile.location {
                             Label(location, systemImage: "location").foregroundStyle(.secondary)
+                        }
+                        if let country = profile.accountCountry?.countryCode {
+                            LabeledContent("Account country", value: country)
                         }
                     }
                     Spacer()
@@ -417,7 +426,7 @@ struct XboxAccountSummaryView: View {
                                 ? "Xbox account needs verification" : "Xbox profile unavailable")
                         .font(.title3.weight(.semibold))
                     Text(state.gameOperations.serviceStatus?.serviceRunning == false
-                         ? "Ode to X is reconnecting automatically. Your saved account and games remain unchanged."
+                         ? "\(AppBrand.displayName) is reconnecting automatically. Your saved account and games remain unchanged."
                          : state.gameOperations.serviceSigningIn
                             ? "Finish signing in in the Microsoft window."
                          : state.gameOperations.serviceAccountNeedsVerification
@@ -583,31 +592,6 @@ struct XboxConsolesView: View {
                 .padding(.top, 2)
             }
         }
-    }
-}
-
-// Keep property-wrapper state unambiguous with SDKs that also export a State macro.
-private typealias EngineViewState<Value> = SwiftUI.State<Value>
-
-struct EnginesView: View {
-    @EnvironmentObject private var state: AppState
-    @EnvironmentObject private var session: LiveSession
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Engines").font(.title2.bold())
-            Text("CrossOver readiness is observed independently from declared Wine, GPTK and graphics components. Experimental configurations remain explicitly labelled.")
-                .font(.callout).foregroundStyle(.secondary)
-            Form {
-                RuntimeProviderSection(settings: state.runtimeSettings, backendPath: session.backendPath)
-                Section("Launch routing") {
-                    RuntimeInstallationPicker(settings: state.runtimeSettings)
-                }
-            }
-            .formStyle(.grouped)
-            .frame(minHeight: 440)
-        }
-        .task { await state.runtimeSettings.refreshCrossOverDependency() }
     }
 }
 

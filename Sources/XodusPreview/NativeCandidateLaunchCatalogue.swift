@@ -59,25 +59,14 @@ struct NativeCandidateLaunchCatalogue: Decodable {
     let profiles: [Row]
 
     private static let published: Result<[Row], Error> = Result {
-        let sources = [
-            ("small-game-candidates", "6a0b6d77f5b8e1d12f6dbc4c92effd55233a3a41adbfe9578d007a0a89188849"),
-            (
-                "preflight-game-candidates",
-                "e761862f7326e80a9591115730d1e3a56747e633e6442e87138c6f64cc2ab024"
-            ),
-        ]
-        var rows: [Row] = []
-        for (name, sha256) in sources {
-            let bytes = try Data(contentsOf: LaunchRecipeResources.candidateProfilesURL(name))
-            guard bytes.count <= 1_048_576,
-                SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == sha256
-            else {
-                throw NativeLaunchError.invalidProfile
-            }
-            let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
-            guard catalogue.schema_version == 1 else { throw NativeLaunchError.invalidProfile }
-            rows += catalogue.profiles
-        }
+        let bytes = try Data(contentsOf: LaunchRecipeResources.candidateLaunchCatalogueURL())
+        guard bytes.count <= 1_048_576,
+            SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
+                == "df8e3892eec9355ed78b0a90b9b2f50296cfc4f6670872c160b1fb95e88a8351"
+        else { throw NativeLaunchError.invalidProfile }
+        let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
+        guard catalogue.schema_version == 1 else { throw NativeLaunchError.invalidProfile }
+        let rows = catalogue.profiles
         guard rows.count == 12, Set(rows.map(\.store_id)).count == rows.count,
             rows.allSatisfy({
                 PCGamesClient.validProductID($0.store_id)
@@ -95,6 +84,16 @@ struct NativeCandidateLaunchCatalogue: Decodable {
 
     static func issue(productID: String, evidence: MacGameEvidence.Game? = nil) -> String? {
         do {
+            if productID == "9NMNMS626R59" {
+                guard let profile = try NativeTitleLaunchProfile.bundledProfiles()
+                        .first(where: { $0.productID == productID && $0.provider == nil }),
+                      let engine = profile.engine, let pin = CalimochoReleasePin.named(engine),
+                      profile.wineSha256 == pin.wineSha256,
+                      profile.wineserverSha256 == pin.wineserverSha256 else {
+                    return "Halls of Torment's launch profile doesn't match a pinned Calimocho release."
+                }
+                return nil
+            }
             if productID == "9MT5NJ5W7B8Z" {
                 return NativeWorkingLaunchRecipe.admitted(productID: productID, evidence: evidence) != nil
                     ? nil : "The exact qualified Hogwarts recipe requires its matching Working, save and normal-quit evidence."
@@ -142,7 +141,8 @@ struct NativeWorkingLaunchRecipe {
     static func admitted(productID: String, evidence: MacGameEvidence.Game?) -> Self? {
         guard let recipe = recipes.first(where: { $0.productID == productID }),
               let evidence, evidence.productId == productID, evidence.verdict == .working,
-              evidence.engine == engine, evidence.verifiedWorkingEvidence != nil,
+              evidence.engine == engine, evidence.hasVerifiedWorkingQualification,
+              evidence.verifiedWorkingEvidence != nil,
               evidence.runId == recipe.initialRun, evidence.retentionRunId == recipe.retentionRun,
               recipe.quitRun.map({ evidence.normalQuitRunId == $0 }) ?? true,
               evidence.saveObservation?.retentionVerified == true,

@@ -20,6 +20,41 @@ enum LibraryGridLayout {
     }
 }
 
+struct ContinuePlayingScrollView<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            content().background(ContinuePlayingScrollerIntegration())
+        }
+            .fixedSize(horizontal: false, vertical: true)
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.viewAligned)
+    }
+}
+
+private struct ContinuePlayingScrollerIntegration: NSViewRepresentable {
+    func makeNSView(context: Context) -> Anchor { Anchor() }
+    func updateNSView(_ view: Anchor, context: Context) {
+        view.integrate()
+        DispatchQueue.main.async { [weak view] in view?.integrate() }
+    }
+
+    final class Anchor: NSView {
+        override func viewDidMoveToSuperview() {
+            super.viewDidMoveToSuperview()
+            integrate()
+        }
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            integrate()
+        }
+        func integrate() {
+            enclosingScrollView?.hasHorizontalScroller = false
+        }
+    }
+}
+
 struct LibraryScrollMeasurement: Equatable {
     let offsetY: CGFloat
     let contentHeight: CGFloat
@@ -44,6 +79,15 @@ struct LibraryActionExtent: Equatable {
     func minimumHeight(viewport: CGSize) -> CGFloat? {
         guard Self.sameWidth(viewport.width, viewportWidth) else { return nil }
         return max(0, offsetY + viewport.height - insetBottom)
+    }
+}
+
+struct LibraryActionExtentObserver: ViewModifier {
+    @ObservedObject var selection: LibrarySelection
+    let changed: () -> Void
+
+    func body(content: Content) -> some View {
+        content.onChange(of: selection.actionExtent) { _, _ in changed() }
     }
 }
 
@@ -180,11 +224,6 @@ final class LibrarySelection: ObservableObject {
     var requestedGamePassScope: String?
 }
 
-@MainActor
-final class LibraryCoverInteraction: ObservableObject {
-    @Published var hovered = false
-}
-
 struct LibraryGame: Identifiable {
     let id: String
     let title: String
@@ -194,6 +233,16 @@ struct LibraryGame: Identifiable {
     let owned: Bool
     let gamePass: Bool
     var accessIsCurrent = true
+    static func displayedCount(qualified: [Self], local: [Self], native: Bool) -> Int {
+        qualified.count + installedCount(local: local, native: native)
+    }
+    static func installedCount(local: [Self], native: Bool) -> Int {
+        local.count + (native ? 1 : 0)
+    }
+    static func collectionTargets(qualified: [Self], local: [Self], native: Bool) -> Set<String> {
+        Set(qualified.map { "library-card-\($0.id)" } + local.map { "library-local-\($0.id)" }
+            + (native ? ["library-native-minecraft"] : []))
+    }
     var cover: CatalogArtworkReference? {
         if let art = pc?.artwork, [.boxArt, .poster].contains(art.role),
            let width = art.width, let height = art.height, height > width { return art }
@@ -235,31 +284,37 @@ struct LibraryGame: Identifiable {
             let id = game.storeId.isEmpty ? game.id.uuidString : game.storeId
             if held[id] == nil, permittedInstalledIDs.contains(id), seen.insert(id).inserted {
                 result.append(Self(id: id, title: game.title, installed: game, pc: nil,
-                    product: catalog[id] ?? pass[id], owned: false, gamePass: false))
+                    product: catalog[id] ?? pass[id], owned: false, gamePass: pass[id] != nil,
+                    accessIsCurrent: accessIsCurrent))
                 continue
             }
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
             result.append(Self(id: id, title: game.title, installed: game, pc: entitlement,
                                product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind == .purchased,
-                               gamePass: entitlement.acquisitionKind == .subscription || pass[id] != nil,
+                               gamePass: pass[id] != nil,
                                accessIsCurrent: accessIsCurrent))
         }
         for game in owned where seen.insert(game.id).inserted {
             result.append(Self(id: game.id, title: game.title, installed: nil, pc: game,
                                product: catalog[game.id] ?? pass[game.id], owned: game.acquisitionKind == .purchased,
-                               gamePass: game.acquisitionKind == .subscription || pass[game.id] != nil,
+                               gamePass: pass[game.id] != nil,
                                accessIsCurrent: accessIsCurrent))
         }
         return result
     }
 
     static func localRecords(installed: [InstalledGame], qualified: [Self],
-                             query: String, sort: LibrarySort) -> [Self] {
+                             query: String, sort: LibrarySort, includingQualified: Bool = false) -> [Self] {
         let qualifiedInstallations = Set(qualified.compactMap { $0.installed?.id })
-        let records = installed.filter { !qualifiedInstallations.contains($0.id) }.map {
+        let qualifiedByInstallation = Dictionary(qualified.compactMap { game in
+            game.installed.map { ($0.id, game) }
+        }, uniquingKeysWith: { first, _ in first })
+        let records = installed.filter { includingQualified || !qualifiedInstallations.contains($0.id) }.map {
+            let current = includingQualified ? qualifiedByInstallation[$0.id] : nil
             // UUID keeps separate imports reachable even if Store IDs overlap.
-            Self(id: $0.id.uuidString, title: $0.title, installed: $0, pc: nil, product: nil,
-                 owned: false, gamePass: false, accessIsCurrent: false)
+            return Self(id: $0.id.uuidString, title: $0.title, installed: $0, pc: current?.pc, product: current?.product,
+                 owned: current?.owned ?? false, gamePass: current?.gamePass ?? false,
+                 accessIsCurrent: current?.accessIsCurrent ?? false)
         }
         return visible(records, query: query, filter: .installed, sort: sort)
     }
@@ -338,6 +393,7 @@ struct LibraryControls: View {
     @Binding var sort: LibrarySort
     @Binding var showsUnsupportedGames: Bool
     var allowsSorting = true
+    var allowsAccountFilters = true
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -360,13 +416,16 @@ struct LibraryControls: View {
             Text(filter == .gamePass ? "PC Game Pass" : "Your Games").font(.title2.weight(.semibold))
             Text(count.formatted()).font(.title3).foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(count) games shown, \(filter.rawValue) filter")
     }
     private var filters: some View {
         Picker("Filter games", selection: $filter) {
-            ForEach(LibraryFilter.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(allowsAccountFilters ? LibraryFilter.allCases : [.installed]) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 400)
         .accessibilityIdentifier("xodus.library.filter")
+        .disabled(!allowsAccountFilters)
     }
     private var supportFilter: some View {
         LibrarySupportMenu(hiddenCount: hiddenUnsupportedCount, showsUnsupportedGames: $showsUnsupportedGames)
@@ -406,6 +465,9 @@ struct LibrarySupportMenu: View {
 }
 
 enum LibrarySupportVisibility {
+    static let preferenceKey = "Xodus.showUnsupportedGames"
+    static let defaultShowsUnsupported = false
+
     static func issues(productID: String, installed: Bool, packageFormat: String?,
                        compatibility: GameCompatibilityResult?,
                        catalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) -> [LibraryCompatibilityIssue] {
@@ -485,8 +547,8 @@ struct GameCompatibilityFacts: View {
             return nil
         }
         switch value.lowercased() {
-        case "none": return "None identified"
-        case "unknown": return "Unknown"
+        case "none": return "None found"
+        case "unknown", "unspecified", "": return "No information yet"
         default: return value
         }
     }
@@ -494,12 +556,8 @@ struct GameCompatibilityFacts: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(GameCompatibilityFactsCopy.heading).font(.headline)
-            if let package = GameSupportPolicy.packageFormat(
-                observed: packageFormat, classified: offline?.packageFormat) {
-                LabeledContent("Windows package", value: package)
-            }
             if let packageListing {
-                LabeledContent("Microsoft Store", value: packageListing ? "PC package listed" : "No PC listing")
+                LabeledContent("Microsoft Store", value: packageListing ? "Available for PC" : "No PC version listed")
             }
             if let antiCheat {
                 LabeledContent("Anti-cheat", value: antiCheat)
@@ -509,7 +567,7 @@ struct GameCompatibilityFacts: View {
                     .font(.callout.weight(.semibold))
             }
             ForEach(issues) { issue in
-                Text(issue.detail).foregroundStyle(.secondary)
+                Text(issue.browseDetail).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let source = issue.source { Link("Learn more", destination: source) }
             }
@@ -578,77 +636,6 @@ struct LibraryHero<Artwork: View, Poster: View, Information: View, Actions: View
     }
 }
 
-enum LibraryAccess: String {
-    case owned = "Owned", library = "In your library", gamePass = "Game Pass catalog", subscription = "Subscription"
-    var symbol: String { self == .owned ? "checkmark.seal" : self == .library ? "books.vertical" : "ticket" }
-    var help: String {
-        switch self {
-        case .owned: "In your Microsoft PC game library."
-        case .library: "In your Microsoft PC game library. The acquisition source is not identified."
-        case .subscription: "Current subscription grant in your PC library. The provider and plan are not identified."
-        case .gamePass: "Included in the PC Game Pass catalogue. A subscription is required to install."
-        }
-    }
-    init?(_ game: LibraryGame) {
-        switch game.eligibility {
-        case .owned: self = .owned
-        case .library: self = .library
-        case .gamePass: self = .subscription
-        case .installedUnknown, nil:
-            guard game.gamePass else { return nil }
-            self = .gamePass
-        }
-    }
-    static func badges(_ game: LibraryGame) -> [Self] {
-        if game.eligibility == .gamePass { return [.subscription] }
-        return (game.eligibility == .owned ? [.owned] : game.eligibility == .library ? [.library] : [])
-            + (game.gamePass ? [.gamePass] : [])
-    }
-    static func summary(owned: Bool, catalogMembership: Bool, current: Bool) -> String {
-        let access = owned ? (current ? "Owned" : "Saved Owned · refresh required") : "Access not verified"
-        return catalogMembership ? access + " · Game Pass catalog" : access
-    }
-}
-
-struct LibraryAccessBadge: View {
-    let access: LibraryAccess
-    var compact = false
-    var body: some View {
-        if access == .subscription {
-            Label(access.rawValue, systemImage: "ticket")
-                .font((compact ? Font.caption : .callout).weight(.semibold))
-                .padding(.horizontal, compact ? 8 : 10).padding(.vertical, 4)
-                .modifier(LibraryBadgeMaterial())
-                .accessibilityLabel(access.rawValue)
-                .help(access.help)
-        } else if access == .gamePass {
-            Image(systemName: "xbox.logo")
-                .font(.system(size: compact ? 10 : 12, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: compact ? 16 : 18, height: compact ? 16 : 18)
-                .background(Color(red: 16 / 255, green: 124 / 255, blue: 16 / 255), in: Circle())
-                .accessibilityLabel("Included with Game Pass (PC catalogue; other tiers not verified)")
-                .help("Included with Game Pass (PC catalogue). Your subscription tier and other plans are not verified.")
-        } else {
-            Label(access.rawValue, systemImage: access.symbol)
-                .font(compact ? .caption : .callout)
-                .padding(.horizontal, compact ? 8 : 10).padding(.vertical, 4)
-                .modifier(LibraryBadgeMaterial())
-                .help(access.help)
-        }
-    }
-}
-
-private struct LibraryBadgeMaterial: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.xodusReviewReduceTransparency) private var reviewReduceTransparency
-    func body(content: Content) -> some View {
-        if reduceTransparency || reviewReduceTransparency { content.background(.background, in: Capsule()) }
-        else if #available(macOS 26, *) { content.glassEffect(.regular, in: .capsule) }
-        else { content.background(.thinMaterial, in: Capsule()) }
-    }
-}
-
 private struct LibraryOnHeroMediaKey: EnvironmentKey { static let defaultValue = false }
 
 extension EnvironmentValues {
@@ -673,31 +660,23 @@ private struct LibraryInformationStyle: ViewModifier {
 }
 
 struct LibraryGameInformation: View {
-    var access: LibraryAccess?
-    var gamePass = false
+    var gameFacts = GameFacts()
+    var detail = false
+    var showsAccessBadges = true
     var facts: LibraryCatalogFacts?
     var xbox: LibraryXboxStatsCache.Game?
     var localPlaySeconds: Double? = nil
     var compact = false
-    var showsPrice = false
     @Environment(\.libraryOnHeroMedia) private var onHeroMedia
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 5 : 8) {
             HStack(spacing: 8) {
-                if let access {
-                    LibraryAccessBadge(access: access, compact: compact)
-                }
-                if gamePass, access == nil || access == .owned || access == .library {
-                    LibraryAccessBadge(access: .gamePass, compact: compact)
-                }
+                if showsAccessBadges { AccessBadges(facts: gameFacts, detail: detail) }
                 if let facts, !facts.genres.isEmpty {
                     Label(compact ? facts.genres[0] : facts.genres.joined(separator: " / "), systemImage: "tag")
                         .lineLimit(compact ? 1 : 2)
                 }
-            }
-            if showsPrice, let price = facts?.commerce.flatMap({ $0.isCurrent() ? $0.label : nil }) {
-                Label(price, systemImage: "tag")
             }
             if !compact {
                 if let facts, !facts.capabilities.isEmpty {
@@ -822,13 +801,13 @@ struct LibraryCompatibilityIndicators: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(issues) { issue in
-                Label(issue.title, systemImage: issue.kind.symbol)
+                Label(issue.browseTitle, systemImage: issue.kind.symbol)
                     .font(.callout)
                     .foregroundStyle(heroStyle ? Color.white.opacity(0.92) : .secondary)
                     .shadow(color: heroStyle ? .black.opacity(0.5) : .clear, radius: 3, y: 1)
                     .fixedSize(horizontal: false, vertical: true)
-                    .help("\(issue.title): \(issue.detail)")
-                    .accessibilityLabel("\(issue.title). \(issue.detail)")
+                    .help("\(issue.browseTitle): \(issue.browseDetail)")
+                    .accessibilityLabel("\(issue.browseTitle). \(issue.browseDetail)")
             }
         }
         .accessibilityIdentifier("xodus.library.unsupported")
@@ -981,39 +960,105 @@ struct LibraryScrollEdge: ViewModifier {
     }
 }
 
-struct LibraryCover<Artwork: View, Actions: View, Status: View>: View {
+struct GameCard<Artwork: View, Status: View>: View {
     let title: String
+    var gameFacts = GameFacts()
+    var compatibilityIssues: [LibraryCompatibilityIssue] = []
+    var showsGamePassCatalogBadge = false
     var openLabel = "Open"
-    var alwaysShowsActions = false
+    var searchFocus: (FocusState<String?>.Binding, String)? = nil
+    var focusReturn: (FocusState<String?>.Binding, String)? = nil
     let open: () -> Void
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let status: () -> Status
-    @ViewBuilder let actions: () -> Actions
-    @StateObject private var interaction = LibraryCoverInteraction()
-    @FocusState private var focused: Bool
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    private var showsActions: Bool { alwaysShowsActions || interaction.hovered || focused || voiceOver }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ZStack(alignment: .bottomTrailing) {
-                Button(action: open) {
-                    artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .contentShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain).accessibilityLabel("\(openLabel) \(title)")
-                actions().controlSize(.small).buttonBorderShape(.capsule)
-                    .fixedSize(horizontal: false, vertical: true).padding(12)
-                    .opacity(showsActions ? 1 : 0)
-                    .allowsHitTesting(showsActions)
+            if let (binding, id) = searchFocus {
+                artworkButton
+                    .focused(binding, equals: id)
+                    .focusEffectDisabled()
+                    .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
+            } else if let (binding, id) = focusReturn {
+                artworkButton
+                    .focused(binding, equals: id)
+                    .focusEffectDisabled()
+                    .modifier(SearchResultFocusRing(focused: binding.wrappedValue == id))
+            } else {
+                artworkButton
             }
-            .onHover { interaction.hovered = $0 }
-            .focused($focused)
             Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
-            status().font(.subheadline).foregroundStyle(.secondary)
+            status().font(.subheadline).foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
+        .contextMenu { Button("View details", action: open) }
+    }
+
+    func openFromKeyboard() -> KeyPress.Result {
+        open()
+        return .handled
+    }
+
+    var artworkAccessibilityLabel: String { "\(openLabel) \(title)" }
+
+    private var artworkButton: some View {
+        Button(action: open) {
+            artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(alignment: .bottomLeading) {
+                    if showsGamePassCatalogBadge {
+                        Text("GAME PASS")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(Color(white: 0.12).opacity(0.9),
+                                        in: RoundedRectangle(cornerRadius: 4))
+                            .padding(8)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .overlay(alignment: .topTrailing) {
+                    HStack(spacing: 4) {
+                        ForEach(compatibilityIssues) { issue in
+                            Image(systemName: issue.kind.symbol)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(6)
+                                .background(Color(white: 0.12).opacity(0.9), in: Circle())
+                        }
+                    }
+                    .padding(8)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain).accessibilityLabel(artworkAccessibilityLabel)
+        .help(coverStatusDescription)
+        .accessibilityValue(coverStatusDescription)
+        .accessibilityHint("Open game details for play, installation and compatibility")
+        .focusable()
+        .onKeyPress(.return, action: openFromKeyboard)
+    }
+
+    var coverStatusDescription: String {
+        ((showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
+            + compatibilityIssues.map { "\($0.browseTitle). \($0.browseDetail)" })
+            .joined(separator: ", ")
+    }
+}
+
+struct SearchResultFocusRing: ViewModifier {
+    let focused: Bool
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.accentColor, lineWidth: focused ? 3 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 }

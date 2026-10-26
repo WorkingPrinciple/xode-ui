@@ -25,6 +25,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var runningGameID: UUID?
     @Published private(set) var playState: InstalledGamePlayState?
     @Published private(set) var playErrors: [UUID: String] = [:]
+    @Published private(set) var engineIssueMessages: [UUID: String] = [:]
     @Published private(set) var historyError: String?
     @Published private(set) var packageErrors: [UUID: String] = [:]
     @Published private(set) var checkingInstallations = Set<UUID>()
@@ -36,6 +37,16 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var launchStarted = false
     @Published private(set) var launchableIDs: Set<UUID> = []
     @Published private(set) var placeholderIDs: Set<UUID> = []
+    @Published private(set) var unavailableDriveIDs: Set<UUID> = []
+    @Published private(set) var availableEngineOverrides: [AdmittedEngineSelection] = []
+    @Published private(set) var checkingEngineOverrides = false
+    private var engineOverrideWaiters: [CheckedContinuation<Void, Never>] = []
+    private var engineOverridesChecked = false
+    @Published private(set) var failedEngineOverrides: Set<String> = []
+    @Published private(set) var undiscoveredInstallations: [String: String] = [:]
+    private var mountedDiscoveryProbes: [String: GameStorageProbe] = [:]
+    @Published private(set) var pendingDiscoveryRoots: Set<String> = []
+    @Published private(set) var discoveringMounts = false
     @Published private(set) var mutationGameID: UUID?
     @Published private(set) var mutationActive = false
     /// Per-game update availability, recomputed from installed versions vs. `availableVersions`.
@@ -45,15 +56,28 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var availableVersions: [String: String] = [:]
     @Published var serviceSignInActive = false
     @Published var runtimeRepairActive = false
-    @Published var accountDisconnecting = false
+    @Published var accountDisconnecting = false {
+        didSet {
+            if accountDisconnecting {
+                nativePreparationTask?.cancel()
+                for task in discoveryTasks.values { task.cancel() }
+                for task in automaticDiscoveryTasks.values { task.cancel() }
+                for task in installationCheckTasks.values { task.cancel() }
+            }
+        }
+    }
     @Published private(set) var accountAccessAllowed = false
     @Published private(set) var accountAccessMessage = "Reconnect Xbox services to play this game."
     var applicationTerminating = false {
         didSet {
             if applicationTerminating {
+                nativePreparationTask?.cancel()
                 productAccess.retire()
                 foregroundHandoff?.cancel()
                 for task in nativeInspectionTasks.values { task.cancel() }
+                for task in discoveryTasks.values { task.cancel() }
+                for task in automaticDiscoveryTasks.values { task.cancel() }
+                for task in installationCheckTasks.values { task.cancel() }
             }
         }
     }
@@ -62,18 +86,39 @@ final class InstalledGamesController: ObservableObject {
     private let defaultEngine: @Sendable () -> RuntimeProviderKind?
     private let detectAvailability: @Sendable () async -> RunnerAvailability
     private let inspectPackage: @Sendable (URL) throws -> PackageType
+    private let mountedStorageRoots: @Sendable () -> [String]?
+    private let discoveryProbe = GameStorageProbe()
+    private var candidateVerificationProbes: [String: GameStorageProbe] = [:]
+    private var installationVolumeProbes: [UUID: GameStorageProbe] = [:]
+    private var gameReadinessProbes: [UUID: GameStorageProbe] = [:]
+    @Published private(set) var discoveringInstallations = false
+    @Published private(set) var verifyingDiscoveredProducts: Set<String> = []
+    @Published private(set) var discoveredVerificationErrors: [String: String] = [:]
+    private var discoveredCandidates: [String: GameInstallationDiscovery.Candidate] = [:]
+    private var discoveryTasks: [String: Task<Void, Never>] = [:]
+    @Published private(set) var automaticDiscoveryProducts: Set<String> = []
+    private var automaticDiscoveryTasks: [String: Task<Void, Never>] = [:]
+    private var automaticDiscoveryAttempts: [String: String] = [:]
+    private let discoveryRoot: URL
+    private let installLocation: @Sendable () throws -> GameInstallLocation?
+    private let discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)?
     private let compatibilityCatalogue: OfflineGameCompatibility?
     private weak var unifiedSession: LiveSession?
     private var usesUnifiedAccount = false
+    private var launchSupportCache: [String: (NativeLaunchSupport, ContinuousClock.Instant)] = [:]
     private let nativeLauncher = NativeGameLifecycle()
     private var nativeLaunchTask: Task<Void, Never>?
+    private var nativePreparationTask: Task<MicrosoftGameConfig, Error>?
     private var nativeForegroundTask: Task<Void, Never>?
     private var nativeInspectionTasks: [UUID: Task<NativeInstallationStatus, Error>] = [:]
+    private var installationCheckTasks: [UUID: Task<Void, Never>] = [:]
     private var nativeInspectionDates: [UUID: ContinuousClock.Instant] = [:]
+    private var automaticReadinessAttempts: [UUID: String] = [:]
     private var playingTask: Task<Void, Never>?
     private var runToken: UUID?
     private var stopToken: UUID?
-    private var inspectionGeneration = UUID()
+    private var refreshingReadiness = false
+    private var readinessRefreshRequested = false
     private var stopConfirmed = false
     private var process: Process?
     private var sessionPersistence: Task<Void, Never>?
@@ -96,7 +141,13 @@ final class InstalledGamesController: ObservableObject {
              await Task.detached(priority: .utility) { RunnerAvailabilityDetector.detect() }.value
          },
          inspectPackage: @escaping @Sendable (URL) throws -> PackageType = { try PackageInspector.detect(folder: $0) },
-         compatibilityCatalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot) {
+         compatibilityCatalogue: OfflineGameCompatibility? = OfflineGameCompatibility.snapshot,
+         mountedStorageRoots: @escaping @Sendable () -> [String]? = { GameStorageVolume.mountedRoots() },
+         discoveryRoot: URL = GameScriptPaths.production.games,
+         installLocation: @escaping @Sendable () throws -> GameInstallLocation? = {
+             try GameInstallLocation.load(.standard)
+         },
+         discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)? = nil) {
         self.store = store
         self.launchingDuration = launchingDuration
         self.logDirectory = logDirectory
@@ -104,6 +155,10 @@ final class InstalledGamesController: ObservableObject {
         self.detectAvailability = detectAvailability
         self.inspectPackage = inspectPackage
         self.compatibilityCatalogue = compatibilityCatalogue
+        self.discoveryRoot = discoveryRoot
+        self.installLocation = installLocation
+        self.discoveryCompleteness = discoveryCompleteness
+        self.mountedStorageRoots = mountedStorageRoots
     }
 
     func load() async {
@@ -174,41 +229,320 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func discoverNativeInstallations(root: URL? = nil) async {
-        guard usesUnifiedAccount, loaded, !editing, !choosing, !mutationActive,
+        guard (usesUnifiedAccount || discoveryCompleteness != nil), loaded, !discoveringInstallations, !editing, !choosing, !mutationActive,
               !accountDisconnecting, !applicationTerminating else { return }
-        let directory = root ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Games/Xodus")
-        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        discoveringInstallations = true
+        defer { discoveringInstallations = false }
+        let entries = games
+        let directory = root ?? discoveryRoot
+        let installLocation = installLocation
+        let mountedStorageRoots = mountedStorageRoots
+        let inspectPackage: @Sendable (URL) throws -> PackageType
+        if discoveryCompleteness == nil { inspectPackage = { @Sendable _ in .unknown } }
+        else { inspectPackage = self.inspectPackage }
+        let account = unifiedSession?.accountHash
+        pendingDiscoveryRoots.formUnion(mountedDiscoveryProbes.keys)
+        discoveringMounts = true
         do {
-            let folders = try await Task.detached {
-                try GameScriptFiles.checkPath(directory)
-                let children = try FileManager.default.contentsOfDirectory(at: directory,
-                    includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
-                guard children.count <= 512 else { throw InstalledGameError.invalidRegistry }
-                return children.filter {
-                    FileManager.default.fileExists(atPath: $0.appendingPathComponent("MicrosoftGame.config").path)
-                }
-            }.value
-            guard !editing, !choosing, !mutationActive, !accountDisconnecting,
-                  !applicationTerminating else { return }
-            let pending = folders.filter { folder in !games.contains(where: { $0.folder == folder.path }) }
-            guard !pending.isEmpty else { return }
-            editing = true
-            defer { editing = false }
-            var failures: [String] = []
-            for folder in pending {
-                do { try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: nil) }
-                catch { failures.append("\(folder.lastPathComponent): \(error.localizedDescription)") }
+            let volumes = try await discoveryProbe.read(timeout: .seconds(3)) {
+                mountedStorageRoots()
             }
-            discoveryError = failures.isEmpty ? nil : "Some installed folders couldn't be imported. " + failures.joined(separator: " ")
+            discoveringMounts = false
+            if let volumes {
+                let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes).map(\.path))
+                pendingDiscoveryRoots.formIntersection(mounted)
+                if root == nil { pendingDiscoveryRoots.formUnion(mounted) }
+                undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes)
+            }
+            var observation = try await discoveryProbe.read {
+                try GameInstallationDiscovery.scan(originalRoot: directory,
+                    location: root == nil ? installLocation() : nil, entries: entries,
+                    mountedRoots: volumes, inspectPackage: inspectPackage)
+            }
+            pendingDiscoveryRoots.subtract(observation.scannedRoots)
+            if root == nil {
+                for library in GameInstallationDiscovery.mountedLibraryRoots(volumes) {
+                    try Task.checkCancellation()
+                    guard loaded, !accountDisconnecting, !applicationTerminating,
+                          unifiedSession?.accountHash == account else { return }
+                    guard !observation.scannedRoots.contains(library.path) else { continue }
+                    let remaining = 512 - observation.childrenRead
+                    guard remaining > 0 else {
+                        observation.errors.append(InstalledGameError.invalidRegistry.localizedDescription)
+                        break
+                    }
+                    let probe: GameStorageProbe
+                    if let existing = mountedDiscoveryProbes[library.path] { probe = existing }
+                    else {
+                        guard mountedDiscoveryProbes.count < 32 else {
+                            pendingDiscoveryRoots.insert(library.path)
+                            observation.errors.append(GameStorageProbeError.pending.localizedDescription)
+                            continue
+                        }
+                        probe = GameStorageProbe()
+                        mountedDiscoveryProbes[library.path] = probe
+                    }
+                    pendingDiscoveryRoots.insert(library.path)
+                    do {
+                        let mounted = try await probe.read(timeout: .seconds(3)) {
+                            try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: entries,
+                                mountedRoots: volumes, includeRecordedRoots: false,
+                                maximumChildren: remaining, inspectPackage: inspectPackage)
+                        }
+                        observation.candidates += mounted.candidates
+                        observation.errors += mounted.errors
+                        observation.scannedRoots.formUnion(mounted.scannedRoots)
+                        observation.childrenRead += mounted.childrenRead
+                        observation.identifiedInstallations.merge(mounted.identifiedInstallations) { _, current in current }
+                        pendingDiscoveryRoots.remove(library.path)
+                    } catch is CancellationError { throw CancellationError() }
+                    catch { observation.errors.append("\(library.path): \(error.localizedDescription)") }
+                }
+            }
+            try Task.checkCancellation()
+            guard !accountDisconnecting, !applicationTerminating,
+                  unifiedSession?.accountHash == account else { return }
+            undiscoveredInstallations = undiscoveredInstallations.filter { folder, _ in
+                !observation.scannedRoots.contains(URL(fileURLWithPath: folder).deletingLastPathComponent().path)
+                    || observation.errors.contains(where: { $0.hasPrefix(folder + ": ") })
+            }
+            undiscoveredInstallations.merge(observation.identifiedInstallations) { _, current in current }
+            for candidate in observation.candidates { discoveredCandidates[candidate.folder.path] = candidate }
+            var failures = observation.errors
+            var seenCandidates = Set<String>()
+            for candidate in observation.candidates where seenCandidates.insert(candidate.folder.path).inserted {
+                guard discoveryCompleteness != nil else { continue }
+                try Task.checkCancellation()
+                guard !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating,
+                      unifiedSession?.accountHash == account else { return }
+                do {
+                    let complete: Bool
+                    if let discoveryCompleteness {
+                        complete = try await discoveryCompleteness(candidate.config.storeId, candidate.folder)
+                    } else {
+                        guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
+                            throw GameInstallationDiscoveryError.serviceUnavailable
+                        }
+                        let status = try await NativeInstallationQuery().run(configuration: configuration,
+                            product: candidate.config.storeId, gameDirectory: candidate.folder,
+                            storageProbe: discoveryProbe)
+                        guard status.success else {
+                            throw GameInstallationDiscoveryError.inspectionFailed(
+                                status.explanation ?? "The installation couldn't be checked. Try again.")
+                        }
+                        complete = status.status == .complete
+                    }
+                    guard complete else {
+                        failures.append("\(candidate.folder.path): Installation is incomplete. Finish or repair it before importing.")
+                        continue
+                    }
+                    let confirmedConfig = try await discoveryProbe.read {
+                        try GameScriptFiles.checkPath(candidate.folder)
+                        return try MicrosoftGameConfig.read(folder: candidate.folder)
+                    }
+                    guard confirmedConfig == candidate.config else {
+                        throw GameInstallationDiscoveryError.identityChanged
+                    }
+                    try Task.checkCancellation()
+                    guard !accountDisconnecting, !applicationTerminating, unifiedSession?.accountHash == account,
+                          !games.contains(where: { $0.folder == candidate.folder.path }) else { return }
+                    let config = candidate.config
+                    let game = InstalledGame(id: UUID(), title: config.title, identityName: config.identityName,
+                        version: config.version, storeId: config.storeId, folder: candidate.folder.path,
+                        launcher: "", importedAt: Date(), publisher: config.publisher, packageType: candidate.package,
+                        usesNativeLifecycle: true, storageVolume: candidate.volume)
+                    applySavedGames(try await store.upsert(game))
+                    undiscoveredInstallations[candidate.folder.path] = nil
+                } catch is CancellationError { throw CancellationError() }
+                catch { failures.append("\(candidate.folder.path): \(error.localizedDescription)") }
+            }
+            for failure in failures {
+                Self.launchLog.debug("Automatic discovery skipped: \(failure, privacy: .private)")
+            }
+            discoveryError = nil
+        } catch is CancellationError {
+            Self.launchLog.debug("Automatic discovery cancelled; existing entries retained.")
         } catch {
-            discoveryError = "Installed folders under \(directory.path) couldn't be read. \(error.localizedDescription)"
+            Self.launchLog.error("Automatic discovery unavailable: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func discoveredReadinessKey(productID: String) -> String {
+        let paths = undiscoveredInstallations.filter { $0.value == productID }.keys.sorted().joined(separator: "|")
+        return "\(productID):\(paths):\(unifiedSession?.accountHash ?? ""):\(discoveryCompleteness != nil || unifiedSession?.nativeInstallStatusConfiguration != nil)"
+    }
+
+    func automaticallyVerifyDiscoveredInstallation(productID: String) async {
+        let key = discoveredReadinessKey(productID: productID)
+        if let pending = automaticDiscoveryTasks[productID] { await pending.value }
+        guard !Task.isCancelled else { return }
+        guard automaticDiscoveryAttempts[productID] != key else { return }
+        automaticDiscoveryAttempts[productID] = key
+        automaticDiscoveryProducts.insert(productID)
+        let task = Task { @MainActor in
+            defer {
+                automaticDiscoveryProducts.remove(productID)
+                automaticDiscoveryTasks[productID] = nil
+            }
+            do {
+                let deadline = ContinuousClock.now.advanced(by: NativeInstallationQuery.largeInstallTimeout)
+                while Set(discoveryTasks.keys).union(candidateVerificationProbes.filter { $0.value.active }.keys).count >= 2 {
+                    guard ContinuousClock.now < deadline else { throw GameScriptError.timeout }
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                try Task.checkCancellation()
+                guard loaded, !applicationTerminating, !accountDisconnecting,
+                      discoveredReadinessKey(productID: productID) == key else { return }
+                await verifyDiscoveredInstallation(productID: productID)
+            } catch is CancellationError {
+                discoveredVerificationErrors[productID] = "Installation verification was cancelled. Retry when you're ready."
+            } catch {
+                discoveredVerificationErrors[productID] = error.localizedDescription
+            }
+        }
+        automaticDiscoveryTasks[productID] = task
+        await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+    }
+
+    func verifyDiscoveredInstallation(productID: String) async {
+        if let pending = discoveryTasks[productID] { await pending.value; return }
+        discoveredVerificationErrors[productID] = nil
+        let candidates = discoveredCandidates.values.filter {
+            $0.config.storeId == productID && undiscoveredInstallations[$0.folder.path] == productID
+        }
+        guard candidates.count <= 1 else {
+            discoveredVerificationErrors[productID] = "Multiple installation folders match this game. Import the exact folder you want to use."
+            return
+        }
+        guard !verifyingDiscoveredProducts.contains(productID),
+              Set(discoveryTasks.keys).union(candidateVerificationProbes.filter { $0.value.active }.keys).count < 2,
+              !accountDisconnecting, !applicationTerminating,
+              let candidate = candidates.first else {
+            discoveredVerificationErrors[productID] = "The game location couldn't be verified. Check its location or drive access, then retry."
+            return
+        }
+        let account = unifiedSession?.accountHash
+        verifyingDiscoveredProducts.insert(productID)
+        let task = Task { @MainActor in
+            defer {
+                verifyingDiscoveredProducts.remove(productID)
+                discoveryTasks[productID] = nil
+            }
+            do {
+                let probe = candidateVerificationProbes[productID] ?? GameStorageProbe()
+                candidateVerificationProbes[productID] = probe
+                let complete: Bool
+                var verifiedStatus: NativeInstallationStatus?
+                if let discoveryCompleteness {
+                    complete = try await discoveryCompleteness(productID, candidate.folder)
+                } else {
+                    guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
+                        throw GameInstallationDiscoveryError.serviceUnavailable
+                    }
+                    let status = try await NativeInstallationQuery().run(configuration: configuration,
+                        product: productID, gameDirectory: candidate.folder, timeout: NativeInstallationQuery.largeInstallTimeout,
+                        storageProbe: probe)
+                    guard status.success else {
+                        throw GameInstallationDiscoveryError.inspectionFailed(
+                            status.explanation ?? "The installation couldn't be checked. Try again.")
+                    }
+                    complete = status.status == .complete
+                    verifiedStatus = status
+                }
+                guard complete else {
+                    throw GameInstallationDiscoveryError.inspectionFailed(
+                        "Installation is incomplete. Finish or repair it before importing.")
+                }
+                let inspect = inspectPackage
+                let facts = try await probe.read {
+                    try GameScriptFiles.checkPath(candidate.folder)
+                    return (try MicrosoftGameConfig.read(folder: candidate.folder),
+                            try inspect(candidate.folder), GameStorageVolume.read(at: candidate.folder))
+                }
+                guard facts.0 == candidate.config, let volume = facts.2 else {
+                    throw GameInstallationDiscoveryError.identityChanged
+                }
+                try Task.checkCancellation()
+                guard loaded, !accountDisconnecting, !applicationTerminating, !mutationActive, !editing,
+                      unifiedSession?.accountHash == account else { throw GameScriptError.busy }
+                if games.contains(where: { $0.folder == candidate.folder.path }) {
+                    undiscoveredInstallations[candidate.folder.path] = nil
+                    return
+                }
+                let config = facts.0
+                let game = InstalledGame(id: UUID(), title: config.title, identityName: config.identityName,
+                    version: config.version, storeId: config.storeId, folder: candidate.folder.path,
+                    launcher: "", importedAt: Date(), publisher: config.publisher, packageType: facts.1,
+                    usesNativeLifecycle: true, storageVolume: volume)
+                applySavedGames(try await store.upsert(game))
+                if let verifiedStatus { try recordInstallationStatus(verifiedStatus, for: game) }
+                undiscoveredInstallations[candidate.folder.path] = nil
+                discoveredVerificationErrors[productID] = nil
+            } catch is CancellationError {
+                Self.launchLog.debug("Product installation check cancelled.")
+                discoveredVerificationErrors[productID] = "Installation verification was cancelled. Retry when you're ready."
+            } catch {
+                Self.launchLog.error("Product installation check failed: \(error.localizedDescription, privacy: .private)")
+                if let failure = error as? GameInstallationDiscoveryError {
+                    discoveredVerificationErrors[productID] = failure.localizedDescription
+                } else if let failure = error as? GameScriptError, case .timeout = failure {
+                    discoveredVerificationErrors[productID] = NativeInstallationQuery.failureMessage(error)
+                } else {
+                    discoveredVerificationErrors[productID] = "The installation couldn't be checked. Try again."
+                }
+            }
+        }
+        discoveryTasks[productID] = task
+        await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    func cancelDiscoveredVerification(productID: String) {
+        automaticDiscoveryTasks[productID]?.cancel()
+        discoveryTasks[productID]?.cancel()
+    }
+
+    func hasUnverifiedInstallation(productID: String) -> Bool {
+        undiscoveredInstallations.values.contains(productID)
+    }
+
+    func canCreateInstallation(productID: String, destination: String? = nil,
+                               resumingManagedOperation: Bool = false) -> Bool {
+        (!discoveringMounts || destination != nil)
+            && Self.permitsInstallation(productID: productID, destination: destination,
+                candidates: undiscoveredInstallations, pendingRoots: pendingDiscoveryRoots,
+                resumingManagedOperation: resumingManagedOperation)
+            && !games.contains { $0.storeId == productID }
+    }
+
+    static func permitsInstallation(productID: String, destination: String?, candidates: [String: String],
+                                    pendingRoots: Set<String>, resumingManagedOperation: Bool = false) -> Bool {
+        let pendingDestination = pendingRoots.contains { root in
+            guard let destination else { return true }
+            return destination == root || destination.hasPrefix(root + "/")
+        }
+        return !pendingDestination && !candidates.contains {
+            $0.value == productID && (!resumingManagedOperation || $0.key != destination)
+        }
+    }
+
+    static func retainingMountedCandidates(_ candidates: [String: String], volumes: [String],
+                                          home: String = NSHomeDirectory()) -> [String: String] {
+        let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes, home: home).map(\.path))
+        return candidates.filter { folder, _ in
+            let parent = URL(fileURLWithPath: folder).deletingLastPathComponent()
+            let possible = GameInstallationDiscovery.mountedLibraryRoots(
+                [parent.deletingLastPathComponent().path], home: home).map(\.path)
+            return !possible.contains(parent.path) || mounted.contains(parent.path)
         }
     }
 
     func remove(_ game: InstalledGame) async {
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating, runningGameID != game.id else { return }
         editing = true
-        inspectionGeneration = UUID()
         defer { editing = false }
         do {
             let updated = try await store.remove(id: game.id)
@@ -256,8 +590,59 @@ final class InstalledGamesController: ObservableObject {
         case .defaultNotInstalled(let kind):
             "The default engine (\(kind.label)) isn't installed or its runner isn't configured. Check its executable path in Engines, or choose a different default."
         case .noRunnerInstalled:
-            "No supported engine is installed. Set up CrossOver in Engines before launching."
+            "No verified Calimocho configuration is selected. Choose one in Engines; no CrossOver or GPTK engine was substituted."
         }
+    }
+
+    nonisolated static func nativeLaunchFailureMessage(_ error: Error) -> String {
+        if let failure = error as? EngineInspectionError { return failure.localizedDescription }
+        if let failure = error as? NativeLaunchError { return failure.localizedDescription }
+        return InstalledGameActionCopy.launchUnavailable
+    }
+
+    /// Launch failures the user resolves in Settings › Engines.
+    nonisolated static func launchFailureOpensEngines(_ error: Error) -> Bool {
+        if error is EngineInspectionError { return true }
+        guard let failure = error as? NativeLaunchError else { return false }
+        switch failure {
+        case .installationNotReady, .candidateBlocked, .invalidProfile, .shimsUnavailable, .legacyLauncher: return false
+        default: return true
+        }
+    }
+
+    /// Play is offered only for titles with an admitted launch setup whose engine is usable here.
+    func launchSupport(for game: InstalledGame) -> NativeLaunchSupport {
+        guard usesUnifiedAccount else { return .supported }
+        let key = "\(game.storeId):\(game.engineOverrideV2 != nil)"
+        if let (value, at) = launchSupportCache[key], ContinuousClock.now < at.advanced(by: .seconds(15)) { return value }
+        let value = NativeLaunchSupport.evaluate(productID: game.storeId,
+            evidence: MacGameEvidenceStore.shared.games[game.storeId], hasEngineOverride: game.engineOverrideV2 != nil)
+        launchSupportCache[key] = (value, .now)
+        return value
+    }
+
+    func invalidateLaunchSupport() { launchSupportCache = [:] }
+
+    /// Support for a title that isn't installed yet (install consent): no per-game override can exist.
+    func launchSupport(productID: String) -> NativeLaunchSupport {
+        guard usesUnifiedAccount else { return .supported }
+        let key = "\(productID):false"
+        if let (value, at) = launchSupportCache[key], ContinuousClock.now < at.advanced(by: .seconds(15)) { return value }
+        let value = NativeLaunchSupport.evaluate(productID: productID,
+            evidence: MacGameEvidenceStore.shared.games[productID], hasEngineOverride: false)
+        launchSupportCache[key] = (value, .now)
+        return value
+    }
+
+    func opensEngines(for game: InstalledGame) -> Bool {
+        guard let message = playErrors[game.id] else { return false }
+        return engineIssueMessages[game.id] == message
+    }
+
+    private func recordLaunchFailure(_ error: Error, for game: InstalledGame) {
+        let message = Self.nativeLaunchFailureMessage(error)
+        playErrors[game.id] = message
+        engineIssueMessages[game.id] = Self.launchFailureOpensEngines(error) ? message : nil
     }
 
     nonisolated static func sessionLog(runID: String, directory: URL) -> URL? {
@@ -291,17 +676,41 @@ final class InstalledGamesController: ObservableObject {
         return !usesUnifiedAccount || productAccess.permits(productID, account: unifiedSession?.accountHash)
     }
 
+    func productAccessNotice(for game: InstalledGame) -> String? {
+        guard !canRequestPlay(game.storeId) else { return nil }
+        return productAccess.reviewNotice(for: game.storeId, account: unifiedSession?.accountHash)
+    }
+
+    var canRetryProductAccess: Bool {
+        accountAccessAllowed && unifiedSession?.nativeLifecycleConfiguration != nil && !productAccess.checking
+            && !accountDisconnecting && !applicationTerminating
+    }
+
+    func retryProductAccess(for game: InstalledGame) async {
+        guard canRetryProductAccess, games.contains(where: { $0.id == game.id && $0.storeId == game.storeId }),
+              let session = unifiedSession else { return }
+        await productAccess.refresh(session: session, installedIDs: games.map(\.storeId),
+            force: true, selectedProductID: game.storeId)
+    }
+
     func suspendAccountView() {
         guard runningGameID == nil, stoppingGameID == nil, !mutationActive else { return }
         games = []
         launchableIDs = []
         placeholderIDs = []
+        unavailableDriveIDs = []
         updateStatuses = [:]
         playErrors = [:]
         playLogs = [:]
         playNotices = [:]
         packageErrors = [:]
         for task in nativeInspectionTasks.values { task.cancel() }
+        for task in discoveryTasks.values { task.cancel() }
+        for task in automaticDiscoveryTasks.values { task.cancel() }
+        for task in installationCheckTasks.values { task.cancel() }
+        automaticDiscoveryAttempts = [:]
+        automaticReadinessAttempts = [:]
+        discoveredVerificationErrors = [:]
         installationStatuses = [:]
         installationErrors = [:]
         nativeInspectionDates = [:]
@@ -309,6 +718,16 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func play(_ game: InstalledGame) async {
+        await play(game, historicalFixture: false)
+    }
+
+#if !XODUS_SHIPPING
+    func playHistoricalFixture(_ game: InstalledGame) async {
+        await play(game, historicalFixture: true)
+    }
+#endif
+
+    private func play(_ game: InstalledGame, historicalFixture: Bool) async {
         Self.launchLog.notice("Play requested: \(game.storeId, privacy: .public)")
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
@@ -336,7 +755,19 @@ final class InstalledGamesController: ObservableObject {
             return
         }
         if usesUnifiedAccount {
+            invalidateLaunchSupport()
+            let support = launchSupport(for: game)
+            guard support.canPlay else {
+                playErrors[game.id] = support.reason
+                engineIssueMessages[game.id] = support.offersEngines ? support.reason : nil
+                Self.launchLog.error("Launch not supported: \(game.storeId, privacy: .public): \(support.reason ?? "", privacy: .public)")
+                return
+            }
             await playNative(game)
+            return
+        }
+        guard historicalFixture || (game.engineOverride ?? defaultEngine()) == .calimocho else {
+            recordLaunchFailure(NativeLaunchError.providerPolicy, for: game)
             return
         }
         guard game.usesNativeLifecycle != true else {
@@ -352,6 +783,8 @@ final class InstalledGamesController: ObservableObject {
 
         let token = UUID()
         runToken = token
+        stopConfirmed = false
+        stopToken = nil
         runningGameID = game.id
         playState = .launching
         playErrors[game.id] = nil
@@ -377,6 +810,11 @@ final class InstalledGamesController: ObservableObject {
             if case .unavailable(let reason) = outcome {
                 playErrors[game.id] = Self.engineUnavailableMessage(reason)
             }
+            return
+        }
+        guard runner != .calimocho else {
+            finished(token: token, gameID: game.id, status: 0)
+            playErrors[game.id] = NativeLaunchError.legacyLauncher.localizedDescription
             return
         }
         do {
@@ -443,6 +881,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func useUnifiedAccount(_ session: LiveSession) {
+        if usesUnifiedAccount, unifiedSession === session { return }
         usesUnifiedAccount = true
         productAccessObservation = productAccess.objectWillChange.sink { [weak self] in
             self?.objectWillChange.send()
@@ -455,23 +894,131 @@ final class InstalledGamesController: ObservableObject {
         usesUnifiedAccount || game.usesNativeLifecycle == true
     }
 
+    func automaticReadinessKey(for game: InstalledGame) -> String {
+        "\(game.id):\(game.importedAt.timeIntervalSince1970):\(unifiedSession?.nativeInstallStatusConfiguration != nil):\(loaded):\(mutationActive):\(editing)"
+    }
+
+    func automaticallyCheckInstallation(_ game: InstalledGame) async {
+        let key = "\(game.id):\(game.importedAt.timeIntervalSince1970):\(unifiedSession?.nativeInstallStatusConfiguration != nil)"
+        let contextChanged = automaticReadinessAttempts[game.id].map { $0 != key } == true
+        guard automaticReadinessAttempts[game.id] != key, requiresNativeInstallationStatus(game),
+              installationStatuses[game.id] == nil, installationErrors[game.id] == nil || contextChanged,
+              packageErrors[game.id] == nil, loaded, !mutationActive, !editing, !choosing,
+              !accountDisconnecting, !applicationTerminating, runningGameID != game.id,
+              NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+                evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil else { return }
+        automaticReadinessAttempts[game.id] = key
+        defer {
+            if installationStatuses[game.id] == nil, installationErrors[game.id] == nil,
+               packageErrors[game.id] == nil, loaded, !accountDisconnecting, !applicationTerminating,
+               games.contains(where: { $0.id == game.id }) {
+                automaticReadinessAttempts[game.id] = nil
+                installationErrors[game.id] = Task.isCancelled
+                    ? "Installation verification was cancelled. Retry when you're ready."
+                    : "Installation verification didn't finish. Retry to verify this game."
+            }
+        }
+        guard !Task.isCancelled else { return }
+        await checkInstallation(game)
+    }
+
     func refreshNativeInstallationStatuses() async {
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
               !applicationTerminating, runningGameID == nil, stoppingGameID == nil,
               unifiedSession?.nativeInstallStatusConfiguration != nil else { return }
-        for game in games where requiresNativeInstallationStatus(game) {
-            guard !Task.isCancelled, !mutationActive, !editing, runningGameID == nil,
-                  !applicationTerminating else { return }
-            let ttl: Duration = installationStatuses[game.id]?.status == .complete ? .seconds(120) : .seconds(15)
-            if let last = nativeInspectionDates[game.id], ContinuousClock.now < last.advanced(by: ttl) { continue }
-            _ = await inspectNativeInstallation(game)
+        let pending = games.filter { game in
+            guard requiresNativeInstallationStatus(game), !Self.isMountedGame(game) else { return false }
+            guard installationErrors[game.id] == nil, packageErrors[game.id] == nil,
+                  installationStatuses[game.id] == nil || installationStatuses[game.id]?.status == .complete else { return false }
+            return nativeInspectionDates[game.id].map { ContinuousClock.now >= $0.advanced(by: .seconds(120)) } ?? true
+        }
+        await withTaskGroup(of: Void.self) { group in
+            var pending = pending.makeIterator()
+            for _ in 0..<2 {
+                if let game = pending.next() {
+                    group.addTask { [self, game] in _ = await inspectNativeInstallation(game) }
+                }
+            }
+            while await group.next() != nil {
+                guard !Task.isCancelled, !mutationActive, !editing, runningGameID == nil,
+                      !applicationTerminating else { group.cancelAll(); return }
+                if let game = pending.next() {
+                    group.addTask { [self, game] in _ = await inspectNativeInstallation(game) }
+                }
+            }
         }
     }
 
-    private func inspectNativeInstallation(_ game: InstalledGame) async -> NativeInstallationStatus? {
+    static func inspectionTimeout(for game: InstalledGame, explicitCheck: Bool = false) -> Duration {
+        explicitCheck || isMountedGame(game) ? NativeInstallationQuery.largeInstallTimeout : NativeInstallationQuery.defaultTimeout
+    }
+
+    static func permitsNativeInspection(activeChecks: Int, preparingLaunch: Bool) -> Bool {
+        activeChecks < 2 || preparingLaunch
+    }
+
+    func hasFreshCompleteInstallation(_ game: InstalledGame) -> Bool {
+        guard let status = installationStatuses[game.id], status.success, status.status == .complete,
+              status.product == game.storeId, status.gameDirectory == game.folder,
+              let date = nativeInspectionDates[game.id] else { return false }
+        return ContinuousClock.now < date.advanced(by: .seconds(120))
+    }
+
+    func recordInstallationStatus(_ status: NativeInstallationStatus, for game: InstalledGame) throws {
+        guard loaded, !applicationTerminating, games.contains(game),
+              status.version == 1, status.operation == "install-status",
+              status.product == game.storeId, status.gameDirectory == game.folder else {
+            throw GameScriptError.invalidReceipt
+        }
+        installationStatuses[game.id] = status
+        installationErrors[game.id] = status.success ? nil : status.explanation
+        nativeInspectionDates[game.id] = ContinuousClock.now
+        invalidateLaunchSupport()
+        if status.success && status.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+            evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil && launchSupport(for: game).canPlay {
+            launchableIDs.insert(game.id)
+            packageErrors[game.id] = nil
+        } else { launchableIDs.remove(game.id) }
+    }
+
+    private func inspectNativeInstallation(_ game: InstalledGame,
+                                           timeout: Duration? = nil) async -> NativeInstallationStatus? {
+        let mountedStorageRoots = mountedStorageRoots
+        let probe: GameStorageProbe
+        if let existing = installationVolumeProbes[game.id] { probe = existing }
+        else {
+            probe = GameStorageProbe()
+            installationVolumeProbes[game.id] = probe
+        }
+        let unavailable: Bool
+        do {
+            unavailable = try await probe.read {
+                game.storageVolume?.isUnavailable(mountedRoots:
+                    game.storageVolume.map { $0.path != "/" } == true ? mountedStorageRoots() : nil) == true
+            }
+        } catch {
+            guard loaded, !applicationTerminating, games.contains(game) else { return nil }
+            installationStatuses[game.id] = nil
+            nativeInspectionDates[game.id] = nil
+            launchableIDs.remove(game.id)
+            installationErrors[game.id] = "The game drive couldn't be checked. \(error.localizedDescription)"
+            return nil
+        }
+        guard loaded, !applicationTerminating, games.contains(game) else { return nil }
+        guard !unavailable else {
+            unavailableDriveIDs.insert(game.id)
+            installationStatuses[game.id] = nil
+            nativeInspectionDates[game.id] = nil
+            launchableIDs.remove(game.id)
+            installationErrors[game.id] = Self.driveUnavailableMessage
+            return nil
+        }
+        unavailableDriveIDs.remove(game.id)
         if let pending = nativeInspectionTasks[game.id] {
             do { return try await pending.value }
+            catch is CancellationError { return nil }
             catch {
+                guard !Task.isCancelled else { return nil }
                 if loaded, !applicationTerminating, games.contains(game) {
                     installationErrors[game.id] = NativeInstallationQuery.failureMessage(error)
                 }
@@ -479,10 +1026,12 @@ final class InstalledGamesController: ObservableObject {
             }
         }
         guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
-            installationErrors[game.id] = "The verified local service isn't connected. Reconnect Ode to X and check again."
+            installationErrors[game.id] = "The verified local service isn't connected. Reconnect \(AppBrand.displayName) and check again."
             return nil
         }
-        guard nativeInspectionTasks.count < 2, loaded, !mutationActive, !applicationTerminating,
+        guard Self.permitsNativeInspection(activeChecks: nativeInspectionTasks.count,
+                  preparingLaunch: runningGameID == game.id && playState == .launching),
+              loaded, !mutationActive, !applicationTerminating,
               games.contains(game) else {
             installationErrors[game.id] = "Wait for the current installation check or operation, then try again."
             return nil
@@ -490,7 +1039,8 @@ final class InstalledGamesController: ObservableObject {
         let query = NativeInstallationQuery()
         let task = Task {
             try await query.run(configuration: configuration, product: game.storeId,
-                                gameDirectory: URL(fileURLWithPath: game.folder))
+                                gameDirectory: URL(fileURLWithPath: game.folder), timeout: timeout ?? Self.inspectionTimeout(for: game),
+                                storageProbe: probe)
         }
         nativeInspectionTasks[game.id] = task
         installationErrors[game.id] = nil
@@ -503,17 +1053,13 @@ final class InstalledGamesController: ObservableObject {
             let result = try await withTaskCancellationHandler {
                 try await task.value
             } onCancel: { task.cancel() }
-            guard !applicationTerminating, loaded, games.contains(game) else { return nil }
-            installationStatuses[game.id] = result
-            installationErrors[game.id] = result.success ? nil : result.explanation
-            nativeInspectionDates[game.id] = ContinuousClock.now
-            if result.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
-                evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil {
-                launchableIDs.insert(game.id)
-                packageErrors[game.id] = nil
-            } else { launchableIDs.remove(game.id) }
+            guard !Task.isCancelled, !applicationTerminating, loaded, games.contains(game) else { return nil }
+            try recordInstallationStatus(result, for: game)
             return result
+        } catch is CancellationError {
+            return nil
         } catch {
+            guard !Task.isCancelled else { return nil }
             guard !applicationTerminating, loaded, games.contains(game) else { return nil }
             installationStatuses[game.id] = nil
             installationErrors[game.id] = NativeInstallationQuery.failureMessage(error)
@@ -531,19 +1077,45 @@ final class InstalledGamesController: ObservableObject {
         }
         let token = UUID()
         runToken = token
+        stopConfirmed = false
+        stopToken = nil
         runningGameID = game.id
         playState = .launching
         launchStarted = false
         do {
-            guard await inspectNativeInstallation(game)?.status == .complete else {
-                throw NativeLaunchError.installationNotReady
+            let preparation = Task { @MainActor in
+                if !hasFreshCompleteInstallation(game) {
+                    let status = await inspectNativeInstallation(game)
+                    try Task.checkCancellation()
+                    guard status?.status == .complete else { throw NativeLaunchError.installationNotReady }
+                }
+                let probe = gameReadinessProbes[game.id] ?? GameStorageProbe()
+                gameReadinessProbes[game.id] = probe
+                return try await probe.read {
+                    let folder = URL(fileURLWithPath: game.folder)
+                    try GameScriptFiles.checkPath(folder)
+                    let config = try MicrosoftGameConfig.read(folder: folder)
+                    guard config.storeId == game.storeId, config.identityName == game.identityName,
+                          config.version == game.version,
+                          game.storageVolume.map { $0.identifies(GameStorageVolume.read(at: folder)) } ?? true else {
+                        throw InstalledGameError.invalidConfig
+                    }
+                    return config
+                }
             }
-            let launch = try NativeLaunchConfiguration.resolve(game: game,
-                provider: game.engineOverride ?? defaultEngine(),
-                provenEngine: MacGameEvidenceStore.shared.games[game.storeId]?.provenEngine,
+            nativePreparationTask = preparation
+            defer { nativePreparationTask = nil }
+            let config = try await withTaskCancellationHandler { try await preparation.value } onCancel: { preparation.cancel() }
+            let launch = try await NativeLaunchConfiguration.resolveDefault(game: game, configuration: configuration,
+                provider: defaultEngine(),
                 evidence: MacGameEvidenceStore.shared.games[game.storeId])
+            Self.launchLog.notice("Effective launch: \(game.storeId, privacy: .public); engine=\(launch.engine, privacy: .public); registry=\(launch.registry.path, privacy: .public); prefix=\(launch.prefix.path, privacy: .public)")
+            guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
             let arguments = try await launch.arguments()
-            let executables = try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder)).executables
+            let prefixNotice = try await launch.prefixNotice()
+            let legacyPrefixIDs = try await store.prefixInstallationIDs(productID: game.storeId) + [game.id]
+            if preparation.isCancelled { throw CancellationError() }
+            let executables = config.executables
             let existingWindows = NativeGameForeground.windowIDs()
             guard canRequestPlay(game.storeId), session.accountHash == account,
                   session.nativeLifecycleConfiguration?.executable == configuration.executable,
@@ -551,7 +1123,7 @@ final class InstalledGamesController: ObservableObject {
                   games.contains(game) else { throw GameScriptError.busy }
             playErrors[game.id] = nil
             playLogs[game.id] = nil
-            playNotices[game.id] = nil
+            playNotices[game.id] = prefixNotice
             let runID = Self.runID()
             runIDs[game.id] = runID
             nativeLaunchTask = Task {
@@ -561,7 +1133,14 @@ final class InstalledGamesController: ObservableObject {
                         operation: "launch", product: game.storeId,
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
                         launchArguments: arguments, launchEnvironment: launch.profile?.launchEnvironment ?? [:],
-                        unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [], onStarted: {
+                        unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [],
+                        engineSelection: launch.admittedSelection, prepareAdmittedPrefix: {
+                            guard let selection = launch.admittedSelection else { throw NativeLaunchError.providerNotAdmitted }
+                            try await Task.detached {
+                                try CalimochoPrefixContinuity.prepare(prefix: launch.prefix, selection: selection,
+                                    productID: game.storeId, legacyIDs: legacyPrefixIDs)
+                            }.value
+                        }, onStarted: {
                             Self.launchLog.notice("Launcher started: \(game.storeId, privacy: .public), engine \(launch.engine, privacy: .public)")
                             launchStarted = true
                             playState = .playing
@@ -583,35 +1162,38 @@ final class InstalledGamesController: ObservableObject {
                     nativeForegroundTask?.cancel()
                     nativeForegroundTask = nil
                     let duration = clock.duration(to: .now).components
-                    let playerMessage: String?
-                    do {
-                        playerMessage = try await result.playerMessage()
-                    } catch {
-                        playerMessage = "The launch log couldn't be read. Open its folder to review the error."
-                        Self.launchLog.error("Player log read failed: \(error.localizedDescription, privacy: .public)")
-                    }
                     guard runToken == token else { return }
                     recordSession(gameID: game.id, startedAt: startedAt,
                         seconds: Double(duration.seconds) + Double(duration.attoseconds) / 1e18)
+                    let stoppedByUser = stopToken == token
                     finished(token: token, gameID: game.id, status: result.exitCode)
                     playLogs[game.id] = URL(fileURLWithPath: result.logDirectory)
-                    if let playerMessage { playErrors[game.id] = playerMessage }
-                    if !result.success && result.errorCode != "CANCELLED" {
-                        playErrors[game.id] = playerMessage ?? result.failureMessage
+                    playErrors[game.id] = result.launchFailureMessage(stoppedByUser: stoppedByUser)
+                    if !result.success {
+                        Self.launchLog.error("Launch terminal result: \(game.storeId, privacy: .public); code=\(result.errorCode ?? "unknown", privacy: .public); error=\(result.error ?? "none", privacy: .public)")
                     }
                     if session.accountHash != account { playErrors[game.id] = "Your Xbox account changed during play." }
+                } catch NativeLifecycleCancellation.launchStopped {
+                    let stoppedByUser = stopToken == token
+                    finished(token: token, gameID: game.id, status: 0)
+                    playErrors[game.id] = stoppedByUser ? nil : InstalledGameActionCopy.launchUnavailable
+                    playLogs[game.id] = nativeLauncher.stateDirectory
+                    if let result = nativeLauncher.completedResult, !result.success {
+                        Self.launchLog.notice("Stopped launch: \(game.storeId, privacy: .public); code=\(result.errorCode ?? "unknown", privacy: .public); error=\(result.error ?? "none", privacy: .public)")
+                    }
                 } catch {
                     finished(token: token, gameID: game.id, status: 1)
-                    playErrors[game.id] = (error as? GameScriptError)?.localizedDescription
-                        ?? InstalledGameError.launch.localizedDescription
+                    recordLaunchFailure(error, for: game)
                     playLogs[game.id] = nativeLauncher.stateDirectory
                 }
                 nativeLaunchTask = nil
             }
+        } catch is CancellationError {
+            finished(token: token, gameID: game.id, status: 0)
+            playErrors[game.id] = nil
         } catch {
             finished(token: token, gameID: game.id, status: 1)
-            playErrors[game.id] = (error as? NativeLaunchError)?.localizedDescription
-                ?? (error as? GameScriptError)?.localizedDescription ?? InstalledGameError.launch.localizedDescription
+            recordLaunchFailure(error, for: game)
             Self.launchLog.error("Play failed before launch: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -738,16 +1320,41 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func checkInstallation(_ game: InstalledGame) async {
-        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
+        guard loaded, !checkingInstallations.contains(game.id), !editing, !choosing, !mutationActive, !accountDisconnecting,
               !applicationTerminating, runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
-        if requiresNativeInstallationStatus(game) {
-            _ = await inspectNativeInstallation(game)
-            return
-        }
-        editing = true
         checkingInstallations.insert(game.id)
-        defer { checkingInstallations.remove(game.id); editing = false }
-        await refreshLaunchableGames()
+        defer {
+            checkingInstallations.remove(game.id)
+            installationCheckTasks[game.id] = nil
+        }
+        let task = Task { @MainActor in
+            await observeLaunchableGame(game)
+            guard !Task.isCancelled, requiresNativeInstallationStatus(game), !unavailableDriveIDs.contains(game.id),
+                  packageErrors[game.id] == nil,
+                  let current = games.first(where: { $0.id == game.id && $0.folder == game.folder }) else { return }
+            _ = await inspectNativeInstallation(current, timeout: Self.inspectionTimeout(for: current, explicitCheck: true))
+        }
+        installationCheckTasks[game.id] = task
+        await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+    }
+
+    func cancelInstallationCheck(_ game: InstalledGame) {
+        if checkingInstallations.contains(game.id) {
+            installationErrors[game.id] = "Installation verification was cancelled. Retry when you're ready."
+        }
+        if runningGameID == game.id && !launchStarted {
+            stopToken = runToken
+            Self.cancelPrestartLaunch(preparation: nativePreparationTask, launch: nativeLaunchTask, launcher: nativeLauncher)
+        }
+        installationCheckTasks[game.id]?.cancel()
+        nativeInspectionTasks[game.id]?.cancel()
+    }
+
+    static func cancelPrestartLaunch(preparation: Task<MicrosoftGameConfig, Error>?,
+                                     launch: Task<Void, Never>?, launcher: NativeGameLifecycle) {
+        preparation?.cancel()
+        launch?.cancel()
+        launcher.cancel()
     }
 
     func reserveMutation(gameID: UUID?) throws {
@@ -777,12 +1384,152 @@ final class InstalledGamesController: ObservableObject {
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating,
               runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
         editing = true
-        inspectionGeneration = UUID()
         defer { editing = false }
         do {
-            applySavedGames(try await store.setEngineOverride(id: game.id, override: override))
+            let selection = override == .calimocho ? try AdmittedEngineSelection.read(defaults: .standard) : nil
+            applySavedGames(try await store.setEngineOverride(id: game.id, override: override, selection: selection))
             error = nil
-        } catch { self.error = InstalledGameError.storage.localizedDescription }
+        } catch let failure as NativeLaunchError { self.error = failure.localizedDescription }
+        catch { self.error = InstalledGameError.storage.localizedDescription }
+    }
+
+    func refreshEngineOverrides(force: Bool = true, retryFailed: Bool = false) async {
+        guard loaded, force || !checkingEngineOverrides, !applicationTerminating,
+              force || !engineOverridesChecked || (retryFailed && !failedEngineOverrides.isEmpty),
+              unifiedSession?.nativeLifecycleConfiguration != nil else { return }
+        await withEngineOverrideCheck {
+            guard !applicationTerminating, !accountDisconnecting, !Task.isCancelled,
+                  let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
+            await inspectEngineOverrides(configuration: configuration, force: force)
+        }
+    }
+
+    func activateCalimochoUpdate(_ selection: AdmittedEngineSelection,
+                                replacing oldEngine: String,
+                                defaults: UserDefaults = .standard) async throws {
+        guard loaded, mutationActive, !applicationTerminating, !accountDisconnecting,
+              runningGameID == nil, let pin = CalimochoReleasePin.all.last,
+              selection.inspection.engineName == pin.engineName,
+              selection.inspection.wineSha256 == pin.wineSha256,
+              selection.inspection.wineserverSha256 == pin.wineserverSha256 else {
+            throw CalimochoUpdateError.admission
+        }
+        for product in ["9P9VNSQK1W3K", "9NMNMS626R59"] {
+            guard let profile = try NativeTitleLaunchProfile.read(productID: product, defaults: defaults,
+                                                                  provider: .calimocho),
+                  profile.engine == pin.engineName, profile.wineSha256 == pin.wineSha256,
+                  profile.wineserverSha256 == pin.wineserverSha256 else { throw NativeLaunchError.invalidProfile }
+        }
+        let previous = defaults.object(forKey: NativeEngineDefaults.preferenceKey)
+        let previousProvider = defaults.object(forKey: EngineDefaults.defaultEngineKey)
+        do {
+            if EngineDefaults.defaultEngine(defaults).map({ $0 == .calimocho }) ?? true,
+               let bytes = defaults.data(forKey: NativeEngineDefaults.preferenceKey) {
+                let saved = try JSONDecoder().decode(AdmittedEngineSelection.self, from: bytes)
+                if saved.inspection.admittedProvider == "calimocho", saved.inspection.engineName == oldEngine {
+                    try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
+                }
+            }
+            applySavedGames(try await store.retargetCalimochoTitles(selection, replacing: oldEngine))
+        } catch {
+            if let previous { defaults.set(previous, forKey: NativeEngineDefaults.preferenceKey) }
+            else { defaults.removeObject(forKey: NativeEngineDefaults.preferenceKey) }
+            if let previousProvider { defaults.set(previousProvider, forKey: EngineDefaults.defaultEngineKey) }
+            else { defaults.removeObject(forKey: EngineDefaults.defaultEngineKey) }
+            throw error
+        }
+    }
+
+    func withEngineOverrideCheck(_ inspection: @MainActor () async -> Void) async {
+        while checkingEngineOverrides {
+            await withCheckedContinuation { engineOverrideWaiters.append($0) }
+        }
+        checkingEngineOverrides = true
+        defer {
+            checkingEngineOverrides = false
+            let waiters = engineOverrideWaiters
+            engineOverrideWaiters.removeAll()
+            for waiter in waiters { waiter.resume() }
+        }
+        await inspection()
+    }
+
+    private func inspectEngineOverrides(configuration: BackendConfiguration, force: Bool) async {
+        do {
+            let catalog = try NativeEngineDefaults.read()
+            let names = Self.engineInspectionNames(all: Set(catalog.bindings.map(\.engineName)),
+                failed: failedEngineOverrides, checked: engineOverridesChecked, force: force)
+            var choices = availableEngineOverrides.filter { !names.contains($0.inspection.engineName ?? "") }
+            var failures = failedEngineOverrides.subtracting(names)
+            for binding in catalog.bindings where names.contains(binding.engineName) {
+                do { choices.append(try await binding.inspect(configuration: configuration)) }
+                catch {
+                    failures.insert(binding.engineName)
+                    Self.launchLog.error("Override unavailable: \(binding.engineName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+                guard !applicationTerminating, !Task.isCancelled else { return }
+            }
+            availableEngineOverrides = choices
+            failedEngineOverrides = failures
+            engineOverridesChecked = true
+        } catch { self.error = Self.nativeLaunchFailureMessage(error) }
+    }
+
+    static func engineInspectionNames(all: Set<String>, failed: Set<String>, checked: Bool,
+                                      force: Bool) -> Set<String> {
+        force || !checked ? all : failed.intersection(all)
+    }
+
+    func engineOverrides(for game: InstalledGame) -> [AdmittedEngineSelection] {
+        availableEngineOverrides.filter { selection in
+            do {
+                try NativeLaunchConfiguration.validateOverride(selection, game: game)
+                return true
+            } catch {
+                Self.launchLog.debug("Override incompatible: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return false
+            }
+
+        }
+    }
+
+    func defaultEngineLabel(for game: InstalledGame) -> String {
+        let titleEngine = try? NativeTitleLaunchProfile.read(productID: game.storeId, defaults: .standard,
+                                                              provider: .calimocho)?.engine
+        let saved = UserDefaults.standard.data(forKey: NativeEngineDefaults.preferenceKey)
+            .flatMap { try? JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+        let name = titleEngine ?? saved?.inspection.engineName
+            ?? (try? NativeEngineDefaults.read().defaultEngine)
+        return Self.readableEngineName(name)
+    }
+
+    static func readableEngineName(_ name: String?) -> String {
+        EngineDisplayName.name(name)
+    }
+
+    func setEngineOverrideV2(_ selection: AdmittedEngineSelection?, for game: InstalledGame) async {
+        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating,
+              runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
+        editing = true
+        defer { editing = false }
+        do {
+            if let selection {
+                try NativeLaunchConfiguration.validateOverride(selection, game: game)
+                guard let configuration = unifiedSession?.nativeLifecycleConfiguration,
+                      let name = selection.inspection.engineName,
+                      let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+                try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
+                    "--registry", selection.registryPath, "--engine", name, "--expected-registry-sha256", digest
+                ], selection: selection)
+            }
+            guard !applicationTerminating, !accountDisconnecting else { throw GameScriptError.busy }
+            applySavedGames(try await store.setEngineOverrideV2(id: game.id, selection: selection))
+            playErrors[game.id] = nil
+            error = nil
+        } catch {
+            Self.launchLog.error("Override not saved: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            self.error = Self.nativeLaunchFailureMessage(error)
+        }
     }
 
     func registerInstallation(folder: URL, launcher: URL, expectedStoreID: String) async throws {
@@ -802,7 +1549,6 @@ final class InstalledGamesController: ObservableObject {
     func removeUninstalled(_ id: UUID) async throws {
         guard mutationActive, mutationGameID == id, runningGameID != id, !editing else { throw GameScriptError.busy }
         editing = true
-        inspectionGeneration = UUID()
         defer { editing = false }
         applySavedGames(try await store.remove(id: id))
         launchableIDs.remove(id)
@@ -815,13 +1561,13 @@ final class InstalledGamesController: ObservableObject {
     }
 
     private func saveValidatedGame(folder: URL, launcher: URL?, expectedStoreID: String?) async throws {
-        inspectionGeneration = UUID()
         let inspectPackage = inspectPackage
         let metadata = try await Task.detached(priority: .userInitiated) {
+            try GameScriptFiles.checkPath(folder)
             let config = try MicrosoftGameConfig.read(folder: folder)
             if let launcher { try InstalledGameFiles.checkLauncher(launcher) }
             if let expectedStoreID, config.storeId != expectedStoreID { throw GameScriptError.invalidReceipt }
-            return (config, try inspectPackage(folder))
+            return (config, try inspectPackage(folder), GameStorageVolume.read(at: folder))
         }.value
         let previous = games.first(where: { $0.folder == folder.path })
         guard previous?.id != runningGameID || runningGameID == nil else { throw GameScriptError.busy }
@@ -829,7 +1575,7 @@ final class InstalledGamesController: ObservableObject {
             title: metadata.0.title, identityName: metadata.0.identityName, version: metadata.0.version,
             storeId: metadata.0.storeId, folder: folder.path, launcher: launcher?.path ?? "", importedAt: Date(),
             publisher: metadata.0.publisher, packageType: metadata.1,
-            usesNativeLifecycle: launcher == nil ? true : nil)
+            usesNativeLifecycle: launcher == nil ? true : nil, storageVolume: metadata.2)
         applySavedGames(try await store.upsert(game))
         await refreshLaunchableGames()
     }
@@ -870,19 +1616,67 @@ final class InstalledGamesController: ObservableObject {
     }
 
     private func refreshLaunchableGames() async {
-        let generation = UUID()
-        inspectionGeneration = generation
-        let entries = games
+        guard !refreshingReadiness else {
+            readinessRefreshRequested = true
+            return
+        }
+        refreshingReadiness = true
+        defer { refreshingReadiness = false }
+        repeat {
+            readinessRefreshRequested = false
+            await observeLaunchableGames()
+        } while readinessRefreshRequested && loaded && !applicationTerminating
+    }
+
+    private func observeLaunchableGames() async {
+        await withTaskGroup(of: Void.self) { group in
+            var pending = games.filter { !Self.isMountedGame($0) }.makeIterator()
+            for _ in 0..<2 {
+                if let game = pending.next() {
+                    group.addTask { [self, game] in await observeLaunchableGame(game) }
+                }
+            }
+            while await group.next() != nil {
+                guard !Task.isCancelled, loaded, !applicationTerminating else { group.cancelAll(); return }
+                if let game = pending.next() {
+                    group.addTask { [self, game] in await observeLaunchableGame(game) }
+                }
+            }
+        }
+    }
+
+    static func isMountedGame(_ game: InstalledGame) -> Bool {
+        game.folder.hasPrefix("/Volumes/") || game.folder.hasPrefix(NSHomeDirectory() + "/Mounts/")
+    }
+
+    private func observeLaunchableGame(_ game: InstalledGame) async {
+        let entries = [game]
+        let probe: GameStorageProbe
+        if let existing = gameReadinessProbes[game.id] { probe = existing }
+        else {
+            probe = GameStorageProbe()
+            gameReadinessProbes[game.id] = probe
+        }
         let inspectPackage = inspectPackage
+        let mountedStorageRoots = mountedStorageRoots
         let nativeIDs = Set(entries.filter(requiresNativeInstallationStatus).map(\.id))
-        let result = await Task.detached(priority: .utility) {
+        let read = Task { try await probe.read(timeout: .seconds(3)) {
             var launchable: Set<UUID> = []
             var publishers: [UUID: String] = [:]
             var packageTypes: [UUID: PackageType] = [:]
             var failures: [UUID: String] = [:]
             var placeholders: Set<UUID> = []
+            var unavailableDrives: Set<UUID> = []
+            var volumes: [UUID: GameStorageVolume] = [:]
+            var validNativeFolders: Set<UUID> = []
+            let mounted = game.storageVolume.map { $0.path != "/" } == true ? mountedStorageRoots() : nil
             for game in entries {
                 let folder = URL(fileURLWithPath: game.folder)
+                if game.storageVolume?.isUnavailable(mountedRoots: mounted) == true {
+                    unavailableDrives.insert(game.id)
+                    failures[game.id] = Self.driveUnavailableMessage
+                    continue
+                }
                 if game.publisher == nil, let publisher = (try? MicrosoftGameConfig.read(folder: folder))?.publisher {
                     publishers[game.id] = publisher
                 }
@@ -892,12 +1686,18 @@ final class InstalledGamesController: ObservableObject {
                 }
                 do {
                     try InstalledGameFiles.checkFolder(folder)
-                    if game.usesNativeLifecycle != true {
+                    try GameScriptFiles.checkPath(folder)
+                    if !nativeIDs.contains(game.id) {
                         try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: game.launcher))
                     }
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId else { throw InstalledGameError.invalidConfig }
-                    if nativeIDs.contains(game.id) { continue }
+                    if let volume = GameStorageVolume.read(at: folder),
+                       game.storageVolume == nil
+                        || (game.storageVolume?.uuid == nil && game.storageVolume?.path == volume.path && volume.uuid != nil) {
+                        volumes[game.id] = volume
+                    }
+                    if nativeIDs.contains(game.id) { validNativeFolders.insert(game.id); continue }
                     if config.placeholderOnly {
                         placeholders.insert(game.id)
                         failures[game.id] = InstalledGameError.placeholderContent.localizedDescription
@@ -909,20 +1709,41 @@ final class InstalledGamesController: ObservableObject {
                         ?? "Game readiness couldn't be checked. Reconnect its drive or reimport the installed game."
                 }
             }
-            return (launchable, publishers, packageTypes, failures, placeholders)
-        }.value
-        guard inspectionGeneration == generation, !applicationTerminating else { return }
+            return (launchable, publishers, packageTypes, failures, placeholders,
+                    unavailableDrives, volumes, validNativeFolders)
+        } }
+        let outcome = await withTaskCancellationHandler { await read.result } onCancel: { read.cancel() }
+        guard loaded, !applicationTerminating, games.contains(where: {
+            $0.id == game.id && $0.folder == game.folder && $0.importedAt == game.importedAt
+        }) else { return }
+        guard case .success(let result) = outcome else {
+            if case .failure(let error) = outcome {
+                guard !(error is CancellationError) else { return }
+                Self.launchLog.error("Readiness refresh unavailable; retaining prior per-game evidence: \(error.localizedDescription, privacy: .public)")
+                packageErrors[game.id] = "The installation couldn't be checked. Try again."
+            }
+            return
+        }
+        unavailableDriveIDs.subtract([game.id])
+        unavailableDriveIDs.formUnion(result.5)
+        for id in result.5 {
+            installationStatuses[id] = nil
+            installationErrors[id] = Self.driveUnavailableMessage
+            nativeInspectionDates[id] = nil
+        }
         let nativeComplete = Set(installationStatuses.filter { $0.value.status == .complete }.map(\.key))
+            .intersection(result.7)
         let candidateBlocked = Set(games.filter {
             NativeCandidateLaunchCatalogue.issue(productID: $0.storeId,
                 evidence: MacGameEvidenceStore.shared.games[$0.storeId]) != nil
         }.map(\.id))
-        launchableIDs = result.0.union(nativeComplete).intersection(games.map(\.id)).subtracting(candidateBlocked)
-        packageErrors = result.3
-        placeholderIDs = result.4.intersection(games.map(\.id))
+        launchableIDs.remove(game.id)
+        launchableIDs.formUnion(result.0.union(nativeComplete).intersection([game.id]).subtracting(candidateBlocked))
+        packageErrors[game.id] = result.3[game.id]
+        placeholderIDs.remove(game.id)
+        placeholderIDs.formUnion(result.4)
         var latestSaved: [InstalledGame]?
         for (id, detected) in result.2 where games.contains(where: { $0.id == id && $0.packageType != detected }) {
-            guard inspectionGeneration == generation else { return }
             do {
                 guard let observed = entries.first(where: { $0.id == id }) else { continue }
                 latestSaved = try await store.recordPackageType(id: id, type: detected,
@@ -930,10 +1751,19 @@ final class InstalledGamesController: ObservableObject {
             }
             catch { packageErrors[id] = "The detected package format couldn't be saved. Check Application Support access." }
         }
-        guard inspectionGeneration == generation else { return }
         if let latestSaved { applySavedGames(latestSaved) }
+        for (id, volume) in result.6 {
+            guard let observed = entries.first(where: { $0.id == id }) else { return }
+            do {
+                applySavedGames(try await store.recordStorageVolume(id: id, volume: volume,
+                                                                   observedAtImport: observed.importedAt))
+            } catch { packageErrors[id] = "The game drive information couldn't be saved. Check Application Support access." }
+        }
         for index in games.indices where games[index].publisher == nil {
             games[index].publisher = result.1[games[index].id]
         }
     }
+
+    nonisolated static let driveUnavailableMessage =
+        "This game's drive is unavailable. Reconnect the drive, then check again. Its library entry and recorded location are kept."
 }

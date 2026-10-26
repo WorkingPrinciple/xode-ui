@@ -42,13 +42,13 @@ final class ShippingChecks: XCTestCase {
               "Shipping setup starts unchecked, without a script, repair or invented readiness")
         let results = CatalogSearchResults(query: "neutral", ownedGames: [], storeProducts: [], gamePassProductIDs: [])
         check(results.ownedMatches.isEmpty && results.storeProducts.isEmpty
-              && results.badge(for: "FIXTURE00001") == nil && session.gamePassProductIDs.isEmpty
+              && results.facts(for: "FIXTURE00001").badgeLabels().isEmpty && session.gamePassProductIDs.isEmpty
               && state.gameOperations.compatibility.isEmpty && !state.gameOperations.checkingCompatibility,
               "Shipping search and Mac-support badges start without invented ownership/feed/check evidence")
         await state.loadRecentActivityIfVisible(session: session)
         check(session.recentLibrary == nil && !session.recentLibraryBootstrapRunning
               && session.authentication == nil && session.libraryTitle == "Your PC library isn't available yet"
-              && session.libraryMessage == "Ode to X can't yet verify which PC games you own.",
+              && session.libraryMessage == "X Ode can't yet verify which PC games you own.",
               "Shipping main Library cannot initiate saved-status or history loading")
         state.openRecentActivity()
         check(state.showsRecentActivity && state.query.isEmpty,
@@ -63,10 +63,8 @@ final class ShippingChecks: XCTestCase {
             version: "26.3", buildVersion: "26.3.0.39832"))
         let runtime = RuntimeProviderSettings(detectCrossOver: { official })
         await runtime.refreshCrossOverDependency()
-        check(runtime.configuration?.provider == .crossover && runtime.configuration?.providerVersion == "26.3"
-              && runtime.configuration?.engine.version == nil && runtime.configuration?.graphics.backend == nil
-              && runtime.plan == nil,
-              "Actual shipping configuration defaults only from a neutral verified CrossOver observation")
+        check(runtime.crossOverDependency == official && runtime.configuration == nil && runtime.plan == nil,
+              "Actual shipping CrossOver detection preserves its observation without auto-selection or silent fallback")
         runtime.select(.gptk4)
         check(runtime.requiresExperimentalAcknowledgement && runtime.planningBlocker != nil,
               "Actual shipping alternatives are acknowledgement-gated Experimental configurations")

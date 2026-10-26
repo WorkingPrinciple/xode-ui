@@ -7,9 +7,11 @@ struct ScopedSearchField: View {
     @Binding var focused: Bool
     let placeholder: String
     var enabled = true
+    var showResults: (() -> Void)?
 
     var body: some View {
-        NativeSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
+        NativeSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled,
+                          showResults: showResults)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
@@ -22,10 +24,19 @@ struct NativeToolbarSearch: View {
     let placeholder: String
     var enabled = true
     var openSearch: () -> Void = {}
+    var showResults: (() -> Void)?
+    var recentSearchesPresented: Binding<Bool> = .constant(false)
+    var recentSearchesContent = AnyView(EmptyView())
+
+    static func collapsedAccessibility(for placeholder: String) -> (label: String, help: String) {
+        (label: placeholder, help: "Open catalogue search")
+    }
 
     static func width(text: String, focused: Bool) -> CGFloat {
         focused || !text.isEmpty ? 220 : 32
     }
+
+    static let collapsedHitSize = CGSize(width: 32, height: 28)
 
     func expand() {
         guard enabled else { return }
@@ -33,30 +44,43 @@ struct NativeToolbarSearch: View {
         focused = true
     }
 
+    private var expanded: Bool { focused || recentSearchesPresented.wrappedValue }
+
     var body: some View {
+        let accessibility = Self.collapsedAccessibility(for: placeholder)
         Group {
-            if Self.width(text: text, focused: focused) == 32 {
+            if Self.width(text: text, focused: expanded) == 32 {
                 Button(action: expand) {
-                    Image(systemName: "magnifyingglass").frame(width: 24, height: 24)
+                    Image(systemName: "magnifyingglass")
+                        .frame(width: Self.collapsedHitSize.width, height: Self.collapsedHitSize.height)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(!enabled)
-                .accessibilityLabel(placeholder)
+                .accessibilityLabel(accessibility.label)
                 .accessibilityIdentifier("xodus.catalog.openSearch")
+                .help(accessibility.help)
             } else {
-                ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled)
+                ScopedSearchField(text: $text, focused: $focused, placeholder: placeholder, enabled: enabled,
+                                  showResults: showResults)
             }
         }
-        .frame(width: Self.width(text: text, focused: focused))
-        .help(placeholder)
+        .frame(width: Self.width(text: text, focused: expanded))
+        .popover(isPresented: recentSearchesPresented, attachmentAnchor: .rect(.bounds),
+                 arrowEdge: .bottom) {
+            recentSearchesContent
+        }
     }
 }
 
 struct NativeSearchField: NSViewRepresentable {
+    static let accessibilityName = "Search games"
+
     @Binding var text: String
     @Binding var focused: Bool
     let placeholder: String
     var enabled = true
+    var showResults: (() -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -84,13 +108,23 @@ struct NativeSearchField: NSViewRepresentable {
         updateField(view, coordinator: context.coordinator)
     }
 
+    static func endEditingClearsFocus(retired: Bool, attached: Bool, editing: Bool) -> Bool {
+        !retired && attached && !editing
+    }
+
+    static func dismantleNSView(_ view: FocusedSearchField, coordinator: Coordinator) {
+        coordinator.retired = true
+        view.wantsFocus = false
+    }
+
     func updateField(_ view: FocusedSearchField, coordinator: Coordinator) {
         coordinator.parent = self
+        coordinator.retired = false
         view.wantsFocus = focused && enabled
         view.isEnabled = enabled
         if view.stringValue != text { view.stringValue = text }
         view.placeholderString = placeholder
-        view.setAccessibilityLabel(placeholder)
+        view.setAccessibilityLabel(Self.accessibilityName)
         if view.wantsFocus, view.window != nil, view.currentEditor() == nil {
             DispatchQueue.main.async { [weak view] in
                 guard let view, view.wantsFocus, view.isEnabled else { return }
@@ -102,6 +136,7 @@ struct NativeSearchField: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, NSSearchFieldDelegate {
         var parent: NativeSearchField
+        var retired = false
         init(_ parent: NativeSearchField) { self.parent = parent }
         func controlTextDidChange(_ notification: Notification) {
             guard let field = notification.object as? NSSearchField else { return }
@@ -111,8 +146,42 @@ struct NativeSearchField: NSViewRepresentable {
             guard field.isEnabled, parent.text != field.stringValue else { return }
             parent.text = field.stringValue
         }
-        func controlTextDidBeginEditing(_ notification: Notification) { parent.focused = true }
-        func controlTextDidEndEditing(_ notification: Notification) { parent.focused = false }
+        func controlTextDidBeginEditing(_ notification: Notification) {
+            guard !retired else { return }
+            parent.focused = true
+        }
+        func controlTextDidEndEditing(_ notification: Notification) {
+            guard let field = notification.object as? NSSearchField else { return }
+            // Toolbar rebuilds remove and re-add the editor; settle after the current event
+            // so a replaced or re-focused field doesn't collapse the search the user opened.
+            DispatchQueue.main.async { [weak self, weak field] in
+                guard let self, let field else { return }
+                self.settleEndEditing(field)
+            }
+        }
+        func settleEndEditing(_ field: NSSearchField) {
+            guard NativeSearchField.endEditingClearsFocus(retired: retired, attached: field.window != nil,
+                                                         editing: field.currentEditor() != nil) else { return }
+            parent.focused = false
+        }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            if commandSelector == #selector(NSResponder.moveDown(_:))
+                || commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                guard let showResults = parent.showResults else { return false }
+                showResults()
+                return true
+            }
+            if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                if parent.text.isEmpty {
+                    parent.focused = false
+                    control.window?.makeFirstResponder(nil)
+                } else {
+                    parent.text = ""
+                }
+                return true
+            }
+            return false
+        }
     }
 }
 

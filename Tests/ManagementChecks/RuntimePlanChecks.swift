@@ -16,9 +16,16 @@ extension Checks {
             check(try JSONDecoder().decode(JSONValue.self, from: encoded) == value,
                   "Provider configurations encode every required nullable field without inventing versions")
         }
-        for (index, provider) in RuntimeProviderKind.allCases.enumerated() {
+        for (index, provider) in [RuntimeProviderKind.gptk3, .gptk4, .crossover, .standaloneWine].enumerated() {
             check(try JSONDecoder().decode(JSONValue.self, from: contract.request(.preset(provider))) == positives[index],
                   "Four native preset declarations equal their canonical configurations")
+        }
+        do {
+            _ = try contract.request(.preset(.calimocho))
+            check(false, "Calimocho selection cannot invent a runtime-plan backend contract")
+        } catch {
+            check(error as? RuntimePlanningError == .invalidConfiguration,
+                  "Calimocho uses existing registry admission, not an invented legacy runtime-plan preset")
         }
         for value in corpus["invalidConfigurations"]?.array ?? [] {
             do {

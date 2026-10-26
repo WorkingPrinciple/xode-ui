@@ -25,8 +25,7 @@ struct InstalledGamesView: View {
                                 Text("Last played \(Text(date, style: .relative)) ago")
                                     .font(.callout).foregroundStyle(.secondary)
                             }
-                            InstalledPlayButton(library: library, operations: operations, game: game)
-                            playError(game)
+                            InstalledPlayButton(library: library, operations: operations, game: game, showsDiagnostics: false)
                         }
                         .padding(24).frame(maxWidth: .infinity, alignment: .leading)
                         .background(.regularMaterial)
@@ -59,7 +58,7 @@ struct InstalledGamesView: View {
             if library.loading {
                 ProgressView("Loading installed games").controlSize(.small)
             } else if library.loaded, library.games.isEmpty {
-                Text("Add a game you've already installed with Ode to X.")
+                Text("Add a game you've already installed with \(AppBrand.displayName).")
                     .foregroundStyle(.secondary)
                 importButton
             }
@@ -77,12 +76,10 @@ struct InstalledGamesView: View {
                             }
                         }
                         Spacer()
-                        InstalledEngineOverride(library: library, game: game)
                         InstalledGameActions(library: library, operations: operations, game: game)
-                        InstalledPlayButton(library: library, operations: operations, game: game)
+                        InstalledPlayButton(library: library, operations: operations, game: game, showsDiagnostics: false)
                     }
                     InstalledUpdateBadge(library: library, operations: operations, game: game)
-                    playError(game)
                 }
                 .accessibilityElement(children: .contain)
                 Divider()
@@ -91,14 +88,11 @@ struct InstalledGamesView: View {
     }
 
     private var importButton: some View {
-        Button("Import installed Xbox game") { Task { await library.chooseGame() } }
+        Button(NativeToolbarImportButton.title) { Task { await library.chooseGame() } }
             .disabled(!library.loaded || library.editing || library.choosing || library.mutationActive)
             .accessibilityIdentifier("xodus.installed.import")
     }
 
-    @ViewBuilder private func playError(_ game: InstalledGame) -> some View {
-        InstalledPlayError(library: library, game: game)
-    }
 }
 
 struct InstalledUpdateBadge: View {
@@ -119,7 +113,7 @@ struct InstalledUpdateBadge: View {
                 Button("Update") {
                     Task {
                         await operations.repair(
-                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game)
+                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game, intent: .update)
                     }
                 }
                 .disabled(!operations.canRepair(game))
@@ -135,24 +129,77 @@ struct InstalledPlayError: View {
     let game: InstalledGame
 
     var body: some View {
-        if let error = library.packageErrors[game.id] {
-            Text(error).font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("xodus.installed.packageError")
+        if let message = library.packageErrors[game.id] ?? library.playErrors[game.id] ?? library.playNotices[game.id] {
+            InstallationWarning(message: message)
+            if library.packageErrors[game.id] == nil, library.opensEngines(for: game) { OpenEnginesButton() }
         }
-        if let error = library.playErrors[game.id] {
-            Text(error).font(.callout).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("xodus.installed.playError")
-            if library.playLogs[game.id] != nil {
-                Button("Show launch log") { library.showLog(for: game) }
-                    .accessibilityLabel("Show \(game.title) launch log in Finder")
-                    .accessibilityIdentifier("xodus.installed.showLog")
+    }
+}
+
+struct InstalledLaunchSupportStatus: View {
+    let support: NativeLaunchSupport
+    let gameTitle: String
+    var showsReason = true
+
+    private var title: String {
+        support.offersEngines ? "Engine needed" : NativeLaunchSupport.notSupportedTitle
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(title, systemImage: support.offersEngines ? "wrench.and.screwdriver" : "info.circle")
+                .font(.callout.weight(.medium))
+            if showsReason, let reason = support.reason {
+                Text(reason).font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        } else if let notice = library.playNotices[game.id] {
-            Text(notice).font(.callout).foregroundStyle(.secondary)
-                .accessibilityIdentifier("xodus.installed.playResult")
+            if support.offersEngines {
+                OpenEnginesButton()
+            }
         }
+        .help(support.reason ?? title)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(title) for \(gameTitle). \(support.reason ?? "")")
+        .accessibilityIdentifier(support.offersEngines ? "xodus.installed.engineNeeded" : "xodus.installed.notSupported")
+    }
+}
+
+struct OpenEnginesButton: View {
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Button("Open Engines") {
+            SettingsPaneSelection.select(.engines)
+            openSettings()
+        }
+        .accessibilityIdentifier("xodus.installed.openEngines")
+    }
+}
+
+struct InstallationWarning: View {
+    let message: String
+    var showsMessage = false
+
+    var body: some View {
+        Group {
+            if showsMessage {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(message, systemImage: "exclamationmark.triangle")
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let permission = PrivacyDenial.permission(inMessage: message) {
+                        OpenPrivacySettingsButton(permission: permission)
+                    }
+                }
+            } else {
+                Image(systemName: "exclamationmark.triangle")
+            }
+        }
+            .foregroundStyle(.secondary)
+            .help(message)
+            .focusable()
+            .accessibilityLabel(message)
+            .accessibilityIdentifier("xodus.installed.detailWarning")
     }
 }
 
@@ -207,9 +254,12 @@ struct InstalledPlayButton: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject private var evidenceStore = MacGameEvidenceStore.shared
     let game: InstalledGame
+    var displayTitle: String? = nil
+    var actionGameTitle: String { displayTitle ?? game.title }
     var usesGlass = false
     var prominent = true
     var heroStyle = false
+    var showsDiagnostics = true
     var attention: (() -> Void)?
     private var needsAttention: Bool {
         !canStop && !launching && (library.placeholderIDs.contains(game.id)
@@ -222,6 +272,12 @@ struct InstalledPlayButton: View {
     }
     private var launching: Bool {
         library.runningGameID == game.id && library.playState == .launching
+    }
+    var loadingTitle: String? {
+        guard library.stoppingGameID == game.id || launching else { return nil }
+        return GameLaunchPresentation.title(game: game.title,
+            stopping: library.stoppingGameID == game.id,
+            checking: library.checkingInstallations.contains(game.id), started: library.launchStarted)
     }
     var title: String {
         library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : canStop ? "Stop"
@@ -242,28 +298,48 @@ struct InstalledPlayButton: View {
     }
 
     private var nativeAction: NativeInstallationStatus.Action {
-        library.installationStatuses[game.id]?.action ?? .check
+        if library.packageErrors[game.id] != nil || library.unavailableDriveIDs.contains(game.id) { return .check }
+        return library.installationStatuses[game.id]?.action ?? .check
     }
 
-    private var nativeActionTitle: String {
-        if library.checkingInstallations.contains(game.id) { return "Checking installation…" }
+    var nativeActionTitle: String {
+        if library.checkingInstallations.contains(game.id) { return "Checking…" }
         switch nativeAction {
         case .play: return "Play"
-        case .install: return "Install"
-        case .resume: return "Resume"
+        case .install: return "Download"
+        case .resume: return GameDownloadCopy.downloadAgain
         case .repair: return "Repair"
-        case .check: return "Check installation"
+        case .check: return "Retry"
         }
     }
 
+    var ownsInstallationCheck: Bool {
+        guard !canStop, !launching, operations.operation?.productID != game.storeId,
+              !(operations.installingDirectly && operations.directInstallProductID == game.storeId) else { return false }
+        if library.unavailableDriveIDs.contains(game.id) { return true }
+        return NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+            evidence: evidenceStore.games[game.storeId]) == nil && unsupportedIssues.isEmpty
+            && library.requiresNativeInstallationStatus(game) && nativeAction == .check
+    }
+
+    var nativeReadinessUnavailableReason: String? {
+        if library.mutationActive { return "Wait for the current installation operation to finish before verifying this game." }
+        if library.accountDisconnecting { return "Wait for account disconnection to finish before verifying this game." }
+        return nil
+    }
+
     @ViewBuilder private var nativeInstallationButton: some View {
+        if nativeActionTitle == "Checking…" {
+            ProgressView("Checking…").controlSize(.small)
+        } else {
         Button {
             let action = nativeAction
             Task {
                 let product = PCGame(id: game.storeId, title: game.title, artwork: nil)
                 switch action {
                 case .check: await library.checkInstallation(game)
-                case .install, .resume: await operations.resume(product, installed: game)
+                case .install: await operations.repair(product, installed: game, resuming: true, intent: .downloadFullGame)
+                case .resume: await operations.resume(product, installed: game)
                 case .repair: await operations.repair(product, installed: game)
                 case .play: await library.play(game)
                 }
@@ -278,24 +354,41 @@ struct InstalledPlayButton: View {
         .modifier(LibraryActionStyle(primary: prominent, usesGlass: usesGlass))
         .modifier(LibraryHeroControlSize(enabled: heroStyle))
         .disabled(library.checkingInstallations.contains(game.id) || library.editing || library.choosing
-                  || library.applicationTerminating
+                  || library.applicationTerminating || nativeReadinessUnavailableReason != nil
                   || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
-        .accessibilityLabel("\(nativeActionTitle) for \(game.title)")
+        .help(nativeReadinessUnavailableReason ?? "\(nativeActionTitle) for \(actionGameTitle)")
+        .accessibilityLabel("\(nativeActionTitle) for \(actionGameTitle)")
         .accessibilityIdentifier("xodus.installed.readinessAction")
-        if library.checkingInstallations.contains(game.id) {
-            ProgressView().controlSize(.small).accessibilityLabel("Checking installation of \(game.title)")
         }
-        if attention == nil, !library.checkingInstallations.contains(game.id),
-           let reason = library.installationErrors[game.id] ?? library.installationStatuses[game.id]?.explanation {
-            Text(reason).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        if library.checkingInstallations.contains(game.id) {
+            Button("Cancel") { library.cancelInstallationCheck(game) }
+        }
+        if showsDiagnostics, attention == nil, !library.checkingInstallations.contains(game.id),
+           let reason = library.installationErrors[game.id] ?? library.installationStatuses[game.id]?.explanation
+                ?? (nativeAction == .check ? "Installation verification hasn't finished. Retry to verify this game." : nil) {
+            InstallationWarning(message: reason)
         }
     }
 
-    @ViewBuilder var body: some View {
-        if operations.operation?.productID == game.storeId
+    var body: some View {
+        Group {
+        if launching && !library.launchStarted {
+            ProgressView(library.checkingInstallations.contains(game.id) ? "Checking installation" : "Preparing game")
+                .controlSize(.small)
+            Button("Cancel") { library.cancelInstallationCheck(game) }
+        } else if operations.operation?.productID == game.storeId
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
             GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
-                              operations: operations, enabled: false, primary: prominent)
+                              operations: operations, enabled: false, primary: prominent, showsDiagnostics: showsDiagnostics)
+        } else if !canStop, !launching, library.unavailableDriveIDs.contains(game.id) {
+            VStack(alignment: .leading, spacing: 8) {
+                if showsDiagnostics {
+                    InstallationWarning(message: InstalledGamesController.driveUnavailableMessage)
+                }
+                Button("Retry") { Task { await library.checkInstallation(game) } }
+                    .disabled(library.editing || library.mutationActive || library.accountDisconnecting
+                              || library.applicationTerminating)
+            }.accessibilityIdentifier("xodus.installed.driveUnavailable")
         } else if !canStop, !launching,
                   NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
                     evidence: evidenceStore.games[game.storeId]) != nil {
@@ -307,11 +400,17 @@ struct InstalledPlayButton: View {
             LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: heroStyle)
         } else if !canStop, !launching, library.requiresNativeInstallationStatus(game), nativeAction != .play {
             nativeInstallationButton
+        } else if !canStop, !launching, case let support = library.launchSupport(for: game), !support.canPlay {
+            InstalledLaunchSupportStatus(support: support, gameTitle: actionGameTitle, showsReason: showsDiagnostics)
         } else {
             actionButton
             if library.updateStatus(for: game).hasUpdate {
                 Label("Update available", systemImage: "arrow.down.circle").font(.caption)
             }
+        }
+        }
+        .task(id: library.automaticReadinessKey(for: game)) {
+            await library.automaticallyCheckInstallation(game)
         }
     }
 
@@ -341,18 +440,19 @@ struct InstalledPlayButton: View {
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.checkingInstallations.contains(game.id)
                   || library.accountDisconnecting || !library.canRequestPlay(game.storeId))
-        .accessibilityLabel(opensAttention ? "\(title) for \(game.title)"
-             : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
-            : !library.canRequestPlay(game.storeId) ? "Play \(game.title), game access hasn't been confirmed"
-            : needsRepair ? "Repair \(game.title)" : "Play \(game.title)")
-        .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
+        .accessibilityLabel(opensAttention ? "\(title) for \(actionGameTitle)"
+             : canStop ? "Stop \(actionGameTitle)" : launching ? "Launching \(actionGameTitle)"
+            : !library.canRequestPlay(game.storeId) ? "Play \(actionGameTitle), game access hasn't been confirmed"
+            : needsRepair ? "Repair \(actionGameTitle)" : "Play \(actionGameTitle)")
+        .help(opensAttention ? "Open \(actionGameTitle) to see installation, compatibility and launch availability"
               : !canStop && !library.canRequestPlay(game.storeId)
                 ? "This account's access to the game hasn't been confirmed." : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
         .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"
                                 : canStop ? "xodus.installed.stop" : "xodus.installed.play")
-        if library.stoppingGameID == game.id || launching {
-            ProgressView(library.stoppingGameID == game.id ? "Stopping" : "Launching").controlSize(.small)
+        if let loadingTitle {
+            OdeLoadingStatus(title: loadingTitle,
+                message: library.stoppingGameID == game.id ? nil : "Waiting for the game launcher.")
         }
     }
 }

@@ -40,8 +40,9 @@ from scan_packages import inventory, load_json, package_identity
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "Sources/XodusManagement/Resources/CompatibilityData"
-QUEUE = DATA / "next-30-queue.json"
-OUTPUT = DATA / "queue-inspection-v1.json"
+QA_DATA = ROOT / "Sources/XodusManagement/QA/CompatibilityData"
+QUEUE = QA_DATA / "next-30-queue.json"
+OUTPUT = QA_DATA / "queue-inspection-v1.json"
 SIGNATURES = Path(__file__).with_name("anti-cheat-signatures-v1.json")
 GDK_REFERENCE = (
     "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/"

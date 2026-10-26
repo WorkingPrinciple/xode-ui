@@ -3,7 +3,11 @@ import SwiftUI
 import XodusManagement
 
 enum InstalledGameActionCopy {
-    static let launchUnavailable = "This game can't launch from Ode to X yet. A supported launch setup isn't available."
+    static let removeKeepingFiles = "Remove from Library (Keep Files)…"
+    static func removeKeepingFilesMessage(folder: String) -> String {
+        "No files are deleted. The game folder stays at \(folder) with your saves, and the game can be added back later. To delete the files, use Uninstall."
+    }
+    static let launchUnavailable = "This game can't launch from \(AppBrand.displayName) yet. A supported launch setup isn't available."
 
     static func title(incomplete: Bool, installationIssue: Bool, launchIssue: Bool) -> String {
         incomplete ? "Install required" : installationIssue ? "Check installation"
@@ -22,40 +26,75 @@ struct InstalledGameAttentionView: View {
     @ObservedObject var operations: GameOperationsController
     let game: InstalledGame
     var repairGame: PCGame?
+    var installationCheckInHeader = false
     let close: () -> Void
     @State private var confirmingRemoval = false
     @Environment(\.openSettings) private var openSettings
 
     private var incomplete: Bool { installed.placeholderIDs.contains(game.id) }
+    private var damaged: String? { operations.damagedInstallations[game.id] }
     private var localIssue: Bool {
-        incomplete || installed.packageErrors[game.id] != nil
-            || (installed.accountAccessAllowed && installed.playErrors[game.id] != nil)
+        driveUnavailable || incomplete || damaged != nil || installed.packageErrors[game.id] != nil
+            || installed.installationErrors[game.id] != nil
+            || installed.installationStatuses[game.id].map { !$0.success || $0.status != .complete } == true
     }
-    private var needsAttention: Bool { localIssue || !installed.accountAccessAllowed }
-    var offersRepair: Bool { repairGame != nil && operations.canRepair(game) }
+    var needsAttention: Bool { localIssue || !installed.accountAccessAllowed || installed.productAccessNotice(for: game) != nil }
+    var attentionTitle: String {
+        driveUnavailable ? "Drive unavailable" : localIssue ? "Installation needs attention"
+            : "Game launching unavailable"
+    }
+    private var driveUnavailable: Bool { installed.unavailableDriveIDs.contains(game.id) }
+    var offersRepair: Bool { localIssue && !driveUnavailable && repairGame != nil && operations.canRepair(game) }
+    var offersInstallationCheck: Bool { localIssue && !installationCheckInHeader }
+
+    /// After install the access check runs automatically; show it as one in-progress status, not a warning.
+    var accessChecking: Bool {
+        !localIssue && installed.accountAccessAllowed && installed.productAccess.checking
+            && installed.productAccessNotice(for: game) != nil
+    }
 
     var body: some View {
         if needsAttention {
             VStack(alignment: .leading, spacing: 12) {
-                Label(localIssue ? "Installation needs attention" : "Game launching unavailable",
-                      systemImage: localIssue ? "exclamationmark.circle" : "info.circle")
-                    .font(.headline)
-                Text(incomplete ? "This game isn't fully installed."
-                     : localIssue ? "The installation or launch files need to be checked."
-                     : installed.accountAccessMessage)
-                    .fixedSize(horizontal: false, vertical: true)
-                if !localIssue {
-                    Text("Game launching is unavailable until Xbox service access is restored.")
-                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    Button("Open settings", action: openSettings.callAsFunction)
-                }
-                if installed.checkingInstallations.contains(game.id) {
-                    ProgressView("Checking installation").controlSize(.small)
+                if accessChecking {
+                    ProgressView("Checking game access…").controlSize(.small)
+                        .accessibilityIdentifier("xodus.game.checkingAccess")
                 } else {
+                InstallationWarning(message: driveUnavailable ? InstalledGamesController.driveUnavailableMessage
+                     : incomplete ? "This game isn't fully installed."
+                     : damaged != nil ? damaged ?? ""
+                     : localIssue ? installed.packageErrors[game.id] ?? installed.installationErrors[game.id]
+                        ?? installed.installationStatuses[game.id]?.explanation ?? "Installation verification is incomplete. Retry to verify this game."
+                     : installed.accountAccessAllowed ? "Couldn't confirm game access." : installed.accountAccessMessage,
+                     showsMessage: true)
+                }
+                if !localIssue && !accessChecking {
+                    if installed.accountAccessAllowed, let notice = installed.productAccessNotice(for: game) {
+                        Text(notice).font(.callout).fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("xodus.game.accessReason")
+                        if installed.canRetryProductAccess {
+                            Button("Retry") { Task { await installed.retryProductAccess(for: game) } }
+                                .help("Checks this exact game's account access without downloading or launching.")
+                                .accessibilityIdentifier("xodus.game.retryAccess")
+                        } else {
+                            Button("Open settings", action: openSettings.callAsFunction)
+                        }
+                    } else {
+                        Button("Open settings", action: openSettings.callAsFunction)
+                    }
+                }
+                if offersInstallationCheck && installed.checkingInstallations.contains(game.id) {
+                    ProgressView("Checking installation").controlSize(.small)
+                    Button("Cancel") { installed.cancelInstallationCheck(game) }
+                } else if localIssue {
                     HStack {
-                        Button("Check installation") { Task { await installed.checkInstallation(game) } }
+                        if offersInstallationCheck {
+                            Button("Retry") {
+                                Task { await installed.checkInstallation(game) }
+                            }
                             .disabled(installed.editing || installed.mutationActive)
                             .help("Checks the game folder and launch files without downloading or starting the game.")
+                        }
                         if offersRepair, let repairGame {
                             Button(incomplete ? "Install full game" : "Repair installation") {
                                 close()
@@ -64,31 +103,32 @@ struct InstalledGameAttentionView: View {
                         }
                     }
                 }
-                Button("Remove from library", role: .destructive) { confirmingRemoval = true }
+                LabeledContent("Installed location") {
+                    Text(game.folder).textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Button(InstalledGameActionCopy.removeKeepingFiles, role: .destructive) { confirmingRemoval = true }
+                    .help("Removes this game from the library. The game folder and saves aren't deleted.")
                     .disabled(installed.editing || installed.mutationActive || installed.runningGameID == game.id)
                 if let error = installed.error {
-                    Text(error).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    InstallationWarning(message: error)
                 }
                 DisclosureGroup("Technical details") {
                     InstalledPackageTypeLabel(game: game)
-                    if let error = installed.packageErrors[game.id] {
-                        Text(error).font(.callout).textSelection(.enabled)
-                    }
                     InstalledPlayError(library: installed, game: game)
-                    InstalledEngineOverride(library: installed, game: game)
                 }
                 .font(.callout).foregroundStyle(.secondary)
             }
             .accessibilityIdentifier("xodus.game.needsAttention")
-            .confirmationDialog("Remove \(game.title) from your library?", isPresented: $confirmingRemoval) {
-                Button("Remove from library", role: .destructive) {
+            .confirmationDialog("Remove \(game.title) from the library?", isPresented: $confirmingRemoval) {
+                Button("Remove (Keep Files)", role: .destructive) {
                     Task {
                         await installed.remove(game)
                         if !installed.games.contains(where: { $0.id == game.id }) { close() }
                     }
                 }
                 Button("Cancel", role: .cancel) {}
-            } message: { Text("Your game files and saves will stay on this Mac.") }
+            } message: { Text(InstalledGameActionCopy.removeKeepingFilesMessage(folder: game.folder)) }
         }
     }
 }
@@ -117,6 +157,6 @@ struct LocalInstalledGameView: View {
             HStack { Spacer(); Button("Done", action: dismiss.callAsFunction).keyboardShortcut(.cancelAction) }
         }
         .padding(28).frame(width: 560, height: 480)
-        .task { await installed.checkInstallation(game) }
+        .task { await installed.automaticallyCheckInstallation(game) }
     }
 }

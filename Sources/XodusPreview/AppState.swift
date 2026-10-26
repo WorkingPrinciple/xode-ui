@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import AppKit
 import Foundation
 import SwiftUI
 import XodusCore
@@ -19,6 +20,36 @@ enum AccountDestination: String, CaseIterable, Identifiable {
     case consoles = "My Consoles"
     case engines = "Engines"
     var id: String { rawValue }
+}
+
+enum SettingsPane: String, CaseIterable, Identifiable {
+    case general
+    case engines
+    case account
+    case advanced
+
+    static let preferenceKey = "Xodus.settings.selectedPane"
+
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    var symbol: String {
+        switch self {
+        case .general: "gearshape"
+        case .engines: "gearshape.2"
+        case .account: "person.crop.circle"
+        case .advanced: "slider.horizontal.3"
+        }
+    }
+}
+
+enum SettingsPaneSelection {
+    static func selected(defaults: UserDefaults = .standard) -> SettingsPane {
+        defaults.string(forKey: SettingsPane.preferenceKey).flatMap(SettingsPane.init(rawValue:)) ?? .general
+    }
+
+    static func select(_ pane: SettingsPane, defaults: UserDefaults = .standard) {
+        defaults.set(pane.rawValue, forKey: SettingsPane.preferenceKey)
+    }
 }
 
 #if !XODUS_SHIPPING
@@ -47,12 +78,26 @@ final class SheetInteraction: ObservableObject {
 @MainActor
 final class AppState: ObservableObject {
     let runtimeSettings = RuntimeProviderSettings()
+    let calimochoInstaller: CalimochoReleaseInstallController
     let installedGames: InstalledGamesController
     let pcGames: PCGamesController
     let librarySelection = LibrarySelection()
     let discoverSelection = DiscoverSelection()
     private let gameScriptPaths: GameScriptPaths
-    lazy var gameOperations = GameOperationsController(installed: installedGames, paths: gameScriptPaths)
+    private let settingsDefaults: UserDefaults
+    lazy var gameOperations: GameOperationsController = {
+        let operations = GameOperationsController(installed: installedGames, paths: gameScriptPaths,
+                                                  installLocationDefaults: .standard)
+        operations.confirmLifecycle = { request in
+            let alert = NSAlert()
+            alert.messageText = request.messageText
+            alert.informativeText = request.informativeText
+            alert.addButton(withTitle: request.actionTitle)
+            alert.addButton(withTitle: "Cancel")
+            return alert.runModal() == .alertFirstButtonReturn
+        }
+        return operations
+    }()
     lazy var downloadQueue = DownloadQueueController(
         driver: GameOperationsInstallDriver(operations: gameOperations))
 #if !XODUS_SHIPPING
@@ -73,17 +118,32 @@ final class AppState: ObservableObject {
     @Published var showingAccount = false
     @Published var accountDestination: AccountDestination = .account
     @Published var showingSetup = false
+    /// Set when the user signs in from the welcome screen; the sheet then shows the readiness checklist.
+    @Published var showingReadiness = false
+    /// REQ-119: the setup view covers the window; navigation, Import and Account wait.
+    @Published private(set) var firstLoadCoveringWindows = Set<UUID>()
+    var firstLoadCovering: Bool { !firstLoadCoveringWindows.isEmpty }
+    /// Each window reports its own setup view; closing one never uncovers another still in setup.
+    func setFirstLoadCovering(_ covering: Bool, window: UUID) {
+        if covering { firstLoadCoveringWindows.insert(window) } else { firstLoadCoveringWindows.remove(window) }
+    }
     @Published var destination: Destination = .library
     @Published var query = ""
     @Published private(set) var unifiedSignInRequested = false
+    /// Incremented by Edit ▸ Find…; the window focuses the toolbar search field.
+    @Published private(set) var searchFocusRequest = 0
     private var destinationQueries: [Destination: String] = [:]
     @Published private(set) var liveLibraryScope: LiveLibraryScope = .games
 
     init(installedGames: InstalledGamesController = InstalledGamesController(),
-         pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production) {
+         pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production,
+         settingsDefaults: UserDefaults = .standard,
+         calimochoInstaller: CalimochoReleaseInstallController = CalimochoReleaseInstallController()) {
+        self.calimochoInstaller = calimochoInstaller
         self.installedGames = installedGames
         self.pcGames = pcGames
         self.gameScriptPaths = gameScriptPaths
+        self.settingsDefaults = settingsDefaults
     }
 
     func canSignOut(session: LiveSession) -> Bool {
@@ -153,10 +213,10 @@ final class AppState: ObservableObject {
         let result = await session.signOut {
             await self.gameOperations.cancelPrecheck()
             guard await self.gameOperations.signOutForApp() else {
-                return self.gameOperations.serviceError ?? "Ode to X couldn't start game-service sign-out. No other sign-in was removed."
+                return self.gameOperations.serviceError ?? "\(AppBrand.displayName) couldn't start game-service sign-out. No other sign-in was removed."
             }
             guard await self.pcGames.signOut() else {
-                return "Game-service sign-out was confirmed, but Ode to X couldn't remove its saved PC-library sign-in. The launcher profile was not disconnected. Check account status before retrying."
+                return "Game-service sign-out was confirmed, but \(AppBrand.displayName) couldn't remove its saved PC-library sign-in. The launcher profile was not disconnected. Check account status before retrying."
             }
             return nil
         }
@@ -180,7 +240,38 @@ final class AppState: ObservableObject {
     }
 
     var navigationSelection: Binding<Destination> {
-        Binding(get: { self.destination }, set: { self.navigate($0) })
+        Binding(get: { self.destination }, set: { self.selectTab($0) })
+    }
+
+    /// Choosing a tab opens that tab's home. Search is its own state: choosing Discover
+    /// leaves any earlier results, which stay one click away in recent searches.
+    func selectTab(_ value: Destination) {
+        navigate(value)
+        if value == .discover { query = "" }
+    }
+
+    func requestSearchFocus() {
+        navigate(.discover)
+        searchFocusRequest += 1
+    }
+
+    func canRefresh(session: LiveSession) -> Bool {
+        switch destination {
+        case .discover: session.isReady && !session.searching
+        case .library: showsRecentActivity ? session.isReady : !pcGames.busy
+        case .downloads: session.supports(.jobs) && !session.activity.isReconciling
+        }
+    }
+
+    func refreshCurrentDestination(session: LiveSession) async {
+        guard canRefresh(session: session) else { return }
+        switch destination {
+        case .discover: await session.refreshCatalog(query)
+        case .library:
+            if showsRecentActivity { await session.reloadRecentLibrary() }
+            else { pcGames.refresh() }
+        case .downloads: await session.refreshActivity()
+        }
     }
 
     func query(for destination: Destination) -> String {
@@ -206,9 +297,24 @@ final class AppState: ObservableObject {
     }
 
     func openAccount(_ destination: AccountDestination = .account) {
+        guard !firstLoadCovering else { return }
+        if destination == .engines {
+            SettingsPaneSelection.select(.engines, defaults: settingsDefaults)
+            showingAccount = false
+            return
+        }
         showingSetup = false
         accountDestination = destination
         showingAccount = true
+    }
+
+    @discardableResult
+    func configureUnifiedAccountMode(session: LiveSession) -> Bool {
+        guard session.supports(.odeAccountRead) else { return false }
+        pcGames.useUnifiedAccount(session)
+        gameOperations.useUnifiedAccount(session)
+        installedGames.useUnifiedAccount(session)
+        return true
     }
 
     func loadRecentActivityIfVisible(session: LiveSession) async {

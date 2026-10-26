@@ -3,10 +3,11 @@ import CryptoKit
 import Foundation
 
 public enum RuntimeProviderKind: String, CaseIterable, Codable, Sendable {
-    case gptk3, gptk4, crossover, standaloneWine
+    case calimocho, gptk3, gptk4, crossover, standaloneWine
 
     public var label: String {
         switch self {
+        case .calimocho: "Calimocho"
         case .gptk3: "Apple GPTK3"
         case .gptk4: "Apple GPTK4"
         case .crossover: "User-installed CrossOver"
@@ -135,6 +136,7 @@ public struct RuntimeProviderConfiguration: Equatable, Codable, Sendable {
             case .gptk3, .gptk4: .appleToolkit
             case .crossover: .userInstalledCrossOver
             case .standaloneWine: .userSelectedWine
+            case .calimocho: .userSelectedSourceBuild
             }
         return Self(
             provider: provider, engine: .init(provenance: provenance),

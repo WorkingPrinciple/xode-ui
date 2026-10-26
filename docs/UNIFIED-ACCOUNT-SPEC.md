@@ -1,5 +1,12 @@
 # Ode to X: unified account implementation specification
 
+> **Historical implementation/contract reference, not a separate backlog.**
+> Current account requirements, acceptance and continuation are consolidated in
+> `dragoshont/dragos-core`, `projects/ode-to-x/SPEC.md` (REQ-29/30/32/49/51/68).
+> Proposed wire fields below are not evidence that the current producer accepts
+> them. Exact current schemas/source govern technical compatibility; only the
+> consolidated SDD governs pending program work and priority.
+
 Status: implementation in progress, not shipping-admitted. Scope: one interactive
 Microsoft sign-in for games, PC library, Xbox profile and achievements where the
 provider authorizes those capabilities. This document does not promise ownership,

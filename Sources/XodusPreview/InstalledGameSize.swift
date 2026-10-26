@@ -100,11 +100,9 @@ final class InstalledGameSizeStore: ObservableObject {
     }
 }
 
-struct LibraryGameSizeView: View {
+struct DetailGameSizeView: View {
     let installed: InstalledGame?
     let downloadBytes: Int64?
-    var productID: String? = nil
-    var pcPackageListed: Bool? = nil
     var packageFormat: String? = nil
     var allowsMeasurement = true
     @ObservedObject private var sizes = InstalledGameSizeStore.shared
@@ -140,16 +138,25 @@ struct LibraryPackageFormatLabel: View {
     let format: String
 
     var body: some View {
-        Text(format)
-            .font(.caption2.weight(.semibold).monospaced())
+        Text(Self.plainName(format))
+            .font(.caption2.weight(.semibold))
             .foregroundStyle(.secondary)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(.quaternary, in: Capsule())
             .help(Self.help(format: format))
-            .accessibilityLabel("Package format \(format)")
+            .accessibilityLabel("Package type: \(Self.plainName(format))")
+    }
+
+    /// Plain words for the package family; the technical name stays in the tooltip.
+    static func plainName(_ format: String) -> String {
+        switch format.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+        case "MSIXVC", "XVC": "Xbox PC game"
+        case "APPX", "EAPPX", "MSIX", "APPXBUNDLE", "EAPPXBUNDLE", "MSIXBUNDLE": "Microsoft Store app"
+        default: "Windows game"
+        }
     }
 
     static func help(format: String) -> String {
-        "\(format) is a Windows game package format. MSIXVC is the GDK format supported by Ode to X 0.1; Appx and EAppx are Store app packages. The format alone does not confirm account access or Mac compatibility."
+        "Package type: \(format). \(AppBrand.displayName) installs Xbox PC game packages; Microsoft Store app packages aren't supported yet. The package type alone doesn't confirm account access or Mac compatibility."
     }
 }

@@ -22,6 +22,25 @@ enum InstalledProductAccessChecks {
             return try JSONDecoder().decode(OdeAccountRead.self,
                 from: JSONSerialization.data(withJSONObject: payload))
         }
+        let pendingAccess = InstalledProductAccess()
+        let pendingIDs = (0..<20).map { String(format: "9PEND%07d", $0) }
+        let unchecked = pendingAccess.pending(product, account: account) && !pendingAccess.pending(product, account: nil)
+        let started = ContinuousClock.now
+        await pendingAccess.refresh(account: account, installedIDs: pendingIDs + [product], now: now) { id in
+            if id == product { return try response(id) }
+            throw ManagementError.disconnected
+        }
+        let elapsed = started.duration(to: .now)
+        check(unchecked && !pendingAccess.pending(product, account: account)
+              && pendingAccess.permits(product, account: account, now: now)
+              && !pendingAccess.pending(pendingIDs[0], account: account)
+              && !pendingAccess.permits(pendingIDs[0], account: account, now: now)
+              && !pendingAccess.pending(product, account: other),
+              "REQ-119 F1: An installed game is pending only until its own check answers; a failed check isn't pending or permitted, and another account never inherits it")
+        check(elapsed < .milliseconds(1_500),
+              "REQ-119 F1: Access checks run back to back with no fixed 100 ms gap (21 synthetic checks took \(elapsed))")
+        pendingAccess.retire()
+
         let controller = InstalledProductAccess()
         defer { controller.retire() }
         var requests: [String] = []
@@ -37,6 +56,27 @@ enum InstalledProductAccessChecks {
               "Installed access checks only deduplicated valid installed StoreIDs, sequentially")
         check(controller.facts.count == 3 && !controller.checking && controller.errors.isEmpty,
               "Typed access facts retain permitted, denied and unknown independently")
+        check(controller.permitsReview(product, account: account, pcCandidate: true, now: now)
+              && controller.reviewNotice(for: product, account: account, now: now) == nil
+              && !controller.permitsReview(denied, account: account, pcCandidate: true, now: now)
+              && controller.reviewNotice(for: denied, account: account, now: now)?.contains("didn't grant access") == true
+              && !controller.permitsReview(unknown, account: account, pcCandidate: true, now: now)
+              && controller.reviewNotice(for: unknown, account: account, now: now) == InstalledProductAccess.notIncludedNotice,
+              "COR89: Selected account access permits review only; denial/unknown explain exact outcome without inventing ownership")
+        let settledNotice = controller.reviewNotice(for: unknown, account: account, publicGamePassExcludes: true, now: now) ?? ""
+        check(settledNotice == "Not included with your account. This game isn't in your Microsoft account's games or your PC Game Pass plan. If you own it, check that you're signed in with the right account."
+              && controller.notIncluded(unknown, account: account, publicGamePassExcludes: true, now: now)
+              && controller.notIncluded(unknown, account: account, publicGamePassExcludes: false, now: now)
+              && !settledNotice.contains("account response") && !settledNotice.contains("unconfirmed")
+              && !settledNotice.localizedCaseInsensitiveContains("store") && !settledNotice.localizedCaseInsensitiveContains("buy"),
+              "QA A1: A settled answer without this game says plainly it isn't included with the account, with no internal wording and no store or purchase link")
+        check(controller.notIncluded(unknown, account: account, publicGamePassExcludes: false, now: now)
+              && !controller.notIncluded(denied, account: account, publicGamePassExcludes: true, now: now)
+              && !controller.notIncluded(product, account: account, publicGamePassExcludes: true, now: now)
+              && !controller.notIncluded(unknown, account: other, publicGamePassExcludes: true, now: now)
+              && !controller.notIncluded(unknown, account: account, publicGamePassExcludes: true,
+                                         now: now.addingTimeInterval(301)),
+              "COR186 A1: Without a complete exclusion, a denial, a permit, another account or a stale fact never claims 'not included'")
         check(controller.permits(product, account: account, now: now)
               && !controller.permits(denied, account: account, now: now)
               && !controller.permits(unknown, account: account, now: now),
@@ -44,8 +84,41 @@ enum InstalledProductAccessChecks {
         check(!controller.permits(product, account: other, now: now)
               && !controller.permits(product, account: nil, now: now),
               "Different or absent account cannot borrow an installed access fact")
+        let selected = InstalledProductAccess()
+        defer { selected.retire() }
+        await selected.refresh(account: account, installedIDs: [product, denied, unknown], now: now) { id in
+            try response(id, access: id == product ? "permitted" : "unknown",
+                         reason: id == product ? nil : "productNotListed")
+        }
+        let preservedFact = selected.facts[product]?.checkedAt
+        var selectedRequests: [String] = []
+        await selected.refresh(account: account, installedIDs: [product, denied, unknown], now: now,
+            force: true, selectedProductID: unknown) { id in
+                selectedRequests.append(id)
+                return try response(id, access: "unknown", reason: "productNotListed")
+            }
+        check(selectedRequests == [unknown] && selected.facts.count == 3
+              && selected.facts[product]?.checkedAt == preservedFact
+              && !selected.permits(unknown, account: account, now: now)
+              && !selected.permits(product, account: other, now: now),
+              "COR171 native: Exact-product access Retry preserves unrelated facts and cannot borrow another edition or account permission")
+        check(!controller.permitsReview(product, account: other, pcCandidate: true, now: now)
+              && !controller.permitsReview(product, account: nil, pcCandidate: true, now: now)
+              && !controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(120)),
+              "COR89: Exact account binding and actual grant expiry revoke selected-title review")
         check(!controller.permits(product, account: account, now: now.addingTimeInterval(120)),
               "Actual license expiry withdraws permission at the boundary")
+        let purchased = PCGame(id: product, title: "Purchased installed fixture", artwork: nil,
+                               acquisitionKind: .purchased)
+        let installedFact = InstalledGame(id: UUID(), title: purchased.title, identityName: "Fixture.Permit",
+            version: "1.0.0.0", storeId: product, folder: "/synthetic/permit",
+            launcher: "/synthetic/never-run", importedAt: now)
+        let purchaseFacts = GameFacts(pc: purchased, gamePass: true, installed: installedFact, accessIsCurrent: true)
+        check(purchaseFacts.badgeLabels() == ["Owned", "Game Pass"]
+              && purchaseFacts.installation == .installed(installedFact.folder)
+              && controller.permits(product, account: account, now: now.addingTimeInterval(119))
+              && !controller.permits(product, account: account, now: now.addingTimeInterval(120)),
+              "REQ-50: Expired Play permit withdraws action eligibility without erasing purchase, membership or installation facts")
         await controller.refresh(account: account, installedIDs: [product, denied, unknown],
             now: now.addingTimeInterval(30), read: reader)
         check(requests.count == 3, "Warm account access is cached without repeated provider calls")
@@ -57,6 +130,13 @@ enum InstalledProductAccessChecks {
         }
         check(controller.errors[product] != nil && !controller.permits(product, account: account,
             now: now.addingTimeInterval(301)), "Transport failure cannot extend a stale permission or become denial")
+        check(!controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(301))
+              && controller.reviewNotice(for: product, account: account, now: now.addingTimeInterval(301))
+                == InstalledProductAccess.unavailableNotice
+              && controller.reviewNotice(for: product, account: account, publicGamePassExcludes: true,
+                                         now: now.addingTimeInterval(301)) == "Couldn't confirm access right now. Try again."
+              && InstalledProductAccess.tryAgainTitle == "Try Again",
+              "QA A1: A failed or timed-out access read says \"Couldn't confirm access right now. Try again.\" with Try Again, never 'not included', a denial or a successful review")
         check(controller.facts[denied] == nil && controller.facts[unknown] == nil,
               "Removed installed IDs leave the access cache")
         await controller.refresh(account: other, installedIDs: [product], now: now) { id in
@@ -82,6 +162,14 @@ enum InstalledProductAccessChecks {
         check(controller.permits(product, account: account, now: now.addingTimeInterval(299))
               && !controller.permits(product, account: account, now: now.addingTimeInterval(300)),
               "Perpetual grants still have a finite five-minute account cache")
+        var explicitRetries = 0
+        await controller.refresh(account: account, installedIDs: [product], now: now, force: true) { id in
+            explicitRetries += 1
+            return try response(id)
+        }
+        check(explicitRetries == 1
+              && !controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(300)),
+              "COR89: Explicit exact-ID retry bypasses cooldown once, never bypassing finite account-cache expiry")
         var renewals = 0
         var preservedDuringRenewal = false
         await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(121)) { id in
@@ -130,6 +218,10 @@ enum InstalledProductAccessChecks {
         let game = InstalledGame(id: UUID(), title: "Synthetic installed title", identityName: "Synthetic",
             version: "1.0.0.0", storeId: product, folder: "/synthetic/never-read",
             launcher: "/synthetic/never-executed", importedAt: now)
+        let importedFacts = GameFacts(pc: nil, gamePass: false, installed: game, accessIsCurrent: false)
+        check(importedFacts.badgeLabels().isEmpty && importedFacts.installation == .installed(game.folder)
+              && !local.canRequestPlay(product) && !local.launchStarted,
+              "REQ-50: Imported installation stays installed and manageable without ownership badges or a Play permit")
         let unqualified = LibraryGame.collection(installed: [game], owned: [], products: [],
             gamePass: [], active: true)
         check(unqualified.isEmpty && LibraryGame.localRecords(installed: [game], qualified: unqualified,
@@ -147,6 +239,75 @@ enum InstalledProductAccessChecks {
         check(LibraryGame.collection(installed: [], owned: [], products: [], gamePass: [],
             active: true, permittedInstalledIDs: [product]).isEmpty,
               "Installed-product grant cannot fan out into uninstalled catalogue entitlement")
+        let switched = InstalledProductAccess()
+        defer { switched.retire() }
+        func waitForSwitch(_ predicate: () -> Bool) async throws -> Bool {
+            for _ in 0..<200 {
+                if predicate() { return true }
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            return predicate()
+        }
+        var releaseOld: CheckedContinuation<OdeAccountRead, Never>?
+        var releaseNew: CheckedContinuation<OdeAccountRead, Never>?
+        let oldRead = Task {
+            await switched.refresh(account: account, installedIDs: [product], now: now) { _ in
+                await withCheckedContinuation { releaseOld = $0 }
+            }
+        }
+        let oldStarted = try await waitForSwitch { releaseOld != nil }
+        check(oldStarted, "REQ-50: Old-account allowed reader explicitly starts before switching")
+        guard let oldCompletion = releaseOld else { throw ManagementError.requestTimedOut }
+        let newRead = Task {
+            await switched.refresh(account: other, installedIDs: [product], now: now) { _ in
+                await withCheckedContinuation { releaseNew = $0 }
+            }
+        }
+        let retired = try await waitForSwitch { switched.accountHash == nil }
+        check(retired && switched.facts.isEmpty && releaseNew == nil,
+              "REQ-50: Account switch explicitly retires old facts and joins old reader before starting the new reader")
+        oldCompletion.resume(returning: try response(product))
+        await oldRead.value
+        let newStarted = try await waitForSwitch { releaseNew != nil }
+        check(newStarted && switched.accountHash == other,
+              "REQ-50: New-account reader explicitly starts and holds its response after old completion joins")
+        guard let newCompletion = releaseNew else {
+            newRead.cancel()
+            await newRead.value
+            throw ManagementError.requestTimedOut
+        }
+        let pendingCollection = LibraryGame.collection(installed: [game], owned: [], products: [],
+            gamePass: [], active: true,
+            permittedInstalledIDs: switched.permits(product, account: other, now: now) ? [product] : [])
+        let pendingDisplay = LibraryGame.displayCollection(installed: [game], account: pendingCollection)
+        check(switched.checking && releaseNew != nil && !pendingDisplay.isEmpty
+              && !LibraryLoadingPresentation.showsAccessProgress(
+                checking: switched.checking, hasUsableContent: !pendingDisplay.isEmpty)
+              && !switched.permits(product, account: other, now: now),
+              "COR83: Populated Library omits access-progress row while real background reader continues and admission stays fenced")
+        check(LibraryLoadingPresentation.showsAccessProgress(checking: true, hasUsableContent: false)
+              && !LibraryLoadingPresentation.showsAccessProgress(checking: false, hasUsableContent: false)
+              && !LibraryLoadingPresentation.showsAccessProgress(checking: false, hasUsableContent: true),
+              "COR83: Empty initial access loading remains distinct; idle Library reserves no access-status row")
+        check(retired && newStarted && switched.checking && switched.facts.isEmpty
+              && !switched.permits(product, account: account, now: now)
+              && !switched.permits(product, account: other, now: now)
+              && pendingCollection.isEmpty && pendingDisplay.first?.facts.badgeLabels().isEmpty == true
+              && pendingDisplay.first?.facts.installation == .installed(game.folder),
+              "REQ-50: Joined old allowed completion cannot transiently restore permission or shared qualification while new denial is still held")
+        newCompletion.resume(returning: try response(product, accountHash: other,
+                                                      access: "denied", reason: "providerDenied"))
+        await newRead.value
+        let switchedCollection = LibraryGame.collection(installed: [game], owned: [], products: [],
+            gamePass: [], active: true,
+            permittedInstalledIDs: switched.permits(product, account: other, now: now) ? [product] : [])
+        let switchedDisplay = LibraryGame.displayCollection(installed: [game], account: switchedCollection)
+        check(switched.accountHash == other && switched.facts[product]?.value.access == .denied
+              && !switched.permits(product, account: account, now: now)
+              && !switched.permits(product, account: other, now: now)
+              && switchedCollection.isEmpty && switchedDisplay.first?.facts.badgeLabels().isEmpty == true
+              && switchedDisplay.first?.facts.installation == .installed(game.folder),
+              "REQ-50: Account-switch late completion cannot restore old access; current UI retains only unqualified installed facts")
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("InstalledAccessChecks-\(UUID().uuidString)")
         let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
             .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),
@@ -154,6 +315,7 @@ enum InstalledProductAccessChecks {
         let session = LiveSession(configuration: config)
         await session.connect()
         await session.refreshAccount()
+        await session.refreshAccountCountry()
         let license = Task { try await session.readUnifiedAccount(.license, productID: product) }
         try await Task.sleep(for: .milliseconds(40))
         let profile = try await session.readUnifiedAccount(.profile)
@@ -171,5 +333,33 @@ enum InstalledProductAccessChecks {
         }
         check(await session.disconnect(), "Synthetic license wire child is joined")
         try FileManager.default.removeItem(at: root)
+        await postInstallChecks(check: check)
+    }
+
+    static func postInstallChecks(check: (Bool, String) -> Void) async {
+        let account = String(repeating: "a", count: 64)
+        let existing = "9NGLST31DG26"
+        let installed = "9NX6K9HN4F4K"
+        let now = Date()
+        let access = InstalledProductAccess()
+        defer { access.retire() }
+        var requests: [String] = []
+        let reader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            requests.append(id)
+            try await Task.sleep(for: .milliseconds(150))
+            let payload: [String: Any] = [
+                "section": "license", "accountHash": account,
+                "checkedAt": ISO8601DateFormatter().string(from: now),
+                "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]
+            ]
+            return try JSONDecoder().decode(OdeAccountRead.self, from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let scan = Task { await access.refresh(account: account, installedIDs: [existing], now: now, read: reader) }
+        try? await Task.sleep(for: .milliseconds(40))
+        // Library publishes the freshly installed title while the earlier scan is still running.
+        await access.refresh(account: account, installedIDs: [existing, installed], now: now, read: reader)
+        await scan.value
+        check(requests == [existing, installed] && access.permits(installed, account: account, now: now),
+              "REQ114 post-install: a title installed during an access scan is checked automatically, so Play enables without Retry")
     }
 }

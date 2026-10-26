@@ -37,10 +37,10 @@
       "version": 1,
       "productID": "9P9VNSQK1W3K",
       "title": "Brotato",
-      "qualification": "CLI-only WORKING_CANDIDATE from ebd56e; a1aade generic route failed, Apple4 app-route regression with 3ea56ed1 pending, no WORKING promotion",
-      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-brotato-retention-02/invocation.json",
-      "sourceRecipeSHA256": "a2858fb02420e6c36f974aa8fe5f70a2d8ad3ee9154c6408bd9999b910cb3414",
-      "engine": "apple-gptk-4.0b3",
+      "qualification": "Calimocho 0.1120.4.6 gameplay gate passed (COR-216); app E2E remains separate. Earlier Apple4 and -04 evidence is not promoted by engine admission.",
+      "engine": "calimocho-11.20-4.0b3-06",
+      "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+      "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
       "executable": "Brotato.exe",
       "noAutoDismiss": true,
       "environment": {},
@@ -62,14 +62,17 @@
       "publishedSource": "xode-wine f7204ef6893439ac781190ee32bd95776fd63ec7 engines/hogwarts-qualified.json",
       "publishedSourceSHA256": "a86d88ab5d9bb5b99d43c76c9c0d7ed0046671916150d2815cc89c15a1fd8cde",
       "qualification": "S3 WORKING: admitted retained checkpoint and ordinary final quit; app E2E unobserved",
-      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-hogwarts-sta-quit-04/invocation.json",
-      "sourceRecipeSHA256": "a38877dd6822ba9260836ebb832d6dbb53a26d531ee540eb453c2cb5eec1c3ab",
       "engine": "apple-gptk-4.0b3",
       "executable": "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe",
       "timeoutSeconds": 600,
       "noAutoDismiss": true,
-      "environment": {"XODUS_PRIVATE_RUNTIME_COM_STA": "1"},
-      "unsetEnvironment": ["XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"],
+      "environment": {
+        "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
+      },
+      "unsetEnvironment": [
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
         "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
@@ -82,10 +85,10 @@
       "title": "Halls of Torment",
       "publishedSource": "xode-wine 27b1e67160efd8460761a48e40cf7b23aacbe862 engines/small-game-candidates.json",
       "publishedSourceSHA256": "4784739ac39f595b71710fec04474cfd284f07d6e4f8d390290297d8336e91d6",
-      "qualification": "S3 WORKING with retained local progression and ordinary CLI0/Wine0 quit; app E2E unobserved",
-      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-halls-retention-02/invocation.json",
-      "sourceRecipeSHA256": "15cb88271d2dd916f55a77bb42197033f83878a12f07f811c96de4b1521f363b",
-      "engine": "apple-gptk-4.0b3",
+      "qualification": "Calimocho 0.1120.4.6 gameplay gate passed (COR-216); app E2E remains separate. Earlier Apple4 and -04 evidence is not promoted by engine admission.",
+      "engine": "calimocho-11.20-4.0b3-06",
+      "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+      "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
       "executable": "Halls of Torment.exe",
       "timeoutSeconds": 300,
       "noAutoDismiss": true,
@@ -109,14 +112,17 @@
       "engine": "apple-gptk-4.0b3",
       "executable": "Mixtape.exe",
       "environment": {},
-      "unsetEnvironment": ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"],
+      "unsetEnvironment": [
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
       "dllOverrides": "msvcp140_2,vcruntime140_1=n,b",
       "dllOverrideEvidence": {
         "runID": "005115dd-7928-4fbc-9ffa-28379040292d",
         "receiptSHA256": "f0041fb14f5dc9bec12fa1368697aab72b26ae36822e0d80d59ccb1d361686bb",
         "registrySHA256": "9fe5bebba1b390f8605364085c3e917d32b2090f18bc0a59a454b6d0573204f1",
-        "scope": "Native msvcp140_2 and vcruntime140_1 loaded; Shipping bootstrap proceeded. Diagnostic also used STA1; DLL-only normal tile combination unqualified, not WORKING.",
-        "receipt": "${HOME}/Library/Application Support/XodusCLI/proofs/passive-sta-9NH0MSG29X6L-vc14-two-native/receipt.json"
+        "scope": "Native msvcp140_2 and vcruntime140_1 loaded; Shipping bootstrap proceeded. Diagnostic also used STA1; DLL-only normal tile combination unqualified, not WORKING."
       }
     },
     {
@@ -124,7 +130,6 @@
       "productID": "9P4NV23Q6QC2",
       "title": "Abiotic Factor",
       "qualification": "S2 observed title screen ac5e2934 only; no gameplay/save qualification",
-      "sourceRecipe": "xodus-macos b464aad docs/recipes/title-runtime-v1.json",
       "engine": "apple-gptk-4.0b3",
       "executable": "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
       "timeoutSeconds": 600,
@@ -143,45 +148,21 @@
       "version": 1,
       "productID": "BQVQTL3PCH05",
       "title": "No Man's Sky",
-      "qualification": "preferred free recipe, S1 retained-save/relaunch; app_e2e unobserved",
-      "sourceRecipe": "xode-wine 6290d24 engines/game-profiles.json",
-      "qualificationSHA256": "231ea92714b54500bfd666f8fb58882ab990b91e3f572fa68dcc91e811397997",
-      "engine": "nms-free-gptk3-d3dshared",
+      "qualification": "Owner-directed port11b PERF run4 configuration; current app end-to-end parity unobserved",
+      "engine": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+      "executable": "Binaries/NMS.exe",
+      "noAutoDismiss": true,
+      "preservedPrefixPath": "${HOME}/Library/Application Support/XodusCLI/prefixes/req71-nms-calimocho-port11b-v1",
+      "registrySHA256": "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
       "environment": {
-        "DYLD_FALLBACK_LIBRARY_PATH": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/lib:${HOME}/Library/Application Support/Ode to X/Engines/kegworks-runtime/Template-1.0.24.app/Contents/Frameworks",
-        "WINEMSYNC": "1",
-        "CX_ROOT": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle",
-        "WINELOADER": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wine.real",
-        "WINESERVER": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wineserver",
-        "CX_LIBVULKAN": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/nms-winecx-msync-v1/lib/libMoltenVK.dylib",
-        "MVK_CONFIG_USE_METAL_PRIVATE_API": "1",
-        "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS": "2",
-        "MVK_CONFIG_LOG_LEVEL": "1",
-        "CX_GRAPHICS_BACKEND": "wined3d",
-        "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
         "XODUS_PRIVATE_LOCAL_SAVES": "1",
-        "WINEDLLOVERRIDES": "windows.web=n;XCurl=n;xgameruntime=n,b",
-        "CX_APPLEGPTK_LIBD3DSHARED_PATH": "${HOME}/Library/Application Support/Ode to X/Engines/apple-gptk-3.0/runtime/wswine.bundle/lib/external/libd3dshared.dylib"
+        "XODUS_XBL_ONLINE": "1"
       },
       "runtime": {
-        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/nms-winecx-msync-v1/shims/xgameruntime.dll",
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
         "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
-        "legacySHA256": "de6f1c47f3cfb087655a4852c185cf89c3d64ca5e2327146d424426d3b7944a5"
-      },
-      "requiredFiles": [
-        {
-          "path": "${HOME}/Library/Application Support/Ode to X/Engines/profiles/nms-winecx-msync-v1/lib/libMoltenVK.dylib",
-          "sha256": "c2b53b24c9f4a29df60bffc73e3da6ec1b4d0d88ebcf40e81acc32ad6ff9b8cc"
-        },
-        {
-          "path": "${HOME}/Library/Application Support/Ode to X/Engines/apple-gptk-3.0/runtime/wswine.bundle/lib/external/libd3dshared.dylib",
-          "sha256": "5131e631eee8b542eadf48f4df9fd662d9aeeb59139137e0e6e14047dc434995"
-        },
-        {
-          "path": "${HOME}/Library/Application Support/Ode to X/Engines/porting-kit-winecx/WS12WineCX26.3_DXMT/wswine.bundle/bin/wine.real",
-          "sha256": "43e721885828686fedf5b1298c009e20d1ff258738bb2c04281ea33a175de2fa"
-        }
-      ]
+        "legacySHA256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+      }
     }
   ],
   "providerOverrides": [
@@ -191,7 +172,6 @@
       "provider": "crossover",
       "title": "No Man's Sky",
       "qualification": "working direct CLI f8bb9124; app_e2e unobserved; fresh app prefix unqualified",
-      "sourceRecipe": "s3-nms-crossover-working-recipe-v1.json",
       "engine": "crossover-26.3",
       "environment": {
         "WINEDLLOVERRIDES": "xgameruntime=n,b;XCurl=n,b;windows.web=n,b",

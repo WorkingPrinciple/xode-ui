@@ -18,6 +18,7 @@ struct LiveAccountView: View {
     @Environment(\.layoutDirection) private var layoutDirection
     @StateObject private var interaction = AccountInteraction()
     @ObservedObject private var companion = XboxCompanionController.shared
+    var onClose: (() -> Void)? = nil
 #if !XODUS_SHIPPING
     var refreshStatusOnAppear = true
 #endif
@@ -35,16 +36,12 @@ struct LiveAccountView: View {
                 accountDestination
             } else {
                 VStack(spacing: 16) {
-                    if !session.hasConfirmedSignIn { VStack(spacing: 8) {
-                        XOdeLogo().fill(XboxBrand.lightGreen)
-                            .frame(width: 48, height: 48).padding(14)
-                            .background(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255),
-                                        in: RoundedRectangle(cornerRadius: 18))
-                            .accessibilityHidden(true)
-                        Text("Ode to X").font(.title2.weight(.medium))
-                            .accessibilityLabel("Ode to X")
+                    if !session.hasConfirmedSignIn {
+                        XOdeLockup(markSize: 48, markStyle: AnyShapeStyle(XboxBrand.lightGreen),
+                                   wordmarkFont: .title2.weight(.medium),
+                                   markBackground: AnyShapeStyle(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255)))
                             .accessibilityAddTraits(.isHeader)
-                    } }
+                    }
                     if session.hasConfirmedSignIn {
                         XboxAccountSummaryView(companion: companion)
                         if !state.pcGames.usesUnifiedAccount { GroupBox("Xbox access") {
@@ -80,7 +77,7 @@ struct LiveAccountView: View {
         } actions: {
             if state.showingSetup || state.accountDestination != .account {
                 AccountActionsLayout(layoutDirection: layoutDirection) {
-                    Button("Close", action: dismiss.callAsFunction).keyboardShortcut(.cancelAction)
+                    Button("Close", action: close).keyboardShortcut(.cancelAction)
                     Button("Back to Account") {
                         state.showingSetup = false
                         state.accountDestination = .account
@@ -94,12 +91,12 @@ struct LiveAccountView: View {
                             let cancelling = session.signInPending
                             if cancelling { await state.cancelUnifiedSignIn(session: session) }
                             if !session.signInPending,
-                               !cancelling || session.authentication?.flow?.state != .completed { dismiss() }
+                               !cancelling || session.authentication?.flow?.state != .completed { close() }
                         }
                     }
-                    .keyboardShortcut(session.hasConfirmedSignIn ? .defaultAction : .cancelAction)
+                    .keyboardShortcut(.cancelAction)
                     .modifier(XboxProminentButton(enabled: session.hasConfirmedSignIn))
-                    .disabled(session.accountBusy)
+                    .disabled(session.signInPending && session.accountBusy)
                     .accessibilityLabel(session.signInPending ? "Cancel sign-in" : "Close account")
                     .accessibilityIdentifier(session.signInPending ? "xodus.account.cancelSignIn" : "xodus.account.close")
                     if session.isReady {
@@ -155,7 +152,7 @@ struct LiveAccountView: View {
             }
         }
         .tint(XboxBrand.green)
-        .interactiveDismissDisabled(session.accountBusy || session.signInPending)
+        .interactiveDismissDisabled(session.signInPending)
         .confirmationDialog("Sign out of Xbox Live on this Mac?", isPresented: $interaction.confirmingSignOut) {
             Button("Sign out of Xbox Live", role: .destructive) { Task { await state.signOut(session: session) } }
             Button("Cancel", role: .cancel) {}
@@ -175,30 +172,75 @@ struct LiveAccountView: View {
         case .consoles:
             XboxConsolesView(companion: companion)
         case .engines:
-            EnginesView()
+            Button("Open Engines Settings") {
+                SettingsPaneSelection.select(.engines)
+                state.showingAccount = false
+                openSettings()
+            }
         }
+    }
+
+    private func close() {
+        if let onClose { onClose() }
+        else { dismiss() }
     }
 }
 
 struct LiveSettingsView: View {
+    let allowsUpdateChecks: Bool
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openWindow) private var openWindow
     @StateObject private var artwork = AccountInteraction()
+    @StateObject private var engineObservation = EngineRegistryObservation()
+    @StateObject private var engineModel: UserEngineModel
     @AppStorage("Xodus.heroAnimationsEnabled") private var heroAnimationsEnabled = true
+    @AppStorage(SettingsPane.preferenceKey) private var storedSelectedPane = SettingsPane.general.rawValue
+
+    init(engineModel: UserEngineModel? = nil, allowsUpdateChecks: Bool = true) {
+        self.allowsUpdateChecks = allowsUpdateChecks
+        _engineModel = StateObject(wrappedValue: engineModel ?? UserEngineModel())
+    }
 
     var body: some View {
+        // Inside the Settings scene, TabView becomes the standard toolbar-tab preferences window.
+        TabView(selection: selectedPane) {
+            ForEach(SettingsPane.allCases) { pane in
+                paneContent(pane)
+                    .tabItem { Label(pane.title, systemImage: pane.symbol) }
+                    .tag(pane)
+                    .accessibilityIdentifier("xodus.settings.\(pane.rawValue)")
+            }
+        }
+        .accessibilityIdentifier("xodus.settings.pane")
+        .frame(minWidth: 560, idealWidth: 600, minHeight: 480, idealHeight: 640)
+        .task {
+            await state.runtimeSettings.refreshCrossOverDependency()
+        }
+    }
+
+    private var selectedPane: Binding<SettingsPane> {
+        Binding(
+            get: { SettingsPane(rawValue: storedSelectedPane) ?? .general },
+            set: { storedSelectedPane = $0.rawValue }
+        )
+    }
+
+    @ViewBuilder private func paneContent(_ pane: SettingsPane) -> some View {
+        switch pane {
+        case .general: generalPane
+        case .engines: enginesPane
+        case .account: accountPane
+        case .advanced: advancedPane
+        }
+    }
+
+    private var generalPane: some View {
         Form {
-            Section("Game runtime") {
-                RuntimeDependencyStatus(settings: state.runtimeSettings)
-                RuntimeInstallationPicker(settings: state.runtimeSettings)
+            Section("Game storage") {
+                GameInstallLocationSettings()
             }
-            Section("Account") {
-                LabeledContent("Status", value: session.accountJourneyTitle)
-                Button("Open account") { state.openAccount() }
-                if session.hasConfirmedSignIn { AccountHubDestinations() }
-            }
-            if session.hasConfirmedSignIn {
+            PrivacyPermissionsSection()
             Section("Artwork") {
                 Toggle("Animate featured game artwork", isOn: $heroAnimationsEnabled)
                 Text("Trailers start when you point at the featured artwork and keep playing while it's visible. Use the speaker button to unmute. Reduce Motion and Low Power Mode use the poster instead.")
@@ -223,6 +265,68 @@ struct LiveSettingsView: View {
                 if let notice = artwork.artworkNotice { Text(notice).foregroundStyle(.secondary) }
                 if let error = artwork.artworkError { Text(error).foregroundStyle(.secondary) }
             }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var enginesPane: some View {
+        Form {
+            RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath,
+                installed: state.installedGames, embeddedInSettings: true, showsAdvanced: false,
+                registryObservation: engineObservation, userEngineModel: engineModel,
+                operations: state.gameOperations, calimochoInstaller: state.calimochoInstaller,
+                checkUpdatesOnOpen: allowsUpdateChecks && storedSelectedPane == SettingsPane.engines.rawValue)
+        }
+        .formStyle(.grouped)
+    }
+
+    private var accountPane: some View {
+        Form {
+            Section("\(AppBrand.displayName) account") {
+                LabeledContent("Status", value: session.accountJourneyTitle)
+                Button("Open account") { state.openAccount() }
+                if session.hasConfirmedSignIn { AccountHubDestinations() }
+            }
+            Section("Account country") {
+                AccountCountrySettings()
+            }
+            Section("Game access") {
+                GameServiceAccountView(operations: state.gameOperations, library: state.pcGames,
+                                       onOpenOdeAccount: { state.openAccount() })
+            }
+            Section("Local consoles") {
+                LocalConsoleDiscoverySettings()
+            }
+            Section("Sign-in support") {
+                Text(session.accountMessage).foregroundStyle(.secondary)
+                if let error = session.accountError {
+                    Text(error).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.error")
+                }
+                if let summary = session.accountFailureSummary {
+                    Text(summary).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.failureSummary")
+                }
+                if let details = session.accountFailureDetails {
+                    Text(details).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.failureDetails")
+                }
+                if let observation = session.accountFailureObservation {
+                    Text(observation).textSelection(.enabled)
+                        .accessibilityIdentifier("xodus.account.failureObservation")
+                }
+                Text(session.accountExplanation).foregroundStyle(.secondary)
+                Text("If macOS asks for permission to read a saved sign-in, respond in that window. Checking a saved sign-in doesn't start a new Microsoft login.")
+                    .foregroundStyle(.secondary)
+                Button("Check status") { Task { await session.prepareWelcome() } }
+                    .disabled(session.connectionTransitioning || session.accountBusy)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var advancedPane: some View {
+        Form {
             Section("App connection") {
 #if XODUS_SHIPPING
                 Text("Only this app's approved bundled engine and sign-in helper can be used. Gameplay runtime certification is separate.")
@@ -232,30 +336,17 @@ struct LiveSettingsView: View {
                     .foregroundStyle(.secondary)
 #endif
                 LabeledContent("Build", value: session.backendPath.isEmpty ? "Not selected" : URL(fileURLWithPath: session.backendPath).lastPathComponent)
-                HStack {
 #if !XODUS_SHIPPING
-                    Button("Choose app engine") { session.chooseBackend() }.disabled(session.connectionTransitioning)
+                Button("Choose app engine") { session.chooseBackend() }
+                    .disabled(session.connectionTransitioning)
 #endif
-                    Spacer()
+                HStack {
                     Button(session.isReady ? "Reconnect" : "Connect") { Task { await session.connect() } }
                         .disabled(session.backendPath.isEmpty || session.connectionTransitioning)
                     if session.isReady {
-                        Button("Disconnect") { Task { await session.disconnect() } }
+                        Button("Disconnect app connection") { Task { await session.disconnect() } }
                             .disabled(session.connectionTransitioning)
-                    }
-                    Section("Installation tools") {
-                        Button("Inspect a game folder") { session.chooseInstallationFolder() }
-                            .disabled(!session.isReady || !session.supports(.inspectInstallation) || session.inspectionBusy)
-                        if session.inspectionBusy { ProgressView("Inspecting installation").controlSize(.small) }
-                        if let inspection = session.inspection {
-                            LabeledContent("Selected folder",
-                                value: URL(fileURLWithPath: inspection.directory).lastPathComponent)
-                            Text("An installation marker was found. This inspection does not verify ownership, full file integrity or compatibility, and does not import or launch the game.")
-                                .font(.callout).foregroundStyle(.secondary)
-                        }
-                        if let error = session.inspectionError {
-                            Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                        }
+                            .help("Stops the app engine connection and clears current session data. This does not sign out of Microsoft or Xbox.")
                     }
                 }
                 if let hello = session.hello {
@@ -267,24 +358,35 @@ struct LiveSettingsView: View {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
             }
-            Section("Engines") {
-                Text("Review CrossOver readiness and declared GPTK, Wine and graphics components on the dedicated Engines page.")
-                    .foregroundStyle(.secondary)
-                Button("Open Engines") { state.openAccount(.engines) }
+            Section("Installation tools") {
+                Button("Inspect a game folder") { session.chooseInstallationFolder() }
+                    .disabled(!session.isReady || !session.supports(.inspectInstallation) || session.inspectionBusy)
+                if session.inspectionBusy { ProgressView("Inspecting installation").controlSize(.small) }
+                if let inspection = session.inspection {
+                    LabeledContent("Selected folder",
+                        value: URL(fileURLWithPath: inspection.directory).lastPathComponent)
+                    Text("An installation marker was found. This inspection does not verify ownership, full file integrity or compatibility, and does not import or launch the game.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                if let error = session.inspectionError {
+                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+                }
             }
-            Section("Game access") {
-                GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
-            }
-            Section("Advanced public catalog") {
-                Text(session.supports(.query)
-                     ? "Discover browses PC Game Pass titles or searches the public Microsoft Store. Neither source is an owned library."
-                     : "Discover checks a bounded public PC Game Pass page. This engine searches checked products only, not the whole Store or an owned library.")
-                    .foregroundStyle(.secondary)
-                TextField("Market (for example US)", text: $session.market)
+            Section("Public catalog") {
+                Text("Edits apply to the next explicit catalog action; there is no separate Save step.")
+                    .font(.callout).foregroundStyle(.secondary)
+                if session.hasConfirmedSignIn {
+                    LabeledContent("Market", value: session.accountCountryLabel)
+                } else {
+                    TextField("Market (for example US)", text: $session.market)
+                        .textFieldStyle(.roundedBorder)
+                }
                 TextField("Language (for example en-US)", text: $session.language)
+                    .textFieldStyle(.roundedBorder)
                 Button("Refresh catalog scope") { Task { await session.refreshCatalog(state.query) } }
                     .disabled(!session.isReady || session.searching)
                 TextField("Public Store product ID", text: $session.lookupID)
+                    .textFieldStyle(.roundedBorder)
                     .onSubmit { Task { await session.lookupProduct() } }
                 HStack {
                     Button("Check public product") { Task { await session.lookupProduct() } }
@@ -293,8 +395,10 @@ struct LiveSettingsView: View {
                         ProgressView().controlSize(.small).accessibilityLabel("Looking up game details")
                     }
                 }
-                Text("Checks public metadata only. It does not buy, authorize, download or install a game.")
-                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Engine registry and technical artifacts") {
+                NativeEngineSettings(allowsFileReads: !state.runtimeSettings.applicationTerminating,
+                    backendPath: session.backendPath, observation: engineObservation)
             }
             Section("Diagnostics") {
                 DisclosureGroup("Sign-in and game connection") {
@@ -335,40 +439,32 @@ struct LiveSettingsView: View {
                     Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                 }
             }
-            }
-            Section("Sign-in support") {
-                Text(session.accountMessage).foregroundStyle(.secondary)
-                if let error = session.accountError {
-                    Text(error).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.error")
-                }
-                if let summary = session.accountFailureSummary {
-                    Text(summary).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.failureSummary")
-                }
-                if let details = session.accountFailureDetails {
-                    Text(details).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.failureDetails")
-                }
-                if let observation = session.accountFailureObservation {
-                    Text(observation).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.failureObservation")
-                }
-                Text(session.accountExplanation).foregroundStyle(.secondary)
-                Text("If macOS asks for permission to read a saved sign-in, respond in that window. Checking a saved sign-in doesn't start a new Microsoft login.")
-                    .foregroundStyle(.secondary)
-                Button("Check status") { Task { await session.prepareWelcome() } }
-                    .disabled(session.connectionTransitioning || session.accountBusy)
-            }
-            Section("About Ode to X") {
+            Section("About \(AppBrand.displayName)") {
+                LabeledContent("Version", value: AppBrand.versionLabel)
+                if let build = AppBrand.current.build { LabeledContent("Build", value: build) }
+                Text(AppBrand.copyright).foregroundStyle(.secondary)
                 Button("Licenses") { openWindow(id: "licenses") }
                 Button("Acknowledgments") { openWindow(id: "acknowledgments") }
             }
         }
-        .formStyle(.grouped).padding()
-        .frame(width: 560)
-        .task {
-            await state.runtimeSettings.refreshCrossOverDependency()
+        .formStyle(.grouped)
+    }
+}
+
+private struct LocalConsoleDiscoverySettings: View {
+    @ObservedObject private var discovery = LocalNetworkDiscovery.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Check for Xbox consoles on your local network. This doesn't confirm account access.")
+                .font(.callout).foregroundStyle(.secondary)
+            LabeledContent("Discovery") {
+                Button("Find consoles") { discovery.search() }
+                    .accessibilityIdentifier("xodus.localNetwork.discover")
+            }
+            Text(discovery.status).font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if discovery.denied { OpenPrivacySettingsButton(permission: .localNetwork) }
         }
     }
 }

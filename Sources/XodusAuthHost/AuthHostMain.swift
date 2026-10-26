@@ -113,7 +113,7 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 720),
                                   styleMask: [.titled, .closable, .resizable, .miniaturizable],
                                   backing: .buffered, defer: false)
-            window.title = "Sign in to Ode to X with Microsoft"
+            window.title = "Sign in to X Ode with Microsoft"
             window.minSize = NSSize(width: 420, height: 480)
             window.contentView = browser.view
             window.delegate = self

@@ -105,9 +105,43 @@ replacement; a new context starts with a dark hero backing, never old-account
 artwork. Foreground landscape images remain keyed to their requested game.
 Local installed registry loading precedes the remote
 collection wait. Empty Discover entry starts immediately; typed queries retain
-the 250 ms debounce. Same-scope/query public refresh keeps useful products while
+the 250 ms debounce, and Return/Down submits without waiting for it. Completed
+public queries are remembered per account, market, language and exact query
+(24 entries, 10 minutes); a repeated query publishes immediately and fences any
+older in-flight read. Retry/Refresh bypass the memory; scope change, sign-out and
+disconnect retire it. The producer exposes no query cancel and one query slot,
+so a superseded read still finishes before the newest one starts; its result is
+never published. Same-scope/query public refresh keeps useful products while
 loading; explicitly failed IDs may retain prior descriptors with failure state.
+Same-scope Retry also retains the cursor and revision until a validated
+replacement page is admitted. A failure without page details leaves prior
+products and continuation usable rather than stranding later pages.
 Changing scope/query clears wrong-key content.
+
+Discover entry and post-login preparation request one page of at most 16 public
+products, not the entire PC Game Pass catalogue. The Library-active warm path
+prepares only those first 16 metadata records. Warm entry does not refresh an
+already checked scope. Horizontal lazy shelves show Explore PC Game Pass and up
+to three actual genres from the loaded subset; the feed provides no verified
+addition dates or popularity ranks, so these labels are deliberately not
+"Recently added" or "Most popular". Search keeps its scoped grid.
+Horizontal end-of-row viewport visibility (macOS 15+) or More games admits one
+further 16-record page; macOS 14 retains explicit More games rather than treating
+lazy view creation as a scroll signal.
+Sparse or filtered rows keep an explicit More games action instead of scanning
+the catalogue automatically. The 512-record safety bound remains. Refreshing
+page one preserves later-page successes and continuation deduplicates them;
+a loaded-subset genre is never presented as an authoritative empty catalogue.
+Retained public metadata is not renewed account access or current membership.
+
+The official [Xbox catalogue](https://www.xbox.com/en-US/xbox-game-pass/games)
+uses separate PC/console recently-added carousels and genre filters. The current
+backend consumes the general PC membership feed only, not those ranked/editorial
+feeds. The official [benefits guide](https://www.xbox.com/xbox-game-pass/in-game-benefits)
+distinguishes in-game benefits and their console/app redemption steps.
+No current, market/tier-qualified free-to-keep offer feed is implemented;
+Discover omits offer cards and links only to that official guidance on explicit
+user action. Included access, limited-time play and benefits are not ownership.
 
 Public metadata publishes one image/fact revision per response batch (at most
 20 products), retains useful earlier results on failure, coalesces same-key
@@ -115,6 +149,59 @@ selected details and serializes bulk waiters. Locale changes advance a generatio
 so A-to-B-to-A cannot admit an obsolete A completion. Selected-detail priority
 remains independent of blocked bulk work. These are public descriptors, never
 PC membership, ownership or permission.
+When the negotiated engine advertises `catalog.descriptors`, the same app actor
+routes Library classification, rich facts and Discover artwork metadata through
+the engine's shared public raw-descriptor provider, also used by discovery/query.
+Keys are product ID, normalized market and language, never account authority.
+The engine owns persistent raw caching; the app keeps at most 512 records/32 MiB
+and preserves each original five-minute expiry instead of extending it on reuse.
+REQ-121 adds a saved public copy for restarts: each verified public product
+record (product ID, market, language; schema version 1) is written to
+`~/Library/Caches/Xodus/PublicDescriptors` (0700 folder, 0600 files, at most
+64 MiB, 2,048 entries and seven days old, written with fsync before rename).
+It stores public descriptors keyed by product, market and language: no
+account, entitlement or token data, but the saved product IDs reflect what the
+library and Discover showed and the market reflects the account country, so
+sign-out clears it together with saved artwork
+(`CatalogArtworkStore.clearForSignOut()`). Checks and previews never use it. A
+saved record is served stale-while-revalidate: tiles and library resolution use
+it at once, it is never reported as fresh, and one background revalidation per
+key replaces it in memory and on disk, then republishes only changed tiles; the
+library's final snapshot waits for that revalidation. A product the
+revalidation no longer returns (delisted or unavailable) loses its saved copy
+and stays unresolved. A failed revalidation keeps the saved copy without an
+error banner and is asked again after 60 seconds. Unreadable, foreign-schema,
+wrong product/market/language, bad-digest, future or week-old records are
+deleted and refetched.
+Descriptor network reads from every consumer share one cap: two managed
+operations (inside the producer's four) or four direct HTTP requests, admitting
+queued foreground batches in caller order before revalidation. Library artwork
+keeps the caller's visible order, so the first screen is in the first batches.
+Requests contain 1–20 IDs, not raw records in CLI arguments. The existing 1 MiB
+frame ceiling is unchanged; `LIMIT_EXCEEDED` records are retried in strictly
+smaller batches, terminating with an explicit error at a single oversized record.
+Successful peers remain usable. Detail Retry requests `refresh: network`.
+Retirement fences old-source completions; locale keys cannot borrow other-region
+records. Older engines retain direct public HTTP with an explicit coverage
+notice and cannot claim backend/app no-redownload behavior.
+The existing URL-keyed artwork store shares in-flight bytes and decoded card
+variants across both tabs, with bounded memory, persistent HTTP freshness and
+off-main decode. Different display-size variants reuse source bytes, not new
+downloads while fresh.
+
+`--media-check` covers bounded metadata/artwork reuse, expiry, locale/source
+retirement, cancellation and finite size-error retries. To additionally exercise
+the actual Swift consumer against a compatible source-built CLI, use
+`XODUS_DESCRIPTOR_CHECK_CLI=/absolute/path/to/xodus-cli .build/debug/XodusPreview --media-check`.
+That opt-in fixture creates only a new canonical private directory with one
+neutral raw public record and requests the seeded exact locale with Cache.
+It checks real hello/capability negotiation, rich-field decoding, original expiry
+and warm app reuse, then retires the child and removes the fixture.
+It makes no account or Network-refresh request. This proves persisted-cache
+wire compatibility, not counted HTTP avoidance across real tabs; backend
+counted-provider tests supply the separate network-cache evidence. Installed
+app/CLI pairing and native latency/scrolling acceptance remain separate.
+
 Acquisition presentation uses all three acquisition kinds: only purchased games
 enter Owned; subscriptions retain their distinct label, and unknown held games
 say "In your library". Unknown provenance does not remove current held access or
@@ -129,10 +216,18 @@ dispatch, acquisition kinds and unresolved/excluded PC descriptors.
 Ordinary detail content follows system appearance; dark treatment is local to
 the media header. See [native UI procedures](NATIVE_UI_PROCEDURES.md) for bounded
 real-product verification and evidence limits.
-Response decoding and detail/artwork/commerce normalization run in one
+Response decoding and detail/artwork normalization run in one
 cancellation-linked utility task, returning a Sendable batch. The MainActor
 rechecks cancellation and generation before one coherent publication; optional
-detail and commerce rejections remain explicit and do not withdraw game access.
+detail rejections remain explicit and do not withdraw game access.
+Ode has no commerce subsystem: no offer decoding, prices, purchase/claim actions
+or external acquisition handoffs. Install and Play remain independently gated by
+current game access.
+Package format and installed/download size are detail-sheet facts, not browse
+metadata. `DetailGameSizeView` is instantiated only under the detail's Details
+group; browsing no longer starts per-cell filesystem size measurements. Real
+download progress remains in operation status. Package admission still uses the
+original metadata, while a blocked browse action points to the detail sheet.
 
 Reproduce the isolated CPU-preparation comparison with
 `swift build --product XodusPreview --jobs 1` followed by
@@ -205,8 +300,22 @@ scale and source aspect ratio (including fill versus fit cropping). Zero-size
 layout requests no image; hero decoding remains capped at 2400. Bitmap identity
 includes validated URL, bucket and processing version. Concurrent variants
 coalesce the encoded byte read by URL; decode is per variant, not per card.
-Only two fetch/decode pipelines run at once. The existing 64 MiB/40-bitmap
-NSCache is charged `CGImage.bytesPerRow * height`, not NSImage point dimensions.
+Only two fetch/decode pipelines run at once. The 256 MiB/200-bitmap NSCache
+(REQ-121; previously 64 MiB/40) is charged `CGImage.bytesPerRow * height`, not
+NSImage point dimensions, and is emptied on a memory-pressure warning. A tile
+keeps its current artwork only while the same artwork identity changes (a
+resize, or a refreshed URL the catalogue published for the same product, or an
+explicit `identity` such as a product ID), so refreshes don't return drawn
+tiles to placeholders. Another product's artwork never borrows it: that tile
+shows the loading or failure placeholder, and a withdrawn reference (for
+example while artwork isn't allowed) removes art already drawn. A new or
+resized tile draws an already decoded copy of the same URL on its first frame. The artwork disk cache sweeps once per
+session, when its running total passes 512 MiB and every ten minutes, not after
+every save, and skips entries another instance removed mid-sweep.
+Load-latency signposts (`log stream --signpost --predicate 'subsystem ==
+"io.github.dragoshont.xodus" AND category == "load-latency"'`) mark each
+`DescriptorBatch` (hit, stale or miss), `DescriptorFetch`, `FirstTilesDrawn`
+(12 tiles) and each `VisibleArtworkDrawn` burst, with milliseconds since launch.
 Admission queues at most 64 jobs; excess requests surface the ordinary artwork
 unavailable state. Each shared variant tracks its live consumers. Losing the
 last consumer cancels its queued admission immediately; withdrawing one of

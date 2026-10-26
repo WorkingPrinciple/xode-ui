@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Explicit local signing policy; never provision, unlock or export a Keychain identity."""
 import argparse
+import hashlib
 import json
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from shipping_pair import (FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, hex_value,
                            owned_bytes, positive, require, unique_object, verify_input)
@@ -15,6 +17,7 @@ IDENTIFIERS = {"app": "io.github.dragoshont.xodus",
                "cli": "io.github.dragoshont.xodus.cli",
                "helper": "io.github.dragoshont.xodus.auth-host",
                "broker": "io.github.dragoshont.xodus.credential-broker"}
+TEAM_ID = "M62Z4M5EUY"
 COMPARISON_RESULT = (
     "Different signed artifacts share the fixed certificate-bound designated requirement. "
     "Independent-build qualification requires distinct compilations and live access checks; "
@@ -95,6 +98,93 @@ def verify_designated_requirement(path, kind, identity, run=command):
                          requirement, re.IGNORECASE) is not None,
             "Requirement must bind only the fixed identifier and supplied certificate")
     return requirement
+
+
+MACH_O_MAGICS = {
+    b"\xcf\xfa\xed\xfe", b"\xce\xfa\xed\xfe", b"\xfe\xed\xfa\xcf", b"\xfe\xed\xfa\xce",
+    b"\xca\xfe\xba\xbe", b"\xbe\xba\xfe\xca", b"\xca\xfe\xba\xbf", b"\xbf\xba\xfe\xca",
+}
+
+
+def _certificate_fingerprints(path, run):
+    with tempfile.TemporaryDirectory(prefix="xodus-certs-") as directory:
+        prefix = Path(directory).resolve(strict=True) / "certificate"
+        run(["/usr/bin/codesign", "--display",
+             "--extract-certificates=" + str(prefix), str(path)])
+        certificates = sorted(prefix.parent.glob(prefix.name + "[0-9]*"))
+        require(certificates and certificates[0].name == prefix.name + "0",
+                "Signed component has no extractable leaf certificate")
+        result = []
+        for certificate in certificates:
+            _, data = owned_bytes(certificate, bounded=1_048_576)
+            result.append(hashlib.sha1(data, usedforsecurity=False).hexdigest().upper())
+        return result
+
+
+def verify_developer_id_component(path, identity, team_id=TEAM_ID, run=command,
+                                  hardened_runtime=True):
+    require(re.fullmatch(r"[0-9a-fA-F]{40}", identity or "") is not None,
+            "Exact Developer ID certificate SHA1 is required")
+    path = Path(path)
+    require(not path.is_symlink() and (path.is_file() or path.is_dir()),
+            "Expected a regular signed code component")
+    run(["/usr/bin/codesign", "--verify", "--strict", "--verbose=2", str(path)])
+    metadata = run(["/usr/bin/codesign", "--display", "--verbose=4", str(path)])
+    identifiers = re.findall(r"^Identifier=(.+)$", metadata, re.MULTILINE)
+    cdhashes = re.findall(r"^CDHash=([0-9A-Fa-f]{40})$", metadata, re.MULTILINE)
+    teams = re.findall(r"^TeamIdentifier=(.+)$", metadata, re.MULTILINE)
+    authorities = re.findall(r"^Authority=(.+)$", metadata, re.MULTILINE)
+    timestamps = re.findall(r"^Timestamp=(.+)$", metadata, re.MULTILINE)
+    runtime_flags = re.findall(r"^.*\bflags=.*\bruntime\b.*$", metadata, re.MULTILINE)
+    require(len(identifiers) == len(cdhashes) == len(teams) == len(timestamps) == 1 and authorities,
+            "Developer ID signature metadata is incomplete")
+    require(teams[0] == team_id and authorities[0].startswith("Developer ID Application: "),
+            "Component is not signed by the required Developer ID team")
+    require(timestamps[0].strip().lower() != "none", "Component has no secure signing timestamp")
+    require(not hardened_runtime or bool(runtime_flags),
+            "Component is not signed with the hardened runtime")
+    fingerprints = _certificate_fingerprints(path, run)
+    require(fingerprints[0] == identity.upper(),
+            "Component certificate leaf differs from the approved Developer ID identity")
+    return {
+        "identifier": identifiers[0],
+        "cdhash": cdhashes[0].lower(),
+        "teamIdentifier": teams[0],
+        "authority": authorities[0],
+        "certificateSha1": fingerprints[0],
+        "hardenedRuntime": bool(runtime_flags),
+        "secureTimestamp": True,
+    }
+
+
+def verify_developer_id_bundle(app, identity, team_id=TEAM_ID, run=command):
+    app = Path(app)
+    require(app.is_dir() and app.suffix == ".app" and not app.is_symlink(),
+            "Expected a regular app bundle")
+    run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)])
+    required = {
+        "Contents/MacOS/Xodus",
+        "Contents/MacOS/XodusAuthHost",
+        "Contents/Resources/XodusEngine/xodus-cli",
+    }
+    mach_o = []
+    for path in app.rglob("*"):
+        require(not path.is_symlink(), "Linked path in signed app bundle")
+        if not path.is_file():
+            continue
+        with path.open("rb") as source:
+            magic = source.read(4)
+        if magic in MACH_O_MAGICS:
+            mach_o.append(path)
+    relative_paths = {path.relative_to(app).as_posix() for path in mach_o}
+    require(required <= relative_paths,
+            "Signed app is missing a required native code component")
+    components = {"app": verify_developer_id_component(
+        app, identity, team_id, run, hardened_runtime=True)}
+    for path in sorted(mach_o):
+        relative = path.relative_to(app).as_posix()
+        components[relative] = verify_developer_id_component(path, identity, team_id, run)
+    return components
 
 
 def package_receipt(path, digest, size):

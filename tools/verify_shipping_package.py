@@ -11,6 +11,7 @@ import tarfile
 from shipping_pair import hex_value, owned_bytes, require, swift_pins, unique_object
 from launch_association_capsule import verify_capsule
 from python_runtime import verify_runtime
+from package_resources import verify_resources
 
 
 def main():
@@ -58,6 +59,8 @@ def main():
     for target, original in [
         (app / "Contents/Info.plist", source_root / "tools/Info.plist"),
         (app / "Contents/Resources/LICENSE.txt", source_root / "LICENSE"),
+        (app / "Contents/Resources/NOTICE.txt", source_root / "NOTICE"),
+        (app / "Contents/Resources/TRADEMARKS.md", source_root / "TRADEMARKS.md"),
     ]:
         original_identity, _ = owned_bytes(original)
         owned_bytes(target, original_identity["sha256"], original_identity["bytes"])
@@ -90,6 +93,7 @@ def main():
             and not (resources / "XodusAppFoundation_XodusAuthHost.bundle").exists(),
             "Shipping package contains preview/private check resources")
     management = resources / "XodusAppFoundation_XodusManagement.bundle"
+    verify_resources(management)
     layouts = [management, management / "Contents/Resources"]
     schemas = ("management-v1.schema.json", "runtime-providers-v1.schema.json")
     present = [layout for layout in layouts if all((layout / name).is_file() for name in schemas)]

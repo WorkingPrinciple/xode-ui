@@ -9,7 +9,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from build_local_candidate import build_evidence, source_identity, validate_host
+from build_local_candidate import (build_evidence, copy_engine_notice, copy_release_notices, source_build_number,
+                                   source_identity, validate_host)
 from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, swift_pins
 
 
@@ -63,6 +64,50 @@ class LocalCandidateChecks(unittest.TestCase):
             (root / "untracked").write_text("Untracked fixture")
             with self.assertRaises(ValueError):
                 source_identity(root)
+
+    def test_build_number_uses_clean_source_commit_count_and_exceeds_installed_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            subprocess.run(["git", "-c", "user.name=Fixture",
+                            "-c", "user.email=fixture@example.invalid",
+                            "commit", "--allow-empty", "-qm", "first"], cwd=root, check=True)
+            with self.assertRaisesRegex(ValueError, "build 2"):
+                source_build_number(root)
+            for index in range(2):
+                subprocess.run(["git", "-c", "user.name=Fixture",
+                                "-c", "user.email=fixture@example.invalid",
+                                "commit", "--allow-empty", "-qm", f"follow-up {index}"],
+                               cwd=root, check=True)
+            self.assertEqual(source_build_number(root), 3)
+
+    def test_release_notices_are_copied_from_source_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, resources = root / "source", root / "Resources"
+            source.mkdir()
+            resources.mkdir()
+            for name, content in (("LICENSE", "GPL fixture"), ("NOTICE", "Notice fixture"),
+                                  ("TRADEMARKS.md", "Trademark fixture")):
+                (source / name).write_text(content, encoding="utf-8")
+            copy_release_notices(source, resources)
+            self.assertEqual((resources / "LICENSE.txt").read_text(), "GPL fixture")
+            self.assertEqual((resources / "NOTICE.txt").read_text(), "Notice fixture")
+            self.assertEqual((resources / "TRADEMARKS.md").read_text(), "Trademark fixture")
+
+    def test_engine_notice_is_bundled_as_plain_text(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source, resources = root / "NOTICE", root / "Resources"
+            resources.mkdir()
+            source.write_text("Calimocho notice fixture\n", encoding="utf-8")
+            record = copy_engine_notice(source, resources)
+            self.assertEqual((resources / "EngineNotices/NOTICE.txt").read_text(),
+                             "Calimocho notice fixture\n")
+            self.assertEqual(record["bytes"], source.stat().st_size)
+            source.write_bytes(b"\x00\xffbinary")
+            with self.assertRaises(UnicodeDecodeError):
+                copy_engine_notice(source, resources)
 
     def test_candidate_pins_do_not_change_release_defaults(self):
         arguments = ("a" * 40, "b" * 40, {"sha256": "c" * 64, "bytes": 20},

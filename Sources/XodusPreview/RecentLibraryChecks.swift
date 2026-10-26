@@ -85,7 +85,7 @@ enum RecentLibraryChecks {
             let loaded = try trace(scenario)
             check(title.platform.rawValue == platform && title.productID == nil
                   && value.libraryTitle == "Your PC library isn't available yet"
-                  && value.libraryMessage == "Ode to X can't yet verify which PC games you own.",
+                  && value.libraryMessage == "X Ode can't yet verify which PC games you own.",
                   "Every reported activity platform, including PC, leaves owned-PC inventory unavailable")
             check(loaded.filter { $0 == "auth.status" }.count == 1
                   && loaded.filter { $0 == "library.recent" }.count == 1,
@@ -161,9 +161,10 @@ enum RecentLibraryChecks {
                       && value.catalogEmptyTitle == "No Store matches" && value.selectedProduct == nil,
                       "A genuine zero-candidate search stays the existing honest empty result")
             } else {
-                check(value.products.isEmpty && value.catalogError != nil && !value.discoveryFailures.isEmpty
+                check(value.products.isEmpty && value.catalogError == nil && !value.discoveryFailures.isEmpty
+                      && value.nextCursor != nil && value.canLoadMoreCatalog
                       && value.catalogEmptyTitle != "No Store matches" && value.selectedProduct == nil,
-                      "Failed catalog candidate checking stays a visible partial/error state, not a false empty match")
+                      "Rejected catalog candidates preserve usable continuation, not a false empty match or terminal error")
             }
             check(await value.disconnect(), "Neutral title-name Store navigation owner closes")
         }

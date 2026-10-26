@@ -1,35 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import SwiftUI
 import XodusCore
 import XodusManagement
 
 @MainActor
 enum PreviewChecks {
-    static func checkOfferMetadata() -> Bool {
-        do {
-            let args = CommandLine.arguments
-            guard args.count == 5, PCGamesClient.market(args[3]) == args[3],
-                  PCGamesClient.language(args[4]) == args[4],
-                  let data = try GameScriptFiles.read(
-                    URL(fileURLWithPath: args[2]), maximumBytes: 4 * 1024 * 1024) else {
-                throw PCGamesError.invalidResponse
-            }
-            let products = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
-            guard !products.isEmpty, products.count <= 20,
-                  products.allSatisfy({ PCGamesClient.validProductID($0.ProductId) }) else {
-                throw PCGamesError.invalidResponse
-            }
-            for product in products {
-                let commerce = CatalogCommerce.price(product, market: args[3])
-                print("Public PC offer \(product.ProductId): \(commerce?.label ?? "Price unavailable"); free=\(commerce?.isFree() == true). No acquisition attempted.")
-            }
-            return true
-        } catch {
-            FileHandle.standardError.write(Data("Saved public PC offer metadata was rejected: \(error).\n".utf8))
-            return false
-        }
-    }
-
     static func checkXboxCompanion() -> Bool {
         do {
             let args = CommandLine.arguments
@@ -107,13 +83,37 @@ enum PreviewChecks {
             }
         }
 
-        let state = AppState()
+        let settingsSuite = "XodusSettingsRouting-\(UUID().uuidString)"
+        guard let settingsDefaults = UserDefaults(suiteName: settingsSuite) else {
+            check(false, "COR174 Settings routing has an isolated preference suite")
+            return false
+        }
+        defer { settingsDefaults.removePersistentDomain(forName: settingsSuite) }
+        let state = AppState(settingsDefaults: settingsDefaults)
         let welcomeSession = LiveSession()
         welcomeSession.errorMessage = "Xcode not configured: private developer-path sentinel"
         check(!welcomeSession.hasConfirmedSignIn && !welcomeSession.canStartWelcomeSignIn
               && welcomeSession.welcomeMessage ==
-                "Sign-in is unavailable in this copy of Ode to X. A matching app and sign-in service are required.",
+                "Sign-in is unavailable in this copy of X Ode. A matching app and sign-in service are required.",
               "Unconfigured welcome is locked and never exposes developer setup details")
+        check(welcomeSession.welcomeNotice == welcomeSession.welcomeMessage,
+              "Welcome keeps actual unavailable-service guidance separate from its neutral account introduction")
+        let preferenceSuite = "Xodus.SupportChecks.\(UUID().uuidString)"
+        if let preferences = UserDefaults(suiteName: preferenceSuite) {
+            defer { preferences.removePersistentDomain(forName: preferenceSuite) }
+            let key = LibrarySupportVisibility.preferenceKey
+            let absent = AppStorage(wrappedValue: LibrarySupportVisibility.defaultShowsUnsupported,
+                                    key, store: preferences)
+            check(!absent.wrappedValue && preferences.object(forKey: key) == nil,
+                  "Library and Discover share an unchecked absent preference without persisting a reset")
+            for saved in [true, false] {
+                preferences.set(saved, forKey: key)
+                let override = AppStorage(wrappedValue: LibrarySupportVisibility.defaultShowsUnsupported,
+                                          key, store: preferences)
+                check(override.wrappedValue == saved && preferences.bool(forKey: key) == saved,
+                      "Shared compatibility preference preserves explicitly saved \(saved)")
+            }
+        } else { check(false, "Isolated compatibility preference suite is available") }
         check(CrossOverDependencyState.absent.offersTrialDownload
               && CrossOverDependencyState.unverified.offersTrialDownload
               && !CrossOverDependencyState.notChecked.offersTrialDownload
@@ -122,7 +122,7 @@ enum PreviewChecks {
                 location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
                 version: "26.3", buildVersion: "neutral")).offersTrialDownload
               && CrossOverDependencyState.trialDownloadURL.absoluteString ==
-                "https://www.codeweavers.com/crossover/download",
+                "https://www.codeweavers.com/crossover",
               "Only missing or unverified CrossOver offers the exact official trial URL")
         check(!DevelopmentArguments.accepts(["--check-native"]) &&
               !DevelopmentArguments.accepts(["--live-check", "--unknown"]),
@@ -133,8 +133,10 @@ enum PreviewChecks {
         check(state.destination == .library && !state.showsRecentActivity,
               "Live startup opens the PC Library without claiming ownership or selecting activity")
         state.openAccount(.engines)
-        check(state.showingAccount && state.accountDestination == .engines && !state.showingSetup,
-              "P6 Engines opens through the shared Account hub without adding a primary navigation tab")
+        check(!state.showingAccount && state.accountDestination == .account
+              && SettingsPane(rawValue: settingsDefaults.string(forKey: SettingsPane.preferenceKey) ?? "") == .engines,
+              "COR174 Engines routes to the shared Settings pane without an Account sheet")
+        SettingsPaneSelection.select(.general, defaults: settingsDefaults)
         state.showingAccount = false
         state.accountDestination = .account
         state.navigate(.library)
@@ -196,7 +198,7 @@ enum PreviewChecks {
         check(live.products.isEmpty, "Live catalog never starts with invented titles")
         check(live.authentication == nil, "Live account does not start with simulated sign-in")
         check(live.currentCredentialState == nil && live.accountSymbol == "person.crop.circle"
-              && live.accountLabel == "Connect Ode to X",
+              && live.accountLabel == "Connect X Ode",
               "Disconnected live account presentation never borrows the fixture's connection or profile badge")
         check(live.activity.jobs.isEmpty, "Live activity does not start with simulated jobs")
         check(!live.canSignIn, "Sign-in is disabled until backend capability negotiation")
@@ -208,6 +210,7 @@ enum PreviewChecks {
         detailChecks(check: check)
         companionChecks(check: check)
         NativeUIChecks.run(check: check)
+        BrandUXChecks.run(check: check)
         print("\(count) preview checks, \(failures) failures. No backend connected.")
         return failures == 0
     }
@@ -235,6 +238,10 @@ enum PreviewChecks {
             check(companion.confirmsAccount(hash) && !companion.confirmsAccount(nil)
                   && !companion.confirmsAccount(String(repeating: "b", count: 64)),
                   "Profile admission still requires the returned identity to match the independently bound account")
+            check(companion.toolbarProfile(for: hash)?.avatarURL == companion.profile.value?.avatarURL
+                  && companion.toolbarProfile(for: nil) == nil
+                  && companion.toolbarProfile(for: String(repeating: "b", count: 64)) == nil,
+                  "REQ90: Toolbar reuses real profile artwork only for the exact current account, clearing on sign-out or replacement")
             let unavailableProfile = try XboxCompanionCache.decode(
                 JSONSerialization.data(withJSONObject: [
                     "ok": true, "accountHash": hash, "checkedAt": "2026-10-09T00:00:00Z",
@@ -245,6 +252,8 @@ enum PreviewChecks {
                 ]))
             check(!unavailableProfile.confirmsAccount(hash),
                   "A matching cache identity without an available profile does not admit account content or games")
+            check(unavailableProfile.toolbarProfile(for: hash) == nil,
+                  "REQ90: Unavailable profile never exposes stale toolbar identity or fabricates a subscription tier")
             check(companion.profile.value?.gamertag == "OriginalGamer" &&
                   companion.friends.value?.count == 1 && companion.consoles.value?.count == 1 &&
                   companion.recentGames.value?.first?.titleId == "1693340366",
@@ -463,7 +472,7 @@ enum PreviewChecks {
             }
             let pass = try product("FIXTURE00003")
             let catalogOnly = try product("FIXTURE00004")
-            check(DiscoverCopy.noResults("tomb") == "No Results for “tomb”" &&
+            check(DiscoverCopy.noResults("tomb") == "No games match ‘tomb’." &&
                   DiscoverCopy.emptyDescription == "Try another title or clear your search.",
                   "A valid zero-result search names the query and offers title/clear recovery, never reconnection")
             check(DiscoverCopy.noOtherGames("gears") == "No other games match “gears”.",
@@ -535,7 +544,7 @@ enum PreviewChecks {
                 products: [], gamePass: [try product(installed.storeId)], active: true)
             check(joined.count == 1 && !joined[0].owned && joined[0].gamePass && joined[0].installed != nil,
                   "One exact title can retain independent installation, account entitlement and subscription facets")
-            check(LibraryAccess.badges(joined[0]) == [.library, .gamePass] &&
+            check(joined[0].facts.badgeLabels() == ["In your library", "Game Pass"] &&
                   LibraryGame.visible(joined, query: "", filter: .owned, sort: .title).isEmpty &&
                   LibraryGame.visible(joined, query: "", filter: .gamePass, sort: .title).count == 1,
                   "Held access and public Game Pass membership remain independent without invented ownership")
@@ -547,9 +556,9 @@ enum PreviewChecks {
             let squareGame = LibraryGame(id: owned.id, title: owned.title, installed: nil,
                 pc: PCGame(id: owned.id, title: owned.title, artwork: square), product: nil, owned: true, gamePass: false)
             check(square != nil && squareGame.cover == nil, "Portrait Library covers do not stretch square Store icons")
-            check(LibraryAccess(joined[0]) == .library && LibraryAccess(all[0]) == .library &&
+            check(joined[0].facts.ownership == .inLibraryUnknownAcquisition && all[0].facts.ownership == .inLibraryUnknownAcquisition &&
                   LibraryGame.localRecords(installed: [installed], qualified: all, query: "", sort: .title)
-                    .allSatisfy { LibraryAccess($0) == nil },
+                    .allSatisfy { $0.facts.badgeLabels().isEmpty },
                   "Local-only copy never turns installation into account entitlement")
             let metadata = try JSONDecoder().decode(PCGamesCatalog.Product.self, from: Data("""
                 {"ProductId":"FIXTURE00002","Properties":{
@@ -631,6 +640,31 @@ enum PreviewChecks {
                   LibrarySupportVisibility.isVisible(productID: "FIXTURE00003", installed: false, packageFormat: nil,
                     compatibility: antiCheat, showsUnsupportedGames: true),
                   "Unsupported anti-cheat games are hidden by default and restored by the explicit toggle")
+            let supportProducts = try ["FIXTURE00003", "FIXTURE00004"].map(product)
+            let supportOwned = supportProducts.map { PCGame(id: $0.id, title: $0.title, artwork: nil) }
+            for showsUnsupported in [LibrarySupportVisibility.defaultShowsUnsupported, true, false] {
+                let visible: (LibraryGame) -> Bool = { game in
+                    LibrarySupportVisibility.isVisible(productID: game.id, installed: false,
+                        packageFormat: nil, compatibility: game.id == "FIXTURE00003" ? antiCheat : nil,
+                        showsUnsupportedGames: showsUnsupported)
+                }
+                let personal = LibraryProjection(key: LibraryProjectionKey(accountHash: nil,
+                    query: "", owned: supportOwned, products: supportProducts, gamePass: [],
+                    active: false, installed: [], permitted: [], launchable: [], accessIsCurrent: true,
+                    metadataRevision: 0, compatibility: [:], filter: .all, sort: .title,
+                    showsUnsupported: showsUnsupported), isVisible: visible, recommendable: { _ in true })
+                let browse = CatalogProjection(key: CatalogProjectionKey(accountHash: nil,
+                    query: "", owned: [], products: supportProducts, gamePass: [], gamePassIDs: [],
+                    installed: [], accessIsCurrent: false, metadataRevision: 0, compatibility: [:],
+                    genre: nil, showsUnsupported: showsUnsupported),
+                    facts: Dictionary(uniqueKeysWithValues: supportProducts.map {
+                        ($0.id, LibraryCatalogFacts(genres: [], isBaseGame: true))
+                    }), isVisible: visible)
+                check(Set(personal.visible.map(\.id)) == Set(browse.visible.map(\.id))
+                      && browse.visible.count == (showsUnsupported ? 2 : 1)
+                      && browse.visible.count + browse.hiddenCount == personal.candidates.count,
+                      "Compatibility default/override \(showsUnsupported) keeps Library/Discover cards and hidden counts in the same scope")
+            }
             check(!LibrarySupportVisibility.isVisible(productID: "FIXTURE00004", installed: false,
                     packageFormat: "EAppx",
                     compatibility: nil, showsUnsupportedGames: false) &&

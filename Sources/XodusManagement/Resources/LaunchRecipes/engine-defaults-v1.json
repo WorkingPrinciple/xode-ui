@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "defaultEngine": "calimocho-11.20-4.0b3-06",
+  "bindings": [
+    {
+      "engineName": "calimocho-11.20-4.0b3-06",
+      "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+      "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0"
+    },
+    {
+      "engineName": "calimocho-11.20-4.0b3-04",
+      "wineSha256": "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0",
+      "wineserverSha256": "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9"
+    },
+    {
+      "registryPath": "${HOME}/src/copilot-worktrees/calimocho/dragoshont-cautious-potato/build/winehq-11.20/metal-port-11b-private-binding-01/calimocho-wine11.20-gptk4b3-tls-vulkan-private.registry.local.PERF-FROZEN-170ca4ad.json",
+      "registrySha256": "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
+      "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+      "wineSha256": "f6d0546fad2d0dafaa09a9fe6cabe75bb070567df6b0933ecd3622dcb6349194",
+      "wineserverSha256": "e3ec4e7e76cee273f17d5fa3459902642f73d6921e94c576aa74e8cdbdcd7da1",
+      "developerLocal": true
+    }
+  ]
+}

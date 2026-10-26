@@ -24,6 +24,7 @@ struct XboxProfile: Decodable, Sendable {
     let gamerscore: UInt?
     let bio: String?
     let location: String?
+    let accountCountry: XboxAccountCountry?
 }
 
 struct XboxFriend: Decodable, Identifiable, Sendable {
@@ -77,6 +78,11 @@ struct XboxCompanionCache: Decodable, Sendable {
 
     func confirmsAccount(_ binding: String?) -> Bool {
         binding == accountHash && profile.available && profile.value != nil
+    }
+
+    func toolbarProfile(for binding: String?) -> XboxProfile? {
+        guard let binding, XboxAccountBinding.valid(binding), confirmsAccount(binding) else { return nil }
+        return profile.value
     }
 
     static func decode(_ data: Data) throws -> Self {
@@ -418,7 +424,8 @@ final class XboxCompanionController: ObservableObject {
         await bind(binding, signedIn: session.hasConfirmedSignIn)
         guard !terminating, let binding else { return }
         if let task { await task.value; return }
-        if !force, error == nil, let date = cache?.date, Date().timeIntervalSince(date) < 900 { return }
+        if !force, session.accountCountryReady, error == nil, let date = cache?.date,
+           Date().timeIntervalSince(date) < 900 { return }
         let epoch = generation
         refreshing = true
         let job = Task {
@@ -602,7 +609,7 @@ private enum XboxCompanionRefreshError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .failed(11): "Xbox companion data requires the current game-service account. Check game sign-in."
-        case .failed(13): "Xbox returned companion data Ode to X couldn't validate. Saved data is kept."
+        case .failed(13): "Xbox returned companion data \(AppBrand.displayName) couldn't validate. Saved data is kept."
         case .failed(1): "Xbox companion data timed out. Try again later."
         case .failed(2): "The Xbox title identifier wasn't accepted."
         case .failed: "Xbox companion data couldn't be refreshed. Saved data is kept."

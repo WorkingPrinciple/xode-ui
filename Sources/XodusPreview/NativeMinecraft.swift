@@ -10,6 +10,18 @@ struct NativeMinecraftInstallation: Equatable, Sendable {
     var version: String? = nil
     var problem: String? = nil
 
+    /// QA REQ-64: only an installed launcher counts toward "Installed games"; the card can still
+    /// appear in All to offer it.
+    var countsAsInstalled: Bool { state == .ready || state == .repair }
+
+    func appears(in filter: LibraryFilter, query: String) -> Bool {
+        guard filter == .all || (filter == .installed && (state == .ready || state == .repair)) else {
+            return false
+        }
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty || "Minecraft: Java Edition".localizedCaseInsensitiveContains(query)
+    }
+
     var action: String {
         switch state {
         case .checking: "Checking launcher"
@@ -58,8 +70,8 @@ struct NativeMinecraftInstallation: Equatable, Sendable {
 }
 
 enum NativeMinecraftDetailsCopy {
-    static let summary = "Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your Ode to X account."
-    static let worldPreservation = "Install or reinstall the official launcher from this page. Your worlds are not removed by Ode to X."
+    static let summary = "Uses the official macOS Minecraft Launcher. Microsoft sign-in is managed by the launcher, separately from your \(AppBrand.displayName) account."
+    static let worldPreservation = "Install or reinstall the official launcher from this page. Your worlds are not removed by \(AppBrand.displayName)."
 }
 
 @MainActor
@@ -135,8 +147,8 @@ struct NativeMinecraftCard<Artwork: View>: View {
     @State private var showsDetails = false
 
     var body: some View {
-        LibraryCover(title: "Minecraft: Java Edition", openLabel: "Details for",
-                     alwaysShowsActions: true, open: { showsDetails = true }, artwork: artwork) {
+        GameCard(title: "Minecraft: Java Edition", openLabel: "Details for",
+                     open: { showsDetails = true }, artwork: artwork) {
             Label(minecraft.installation.version.map { "Native launcher · \($0)" } ?? "Native launcher",
                   systemImage: "desktopcomputer")
                 .help(minecraft.installation.path ?? "Official macOS Minecraft Launcher")
@@ -146,28 +158,6 @@ struct NativeMinecraftCard<Artwork: View>: View {
             }
             if let problem = minecraft.installation.problem {
                 Text(problem).fixedSize(horizontal: false, vertical: true)
-            }
-        } actions: {
-            LibraryGlassCluster {
-            if minecraft.installation.state == .ready {
-                Button("Open") { minecraft.open() }
-                    .modifier(LibraryActionStyle(primary: false))
-                    .accessibilityLabel("Open Minecraft's official native launcher")
-                    .accessibilityIdentifier("xodus.native.minecraft.open")
-            } else if minecraft.installation.state == .checking {
-                ProgressView("Checking launcher").controlSize(.small)
-            } else {
-                Link(minecraft.installation.action, destination: NativeMinecraft.downloadURL)
-                    .accessibilityIdentifier("xodus.native.minecraft.recover")
-                    .help("Opens Minecraft's official download page. Install or reinstall the launcher there; Ode to X does not delete your worlds.")
-            }
-                Menu {
-                    Button("Details") { showsDetails = true }
-                } label: { Image(systemName: "ellipsis").accessibilityHidden(true) }
-                .menuIndicator(.hidden)
-                .modifier(LibraryActionStyle(primary: false))
-                .fixedSize()
-                .accessibilityLabel("Actions for Minecraft: Java Edition")
             }
         }
         .sheet(isPresented: $showsDetails) {
@@ -196,8 +186,17 @@ struct NativeMinecraftDetailsContent<SaveLocation: View>: View {
                     LabeledContent("Version", value: version)
                 }
                 if let problem = minecraft.installation.problem { Text(problem) }
+                if let error = minecraft.errorMessage { Text(error) }
+                if minecraft.installation.state == .ready {
+                    Button("Open") { minecraft.open() }
+                        .accessibilityLabel("Open Minecraft's official native launcher")
+                        .accessibilityIdentifier("xodus.native.minecraft.open")
+                } else if minecraft.installation.state == .checking {
+                    ProgressView("Checking launcher").controlSize(.small)
+                }
                 if minecraft.installation.state == .missing || minecraft.installation.state == .repair {
                     Link(minecraft.installation.action, destination: NativeMinecraft.downloadURL)
+                        .accessibilityIdentifier("xodus.native.minecraft.recover")
                     Text(NativeMinecraftDetailsCopy.worldPreservation)
                 }
                 Button("Check launcher") { Task { await minecraft.refresh() } }

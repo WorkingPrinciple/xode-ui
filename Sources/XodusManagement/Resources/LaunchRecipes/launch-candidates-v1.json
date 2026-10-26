@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "profiles": [
+    {
+      "title": "Vampire Survivors",
+      "store_id": "9PD5BM2Z8C4L",
+      "manifest_executable": "VampireSurvivors.exe",
+      "manifest_sha256": "f0521ca96f2792a2da4dcc575d479866b5605c064f2249c7d2f3666ff25b2ec4",
+      "profile": "creation-dx11-d3dmetal",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Halls of Torment",
+      "store_id": "9NMNMS626R59",
+      "manifest_executable": "Halls of Torment.exe",
+      "manifest_sha256": "76ebd7eac803daa375812e2e9d14e2b0b7e0322345b86dd1a10044e45be6b504",
+      "profile": "apple-gptk-4.0b3",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "blocked, unqualified candidate",
+      "ready_for_launch": false
+    },
+    {
+      "title": "Inscryption",
+      "store_id": "9P8NSTDMZ11P",
+      "manifest_executable": "Inscryption.exe",
+      "manifest_sha256": "487021aeef1da423f8d2bdc446f9fbfca3cbe3d7742b8c759282f61e2018254d",
+      "profile": "creation-dx11-d3dmetal",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "DREDGE",
+      "store_id": "9MSVVM5NS9L6",
+      "manifest_executable": "DREDGE.exe",
+      "manifest_sha256": "4a579c6d5be39f0456d076982c8453b2c232c093a2f2a6ce87474b25d4e8b5d8",
+      "profile": "creation-dx11-d3dmetal",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Monster Sanctuary",
+      "store_id": "9PBWWQGXVMKC",
+      "manifest_executable": "Monster Sanctuary.exe",
+      "manifest_sha256": "a27f8573233ad60b84343d3d121ef69f2bec7af3bace27f602a1bcae14d79c98",
+      "profile": "creation-dx11-d3dmetal",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "TUNIC",
+      "store_id": "9NLRT31Z4RWM",
+      "manifest_executable": "Secret Legend.exe",
+      "manifest_sha256": "8c641f76dc2406a82dc5ade18f8f1be0af1cf1f9a14e06ee490d78d003137a53",
+      "profile": "creation-dx11-d3dmetal",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Skyrim Special Edition / Anniversary Edition",
+      "store_id": "9P03JGQ4S1GC",
+      "manifest_executable": "SkyrimSELauncher.exe",
+      "manifest_sha256": "5eea776f506977896230f080175253ebbd50c4fd65fa641bb902b0d2a767dbf8",
+      "profile": "creation-dx11-d3dmetal",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Dishonored Definitive Edition",
+      "store_id": "9P1N07XDL1D4",
+      "manifest_executable": "Binaries/Win64/Dishonored.exe",
+      "manifest_sha256": "653200f8c71fc7ffe50984337601e6dbe7ccd1f03f4ab09349af41754266655d",
+      "profile": "queue-winecx-nativejson",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Stardew Valley",
+      "store_id": "9MWR1NC6VQ6L",
+      "manifest_executable": "Stardew Valley.exe",
+      "manifest_sha256": "7220b14e4c23def9675cbd3ab64f9f3fedf3b42fc9d9fa553e0e3afb45b85804",
+      "profile": "queue-winecx-nativejson",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "LIMBO",
+      "store_id": "9PNG83MDD6SH",
+      "manifest_executable": "Limbo.exe",
+      "manifest_sha256": "aa248d3faf3824ceed8afc86bcf738e1747c58d0c28d08746435d1080a8d8877",
+      "profile": "queue-winecx-nativejson",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Kingdom Come: Deliverance",
+      "store_id": "9P3T7HVKM6D0",
+      "manifest_executable": "KingdomCome.exe",
+      "manifest_sha256": "3a990547523273da6980ad990bf9649a5b7d796069eaf987dad83af1d3289ceb",
+      "profile": "creation-dx11-d3dmetal",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "FINAL FANTASY IV",
+      "store_id": "9N8C07SS8C9D",
+      "manifest_executable": "FINAL FANTASY IV.exe",
+      "manifest_sha256": "175083f95cb11ee2ab24533b96da0c04442ba06c0206895cba647a85409597e3",
+      "profile": "queue-winecx-nativejson",
+      "game_arguments": [],
+      "title_environment": {},
+      "status": "candidate, not game-qualified"
+    }
+  ]
+}

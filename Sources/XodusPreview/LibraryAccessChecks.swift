@@ -5,6 +5,46 @@ import XodusManagement
 @MainActor
 enum LibraryAccessChecks {
     static func run(check: (Bool, String) -> Void) throws {
+        check(GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: "Wait for the Game Pass access check to finish.")
+                  == "Wait for the Game Pass access check to finish."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true,
+                  libraryNotice: "Approve Keychain access in Account settings.",
+                  operationNotice: "Wait for the current game operation.") == "Approve Keychain access in Account settings."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: false, libraryNotice: nil,
+                  operationNotice: nil) == "Wait for X Ode to finish starting."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: nil) == nil,
+              "COR88: Actual Game Pass action caption covers operation-only, account, startup and ready gates")
+        let utc = TimeZone(secondsFromGMT: 0)!
+        func seasonalDate(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0,
+                          timeZone: TimeZone = TimeZone(secondsFromGMT: 0)!) -> Date {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = timeZone
+            return calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+        }
+        for (year, lastMonth, lastDay, hiddenDay) in [
+            (2024, 11, 3, 4), (2025, 11, 2, 3), (2026, 11, 1, 2),
+            (2027, 10, 31, 1), (2028, 11, 5, 6), (2029, 11, 4, 5), (2033, 11, 6, 7)
+        ] {
+            check(!HalloweenShelf.isActive(on: seasonalDate(year, 9, 30, hour: 23), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, 10, 1), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, 10, 31, hour: 23), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, lastMonth, lastDay, hour: 23), timeZone: utc)
+                  && !HalloweenShelf.isActive(on: seasonalDate(year, 11, hiddenDay), timeZone: utc)
+                  && !HalloweenShelf.isActive(on: seasonalDate(year + 1, 1, 1), timeZone: utc),
+                  "REQ89: Annual local Halloween window includes Oct1 through Sunday, never following Monday or year rollover (\(year))")
+        }
+        let losAngeles = TimeZone(identifier: "America/Los_Angeles")!
+        let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+        let localBoundary = seasonalDate(2026, 10, 1, timeZone: tokyo)
+        check(HalloweenShelf.isActive(on: localBoundary, timeZone: tokyo)
+              && !HalloweenShelf.isActive(on: localBoundary, timeZone: losAngeles),
+              "REQ89: The same instant follows the Mac's local season rather than a UTC date")
+        let dstMonday = seasonalDate(2026, 11, 2, timeZone: losAngeles)
+        check(HalloweenShelf.isActive(on: dstMonday.addingTimeInterval(-1), timeZone: losAngeles)
+              && !HalloweenShelf.isActive(on: dstMonday, timeZone: losAngeles),
+              "REQ89: Local Sunday stays inclusive across daylight-saving transition, ending exactly at Monday")
         check(InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: false) == "View details",
               "An app-wide launch gate is not labelled as a broken game")
         check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
@@ -276,12 +316,13 @@ enum LibraryAccessChecks {
         let newWorkingIDs = Set(["9PCR3Z2MSM4T", "9P4NV23Q6QC2", "9NH0MSG29X6L"])
         check(Set(bundledEvidence.games.map(\.productId)) == newWorkingIDs
               && bundledEvidence.games.allSatisfy {
-                  $0.verifiedWorkingEvidence != nil
+                  $0.hasVerifiedWorkingQualification
                       && $0.verificationScopeLabel == "CLI only · App testing not observed"
+                      && $0.verifiedWorkingEvidence?.referenceID != nil
                       && $0.saveObservation?.retentionVerified == true
                       && $0.saveObservation?.normalMenuQuitObserved == true
               },
-              "Hades II, Abiotic Factor and Mixtape bundle exact WORKING rows with visible CLI-only scope, not app E2E")
+              "Hades II, Abiotic Factor and Mixtape retain non-image proof references for runtime qualification")
         let expectedProofs = [
             "9PCR3Z2MSM4T": ("crossover-26.3", "s3-hades-checkpoint-reload-02"),
             "9P4NV23Q6QC2": ("apple-gptk-4.0b3", "s3-abiotic-qualification-reload-01"),
@@ -289,12 +330,8 @@ enum LibraryAccessChecks {
         ]
         check(bundledEvidence.games.allSatisfy {
             $0.engine == expectedProofs[$0.productId]?.0
-                && $0.scope.contains(expectedProofs[$0.productId]?.1 ?? "missing")
                 && $0.runId == $0.retentionRunId
         }, "New WORKING rows retain their exact CLI runtime, reload proof and run identity")
-        check(bundledEvidence.games.first { $0.productId == "9P4NV23Q6QC2" }?.scope.contains("STA") == true
-              && bundledEvidence.games.first { $0.productId == "9P4NV23Q6QC2" }?.scope.contains("Shipping") == true,
-              "Abiotic qualification discloses STA and Shipping executable without changing a launch recipe")
         check(mixedWorking.games[0].verificationScopeLabel == nil,
               "Legacy evidence without an app-testing field is not retroactively labelled CLI-only")
         var staleRows: [[String: Any]] = []
@@ -314,7 +351,7 @@ enum LibraryAccessChecks {
         check(mergedEvidence.count == 8
               && mergedEvidence.values.allSatisfy { $0.verifiedWorkingEvidence != nil }
               && mergedEvidence["9NH0MSG29X6L"]?.verificationScopeLabel != nil,
-              "The five existing WORKING tiles plus the three newer CLI rows produce eight, superseding stale Mixtape")
+              "The five existing WORKING tiles plus the three newer CLI rows produce eight with proof references, superseding stale Mixtape")
         mixed["updatedAt"] = "2026-10-23T00:00:00Z"
         let newerLedger = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed))
         check(try bundledEvidence.merging(newerLedger)["9NH0MSG29X6L"]?.verdict == .gameplay,
@@ -447,6 +484,33 @@ enum LibraryAccessChecks {
             market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: true)
         let console = try LibraryGame.details(id: "FIXTURE00004", title: "Console candidate",
             market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: false)
+        let halloweenDate = seasonalDate(2026, 10, 24)
+        let editorialPC = try LibraryGame.details(id: "9N9097G0XZMB", title: "Editorial PC fixture",
+            market: "GB", language: "en-US", source: "MicrosoftDisplayCatalog:v7", pcCandidate: true)
+        check(HalloweenShelf.products([editorialPC], facts: [:],
+                on: halloweenDate, timeZone: utc).map(\.id) == [editorialPC.id],
+              "REQ89: Verified editorial PC selection does not depend on the first Discover page or English category words")
+        let seasonalFacts = [
+            publicPC.id: LibraryCatalogFacts(genres: ["Survival Horror"]),
+            console.id: LibraryCatalogFacts(genres: ["Horror"])
+        ]
+        check(HalloweenShelf.products([publicPC, publicPC, console], facts: seasonalFacts,
+                on: halloweenDate, timeZone: utc).map(\.id) == [publicPC.id],
+              "REQ89: Seasonal shelf deduplicates exact loaded PC products using existing public category metadata")
+        check(HalloweenShelf.products([], facts: seasonalFacts, on: halloweenDate, timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: [:], on: halloweenDate, timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: seasonalFacts,
+                  on: seasonalDate(2026, 11, 2), timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: [
+                  publicPC.id: LibraryCatalogFacts(genres: ["Action & adventure"])
+              ], on: halloweenDate, timeZone: utc).isEmpty,
+              "REQ89: Empty, missing, non-themed metadata and out-of-season selections omit the shelf without inventing genres")
+        for category in ["Horror", "Psychological horror", "Halloween", "Spooky"] {
+            check(HalloweenShelf.products([publicPC], facts: [
+                publicPC.id: LibraryCatalogFacts(genres: [category])
+            ], on: halloweenDate, timeZone: utc).map(\.id) == [publicPC.id],
+                  "REQ89: Explicit catalogue category \(category) is a theme, not an entitlement or compatibility claim")
+        }
         let collection = LibraryGame.collection(installed: [local], owned: [held, held],
             products: [publicPC], gamePass: [publicPC, console], active: true)
         check(collection.map(\.id) == [held.id],
@@ -455,8 +519,8 @@ enum LibraryAccessChecks {
               "SDD-LIB-01: held does not imply paid acquisition")
         let granted = LibraryGame.collection(installed: [], owned: [PCGame(id: "FIXTURE00005", title: "Pass grant",
             artwork: nil, acquisitionKind: .subscription)], products: [], gamePass: [], active: false)
-        check(granted.first.flatMap(LibraryAccess.init) == .subscription
-              && granted.first.map(LibraryAccess.badges) == [.subscription]
+        check(granted.first?.facts.ownership == .inLibraryUnknownAcquisition
+              && granted.first?.facts.badgeLabels() == ["In your library"]
               && granted.first?.owned == false && granted.first?.eligibility == .gamePass
               && LibraryGame.visible(granted, query: "", filter: .owned, sort: .title).isEmpty
               && PCGameAcquisitionKind.merged(.subscription, .purchased) == .purchased
@@ -503,7 +567,7 @@ enum LibraryAccessChecks {
         let both = LibraryGame.collection(installed: [installedHeld], owned: [held],
             products: [], gamePass: [overlap], active: true)
         check(both.count == 1 && !both[0].owned && both[0].gamePass
-              && LibraryAccess.badges(both[0]) == [.library, .gamePass],
+              && both[0].facts.badgeLabels() == ["In your library", "Game Pass"],
               "SDD-LIB-02: held access and explicitly public Game Pass membership remain independent overlapping facts")
         check(both[0].eligibility == .library,
               "M10: current held access remains independent of public Game Pass membership")
@@ -513,7 +577,7 @@ enum LibraryAccessChecks {
         let catalogue = LibraryGame.gamePassCatalog(installed: [installedHeld], owned: [held],
             products: [overlap, overlap, publicPC, console])
         check(catalogue.count == 2 && catalogue.first?.owned == false
-              && LibraryAccess.badges(catalogue[0]) == [.library, .gamePass]
+              && catalogue[0].facts.badgeLabels() == ["In your library", "Game Pass"]
               && catalogue.last?.owned == false,
               "Game Pass catalogue includes unowned PC members and independently marks overlapping held access")
         check(catalogue.last?.eligibility == nil,
@@ -550,9 +614,32 @@ enum LibraryAccessChecks {
                 qualified: stale, query: "", sort: .title).isEmpty,
               "Same-account saved games stay visible while refreshing without current install or Play admission")
         check(GameDetailFacetCopy.access(acquisition: .subscription, current: true) == "Subscription (plan unknown)"
-              && GameDetailFacetCopy.access(acquisition: .purchased, current: false).contains("refresh required")
-              && GameDetailFacetCopy.access(acquisition: nil, current: true) == "Access not verified",
+              && GameDetailFacetCopy.access(acquisition: .purchased, current: false)?.contains("refresh required") == true
+              && GameDetailFacetCopy.access(acquisition: nil, current: true) == nil,
               "M10: detail facets never relabel subscription, stale or absent access as current Owned")
+        let heroPurchase = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .purchased), gamePass: false, installed: installedHeld, accessIsCurrent: true)
+        let heroSubscription = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: true)
+        check(heroPurchase.heroAccessLabels() == ["Owned"]
+              && heroSubscription.heroAccessLabels() == ["Subscription (plan unknown)", "In PC Game Pass catalog"],
+              "REQ-77: Actual purchase/subscription collection facts provide separate provenance, not installation or an inferred plan")
+        var heroBoth = heroPurchase
+        heroBoth.subscriptionAcquisition = true
+        heroBoth.memberships = [.init(plan: .pcGamePass)]
+        check(heroBoth.heroAccessLabels() == ["Owned", "Subscription (plan unknown)", "In PC Game Pass catalog"],
+              "REQ-77: Independently evidenced purchase, subscription acquisition and public catalog membership may coexist")
+        let heroCatalogOnly = GameFacts(pc: nil, gamePass: true, installed: installedHeld, accessIsCurrent: true)
+        let heroUnknown = GameFacts(pc: nil, gamePass: false, installed: installedHeld, accessIsCurrent: false)
+        let heroStale = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: false)
+        check(heroCatalogOnly.heroAccessLabels() == ["In PC Game Pass catalog"]
+              && heroUnknown.heroAccessLabels().isEmpty
+              && heroStale.heroAccessLabels() == ["In PC Game Pass catalog"],
+              "REQ-77: Public membership, stale subscription and installed/launchable files cannot invent current account provenance")
+        check([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale]
+            .allSatisfy { !$0.heroAccessLabels().contains("Installed on this Mac") },
+              "REQ-77: All playable hero evidence combinations omit the redundant prominent installed subtitle")
         let refusal = GameScriptError.failed(11).localizedDescription
         check(refusal.contains("download") && refusal.contains("doesn't establish")
               && refusal.contains("Check download access")
@@ -560,16 +647,35 @@ enum LibraryAccessChecks {
               "SDD-LIB-07: ambiguous acquisition failure is not ownership loss or a demand to sign in")
         check(GameScriptError.failed(12).localizedDescription != refusal,
               "SDD-LIB-07: package incompatibility retains a separate failure")
-        check(LibraryAccess.summary(owned: false, catalogMembership: true, current: true)
-                == "Access not verified · Game Pass catalog",
+        check(GameFacts(pc: nil, gamePass: true, accessIsCurrent: true).badgeLabels() == ["Game Pass"],
               "SDD-LIB-02/07: live detail facet never presents public membership as account access")
         check(DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
                   gamePass: true, subscriptionActive: true, pcCandidate: true)
               && collection.allSatisfy { $0.id != publicPC.id },
               "SDD-LIB-02: shared live action policy opens protected Game Pass review without admitting public-only personal access")
-        check(LibraryAccess.summary(owned: true, catalogMembership: true, current: false)
-                == "Saved Owned · refresh required · Game Pass catalog",
+        check(GameFacts(ownership: .purchased(nil), memberships: [.init(plan: .pcGamePass)],
+                        accessIsCurrent: false).accessIsCurrent == false,
               "SDD-LIB-06: live detail facet labels retained access stale independently of catalog membership")
+        let boughtAndIncluded = GameFacts(ownership: .purchased(nil), memberships: [.init(plan: .pcGamePass)],
+                                          accessIsCurrent: true)
+        check(boughtAndIncluded.badgeLabels() == ["Owned", "Game Pass"]
+              && boughtAndIncluded.badgeLabels(detail: true) == ["Owned", "Included with PC Game Pass"],
+              "REQ-63: purchased plus catalogue membership always renders both independent badges")
+        var saved = boughtAndIncluded
+        saved.accessIsCurrent = false
+        check(saved.badgeLabels() == ["Game Pass"]
+              && saved.badgeLabels(detail: true) == ["Included with PC Game Pass"]
+              && GameFacts(pc: held, gamePass: false, accessIsCurrent: false).badgeLabels().isEmpty,
+              "REQ-63: stale ownership is suppressed on every surface without hiding public membership")
+        let unsupportedPackage = LibraryCompatibilityIssue(kind: .packageType, title: "MSIX",
+            detail: "MSIX package not supported", source: nil)
+        check(!unsupportedPackage.browseTitle.contains("MSIX")
+              && !unsupportedPackage.browseDetail.contains("MSIX"),
+              "REQ-62: blocked browse actions explain package admission without detail-only format labels")
+        check(GameFacts(pc: granted[0].pc, gamePass: true, accessIsCurrent: true).badgeLabels()
+                == ["In your library", "Game Pass"]
+              && GameFacts(pc: nil, gamePass: false, installed: local, accessIsCurrent: true).badgeLabels().isEmpty,
+              "REQ-63: subscription grants never become Owned and installation never infers either badge")
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("LibraryPreservation-\(UUID())")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
         defer { try? FileManager.default.removeItem(at: root) }

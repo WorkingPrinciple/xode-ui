@@ -7,12 +7,14 @@ import os
 from pathlib import Path
 import platform
 import plistlib
+import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
 
-from shipping_pair import FEATURES, PROFILE, hex_value, owned_bytes, require, swift_pins
+from shipping_pair import (CARGO_LOCK_SHA256, FEATURES, PRODUCER, PRODUCER_TREE, PROFILE,
+                           hex_value, owned_bytes, require, swift_pins, swift_producer_pins)
 from signing_identity import preflight, sign, verify_designated_requirement
 
 
@@ -40,6 +42,34 @@ def source_identity(root):
             "tree": hex_value(git("rev-parse", "HEAD^{tree}"), 40)}
 
 
+def source_build_number(root):
+    build = int(subprocess.check_output(
+        ["git", "-C", str(root), "rev-list", "--count", "HEAD"], text=True).strip())
+    require(build > 2, "CFBundleVersion must exceed the installed candidate's build 2")
+    return build
+
+
+def copy_release_notices(source, resources):
+    for source_name, bundle_name in (("LICENSE", "LICENSE.txt"),
+                                     ("NOTICE", "NOTICE.txt"),
+                                     ("TRADEMARKS.md", "TRADEMARKS.md")):
+        path = source / source_name
+        require(path.is_file() and not path.is_symlink(),
+                "Missing required release notice: " + source_name)
+        shutil.copyfile(path, resources / bundle_name)
+
+
+def copy_engine_notice(notice_path, resources):
+    identity, data = owned_bytes(notice_path, bounded=2 * 1024 * 1024)
+    text = data.decode("utf-8")
+    require(bool(text.strip()) and "\x00" not in text,
+            "Engine NOTICE must be non-empty UTF-8 text")
+    destination = resources / "EngineNotices/NOTICE.txt"
+    destination.parent.mkdir(parents=True)
+    destination.write_bytes(data)
+    return identity
+
+
 def build_evidence(messages):
     artifacts, native_features = [], {}
     for line in messages.splitlines():
@@ -61,7 +91,7 @@ def build_evidence(messages):
     return artifacts[0], native_features
 
 
-def build(engine_root, output_root, identity):
+def build(engine_root, output_root, identity, engine_notice=None):
     validate_host()
     project = Path(__file__).resolve().parent.parent
     engine_root = engine_root.resolve(strict=True)
@@ -72,6 +102,9 @@ def build(engine_root, output_root, identity):
             "Output directory must be owned and not group/world writable")
     preflight(identity)
     app_source, engine_source = source_identity(project), source_identity(engine_root)
+    require(engine_source == {"commit": PRODUCER, "tree": PRODUCER_TREE},
+            "Engine source differs from the approved shipping producer")
+    cargo_lock = owned_bytes(engine_root / "Cargo.lock", CARGO_LOCK_SHA256)[0]
     contract = engine_root / "docs/contracts/management-v1.schema.json"
     consumer = project / "Sources/XodusManagement/Resources/management-v1.schema.json"
     require(contract.read_bytes() == consumer.read_bytes(),
@@ -99,7 +132,7 @@ def build(engine_root, output_root, identity):
     executable = Path(artifact["executable"]).resolve(strict=True)
     require(executable.is_relative_to(stage / "engine-target"), "CLI artifact is outside this build target")
     unsigned, _ = owned_bytes(executable)
-    app = stage / "Ode to X Local Candidate.app"
+    app = stage / "X Ode.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
     macos.mkdir(parents=True)
     (resources / "XodusEngine").mkdir(parents=True)
@@ -124,19 +157,22 @@ def build(engine_root, output_root, identity):
     pins.write_text(swift_pins(app_source["commit"], app_source["tree"],
                               signed_engine, signed_helper, engine_source["commit"], engine_source["tree"]))
     producer_pins = source / "Sources/XodusPreview/ShippingProducerPins.swift"
-    producer_pins.write_text(
-        '// Generated for this local candidate only.\nenum ShippingProducerPins {\n'
-        f'    static let commit = "{engine_source["commit"]}"\n'
-        f'    static let tree = "{engine_source["tree"]}"\n}}\n')
+    producer_pins.write_text(swift_producer_pins())
     run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
         source, log, environment)
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
     (macos / "Xodus").chmod(0o755)
     info = plistlib.loads((source / "tools/Info.plist").read_bytes())
-    info["CFBundleName"] = info["CFBundleDisplayName"] = "Ode to X Local Candidate"
+    require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",
+                         info.get("CFBundleShortVersionString", "")) is not None,
+            "App version must use exactly x.y.z")
+    info["CFBundleName"] = info["CFBundleDisplayName"] = "X Ode"
+    info["CFBundleVersion"] = str(source_build_number(project))
+    info["XodeReleaseChannel"] = "Beta"
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump(info, output)
-    shutil.copyfile(source / "LICENSE", resources / "LICENSE.txt")
+    copy_release_notices(source, resources)
+    engine_notice_record = copy_engine_notice(engine_notice, resources) if engine_notice else None
     run(["swiftc", "Sources/XodusCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
          "-o", str(stage / "RenderAppIcon")], source, log)
     run([str(stage / "RenderAppIcon"), str(resources / "Xodus.iconset")], source, log)
@@ -162,7 +198,8 @@ def build(engine_root, output_root, identity):
                  for path in sorted(app.rglob("*")) if path.is_file()}
     receipt = {
         "kind": "local-development-candidate", "productionQualified": False, "notarized": False,
-        "appSource": app_source, "engineSource": engine_source, "engineBuildCommand": command,
+        "appSource": app_source, "engineSource": engine_source, "engineCargoLock": cargo_lock,
+        "engineBuildCommand": command,
         "actualCargoProfile": artifact["profile"], "unsignedEngine": unsigned,
         "actualNativeResolvedFeatures": native_features,
         "signedEngine": signed_engine, "signedHelper": signed_helper,
@@ -170,6 +207,8 @@ def build(engine_root, output_root, identity):
         "architecture": "arm64",
         "generatedProducerPins": owned_bytes(producer_pins)[0], "packageFiles": inventory,
     }
+    if engine_notice_record:
+        receipt["engineNotice"] = engine_notice_record
     (stage / "candidate-receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(app)
     print(stage / "candidate-receipt.json")
@@ -180,5 +219,7 @@ if __name__ == "__main__":
     parser.add_argument("--engine-source", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--identity", required=True)
+    parser.add_argument("--engine-notice", type=Path,
+                        help="Plain-text Calimocho NOTICE from the admitted release")
     args = parser.parse_args()
-    build(args.engine_source, args.output_root, args.identity)
+    build(args.engine_source, args.output_root, args.identity, args.engine_notice)

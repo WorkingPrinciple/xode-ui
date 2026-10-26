@@ -41,7 +41,7 @@ enum EngineDefaults {
 
     static func runnerPaths(_ defaults: UserDefaults = .standard) -> [RuntimeProviderKind: String] {
         var paths: [RuntimeProviderKind: String] = [:]
-        for kind in RuntimeProviderKind.allCases where kind != .crossover {
+        for kind in RuntimeProviderKind.allCases where kind != .crossover && kind != .calimocho {
             if let path = defaults.string(forKey: runnerPathKey(kind)), !path.isEmpty { paths[kind] = path }
         }
         return paths
@@ -87,7 +87,7 @@ enum RunnerAvailabilityDetector {
     ) -> RunnerAvailability {
         var installed: Set<RuntimeProviderKind> = []
         if crossOver.isVerified { installed.insert(.crossover) }
-        for kind in RuntimeProviderKind.allCases where kind != .crossover {
+        for kind in RuntimeProviderKind.allCases where kind != .crossover && kind != .calimocho {
             if let path = runnerPaths[kind], path.hasPrefix("/"),
                probe(URL(fileURLWithPath: path)) {
                 installed.insert(kind)

@@ -1,0 +1,23 @@
+cask "x-ode" do
+  version "0.2.0-beta.1"
+  sha256 "REPLACE_WITH_NOTARIZED_DMG_SHA256"
+
+  url "https://github.com/WorkingPrinciple/xode-ui/releases/download/v#{version}/X-Ode-0.2.0-beta.dmg"
+  name "X Ode"
+  desc "Xbox game library and launch manager"
+  homepage "https://github.com/WorkingPrinciple/xode-ui"
+
+  livecheck do
+    url :url
+    strategy :github_releases
+  end
+
+  depends_on arch: :arm64
+  depends_on macos: ">= :sonoma"
+
+  app "X Ode.app"
+
+  zap trash: [
+    "~/Library/Preferences/io.github.dragoshont.xodus.development.plist",
+  ]
+end

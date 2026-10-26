@@ -4,10 +4,10 @@ import PackageDescription
 import Foundation
 
 let shipping = ProcessInfo.processInfo.environment["XODUS_SHIPPING"] == "1"
-let previewOnly = ["Artwork.swift", "RootView.swift", "FixtureLibraryView.swift", "DetailView.swift", "DownloadsView.swift",
+let previewOnly = ["NativeCheckOCR.swift", "SearchPresentationChecks.swift", "Artwork.swift", "RootView.swift", "FixtureLibraryView.swift", "DetailView.swift", "DownloadsView.swift",
                    "PreviewExporter.swift", "LibraryPreviewExporter.swift", "PreviewChecks.swift", "NativeChecks.swift",
-                   "NativeUIChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift", "LaunchAssociationChecks.swift",
-                   "OdeRuntimeChecks.swift", "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "CatalogDetailLoadingChecks.swift", "PresentationPerformanceChecks.swift", "PublicDescriptorChecks.swift", "Resources"]
+                   "NativeUIChecks.swift", "CalimochoReleaseInstallerChecks.swift", "AccountCountryChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift", "LaunchAssociationChecks.swift",
+                   "OdeRuntimeChecks.swift", "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "EngineManagementChecks.swift", "EngineConfiguratorChecks.swift", "CatalogDetailLoadingChecks.swift", "PresentationPerformanceChecks.swift", "SearchPerformanceChecks.swift", "PublicDescriptorChecks.swift", "BrandUXChecks.swift", "Resources"]
 let shippingSettings: [SwiftSetting] = shipping ? [.define("XODUS_SHIPPING")] : []
 
 let package = Package(
@@ -29,9 +29,14 @@ let package = Package(
         .target(name: "XodusCore", exclude: shipping ? ["Fixtures.swift"] : [],
                 swiftSettings: shippingSettings),
         .target(name: "XodusManagement", dependencies: ["XodusCore"],
+                exclude: ["QA/CompatibilityData/next-30-queue.json",
+                          "QA/CompatibilityData/queue-inspection-v1.json",
+                          "QA/LaunchRecipes/preflight-game-candidates.json",
+                          "QA/LaunchRecipes/small-game-candidates.json",
+                          "Resources/mac-game-evidence-v1.json"],
                 resources: [.copy("Resources/management-v1.schema.json"),
                             .copy("Resources/runtime-providers-v1.schema.json"),
-                            .copy("Resources/mac-game-evidence-v1.json"),
+                            .copy("Resources/mac-game-status-v1.json"),
                             .copy("Resources/LaunchRecipes"),
                             .copy("Resources/CompatibilityData")]),
         .target(name: "XodusCredentials"),

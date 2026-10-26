@@ -21,12 +21,16 @@ final class LibraryCatalogArtwork: ObservableObject {
     private(set) var revision: UInt64 = 0
     @Published private(set) var error: String?
     @Published private(set) var detailErrors: [String: String] = [:]
+    /// Product IDs whose public details are requested but not yet settled in this scope.
+    @Published private(set) var pendingIDs: Set<String> = []
+    private var pendingCounts: [String: Int] = [:]
     private var requested: [String: Date] = [:]
     private var pending: Task<Void, Never>?
     private var scope: String?
     private var generation = UUID()
     private var pendingID = UUID()
     private var detailPending: [String: Task<Void, Never>] = [:]
+    private var revalidations: [UUID: Task<Void, Never>] = [:]
     private let descriptors: PublicCatalogDescriptors
     private let now: @Sendable () -> Date
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "catalog-detail")
@@ -45,16 +49,46 @@ final class LibraryCatalogArtwork: ObservableObject {
             pending = nil
             for task in detailPending.values { task.cancel() }
             detailPending = [:]
+            for task in revalidations.values { task.cancel() }
+            revalidations = [:]
             if !images.isEmpty { images = [:] }
             if !detailErrors.isEmpty { detailErrors = [:] }
             if error != nil { error = nil }
             requested = [:]
+            pendingCounts = [:]
+            if !pendingIDs.isEmpty { pendingIDs = [] }
         }
         return generation
     }
 
+    private func markPending(_ ids: Set<String>) {
+        guard !ids.isEmpty else { return }
+        for id in ids { pendingCounts[id, default: 0] += 1 }
+        let next = Set(pendingCounts.keys)
+        if next != pendingIDs { pendingIDs = next }
+    }
+
+    private func settlePending(_ ids: Set<String>) {
+        guard !ids.isEmpty else { return }
+        for id in ids {
+            guard let count = pendingCounts[id] else { continue }
+            pendingCounts[id] = count > 1 ? count - 1 : nil
+        }
+        let next = Set(pendingCounts.keys)
+        if next != pendingIDs { pendingIDs = next }
+    }
+
+    func retireScope() {
+        _ = enterScope("retired:\(UUID().uuidString)")
+    }
+
     func loadDetail(id: String, market: String, language: String) async {
-        let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language).lowercased())"
+        guard let market = PCGamesClient.market(market) else {
+            retireScope()
+            error = "Confirm your account country before loading game details."
+            return
+        }
+        let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
         guard PCGamesClient.validProductID(id) else { return }
         let epoch = enterScope(nextScope)
         if images[id]?.detail != nil, let expiry = requested[id], expiry > now() { return }
@@ -75,55 +109,77 @@ final class LibraryCatalogArtwork: ObservableObject {
         if generation == epoch { detailPending[id] = nil }
     }
 
-    func load(ids: [String], market: String, language: String) async {
-        let nextScope = "\(PCGamesClient.market(market)):\(PCGamesClient.language(language).lowercased())"
+    func load(ids: [String], market: String, language: String, refresh: Bool = false) async {
+        guard let market = PCGamesClient.market(market) else {
+            retireScope()
+            error = "Confirm your account country before loading game details."
+            return
+        }
+        let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
         let epoch = enterScope(nextScope)
+        let marked = Set(ids.filter { PCGamesClient.validProductID($0) && (refresh || images[$0] == nil) })
+        markPending(marked)
+        defer { if generation == epoch { settlePending(marked) } }
         while let pending {
             await pending.value
             guard !Task.isCancelled, generation == epoch else { return }
         }
         guard !Task.isCancelled, generation == epoch else { return }
         let time = now()
-        let ids = Set(ids.filter(PCGamesClient.validProductID))
-            .filter { requested[$0].map { $0 <= time } ?? true }.sorted()
+        // REQ-121: keep the caller's order so the first visible tiles are in the first batches.
+        var seen = Set<String>()
+        let ids = ids.filter { PCGamesClient.validProductID($0) && seen.insert($0).inserted }
+            .filter { refresh || (requested[$0].map { $0 <= time } ?? true) }
         guard !ids.isEmpty else { return }
+        let batches = stride(from: 0, to: ids.count, by: 20).map { Array(ids[$0..<min($0 + 20, ids.count)]) }
+        let descriptors = descriptors
         let token = UUID()
         let task = Task {
             defer {
                 if generation == epoch, pendingID == token { pending = nil }
             }
+            var failure: (any Error)?
             do {
-                for start in stride(from: 0, to: ids.count, by: 20) {
-                    try Task.checkCancellation()
-                    let batch = Array(ids[start..<min(start + 20, ids.count)])
-                    let data = try await descriptors.load(ids: batch, market: market, language: language)
-                    let expirations = await descriptors.expirations(ids: batch, market: market, language: language)
-                    guard !Task.isCancelled, generation == epoch else { return }
-                    let parsed = try await Self.parseResponse(data, batch: batch, market: market, language: language)
-                    guard !Task.isCancelled, generation == epoch else { return }
-                    if parsed.rejectedDetailPayload {
-                        logger.warning("Optional public detail payload was rejected; library identity and artwork remain separate.")
+                try await withThrowingTaskGroup(of: (Int, Result<PublicCatalogDescriptors.Read, any Error>).self) { group in
+                    var next = 0
+                    func start(_ group: inout ThrowingTaskGroup<(Int, Result<PublicCatalogDescriptors.Read, any Error>), any Error>) {
+                        guard next < batches.count else { return }
+                        let index = next, batch = batches[index]
+                        next += 1
+                        group.addTask {
+                            do {
+                                return (index, .success(try await descriptors.read(ids: batch, market: market,
+                                                                                  language: language, refresh: refresh)))
+                            } catch { return (index, .failure(error)) }
+                        }
                     }
-                    if parsed.rejectedCommerce {
-                        logger.warning("Public PC price offers were rejected; prices stay unavailable and no free acquisition is offered.")
+                    for _ in 0..<PCGamesClient.descriptorConcurrency { start(&group) }
+                    while let (index, result) = try await group.next() {
+                        guard !Task.isCancelled, generation == epoch else { throw CancellationError() }
+                        do {
+                            let read = try result.get()
+                            try await apply(read.data, batch: batches[index], staleIDs: read.staleIDs,
+                                            market: market, language: language, epoch: epoch)
+                            if let revalidation = read.revalidation {
+                                follow(revalidation, staleIDs: read.staleIDs, market: market, language: language, epoch: epoch)
+                            }
+                        } catch is CancellationError { throw CancellationError() }
+                        catch { failure = failure ?? error }
+                        start(&group)
                     }
-                    if !parsed.errors.isEmpty {
-                        logger.warning("Optional public game details were rejected; game access and actions are unchanged.")
-                    }
-                    var batchErrors = detailErrors
-                    for id in parsed.images.keys { batchErrors[id] = parsed.errors[id] }
-                    if !parsed.images.isEmpty {
-                        images.merge(parsed.images, uniquingKeysWith: { _, new in new })
-                    }
-                    if batchErrors != detailErrors { detailErrors = batchErrors }
-                    for id in parsed.images.keys { requested[id] = expirations[id] }
                 }
-                if generation == epoch, error != nil { error = nil }
+                guard generation == epoch else { return }
+                if let failure {
+                    self.error = Self.message(failure)
+                } else {
+                    let failures = await descriptors.failures(ids: ids, market: market, language: language)
+                    guard generation == epoch else { return }
+                    error = failures.isEmpty ? nil : "Some public game details couldn't be loaded. Try again."
+                }
             } catch is CancellationError { }
             catch {
                 guard generation == epoch else { return }
-                self.error = (error as? PCGamesError)?.localizedDescription
-                    ?? "Game artwork and details couldn't be loaded. Check your connection and try again."
+                self.error = Self.message(error)
             }
         }
         pending = task
@@ -131,11 +187,74 @@ final class LibraryCatalogArtwork: ObservableObject {
         await task.value
     }
 
+    private static func message(_ error: any Error) -> String {
+        (error as? PCGamesError)?.localizedDescription
+            ?? "Game artwork and details couldn't be loaded. Check your connection and try again."
+    }
+
+    /// Publishes one batch. Saved (stale) entries are asked for again after `staleRetryDelay` unless their
+    /// revalidation lands first.
+    private func apply(_ data: Data, batch: [String], staleIDs: Set<String>, market: String, language: String,
+                       epoch: UUID) async throws {
+        let expirations = await descriptors.expirations(ids: batch, market: market, language: language)
+        let failures = await descriptors.failures(ids: batch, market: market, language: language)
+        guard !Task.isCancelled, generation == epoch else { throw CancellationError() }
+        let parsed = try await Self.parseResponse(data, batch: batch, market: market, language: language)
+        guard !Task.isCancelled, generation == epoch else { throw CancellationError() }
+        if parsed.rejectedDetailPayload {
+            logger.warning("Optional public detail payload was rejected; library identity and artwork remain separate.")
+        }
+        if !parsed.errors.isEmpty {
+            logger.warning("Optional public game details were rejected; game access and actions are unchanged.")
+        }
+        var batchErrors = detailErrors
+        for (id, message) in failures { batchErrors[id] = message }
+        for id in parsed.images.keys { batchErrors[id] = parsed.errors[id] }
+        if !parsed.images.isEmpty {
+            for (id, image) in parsed.images {
+                CatalogArtworkIdentity.register([image.cover, image.hero].compactMap { $0 } + image.landscape + image.logos,
+                                                owner: id)
+            }
+            images.merge(parsed.images, uniquingKeysWith: { _, new in new })
+        }
+        if batchErrors != detailErrors { detailErrors = batchErrors }
+        let retry = now().addingTimeInterval(PublicCatalogDescriptors.staleRetryDelay)
+        for id in parsed.images.keys { requested[id] = staleIDs.contains(id) ? retry : expirations[id] }
+    }
+
+    /// When a revalidation lands, adopts fresh expiries and republishes only the tiles whose details changed.
+    private func follow(_ revalidation: Task<PublicCatalogDescriptors.Revalidated, Never>, staleIDs: Set<String>,
+                        market: String, language: String, epoch: UUID) {
+        let id = UUID()
+        revalidations[id] = Task {
+            defer { if generation == epoch { revalidations[id] = nil } }
+            let changed = await revalidation.value.changed
+            guard !Task.isCancelled, generation == epoch else { return }
+            let ordered = staleIDs.sorted()
+            let fresh = await descriptors.expirations(ids: ordered, market: market, language: language)
+            guard !Task.isCancelled, generation == epoch else { return }
+            for (id, expiry) in fresh where !changed.contains(id) { requested[id] = expiry }
+            let updated = ordered.filter(changed.contains)
+            guard !updated.isEmpty else { return }
+            do {
+                let data = try await descriptors.load(ids: updated, market: market, language: language)
+                try await apply(data, batch: updated, staleIDs: [], market: market, language: language, epoch: epoch)
+            } catch is CancellationError { }
+            catch {
+                logger.warning("Revalidated public game details couldn't be shown; saved details remain.")
+            }
+        }
+    }
+
+    /// Waits until background revalidations started by earlier loads have been published.
+    func waitForRevalidations() async {
+        while let task = revalidations.values.first { await task.value }
+    }
+
     struct ParsedResponse: Sendable {
         let images: [String: Images]
         let errors: [String: String]
         let rejectedDetailPayload: Bool
-        let rejectedCommerce: Bool
     }
 
     nonisolated static func parseResponse(_ data: Data, batch: [String], market: String,
@@ -165,18 +284,6 @@ final class LibraryCatalogArtwork: ObservableObject {
             details = Dictionary(uniqueKeysWithValues: values.map { ($0.ProductId, $0) })
         } catch {
             rejectedDetailPayload = true
-        }
-        var prices: [String: CatalogCommerce] = [:]
-        var rejectedCommerce = false
-        do {
-            let values = try JSONDecoder().decode(CatalogCommerce.Payload.self, from: data).Products
-            guard values.count <= batch.count, Set(values.map(\.ProductId)).count == values.count,
-                  values.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-            for value in values {
-                prices[value.ProductId] = CatalogCommerce.price(value, market: PCGamesClient.market(market))
-            }
-        } catch {
-            rejectedCommerce = true
         }
         var batchImages: [String: Images] = [:]
         var batchErrors: [String: String] = [:]
@@ -216,7 +323,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                 batchErrors[product.ProductId] = nil
             } catch {
                 batchErrors[product.ProductId] =
-                    "Microsoft returned game details Ode to X couldn't read. Try again."
+                    "Microsoft returned game details \(AppBrand.displayName) couldn't read. Try again."
             }
             batchImages[product.ProductId] = Images(cover: cover, hero: heroes.first,
                 landscape: unique, logos: Self.logoReferences(in: art),
@@ -224,17 +331,16 @@ final class LibraryCatalogArtwork: ObservableObject {
                                            downloadBytes: product.pcDownloadBytes,
                                            packageFormat: product.pcPackageFormat,
                                            pcPackageListed: product.pcPackageListing,
-                                           isBaseGame: product.isBaseGame,
-                                           commerce: prices[product.ProductId]),
+                                           isBaseGame: product.isBaseGame),
                 detail: detailFacts, product: detail)
         }
         return ParsedResponse(images: batchImages, errors: batchErrors,
-            rejectedDetailPayload: rejectedDetailPayload, rejectedCommerce: rejectedCommerce)
+            rejectedDetailPayload: rejectedDetailPayload)
     }
 
     func retry(id: String, market: String, language: String) async {
         requested.removeValue(forKey: id)
-        await load(ids: [id], market: market, language: language)
+        await load(ids: [id], market: market, language: language, refresh: true)
     }
 
     func preload() async -> Int {
@@ -279,28 +385,23 @@ struct LibraryCatalogFacts: Sendable {
     let packageFormat: String?
     let pcPackageListed: Bool?
     let isBaseGame: Bool?
-    let commerce: CatalogCommerce?
 
     init(genres: [String], capabilities: [LibraryCapability] = [], downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil,
-         commerce: CatalogCommerce? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil) {
         self.genres = Array(genres.prefix(2))
         self.capabilities = capabilities
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
         self.isBaseGame = isBaseGame
-        self.commerce = commerce
     }
 
     init(properties: PCGamesCatalog.Product.PropertiesDTO?, downloadBytes: Int64? = nil,
-         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil,
-         commerce: CatalogCommerce? = nil) {
+         packageFormat: String? = nil, pcPackageListed: Bool? = nil, isBaseGame: Bool? = nil) {
         self.downloadBytes = downloadBytes
         self.packageFormat = packageFormat
         self.pcPackageListed = pcPackageListed
         self.isBaseGame = isBaseGame
-        self.commerce = commerce
         var seen = Set<String>()
         genres = Array((properties?.Categories ?? properties?.Category.map { [$0] } ?? [])
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
