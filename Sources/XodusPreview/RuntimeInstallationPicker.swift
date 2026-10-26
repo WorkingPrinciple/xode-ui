@@ -48,12 +48,12 @@ struct RuntimeInstallationPicker: View {
 
     private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
         let defaultID = try? NativeEngineSettings.defaultAdmissionName()
-        let choices = installed.availableEngineOverrides.compactMap { selection in
+        let choices = installed.availableEngineOverrides.filter(NativeEngineDefaults.permitsGlobalDefault).compactMap { selection in
             selection.inspection.engineName.map {
                 EngineChoice.named($0, ready: true,
                                    playable: EngineChoice.playsInBeta(admittedProvider: selection.inspection.admittedProvider))
             }
-        } + installed.failedEngineOverrides.sorted().map { EngineChoice.named($0, ready: false) }
+        } + installed.failedEngineOverrides.filter { $0 != NativeFH6Recipe.engineName }.sorted().map { EngineChoice.named($0, ready: false) }
         return EngineConfiguratorForm(
             choices: choices,
             defaultID: defaultID, defaultName: defaultID.map { EngineDisplayName.name($0) } ?? "Unavailable",
@@ -68,7 +68,7 @@ struct RuntimeInstallationPicker: View {
                     await installed.refreshEngineOverrides(force: true)
                     guard allowsFileReads, !Task.isCancelled,
                           let selection = installed.availableEngineOverrides.first(where: {
-                              $0.inspection.engineName == name
+                              $0.inspection.engineName == name && NativeEngineDefaults.permitsGlobalDefault($0)
                           }) else {
                         error = "This engine couldn't be verified. Refresh engines and try again."
                         return

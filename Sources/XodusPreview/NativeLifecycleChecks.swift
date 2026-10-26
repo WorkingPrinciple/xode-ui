@@ -842,8 +842,45 @@ enum NativeLifecycleChecks {
             "overlaySha256": NativeFH6Recipe.overlaySHA256, "postWinebootPreparation": true,
             "ready": true, "error": NSNull()
         ]
-        _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: title),
-                                                   selection: selection, exitCode: 0)
+        if NativeFH6Recipe.enabled {
+            _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: title),
+                                                       selection: selection, exitCode: 0)
+        } else {
+            do {
+                _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: title),
+                                                           selection: selection, exitCode: 0)
+                check(false, "REQ125: ordinary builds cannot admit an unqualified title recipe")
+            } catch NativeLaunchError.titleRecipeUnavailable {
+                check(true, "REQ125: ordinary builds cannot admit an unqualified title recipe")
+            }
+            check(!NativeLaunchSupport.evaluate(productID: game.storeId, hasEngineOverride: true).canPlay
+                  && !NativeLaunchSupport.hasLaunchProfile(productID: game.storeId),
+                  "REQ125: an FH6 override cannot bypass the live-qualification presentation gate")
+            let store = InstalledGameStore(file: root.appendingPathComponent("fh6-overrides/games.json"))
+            try await store.save([game])
+            do {
+                _ = try await store.setEngineOverrideV2(id: game.id, selection: selection)
+                check(false, "REQ125: ordinary builds cannot persist an unqualified FH6 override")
+            } catch NativeLaunchError.titleRecipeUnavailable {
+                check(try await store.load().first?.engineOverrideV2 == nil,
+                      "REQ125: ordinary builds refuse an unqualified FH6 override without changing saved selection")
+            }
+        }
+        let suite = "io.github.xodus.fh6-default-check.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        do {
+            try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
+            check(false, "REQ125: title-only alias cannot become a global default")
+        } catch NativeLaunchError.titleRecipeUnavailable {
+            check(defaults.data(forKey: NativeEngineDefaults.preferenceKey) == nil
+                  && !NativeEngineDefaults.permitsGlobalDefault(selection),
+                  "REQ125: title-only alias is excluded from global choices and default persistence")
+        }
+        defaults.set(try JSONEncoder().encode(selection), forKey: NativeEngineDefaults.preferenceKey)
+        check(try NativeEngineSettings.defaultAdmissionName(defaults: defaults) == CalimochoReleasePin.release06.engineName
+              && defaults.object(forKey: NativeEngineDefaults.preferenceKey) == nil,
+              "REQ125: an already-persisted title-only default is removed safely without retargeting games")
         for key in ["productID", "packageIdentity", "engineName", "registrySha256", "overlaySha256",
                     "postWinebootPreparation", "ready", "extra"] {
             var invalid = title
@@ -881,9 +918,14 @@ enum NativeLifecycleChecks {
         let backend = BackendConfiguration(executable: mock, stateDirectory: root)
         let arguments = ["--engine", NativeFH6Recipe.engineName, "--registry", selection.registryPath,
                          "--expected-registry-sha256", digest] + NativeFH6Recipe.arguments
-        try await EngineInspectionClient().validateLaunch(configuration: backend, arguments: arguments,
-            selection: selection, product: NativeFH6Recipe.productID)
-        check(true, "REQ125: fresh engine admission and separate title capability are both required before launch")
+        do {
+            try await EngineInspectionClient().validateLaunch(configuration: backend, arguments: arguments,
+                selection: selection, product: NativeFH6Recipe.productID)
+            check(NativeFH6Recipe.enabled,
+                  "REQ125: only labelled qualification builds may admit the exact unqualified title for live testing")
+        } catch NativeLaunchError.titleRecipeUnavailable {
+            check(!NativeFH6Recipe.enabled, "REQ125: exact capability cannot bypass the ordinary-build live gate")
+        }
         do {
             try await EngineInspectionClient().validateLaunch(configuration: backend,
                 arguments: arguments + ["--shim-dir", root.path], selection: selection, product: NativeFH6Recipe.productID)

@@ -13,7 +13,9 @@ struct NativeEngineSettings: View {
             throw NativeLaunchError.selectionChanged
         }
         if data.isEmpty { return try NativeEngineDefaults.read().defaultEngine }
-        let saved = try JSONDecoder().decode(AdmittedEngineSelection.self, from: data)
+        guard let saved = try NativeEngineDefaults.savedAdmission(defaults: defaults) else {
+            return try NativeEngineDefaults.read().defaultEngine
+        }
         guard let name = saved.inspection.engineName, let digest = saved.inspection.registrySha256 else {
             throw NativeLaunchError.selectionChanged
         }
@@ -23,6 +25,7 @@ struct NativeEngineSettings: View {
 
     static func persistDefaultAdmission(_ selection: AdmittedEngineSelection,
                                          defaults: UserDefaults = .standard) throws {
+        guard NativeEngineDefaults.permitsGlobalDefault(selection) else { throw NativeLaunchError.titleRecipeUnavailable }
         guard let name = selection.inspection.engineName, let digest = selection.inspection.registrySha256 else {
             throw NativeLaunchError.selectionChanged
         }

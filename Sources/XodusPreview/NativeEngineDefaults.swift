@@ -2,6 +2,7 @@
 import Foundation
 import CryptoKit
 import XodusManagement
+import OSLog
 
 struct NativeEngineDefaults: Decodable {
     struct Binding: Decodable {
@@ -69,6 +70,23 @@ struct NativeEngineDefaults: Decodable {
     let defaultEngine: String
     let bindings: [Binding]
     static let preferenceKey = "Xodus.lifecycle.defaultAdmission.v2"
+
+    static func permitsGlobalDefault(_ selection: AdmittedEngineSelection) -> Bool {
+        selection.inspection.engineName != NativeFH6Recipe.engineName
+    }
+
+    static func savedAdmission(defaults: UserDefaults) throws -> AdmittedEngineSelection? {
+        guard let bytes = defaults.data(forKey: preferenceKey), !bytes.isEmpty else { return nil }
+        let saved = try JSONDecoder().decode(AdmittedEngineSelection.self, from: bytes)
+        guard permitsGlobalDefault(saved) else {
+            defaults.removeObject(forKey: preferenceKey)
+            Logger(subsystem: "io.github.dragoshont.xodus", category: "EngineSelection")
+                .error("Removed invalid title-only FH6 global default; the ordinary catalogue default is used.")
+            guard defaults.object(forKey: preferenceKey) == nil else { throw GameScriptError.storage }
+            return nil
+        }
+        return saved
+    }
 
     static func read() throws -> Self {
         let bytes = try Data(contentsOf: LaunchRecipeResources.engineDefaultsURL())
