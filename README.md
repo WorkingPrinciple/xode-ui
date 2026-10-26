@@ -112,6 +112,23 @@ online multiplayer, signing/notarization and distribution need separate evidence
 Heroic integration, Cuphead/Celeste success and UWP/EAppx gameplay are not launch
 claims. Documentation does not hide or disable existing controls.
 
+## What X Ode may ask permission for, and why
+
+macOS asks the first time each one is needed. If you said no, open System Settings ▸ Privacy & Security, or use the Open System Settings button X Ode shows next to the problem.
+
+| Permission | When and why |
+|---|---|
+| Local network | Only when you choose Find consoles, so X Ode can look for Xbox consoles on your network. |
+| External drives | When your games folder or an installed game is on an external drive. |
+| Network drives | When your games folder or an installed game is on a network drive. |
+| Documents folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
+| Downloads folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
+| Desktop folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
+| Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. |
+| Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. |
+
+In-game voice chat and microphone input aren't supported in this beta. Updates keep the same app identity, so permissions you already granted and your saved sign-in carry over.
+
 ## Scope and credits
 
 X Ode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the

@@ -28,6 +28,7 @@ enum BrandUXChecks {
         readiness(check: check)
         support(check: check)
         acknowledgments(check: check)
+        permissions(check: check)
         jargon(check: check)
     }
 
@@ -608,6 +609,65 @@ enum BrandUXChecks {
             check(joined.contains("Built on open source") && joined.contains("Key projects") && joined.contains("MoltenVK")
                   && joined.contains("Apple D3DMetal") && !joined.contains("DXVK"),
                   "REQ-117: The Acknowledgments window (\(scheme)) leads with the derived key projects and the separate D3DMetal note: \(labels)")
+        }
+    }
+
+    // MARK: Permissions (REQ-118)
+
+    static func permissions(check: (Bool, String) -> Void) {
+        let usage = PrivacyPermission.allCases.compactMap(\.usageDescription)
+        check(usage.map(\.key) == ["NSLocalNetworkUsageDescription", "NSRemovableVolumesUsageDescription",
+                                    "NSNetworkVolumesUsageDescription", "NSDocumentsFolderUsageDescription",
+                                    "NSDownloadsFolderUsageDescription", "NSDesktopFolderUsageDescription"]
+              && usage.allSatisfy { $0.text.contains("X Ode") && !$0.text.contains("Xode") && $0.text.hasSuffix(".") }
+              && PrivacyPermission.keychain.usageDescription == nil,
+              "REQ-118: Every privacy prompt X Ode can trigger has a clear 'X Ode' usage string (Keychain uses macOS's own prompt)")
+        check(PrivacyPermission.allCases.allSatisfy { $0.settingsURL.scheme == "x-apple.systempreferences" }
+              && PrivacyPermission.localNetwork.settingsURL.absoluteString.hasSuffix("Privacy_LocalNetwork")
+              && PrivacyPermission.removableVolumes.settingsURL.absoluteString.hasSuffix("Privacy_FilesAndFolders"),
+              "REQ-118: Each denial opens its own Privacy & Security pane")
+        let discovery = LocalNetworkDiscovery()
+        discovery.didNotSearch(code: -65570)
+        let other = LocalNetworkDiscovery()
+        other.didNotSearch(code: -72000)
+        check(discovery.denied && discovery.status == LocalNetworkDiscovery.deniedStatus
+              && discovery.status.contains("System Settings") && !other.denied,
+              "REQ-118: A local-network privacy denial is recognised and explained with a way to fix it; other errors aren't called denials")
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        check(PrivacyDenial.isFolderDenial(CocoaError(.fileReadNoPermission))
+              && PrivacyDenial.isFolderDenial(NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM)))
+              && !PrivacyDenial.isFolderDenial(CocoaError(.fileNoSuchFile))
+              && PrivacyDenial.folderPermission(for: home + "/Documents/Games") == .documents
+              && PrivacyDenial.folderPermission(for: home + "/Desktop") == .desktop
+              && PrivacyDenial.folderPermission(for: "/Volumes/Games/Xode") != .documents
+              && InstalledGameError.folderPermission.localizedDescription.contains("Files and Folders"),
+              "REQ-118: Folder denials are told apart from other errors and point to Files and Folders")
+        // Notifications are requested only when an install or repair finishes (GameReadyNotifier.post), never at launch.
+        let sources = (try? FileManager.default.subpathsOfDirectory(atPath: "Sources")) ?? []
+        let requesters = sources.filter { $0.hasSuffix(".swift") && !$0.hasSuffix("BrandUXChecks.swift") }.filter {
+            ((try? String(contentsOfFile: "Sources/" + $0, encoding: .utf8)) ?? "").contains("requestAuthorization")
+        }
+        let notifier = (try? String(contentsOfFile: "Sources/XodusPreview/GameReadyNotifier.swift", encoding: .utf8)) ?? ""
+        let postBody = notifier.range(of: "func post(").map { String(notifier[$0.lowerBound...]) } ?? ""
+        let beforePost = notifier.range(of: "func post(").map { String(notifier[..<$0.lowerBound]) } ?? notifier
+        check(!sources.isEmpty && requesters == ["XodusPreview/GameReadyNotifier.swift"]
+              && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization")
+              && PrivacyPermission.notifications.usageDescription == nil,
+              "REQ-118: Notification permission is asked only when a finished install posts its ready notice, never at launch")
+        if let readme = try? String(contentsOfFile: "README.md", encoding: .utf8) {
+            check(readme.contains("## " + PrivacyPermission.installNotesTitle)
+                  && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) |") }
+                  && readme.contains(PrivacyPermission.microphoneKnownIssue)
+                  && !readme.contains("| Microphone |"),
+                  "REQ-118: The install notes list every permission with the same words the app uses")
+        }
+        for scheme in [ColorScheme.light, .dark] {
+            let labels = render(Form { PrivacyPermissionsSection() }.formStyle(.grouped),
+                                size: CGSize(width: 600, height: 760), scheme: scheme,
+                                name: "permissions-\(scheme == .dark ? "dark" : "light")")
+            let joined = labels.joined(separator: " ")
+            check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Privacy"),
+                  "REQ-118: Settings ▸ General lists permissions with a way to change them (\(scheme)): \(labels)")
         }
     }
 

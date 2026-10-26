@@ -5,6 +5,7 @@ struct GameInstallLocationSettings: View {
     @AppStorage(GameInstallLocation.preferenceKey) private var savedLocation = Data()
     @State private var choosing = false
     @State private var error: String?
+    @State private var deniedPermission: PrivacyPermission?
     @State private var probe = GameStorageProbe()
     @State private var generation = UUID()
 
@@ -22,6 +23,7 @@ struct GameInstallLocationSettings: View {
                     Button("Use original default") {
                         savedLocation = Data()
                         error = nil
+                        deniedPermission = nil
                     }.disabled(choosing)
                 }
                 if choosing { ProgressView("Checking folder").controlSize(.small) }
@@ -31,6 +33,7 @@ struct GameInstallLocationSettings: View {
             if let error {
                 Label(error, systemImage: "exclamationmark.circle")
                     .fixedSize(horizontal: false, vertical: true)
+                if let deniedPermission { OpenPrivacySettingsButton(permission: deniedPermission) }
             }
         }
         .onDisappear { generation = UUID() }
@@ -60,9 +63,17 @@ struct GameInstallLocationSettings: View {
             guard generation == token else { return }
             savedLocation = try JSONEncoder().encode(location)
             error = nil
+            deniedPermission = nil
         } catch {
             guard generation == token else { return }
-            self.error = "The install folder couldn't be selected. \(error.localizedDescription)"
+            if PrivacyDenial.isFolderDenial(error) {
+                let permission = PrivacyDenial.folderPermission(for: root.path)
+                deniedPermission = permission
+                self.error = "macOS hasn't allowed \(AppBrand.displayName) to use this folder. Allow \(permission.title) in System Settings ▸ Privacy & Security ▸ Files and Folders, then choose it again."
+            } else {
+                deniedPermission = nil
+                self.error = "The install folder couldn't be selected. \(error.localizedDescription)"
+            }
         }
     }
 }

@@ -238,6 +238,7 @@ struct LiveSettingsView: View {
             Section("Game storage") {
                 GameInstallLocationSettings()
             }
+            PrivacyPermissionsSection()
             Section("Artwork") {
                 Toggle("Animate featured game artwork", isOn: $heroAnimationsEnabled)
                 Text("Trailers start when you point at the featured artwork and keep playing while it's visible. Use the speaker button to unmute. Reduce Motion and Low Power Mode use the poster instead.")
@@ -459,6 +460,7 @@ private struct LocalConsoleDiscoverySettings: View {
             }
             Text(discovery.status).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            if discovery.denied { OpenPrivacySettingsButton(permission: .localNetwork) }
         }
     }
 }
