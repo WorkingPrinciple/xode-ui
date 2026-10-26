@@ -187,6 +187,7 @@ struct LiveAccountView: View {
 }
 
 struct LiveSettingsView: View {
+    let allowsUpdateChecks: Bool
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openWindow) private var openWindow
@@ -196,7 +197,8 @@ struct LiveSettingsView: View {
     @AppStorage("Xodus.heroAnimationsEnabled") private var heroAnimationsEnabled = true
     @AppStorage(SettingsPane.preferenceKey) private var storedSelectedPane = SettingsPane.general.rawValue
 
-    init(engineModel: UserEngineModel? = nil) {
+    init(engineModel: UserEngineModel? = nil, allowsUpdateChecks: Bool = true) {
+        self.allowsUpdateChecks = allowsUpdateChecks
         _engineModel = StateObject(wrappedValue: engineModel ?? UserEngineModel())
     }
 
@@ -271,7 +273,8 @@ struct LiveSettingsView: View {
             RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath,
                 installed: state.installedGames, embeddedInSettings: true, showsAdvanced: false,
                 registryObservation: engineObservation, userEngineModel: engineModel,
-                operations: state.gameOperations, calimochoInstaller: state.calimochoInstaller)
+                operations: state.gameOperations, calimochoInstaller: state.calimochoInstaller,
+                checkUpdatesOnOpen: allowsUpdateChecks && storedSelectedPane == SettingsPane.engines.rawValue)
         }
         .formStyle(.grouped)
     }

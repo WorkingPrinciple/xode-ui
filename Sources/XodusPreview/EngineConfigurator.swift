@@ -602,7 +602,7 @@ struct CalimochoReleaseInstallControls: View {
                     }
                 }
                 .accessibilityIdentifier("xodus.engines.calimocho.progress")
-            } else if !installer.hasEngineFolder {
+            } else if !installer.hasEngineFolder && !installer.offersPinnedUpdate {
                 if CalimochoRelease.downloadPublished {
                     HStack {
                         Button(CalimochoRelease.getTitle) {
@@ -708,6 +708,10 @@ struct EngineConfiguratorForm<Advanced: View>: View {
     var calimochoInstaller: CalimochoReleaseInstallController? = nil
     var engineRemovalBusy: @MainActor @Sendable () -> Bool = { true }
     var refreshReleaseAdmission: @MainActor () async -> Bool = { false }
+    var showsCalimochoUpdates = false
+    var checkCalimochoUpdatesOnOpen = false
+    var beginCalimochoUpdate: @MainActor (LocalCalimochoRelease) -> Void = { _ in }
+    var removeOldCalimocho: @MainActor () -> Void = {}
     @ViewBuilder let advanced: () -> Advanced
 
     var body: some View {
@@ -723,6 +727,9 @@ struct EngineConfiguratorForm<Advanced: View>: View {
             refresh: refresh, showsAdvanced: showsAdvanced, userEngineModel: userEngineModel,
             calimochoStatus: calimochoStatus, calimochoInstaller: calimochoInstaller,
             engineRemovalBusy: engineRemovalBusy, refreshReleaseAdmission: refreshReleaseAdmission,
+            showsCalimochoUpdates: showsCalimochoUpdates, beginCalimochoUpdate: beginCalimochoUpdate,
+            removeOldCalimocho: removeOldCalimocho,
+            checkCalimochoUpdatesOnOpen: checkCalimochoUpdatesOnOpen,
             advanced: advanced)
     }
 }
@@ -741,6 +748,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     let calimochoStatus: CalimochoAvailability?
     let engineRemovalBusy: @MainActor @Sendable () -> Bool
     let refreshReleaseAdmission: @MainActor () async -> Bool
+    let showsCalimochoUpdates: Bool
+    let beginCalimochoUpdate: @MainActor (LocalCalimochoRelease) -> Void
+    let removeOldCalimocho: @MainActor () -> Void
+    let checkCalimochoUpdatesOnOpen: Bool
     let advanced: () -> Advanced
     @StateObject private var ownedUsers: UserEngineModel
     @StateObject private var ownedCalimochoInstaller: CalimochoReleaseInstallController
@@ -756,6 +767,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
          calimochoInstaller: CalimochoReleaseInstallController? = nil,
          engineRemovalBusy: @escaping @MainActor @Sendable () -> Bool = { true },
          refreshReleaseAdmission: @escaping @MainActor () async -> Bool = { false },
+         showsCalimochoUpdates: Bool = false,
+         beginCalimochoUpdate: @escaping @MainActor (LocalCalimochoRelease) -> Void = { _ in },
+         removeOldCalimocho: @escaping @MainActor () -> Void = {},
+         checkCalimochoUpdatesOnOpen: Bool = false,
          advanced: @escaping () -> Advanced) {
         self.choices = choices
         self.defaultID = defaultID
@@ -770,6 +785,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         self.calimochoStatus = calimochoStatus
         self.engineRemovalBusy = engineRemovalBusy
         self.refreshReleaseAdmission = refreshReleaseAdmission
+        self.showsCalimochoUpdates = showsCalimochoUpdates
+        self.beginCalimochoUpdate = beginCalimochoUpdate
+        self.removeOldCalimocho = removeOldCalimocho
+        self.checkCalimochoUpdatesOnOpen = checkCalimochoUpdatesOnOpen
         self.advanced = advanced
         _ownedUsers = StateObject(wrappedValue:
             userEngineModel ?? UserEngineModel(store: userEngineStore, suggestions: suggestions))
@@ -794,7 +813,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                     refresh()
                     Task { await settings.refreshCrossOverDependency() }
                 }
-                .disabled(checkingAny || !allowsFileReads || settings.applicationTerminating)
+                .disabled(checkingAny || calimochoInstaller.isWorking || !allowsFileReads || settings.applicationTerminating)
                 .accessibilityLabel("Check engines and CrossOver again")
                 .accessibilityIdentifier("xodus.engines.refresh")
             }
@@ -805,6 +824,14 @@ struct EngineConfiguratorSections<Advanced: View>: View {
             }
             CalimochoReleaseInstallControls(installer: calimochoInstaller, isBusy: engineRemovalBusy,
                                             refreshAdmission: refreshReleaseAdmission)
+            if showsCalimochoUpdates {
+                CalimochoUpdateControls(installer: calimochoInstaller, isBusy: engineRemovalBusy,
+                                        beginUpdate: beginCalimochoUpdate, removeOld: removeOldCalimocho)
+                    .task(id: checkCalimochoUpdatesOnOpen) {
+                        guard checkCalimochoUpdatesOnOpen, allowsFileReads else { return }
+                        await calimochoInstaller.checkForUpdates(automatic: true)
+                    }
+            }
         }
         Section {
             Picker("Default Engine", selection: Binding(
@@ -818,7 +845,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 }
             }
             .pickerStyle(.menu)
-            .disabled(!allowsFileReads || settings.applicationTerminating)
+            .disabled(!allowsFileReads || settings.applicationTerminating || calimochoInstaller.isWorking)
             .accessibilityIdentifier("xodus.engines.default")
             if let error {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)

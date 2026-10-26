@@ -60,7 +60,7 @@ enum NativeUIChecks {
                   "COR174 \(pane.title) restores from its selected-pane preference")
             for width in [CGFloat(560), CGFloat(820)] {
                 for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-                    let host = NSHostingView(rootView: LiveSettingsView()
+                    let host = NSHostingView(rootView: LiveSettingsView(allowsUpdateChecks: false)
                         .environmentObject(state)
                         .environmentObject(session)
                         .defaultAppStorage(defaults)
@@ -120,7 +120,7 @@ enum NativeUIChecks {
             for width in [CGFloat(560), CGFloat(820)] {
                 for appearance in [NSAppearance.Name.aqua, .darkAqua] {
                     let height: CGFloat = 2600
-                    let host = NSHostingView(rootView: LiveSettingsView()
+                    let host = NSHostingView(rootView: LiveSettingsView(allowsUpdateChecks: false)
                         .environmentObject(state)
                         .environmentObject(session)
                         .defaultAppStorage(defaults)
@@ -169,7 +169,7 @@ enum NativeUIChecks {
         state.gameOperations.useUnifiedAccount(session)
         SettingsPaneSelection.select(.account, defaults: defaults)
         let height: CGFloat = 2600
-        let host = NSHostingView(rootView: LiveSettingsView()
+        let host = NSHostingView(rootView: LiveSettingsView(allowsUpdateChecks: false)
             .environmentObject(state)
             .environmentObject(session)
             .defaultAppStorage(defaults)

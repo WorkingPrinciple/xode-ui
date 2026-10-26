@@ -1396,6 +1396,35 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    func activateCalimochoUpdate(_ selection: AdmittedEngineSelection,
+                                defaults: UserDefaults = .standard) async throws {
+        guard loaded, mutationActive, !applicationTerminating, !accountDisconnecting,
+              runningGameID == nil, let pin = CalimochoReleasePin.all.last,
+              selection.inspection.engineName == pin.engineName,
+              selection.inspection.wineSha256 == pin.wineSha256,
+              selection.inspection.wineserverSha256 == pin.wineserverSha256 else {
+            throw CalimochoUpdateError.admission
+        }
+        for product in ["9P9VNSQK1W3K", "9NMNMS626R59"] {
+            guard let profile = try NativeTitleLaunchProfile.read(productID: product, defaults: defaults,
+                                                                  provider: .calimocho),
+                  profile.engine == pin.engineName, profile.wineSha256 == pin.wineSha256,
+                  profile.wineserverSha256 == pin.wineserverSha256 else { throw NativeLaunchError.invalidProfile }
+        }
+        let previous = defaults.object(forKey: NativeEngineDefaults.preferenceKey)
+        let previousProvider = defaults.object(forKey: EngineDefaults.defaultEngineKey)
+        do {
+            try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
+            applySavedGames(try await store.retargetCalimochoTitles(selection))
+        } catch {
+            if let previous { defaults.set(previous, forKey: NativeEngineDefaults.preferenceKey) }
+            else { defaults.removeObject(forKey: NativeEngineDefaults.preferenceKey) }
+            if let previousProvider { defaults.set(previousProvider, forKey: EngineDefaults.defaultEngineKey) }
+            else { defaults.removeObject(forKey: EngineDefaults.defaultEngineKey) }
+            throw error
+        }
+    }
+
     func withEngineOverrideCheck(_ inspection: @MainActor () async -> Void) async {
         while checkingEngineOverrides {
             await withCheckedContinuation { engineOverrideWaiters.append($0) }

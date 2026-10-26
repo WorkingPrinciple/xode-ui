@@ -383,4 +383,16 @@ actor InstalledGameStore {
         try save(games)
         return games
     }
+
+    func retargetCalimochoTitles(_ selection: AdmittedEngineSelection) throws -> [InstalledGame] {
+        var games = try load()
+        for index in games.indices where ["9P9VNSQK1W3K", "9NMNMS626R59"].contains(games[index].storeId) {
+            try NativeLaunchConfiguration.validateOverride(selection, game: games[index])
+            games[index].engineOverride = .calimocho
+            games[index].engineSelection = selection
+            games[index].engineOverrideV2 = GameEngineOverride(selection: selection)
+        }
+        try save(games)
+        return games
+    }
 }
