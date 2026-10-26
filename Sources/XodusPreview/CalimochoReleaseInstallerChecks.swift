@@ -443,6 +443,22 @@ enum CalimochoReleaseInstallerChecks {
         await forcedInspection.value
         check(inspectionOrder == [1, 2, 3] && !installed.checkingEngineOverrides,
               "REQ115: queued admission runs a fresh inspection rather than skipping it")
+        @MainActor final class ExtractorLiveness { var alive = true }
+        let extractor = ExtractorLiveness()
+        let stuckService = CalimochoReleaseInstallService(pin: valid.pin, root: engines, session: session,
+            availableSpace: { _ in Int64.max }, extractArchive: { _, _ in
+                throw CalimochoInstallError.extractionShutdownFailed
+            }, verifyEngine: { _, _ in })
+        let stuck = CalimochoReleaseInstallController(service: stuckService, extractionStillRunning: { extractor.alive })
+        CalimochoInstallerURLProtocol.configure(valid.archive)
+        stuck.install { false }
+        try await finish(stuck)
+        check(!(await stuck.shutdownForApplicationTermination()),
+              "REQ123: quit refuses while the failed extractor is still alive")
+        stuck.resumeAfterTerminationRefusal()
+        extractor.alive = false
+        check(await stuck.shutdownForApplicationTermination(),
+              "REQ123: a later quit succeeds once the failed extractor exits")
         try await updateChecks(root: root.appendingPathComponent("updates"), session: session, check: check)
     }
 
@@ -564,6 +580,10 @@ enum CalimochoReleaseInstallerChecks {
         await controller.checkForUpdates(automatic: true)
         check(CalimochoInstallerURLProtocol.requests == 2,
               "REQ123: opening the pane on the next day permits another check")
+        defaults.set(date.addingTimeInterval(86_400), forKey: CalimochoReleaseInstallController.lastUpdateCheckKey)
+        await controller.checkForUpdates(automatic: true)
+        check(CalimochoInstallerURLProtocol.requests == 3,
+              "REQ123: a future-dated timestamp is stale and cannot suppress an automatic check")
         CalimochoInstallerURLProtocol.configure(Data(), error: URLError(.notConnectedToInternet))
         await controller.checkForUpdates(automatic: false)
         check(controller.updateMessage == CalimochoUpdateError.offline.localizedDescription,
@@ -600,6 +620,48 @@ enum CalimochoReleaseInstallerChecks {
         try await finish(controller)
         check(oldDefault == old.engineName && !reserved && !controller.hasEngineFolder && tryNoStaging(in: root),
               "REQ123: cancel mid-update preserves the old engine/default and removes staging")
+
+        let oldInspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: String(repeating: "b", count: 64), engineName: old.engineName,
+            declaredProvider: "calimocho", admittedProvider: "calimocho", admission: "admitted",
+            ready: true, qualified: false, wineSha256: String(repeating: "c", count: 64),
+            wineserverSha256: String(repeating: "d", count: 64), error: nil)
+        let oldSelection = AdmittedEngineSelection(registryPath: root.appendingPathComponent("old-registry.json").path,
+                                                   inspection: oldInspection)
+        defaults.set(try JSONEncoder().encode(oldSelection), forKey: NativeEngineDefaults.preferenceKey)
+        EngineDefaults.setDefaultEngine(.calimocho, defaults)
+        CalimochoInstallerURLProtocol.configure(valid.archive)
+        _ = try await service(archive: valid, root: root, session: session).install { _ in }
+        let recovery = CalimochoReleaseInstallController(
+            service: service(archive: valid, root: root, session: session),
+            releaseCheck: CalimochoReleaseCheck(session: session), updateDefaults: defaults, now: { date })
+        await recovery.checkForUpdates(automatic: true)
+        check(recovery.updateOutcome == .finishUpdate(old),
+              "REQ123: pane-open detects an installed pinned release whose default still points to the old engine")
+        CalimochoInstallerURLProtocol.configure(Data())
+        var refusedUpdateActivated = false
+        recovery.update(from: old, isBusy: { false }, reserve: {}, release: {}, admit: { false }, activate: {
+            refusedUpdateActivated = true
+        })
+        try await finish(recovery)
+        check(recovery.hasEngineFolder && recovery.updateOutcome == .finishUpdate(old)
+              && defaults.data(forKey: CalimochoReleaseInstallController.pendingUpdateKey) != nil
+              && CalimochoInstallerURLProtocol.requests == 0 && !refusedUpdateActivated,
+              "REQ123: refused Finish Update preserves the existing folder and recovery offer without downloading")
+        recovery.update(from: old, isBusy: { false }, reserve: {}, release: {}, admit: { true }, activate: {
+            defaults.removeObject(forKey: NativeEngineDefaults.preferenceKey)
+        })
+        try await finish(recovery)
+        check(CalimochoInstallerURLProtocol.requests == 0 && recovery.removableOldRelease == old,
+              "REQ123: Finish Update admits and activates the existing folder without downloading it again")
+        let relaunched = CalimochoReleaseInstallController(
+            service: service(archive: valid, root: root, session: session),
+            releaseCheck: CalimochoReleaseCheck(session: session), updateDefaults: defaults, now: { date })
+        await relaunched.checkForUpdates(automatic: true)
+        check(relaunched.removableOldRelease == old,
+              "REQ123: the old-engine Trash offer survives controller recreation")
+        try FileManager.default.removeItem(at: controller.engineURL)
+        defaults.removeObject(forKey: CalimochoReleaseInstallController.pendingRemovalKey)
 
         CalimochoInstallerURLProtocol.configure(valid.archive)
         var sawOldBeforeAdmission = false
@@ -638,7 +700,9 @@ enum CalimochoReleaseInstallerChecks {
         let games = ["9P9VNSQK1W3K", "9NMNMS626R59", "9P7XZ2FW2B39"].map { product in
             InstalledGame(id: UUID(), title: product, identityName: product, version: "1.0.0.0",
                           storeId: product, folder: root.appendingPathComponent(product).path,
-                          launcher: "", importedAt: date, usesNativeLifecycle: true)
+                          launcher: "", importedAt: date, engineOverride: .calimocho,
+                          engineSelection: oldSelection, engineOverrideV2: GameEngineOverride(selection: oldSelection),
+                          usesNativeLifecycle: true)
         }
         try await gameStore.save(games)
         let activePin = CalimochoReleasePin.release04
@@ -649,22 +713,45 @@ enum CalimochoReleaseInstallerChecks {
             wineserverSha256: activePin.wineserverSha256, error: nil)
         let selection = AdmittedEngineSelection(registryPath: root.appendingPathComponent("registry.json").path,
                                                  inspection: inspection)
-        defaults.set(Data("old default".utf8), forKey: NativeEngineDefaults.preferenceKey)
+        defaults.set(try JSONEncoder().encode(oldSelection), forKey: NativeEngineDefaults.preferenceKey)
         try library.reserveMutation(gameID: nil)
-        try await library.activateCalimochoUpdate(selection, defaults: defaults)
+        try await library.activateCalimochoUpdate(selection, replacing: old.engineName, defaults: defaults)
         library.releaseMutation()
         let savedGames = try await gameStore.load()
         let savedDefault = try JSONDecoder().decode(AdmittedEngineSelection.self,
                             from: defaults.data(forKey: NativeEngineDefaults.preferenceKey)!)
         check(savedDefault == selection && savedGames.prefix(2).allSatisfy { $0.engineOverrideV2?.selection == selection }
-              && savedGames.last?.engineOverrideV2 == nil,
+              && savedGames.last?.engineOverrideV2?.selection == oldSelection,
               "REQ123: admitted activation switches the default and only Brotato/Halls stored profiles")
-        let oldPreference = Data("previous saved selection".utf8)
+        var customGames = games
+        customGames[0].engineOverride = .crossover
+        let customInspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: String(repeating: "e", count: 64), engineName: "custom-calimocho",
+            declaredProvider: "calimocho", admittedProvider: "calimocho", admission: "admitted",
+            ready: true, qualified: false, wineSha256: String(repeating: "f", count: 64),
+            wineserverSha256: String(repeating: "a", count: 64), error: nil)
+        let customSelection = AdmittedEngineSelection(registryPath: root.appendingPathComponent("custom.json").path,
+                                                      inspection: customInspection)
+        customGames[1].engineSelection = customSelection
+        customGames[1].engineOverrideV2 = GameEngineOverride(selection: customSelection)
+        try await gameStore.save(customGames)
+        let previousDefault = try JSONEncoder().encode(oldSelection)
+        defaults.set(previousDefault, forKey: NativeEngineDefaults.preferenceKey)
+        EngineDefaults.setDefaultEngine(.crossover, defaults)
+        try library.reserveMutation(gameID: nil)
+        try await library.activateCalimochoUpdate(selection, replacing: old.engineName, defaults: defaults)
+        library.releaseMutation()
+        check(try await gameStore.load() == customGames
+              && defaults.data(forKey: NativeEngineDefaults.preferenceKey) == previousDefault
+              && EngineDefaults.defaultEngine(defaults) == .crossover,
+              "REQ123: activation preserves CrossOver defaults/overrides and unrelated custom Calimocho choices")
+        let oldPreference = try JSONEncoder().encode(oldSelection)
         defaults.set(oldPreference, forKey: NativeEngineDefaults.preferenceKey)
+        EngineDefaults.setDefaultEngine(.calimocho, defaults)
         try Data("invalid registry".utf8).write(to: root.appendingPathComponent("games/installed.json"))
         try library.reserveMutation(gameID: nil)
         do {
-            try await library.activateCalimochoUpdate(selection, defaults: defaults)
+            try await library.activateCalimochoUpdate(selection, replacing: old.engineName, defaults: defaults)
             check(false, "REQ123: a failed title-selection save restores the previous default")
         } catch {
             check(defaults.data(forKey: NativeEngineDefaults.preferenceKey) == oldPreference,

@@ -123,7 +123,7 @@ struct RuntimeInstallationPicker: View {
                     guard let selection = installed.availableEngineOverrides.first(where: {
                         $0.inspection.engineName == CalimochoRelease.engineID
                     }) else { throw CalimochoUpdateError.admission }
-                    try await installed.activateCalimochoUpdate(selection)
+                    try await installed.activateCalimochoUpdate(selection, replacing: old.engineName)
                 })
             }, removeOldCalimocho: {
                 calimochoInstaller.removeOld(isBusy: {
