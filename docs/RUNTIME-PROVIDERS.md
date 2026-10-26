@@ -7,9 +7,10 @@ understand and acquire, not two simultaneous effective defaults. CrossOver's
 existing publisher-signature check reports observed version/build/location.
 Its Get action opens the [official CodeWeavers portal](https://www.codeweavers.com/crossover/download);
 Ode does not download, redistribute, purchase or accept a licence.
-Calimocho has no verified public binary distribution. Its
-[official source](https://github.com/dragoshont/calimocho) is guidance, not an
-installer. A source checkout or a Wine-looking filename never means installed.
+Calimocho's [official source](https://github.com/dragoshont/calimocho) and
+published [0.1120.4.4 release](https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-0.1120.4.4)
+are guidance for the pinned engine. A source checkout or a Wine-looking
+filename never means installed.
 
 Registered engines are read locally from `Xodus.lifecycle.registry`. All
 records remain visible, including missing executables, failed/pending smoke
@@ -42,8 +43,9 @@ An optional schema1 declaration
 Only the supporting backend's independently reviewed admission manifest and
 complete artifact validation can return `admittedProvider:"calimocho"`.
 The production manifest is currently empty: there is no production-admitted
-Calimocho selection or downloadable release claimed here. Generic records,
-including existing source-built Wine records without a declaration, stay Wine.
+Calimocho selection claimed here. A published release asset does not itself
+establish backend admission. Generic records, including existing source-built
+Wine records without a declaration, stay Wine.
 No substring heuristic, self-trusted manifest or app-only allowlist is used.
 
 A successful admitted selection persists the registry path and exact projection
@@ -103,10 +105,11 @@ render evidence, installed delivery and product acceptance are separate gates.
 
 ## Calimocho release engine discovery (REQ-115/B3, first beta)
 
-- Xode discovers only `~/Library/Application Support/Xode/Engines/<engine_id>/calimocho-engine.json` (schema `calimocho-engine/1`). The folder name must equal `engine_id`, and the folder must not be a symlink. The only compiled pin is `calimocho-11.20-4.0b3-01` (wine `c2eb2810…3437`, wineserver `05a3193d…9639`, descriptor `fb6c79da…fe8`, `MANIFEST.sha256` `7c9e08a9…33c5`, Team ID `M62Z4M5EUY`).
+- Xode discovers only `~/Library/Application Support/Xode/Engines/<engine_id>/calimocho-engine.json` (schema `calimocho-engine/1`). The folder name must equal `engine_id`, and the folder must not be a symlink. The only compiled pin is `calimocho-11.20-4.0b3-04` (version `0.1120.4.4`; wine `2482af59…d3d0`, wineserver `65581296…cfc9`, descriptor `98473033…6425`, `MANIFEST.sha256` `5ce80d16…2aba`, Team ID `M62Z4M5EUY`).
 - The app runs a fast local pre-filter: it hashes the descriptor, the `MANIFEST.sha256` file itself and the `wine`/`wineserver` binaries against the compiled pins, and checks their code signatures against `anchor apple generic and certificate leaf[subject.OU] = "M62Z4M5EUY"`. The app does **not** verify individual manifest entries or the rest of the tree; backend `engine-inspect` does (descriptor hash, every manifested file and link, no extra entries, signatures). It expands `${ENGINE_ROOT}` and refuses `DYLD_*`, `MTL_HUD*`, `PATH`, `HOME`, unknown variables, absolute paths and paths that escape the engine folder. It then renders a private local registry with absolute paths.
-- Backend `engine-inspect` remains the admission gate. The Engines pane shows Calimocho as Ready only when the pre-filter passes **and** `engine-inspect` admitted this exact engine (name, Wine and wineserver digests); launch re-inspects and refuses when it isn't admitted. Admission checks identity and integrity only: it is not title qualification, and it grants no right to bundle or redistribute Apple GPTK components. Xode never bundles, links or publishes the engine.
+- Backend `engine-inspect` remains the admission gate. The Engines pane shows Calimocho as Ready only when the pre-filter passes **and** `engine-inspect` admitted this exact engine (name, Wine and wineserver digests); launch re-inspects and refuses when it isn't admitted. Admission checks identity and integrity only: it is not title qualification, and it grants no right to bundle or redistribute Apple GPTK components. X Ode points to the owner-published archive but does not bundle or republish the engine.
 - Shipped defaults pin the release engine by name and its wine/wineserver pins, not by a registry path or digest. If the engine is missing, Play says that Calimocho isn't installed and nothing else is substituted.
+- The published archive is `https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip` (SHA-256 `193420eff603e05e9c76344de14e961ed230f016fd129f00667a176251a2fb6b`). “Get Calimocho” opens that owner-published archive; X Ode does not install or bundle it. Extract the engine folder under `~/Library/Application Support/Xode/Engines/`; it still must pass local checks and backend admission before it is Ready.
 - **Temporary developer-local exception:** No Man's Sky keeps its private `calimocho-wine11.20-gptk4b3-tls-vulkan-private` binding (`developerLocal: true`). It resolves only when the exact pinned registry exists and hash-verifies on this Mac. On any other Mac it reports that the tested engine isn't installed, without substitution. NMS moves to the release engine only after a save-backed qualification, which is a separate decision. Release notes for the first beta must state this exception.
 
 ## Persisted launch selection (M3)

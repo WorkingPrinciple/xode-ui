@@ -33,11 +33,12 @@ enum EngineManagementChecks {
         check(unprofiled == .notSupported(NativeLaunchSupport.notSupportedReason) && !unprofiled.canPlay
               && !unprofiled.offersEngines,
               "REQ114 M1/R1 title without an admitted launch profile is not yet supported and never offers Play")
-        let halls = NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults,
-            engineDefaults: { catalog }, registryDigest: present)
-        check(!halls.canPlay && halls.offersEngines && halls.reason?.contains("Apple Game Porting Toolkit") == true
-              && halls.reason?.contains("No other engine was substituted") == true,
-              "REQ114 M1/R3 profiled title pinned to an absent engine shows Engine needed, not Play")
+        let missingRelease = NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults,
+            engineDefaults: { catalog }, registryDigest: present, releaseStatus: { _ in .notInstalled })
+        check(!missingRelease.canPlay && missingRelease.offersEngines
+              && missingRelease.reason?.contains("Calimocho isn't installed") == true
+              && missingRelease.reason?.contains("No other engine was substituted") == true,
+              "REQ115 M1/R3 Brotato's pinned but absent Calimocho release shows Engine needed, not Play")
         check(NativeLaunchSupport.evaluate(productID: "BQVQTL3PCH05", defaults: defaults,
                 engineDefaults: { catalog }, registryDigest: present) == .supported,
               "REQ114 M1 profiled title whose bound engine registry matches is supported")
@@ -71,7 +72,15 @@ enum EngineManagementChecks {
         let catalog = try NativeEngineDefaults.read()
         let release = catalog.bindings.first { $0.engineName == catalog.defaultEngine }
         let devLocal = catalog.bindings.filter { $0.registryPath != nil }
-        check(release?.release == .release01 && release?.registryPath == nil && release?.registrySha256 == nil
+        check(CalimochoReleasePin.release04.engineName == "calimocho-11.20-4.0b3-04"
+              && CalimochoReleasePin.all.last?.engineName == "calimocho-11.20-4.0b3-04"
+              && catalog.defaultEngine == "calimocho-11.20-4.0b3-04"
+              && CalimochoReleasePin.release04.wineSha256 == "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0"
+              && CalimochoReleasePin.release04.wineserverSha256 == "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9"
+              && CalimochoReleasePin.release04.engineJSONSha256 == "98473033e8b1e4f02a1986749b684d0becd5e2be7d0ff388f7a2049566296425"
+              && CalimochoReleasePin.release04.manifestSha256 == "5ce80d16347304d2cd5d149072fed4aeed848e854fe17e20c3bd45c5013b2aba"
+              && CalimochoReleasePin.release04.teamID == "M62Z4M5EUY"
+              && release?.release == .release04 && release?.registryPath == nil && release?.registrySha256 == nil
               && devLocal.map(\.engineName) == ["calimocho-wine11.20-gptk4b3-tls-vulkan-private"]
               && devLocal.allSatisfy { $0.developerLocal == true }
               && String(decoding: bundled, as: UTF8.self).components(separatedBy: "${HOME}/src/").count == 2
@@ -82,7 +91,7 @@ enum EngineManagementChecks {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         defer { try? FileManager.default.removeItem(at: root) }
         let engines = root.appendingPathComponent("Engines"), registries = root.appendingPathComponent("registries")
-        let name = "calimocho-11.20-4.0b3-01"
+        let name = CalimochoReleasePin.release04.engineName
         func build(environment: [String: String] = ["WINELOADER": "${ENGINE_ROOT}/bin/wine", "WINEDEBUG": "-all"],
                    wine: String = "bin/wine") throws -> CalimochoReleasePin {
             let folder = engines.appendingPathComponent(name)
@@ -95,7 +104,7 @@ enum EngineManagementChecks {
                 chmod(folder.appendingPathComponent(file).path, 0o755)
                 listing += "\(CalimochoReleaseEngines.digest(Data(body.utf8)))  \(file)\n"
             }
-            let manifest: [String: Any] = ["schema": "calimocho-engine/1", "engine_id": name, "version": "11.20-4.0b3-01",
+            let manifest: [String: Any] = ["schema": "calimocho-engine/1", "engine_id": name, "version": "0.1120.4.4",
                 "provider": ["id": "calimocho", "contract_version": 1], "paths": ["wine": wine, "wineserver": "bin/wineserver"],
                 "environment": environment, "signing": ["team_id": "M62Z4M5EUY"]]
             let json = try JSONSerialization.data(withJSONObject: manifest)
@@ -106,7 +115,7 @@ enum EngineManagementChecks {
                 wineserverSha256: CalimochoReleaseEngines.digest(Data("server".utf8)),
                 engineJSONSha256: CalimochoReleaseEngines.digest(json),
                 manifestSha256: CalimochoReleaseEngines.digest(Data(listing.utf8)), teamID: "M62Z4M5EUY",
-                renderer: "apple-4.0b3", attestation: "fixture")
+                renderer: "apple-4.0b3", downloadURL: nil, archiveSha256: nil, attestation: "fixture")
         }
         let signed: (URL, String) -> Bool = { _, requirement in requirement.contains("\"M62Z4M5EUY\"") }
         func outcome(_ pin: CalimochoReleasePin, signature: @escaping (URL, String) -> Bool = signed) -> CalimochoReleaseError? {
@@ -138,8 +147,8 @@ enum EngineManagementChecks {
                 != .ready,
               "REQ115 B3: Engines availability is ready only for a verified, admitted release, missing when absent, invalid when unsigned")
         check(CalimochoAvailability.verifiedRelease(pin, root: engines, signature: signed, admission: nil)
-                == .invalid(CalimochoAvailability.notAdmittedReason),
-              "REQ115 M3: a locally verified engine is never Ready before backend engine-inspect admits it")
+                == .pendingVerification,
+              "REQ115 M3: a locally verified engine without backend admission stays pending and never Ready")
         let library = engines.appendingPathComponent(name).appendingPathComponent("lib/libcalimocho.dylib")
         try Data("tampered".utf8).write(to: library)
         check(outcome(pin) == nil
@@ -185,7 +194,7 @@ enum EngineManagementChecks {
         let installed = CalimochoReleaseEngines.defaultEnginesRoot.appendingPathComponent(name)
         if FileManager.default.fileExists(atPath: installed.path) {
             // Read-only: verifies this Mac's real release install against compiled pins and its Developer ID signature.
-            let real = Result { try CalimochoReleaseEngines.verify(.release01) }
+            let real = Result { try CalimochoReleaseEngines.verify(.release04) }
             let render = (try? real.get()).flatMap { try? CalimochoReleaseEngines.renderRegistry($0, registries: registries) }
             check((try? real.get()) != nil && render != nil,
                   "REQ115 B3: installed release engine on this Mac matches compiled pins and Team ID M62Z4M5EUY (\((try? real.get()) == nil ? String(describing: real) : "verified"))")

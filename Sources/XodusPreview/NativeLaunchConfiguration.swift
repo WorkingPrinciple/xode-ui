@@ -214,6 +214,8 @@ struct NativeTitleLaunchProfile: Codable {
     var unsetEnvironment: [String]? = nil
     var crossOverEnvironment: [String: String]? = nil
     var executable: String? = nil
+    var wineSha256: String? = nil
+    var wineserverSha256: String? = nil
     var timeoutSeconds: UInt? = nil
     var noAutoDismiss: Bool? = nil
     var runtime: NativeLocalRuntime? = nil
@@ -225,6 +227,13 @@ struct NativeTitleLaunchProfile: Codable {
     var dllOverrideEvidence: DLLOverrideEvidence? = nil
     var preservedPrefixPath: String? = nil
     var registrySHA256: String? = nil
+
+    func enginePinsMatch(_ inspection: EngineInspection) -> Bool {
+        guard engine == inspection.engineName else { return false }
+        if wineSha256 == nil && wineserverSha256 == nil { return true }
+        guard let wineSha256, let wineserverSha256 else { return false }
+        return wineSha256 == inspection.wineSha256 && wineserverSha256 == inspection.wineserverSha256
+    }
 
     struct DLLOverrideEvidence: Codable {
         let runID: String
@@ -346,6 +355,12 @@ struct NativeTitleLaunchProfile: Codable {
                 && !path.split(separator: "/", omittingEmptySubsequences: false).contains(where: { ["", ".", ".."].contains(String($0)) })
         }
         let mirrored = crossOverEnvironment ?? [:]
+        if wineSha256 != nil || wineserverSha256 != nil {
+            guard let engine, let pin = CalimochoReleasePin.named(engine),
+                  wineSha256 == pin.wineSha256, wineserverSha256 == pin.wineserverSha256 else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
         if preservedPrefixPath != nil || registrySHA256 != nil {
             guard productID == "BQVQTL3PCH05",
                   engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
@@ -476,7 +491,7 @@ struct NativeLaunchConfiguration {
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho)
         if let profile {
-            guard profile.engine == selection.inspection.engineName,
+            guard profile.enginePinsMatch(selection.inspection),
                   profile.registrySHA256.map({ $0 == selection.inspection.registrySha256 }) ?? true else {
                 throw NativeLaunchError.configurationConflict
             }
@@ -503,6 +518,8 @@ struct NativeLaunchConfiguration {
             try validateOverride(selection, game: game, defaults: defaults)
         } else if let titleEngine = profile?.engine {
             guard let binding = catalog.bindings.first(where: { $0.engineName == titleEngine }),
+                  profile?.wineSha256.map({ $0 == binding.wineSha256 }) ?? true,
+                  profile?.wineserverSha256.map({ $0 == binding.wineserverSha256 }) ?? true,
                   profile?.registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
                 throw NativeLaunchError.engineUnavailable
             }
@@ -555,11 +572,13 @@ struct NativeLaunchConfiguration {
         }
         var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: provider, evidence: evidence)
-        if let selected, let engine = profile?.engine, engine != selected.inspection.engineName {
-            throw NativeLaunchError.configurationConflict
+        if let selected, let profile {
+            guard profile.enginePinsMatch(selected.inspection) else { throw NativeLaunchError.configurationConflict }
         }
-        let qualified = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence)
-        let candidate = qualified != nil ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
+        let workingRecipe = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence)
+        let qualified = profile?.engine == NativeWorkingLaunchRecipe.engine ? workingRecipe : nil
+        let candidate = qualified != nil || profile?.engine != nil
+            ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
             try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))
             guard profile?.engine == candidate.profile, profile?.executable == candidate.manifest_executable else {

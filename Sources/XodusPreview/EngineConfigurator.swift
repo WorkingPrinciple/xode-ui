@@ -567,7 +567,8 @@ enum CalimochoAvailability: Equatable, Sendable {
         switch self {
         case .missing:
             "Calimocho isn't installed. \(AppBrand.displayName) needs Calimocho to play games."
-                + (CalimochoRelease.downloadPublished ? " Get it, then choose Check Again." : "")
+                + (CalimochoRelease.downloadPublished
+                   ? " Download it and install the engine folder in your Engines folder, then choose Check Again." : "")
         case .invalid(let reason): "Calimocho couldn't be verified. \(reason)"
         case .pendingVerification:
             "Calimocho is installed. It will be ready once \(AppBrand.displayName) verifies it."
@@ -579,8 +580,8 @@ enum CalimochoAvailability: Equatable, Sendable {
 /// The download control, or a plain notice while no release asset is published.
 struct CalimochoDownloadAction: View {
     var body: some View {
-        if CalimochoRelease.downloadPublished {
-            Link(CalimochoRelease.getTitle, destination: CalimochoRelease.downloadURL)
+        if let downloadURL = CalimochoRelease.downloadURL {
+            Link(CalimochoRelease.getTitle, destination: downloadURL)
                 .accessibilityIdentifier("xodus.engines.calimocho.get")
         } else {
             Text(CalimochoRelease.unpublishedNotice)

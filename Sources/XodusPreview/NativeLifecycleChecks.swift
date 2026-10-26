@@ -784,6 +784,29 @@ enum NativeLifecycleChecks {
         try await candidateRecipeChecks(root: root, check: check)
     }
 
+    private static func installCalimochoRouteFixture(root: URL, defaults: UserDefaults,
+                                                     fileName: String) throws -> URL {
+        let pin = CalimochoReleasePin.release04
+        let executable = "/usr/bin/true"
+        let registryURL = root.appendingPathComponent(fileName)
+        let bytes = try JSONSerialization.data(withJSONObject: ["engines": [[
+            "name": pin.engineName, "kind": "free", "wine": executable, "wineserver": executable,
+            "sha256": pin.wineSha256, "wineserver_sha256": pin.wineserverSha256,
+            "provider": ["id": "calimocho", "contract_version": 1],
+            "smoke_test": ["status": "pass"]
+        ]]])
+        try bytes.write(to: registryURL)
+        let registry = try NativeEngineRegistry.read(registryURL)
+        let inspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: registry.byteDigest, engineName: pin.engineName, declaredProvider: "calimocho",
+            admittedProvider: "calimocho", admission: "admitted", ready: true, qualified: false,
+            wineSha256: pin.wineSha256, wineserverSha256: pin.wineserverSha256, error: nil)
+        let selection = AdmittedEngineSelection(registryPath: registryURL.path, inspection: inspection)
+        defaults.set(try JSONEncoder().encode(selection), forKey: AdmittedEngineSelection.preferenceKey)
+        defaults.set(registryURL.path, forKey: "Xodus.lifecycle.registry")
+        return registryURL
+    }
+
     private static func candidateRecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
         let rows = try NativeCandidateLaunchCatalogue.rows()
         let expected = [
@@ -838,9 +861,12 @@ enum NativeLifecycleChecks {
         let hallsProfile = try NativeTitleLaunchProfile.read(productID: "9NMNMS626R59", defaults: defaults,
             provider: .standaloneWine, evidence: hallsEvidence)
         check(NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59", evidence: hallsEvidence) == nil
-              && hallsEvidence.verifiedWorkingEvidence != nil && hallsProfile?.engine == "apple-gptk-4.0b3"
+              && hallsEvidence.verifiedWorkingEvidence != nil && hallsEvidence.engine == "apple-gptk-4.0b3"
+              && hallsProfile?.engine == CalimochoRelease.engineID
+              && hallsProfile?.wineSha256 == CalimochoReleasePin.release04.wineSha256
+              && hallsProfile?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
               && hallsProfile?.arguments == ["--exe", "Halls of Torment.exe", "--timeout-seconds", "300", "--no-auto-dismiss"],
-              "Exact admitted Halls WORKING evidence replaces Launch unavailable with Play eligibility and a Working badge")
+              "Halls' Apple4 WORKING evidence remains distinct from the pinned Calimocho -04 launch profile")
         let hallsRegistry = root.appendingPathComponent("halls-registry.json")
         let hallsRegistryBytes = try JSONSerialization.data(withJSONObject: ["engines": [[
             "name": "apple-gptk-4.0b3", "kind": "free", "wine": "/usr/bin/true",
@@ -852,14 +878,24 @@ enum NativeLifecycleChecks {
         let hallsGame = InstalledGame(id: UUID(), title: "Halls of Torment", identityName: "SyntheticHalls",
             version: "1.0.0.0", storeId: "9NMNMS626R59", folder: root.path, launcher: "",
             importedAt: Date(), usesNativeLifecycle: true)
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
+                defaults: defaults, evidence: hallsEvidence)
+            check(false, "Halls cannot substitute its old Apple4 evidence when the pinned Calimocho engine is absent")
+        } catch NativeLaunchError.engineUnavailable {
+            check(true, "Halls cannot substitute its old Apple4 evidence when the pinned Calimocho engine is absent")
+        }
+        _ = try installCalimochoRouteFixture(root: root, defaults: defaults, fileName: "halls-calimocho-registry.json")
         let resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
             defaults: defaults, evidence: hallsEvidence)
-        check(resolvedHalls.engine == NativeWorkingLaunchRecipe.engine
-              && resolvedHalls.prefix.path == NativeWorkingLaunchRecipe.admitted(
-                productID: hallsGame.storeId, evidence: hallsEvidence)?.prefix.path
+        check(resolvedHalls.engine == CalimochoRelease.engineID
+              && resolvedHalls.prefix.path.hasSuffix("/\(hallsGame.id.uuidString)/\(CalimochoRelease.engineID)")
+              && resolvedHalls.admittedSelection?.inspection.engineName == CalimochoRelease.engineID
+              && resolvedHalls.admittedSelection?.inspection.qualified == false
               && resolvedHalls.profile?.environment.isEmpty == true
+              && resolvedHalls.profile?.preservedPrefixPath == nil
               && resolvedHalls.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
-              "Halls exact Apple4/default-COM/runtime/preserved save prefix wins over a conflicting global provider without launching")
+              "Halls selects admitted Calimocho -04 without inheriting Apple4's retained-prefix proof")
         defaults.set("creation-dx11-d3dshared", forKey: "Xodus.lifecycle.fallback.9NMNMS626R59")
         do {
             _ = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: nil,
@@ -884,6 +920,7 @@ enum NativeLifecycleChecks {
         let hogwartsGame = InstalledGame(id: UUID(), title: "Hogwarts Legacy", identityName: "SyntheticHogwarts",
             version: "1.0.0.0", storeId: "9MT5NJ5W7B8Z", folder: root.path, launcher: "",
             importedAt: Date(), usesNativeLifecycle: true)
+        defaults.set(hallsRegistry.path, forKey: "Xodus.lifecycle.registry")
         let resolvedHogwarts = try NativeLaunchConfiguration.resolve(game: hogwartsGame,
             provider: .standaloneWine, defaults: defaults, evidence: hogwartsEvidence)
         check(resolvedHogwarts.engine == "apple-gptk-4.0b3"
@@ -1058,28 +1095,27 @@ enum NativeLifecycleChecks {
         let fallbackNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults, provider: .crossover)
         check(defaultNMS?.engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private" && fallbackNMS?.engine == "crossover-26.3",
               "Automatic NMS uses the observed port11b binding; explicit CrossOver selects its unchanged separate recipe")
-        let brotatoRegistry = root.appendingPathComponent("brotato-route-registry.json")
-        try JSONSerialization.data(withJSONObject: ["engines": [
-            ["name": "wine-stable", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]],
-            ["name": "apple-gptk-4.0b3", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]]
-        ]]).write(to: brotatoRegistry)
-        defaults.set(brotatoRegistry.path, forKey: "Xodus.lifecycle.registry")
+        _ = try installCalimochoRouteFixture(root: root, defaults: defaults,
+                                              fileName: "brotato-route-registry.json")
         defaults.set("wine-stable", forKey: "Xodus.lifecycle.engine.crossover")
         let brotato = InstalledGame(id: UUID(), title: "Brotato", identityName: "Synthetic.Brotato",
             version: "1.0", storeId: "9P9VNSQK1W3K", folder: root.path, launcher: "",
             importedAt: Date(), usesNativeLifecycle: true)
         for provider: RuntimeProviderKind? in [nil, .crossover] {
             let launch = try NativeLaunchConfiguration.resolve(game: brotato, provider: provider, defaults: defaults)
-            check(launch.engine == "apple-gptk-4.0b3"
+            check(launch.engine == CalimochoRelease.engineID
                   && launch.profile?.arguments == ["--exe", "Brotato.exe", "--no-auto-dismiss"]
                   && launch.profile?.environment.isEmpty == true
                   && Set(launch.profile?.unsetEnvironment ?? []) == Set([
                     "XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"])
                   && launch.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
                   && launch.profile?.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+                  && launch.profile?.wineSha256 == CalimochoReleasePin.release04.wineSha256
+                  && launch.profile?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
                   && launch.shims.directory.path.hasSuffix("/Ode to X/Engines/profiles/native-web-shims-v1")
-                  && launch.prefix.path.hasSuffix("/\(brotato.id.uuidString)/apple-gptk-4.0b3"),
-                  "#43: Brotato selects its explicit Apple4/defaultCOM/runtime7106/native-shims/direct-exe recipe, not generic wine-stable or a conflicting default provider")
+                  && launch.prefix.path.hasSuffix("/\(brotato.id.uuidString)/\(CalimochoRelease.engineID)")
+                  && launch.admittedSelection?.inspection.engineName == CalimochoRelease.engineID,
+                  "Brotato selects admitted Calimocho -04 with exact Wine/server pins, not a conflicting default provider")
         }
         let observedAbiotic = try NativeTitleLaunchProfile.read(productID: "9P4NV23Q6QC2", defaults: defaults)
         check(observedAbiotic?.launchEnvironment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"

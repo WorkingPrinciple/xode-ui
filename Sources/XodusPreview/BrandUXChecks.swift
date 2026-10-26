@@ -152,7 +152,9 @@ enum BrandUXChecks {
         check(CalimochoAvailability.from(choices: [failed], checking: false, release: .missing) == .missing
               && CalimochoAvailability.from(choices: [], checking: false, release: .invalid("Damaged.")) == .invalid("Damaged.")
               && CalimochoAvailability.from(choices: [failed, ready], checking: true, release: .missing) == .ready
-              && CalimochoAvailability.missing.message == "Calimocho isn't installed. X Ode needs Calimocho to play games."
+              && CalimochoAvailability.missing.message
+                == "Calimocho isn't installed. X Ode needs Calimocho to play games. "
+                    + "Download it and install the engine folder in your Engines folder, then choose Check Again."
               && CalimochoAvailability.invalid("Signature changed.").message == "Calimocho couldn't be verified. Signature changed."
               && CalimochoAvailability.missing.needsDownload && CalimochoAvailability.invalid("x").needsDownload
               && !CalimochoAvailability.ready.needsDownload && CalimochoAvailability.notChecked.message == nil
@@ -165,7 +167,19 @@ enum BrandUXChecks {
               "REQ-115: The Engines pane maps 135c's release verification of an empty Engines folder to Missing")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
         let pinned = CalimochoReleasePin.all.last!.engineName
-        check(CalimochoRelease.engineID == pinned && CalimochoReleasePin.named(CalimochoRelease.engineID) != nil
+        check(CalimochoRelease.engineID == "calimocho-11.20-4.0b3-04"
+              && EngineDisplayName.releaseVersion(CalimochoRelease.engineID)?.version == "0.1120.4.4"
+              && CalimochoReleasePin.all == [.release04]
+              && CalimochoReleasePin.release04.wineSha256
+                == "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0"
+              && CalimochoReleasePin.release04.wineserverSha256
+                == "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9"
+              && CalimochoReleasePin.release04.engineJSONSha256
+                == "98473033e8b1e4f02a1986749b684d0becd5e2be7d0ff388f7a2049566296425"
+              && CalimochoReleasePin.release04.manifestSha256
+                == "5ce80d16347304d2cd5d149072fed4aeed848e854fe17e20c3bd45c5013b2aba"
+              && CalimochoReleasePin.release04.teamID == "M62Z4M5EUY"
+              && CalimochoRelease.engineID == pinned && CalimochoReleasePin.named(CalimochoRelease.engineID) != nil
               && release.name == "Calimocho \(EngineDisplayName.releaseVersion(pinned)!.version)"
               && release.detail == "Wine 11.20 · GPTK 4.0 beta 3" && !release.titleSpecific
               && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-03")?.version == "0.1120.4.3"
@@ -173,12 +187,13 @@ enum BrandUXChecks {
               && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-00") == nil
               && CalimochoRelease.displayName == release.name
               && CalimochoRelease.getTitle == "Get Calimocho (beta)"
-              && CalimochoRelease.downloadURL.absoluteString
-                == "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-" + pinned.dropFirst("calimocho-".count)
-              && !CalimochoRelease.downloadPublished
-              && CalimochoRelease.unpublishedNotice
-                == "Calimocho isn't available for download yet — ask the person who invited you to the beta.",
-              "REVIEW H2a: The release keeps one URL constant but shows no download control until the asset is published")
+              && CalimochoReleasePin.release04.downloadURL?.absoluteString
+                == "https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip"
+              && CalimochoReleasePin.release04.archiveSha256
+                == "193420eff603e05e9c76344de14e961ed230f016fd129f00667a176251a2fb6b"
+              && CalimochoRelease.downloadURL == CalimochoReleasePin.release04.downloadURL
+              && CalimochoRelease.downloadPublished,
+              "REQ-115: The -04 pin exposes only the owner-published, archive-hash-pinned release asset")
         check(AppLegalCopy.d3dMetal.contains("Apple D3DMetal") && AppLegalCopy.d3dMetal.contains("non-commercial")
               && AppLegalCopy.d3dMetal.contains("downloaded separately"),
               "COR187: Licenses state that Calimocho bundles Apple D3DMetal under Apple's non-commercial license, downloaded separately")
@@ -216,22 +231,22 @@ enum BrandUXChecks {
                       && joined.contains("Play currently uses Calimocho")
                       && !joined.contains("Private") && !joined.contains("Use App"),
                       "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
-                let noDownloadControl = !joined.contains("Get Calimocho")
+                let hasDownloadControl = joined.contains("Get Calimocho (beta)")
                 switch scenario {
                 case "missing":
-                    check(joined.contains("Calimocho isn't installed") && joined.contains("isn't available for download yet")
-                          && joined.contains("Check Again") && noDownloadControl,
-                          "REVIEW H2a: Missing Calimocho says so, explains the download isn't available yet and offers no dead-end button (\(scheme))")
+                    check(joined.contains("Calimocho isn't installed") && joined.contains("install the engine folder")
+                          && joined.contains("Check Again") && hasDownloadControl,
+                          "REQ-115: Missing Calimocho offers the published release and explains installation/recheck (\(scheme))")
                 case "invalid":
-                    check(joined.contains("couldn't be verified") && joined.contains("isn't available for download yet")
-                          && joined.contains("Not Verified") && !labels.contains("Default") && noDownloadControl,
-                          "REQ-114(4): Invalid Calimocho gives the verification reason and marks the engine Not Verified (\(scheme))")
+                    check(joined.contains("couldn't be verified") && joined.contains("Not Verified")
+                          && !labels.contains("Default") && hasDownloadControl,
+                          "REQ-114(4): Invalid Calimocho gives the verification reason, marks it Not Verified, and offers the pinned release (\(scheme))")
                 case "pending":
                     check(joined.contains("will be ready once") && !joined.contains("isn't available for download")
-                          && !joined.contains("Reinstall") && noDownloadControl,
+                          && !joined.contains("Reinstall") && !hasDownloadControl,
                           "REVIEW H2b: A verified but not yet admitted release is neutral, with no reinstall or download prompt (\(scheme))")
                 default:
-                    check(noDownloadControl && joined.contains("Calimocho for DIRT 5")
+                    check(!hasDownloadControl && joined.contains("Calimocho for DIRT 5")
                           && joined.contains(EngineDisplayName.name(CalimochoRelease.engineID)),
                           "COR186 U2: Ready engines show no download prompt and name release and game-specific builds (\(scheme))")
                 }
