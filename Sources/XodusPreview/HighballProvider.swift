@@ -188,6 +188,7 @@ struct HighballRow: View {
                         .foregroundStyle(.secondary)
                     if state.offersGet {
                         Link("Get Highball", destination: HighballContract.repository)
+                            .accessibleLink()
                             .accessibilityIdentifier("xodus.engines.highball.get")
                     }
                 }
