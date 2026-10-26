@@ -1536,14 +1536,14 @@ final class InstalledGamesController: ObservableObject {
         guard loaded, mutationActive, !editing, !applicationTerminating else { throw GameScriptError.busy }
         editing = true
         defer { editing = false }
-        try await saveValidatedGame(folder: folder, launcher: launcher, expectedStoreID: expectedStoreID)
+        try await saveValidatedGame(folder: folder, launcher: launcher, expectedStoreID: expectedStoreID, installedOn: Date())
     }
 
     func registerNativeInstallation(folder: URL, expectedStoreID: String) async throws {
         guard loaded, mutationActive, !editing, !applicationTerminating else { throw GameScriptError.busy }
         editing = true
         defer { editing = false }
-        try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: expectedStoreID)
+        try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: expectedStoreID, installedOn: Date())
     }
 
     func removeUninstalled(_ id: UUID) async throws {
@@ -1560,7 +1560,7 @@ final class InstalledGamesController: ObservableObject {
         runIDs[id] = nil
     }
 
-    private func saveValidatedGame(folder: URL, launcher: URL?, expectedStoreID: String?) async throws {
+    private func saveValidatedGame(folder: URL, launcher: URL?, expectedStoreID: String?, installedOn: Date? = nil) async throws {
         let inspectPackage = inspectPackage
         let metadata = try await Task.detached(priority: .userInitiated) {
             try GameScriptFiles.checkPath(folder)
@@ -1575,7 +1575,8 @@ final class InstalledGamesController: ObservableObject {
             title: metadata.0.title, identityName: metadata.0.identityName, version: metadata.0.version,
             storeId: metadata.0.storeId, folder: folder.path, launcher: launcher?.path ?? "", importedAt: Date(),
             publisher: metadata.0.publisher, packageType: metadata.1,
-            usesNativeLifecycle: launcher == nil ? true : nil, storageVolume: metadata.2)
+            usesNativeLifecycle: launcher == nil ? true : nil, storageVolume: metadata.2,
+            installedOn: previous == nil ? installedOn : previous?.installedOn)
         applySavedGames(try await store.upsert(game))
         await refreshLaunchableGames()
     }
