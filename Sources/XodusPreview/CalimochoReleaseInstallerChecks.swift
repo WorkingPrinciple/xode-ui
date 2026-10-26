@@ -165,13 +165,13 @@ enum CalimochoReleaseInstallerChecks {
         defer { session.invalidateAndCancel() }
 
         let verifierParent = root.appendingPathComponent("verifier-fixture", isDirectory: true)
-        let verifierEngine = verifierParent.appendingPathComponent(CalimochoReleasePin.release04.engineName,
+        let verifierEngine = verifierParent.appendingPathComponent(CalimochoReleasePin.release06.engineName,
                                                                   isDirectory: true)
         try FileManager.default.createDirectory(at: verifierEngine, withIntermediateDirectories: true)
-        let releaseVerifier = CalimochoReleaseInstallService(pin: .release04, root: engines, session: session,
+        let releaseVerifier = CalimochoReleaseInstallService(pin: .release06, root: engines, session: session,
                                                               availableSpace: { _ in Int64.max })
         do {
-            try releaseVerifier.verifyEngine(.release04, verifierEngine)
+            try releaseVerifier.verifyEngine(.release06, verifierEngine)
             check(false, "REQ115: the release verifier resolves the extracted engine folder once")
         } catch let error as CalimochoReleaseError {
             if case .damaged = error {
@@ -468,7 +468,7 @@ enum CalimochoReleaseInstallerChecks {
         let expandedBytes: Int
     }
 
-    private static func fixture(topLevel: String = CalimochoReleasePin.release04.engineName,
+    private static func fixture(topLevel: String = CalimochoReleasePin.release06.engineName,
                                 includeTraversal: Bool = false,
                                 includeEscapingSymlink: Bool = false,
                                 includeInternalSymlink: Bool = false) -> ArchiveFixture {
@@ -477,7 +477,7 @@ enum CalimochoReleaseInstallerChecks {
             ("\(topLevel)/bin/", Data(), 0x41ed),
             ("\(topLevel)/bin/wine", Data("wine".utf8), 0x81ed),
             ("\(topLevel)/bin/wineserver", Data("server".utf8), 0x81ed),
-            ("\(topLevel)/calimocho-engine.json", descriptor(name: topLevel, version: "0.1120.4.4"), 0x81a4),
+            ("\(topLevel)/calimocho-engine.json", descriptor(name: topLevel, version: "0.1120.4.6"), 0x81a4),
             ("\(topLevel)/engine.bin", Data("verified engine payload".utf8), 0x81a4)
         ]
         var entries = files.map { FixtureEntry(name: $0.0, data: $0.1, mode: $0.2) }
@@ -493,13 +493,13 @@ enum CalimochoReleaseInstallerChecks {
         let archive = zip(entries)
         let expanded = entries.reduce(0) { $0 + $1.data.count }
         let hash = CalimochoReleaseEngines.digest(archive)
-        let pin = CalimochoReleasePin(engineName: CalimochoReleasePin.release04.engineName,
-            wineSha256: CalimochoReleasePin.release04.wineSha256,
-            wineserverSha256: CalimochoReleasePin.release04.wineserverSha256,
-            engineJSONSha256: CalimochoReleasePin.release04.engineJSONSha256,
-            manifestSha256: CalimochoReleasePin.release04.manifestSha256,
-            teamID: CalimochoReleasePin.release04.teamID, renderer: CalimochoReleasePin.release04.renderer,
-            downloadURL: CalimochoReleasePin.release04.downloadURL,
+        let pin = CalimochoReleasePin(engineName: CalimochoReleasePin.release06.engineName,
+            wineSha256: CalimochoReleasePin.release06.wineSha256,
+            wineserverSha256: CalimochoReleasePin.release06.wineserverSha256,
+            engineJSONSha256: CalimochoReleasePin.release06.engineJSONSha256,
+            manifestSha256: CalimochoReleasePin.release06.manifestSha256,
+            teamID: CalimochoReleasePin.release06.teamID, renderer: CalimochoReleasePin.release06.renderer,
+            downloadURL: CalimochoReleasePin.release06.downloadURL,
             archiveSha256: hash, archiveByteCount: Int64(archive.count),
             expandedByteCount: Int64(max(1, expanded)), attestation: "fixture")
         return ArchiveFixture(archive: archive, pin: pin, expandedBytes: expanded)
@@ -528,8 +528,8 @@ enum CalimochoReleaseInstallerChecks {
     private static func updateChecks(root: URL, session: URLSession,
                                       check: (Bool, String) -> Void) async throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
-        let old = LocalCalimochoRelease(engineName: "calimocho-11.20-4.0b3-01",
-                                        version: CalimochoVersion("0.1120.4.1")!)
+        let old = LocalCalimochoRelease(engineName: CalimochoReleasePin.release04.engineName,
+                                        version: CalimochoReleasePin.release04.releaseVersion!)
         let oldFolder = root.appendingPathComponent(old.engineName)
         try FileManager.default.createDirectory(at: oldFolder, withIntermediateDirectories: false)
         try descriptor(name: old.engineName, version: old.version.description)
@@ -545,12 +545,12 @@ enum CalimochoReleaseInstallerChecks {
             releaseCheck: CalimochoReleaseCheck(session: session), updateDefaults: defaults, now: { date })
         check(CalimochoInstallerURLProtocol.requests == 0,
               "REQ123: constructing the shared installer at app launch makes no update request")
-        let pinned = CalimochoVersion("0.1120.4.4")!
+        let pinned = CalimochoVersion("0.1120.4.6")!
         check(CalimochoUpdateOutcome.decide(installed: [.init(engineName: "current", version: pinned)],
                     pinned: pinned, latest: pinned) == .upToDate,
               "REQ123: an installed current pin reports up to date")
         check(CalimochoUpdateOutcome.decide(installed: [old], pinned: pinned, latest: pinned) == .pinnedUpdate(old),
-              "REQ123: an older installed release offers only the compiled pinned update")
+              "REQ123: retained -04 offers the compiled -06 update alongside, not an unpinned release")
         let future = CalimochoVersion("0.1120.4.10")!
         let unsupported = CalimochoUpdateOutcome.decide(installed: [.init(engineName: "current", version: pinned)],
                                                        pinned: pinned, latest: future)
@@ -624,8 +624,8 @@ enum CalimochoReleaseInstallerChecks {
         let oldInspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
             registrySha256: String(repeating: "b", count: 64), engineName: old.engineName,
             declaredProvider: "calimocho", admittedProvider: "calimocho", admission: "admitted",
-            ready: true, qualified: false, wineSha256: String(repeating: "c", count: 64),
-            wineserverSha256: String(repeating: "d", count: 64), error: nil)
+            ready: true, qualified: false, wineSha256: CalimochoReleasePin.release04.wineSha256,
+            wineserverSha256: CalimochoReleasePin.release04.wineserverSha256, error: nil)
         let oldSelection = AdmittedEngineSelection(registryPath: root.appendingPathComponent("old-registry.json").path,
                                                    inspection: oldInspection)
         defaults.set(try JSONEncoder().encode(oldSelection), forKey: NativeEngineDefaults.preferenceKey)
@@ -676,7 +676,7 @@ enum CalimochoReleaseInstallerChecks {
               "REQ123: pinned update installs alongside, waits for admission, then activates and offers old-engine removal")
         try renderUpdateControls(controller, name: "newer-unpinned", check: check)
         CalimochoInstallerURLProtocol.configure(Data("""
-        [{"tag_name":"engine-0.1120.4.4","draft":false,"prerelease":true}]
+        [{"tag_name":"engine-0.1120.4.6","draft":false,"prerelease":true}]
         """.utf8))
         await controller.checkForUpdates(automatic: false)
         check(controller.updateOutcome == .upToDate,
@@ -705,7 +705,7 @@ enum CalimochoReleaseInstallerChecks {
                           usesNativeLifecycle: true)
         }
         try await gameStore.save(games)
-        let activePin = CalimochoReleasePin.release04
+        let activePin = CalimochoReleasePin.release06
         let inspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
             registrySha256: String(repeating: "a", count: 64), engineName: activePin.engineName,
             declaredProvider: "calimocho", admittedProvider: "calimocho", admission: "admitted",

@@ -34,7 +34,21 @@ struct CalimochoReleasePin: Equatable, Sendable {
         expandedByteCount: 695_591_512,
         attestation: "Calimocho release engine-0.1120.4.4 (REQ-115 release smoke run)")
 
-    static let all: [Self] = [.release04]
+    static let release06 = Self(
+        engineName: "calimocho-11.20-4.0b3-06",
+        wineSha256: "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+        wineserverSha256: "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
+        engineJSONSha256: "d3ca32d8d706be0ca948f661f76e68c4a735b78362c6fb95fe50c12eb5db18ff",
+        manifestSha256: "db1b642e1d1a93cf50a3620a994ca049e34ce2352dc25fc34617a651302528bf",
+        teamID: "M62Z4M5EUY",
+        renderer: "apple-4.0b3",
+        downloadURL: URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.6/calimocho-11.20-4.0b3-06-macos.zip"),
+        archiveSha256: "3fc4467b466b6f8f0855c1934b2fe6a3d1c02b0c5ca85037860b735e4e419ee5",
+        archiveByteCount: 200_075_043,
+        expandedByteCount: 695_625_804,
+        attestation: "Provisional engine-0.1120.4.6; publication and title gameplay gates pending")
+
+    static let all: [Self] = [.release04, .release06]
     static func named(_ name: String) -> Self? { all.first { $0.engineName == name } }
 }
 

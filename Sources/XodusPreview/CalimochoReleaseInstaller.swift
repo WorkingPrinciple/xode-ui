@@ -118,7 +118,7 @@ struct CalimochoReleaseInstallService: Sendable {
     let extractArchive: @Sendable (URL, URL) async throws -> Void
     let verifyEngine: @Sendable (CalimochoReleasePin, URL) throws -> Void
 
-    init(pin: CalimochoReleasePin = .release04,
+    init(pin: CalimochoReleasePin = .release06,
          root: URL = CalimochoReleaseEngines.defaultEnginesRoot,
          session: URLSession = .shared,
          availableSpace: @escaping @Sendable (URL) throws -> Int64? = Self.volumeAvailableSpace,

@@ -72,15 +72,20 @@ enum EngineManagementChecks {
         let catalog = try NativeEngineDefaults.read()
         let release = catalog.bindings.first { $0.engineName == catalog.defaultEngine }
         let devLocal = catalog.bindings.filter { $0.registryPath != nil }
-        check(CalimochoReleasePin.release04.engineName == "calimocho-11.20-4.0b3-04"
-              && CalimochoReleasePin.all.last?.engineName == "calimocho-11.20-4.0b3-04"
-              && catalog.defaultEngine == "calimocho-11.20-4.0b3-04"
-              && CalimochoReleasePin.release04.wineSha256 == "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0"
-              && CalimochoReleasePin.release04.wineserverSha256 == "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9"
-              && CalimochoReleasePin.release04.engineJSONSha256 == "98473033e8b1e4f02a1986749b684d0becd5e2be7d0ff388f7a2049566296425"
-              && CalimochoReleasePin.release04.manifestSha256 == "5ce80d16347304d2cd5d149072fed4aeed848e854fe17e20c3bd45c5013b2aba"
-              && CalimochoReleasePin.release04.teamID == "M62Z4M5EUY"
-              && release?.release == .release04 && release?.registryPath == nil && release?.registrySha256 == nil
+        check(CalimochoReleasePin.release06.engineName == "calimocho-11.20-4.0b3-06"
+              && CalimochoReleasePin.all == [.release04, .release06]
+              && catalog.defaultEngine == "calimocho-11.20-4.0b3-06"
+              && CalimochoReleasePin.release06.wineSha256 == "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505"
+              && CalimochoReleasePin.release06.wineserverSha256 == "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0"
+              && CalimochoReleasePin.release06.engineJSONSha256 == "d3ca32d8d706be0ca948f661f76e68c4a735b78362c6fb95fe50c12eb5db18ff"
+              && CalimochoReleasePin.release06.manifestSha256 == "db1b642e1d1a93cf50a3620a994ca049e34ce2352dc25fc34617a651302528bf"
+              && CalimochoReleasePin.release06.teamID == "M62Z4M5EUY"
+              && CalimochoReleasePin.release06.archiveSha256 == "3fc4467b466b6f8f0855c1934b2fe6a3d1c02b0c5ca85037860b735e4e419ee5"
+              && CalimochoReleasePin.release06.archiveByteCount == 200_075_043
+              && CalimochoReleasePin.release06.expandedByteCount == 695_625_804
+              && CalimochoReleaseInstallService().pin == .release06
+              && release?.release == .release06 && release?.registryPath == nil && release?.registrySha256 == nil
+              && catalog.bindings.contains { $0.release == .release04 }
               && devLocal.map(\.engineName) == ["calimocho-wine11.20-gptk4b3-tls-vulkan-private"]
               && devLocal.allSatisfy { $0.developerLocal == true }
               && String(decoding: bundled, as: UTF8.self).components(separatedBy: "${HOME}/src/").count == 2
