@@ -195,6 +195,10 @@ enum DiscoverShelfChecks {
         check(owned?.availableWithGamePass == false
               && owned?.facts.badgeLabels() == ["Owned", "Game Pass"],
               "REQ-63: a purchased Game Pass title stays Owned plus Game Pass, not merely available")
+        let denied = LibraryGame.collection(installed: local, owned: held, products: [], gamePass: [brotato, purchased],
+            active: true, accessIsCurrent: true, gamePassPlanActive: true, deniedInstalledIDs: [brotato.id])
+        check(!denied.contains { $0.id == brotato.id },
+              "REQ-7: a settled per-title access denial for this account wins over the general Game Pass plan")
         check(!active.contains { $0.id == outside.id } && !rows(planActive: false).contains { $0.id == brotato.id },
               "REQ-7: without an active plan or public PC Game Pass membership, nothing is presented as Game Pass access")
         let noPlan = LibraryGame(id: brotato.id, title: brotato.id, installed: nil, pc: nil, product: brotato,

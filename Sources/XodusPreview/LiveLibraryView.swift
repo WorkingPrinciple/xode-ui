@@ -114,7 +114,11 @@ struct LiveLibraryView: View {
             }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
             filter: filter, sort: sort, showsUnsupported: showsUnsupported,
-            gamePassPlanActive: library.gamePassPlanActive)
+            gamePassPlanActive: library.gamePassPlanActive,
+            denied: Set(installed.games.map(\.storeId).filter {
+                !installed.productAccess.permits($0, account: session.accountHash)
+                    && !installed.productAccess.pending($0, account: session.accountHash)
+            }))
     }
 
     private func changeScope(filter nextFilter: LibraryFilter, showsUnsupported: Bool) {

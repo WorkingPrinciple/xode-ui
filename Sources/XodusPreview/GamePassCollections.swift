@@ -107,6 +107,8 @@ final class GamePassCollections: ObservableObject {
     @Published private(set) var loading = false
     @Published private(set) var error: String?
     private var scope: String?
+    /// Scope of the members in `collections`; survives cancellation so an interrupted reload keeps shelves.
+    private var collectionsScope: String?
     private var revision = UUID()
     private let transport: any PCGamesTransport
     private let artwork: LibraryCatalogArtwork
@@ -155,6 +157,7 @@ final class GamePassCollections: ObservableObject {
         guard let market = PCGamesClient.market(market) else {
             revision = UUID()
             scope = nil
+            collectionsScope = nil
             collections = []
             loading = false
             error = "Confirm your account country before loading Game Pass."
@@ -164,7 +167,7 @@ final class GamePassCollections: ObservableObject {
         guard refresh || scope != nextScope else { return }
         let owner = UUID()
         revision = owner
-        let previous = scope == nextScope ? collections : []
+        let previous = collectionsScope == nextScope ? collections : []
         scope = nextScope
         collections = previous
         loading = true
@@ -180,6 +183,7 @@ final class GamePassCollections: ObservableObject {
             try Task.checkCancellation()
             guard revision == owner else { return }
             collections = definitions
+            collectionsScope = nextScope
             for definition in definitions {
                 try Task.checkCancellation()
                 guard revision == owner else { return }

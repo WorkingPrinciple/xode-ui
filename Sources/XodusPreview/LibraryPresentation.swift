@@ -284,7 +284,7 @@ struct LibraryGame: Identifiable {
     static func collection(installed: [InstalledGame], owned: [PCGame], products: [CatalogProduct],
                            gamePass: [CatalogProduct], active: Bool,
                            accessIsCurrent: Bool = true, permittedInstalledIDs: Set<String> = [],
-                           gamePassPlanActive: Bool = false) -> [Self] {
+                           gamePassPlanActive: Bool = false, deniedInstalledIDs: Set<String> = []) -> [Self] {
         var result: [Self] = []
         var seen = Set<String>()
         let catalog = Dictionary(products.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -297,8 +297,9 @@ struct LibraryGame: Identifiable {
         for game in installed {
             let id = game.storeId.isEmpty ? game.id.uuidString : game.storeId
             // An active plan plus public PC Game Pass membership qualifies an installed title that the
-            // collection doesn't list (Game Pass licences aren't collection rows).
-            let passQualified = gamePassPlanActive && pass[id] != nil
+            // collection doesn't list (Game Pass licences aren't collection rows). A settled per-title
+            // access answer for this account wins over the general plan.
+            let passQualified = gamePassPlanActive && pass[id] != nil && !deniedInstalledIDs.contains(id)
             if held[id] == nil, permittedInstalledIDs.contains(id) || passQualified, seen.insert(id).inserted {
                 result.append(Self(id: id, title: game.title, installed: game, pc: nil,
                     product: catalog[id] ?? pass[id], owned: false, gamePass: pass[id] != nil,
