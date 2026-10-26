@@ -121,7 +121,14 @@ private final class ArtworkRedirectPolicy: NSObject, URLSessionTaskDelegate, Sen
 
 @MainActor
 final class CatalogArtworkStore {
-    static let shared = CatalogArtworkStore()
+    static let shared: CatalogArtworkStore = {
+        let store = CatalogArtworkStore(descriptors: .shared)
+        store.observeMemoryPressure()
+        return store
+    }()
+    /// REQ-121: room for a full library of decoded cards plus heroes; memory pressure empties it.
+    static let memoryCountLimit = 200
+    static let memoryCostLimit = 256 * 1024 * 1024
     private struct ByteKey: Hashable { let url: URL; let generation: Int }
     private struct ImageKey: Hashable {
         let bytes: ByteKey
@@ -148,14 +155,19 @@ final class CatalogArtworkStore {
     private let disk: CatalogMediaDiskCache?
     private var expires: [ImageKey: Date] = [:]
     private var generation = 0
+    private let descriptors: PublicCatalogDescriptors?
+    private var pressure: DispatchSourceMemoryPressure?
+    private(set) var pressureEvictions = 0
     #if DEBUG
     private(set) var decodedVariants = 0
     private(set) var byteReads = 0
     #endif
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "catalog-artwork")
 
-    init(diskCache: CatalogMediaDiskCache? = CatalogArtworkStore.defaultDiskCache(), session suppliedSession: URLSession? = nil) {
+    init(diskCache: CatalogMediaDiskCache? = CatalogArtworkStore.defaultDiskCache(), session suppliedSession: URLSession? = nil,
+         descriptors: PublicCatalogDescriptors? = nil) {
         disk = diskCache
+        self.descriptors = descriptors
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpCookieStorage = nil
         configuration.httpShouldSetCookies = false
@@ -166,8 +178,40 @@ final class CatalogArtworkStore {
         configuration.httpMaximumConnectionsPerHost = 4
         session = suppliedSession ?? URLSession(configuration: configuration, delegate: ArtworkRedirectPolicy(),
                              delegateQueue: nil)
-        cache.totalCostLimit = 64 * 1024 * 1024
-        cache.countLimit = 40
+        cache.totalCostLimit = Self.memoryCostLimit
+        cache.countLimit = Self.memoryCountLimit
+    }
+
+    var memoryLimits: (count: Int, cost: Int) { (cache.countLimit, cache.totalCostLimit) }
+
+    private func observeMemoryPressure() {
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        source.setEventHandler { [weak self] in
+            MainActor.assumeIsolated { self?.handleMemoryPressure() }
+        }
+        source.resume()
+        pressure = source
+    }
+
+    /// Drops decoded artwork under memory pressure. Tiles keep the image they already show; saved bytes stay on disk.
+    func handleMemoryPressure() {
+        pressureEvictions += 1
+        cache.removeAllObjects()
+        expires.removeAll()
+        logger.notice("stage=memoryPressureEviction; decoded artwork released")
+    }
+
+    /// A decoded image already in memory for this artwork, preferring the requested size, then larger, then smaller.
+    /// It lets a recreated or resized tile draw at once; expiry is not checked because a load follows.
+    func cachedImage(for reference: CatalogArtworkReference, bucket: CatalogImageBucket) -> NSImage? {
+        guard let url = try? reference.validatedURL() else { return nil }
+        let larger = CatalogImageBucket.allCases.filter { $0.rawValue >= bucket.rawValue }
+        let smaller = CatalogImageBucket.allCases.filter { $0.rawValue < bucket.rawValue }.reversed()
+        for candidate in larger + smaller {
+            let key = ImageKey(bytes: ByteKey(url: url, generation: generation), bucket: candidate)
+            if let image = cache.object(forKey: key.cacheKey) { return image }
+        }
+        return nil
     }
 
     nonisolated private static func defaultDiskCache() -> CatalogMediaDiskCache? {
@@ -180,6 +224,7 @@ final class CatalogArtworkStore {
         cache.removeAllObjects()
         expires.removeAll()
         try await disk?.clear()
+        try await descriptors?.clearPersisted()
     }
 
     #if DEBUG
@@ -250,7 +295,7 @@ final class CatalogArtworkStore {
                 if key.bytes.generation == generation, let expiry = bytes.expiry, expiry > Date() {
                     expires[key] = expiry
                     cache.setObject(image, forKey: key.cacheKey, cost: decoded.bytesPerRow * decoded.height)
-                    if expires.count > 160 {
+                    if expires.count > 2 * Self.memoryCountLimit {
                         expires = expires.filter { cache.object(forKey: $0.key.cacheKey) != nil }
                     }
                 }
@@ -370,33 +415,61 @@ struct CatalogArtworkRequest: Hashable {
 
 @MainActor
 final class ArtworkPresentation: ObservableObject {
+    /// The last decoded image. A tile keeps showing it while a changed request loads (REQ-121).
     @Published private(set) var image: NSImage?
     @Published private(set) var loading = false
     @Published private(set) var failed = false
     private var loadID = UUID()
-    private var request: CatalogArtworkRequest?
+    private var imageRequest: CatalogArtworkRequest?
+    private var drawn = false
     private let store: CatalogArtworkStore
+    private let tracker: ArtworkDrawTracker?
 
-    init(store: CatalogArtworkStore = .shared) { self.store = store }
+    init(store: CatalogArtworkStore = .shared, tracker: ArtworkDrawTracker? = nil) {
+        self.store = store
+        self.tracker = tracker
+    }
 
-    func image(for request: CatalogArtworkRequest) -> NSImage? { self.request == request ? image : nil }
+    /// The image decoded for exactly this request, or nil while another request's image is retained.
+    func image(for request: CatalogArtworkRequest) -> NSImage? { imageRequest == request ? image : nil }
+
+    /// What a tile draws: this request's image, else an already decoded copy of the same artwork, else the
+    /// tile's previous artwork, so a descriptor or shelf refresh never returns a drawn tile to a placeholder.
+    func displayImage(for request: CatalogArtworkRequest) -> NSImage? {
+        if imageRequest == request, let image { return image }
+        if let reference = request.reference, let bucket = request.bucket,
+           let cached = store.cachedImage(for: reference, bucket: bucket) { return cached }
+        return image
+    }
 
     func load(_ request: CatalogArtworkRequest) async {
         let token = UUID()
         loadID = token
-        if self.request != request { image = nil }
-        self.request = request
         failed = false
         guard let reference = request.reference, let bucket = request.bucket else { loading = false; return }
+        let tracked = imageRequest == request ? nil : tracker
+        tracked?.began()
+        var outcome = (drawn: false, failed: false)
         loading = true
-        defer { if loadID == token { loading = false } }
+        defer {
+            if loadID == token { loading = false }
+            tracked?.finished(drawn: outcome.drawn, failed: outcome.failed)
+        }
         do {
             let loaded = try await store.image(for: reference, bucket: bucket)
             try Task.checkCancellation()
             guard loadID == token else { return }
             image = loaded
+            imageRequest = request
+            outcome.drawn = !drawn
+            drawn = true
         } catch is CancellationError { }
-        catch { if loadID == token { failed = true } }
+        catch {
+            if loadID == token {
+                failed = true
+                outcome.failed = true
+            }
+        }
     }
 }
 
@@ -404,7 +477,7 @@ struct CatalogArtworkView: View {
     let reference: CatalogArtworkReference?
     var status: CatalogArtworkStatus = .absent
     var contentMode: ContentMode = .fill
-    @StateObject private var presentation = ArtworkPresentation()
+    @StateObject private var presentation = ArtworkPresentation(tracker: .shared)
     @Environment(\.displayScale) private var displayScale
     @Environment(\.catalogPresentationActive) private var presentationActive
 
@@ -424,7 +497,7 @@ struct CatalogArtworkView: View {
                 bucket: CatalogImageBucket.target(reference: reference, size: geometry.size,
                                                    scale: displayScale, mode: contentMode))
             Group {
-                if let image = presentation.image(for: request) {
+                if let image = presentation.displayImage(for: request) {
                     Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode)
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                 } else {

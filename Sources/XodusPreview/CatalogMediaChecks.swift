@@ -188,5 +188,81 @@ enum CatalogMediaChecks {
         } catch { check(true, "Public-media disk cache refuses a symlink root") }
         check(CatalogMediaHTTPPolicy.validator("bad\r\nheader") == nil,
               "Persistent HTTP validators cannot inject control characters")
+
+        // REQ-121: cleanup cadence. Saves under budget never rescan the folder until the sweep timer.
+        let cadenceClock = MediaFixtureClock()
+        let cadenceDirectory = root.appendingPathComponent("cadence")
+        let cadence = CatalogMediaDiskCache(directory: cadenceDirectory, now: { cadenceClock.now() })
+        for suffix in ["D", "E", "F"] {
+            let saved = try makeReference(suffix).validatedURL()
+            try await cadence.store(entry(saved), for: saved, generation: 0)
+        }
+        let earlySweeps = await cadence.sweeps
+        cadenceClock.advance(CatalogMediaDiskCache.sweepInterval)
+        let later = try makeReference("G").validatedURL()
+        try await cadence.store(entry(later), for: later, generation: 0)
+        let timedSweeps = await cadence.sweeps
+        check(earlySweeps == 1 && timedSweeps == 2,
+              "REQ-121: The artwork disk cache sweeps once per session and on its timer, not after every save")
+
+        // REQ-121: decoded-artwork memory budget and memory-pressure eviction.
+        check(CatalogArtworkStore.memoryCountLimit == 200 && CatalogArtworkStore.memoryCostLimit == 256 * 1024 * 1024
+              && CatalogArtworkStore(diskCache: nil, session: session).memoryLimits == (200, 256 * 1024 * 1024),
+              "REQ-121: Decoded artwork keeps up to 200 images or 256 MiB in memory")
+        let pressured = CatalogArtworkStore(diskCache: nil, session: session)
+        let pressureReference = try makeReference("Pressure")
+        let reply = MediaFixtureState.Reply(status: 200, headers: [
+            "Content-Type": "image/png", "Cache-Control": "max-age=3600"], data: data)
+        MediaFixtureProtocol.state.reset([reply, reply])
+        let decoded = try await pressured.image(for: pressureReference, bucket: .card)
+        let warm = try await pressured.image(for: pressureReference, bucket: .card)
+        let beforePressure = MediaFixtureProtocol.state.observed().count
+        let cachedBefore = pressured.cachedImage(for: pressureReference, bucket: .hero) != nil
+        pressured.handleMemoryPressure()
+        let cachedAfter = pressured.cachedImage(for: pressureReference, bucket: .card) != nil
+        _ = try await pressured.image(for: pressureReference, bucket: .card)
+        check(decoded === warm && beforePressure == 1 && cachedBefore && !cachedAfter
+              && MediaFixtureProtocol.state.observed().count == 2 && pressured.pressureEvictions == 1,
+              "REQ-121: Memory pressure evicts decoded artwork, and the next read decodes it again")
+
+        // REQ-121: a tile with artwork never returns to a placeholder while its replacement loads or fails.
+        let tileStore = CatalogArtworkStore(diskCache: nil, session: session)
+        let tracker = ArtworkDrawTracker(firstTileCount: 1)
+        let tile = ArtworkPresentation(store: tileStore, tracker: tracker)
+        let firstRequest = CatalogArtworkRequest(reference: try makeReference("TileA"), bucket: .card)
+        MediaFixtureProtocol.state.reset([reply])
+        await tile.load(firstRequest)
+        let shown = tile.displayImage(for: firstRequest)
+        let failingRequest = CatalogArtworkRequest(reference: try makeReference("TileB"), bucket: .card)
+        let keptBeforeLoad = tile.displayImage(for: failingRequest)
+        MediaFixtureProtocol.state.reset([])
+        await tile.load(failingRequest)
+        let keptAfterFailure = tile.displayImage(for: failingRequest)
+        let replacementRequest = CatalogArtworkRequest(reference: try makeReference("TileC"), bucket: .card)
+        MediaFixtureProtocol.state.reset([reply])
+        let replacing = Task { await tile.load(replacementRequest) }
+        let keptWhileLoading = tile.displayImage(for: replacementRequest)
+        await replacing.value
+        let replaced = tile.displayImage(for: replacementRequest)
+        let withdrawn = tile.displayImage(for: CatalogArtworkRequest(reference: nil, bucket: nil))
+        check(shown != nil && keptBeforeLoad === shown && keptWhileLoading === shown && keptAfterFailure === shown
+              && tile.failed == false && replaced != nil && replaced !== shown && withdrawn === replaced
+              && tile.image(for: failingRequest) == nil,
+              "REQ-121: Refreshed tiles keep their current artwork until the replacement decodes, even if it fails")
+        let recreated = ArtworkPresentation(store: tileStore)
+        let resized = CatalogArtworkRequest(reference: replacementRequest.reference, bucket: .hero)
+        check(recreated.displayImage(for: replacementRequest) === replaced && recreated.displayImage(for: resized) != nil
+              && recreated.image(for: replacementRequest) == nil,
+              "REQ-121: A recreated or resized tile draws already decoded artwork on its first frame")
+        check(tracker.firstTilesDrawn && tracker.drawn == 1 && tracker.failed == 1 && tracker.active == 0
+              && tracker.completedBursts == 3,
+              "REQ-121: Tile draw signposts count real artwork, failures and completed visible bursts")
     }
+}
+
+private final class MediaFixtureClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var date = Date()
+    func now() -> Date { lock.withLock { date } }
+    func advance(_ seconds: TimeInterval) { lock.withLock { date.addTimeInterval(seconds) } }
 }

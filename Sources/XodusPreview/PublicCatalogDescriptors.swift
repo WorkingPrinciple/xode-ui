@@ -4,11 +4,34 @@ import OSLog
 import XodusManagement
 
 actor PublicCatalogDescriptors {
-    static let shared = PublicCatalogDescriptors()
+    static let shared = PublicCatalogDescriptors(persistence: PublicDescriptorDiskCache.production())
+    /// Direct public HTTP has no producer limit; managed reads stay inside the producer's four operations.
+    static let directNetworkLimit = 4
+    /// A consumer shown a saved descriptor asks again after this long if its revalidation failed.
+    static let staleRetryDelay: TimeInterval = 60
+
+    /// A read's products, which of them came from the saved copy, and their background revalidation,
+    /// which yields the product IDs whose details changed.
+    struct Read: Sendable {
+        let data: Data
+        let staleIDs: Set<String>
+        let revalidation: Task<Set<String>, Never>?
+    }
     private struct Key: Hashable {
         let id: String
         let market: String
         let language: String
+        var saved: PublicDescriptorDiskCache.Key { .init(id: id, market: market, language: language) }
+    }
+    private struct Revalidation {
+        let id: UUID
+        let stale: Data
+        let task: Task<Set<String>, Never>
+    }
+    private struct Waiter {
+        let id: UUID
+        let background: Bool
+        let continuation: CheckedContinuation<Void, Error>
     }
     private struct Entry {
         let bytes: Data
@@ -39,18 +62,32 @@ actor PublicCatalogDescriptors {
     private var entries: [Key: Entry] = [:]
     private var errors: [Key: String] = [:]
     private var pending: [Key: Pending] = [:]
+    private var revalidating: [Key: Revalidation] = [:]
+    private var revalidations: [UUID: Task<Set<String>, Never>] = [:]
+    private var writes: [UUID: Task<Void, Never>] = [:]
+    private var networkActive = 0
+    private var waiters: [Waiter] = []
+    private let persistence: PublicDescriptorDiskCache?
     private var bytes = 0
     private(set) var requests = 0
     private(set) var hits = 0
+    private(set) var staleHits = 0
+    private(set) var peakNetwork = 0
+    var queuedNetwork: (foreground: Int, background: Int) {
+        (waiters.filter { !$0.background }.count, waiters.filter(\.background).count)
+    }
     var cachedCount: Int { entries.count }
     var cachedBytes: Int { bytes }
+    private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
 
     init(transport: any PCGamesTransport = PCGamesHTTP(),
          now: @escaping @Sendable () -> Date = { Date() },
-         sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
+         sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) },
+         persistence: PublicDescriptorDiskCache? = nil) {
         self.transport = transport
         self.now = now
         self.sleep = sleep
+        self.persistence = persistence
     }
 
     func bind(_ client: ManagementClient?, owner: UUID) {
@@ -70,12 +107,26 @@ actor PublicCatalogDescriptors {
     private func reset() {
         for task in batches.values { task.cancel() }
         for read in pending.values { read.task.cancel() }
+        for task in revalidations.values { task.cancel() }
         batches = [:]
         generation = UUID()
         entries = [:]
         errors = [:]
         pending = [:]
+        revalidating = [:]
+        revalidations = [:]
         bytes = 0
+    }
+
+    /// Waits for saved-copy writes, so a check can reopen the cache like a restart.
+    func flushPersistence() async {
+        while let task = writes.values.first { await task.value }
+    }
+
+    /// Removes saved public descriptors from disk; in-memory copies and active reads are unchanged.
+    func clearPersisted() async throws {
+        await flushPersistence()
+        try await persistence?.clear()
     }
 
     func failures(ids: [String], market: String, language: String) -> [String: String] {
@@ -97,6 +148,21 @@ actor PublicCatalogDescriptors {
     }
 
     func load(ids: [String], market: String, language: String, refresh: Bool = false) async throws -> Data {
+        try await read(ids: ids, market: market, language: language, refresh: refresh).data
+    }
+
+    /// Fresh in-memory descriptors are hits; with persistence, a saved descriptor is served at once and
+    /// revalidated in the background (stale-while-revalidate); anything else is read from the network.
+    /// `refresh` always reads the network.
+    func read(ids: [String], market: String, language: String, refresh: Bool = false) async throws -> Read {
+        let signpost = LoadSignposts.signposter.beginInterval("DescriptorBatch",
+            id: LoadSignposts.signposter.makeSignpostID(), "ids=\(ids.count) refresh=\(refresh)")
+        var outcome = "failed"
+        var counts = (hit: 0, stale: 0, network: 0)
+        defer {
+            LoadSignposts.signposter.endInterval("DescriptorBatch", signpost,
+                "outcome=\(outcome, privacy: .public) hit=\(counts.hit) stale=\(counts.stale) network=\(counts.network)")
+        }
         try Task.checkCancellation()
         guard !ids.isEmpty, ids.count <= 20, Set(ids).count == ids.count,
               ids.allSatisfy(PCGamesClient.validProductID) else { throw PCGamesError.invalidResponse }
@@ -116,21 +182,49 @@ actor PublicCatalogDescriptors {
                 remove(key)
             }
         }
-        let time = now()
+        var time = now()
         for key in entries.keys.filter({ entries[$0]!.expiresAt <= time }) { remove(key) }
         var result: [Key: Data] = [:]
         var waiting: [Key: Task<Data?, Error>] = [:]
+        var stale: [Key: Data] = [:]
+        var following: [Task<Set<String>, Never>] = []
         var missing: [Key] = []
-        for key in keys {
-            if var entry = entries[key] {
+        func classify(_ key: Key, saved: Data? = nil) -> Bool {
+            if var entry = entries[key], entry.expiresAt > time {
                 hits += 1
                 entry.usedAt = time
                 entries[key] = entry
                 result[key] = entry.bytes
             } else if let read = pending[key] {
                 waiting[key] = read.task
-            } else { missing.append(key) }
+            } else if !refresh, let revalidation = revalidating[key] {
+                stale[key] = revalidation.stale
+                if !following.contains(revalidation.task) { following.append(revalidation.task) }
+            } else if let saved {
+                stale[key] = saved
+            } else { return false }
+            return true
         }
+        for key in keys where !classify(key) { missing.append(key) }
+        if !refresh, !missing.isEmpty, let persistence {
+            let saved = await persistence.read(missing.map(\.saved))
+            try Task.checkCancellation()
+            guard generation == epoch else { throw CancellationError() }
+            time = now()
+            let candidates = missing
+            missing = []
+            var revalidate: [Key] = []
+            for key in candidates {
+                let known = revalidating[key] != nil
+                if !classify(key, saved: saved[key.saved]?.bytes) { missing.append(key) }
+                else if !known, stale[key] != nil, revalidating[key] == nil { revalidate.append(key) }
+            }
+            if !revalidate.isEmpty {
+                following.append(startRevalidation(revalidate, stale: stale, market: market, language: language,
+                                                   wireLanguage: wireLanguage, epoch: epoch))
+            }
+        }
+        staleHits += stale.count
         if !missing.isEmpty {
             if client == nil, let retryNotBefore, retryNotBefore > now() {
                 throw PCGamesError.http(429)
@@ -139,9 +233,11 @@ actor PublicCatalogDescriptors {
             let batchID = UUID()
             let batch = Task { () throws -> Batch in
                 defer { batches[batchID] = nil }
-                return try await recovering(ids: missing.map(\.id), market: market,
+                let batch = try await recovering(ids: missing.map(\.id), market: market,
                     language: client == nil ? language : wireLanguage, client: client, refresh: refresh,
-                    epoch: epoch)
+                    epoch: epoch, background: false)
+                if generation == epoch { persist(batch.entries, market: market, language: language) }
+                return batch
             }
             batches[batchID] = batch
             for key in missing {
@@ -150,26 +246,18 @@ actor PublicCatalogDescriptors {
                     let batch = try await batch.value
                     guard generation == epoch else { throw CancellationError() }
                     errors[key] = batch.failures[key.id]
-                    if errors.count > 512 {
-                        for old in Array(errors.keys.prefix(errors.count - 512)) { errors[old] = nil }
-                    }
-                    if let value = batch.entries[key.id] {
-                        remove(key)
-                        entries[key] = value
-                        bytes += value.bytes.count
-                        while entries.count > 512 || bytes > 32 * 1024 * 1024 {
-                            guard let oldest = entries.min(by: { $0.value.usedAt < $1.value.usedAt })?.key else { break }
-                            remove(oldest)
-                        }
-                    }
+                    trimErrors()
+                    if let value = batch.entries[key.id] { insert(value, for: key) }
                     return batch.entries[key.id]?.bytes
                 }
                 pending[key] = Pending(task: task, network: refresh)
                 waiting[key] = task
             }
         }
+        counts = (hit: result.count, stale: stale.count, network: waiting.count)
         for key in keys where result[key] == nil {
-            if let task = waiting[key], let value = try await task.value { result[key] = value }
+            if let value = stale[key] { result[key] = value }
+            else if let task = waiting[key], let value = try await task.value { result[key] = value }
         }
         try Task.checkCancellation()
         guard generation == epoch else { throw CancellationError() }
@@ -178,11 +266,125 @@ actor PublicCatalogDescriptors {
         }
         let data = try JSONSerialization.data(withJSONObject: ["Products": products], options: [.sortedKeys])
         guard data.count <= PCGamesHTTP.maximumBytes else { throw PCGamesError.responseTooLarge }
-        return data
+        outcome = counts.network > 0 ? "miss" : counts.stale > 0 ? "stale" : "hit"
+        let staleIDs = Set(stale.keys.map(\.id))
+        let tasks = following
+        let revalidation: Task<Set<String>, Never>? = tasks.isEmpty ? nil : Task.detached {
+            var changed = Set<String>()
+            for task in tasks { changed.formUnion(await task.value) }
+            return changed.intersection(staleIDs)
+        }
+        return Read(data: data, staleIDs: staleIDs, revalidation: revalidation)
+    }
+
+    /// Refreshes saved descriptors behind foreground reads. A failure keeps the saved copy on screen and
+    /// publishes no error; success replaces it in memory and on disk.
+    private func startRevalidation(_ keys: [Key], stale: [Key: Data], market: String, language: String,
+                                   wireLanguage: String, epoch: UUID) -> Task<Set<String>, Never> {
+        let client = client
+        let id = UUID()
+        let task = Task { () -> Set<String> in
+            defer {
+                revalidations[id] = nil
+                for key in keys where revalidating[key]?.id == id { revalidating[key] = nil }
+            }
+            do {
+                let batch = try await recovering(ids: keys.map(\.id), market: market,
+                    language: client == nil ? language : wireLanguage, client: client, refresh: false,
+                    epoch: epoch, background: true)
+                guard generation == epoch else { return [] }
+                var changed = Set<String>()
+                for key in keys {
+                    guard let value = batch.entries[key.id] else { continue }
+                    errors[key] = nil
+                    insert(value, for: key)
+                    if value.bytes != stale[key] { changed.insert(key.id) }
+                }
+                persist(batch.entries, market: market, language: language)
+                return changed
+            } catch is CancellationError {
+                return []
+            } catch {
+                logger.notice("stage=descriptorRevalidationFailed; showing saved public details")
+                return []
+            }
+        }
+        revalidations[id] = task
+        for key in keys {
+            if let saved = stale[key] { revalidating[key] = Revalidation(id: id, stale: saved, task: task) }
+        }
+        return task
+    }
+
+    private func insert(_ value: Entry, for key: Key) {
+        remove(key)
+        entries[key] = value
+        bytes += value.bytes.count
+        while entries.count > 512 || bytes > 32 * 1024 * 1024 {
+            guard let oldest = entries.min(by: { $0.value.usedAt < $1.value.usedAt })?.key else { break }
+            remove(oldest)
+        }
+    }
+
+    private func trimErrors() {
+        if errors.count > 512 {
+            for old in Array(errors.keys.prefix(errors.count - 512)) { errors[old] = nil }
+        }
+    }
+
+    private func persist(_ values: [String: Entry], market: String, language: String) {
+        guard let persistence, !values.isEmpty else { return }
+        let records = Dictionary(uniqueKeysWithValues: values.map {
+            (PublicDescriptorDiskCache.Key(id: $0.key, market: market, language: language), $0.value.bytes)
+        })
+        let fetchedAt = now()
+        let id = UUID()
+        let logger = logger
+        writes[id] = Task {
+            do { try await persistence.store(records, fetchedAt: fetchedAt) }
+            catch { logger.warning("stage=descriptorCacheWriteFailed; public details stay memory-only") }
+            writes[id] = nil
+        }
+    }
+
+    /// Caps concurrent descriptor network reads across every consumer; foreground reads go before revalidation.
+    private func acquireNetwork(background: Bool) async throws {
+        try Task.checkCancellation()
+        let limit = client == nil ? Self.directNetworkLimit : PCGamesClient.descriptorConcurrency
+        let queued = background ? !waiters.isEmpty : waiters.contains { !$0.background }
+        if networkActive < limit, !queued {
+            networkActive += 1
+            peakNetwork = max(peakNetwork, networkActive)
+            return
+        }
+        let id = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                if Task.isCancelled { continuation.resume(throwing: CancellationError()) }
+                else { waiters.append(Waiter(id: id, background: background, continuation: continuation)) }
+            }
+        } onCancel: {
+            Task { await self.cancelWaiter(id) }
+        }
+        peakNetwork = max(peakNetwork, networkActive)
+    }
+
+    private func cancelWaiter(_ id: UUID) {
+        guard let index = waiters.firstIndex(where: { $0.id == id }) else { return }
+        waiters.remove(at: index).continuation.resume(throwing: CancellationError())
+    }
+
+    private func releaseNetwork() {
+        let limit = client == nil ? Self.directNetworkLimit : PCGamesClient.descriptorConcurrency
+        if networkActive <= limit,
+           let index = waiters.firstIndex(where: { !$0.background }) ?? (waiters.isEmpty ? nil : 0) {
+            waiters.remove(at: index).continuation.resume()
+        } else { networkActive -= 1 }
     }
 
     private func recovering(ids: [String], market: String, language: String,
-                            client: ManagementClient?, refresh: Bool, epoch: UUID) async throws -> Batch {
+                            client: ManagementClient?, refresh: Bool, epoch: UUID,
+                            background: Bool) async throws -> Batch {
         var remaining = ids
         var result = Batch()
         for attempt in 0...3 {
@@ -190,13 +392,27 @@ actor PublicCatalogDescriptors {
             guard epoch == generation else { throw CancellationError() }
             var delay: TimeInterval = pow(2, Double(attempt))
             do {
-                let next: Batch
-                if let client {
-                    next = try await managed(ids: remaining, market: market, language: language,
-                                             client: client, refresh: refresh || attempt > 0)
-                } else {
-                    next = try await direct(ids: remaining, market: market, language: language)
+                try await acquireNetwork(background: background)
+                guard epoch == generation else {
+                    releaseNetwork()
+                    throw CancellationError()
                 }
+                let signpost = LoadSignposts.signposter.beginInterval("DescriptorFetch",
+                    id: LoadSignposts.signposter.makeSignpostID(),
+                    "ids=\(remaining.count) background=\(background) attempt=\(attempt)")
+                let fetched: Result<Batch, any Error>
+                do {
+                    if let client {
+                        fetched = .success(try await managed(ids: remaining, market: market, language: language,
+                                                             client: client, refresh: refresh || attempt > 0))
+                    } else {
+                        fetched = .success(try await direct(ids: remaining, market: market, language: language))
+                    }
+                } catch { fetched = .failure(error) }
+                releaseNetwork()
+                LoadSignposts.signposter.endInterval("DescriptorFetch", signpost,
+                    "succeeded=\((try? fetched.get()) != nil)")
+                let next = try fetched.get()
                 result.entries.merge(next.entries, uniquingKeysWith: { _, new in new })
                 for id in remaining { result.failures[id] = next.failures[id] }
                 remaining = remaining.filter { next.retryable.contains($0) }
@@ -303,8 +519,10 @@ actor PublicCatalogDescriptors {
         let response = try value.decode(CatalogDescriptors.self)
         try response.validate(ids: ids, market: market, language: language, now: now())
         var result = Batch()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
         for record in response.descriptors {
-            let bytes = try JSONEncoder().encode(record.product)
+            let bytes = try encoder.encode(record.product)
             let wrapped = try JSONEncoder().encode(JSONValue.object(["Products": .array([record.product])]))
             _ = try JSONDecoder().decode(PCGamesCatalog.self, from: wrapped)
             result.entries[record.productID] = Entry(bytes: bytes,

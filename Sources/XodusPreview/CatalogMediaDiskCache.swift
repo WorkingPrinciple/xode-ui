@@ -53,15 +53,21 @@ actor CatalogMediaDiskCache {
         let generation: Int
     }
     static let maximumBytes: Int64 = 512 * 1024 * 1024
+    static let sweepInterval: TimeInterval = 600
     private let directory: URL
     private let limit: Int64
+    private let now: @Sendable () -> Date
     private var generation = 0
-    private var swept = false
+    private var lastSweep: Date?
+    private var knownBytes: Int64?
+    private(set) var sweeps = 0
     private static let maximumFileBytes = CatalogImagePolicy.maximumBytes + 16_384
 
-    init(directory: URL, maximumBytes: Int64 = CatalogMediaDiskCache.maximumBytes) {
+    init(directory: URL, maximumBytes: Int64 = CatalogMediaDiskCache.maximumBytes,
+         now: @escaping @Sendable () -> Date = { Date() }) {
         self.directory = directory
         limit = maximumBytes
+        self.now = now
     }
 
     static func production() -> CatalogMediaDiskCache {
@@ -76,7 +82,7 @@ actor CatalogMediaDiskCache {
     func lookup(_ url: URL) throws -> Lookup {
         try validate(url)
         guard try exists() else { return Lookup(entry: nil, generation: generation) }
-        if !swept { try prune(); swept = true }
+        if lastSweep == nil { try prune() }
         let file = directory.appendingPathComponent(Self.key(url) + ".cache")
         let fd = open(file.path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
         if fd < 0, errno == ENOENT { return Lookup(entry: nil, generation: generation) }
@@ -114,6 +120,9 @@ actor CatalogMediaDiskCache {
         guard bytes.count <= Self.maximumFileBytes, Int64(bytes.count) <= limit else {
             throw CatalogMediaCacheError.storage
         }
+        let target = directory.appendingPathComponent(Self.key(url) + ".cache")
+        var previous = stat()
+        let replaced: Int64 = lstat(target.path, &previous) == 0 ? Int64(previous.st_size) : 0
         let temporary = directory.appendingPathComponent(".\(UUID().uuidString).tmp")
         let fd = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
         guard fd >= 0 else { throw CatalogMediaCacheError.storage }
@@ -122,29 +131,36 @@ actor CatalogMediaDiskCache {
             try handle.write(contentsOf: bytes)
             guard fsync(fd) == 0 else { throw CatalogMediaCacheError.storage }
             try handle.close()
-            let target = directory.appendingPathComponent(Self.key(url) + ".cache")
             guard rename(temporary.path, target.path) == 0 else { throw CatalogMediaCacheError.storage }
         } catch {
             handle.closeFile()
             if unlink(temporary.path) != 0, errno != ENOENT { throw CatalogMediaCacheError.storage }
             throw error
         }
-        try prune()
-        swept = true
+        if let known = knownBytes { knownBytes = known - replaced + Int64(bytes.count) }
+        // REQ-121: clean up once per session, when the running total passes the budget, or on the sweep timer.
+        if knownBytes.map({ $0 > limit }) ?? true
+            || lastSweep.map({ now().timeIntervalSince($0) >= Self.sweepInterval }) ?? true {
+            try prune()
+        }
     }
 
     func remove(_ url: URL) throws {
         try validate(url)
         guard try exists() else { return }
         let file = directory.appendingPathComponent(Self.key(url) + ".cache")
+        var info = stat()
+        let removed: Int64 = lstat(file.path, &info) == 0 ? Int64(info.st_size) : 0
         if unlink(file.path) != 0, errno != ENOENT { throw CatalogMediaCacheError.storage }
+        if let known = knownBytes { knownBytes = max(0, known - removed) }
     }
 
     func clear() throws {
         generation += 1
+        knownBytes = 0
         guard try exists() else { return }
         for file in try files() {
-            guard unlink(file.url.path) == 0 else { throw CatalogMediaCacheError.storage }
+            guard unlink(file.url.path) == 0 || errno == ENOENT else { throw CatalogMediaCacheError.storage }
         }
     }
 
@@ -187,10 +203,11 @@ actor CatalogMediaDiskCache {
             if url.pathExtension == "tmp", url.lastPathComponent.hasPrefix("."),
                UUID(uuidString: String(url.deletingPathExtension().lastPathComponent.dropFirst())) != nil {
                 var info = stat()
-                guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
+                if lstat(url.path, &info) != 0, errno == ENOENT { continue }
+                guard info.st_mode & S_IFMT == S_IFREG,
                       info.st_uid == getuid(), info.st_mode & 0o777 == 0o600 else { throw CatalogMediaCacheError.storage }
                 if Date().timeIntervalSince1970 - Double(info.st_mtimespec.tv_sec) > 3600 {
-                    guard unlink(url.path) == 0 else { throw CatalogMediaCacheError.storage }
+                    guard unlink(url.path) == 0 || errno == ENOENT else { throw CatalogMediaCacheError.storage }
                 }
                 continue
             }
@@ -198,7 +215,9 @@ actor CatalogMediaDiskCache {
             let name = url.deletingPathExtension().lastPathComponent
             guard name.utf8.count == 64, name.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else { continue }
             var info = stat()
-            guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_uid == getuid(),
+            // Another app instance may save or prune the same folder; a vanished entry is not damage.
+            if lstat(url.path, &info) != 0, errno == ENOENT { continue }
+            guard info.st_mode & S_IFMT == S_IFREG, info.st_uid == getuid(),
                   info.st_mode & 0o777 == 0o600, info.st_size >= 0 else { throw CatalogMediaCacheError.storage }
             result.append(File(url: url, bytes: info.st_size,
                 accessed: Date(timeIntervalSince1970: Double(info.st_mtimespec.tv_sec) + Double(info.st_mtimespec.tv_nsec) / 1_000_000_000)))
@@ -207,6 +226,8 @@ actor CatalogMediaDiskCache {
     }
 
     private func prune() throws {
+        sweeps += 1
+        lastSweep = now()
         let entries = try files().sorted { $0.accessed == $1.accessed ? $0.url.path < $1.url.path : $0.accessed < $1.accessed }
         var total: Int64 = 0
         for entry in entries {
@@ -215,8 +236,9 @@ actor CatalogMediaDiskCache {
             total = sum
         }
         for entry in entries where total > limit {
-            guard unlink(entry.url.path) == 0 else { throw CatalogMediaCacheError.storage }
+            guard unlink(entry.url.path) == 0 || errno == ENOENT else { throw CatalogMediaCacheError.storage }
             total -= entry.bytes
         }
+        knownBytes = total
     }
 }
