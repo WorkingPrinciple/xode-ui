@@ -986,7 +986,8 @@ struct LiveCatalogView: View {
         let cover = art.images[game.id]?.cover ?? game.cover
         return GameCard(title: game.title, gameFacts: game.facts,
                             compatibilityIssues: unsupportedIssues(game),
-                            showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(game.id), openLabel: "View",
+                            showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(game.id),
+                            showsInstalledBadge: game.installed != nil, openLabel: "View",
                             searchFocus: query.isEmpty ? nil : ($focusedResult, game.id),
                             focusReturn: query.isEmpty ? ($focusedResult, game.id) : nil,
                             open: { open(game) }) {
@@ -994,7 +995,6 @@ struct LiveCatalogView: View {
                                status: cover == nil ? .absent : .available)
         } status: {
             GameCardDownloadStatus(operations: operations, productID: game.id)
-            if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
         }
     }
 

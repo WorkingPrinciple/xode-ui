@@ -1138,10 +1138,10 @@ enum BrandUXChecks {
               && LibraryGame.uniqueInstalled(withJava, nativeShown: false).count == 4,
               "QA LC: With the native Minecraft card shown, its registry record for the same product isn't shown or counted again; the count equals the visible cards")
         func cardSize(_ installed: Bool) -> CGSize {
-            let card = GameCard(title: "Hogwarts Legacy", open: {}) {
+            let card = GameCard(title: "Hogwarts Legacy", showsInstalledBadge: installed, open: {}) {
                 Color.gray
             } status: {
-                if installed { Label("Installed", systemImage: "internaldrive").font(.caption) }
+                EmptyView()
             }
             let host = NSHostingView(rootView: card.frame(width: 180))
             host.layoutSubtreeIfNeeded()
@@ -1149,7 +1149,7 @@ enum BrandUXChecks {
         }
         let installedCard = cardSize(true), plainCard = cardSize(false)
         check(installedCard == plainCard && installedCard.height > 0,
-              "P1: An Installed card and a plain card have the same size, so artwork and title baselines line up (\(installedCard) vs \(plainCard))")
+              "P1: An Installed card (badge on the art) and a plain card have the same size, so artwork and title baselines line up (\(installedCard) vs \(plainCard))")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)

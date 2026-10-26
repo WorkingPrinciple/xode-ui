@@ -971,14 +971,14 @@ struct GameCard<Artwork: View, Status: View>: View {
     var gameFacts = GameFacts()
     var compatibilityIssues: [LibraryCompatibilityIssue] = []
     var showsGamePassCatalogBadge = false
+    /// P1: "Installed" is a badge on the artwork, so it never changes the card's art size or title baseline.
+    var showsInstalledBadge = false
     var openLabel = "Open"
     var searchFocus: (FocusState<String?>.Binding, String)? = nil
     var focusReturn: (FocusState<String?>.Binding, String)? = nil
     let open: () -> Void
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let status: () -> Status
-    static var titleHeight: CGFloat { 40 }
-    static var statusHeight: CGFloat { 34 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -995,15 +995,8 @@ struct GameCard<Artwork: View, Status: View>: View {
             } else {
                 artworkButton
             }
-            Text(title).font(.headline).lineLimit(2)
-                .frame(height: Self.titleHeight, alignment: .topLeading)
-            // P1: every card reserves the same status slot, so "Installed" or progress never shrinks the art.
-            ZStack(alignment: .topLeading) {
-                Color.clear
-                status().font(.subheadline).foregroundStyle(.primary)
-            }
-            .frame(maxWidth: .infinity, minHeight: Self.statusHeight, maxHeight: Self.statusHeight,
-                   alignment: .topLeading)
+            Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
+            status().font(.subheadline).foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
@@ -1015,7 +1008,7 @@ struct GameCard<Artwork: View, Status: View>: View {
         return .handled
     }
 
-    var artworkAccessibilityLabel: String { "\(openLabel) \(title)" }
+    var artworkAccessibilityLabel: String { "\(openLabel) \(title)\(showsInstalledBadge ? ", installed" : "")" }
 
     private var artworkButton: some View {
         Button(action: open) {
@@ -1031,6 +1024,19 @@ struct GameCard<Artwork: View, Status: View>: View {
                                         in: RoundedRectangle(cornerRadius: 4))
                             .padding(8)
                             .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if showsInstalledBadge {
+                        Image(systemName: "internaldrive.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(6)
+                            .background(Color(white: 0.12).opacity(0.9), in: Circle())
+                            .padding(8)
+                            .allowsHitTesting(false)
+                            .help("Installed")
                             .accessibilityHidden(true)
                     }
                 }
