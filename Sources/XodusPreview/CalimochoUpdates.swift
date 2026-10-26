@@ -36,7 +36,8 @@ struct LocalCalimochoRelease: Equatable, Codable, Sendable {
         let names = try FileManager.default.contentsOfDirectory(atPath: root.path)
         guard names.count <= 1024 else { throw CalimochoUpdateError.invalidResponse }
         return try names.compactMap { name in
-            guard name.hasPrefix("calimocho-"), !name.contains("/") else { return nil }
+            guard let release = EngineDisplayName.releaseVersion(name),
+                  let expectedVersion = CalimochoVersion(release.version) else { return nil }
             let folder = root.appendingPathComponent(name, isDirectory: true)
             guard lstat(folder.path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR,
                   info.st_uid == getuid() else { return nil }
@@ -45,7 +46,7 @@ struct LocalCalimochoRelease: Equatable, Codable, Sendable {
             let manifest = try JSONDecoder().decode(CalimochoReleaseManifest.self, from: bytes)
             guard manifest.schema == "calimocho-engine/1", manifest.engine_id == name,
                   manifest.provider.id == "calimocho", manifest.provider.contract_version == 1,
-                  let version = CalimochoVersion(manifest.version) else {
+                  let version = CalimochoVersion(manifest.version), version == expectedVersion else {
                 throw CalimochoUpdateError.invalidResponse
             }
             // Discovery is display-only. It does not admit this engine for launch.
