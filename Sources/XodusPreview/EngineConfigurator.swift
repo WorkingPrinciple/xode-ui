@@ -625,7 +625,7 @@ struct CalimochoReleaseInstallControls: View {
                     .accessibilityIdentifier("xodus.engines.calimocho.error")
             }
             if let notice = installer.notice {
-                Label(notice, systemImage: "checkmark.circle")
+                Label(notice, systemImage: installer.noticeSymbol)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.engines.calimocho.notice")

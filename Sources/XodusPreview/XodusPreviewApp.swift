@@ -56,6 +56,7 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     var runtimeSettings: RuntimeProviderSettings?
     var installedGames: InstalledGamesController?
     var pcGames: PCGamesController?
+    var calimochoInstaller: CalimochoReleaseInstallController?
     var gameOperations: GameOperationsController? {
         didSet {
             guard let gameOperations, gameOperations !== oldValue else { return }
@@ -95,7 +96,8 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
             await XboxCompanionController.shared.shutdown()
             let closed = await termination.shutdown(session: liveSession, runtime: runtimeSettings,
                                                     installedGames: installedGames, pcGames: pcGames,
-                                                    gameOperations: gameOperations)
+                                                    gameOperations: gameOperations,
+                                                    calimochoInstaller: calimochoInstaller)
             if !closed {
                 LibraryXboxStats.shared.resumeAfterTerminationRefusal()
                 XboxCompanionController.shared.resumeAfterTerminationRefusal()
@@ -251,6 +253,7 @@ struct XodusPreviewApp: App {
                     delegate.installedGames = state.installedGames
                     delegate.pcGames = state.pcGames
                     delegate.gameOperations = state.gameOperations
+                    delegate.calimochoInstaller = state.calimochoInstaller
                 }
         }
 
@@ -355,6 +358,7 @@ struct XodusPreviewApp: App {
                     delegate.installedGames = state.installedGames
                     delegate.pcGames = state.pcGames
                     delegate.gameOperations = state.gameOperations
+                    delegate.calimochoInstaller = state.calimochoInstaller
                 }
         }
         Window("Licenses", id: "licenses") { AppLicensesView() }
