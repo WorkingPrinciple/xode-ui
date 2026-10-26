@@ -159,9 +159,12 @@ enum BrandUXChecks {
               && CalimochoAvailability.notChecked.emptyListMessage != nil,
               "REQ-114(4): A completed check renders Ready, Missing or Invalid (reason); an admitted engine is Ready")
         let emptyRoot = FileManager.default.temporaryDirectory.appendingPathComponent("XodusNoEngines-\(UUID().uuidString)")
-        check(CalimochoAvailability.verifiedRelease(root: emptyRoot) == .missing
+        check(CalimochoAvailability.verifiedRelease(root: emptyRoot, admission: nil) == .missing
               && CalimochoAvailability.from(choices: [failed], checking: false,
-                    release: CalimochoAvailability.verifiedRelease(root: emptyRoot)) == .missing,
+                    release: CalimochoAvailability.verifiedRelease(root: emptyRoot, admission: nil)) == .missing
+              && CalimochoAvailability.neutralizingAdmission(.invalid(CalimochoAvailability.notAdmittedReason))
+                == .pendingVerification
+              && CalimochoAvailability.neutralizingAdmission(.invalid("Damaged.")) == .invalid("Damaged."),
               "REQ-115: The Engines pane maps 135c's release verification of an empty Engines folder to Missing")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
         let pinned = CalimochoReleasePin.all.last!.engineName
@@ -174,7 +177,8 @@ enum BrandUXChecks {
               && CalimochoRelease.displayName == release.name
               && CalimochoRelease.getTitle == "Get Calimocho (beta)"
               && CalimochoRelease.downloadURL.absoluteString
-                == "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-" + pinned.dropFirst("calimocho-".count)
+                == "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-"
+                    + EngineDisplayName.releaseVersion(pinned)!.version
               && !CalimochoRelease.downloadPublished
               && CalimochoRelease.unpublishedNotice
                 == "Calimocho isn't available for download yet — ask the person who invited you to the beta.",

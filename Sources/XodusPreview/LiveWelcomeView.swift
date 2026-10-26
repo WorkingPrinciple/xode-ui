@@ -230,10 +230,11 @@ struct ReadinessChecklistView: View {
             guard allowsStatusReads else { return }
             await installed.refreshEngineOverrides(force: false)
         }
-        .task(id: allowsStatusReads) {
+        .task(id: "\(allowsStatusReads):\(installed.availableEngineOverrides.count)") {
             guard allowsStatusReads else { return }
             releaseStatus = .checking
-            let status = await CalimochoAvailability.verifyReleaseInBackground()
+            let status = await CalimochoAvailability.verifyReleaseInBackground(
+                admission: CalimochoAvailability.admission(in: installed))
             guard !Task.isCancelled else { return }
             releaseStatus = status
         }

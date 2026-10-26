@@ -542,9 +542,23 @@ enum CalimochoAvailability: Equatable, Sendable {
         }
     }
 
-    /// Runs the release verification off the main actor; it reads and hashes the engine.
-    static func verifyReleaseInBackground() async -> Self {
-        await Task.detached(priority: .utility) { CalimochoAvailability.verifiedRelease() }.value
+    /// Runs the active pin's release verification off the main actor (it reads and hashes the engine).
+    /// A verified engine the backend hasn't admitted yet is neutral, not invalid.
+    static func verifyReleaseInBackground(admission: EngineInspection?) async -> Self {
+        let pin = CalimochoReleasePin.all.last!
+        let result = await Task.detached(priority: .utility) {
+            CalimochoAvailability.verifiedRelease(pin, admission: admission)
+        }.value
+        return neutralizingAdmission(result)
+    }
+
+    static func neutralizingAdmission(_ status: Self) -> Self {
+        status == .invalid(notAdmittedReason) ? .pendingVerification : status
+    }
+
+    /// The backend inspection for the active pinned release, if the engine check has one.
+    @MainActor static func admission(in installed: InstalledGamesController) -> EngineInspection? {
+        installed.availableEngineOverrides.first { $0.inspection.engineName == CalimochoRelease.engineID }?.inspection
     }
 
     var needsDownload: Bool {

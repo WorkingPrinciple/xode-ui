@@ -87,10 +87,11 @@ struct RuntimeInstallationPicker: View {
             await installed.refreshEngineOverrides(force: false)
             await settings.refreshCrossOverDependency()
         }
-        .task(id: "\(allowsFileReads):\(releaseCheck)") {
+        .task(id: "\(allowsFileReads):\(releaseCheck):\(installed.availableEngineOverrides.count)") {
             guard allowsFileReads else { return }
             releaseStatus = .checking
-            let status = await CalimochoAvailability.verifyReleaseInBackground()
+            let status = await CalimochoAvailability.verifyReleaseInBackground(
+                admission: CalimochoAvailability.admission(in: installed))
             guard !Task.isCancelled else { return }
             releaseStatus = status
         }

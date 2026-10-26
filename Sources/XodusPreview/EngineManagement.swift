@@ -26,8 +26,9 @@ enum CalimochoRelease {
     /// Release tag page. Its asset isn't published yet (owner decision), so no download control is
     /// shown until `downloadPublished` is true.
     static var downloadURL: URL {
+        // Release tags are named by engine version, e.g. engine-0.1120.4.4.
         URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-"
-            + engineID.dropFirst("calimocho-".count))!
+            + (EngineDisplayName.releaseVersion(engineID)?.version ?? engineID))!
     }
     static let downloadPublished = false
     static let unpublishedNotice = "Calimocho isn't available for download yet — ask the person who invited you to the beta."
