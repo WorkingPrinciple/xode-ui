@@ -229,6 +229,7 @@ struct NativeTitleLaunchProfile: Codable {
     var registrySHA256: String? = nil
 
     func enginePinsMatch(_ inspection: EngineInspection) -> Bool {
+        guard let engine else { return true }
         guard engine == inspection.engineName else { return false }
         if wineSha256 == nil && wineserverSha256 == nil { return true }
         guard let wineSha256, let wineserverSha256 else { return false }
@@ -559,6 +560,27 @@ struct NativeLaunchConfiguration {
                         shims: NativeShimReference = .approved,
                         provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
                         detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect) throws -> Self {
+        try resolve(game: game, provider: provider, defaults: defaults, runtime: runtime, shims: shims,
+                    provenEngine: provenEngine, evidence: evidence, detectCrossOver: detectCrossOver,
+                    candidateOverride: nil)
+    }
+
+    #if !XODUS_SHIPPING
+    static func resolveForChecks(game: InstalledGame, defaults: UserDefaults,
+                                 runtime: NativeRuntimeReference, shims: NativeShimReference,
+                                 candidate: NativeCandidateLaunchCatalogue.Row) throws -> Self {
+        try resolve(game: game, provider: nil, defaults: defaults, runtime: runtime, shims: shims,
+                    candidateOverride: candidate)
+    }
+    #endif
+
+    private static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
+                                defaults: UserDefaults,
+                                runtime: NativeRuntimeReference?,
+                                shims: NativeShimReference,
+                                provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
+                                detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect,
+                                candidateOverride: NativeCandidateLaunchCatalogue.Row?) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         let selected: AdmittedEngineSelection?
@@ -577,8 +599,15 @@ struct NativeLaunchConfiguration {
         }
         let workingRecipe = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence)
         let qualified = profile?.engine == NativeWorkingLaunchRecipe.engine ? workingRecipe : nil
-        let candidate = qualified != nil || profile?.engine != nil
-            ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
+        let releasePinnedProfile: Bool
+        if let profile, let engine = profile.engine, let pin = CalimochoReleasePin.named(engine) {
+            releasePinnedProfile = profile.wineSha256 == pin.wineSha256
+                && profile.wineserverSha256 == pin.wineserverSha256
+        } else {
+            releasePinnedProfile = false
+        }
+        let candidate = qualified != nil || releasePinnedProfile
+            ? nil : try candidateOverride ?? NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
             try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))
             guard profile?.engine == candidate.profile, profile?.executable == candidate.manifest_executable else {
