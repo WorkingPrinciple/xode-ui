@@ -28,6 +28,9 @@ enum HighballContract {
     static let repository = URL(string: "https://github.com/gauthierpiarrette/highball")!
     static let applicationPath = "/Applications/Highball.app"
     static let engineID = "x64-crossover26.3-r27"
+    /// The one title the backend `highball-inspect` contract can qualify (Brotato).
+    static let qualifiedProductID = "9P9VNSQK1W3K"
+    static let qualifiedTitle = "Brotato"
     static let maximumBytes = 65_536
     static let requirement = """
         identifier "app.highball.Highball" and anchor apple generic \
@@ -50,11 +53,14 @@ enum HighballContract {
     }
 
     /// Strict decode of `highball-inspect` stdout. Anything inconsistent is never "qualified".
-    static func decode(_ data: Data) -> HighballState? {
+    /// When supplied, the requested product and the exit status (0 only when qualified) must agree.
+    static func decode(_ data: Data, product: String? = nil, exitCode: Int32? = nil) -> HighballState? {
         guard data.count <= maximumBytes,
               let value = try? JSONDecoder().decode(Inspection.self, from: data),
               value.schemaVersion == 1, value.capability == "highballAdmissionV1",
               value.providerID == "highball" else { return nil }
+        if let product, value.productID != product { return nil }
+        if let exitCode, (exitCode == 0) != (value.state == "qualified") { return nil }
         switch value.state {
         case "missing":
             return value.qualified || value.admitted || value.ready ? nil : .missing
@@ -68,6 +74,12 @@ enum HighballContract {
         default:
             return nil
         }
+    }
+
+    /// The backend verdict wins when it is available; otherwise the local read-only detection stands
+    /// with no verdict, which is never shown as qualified.
+    static func reconcile(local: HighballState, backend: HighballState?) -> HighballState {
+        backend ?? local
     }
 
     /// Read-only presence check: identity and publisher signature, no execution, no writes.
@@ -95,15 +107,25 @@ enum HighballContract {
 }
 
 enum HighballCopy {
-    static let explanation = "Highball is a separate app you install yourself. X Ode only reads it and never installs, changes, or switches to it. It is used only for titles the backend has qualified."
-    static let license = "Highball is GPL-3.0 and is not part of X Ode. Its Wine and graphics components are separately licensed; Apple's Game Porting Toolkit is not accepted."
+    static func blockerText(_ code: String?) -> String? {
+        switch code {
+        case "HIGHBALL_SIGNATURE_INVALID": "Signature couldn't be verified"
+        case "HIGHBALL_PATH_INVALID", "HIGHBALL_IDENTITY_UNAVAILABLE": "Not a usable Highball app"
+        default: nil
+        }
+    }
+    static let explanation = "Highball is a separate app you install yourself. \(AppBrand.displayName) only reads it and never installs or changes it."
+    static let license = "Highball is GPL-3.0 and is not part of \(AppBrand.displayName). Its Wine and graphics components are separately licensed; \(AppBrand.displayName) doesn't accept their licences for you."
     static func detail(_ state: HighballState) -> String? {
         switch state {
         case .missing: nil
         case .detected(let version, let blocker):
-            [version, blocker == nil ? "Not yet qualified for X Ode" : "Not qualified for this title"]
+            [version, blocker == nil ? "Not qualified" : blockerText(blocker)]
                 .compactMap { $0 }.joined(separator: " · ")
-        case .qualified(let version, _): [version, "One qualified title"].compactMap { $0 }.joined(separator: " · ")
+        case .qualified(let version, let product):
+            [version, product == HighballContract.qualifiedProductID
+                ? "Qualified for \(HighballContract.qualifiedTitle) only" : "Qualified for one title"]
+                .compactMap { $0 }.joined(separator: " · ")
         }
     }
 }
@@ -140,10 +162,21 @@ struct HighballRow: View {
 
 /// Detects off the main thread; the verdict stays "Detected" until a backend inspection supplies one.
 struct HighballSection: View {
+    /// Backend `highball-inspect`; nil or a nil result means no verdict is available.
+    var inspect: (@MainActor () async -> HighballState?)? = nil
+    var refreshID = 0
     @State private var state: HighballState = .missing
 
     var body: some View {
         HighballRow(state: state)
-            .task { state = await Task.detached(priority: .utility) { HighballContract.detect() }.value }
+            .task(id: refreshID) {
+                let local = await Task.detached(priority: .utility) { HighballContract.detect() }.value
+                guard !Task.isCancelled else { return }
+                state = local
+                guard let inspect else { return }
+                let verdict = await inspect()
+                guard !Task.isCancelled else { return }
+                state = HighballContract.reconcile(local: local, backend: verdict)
+            }
     }
 }

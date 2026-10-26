@@ -445,3 +445,29 @@ swiftc Sources/XodusPreview/CalimochoIndexJSON.swift \
 
 The checks exercise the upstream known-answer vectors and local parser,
 state and bounds regressions without network access, installation or activation.
+
+## Highball provider (REQ-127, user-installed)
+
+Highball (`app.highball.Highball`, Team ID `B95M7DARU4`) is a third,
+user-installed provider. X Ode never installs, updates, modifies or launches
+Highball and never accepts its licences (GPL-3.0 app; separately licensed Wine
+and graphics components) on the user's behalf.
+
+Engines Settings shows one of three states:
+
+- **Not Installed** with a Get Highball link to the upstream repository.
+- **Detected** when `/Applications/Highball.app` is a non-writable directory
+  with the exact bundle identifier and a valid publisher signature. This is a
+  read-only check with no execution. Without a backend verdict, the row stays
+  Detected and is never Qualified.
+- **Qualified for Brotato only** when the paired backend answers
+  `highball-inspect --contract-version 1` with `highballAdmissionV1` and
+  `highball-inspect --product 9P9VNSQK1W3K` returns a consistent qualified
+  verdict for that product (exit status 0 only when qualified). Any other
+  product, a disagreeing exit status, an unsupported contract or a missing
+  backend yields no verdict.
+
+Shipping builds run the inspection only through the approved shipping pair
+identity, on a dedicated inspector that is closed on quit. Launch admission and
+the separate Highball prefix are backend responsibilities; this row grants no
+launch.

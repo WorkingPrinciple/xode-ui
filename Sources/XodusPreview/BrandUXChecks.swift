@@ -62,6 +62,7 @@ enum BrandUXChecks {
         let session = LiveSession()
         let copy = [WelcomeCopy.technology, WelcomeCopy.signIn, WelcomeCopy.keychain,
                     EnginesCopy.lead, EnginesCopy.crossOver, EnginesCopy.crossOverLicense,
+                    HighballCopy.explanation, HighballCopy.license,
                     session.accountLabel, LiveSession.signOutConfirmationMessage, session.libraryMessage,
                     ManagementError.stateLocked.errorDescription ?? "", ManagementError.startFailed.errorDescription ?? "",
                     AppLegalCopy.acknowledgment, AppLegalCopy.trademarks,

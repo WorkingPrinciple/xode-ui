@@ -136,7 +136,7 @@ struct RuntimeInstallationPicker: View {
                         || operations.checkingRecovery || settingDefault
                 }, reserve: { try installed.reserveMutation(gameID: nil) },
                    release: { installed.releaseMutation() })
-            }) {
+            }, backendPath: backendPath) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)
         }

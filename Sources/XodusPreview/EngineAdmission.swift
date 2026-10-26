@@ -232,6 +232,25 @@ actor EngineInspectionClient {
         return try EngineInspection.decode(result.0, engine: engine, registryDigest: expectedDigest, exitCode: result.1)
     }
 
+    /// Backend `highball-inspect` verdict for one product, or nil when this backend has no
+    /// `highballAdmissionV1` contract or its answer is inconsistent. Read-only on both sides.
+    func highball(executable: URL, product: String = HighballContract.qualifiedProductID,
+                  executableIdentity: NativeAuthHostBinding? = nil) async -> HighballState? {
+        struct Capability: Decodable { let schemaVersion: Int; let capability: String; let supported: Bool }
+        guard let probe = try? await run(executable: executable,
+                                         arguments: ["highball-inspect", "--contract-version", "1"],
+                                         executableIdentity: executableIdentity),
+              probe.1 == 0,
+              let capability = try? JSONValue.decodeUnique(probe.0, maximumBytes: 32_768).decode(Capability.self),
+              capability.schemaVersion == 1, capability.capability == "highballAdmissionV1", capability.supported,
+              let result = try? await run(executable: executable,
+                                          arguments: ["highball-inspect", "--product", product],
+                                          executableIdentity: executableIdentity)
+        else { return nil }
+        guard (try? JSONValue.decodeUnique(result.0, maximumBytes: HighballContract.maximumBytes)) != nil else { return nil }
+        return HighballContract.decode(result.0, product: product, exitCode: result.1)
+    }
+
     private func run(executable: URL, arguments: [String],
                      executableIdentity: NativeAuthHostBinding?) async throws -> (Data, Int32) {
         guard child == nil else { throw EngineInspectionError.shutdownFailed }

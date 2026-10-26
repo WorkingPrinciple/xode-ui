@@ -93,6 +93,69 @@ enum EngineManagementChecks {
         check(HighballState.missing.offersGet && !HighballState.detected(version: nil, blocker: nil).offersGet
               && HighballContract.detect(at: URL(fileURLWithPath: "/nonexistent/Highball.app")) == .missing,
               "REQ127 Get appears only when absent and detection is read-only")
+        let qualified = json("qualified", qualified: true, product: HighballContract.qualifiedProductID, error: nil)
+        check(HighballContract.decode(qualified, product: HighballContract.qualifiedProductID, exitCode: 0) != nil
+              && HighballContract.decode(qualified, product: "BQVQTL3PCH05", exitCode: 0) == nil
+              && HighballContract.decode(qualified, product: HighballContract.qualifiedProductID, exitCode: 1) == nil
+              && HighballContract.decode(json("detected", qualified: false, product: HighballContract.qualifiedProductID,
+                                              error: "HIGHBALL_TITLE_UNQUALIFIED"),
+                                         product: HighballContract.qualifiedProductID, exitCode: 0) == nil,
+              "REQ127 a verdict for another product, or an exit status that disagrees with it, is refused")
+        let local = HighballState.detected(version: "0.10.22", blocker: nil)
+        check(HighballContract.reconcile(local: local, backend: nil) == local
+              && !HighballContract.reconcile(local: local, backend: nil).isQualified
+              && HighballContract.reconcile(local: local, backend: .qualified(version: "0.10.22",
+                  productID: HighballContract.qualifiedProductID)).isQualified
+              && HighballContract.reconcile(local: .missing, backend: nil) == .missing,
+              "REQ127 without a backend verdict Highball stays Detected, never Qualified")
+        check(HighballCopy.detail(.qualified(version: "0.10.22", productID: HighballContract.qualifiedProductID))
+                == "0.10.22 · Qualified for Brotato only"
+              && HighballCopy.detail(.detected(version: nil, blocker: "HIGHBALL_SIGNATURE_INVALID"))
+                == "Signature couldn't be verified"
+              && HighballCopy.detail(.detected(version: "1", blocker: nil)) == "1 · Not qualified"
+              && !HighballCopy.explanation.contains("backend")
+              && HighballCopy.explanation.contains(AppBrand.displayName),
+              "REQ127 rows read Missing, Detected or Qualified for the one title in plain language")
+    }
+
+    /// REQ-127: the app runs only the read-only `highball-inspect` contract and never a game or Highball.
+    static func highballInspectionChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let cli = root.appendingPathComponent("highball-cli")
+        let launched = root.appendingPathComponent("highball-must-not-run")
+        func script(capability: String, verdict: String, exit: Int) throws {
+            try Data("""
+            #!/bin/sh
+            if [ "$1" != "highball-inspect" ]; then /usr/bin/touch '\(launched.path)'; exit 91; fi
+            if [ "$2" = "--contract-version" ]; then printf '%s\\n' '\(capability)'; exit 0; fi
+            if [ "$2" != "--product" ] || [ "$3" != "\(HighballContract.qualifiedProductID)" ] || [ -n "$4" ]; then
+              /usr/bin/touch '\(launched.path)'; exit 92
+            fi
+            printf '%s\\n' '\(verdict)'
+            exit \(exit)
+
+            """.utf8).write(to: cli)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cli.path)
+        }
+        let supported = #"{"schemaVersion":1,"capability":"highballAdmissionV1","supported":true}"#
+        let product = HighballContract.qualifiedProductID
+        let qualifiedVerdict = #"{"schemaVersion":1,"capability":"highballAdmissionV1","providerID":"highball","productID":"\#(product)","state":"qualified","admitted":true,"ready":true,"qualified":true,"candidate":{"version":"0.10.22"},"engine":null,"registryEntry":null,"error":null}"#
+        let detectedVerdict = #"{"schemaVersion":1,"capability":"highballAdmissionV1","providerID":"highball","productID":"\#(product)","state":"detected","admitted":false,"ready":false,"qualified":false,"candidate":{"version":"0.10.22"},"error":{"code":"HIGHBALL_ENGINE_HASH_MISMATCH","message":"x"}}"#
+        let client = EngineInspectionClient()
+        try script(capability: supported, verdict: qualifiedVerdict, exit: 0)
+        let qualified = await client.highball(executable: cli)
+        try script(capability: supported, verdict: detectedVerdict, exit: 1)
+        let detected = await client.highball(executable: cli)
+        try script(capability: supported, verdict: qualifiedVerdict, exit: 1)
+        let disagreeing = await client.highball(executable: cli)
+        try script(capability: #"{"schemaVersion":1,"capability":"highballAdmissionV1","supported":false}"#,
+                   verdict: qualifiedVerdict, exit: 0)
+        let unsupported = await client.highball(executable: cli)
+        let absent = await client.highball(executable: root.appendingPathComponent("no-backend"))
+        check(qualified == .qualified(version: "0.10.22", productID: product)
+              && detected == .detected(version: "0.10.22", blocker: "HIGHBALL_ENGINE_HASH_MISMATCH")
+              && disagreeing == nil && unsupported == nil && absent == nil
+              && !FileManager.default.fileExists(atPath: launched.path),
+              "REQ127 Settings asks only highball-inspect for Brotato; unsupported, missing or inconsistent backends give no verdict")
     }
 
     /// REQ-115/B3: release engines are discovered, hash- and signature-verified and rendered per Mac; nothing user-specific ships.
@@ -251,6 +314,7 @@ enum EngineManagementChecks {
             do { try FileManager.default.removeItem(at: root) }
             catch { check(false, "REQ79 removes only its owned fixture directory") }
         }
+        try await highballInspectionChecks(root: root, check: check)
         let executable = root.appendingPathComponent("wine")
         try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
