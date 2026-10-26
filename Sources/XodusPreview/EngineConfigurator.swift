@@ -938,6 +938,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
         CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
+        if allowsFileReads { HighballSection() }
         if showsAdvanced {
             Section {
                 DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
