@@ -22,13 +22,14 @@ enum CalimochoRelease {
     /// Engines pane, readiness, Acknowledgments and Play never point at different engine folders.
     static var engineID: String { CalimochoReleasePin.all.last!.engineName }
     static var displayName: String { EngineDisplayName.name(engineID) }
-    static let getTitle = "Get Calimocho (beta)"
+    static let getTitle = "Get Calimocho"
     static var downloadURL: URL? {
-        guard let pin = CalimochoReleasePin.all.last, pin.archiveSha256 != nil else { return nil }
+        guard let pin = CalimochoReleasePin.all.last, pin.archiveSha256 != nil,
+              pin.archiveByteCount != nil, pin.expandedByteCount != nil else { return nil }
         return pin.downloadURL
     }
     static var downloadPublished: Bool { downloadURL != nil }
-    static let unpublishedNotice = "Calimocho isn't available for download yet — ask the person who invited you to the beta."
+    static let unpublishedNotice = "Calimocho isn't available for download yet. Ask the person who invited you to the beta."
 }
 
 enum EngineManagementPolicy {

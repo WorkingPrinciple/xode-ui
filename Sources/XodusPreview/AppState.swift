@@ -78,6 +78,7 @@ final class SheetInteraction: ObservableObject {
 @MainActor
 final class AppState: ObservableObject {
     let runtimeSettings = RuntimeProviderSettings()
+    let calimochoInstaller: CalimochoReleaseInstallController
     let installedGames: InstalledGamesController
     let pcGames: PCGamesController
     let librarySelection = LibrarySelection()
@@ -129,7 +130,9 @@ final class AppState: ObservableObject {
 
     init(installedGames: InstalledGamesController = InstalledGamesController(),
          pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production,
-         settingsDefaults: UserDefaults = .standard) {
+         settingsDefaults: UserDefaults = .standard,
+         calimochoInstaller: CalimochoReleaseInstallController = CalimochoReleaseInstallController()) {
+        self.calimochoInstaller = calimochoInstaller
         self.installedGames = installedGames
         self.pcGames = pcGames
         self.gameScriptPaths = gameScriptPaths

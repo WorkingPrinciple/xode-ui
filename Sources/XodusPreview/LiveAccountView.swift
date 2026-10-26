@@ -271,7 +271,8 @@ struct LiveSettingsView: View {
         Form {
             RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath,
                 installed: state.installedGames, embeddedInSettings: true, showsAdvanced: false,
-                registryObservation: engineObservation, userEngineModel: engineModel)
+                registryObservation: engineObservation, userEngineModel: engineModel,
+                operations: state.gameOperations, calimochoInstaller: state.calimochoInstaller)
         }
         .formStyle(.grouped)
     }

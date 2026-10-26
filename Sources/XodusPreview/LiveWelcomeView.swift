@@ -136,7 +136,7 @@ struct GamesFolderSpace: Equatable, Sendable {
 }
 
 /// Shown once after signing in from the welcome screen: account, engine and games-folder space.
-/// Read-only: it only reads existing status and opens Settings or the download page.
+/// It reads existing status and offers the pinned engine's in-app install when needed.
 struct ReadinessChecklistView: View {
     enum Status: Equatable {
         case done, waiting, attention
@@ -161,6 +161,7 @@ struct ReadinessChecklistView: View {
     @EnvironmentObject private var state: AppState
     @ObservedObject var session: LiveSession
     @ObservedObject var installed: InstalledGamesController
+    @ObservedObject private var calimochoInstaller: CalimochoReleaseInstallController
     var allowsStatusReads = true
     var openSettingsPane: (SettingsPane) -> Void = { _ in }
     var done: () -> Void = {}
@@ -168,6 +169,18 @@ struct ReadinessChecklistView: View {
     @State private var probe = GameStorageProbe()
     @State private var releaseStatus: CalimochoAvailability?
     @State private var recheck = 0
+
+    init(session: LiveSession, installed: InstalledGamesController, allowsStatusReads: Bool = true,
+         openSettingsPane: @escaping (SettingsPane) -> Void = { _ in },
+         done: @escaping () -> Void = {},
+         calimochoInstaller: CalimochoReleaseInstallController = CalimochoReleaseInstallController()) {
+        self.session = session
+        self.installed = installed
+        self.allowsStatusReads = allowsStatusReads
+        self.openSettingsPane = openSettingsPane
+        self.done = done
+        _calimochoInstaller = ObservedObject(wrappedValue: calimochoInstaller)
+    }
 
     private var engine: CalimochoAvailability {
         .status(results: installed, verification: releaseStatus)
@@ -185,6 +198,7 @@ struct ReadinessChecklistView: View {
 
     var body: some View {
         let (engineState, engineTitle) = Self.engineStatus(engine)
+        let activeProgress = calimochoInstaller.progress
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("You're signed in").font(.title2.bold()).accessibilityAddTraits(.isHeader)
@@ -195,10 +209,13 @@ struct ReadinessChecklistView: View {
                 row(session.hasConfirmedSignIn ? .done : .waiting, title: "Microsoft account",
                     detail: session.accountJourneyTitle)
                     .accessibilityIdentifier("xodus.readiness.account")
-                row(engineState, title: engineTitle,
+                row(activeProgress == nil ? engineState : .waiting,
+                    title: activeProgress?.label ?? engineTitle,
                     detail: engine.needsDownload ? engine.message : nil) {
-                    if engine.needsDownload {
-                        CalimochoDownloadAction()
+                    if engine.needsDownload || calimochoInstaller.isWorking {
+                        CalimochoReleaseInstallControls(
+                            installer: calimochoInstaller, refreshAdmission: refreshReleaseAdmission,
+                            allowsRemoval: false)
                         HStack(spacing: 12) {
                             Button("Check Again") {
                                 recheck += 1
@@ -239,7 +256,7 @@ struct ReadinessChecklistView: View {
             guard allowsStatusReads else { return }
             releaseStatus = .checking
             let status = await CalimochoAvailability.verifyReleaseInBackground(
-                admission: CalimochoAvailability.admission(in: installed))
+                admission: CalimochoAvailability.admission(in: installed), root: calimochoInstaller.enginesRoot)
             guard !Task.isCancelled else { return }
             releaseStatus = status
         }
@@ -248,6 +265,15 @@ struct ReadinessChecklistView: View {
             let folder = GamesFolderSpace.currentFolder()
             space = (try? await probe.read { GamesFolderSpace.measure(folder: folder) })
                 ?? GamesFolderSpace(folder: folder, availableBytes: nil)
+        }
+    }
+
+    private func refreshReleaseAdmission() async -> Bool {
+        await installed.refreshEngineOverrides(force: true)
+        releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(
+            admission: CalimochoAvailability.admission(in: installed), root: calimochoInstaller.enginesRoot)
+        return installed.availableEngineOverrides.contains {
+            $0.inspection.engineName == CalimochoRelease.engineID
         }
     }
 

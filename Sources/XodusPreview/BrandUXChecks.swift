@@ -154,8 +154,7 @@ enum BrandUXChecks {
               && CalimochoAvailability.from(choices: [], checking: false, release: .invalid("Damaged.")) == .invalid("Damaged.")
               && CalimochoAvailability.from(choices: [failed, ready], checking: true, release: .missing) == .ready
               && CalimochoAvailability.missing.message
-                == "Calimocho isn't installed. X Ode needs Calimocho to play games. "
-                    + "Download it and install the engine folder in your Engines folder, then choose Check Again."
+                == "Calimocho isn't installed. Get it to use games pinned to this release."
               && CalimochoAvailability.invalid("Signature changed.").message == "Calimocho couldn't be verified. Signature changed."
               && CalimochoAvailability.missing.needsDownload && CalimochoAvailability.invalid("x").needsDownload
               && !CalimochoAvailability.ready.needsDownload && CalimochoAvailability.notChecked.message == nil
@@ -208,7 +207,7 @@ enum BrandUXChecks {
               && EngineDisplayName.releaseVersion("calimocho-11.21-4.0b4-03")?.version == "0.1121.4.3"
               && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-00") == nil
               && CalimochoRelease.displayName == release.name
-              && CalimochoRelease.getTitle == "Get Calimocho (beta)"
+              && CalimochoRelease.getTitle == "Get Calimocho"
               && CalimochoReleasePin.release04.downloadURL?.absoluteString
                 == "https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip"
               && CalimochoReleasePin.release04.archiveSha256
@@ -240,11 +239,19 @@ enum BrandUXChecks {
             ("ready", [EngineChoice.named(CalimochoRelease.engineID, ready: true), ready,
                        EngineChoice.named("calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5", ready: true)], nil)]
         for (scenario, choices, status) in scenarios {
+            let installerRoot = emptyRoot.appendingPathComponent("scenario-\(scenario)", isDirectory: true)
+            if ["invalid", "pending", "ready"].contains(scenario) {
+                try? FileManager.default.createDirectory(
+                    at: installerRoot.appendingPathComponent(CalimochoRelease.engineID, isDirectory: true),
+                    withIntermediateDirectories: true)
+            }
+            let installer = CalimochoReleaseInstallController(
+                service: CalimochoReleaseInstallService(root: installerRoot))
             for scheme in [ColorScheme.light, .dark] {
                 let form = EngineConfiguratorForm(choices: choices, defaultID: ready.id, defaultName: ready.name,
                     checking: false, error: nil, settings: settings, allowsFileReads: false,
                     userEngineStore: store, setDefault: { _ in }, refresh: {}, showsAdvanced: false,
-                    calimochoStatus: status) { EmptyView() }
+                    calimochoStatus: status, calimochoInstaller: installer) { EmptyView() }
                 let labels = render(form, size: CGSize(width: 600, height: 900), scheme: scheme,
                                     name: "engines-\(scenario)-\(scheme == .dark ? "dark" : "light")")
                 let joined = labels.joined(separator: " ")
@@ -253,16 +260,17 @@ enum BrandUXChecks {
                       && joined.contains("Play currently uses Calimocho")
                       && !joined.contains("Private") && !joined.contains("Use App"),
                       "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
-                let hasDownloadControl = joined.contains("Get Calimocho (beta)")
+                let hasDownloadControl = joined.contains("Get Calimocho")
                 switch scenario {
                 case "missing":
-                    check(joined.contains("Calimocho isn't installed") && joined.contains("install the engine folder")
+                    check(joined.contains("Calimocho isn't installed") && !joined.contains("install the engine folder")
                           && joined.contains("Check Again") && hasDownloadControl,
-                          "REQ-115: Missing Calimocho offers the published release and explains installation/recheck (\(scheme))")
+                          "REQ-115: Missing Calimocho offers in-app installation without manual folder instructions (\(scheme))")
                 case "invalid":
                     check(joined.contains("couldn't be verified") && joined.contains("Not Verified")
-                          && !labels.contains("Default") && hasDownloadControl,
-                          "REQ-114(4): Invalid Calimocho gives the verification reason, marks it Not Verified, and offers the pinned release (\(scheme))")
+                          && !labels.contains("Default") && !hasDownloadControl
+                          && joined.contains("Remove Calimocho"),
+                          "REQ-114(4): Invalid Calimocho gives the verification reason, marks it Not Verified, and offers safe removal (\(scheme))")
                 case "pending":
                     check(joined.contains("will be ready once") && !joined.contains("isn't available for download")
                           && !joined.contains("Reinstall") && !hasDownloadControl,
@@ -273,6 +281,23 @@ enum BrandUXChecks {
                           "COR186 U2: Ready engines show no download prompt and name release and game-specific builds (\(scheme))")
                 }
             }
+        }
+        let installedRoot = emptyRoot.appendingPathComponent("installed-controls", isDirectory: true)
+        let installedEngine = installedRoot.appendingPathComponent(CalimochoRelease.engineID, isDirectory: true)
+        if (try? FileManager.default.createDirectory(at: installedEngine, withIntermediateDirectories: true)) != nil {
+            defer { try? FileManager.default.removeItem(at: installedRoot) }
+            let installedControls = CalimochoReleaseInstallControls(
+                installer: CalimochoReleaseInstallController(
+                    service: CalimochoReleaseInstallService(root: installedRoot)),
+                isBusy: { false }, refreshAdmission: { false })
+            let labels = render(installedControls, size: CGSize(width: 520, height: 220), scheme: .light,
+                                name: "calimocho-installed-controls")
+            let joined = labels.joined(separator: " ")
+            check(joined.contains("Show in Finder") && joined.contains("Remove Calimocho")
+                  && !joined.contains("Get Calimocho"),
+                  "REQ-115: An installed release exposes its location actions rather than another Get action: \(labels)")
+        } else {
+            check(false, "REQ-115: Installed engine controls render from a temporary Engines root")
         }
     }
 
@@ -466,8 +491,12 @@ enum BrandUXChecks {
               "COR186 M7: Games-folder space reads the nearest existing folder without creating it")
         let state = AppState()
         for scheme in [ColorScheme.light, .dark] {
+            let readinessRoot = FileManager.default.temporaryDirectory
+                .appendingPathComponent("XodusReadinessEngines-\(UUID().uuidString)")
+            let installer = CalimochoReleaseInstallController(
+                service: CalimochoReleaseInstallService(root: readinessRoot))
             let view = ReadinessChecklistView(session: LiveSession(), installed: InstalledGamesController(),
-                                              allowsStatusReads: false)
+                                              allowsStatusReads: false, calimochoInstaller: installer)
                 .environmentObject(state)
             let labels = render(view, size: CGSize(width: 520, height: 460), scheme: scheme,
                                 name: "readiness-\(scheme == .dark ? "dark" : "light")")
