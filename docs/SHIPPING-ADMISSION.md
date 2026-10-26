@@ -45,9 +45,9 @@ paired CLI and Windows helper hashes are
 `de8e6fb21068c0d60479a5634091d23a6977d865f5b9d26343caecdfe00d44a9` and
 `13199ebc15f23001fd2d87488f758f7856512872726c90ca5111c793eeb47c29`.
 The regenerated producer-notice inventory is
-`e9f8eb634044f34eba1a9437b7b8a69fe6777c8ea5d469aeef4a7fd738fbcd9e`; its
+`6a7db4f119ddc98c8ceb3e289259029613ea9dea8acb9c03b7ac842f9db52fb4`; its
 source-bound supplemental evidence is
-`5f6e6ae4e195ffb4d52d064b86a99a41c70f90c71de87dd9362f0940696191e8`. The
+`c62f286921108652d2914de1b2dce32bf16b6237ba602266b6b062fe02c41ed1`. The
 corresponding-source archive is
 `7573a629d1a14c98424530d40572dbd638920b4b5a269a8d7df823b7863ce003`
 (9,216,000 bytes, 589 members, from the exact commit). It excludes

@@ -89,9 +89,9 @@ Its corresponding-source archive
 (9,216,000 bytes; 589 members), from that exact commit and excluding
 `docs/private-ai/` and `docs/private-checkpoints/`.
 The regenerated inventory SHA-256 is
-`e9f8eb634044f34eba1a9437b7b8a69fe6777c8ea5d469aeef4a7fd738fbcd9e`;
+`6a7db4f119ddc98c8ceb3e289259029613ea9dea8acb9c03b7ac842f9db52fb4`;
 the matching source-bound supplemental evidence SHA-256 is
-`5f6e6ae4e195ffb4d52d064b86a99a41c70f90c71de87dd9362f0940696191e8`.
+`c62f286921108652d2914de1b2dce32bf16b6237ba602266b6b062fe02c41ed1`.
 It covers 479 package identities and 462 compiler-artifact identities, with
 one unresolved corresponding-source delivery and applicable licence/notice
 review obligation. The evidence establishes provenance and notice-text
