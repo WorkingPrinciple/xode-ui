@@ -159,8 +159,8 @@ enum AccessibilityAuditChecks {
     /// failed. None: the Acknowledgments search prompt uses AccessiblePalette.placeholder.
     static let systemPlaceholders: [String] = []
 
-    /// Files owned by the Library/Discover lane keep the system link colour until that lane adopts the palette.
-    static let routedLinkFiles: Set<String> = ["LibraryPresentation.swift", "LiveCatalogView.swift"]
+    /// No file is exempt: Library/Discover links adopted the palette at integration.
+    static let routedLinkFiles: Set<String> = []
 
     static func ownedColours(check: (Bool, String) -> Void) {
         func ratio(_ a: AccessiblePalette.RGB, _ b: AccessiblePalette.RGB) -> Double {
@@ -186,7 +186,7 @@ enum AccessibilityAuditChecks {
                     .contains { $0.text.contains(".accessibleLink()") }
         }
         check(bare.isEmpty,
-              "REQ-19: Every link outside the routed Library/Discover files uses the accessible link colour (bare: \(bare.map { "\($0.file):\($0.line)" }))")
+              "REQ-19: Every link uses the accessible link colour (bare: \(bare.map { "\($0.file):\($0.line)" }))")
     }
 
     static func renderedContrast(check: (Bool, String) -> Void) {
