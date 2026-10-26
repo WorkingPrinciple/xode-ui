@@ -1457,11 +1457,15 @@ final class InstalledGamesController: ObservableObject {
     private func inspectEngineOverrides(configuration: BackendConfiguration, force: Bool) async {
         do {
             let catalog = try NativeEngineDefaults.read()
-            let names = Self.engineInspectionNames(all: Set(catalog.bindings.map(\.engineName)),
+            let bindings = catalog.bindings.filter { !$0.isFH6Recipe || NativeFH6Recipe.enabled }
+            let names = Self.engineInspectionNames(all: Set(bindings.map(\.engineName)),
                 failed: failedEngineOverrides, checked: engineOverridesChecked, force: force)
-            var choices = availableEngineOverrides.filter { !names.contains($0.inspection.engineName ?? "") }
+            var choices = availableEngineOverrides.filter {
+                !names.contains($0.inspection.engineName ?? "")
+                    && (NativeFH6Recipe.enabled || $0.inspection.engineName != NativeFH6Recipe.engineName)
+            }
             var failures = failedEngineOverrides.subtracting(names)
-            for binding in catalog.bindings where names.contains(binding.engineName) {
+            for binding in bindings where names.contains(binding.engineName) {
                 do { choices.append(try await binding.inspect(configuration: configuration)) }
                 catch {
                     failures.insert(binding.engineName)

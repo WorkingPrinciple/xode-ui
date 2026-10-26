@@ -235,6 +235,7 @@ extension NativeTitleRecipeInspection {
     try selection.validate(
       registryPath: selection.registryPath, engineName: value.engineName,
       registryDigest: value.registrySha256)
+    try NativeFH6Recipe.requireEnabled(productID: value.productID)
     return value
   }
 }

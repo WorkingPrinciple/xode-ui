@@ -26,7 +26,8 @@ enum NativeLaunchSupport: Equatable {
     /// Admitted per-title launch setup (bundled or local profile), independent of engine state.
     static func hasLaunchProfile(productID: String, defaults: UserDefaults = .standard,
                                  evidence: MacGameEvidence.Game? = nil) -> Bool {
-        (try? NativeTitleLaunchProfile.read(productID: productID, defaults: defaults,
+        guard productID != NativeFH6Recipe.productID || NativeFH6Recipe.enabled else { return false }
+        return (try? NativeTitleLaunchProfile.read(productID: productID, defaults: defaults,
                                             provider: .calimocho, evidence: evidence)) != nil
     }
 
@@ -35,6 +36,9 @@ enum NativeLaunchSupport: Equatable {
                          engineDefaults: () throws -> NativeEngineDefaults = NativeEngineDefaults.read,
                          registryDigest: (String) -> String? = Self.fileDigest,
                          releaseStatus: (CalimochoReleasePin) -> CalimochoReleaseError? = Self.releaseManifestStatus) -> Self {
+        guard productID != NativeFH6Recipe.productID || NativeFH6Recipe.enabled else {
+            return .notSupported(NativeLaunchError.titleRecipeUnavailable.localizedDescription)
+        }
         let profile: NativeTitleLaunchProfile?
         do {
             profile = try NativeTitleLaunchProfile.read(productID: productID, defaults: defaults,
@@ -47,14 +51,20 @@ enum NativeLaunchSupport: Equatable {
         guard let profile else { return .notSupported(notSupportedReason) }
         // An explicit per-game engine choice is re-verified at launch; it is never substituted here.
         if hasEngineOverride { return .supported }
-        if profile.engine == nil, defaults.data(forKey: NativeEngineDefaults.preferenceKey) != nil { return .supported }
+        if profile.engine == nil {
+            do {
+                if try NativeEngineDefaults.savedAdmission(defaults: defaults) != nil { return .supported }
+            } catch {
+                return .engineMissing(NativeLaunchError.selectionChanged.localizedDescription)
+            }
+        }
         guard let catalog = try? engineDefaults() else { return .engineMissing(engineMissingReason(profile.engine)) }
         let engine = profile.engine ?? catalog.defaultEngine
         guard let binding = catalog.bindings.first(where: { $0.engineName == engine }),
               profile.registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
             return .engineMissing(engineMissingReason(engine))
         }
-        if let pin = binding.release {
+        if let pin = binding.release ?? (binding.isFH6Recipe ? .release06 : nil) {
             // Cheap presence check; the full hash and signature verification runs before launch.
             switch releaseStatus(pin) {
             case .none: return .supported

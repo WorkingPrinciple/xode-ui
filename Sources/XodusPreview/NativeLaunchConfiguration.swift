@@ -495,6 +495,7 @@ struct NativeLaunchConfiguration {
 
     static func validateOverride(_ selection: AdmittedEngineSelection, game: InstalledGame,
                                  defaults: UserDefaults = .standard) throws {
+        try NativeFH6Recipe.requireEnabled(productID: game.storeId)
         if let engine = selection.inspection.engineName {
             try NativeFH6Recipe.validate(game: game, engine: engine)
         }
@@ -517,8 +518,7 @@ struct NativeLaunchConfiguration {
         guard provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho, evidence: evidence)
-        let saved = try defaults.data(forKey: NativeEngineDefaults.preferenceKey)
-            .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+        let saved = try NativeEngineDefaults.savedAdmission(defaults: defaults)
         let catalog = try engineDefaults ?? NativeEngineDefaults.read()
         let selection: AdmittedEngineSelection
         if let override = game.engineOverrideV2 {
