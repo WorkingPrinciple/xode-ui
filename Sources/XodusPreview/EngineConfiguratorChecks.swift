@@ -337,12 +337,16 @@ extension EngineConfiguratorChecks {
             let settings = RuntimeProviderSettings(detectCrossOver: { crossOver })
             await settings.refreshCrossOverDependency()
             check(settings.crossOverDependency == crossOver, "REQ109: Render fixture CrossOver state is \(name)")
+            let installerRoot = FileManager.default.temporaryDirectory
+                .appendingPathComponent("XodusEngineConfiguratorEngines-\(UUID().uuidString)")
+            let installer = CalimochoReleaseInstallController(
+                service: CalimochoReleaseInstallService(root: installerRoot))
             for width in [CGFloat(560), CGFloat(820)] {
                 for appearance in [NSAppearance.Name.aqua, .darkAqua] {
                     let form = EngineConfiguratorForm(choices: choices, defaultID: choices[0].id,
                         defaultName: choices[0].name, checking: false, error: error, settings: settings,
                         allowsFileReads: true, userEngineStore: store, suggestions: corrupt ? [] : [detected],
-                        setDefault: { _ in }, refresh: {}) {
+                        setDefault: { _ in }, refresh: {}, calimochoInstaller: installer) {
                             LabeledContent("Registry", value: "/Users/example/engines/registry.json")
                         }
                     let host = NSHostingView(rootView: form.frame(width: width, height: 900)

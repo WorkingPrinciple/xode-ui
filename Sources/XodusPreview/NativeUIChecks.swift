@@ -42,7 +42,11 @@ enum NativeUIChecks {
             return
         }
         defer { defaults.removePersistentDomain(forName: suite) }
-        let state = AppState(settingsDefaults: defaults)
+        let testEnginesRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("XodusSettingsEngines-\(UUID().uuidString)", isDirectory: true)
+        let installer = CalimochoReleaseInstallController(
+            service: CalimochoReleaseInstallService(root: testEnginesRoot))
+        let state = AppState(settingsDefaults: defaults, calimochoInstaller: installer)
         let session = LiveSession()
         let renderDirectory = ProcessInfo.processInfo.environment["XODUS_SETTINGS_RENDER_DIRECTORY"]
             .map(URL.init(fileURLWithPath:))

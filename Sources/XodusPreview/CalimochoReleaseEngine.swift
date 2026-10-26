@@ -16,6 +16,8 @@ struct CalimochoReleasePin: Equatable, Sendable {
     let renderer: String
     let downloadURL: URL?
     let archiveSha256: String?
+    let archiveByteCount: Int64?
+    let expandedByteCount: Int64?
     let attestation: String
 
     static let release04 = Self(
@@ -28,6 +30,8 @@ struct CalimochoReleasePin: Equatable, Sendable {
         renderer: "apple-4.0b3",
         downloadURL: URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip"),
         archiveSha256: "193420eff603e05e9c76344de14e961ed230f016fd129f00667a176251a2fb6b",
+        archiveByteCount: 200_070_449,
+        expandedByteCount: 695_591_512,
         attestation: "Calimocho release engine-0.1120.4.4 (REQ-115 release smoke run)")
 
     static let all: [Self] = [.release04]

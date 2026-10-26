@@ -100,8 +100,8 @@ and real acquisition actions; configured default and exact registry selection;
 progressive disclosure for legacy bottles, graphics declarations and diagnostics.
 Use standard Pickers, buttons, selectable locations, semantic text and adaptive
 action rows, with explicit missing/checking/error/unsupported states. Actual
-download UI is withheld until a trusted distribution exists. Source/native
-render evidence, installed delivery and product acceptance are separate gates.
+download controls use only the pinned, trusted release. Source/native render
+evidence, installed delivery and product acceptance are separate gates.
 
 ## Calimocho release engine discovery (REQ-115/B3, first beta)
 
@@ -109,7 +109,8 @@ render evidence, installed delivery and product acceptance are separate gates.
 - The app runs a fast local pre-filter: it hashes the descriptor, the `MANIFEST.sha256` file itself and the `wine`/`wineserver` binaries against the compiled pins, and checks their code signatures against `anchor apple generic and certificate leaf[subject.OU] = "M62Z4M5EUY"`. The app does **not** verify individual manifest entries or the rest of the tree; backend `engine-inspect` does (descriptor hash, every manifested file and link, no extra entries, signatures). It expands `${ENGINE_ROOT}` and refuses `DYLD_*`, `MTL_HUD*`, `PATH`, `HOME`, unknown variables, absolute paths and paths that escape the engine folder. It then renders a private local registry with absolute paths.
 - Backend `engine-inspect` remains the admission gate. The Engines pane shows Calimocho as Ready only when the pre-filter passes **and** `engine-inspect` admitted this exact engine (name, Wine and wineserver digests); launch re-inspects and refuses when it isn't admitted. Admission checks identity and integrity only: it is not title qualification, and it grants no right to bundle or redistribute Apple GPTK components. X Ode points to the owner-published archive but does not bundle or republish the engine.
 - Shipped defaults pin the release engine by name and its wine/wineserver pins, not by a registry path or digest. If the engine is missing, Play says that Calimocho isn't installed and nothing else is substituted.
-- The published archive is `https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip` (SHA-256 `193420eff603e05e9c76344de14e961ed230f016fd129f00667a176251a2fb6b`). “Get Calimocho” opens that owner-published archive; X Ode does not install or bundle it. Extract the engine folder under `~/Library/Application Support/Xode/Engines/`; it still must pass local checks and backend admission before it is Ready.
+- The published archive is `https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip` (200,070,449 bytes; SHA-256 `193420eff603e05e9c76344de14e961ed230f016fd129f00667a176251a2fb6b`). “Get Calimocho” downloads it in-app, checks free space, exact size and SHA-256, validates the ZIP layout and extracted links, extracts into private staging with `/usr/bin/ditto`, verifies the release, and places it without replacing an existing engine. Cancelled or failed installs clean staging. Backend admission remains the only Ready gate.
+- Engines and sign-in readiness share install progress and cancellation. The Engines pane offers Show in Finder and confirmed removal to the Trash; removal refuses while a game or game operation is active, and does not modify prefixes or saves. After install or removal, Ode refreshes engine admission. It never treats the local archive check as Ready.
 - **Temporary developer-local exception:** No Man's Sky keeps its private `calimocho-wine11.20-gptk4b3-tls-vulkan-private` binding (`developerLocal: true`). It resolves only when the exact pinned registry exists and hash-verifies on this Mac. On any other Mac it reports that the tested engine isn't installed, without substitution. NMS moves to the release engine only after a save-backed qualification, which is a separate decision. Release notes for the first beta must state this exception.
 
 ## Persisted launch selection (M3)

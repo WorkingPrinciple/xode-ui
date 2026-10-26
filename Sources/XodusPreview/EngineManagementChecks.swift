@@ -87,7 +87,12 @@ enum EngineManagementChecks {
               && !String(decoding: bundled, as: UTF8.self).contains("/Users/"),
               "REQ115 B3: shipped engine defaults pin the release engine by name and keep only the documented NMS developer-local exception")
 
-        let root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".xodus-req115-engine-\(UUID().uuidString)")
+        guard let canonicalTemporary = realpath(FileManager.default.temporaryDirectory.path, nil) else {
+            throw CalimochoInstallError.invalidArchive("The temporary test folder couldn't be resolved.")
+        }
+        let root = URL(fileURLWithPath: String(cString: canonicalTemporary), isDirectory: true)
+            .appendingPathComponent("xodus-req115-engine-\(UUID().uuidString)")
+        free(canonicalTemporary)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         defer { try? FileManager.default.removeItem(at: root) }
         let engines = root.appendingPathComponent("Engines"), registries = root.appendingPathComponent("registries")
@@ -115,7 +120,8 @@ enum EngineManagementChecks {
                 wineserverSha256: CalimochoReleaseEngines.digest(Data("server".utf8)),
                 engineJSONSha256: CalimochoReleaseEngines.digest(json),
                 manifestSha256: CalimochoReleaseEngines.digest(Data(listing.utf8)), teamID: "M62Z4M5EUY",
-                renderer: "apple-4.0b3", downloadURL: nil, archiveSha256: nil, attestation: "fixture")
+                renderer: "apple-4.0b3", downloadURL: nil, archiveSha256: nil,
+                archiveByteCount: nil, expandedByteCount: nil, attestation: "fixture")
         }
         let signed: (URL, String) -> Bool = { _, requirement in requirement.contains("\"M62Z4M5EUY\"") }
         func outcome(_ pin: CalimochoReleasePin, signature: @escaping (URL, String) -> Bool = signed) -> CalimochoReleaseError? {
@@ -191,19 +197,12 @@ enum EngineManagementChecks {
               && CalimochoReleaseEngines.installedNames(root: engines).isEmpty,
               "REQ115 B3: a symlinked engine folder is neither discovered nor verified")
 
-        let installed = CalimochoReleaseEngines.defaultEnginesRoot.appendingPathComponent(name)
-        if FileManager.default.fileExists(atPath: installed.path) {
-            // Read-only: verifies this Mac's real release install against compiled pins and its Developer ID signature.
-            let real = Result { try CalimochoReleaseEngines.verify(.release04) }
-            let render = (try? real.get()).flatMap { try? CalimochoReleaseEngines.renderRegistry($0, registries: registries) }
-            check((try? real.get()) != nil && render != nil,
-                  "REQ115 B3: installed release engine on this Mac matches compiled pins and Team ID M62Z4M5EUY (\((try? real.get()) == nil ? String(describing: real) : "verified"))")
-        }
     }
 
     static func run(check: (Bool, String) -> Void) async throws {
         launchSupportChecks(check: check)
         try releaseEngineChecks(check: check)
+        try await CalimochoReleaseInstallerChecks.run(check: check)
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).resolvingSymlinksInPath()
             .appendingPathComponent("EngineManagementChecks-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)

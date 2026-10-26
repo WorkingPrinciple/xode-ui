@@ -363,7 +363,8 @@ struct LiveRootView: View {
                                            SettingsPaneSelection.select(pane)
                                            state.showingReadiness = false
                                            openSettings()
-                                       }, done: { state.showingReadiness = false })
+                                       }, done: { state.showingReadiness = false },
+                                       calimochoInstaller: state.calimochoInstaller)
             } else {
 #if !XODUS_SHIPPING
             LiveAccountView(refreshStatusOnAppear: !PreviewExporter.liveDataRequested)

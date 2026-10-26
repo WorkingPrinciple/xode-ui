@@ -543,8 +543,10 @@ enum CalimochoAvailability: Equatable, Sendable {
     }
 
     /// Runs the release verification off the main actor; it reads and hashes the engine.
-    static func verifyReleaseInBackground() async -> Self {
-        await Task.detached(priority: .utility) { CalimochoAvailability.verifiedRelease() }.value
+    static func verifyReleaseInBackground(
+        root: URL = CalimochoReleaseEngines.defaultEnginesRoot
+    ) async -> Self {
+        await Task.detached(priority: .utility) { CalimochoAvailability.verifiedRelease(root: root) }.value
     }
 
     var needsDownload: Bool {
@@ -566,9 +568,7 @@ enum CalimochoAvailability: Equatable, Sendable {
     var message: String? {
         switch self {
         case .missing:
-            "Calimocho isn't installed. \(AppBrand.displayName) needs Calimocho to play games."
-                + (CalimochoRelease.downloadPublished
-                   ? " Download it and install the engine folder in your Engines folder, then choose Check Again." : "")
+            "Calimocho isn't installed. Get it to use games pinned to this release."
         case .invalid(let reason): "Calimocho couldn't be verified. \(reason)"
         case .pendingVerification:
             "Calimocho is installed. It will be ready once \(AppBrand.displayName) verifies it."
@@ -577,18 +577,93 @@ enum CalimochoAvailability: Equatable, Sendable {
     }
 }
 
-/// The download control, or a plain notice while no release asset is published.
-struct CalimochoDownloadAction: View {
+struct CalimochoReleaseInstallControls: View {
+    @ObservedObject var installer: CalimochoReleaseInstallController
+    var isBusy: @MainActor @Sendable () -> Bool = { true }
+    var refreshAdmission: @MainActor () async -> Bool = { false }
+    var allowsRemoval = true
+    @State private var confirmingRemoval = false
+
     var body: some View {
-        if let downloadURL = CalimochoRelease.downloadURL {
-            Link(CalimochoRelease.getTitle, destination: downloadURL)
-                .accessibilityIdentifier("xodus.engines.calimocho.get")
-        } else {
-            Text(CalimochoRelease.unpublishedNotice)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("xodus.engines.calimocho.unpublished")
+        VStack(alignment: .leading, spacing: 8) {
+            if let progress = installer.progress {
+                if let fraction = progress.fraction {
+                    ProgressView(value: fraction)
+                        .accessibilityLabel("Calimocho download progress")
+                } else {
+                    ProgressView().controlSize(.small)
+                }
+                HStack {
+                    Text(progress.label).foregroundStyle(.secondary)
+                    Spacer()
+                    if progress != .checkingAdmission && progress != .removing {
+                        Button("Cancel", action: installer.cancel)
+                            .accessibilityIdentifier("xodus.engines.calimocho.cancel")
+                    }
+                }
+                .accessibilityIdentifier("xodus.engines.calimocho.progress")
+            } else if !installer.hasEngineFolder {
+                if CalimochoRelease.downloadPublished {
+                    HStack {
+                        Button(CalimochoRelease.getTitle) {
+                            installer.install(refreshAdmission: refreshAdmission)
+                        }
+                        .accessibilityIdentifier("xodus.engines.calimocho.get")
+                        Text(downloadSize).font(.caption).foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text(CalimochoRelease.unpublishedNotice)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.engines.calimocho.unpublished")
+                }
+            }
+            if let error = installer.errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.engines.calimocho.error")
+            }
+            if let notice = installer.notice {
+                Label(notice, systemImage: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.engines.calimocho.notice")
+            }
+            if installer.hasEngineFolder {
+                Text(installer.engineURL.path)
+                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                    .accessibilityIdentifier("xodus.engines.calimocho.location")
+                HStack {
+                    Button("Show in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([installer.engineURL])
+                    }
+                    .accessibilityIdentifier("xodus.engines.calimocho.show")
+                    if allowsRemoval {
+                        Button("Remove Calimocho…", role: .destructive) { confirmingRemoval = true }
+                            .disabled(isBusy() || installer.isWorking)
+                            .help("Quit any running game and finish active operations before removing Calimocho.")
+                            .accessibilityIdentifier("xodus.engines.calimocho.remove")
+                    }
+                }
+            }
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .confirmationDialog("Move Calimocho to the Trash?", isPresented: $confirmingRemoval,
+                            titleVisibility: .visible) {
+            Button("Move to Trash", role: .destructive) {
+                installer.remove(isBusy: isBusy, refreshAdmission: { _ = await refreshAdmission() })
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Only the pinned Calimocho engine folder will be moved. Game prefixes and saves won't be changed.")
+        }
+    }
+
+    private var downloadSize: String {
+        guard let pin = CalimochoReleasePin.all.last,
+              let archive = pin.archiveByteCount, let expanded = pin.expandedByteCount else { return "" }
+        return "\(ByteCountFormatter.string(fromByteCount: archive, countStyle: .file)) download · about \(ByteCountFormatter.string(fromByteCount: expanded, countStyle: .file)) installed"
     }
 }
 
@@ -630,6 +705,9 @@ struct EngineConfiguratorForm<Advanced: View>: View {
     var showsAdvanced = true
     /// Host-supplied Calimocho state; nil derives it from the choices alone.
     var calimochoStatus: CalimochoAvailability? = nil
+    var calimochoInstaller: CalimochoReleaseInstallController? = nil
+    var engineRemovalBusy: @MainActor @Sendable () -> Bool = { true }
+    var refreshReleaseAdmission: @MainActor () async -> Bool = { false }
     @ViewBuilder let advanced: () -> Advanced
 
     var body: some View {
@@ -643,7 +721,9 @@ struct EngineConfiguratorForm<Advanced: View>: View {
             checking: checking, error: error, settings: settings, allowsFileReads: allowsFileReads,
             userEngineStore: userEngineStore, suggestions: suggestions, setDefault: setDefault,
             refresh: refresh, showsAdvanced: showsAdvanced, userEngineModel: userEngineModel,
-            calimochoStatus: calimochoStatus, advanced: advanced)
+            calimochoStatus: calimochoStatus, calimochoInstaller: calimochoInstaller,
+            engineRemovalBusy: engineRemovalBusy, refreshReleaseAdmission: refreshReleaseAdmission,
+            advanced: advanced)
     }
 }
 
@@ -659,16 +739,24 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     let refresh: () -> Void
     let showsAdvanced: Bool
     let calimochoStatus: CalimochoAvailability?
+    let engineRemovalBusy: @MainActor @Sendable () -> Bool
+    let refreshReleaseAdmission: @MainActor () async -> Bool
     let advanced: () -> Advanced
     @StateObject private var ownedUsers: UserEngineModel
+    @StateObject private var ownedCalimochoInstaller: CalimochoReleaseInstallController
     private var users: UserEngineModel { ownedUsers }
+    private var calimochoInstaller: CalimochoReleaseInstallController { ownedCalimochoInstaller }
     @State private var advancedExpanded = false
 
     init(choices: [EngineChoice], defaultID: String?, defaultName: String, checking: Bool, error: String?,
          settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
          suggestions: [UserEngine], setDefault: @escaping (String) -> Void, refresh: @escaping () -> Void,
          showsAdvanced: Bool = true, userEngineModel: UserEngineModel? = nil,
-         calimochoStatus: CalimochoAvailability? = nil, advanced: @escaping () -> Advanced) {
+         calimochoStatus: CalimochoAvailability? = nil,
+         calimochoInstaller: CalimochoReleaseInstallController? = nil,
+         engineRemovalBusy: @escaping @MainActor @Sendable () -> Bool = { true },
+         refreshReleaseAdmission: @escaping @MainActor () async -> Bool = { false },
+         advanced: @escaping () -> Advanced) {
         self.choices = choices
         self.defaultID = defaultID
         self.defaultName = defaultName
@@ -680,9 +768,13 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         self.refresh = refresh
         self.showsAdvanced = showsAdvanced
         self.calimochoStatus = calimochoStatus
+        self.engineRemovalBusy = engineRemovalBusy
+        self.refreshReleaseAdmission = refreshReleaseAdmission
         self.advanced = advanced
         _ownedUsers = StateObject(wrappedValue:
             userEngineModel ?? UserEngineModel(store: userEngineStore, suggestions: suggestions))
+        _ownedCalimochoInstaller = StateObject(wrappedValue:
+            calimochoInstaller ?? CalimochoReleaseInstallController())
     }
 
     private var calimocho: CalimochoAvailability {
@@ -710,8 +802,9 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 Label(message, systemImage: calimocho.needsDownload ? "exclamationmark.triangle" : "clock")
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.engines.calimocho.status")
-                if calimocho.needsDownload { CalimochoDownloadAction() }
             }
+            CalimochoReleaseInstallControls(installer: calimochoInstaller, isBusy: engineRemovalBusy,
+                                            refreshAdmission: refreshReleaseAdmission)
         }
         Section {
             Picker("Default Engine", selection: Binding(

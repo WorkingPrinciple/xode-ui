@@ -7,6 +7,8 @@ import XodusManagement
 struct RuntimeInstallationPicker: View {
     @ObservedObject var settings: RuntimeProviderSettings
     @ObservedObject private var installed: InstalledGamesController
+    @ObservedObject private var operations: GameOperationsController
+    @ObservedObject private var calimochoInstaller: CalimochoReleaseInstallController
     var backendPath = ""
     var embeddedInSettings = false
     var showsAdvanced = true
@@ -21,10 +23,17 @@ struct RuntimeInstallationPicker: View {
     init(settings: RuntimeProviderSettings, backendPath: String = "",
          installed: InstalledGamesController? = nil, embeddedInSettings: Bool = false,
          showsAdvanced: Bool = true, registryObservation: EngineRegistryObservation? = nil,
-         userEngineModel: UserEngineModel = UserEngineModel()) {
+         userEngineModel: UserEngineModel = UserEngineModel(),
+         operations: GameOperationsController? = nil,
+         calimochoInstaller: CalimochoReleaseInstallController? = nil) {
         self.settings = settings
         self.backendPath = backendPath
-        self.installed = installed ?? InstalledGamesController()
+        let installedController = installed ?? InstalledGamesController()
+        _installed = ObservedObject(wrappedValue: installedController)
+        _operations = ObservedObject(wrappedValue:
+            operations ?? GameOperationsController(installed: installedController))
+        _calimochoInstaller = ObservedObject(wrappedValue:
+            calimochoInstaller ?? CalimochoReleaseInstallController())
         self.embeddedInSettings = embeddedInSettings
         self.showsAdvanced = showsAdvanced
         self.userEngineModel = userEngineModel
@@ -71,7 +80,23 @@ struct RuntimeInstallationPicker: View {
             },
             showsAdvanced: showsAdvanced,
             calimochoStatus: .from(choices: choices, checking: installed.checkingEngineOverrides || settingDefault,
-                                   release: releaseStatus)) {
+                                   release: releaseStatus),
+            calimochoInstaller: calimochoInstaller,
+            engineRemovalBusy: { [installed, operations, settings] in
+                settings.applicationTerminating || !installed.loaded
+                    || installed.accountDisconnecting || installed.editing || installed.choosing
+                    || installed.runningGameID != nil || installed.stoppingGameID != nil
+                    || installed.mutationActive || operations.isBusy || operations.serviceBusy
+                    || operations.setupRepairing || operations.orphanRunning
+                    || operations.recoveryRequired || operations.checkingRecovery
+            },
+            refreshReleaseAdmission: {
+                await installed.refreshEngineOverrides(force: true)
+                releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(root: calimochoInstaller.enginesRoot)
+                return installed.availableEngineOverrides.contains {
+                    $0.inspection.engineName == CalimochoRelease.engineID
+                }
+            }) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)
         }
@@ -90,7 +115,7 @@ struct RuntimeInstallationPicker: View {
         .task(id: "\(allowsFileReads):\(releaseCheck)") {
             guard allowsFileReads else { return }
             releaseStatus = .checking
-            let status = await CalimochoAvailability.verifyReleaseInBackground()
+            let status = await CalimochoAvailability.verifyReleaseInBackground(root: calimochoInstaller.enginesRoot)
             guard !Task.isCancelled else { return }
             releaseStatus = status
         }
