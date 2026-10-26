@@ -513,6 +513,7 @@ struct NativeLaunchConfiguration {
                                runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
                                evidence: MacGameEvidence.Game? = nil,
                                engineDefaults: NativeEngineDefaults? = nil) async throws -> Self {
+        try NativeFH6Recipe.requireEnabled(productID: game.storeId)
         guard provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho, evidence: evidence)
@@ -592,6 +593,7 @@ struct NativeLaunchConfiguration {
                                 provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
                                 detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect,
                                 candidateOverride: NativeCandidateLaunchCatalogue.Row?) throws -> Self {
+        try NativeFH6Recipe.requireEnabled(productID: game.storeId)
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         let selected: AdmittedEngineSelection?

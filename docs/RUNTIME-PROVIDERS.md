@@ -139,6 +139,10 @@ Other titles retain their existing runtime/shim contracts and the blanket refusa
 of arbitrary admitted overlays/imports/DLL overrides. The app-pinned runtime pair
 still needs a70's fresh-prefix sign-in/free-roam and forced-update live checks;
 source/mock checks do not establish that product gate or a signed producer rebind.
+Normal builds keep the FH6 launch gate closed until that live receipt is admitted.
+A separately labelled qualification candidate may be compiled with
+`-Xswiftc -DXODUS_FH6_QUALIFICATION`; this opens only the app feature gate, never
+the engine/title admission or preparation checks. It is not release qualification.
 
 ## Persisted launch selection (M3)
 

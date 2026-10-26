@@ -789,6 +789,12 @@ enum NativeLifecycleChecks {
         let profile = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == NativeFH6Recipe.productID }
         guard let profile else { throw NativeLaunchError.invalidProfile }
         try NativeFH6Recipe.validate(profile: profile)
+        if !NativeFH6Recipe.enabled {
+            do {
+                try NativeFH6Recipe.requireEnabled(productID: NativeFH6Recipe.productID)
+                check(false, "REQ125: ordinary builds keep FH6 gated pending live qualification")
+            } catch { check(true, "REQ125: ordinary builds keep FH6 gated pending live qualification") }
+        }
         check(profile.engine == NativeFH6Recipe.engineName && profile.prefixOverlays == nil
               && profile.environment.isEmpty && profile.executable == "forzahorizon6.exe",
               "REQ125: immutable FH6 profile selects the isolated title contract, never arbitrary admitted overlays")
