@@ -6,8 +6,8 @@ enum WelcomeCopy {
     static let signIn = "Sign in with Microsoft"
     static var technology: String { FeaturedCredits.signInLine }
     static var credits: String { FeaturedCredits.whereToFind }
-    static let acknowledgments = "Acknowledgments"
-    static let acknowledgmentsAccessibility = "Open-source acknowledgments"
+    static var acknowledgments: String { FeaturedCredits.creditsLinkTitle }
+    static let acknowledgmentsAccessibility = "Open-source acknowledgments and licences"
     static let checking = "Checking your Microsoft account"
     /// While a saved sign-in is restored at launch; "needs to be reconnected" only after it fails.
     static let restoring = "Checking your sign-in…"
@@ -74,7 +74,7 @@ struct LiveWelcomeView: View {
                                   || session.restoringSignIn)
                         .accessibilityIdentifier("xodus.welcome.signIn")
                     }
-                    if session.connectionTransitioning || session.accountBusy {
+                    if session.connectionTransitioning || session.accountBusy || session.restoringSignIn {
                         OdeLoadingStatus(title: WelcomeCopy.checking, message: WelcomeCopy.keychain)
                             .frame(maxWidth: 360)
                     }
@@ -87,15 +87,18 @@ struct LiveWelcomeView: View {
                             .font(.callout).multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("xodus.welcome.technology")
-                        Text(WelcomeCopy.credits)
-                            .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("xodus.welcome.credits")
-                        // Works signed out and offline: the notices ship with the app.
-                        Button(WelcomeCopy.acknowledgments, action: openAcknowledgmentsAction)
-                            .buttonStyle(.link).font(.footnote)
-                            .accessibilityLabel(WelcomeCopy.acknowledgmentsAccessibility)
-                            .accessibilityIdentifier("xodus.welcome.acknowledgments")
+                        // One line: the link, then where else to find it. Works signed out and offline.
+                        HStack(spacing: 3) {
+                            Button(WelcomeCopy.acknowledgments, action: openAcknowledgmentsAction)
+                                .buttonStyle(.link)
+                                .accessibilityLabel(WelcomeCopy.acknowledgmentsAccessibility)
+                                .accessibilityHint("Also in the \(AppBrand.displayName) menu")
+                                .accessibilityIdentifier("xodus.welcome.acknowledgments")
+                            Text(WelcomeCopy.credits).foregroundStyle(.secondary)
+                                .accessibilityHidden(true)
+                                .accessibilityIdentifier("xodus.welcome.credits")
+                        }
+                        .font(.footnote)
                     }
                     .frame(maxWidth: 360)
                     Spacer(minLength: 24)

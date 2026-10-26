@@ -346,7 +346,10 @@ final class LiveSession: ObservableObject {
     /// The first status read on this connection finished, successfully or not.
     @Published private(set) var initialStatusSettled = false
     @Published private(set) var unverifiedCredentialSince: Date?
+    /// Set when a launch connect will read the saved sign-in; a plain reconnect never enters restoring.
+    @Published private(set) var restoreExpectedSince: Date?
     @Published private var restoreTick = 0
+    private var restoreRereadDone = false
     /// REQ-119: a library collection read waiting to dispatch. License and recent-activity reads hold
     /// back for it, so the cold library isn't queued behind background reads.
     @Published private(set) var libraryReadsWaiting = 0
@@ -719,17 +722,41 @@ final class LiveSession: ObservableObject {
     /// REQ-119: a stored sign-in is still being restored — the launch's first status read hasn't
     /// settled, or the saved credential's identity isn't verified yet. Neutral, never "reconnect".
     static let restoreGrace: TimeInterval = 15
-    static func signInRestoring(statusSettled: Bool, state: CredentialState?, hashValid: Bool,
-                                unverifiedFor: TimeInterval?) -> Bool {
-        guard statusSettled else { return true }
+    /// Bounded: an expected first read that hasn't settled, or an unverified credential, for at most
+    /// `restoreGrace`. A plain reconnect that reads nothing is never "restoring".
+    static func signInRestoring(statusSettled: Bool, restoreExpected: Bool, restoringFor: TimeInterval?,
+                                state: CredentialState?, hashValid: Bool, unverifiedFor: TimeInterval?) -> Bool {
+        guard statusSettled else { return restoreExpected && (restoringFor ?? 0) < restoreGrace }
         return state == .credentialPresent && !hashValid && (unverifiedFor ?? 0) < restoreGrace
+    }
+    /// At the end of the wait, read status once more before showing reconnect copy.
+    static func rereadsStatusAtGrace(state: CredentialState?, hashValid: Bool, alreadyReread: Bool) -> Bool {
+        state == .credentialPresent && !hashValid && !alreadyReread
     }
     var restoringSignIn: Bool {
         guard isReady, supports(.authStatus), !signInPending, !signingOut, accountError == nil,
               !hasConfirmedSignIn else { return false }
-        return Self.signInRestoring(statusSettled: initialStatusSettled, state: authentication?.state,
+        _ = restoreTick
+        return Self.signInRestoring(statusSettled: initialStatusSettled, restoreExpected: restoreExpectedSince != nil,
+            restoringFor: restoreExpectedSince.map { Date().timeIntervalSince($0) },
+            state: authentication?.state,
             hashValid: authentication?.accountHash.map(XboxAccountBinding.valid) == true,
             unverifiedFor: unverifiedCredentialSince.map { Date().timeIntervalSince($0) })
+    }
+    private func scheduleRestoreBound() {
+        let token = generation
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.restoreGrace))
+            guard let self, token == self.generation else { return }
+            if Self.rereadsStatusAtGrace(state: self.authentication?.state,
+                    hashValid: self.authentication?.accountHash.map(XboxAccountBinding.valid) == true,
+                    alreadyReread: self.restoreRereadDone), !self.accountBusy, !self.signInPending {
+                self.restoreRereadDone = true
+                await self.refreshAccount()
+            }
+            guard token == self.generation else { return }
+            self.restoreTick &+= 1
+        }
     }
     var needsAccountDisconnect: Bool {
         guard let state = authentication?.state else { return false }
@@ -1173,6 +1200,8 @@ final class LiveSession: ObservableObject {
             // REQ-119: the launch's sign-in check runs before installed and catalogue reads, so the
             // welcome screen resolves first. Plain reconnects stay anonymous.
             if readingAccountFirst {
+                restoreExpectedSince = Date()
+                scheduleRestoreBound()
                 await refreshAccount()
                 guard token == generation, revision == lifecycleRevision, client === connection else { return }
             }
@@ -1233,6 +1262,8 @@ final class LiveSession: ObservableObject {
         authentication = nil
         initialStatusSettled = false
         unverifiedCredentialSince = nil
+        restoreExpectedSince = nil
+        restoreRereadDone = false
         accountStatusCurrent = false
         nativeSignInHostAdmitted = false
         connectionFailedAfterAdmission = false
@@ -1355,9 +1386,11 @@ final class LiveSession: ObservableObject {
             failedAccountAction = nil
             errorMessage = nil
             initialStatusSettled = true
+            restoreExpectedSince = nil
         } catch {
             guard token == generation, authToken == authenticationGeneration else { return }
             initialStatusSettled = true
+            restoreExpectedSince = nil
             clearRecentLibrary()
             accountStatusCurrent = false
             accountStatusError = error as? ManagementError
@@ -1400,12 +1433,7 @@ final class LiveSession: ObservableObject {
         if status.state == .credentialPresent, status.accountHash.map(XboxAccountBinding.valid) != true {
             if unverifiedCredentialSince == nil {
                 unverifiedCredentialSince = Date()
-                let token = generation
-                Task { [weak self] in
-                    try? await Task.sleep(for: .seconds(Self.restoreGrace))
-                    guard let self, token == self.generation else { return }
-                    self.restoreTick &+= 1
-                }
+                scheduleRestoreBound()
             }
         } else {
             unverifiedCredentialSince = nil

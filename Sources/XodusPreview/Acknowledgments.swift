@@ -264,7 +264,7 @@ enum FeaturedCredits {
     static var xodus: Credit {
         Credit(name: "Xodus", organisation: "xodus-gaming", url: URL(string: "https://github.com/xodus-gaming/xodus")!,
                linkText: "github.com/xodus-gaming/xodus",
-               role: "The Xbox library and install backend \(AppBrand.displayName)'s backend is built on", license: "GPL-3.0",
+               role: "The Xbox library and install engine \(AppBrand.displayName)'s backend builds on", license: "GPL-3.0",
                thanks: "Thank you to the Xodus contributors for the open Xbox library and install work \(AppBrand.displayName) grows from.")
     }
     static var all: [Credit] { [wine, xodus] }
@@ -274,7 +274,10 @@ enum FeaturedCredits {
     /// The sign-in window's two short lines: Wine first, then where the credits are.
     static var signInLine: String { "\(AppBrand.displayName) runs Windows games with Wine and is built on Xodus." }
     static var menuPath: String { "\(AppBrand.displayName) menu › Acknowledgments" }
-    static var whereToFind: String { "Acknowledgments and licences: \(menuPath)." }
+    /// The link title and the words after it read as one line: "Acknowledgments and licences are also
+    /// in the X Ode menu."
+    static let creditsLinkTitle = "Acknowledgments and licences"
+    static var whereToFind: String { "are also in the \(AppBrand.displayName) menu." }
     static let acknowledgmentsMenu = "Acknowledgments…"
     static let licencesMenu = "Open-Source Licences…"
     static let helpMenu = "Acknowledgments and Licences"
@@ -345,18 +348,28 @@ enum KeyOpenSourceProjects {
 
 struct AppAcknowledgmentsView: View {
     static let windowID = "acknowledgments"
-    private enum Selection: Hashable { case overview, component(String) }
+    enum Selection: Hashable { case overview, licences, component(String) }
+    static let licencesTitle = "All components and licences"
+
+    /// Where a menu request lands: Open-Source Licences opens its own page, so it never depends on
+    /// scrolling a Form that isn't laid out yet.
+    static func selection(for focus: AcknowledgmentsNavigation.Focus) -> Selection {
+        focus == .licences ? .licences : .overview
+    }
 
     @State private var inventory: AcknowledgmentsInventory?
     @State private var query = ""
     @State private var selection: Selection? = .overview
-    @ObservedObject private var navigation = AcknowledgmentsNavigation.shared
+    @ObservedObject private var navigation: AcknowledgmentsNavigation
     private let locations: AcknowledgmentsInventory.Locations?
 
     /// Pass an inventory to render without reading files (checks and previews).
-    init(inventory: AcknowledgmentsInventory? = nil, locations: AcknowledgmentsInventory.Locations? = nil) {
+    init(inventory: AcknowledgmentsInventory? = nil, locations: AcknowledgmentsInventory.Locations? = nil,
+         navigation: AcknowledgmentsNavigation = .shared) {
         _inventory = State(initialValue: inventory)
         self.locations = locations
+        _navigation = ObservedObject(wrappedValue: navigation)
+        _selection = State(initialValue: navigation.request.map(Self.selection(for:)) ?? .overview)
     }
 
     private var visible: [OpenSourceComponent] { inventory?.filtered(query) ?? [] }
@@ -367,6 +380,9 @@ struct AppAcknowledgmentsView: View {
                 Label(KeyOpenSourceProjects.header, systemImage: "heart.text.square")
                     .tag(Selection.overview)
                     .accessibilityIdentifier("xodus.acknowledgments.overview")
+                Label(Self.licencesTitle, systemImage: "doc.text")
+                    .tag(Selection.licences)
+                    .accessibilityIdentifier("xodus.acknowledgments.licencesPage")
                 if inventory == nil {
                     ProgressView("Loading notices…").controlSize(.small)
                 }
@@ -396,8 +412,10 @@ struct AppAcknowledgmentsView: View {
             detail
         }
         .searchable(text: $query, placement: .sidebar, prompt: "Search components and licences")
-        .onChange(of: navigation.request) { _, request in
-            if request != nil { selection = .overview }
+        .onChange(of: navigation.request, initial: true) { _, request in
+            guard let request else { return }
+            selection = Self.selection(for: request)
+            navigation.request = nil
         }
         .navigationTitle("Acknowledgments")
         .frame(minWidth: 680, minHeight: 460)
@@ -411,6 +429,8 @@ struct AppAcknowledgmentsView: View {
 
     @ViewBuilder private var detail: some View {
         switch selection {
+        case .licences:
+            licencesPage
         case .component(let id):
             if let component = inventory?.components.first(where: { $0.id == id }) {
                 ComponentNoticeView(component: component)
@@ -423,7 +443,6 @@ struct AppAcknowledgmentsView: View {
     }
 
     private var overview: some View {
-        ScrollViewReader { proxy in
         Form {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
@@ -432,7 +451,6 @@ struct AppAcknowledgmentsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .id("xodus.acknowledgments.top")
             Section(FeaturedCredits.sectionTitle) {
                 ForEach(FeaturedCredits.all, id: \.self) { featuredRow($0) }
             }
@@ -451,7 +469,7 @@ struct AppAcknowledgmentsView: View {
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
             }
-            Section("All components and licences") {
+            Section(Self.licencesTitle) {
                 if let inventory {
                     LabeledContent("Components listed", value: "\(inventory.components.count)")
                     Text(KeyOpenSourceProjects.appSwiftPackages).font(.callout).foregroundStyle(.secondary)
@@ -471,7 +489,6 @@ struct AppAcknowledgmentsView: View {
                     .font(.callout).foregroundStyle(.secondary)
                 Link("\(AppBrand.displayName) source code", destination: AppLegalCopy.source)
             }
-            .id(AcknowledgmentsNavigation.licencesAnchor)
             .accessibilityIdentifier(AcknowledgmentsNavigation.licencesAnchor)
             Section("Trademarks") {
                 Text("CrossOver is a trademark of CodeWeavers, Inc. Microsoft, Xbox, Xbox Live and PC Game Pass are trademarks of the Microsoft group of companies. Game names and artwork belong to their publishers.")
@@ -479,16 +496,41 @@ struct AppAcknowledgmentsView: View {
             }
         }
         .formStyle(.grouped)
-        .onChange(of: navigation.request, initial: true) { _, request in
-            guard let request else { return }
-            navigation.request = nil
-            if request == .licences {
-                withAnimation(nil) { proxy.scrollTo(AcknowledgmentsNavigation.licencesAnchor, anchor: .top) }
+    }
+
+    /// Every shipped component with its licence; choosing one opens its full notice texts.
+    private var licencesPage: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(Self.licencesTitle).font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                    Text("Every component that ships with \(AppBrand.displayName), with its licence. Choose one to read its full licence and notices.")
+                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if let inventory {
+                ForEach(OpenSourceComponent.Origin.allCases, id: \.self) { origin in
+                    let items = inventory.components.filter { $0.origin == origin }
+                    if !items.isEmpty {
+                        Section("\(origin.rawValue) (\(items.count))") {
+                            ForEach(items) { component in
+                                Button {
+                                    selection = .component(component.id)
+                                } label: {
+                                    LabeledContent(component.name, value: component.license ?? "Licence in notices")
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityHint("Opens the full licence and notices")
+                            }
+                        }
+                    }
+                }
             } else {
-                withAnimation(nil) { proxy.scrollTo("xodus.acknowledgments.top", anchor: .top) }
+                ProgressView("Loading notices…").controlSize(.small)
             }
         }
-        }
+        .formStyle(.grouped)
+        .accessibilityIdentifier(AcknowledgmentsNavigation.licencesAnchor + ".page")
     }
 
     private func featuredRow(_ credit: FeaturedCredits.Credit) -> some View {

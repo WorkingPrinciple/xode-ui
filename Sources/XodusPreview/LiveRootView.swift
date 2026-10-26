@@ -30,6 +30,7 @@ struct LiveRootView: View {
     @State private var firstScreenArtwork = FirstScreenArtwork()
     @State private var readinessAfterFirstLoad = false
     @State private var firstLoadDoneFor: String?
+    @State private var firstScreenRequested = Set<String>()
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
@@ -106,7 +107,17 @@ struct LiveRootView: View {
         return !unifiedAccountMode || library.collectionReadStarted || library.snapshot != nil
             || library.error != nil || !session.accountCountryReady
     }
-    private var firstLoadCovers: Bool { firstLoad.covers }
+    /// Covers in the same frame this run's own sign-in confirms, before onChange begins the state.
+    private var interactiveFirstLoadPending: Bool {
+        startupAllowed && unifiedAccountMode && state.unifiedSignInRequested && session.hasConfirmedSignIn
+            && firstLoad.phase == .inactive && firstLoadDoneFor != session.accountHash
+    }
+    private var firstLoadCovers: Bool { firstLoad.covers || interactiveFirstLoadPending }
+    private static let coveringFirstLoad: LibraryFirstLoad = {
+        var value = LibraryFirstLoad()
+        value.begin(at: .now, immediate: true)
+        return value
+    }()
     /// Signed in, but this account's first load hasn't handed over yet; the readiness sheet waits.
     private var firstLoadOutstanding: Bool {
         startupAllowed && unifiedAccountMode && session.hasConfirmedSignIn
@@ -118,8 +129,9 @@ struct LiveRootView: View {
         let projection = state.librarySelection.projection.current
         let art = LibraryCatalogArtwork.shared
         func resolved(_ id: String) -> Bool {
-            art.images[id] != nil || art.detailErrors[id] != nil || art.error != nil
-                || !PCGamesClient.validProductID(id)
+            !PCGamesClient.validProductID(id) || FirstScreenArtwork.resolved(
+                loaded: art.images[id] != nil, failed: art.detailErrors[id] != nil || art.error != nil,
+                requested: firstScreenRequested.contains(id), pending: art.pendingIDs.contains(id))
         }
         var items: [FirstScreenArtwork.Item] = []
         if let hero = projection.hero.first {
@@ -194,6 +206,7 @@ struct LiveRootView: View {
         let ids = firstScreenItems.map(\.id).filter(PCGamesClient.validProductID)
         await LibraryCatalogArtwork.shared.load(ids: ids, market: session.market, language: session.language)
         guard !Task.isCancelled else { return }
+        firstScreenRequested.formUnion(ids)
         let token = firstScreenArtwork.target(firstScreenItems)
         let work = firstScreenArtwork.pending
         let reads = work.map { item in
@@ -252,7 +265,7 @@ struct LiveRootView: View {
         }
         .overlay {
             if firstLoadCovers {
-                LibraryFirstLoadView(state: firstLoad,
+                LibraryFirstLoadView(state: firstLoad.covers ? firstLoad : Self.coveringFirstLoad,
                                      inputs: firstLoadInputs,
                                      showNow: { applyFirstLoad { $0.showLibraryNow() } },
                                      tryAgain: {
@@ -266,6 +279,7 @@ struct LiveRootView: View {
         .onChange(of: firstLoadInputs, initial: true) { _, inputs in
             applyFirstLoad { $0.update(inputs, now: .now) }
         }
+        .onDisappear { state.endFirstLoadCovering() }
         .onChange(of: firstLoad.active) { _, active in
             guard !active, readinessAfterFirstLoad else { return }
             readinessAfterFirstLoad = false
@@ -465,7 +479,8 @@ struct LiveRootView: View {
                 if startupAllowed, unifiedAccountMode, firstLoadDoneFor != session.accountHash,
                    LibraryFirstLoad.shouldBegin(signedIn: true) {
                     firstScreenArtwork = FirstScreenArtwork()
-                    applyFirstLoad { $0.begin(at: .now) }
+                    firstScreenRequested = []
+                    applyFirstLoad { $0.begin(at: .now, immediate: state.unifiedSignInRequested) }
                     readinessAfterFirstLoad = state.unifiedSignInRequested
                 }
             } else {

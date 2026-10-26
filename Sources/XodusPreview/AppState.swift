@@ -122,6 +122,8 @@ final class AppState: ObservableObject {
     @Published var showingReadiness = false
     /// REQ-119: the setup view covers the window; navigation, Import and Account wait.
     @Published var firstLoadCovering = false
+    /// A window that showed the setup view went away; its covering ends with it.
+    func endFirstLoadCovering() { firstLoadCovering = false }
     @Published var destination: Destination = .library
     @Published var query = ""
     @Published private(set) var unifiedSignInRequested = false

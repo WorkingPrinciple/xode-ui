@@ -113,8 +113,10 @@ struct LibraryFirstLoad: Equatable {
             || (inputs.artworkTotal > 0 && inputs.artworkReady >= inputs.artworkTotal))
     }
 
-    mutating func begin(at now: ContinuousClock.Instant) {
-        phase = .pending
+    /// `immediate` right after this run's own sign-in: the setup view covers at once, without the
+    /// grace delay that only restored launches use.
+    mutating func begin(at now: ContinuousClock.Instant, immediate: Bool = false) {
+        phase = immediate ? .loading : .pending
         step = .findingGames
         startedAt = now
         awaitingRetry = false
@@ -245,6 +247,12 @@ struct FirstScreenArtwork: Equatable {
         /// Whether the descriptor read for this game has finished, so a missing reference is final.
         var resolved = true
         var key: String { "\(kind.rawValue):\(reference?.url ?? id)" }
+    }
+
+    /// A game's descriptor is final once loaded, failed, or requested and no longer pending — a
+    /// dropped (e.g. PACKAGE_UNAVAILABLE) descriptor counts as resolved and uses fallback art.
+    static func resolved(loaded: Bool, failed: Bool, requested: Bool, pending: Bool) -> Bool {
+        loaded || failed || (requested && !pending)
     }
 
     private(set) var items: [Item] = []

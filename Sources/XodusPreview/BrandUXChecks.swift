@@ -451,7 +451,7 @@ enum BrandUXChecks {
     static func welcome(check: (Bool, String) -> Void) {
         check(WelcomeCopy.signIn == "Sign in with Microsoft"
               && WelcomeCopy.technology == "X Ode runs Windows games with Wine and is built on Xodus."
-              && WelcomeCopy.credits == "Acknowledgments and licences: X Ode menu › Acknowledgments."
+              && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)" == "Acknowledgments and licences are also in the X Ode menu."
               && WelcomeCopy.keychain.contains("Keychain") && XOdeLockup.accessibilityName == "X Ode",
               "COR186 M7: The login screen is the X Ode lockup, Sign in with Microsoft and the Wine/open-source line")
         for scheme in [ColorScheme.light, .dark] {
@@ -648,7 +648,7 @@ enum BrandUXChecks {
         let welcome = LiveWelcomeView(session: LiveSession(), runtime: RuntimeProviderSettings(),
             operations: GameOperationsController(installed: InstalledGamesController()), openAcknowledgments: { opened = true })
         welcome.openAcknowledgmentsAction()
-        check(opened && WelcomeCopy.acknowledgmentsAccessibility == "Open-source acknowledgments"
+        check(opened && WelcomeCopy.acknowledgmentsAccessibility == "Open-source acknowledgments and licences"
               && AppAcknowledgmentsView.windowID == "acknowledgments",
               "REQ-117: The login screen's Acknowledgments link opens the Acknowledgments window")
         for scheme in [ColorScheme.light, .dark] {
@@ -674,7 +674,7 @@ enum BrandUXChecks {
               && wine.license == "LGPL-2.1-or-later" && wine.role == "Runs Windows games on your Mac"
               && wine.thanks.contains("Wine authors") && wine.thanks.contains("CodeWeavers")
               && xodus.url.absoluteString == "https://github.com/xodus-gaming/xodus" && xodus.license == "GPL-3.0"
-              && xodus.role.contains("Xbox library and install backend") && xodus.thanks.contains("Xodus contributors"),
+              && xodus.role.contains("Xbox library and install engine") && xodus.thanks.contains("Xodus contributors"),
               "REQ-122: Wine (WineHQ, LGPL-2.1-or-later) and Xodus (xodus-gaming, GPL-3.0) each have a role, a thank-you and a working link")
         let about = (AppBrandPresentation.aboutPanelOptions()[.credits] as? NSAttributedString)?.string ?? ""
         check(about.components(separatedBy: "\n").first == FeaturedCredits.aboutLine
@@ -682,8 +682,10 @@ enum BrandUXChecks {
               "REQ-122: About X Ode credits Wine and Xodus in one line above the copyright")
         let line = WelcomeCopy.technology
         check(line.hasPrefix("X Ode runs Windows games with Wine") && line.contains("Xodus")
-              && WelcomeCopy.credits.contains("X Ode menu › Acknowledgments") && line.count <= 70
-              && WelcomeCopy.credits.count <= 70,
+              && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".contains("X Ode menu") && line.count <= 70
+              && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".count <= 70
+              && !FeaturedCredits.xodus.role.lowercased().contains("backend is built on")
+              && FeaturedCredits.xodus.role.components(separatedBy: "backend").count == 2,
               "COR-209: The sign-in window names Wine first, then Xodus, and says where credits and licences are, in two short lines")
         let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
         check(readme.contains(FeaturedCredits.readmeLine) && readme.contains(FeaturedCredits.helpMenu),
@@ -702,6 +704,20 @@ enum BrandUXChecks {
         check(windows == Array(repeating: AppAcknowledgmentsView.windowID, count: 3)
               && focuses == [.overview, .licences, .overview],
               "COR-209: Each menu item opens the Acknowledgments window; Open-Source Licences asks for the licence list")
+        check(AppAcknowledgmentsView.selection(for: .licences) == .licences
+              && AppAcknowledgmentsView.selection(for: .overview) == .overview,
+              "REQ-122 review L5: Open-Source Licences opens its own All components and licences page, so it never depends on scrolling before layout")
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let navigation = AcknowledgmentsNavigation()
+            navigation.request = .licences
+            let page = render(AppAcknowledgmentsView(inventory: AcknowledgmentsInventory(), navigation: navigation),
+                              size: CGSize(width: 860, height: 600), scheme: scheme,
+                              name: "req122-licences-\(suffix)").joined(separator: " ")
+            check(page.contains(AppAcknowledgmentsView.licencesTitle) && page.contains("Choose one to read")
+                  && !page.contains(FeaturedCredits.sectionTitle),
+                  "REQ-122 review L5 render (\(suffix)): The licences request opens on the component and licence list: \(page.prefix(240))")
+        }
         for scheme in [ColorScheme.light, .dark] {
             let suffix = scheme == .dark ? "dark" : "light"
             let labels = render(AppAcknowledgmentsView(inventory: AcknowledgmentsInventory()),
@@ -1033,23 +1049,50 @@ enum BrandUXChecks {
         check(yields && !priority.yieldsToLibraryRead && priority.libraryReadsWaiting == 0,
               "REQ-119 quick win: Recent-activity and license reads hold back while the cold library read waits to dispatch, and the hold always clears")
 
-        let restore: [(Bool, CredentialState?, Bool, TimeInterval?)] = [
-            (false, nil, false, nil), (true, .credentialPresent, false, 0.7), (true, .credentialPresent, false, 2.9)]
-        let restoringPath = restore.allSatisfy {
-            LiveSession.signInRestoring(statusSettled: $0.0, state: $0.1, hashValid: $0.2, unverifiedFor: $0.3)
+        func restoring(settled: Bool, expected: Bool = true, for wait: TimeInterval? = 0.5,
+                       _ state: CredentialState?, hash: Bool, unverified: TimeInterval? = nil) -> Bool {
+            LiveSession.signInRestoring(statusSettled: settled, restoreExpected: expected, restoringFor: wait,
+                                        state: state, hashValid: hash, unverifiedFor: unverified)
         }
-        let confirmed = !LiveSession.signInRestoring(statusSettled: true, state: .credentialPresent, hashValid: true,
-                                                     unverifiedFor: nil)
+        let restoringPath = restoring(settled: false, nil, hash: false)
+            && restoring(settled: true, .credentialPresent, hash: false, unverified: 0.7)
+            && restoring(settled: true, .credentialPresent, hash: false, unverified: 2.9)
+        let confirmed = !restoring(settled: true, .credentialPresent, hash: true)
         let realFailures = [CredentialState.expired, .invalid, .signedOut].allSatisfy {
-            !LiveSession.signInRestoring(statusSettled: true, state: $0, hashValid: false, unverifiedFor: nil)
-        } && !LiveSession.signInRestoring(statusSettled: true, state: .credentialPresent, hashValid: false,
-                                          unverifiedFor: LiveSession.restoreGrace)
+            !restoring(settled: true, $0, hash: false)
+        } && !restoring(settled: true, .credentialPresent, hash: false, unverified: LiveSession.restoreGrace)
         check(restoringPath && confirmed && realFailures && !WelcomeCopy.restoring.contains("reconnect")
               && WelcomeCopy.restoring == "Checking your sign-in…",
               "REQ-119 restore: Launch → first status → identity verification → signed in stays on \"Checking your sign-in…\" and never passes through \"needs to be reconnected\"; that copy appears only for expired or invalid sign-ins, or after a \(Int(LiveSession.restoreGrace)) s unverified wait")
+        check(!restoring(settled: false, expected: false, nil, hash: false)
+              && !restoring(settled: false, for: LiveSession.restoreGrace, nil, hash: false),
+              "REQ-119 review M-A: A plain Reconnect that reads no status is never \"restoring\", and an unanswered launch read stops restoring (and re-enables Sign in) after \(Int(LiveSession.restoreGrace)) s")
+        check(LiveSession.rereadsStatusAtGrace(state: .credentialPresent, hashValid: false, alreadyReread: false)
+              && !LiveSession.rereadsStatusAtGrace(state: .credentialPresent, hashValid: false, alreadyReread: true)
+              && !LiveSession.rereadsStatusAtGrace(state: .credentialPresent, hashValid: true, alreadyReread: false)
+              && !LiveSession.rereadsStatusAtGrace(state: .expired, hashValid: false, alreadyReread: false),
+              "REQ-119 review M-A: At the end of the wait an unverified sign-in is read once more before reconnect copy shows")
         let restoringSession = LiveSession()
         check(!restoringSession.restoringSignIn,
               "REQ-119 restore: A session that can't read sign-in status never sits in the restoring state")
+
+        var immediate = LibraryFirstLoad()
+        immediate.begin(at: t0, immediate: true)
+        check(immediate.covers && immediate.phase == .loading && begun().phase == .pending,
+              "REQ-119 review L1: Right after this run's own sign-in the setup view covers at once; only restored launches wait the grace delay")
+        let dropped = FirstScreenArtwork.resolved(loaded: false, failed: false, requested: true, pending: false)
+        let inFlight = FirstScreenArtwork.resolved(loaded: false, failed: false, requested: true, pending: true)
+        let unasked = FirstScreenArtwork.resolved(loaded: false, failed: false, requested: false, pending: false)
+        var droppedHero = FirstScreenArtwork()
+        _ = droppedHero.target([.init(kind: .hero, id: "9HERO0000002", reference: nil, resolved: dropped)])
+        check(dropped && !inFlight && !unasked && droppedHero.settled,
+              "REQ-119 review L2: A dropped hero descriptor (e.g. PACKAGE_UNAVAILABLE) counts as resolved with fallback art, so hand-over doesn't wait 20 s")
+        let windowState = AppState()
+        windowState.firstLoadCovering = true
+        windowState.endFirstLoadCovering()
+        windowState.openAccount()
+        check(!windowState.firstLoadCovering && windowState.showingAccount,
+              "REQ-119 review M-B: Closing the window during setup clears the app-wide covering, so a reopened window's Account, Navigate and Import work")
 
         let still = LibraryFirstLoadMotion(reduceMotion: true)
         let moving = LibraryFirstLoadMotion(reduceMotion: false)
