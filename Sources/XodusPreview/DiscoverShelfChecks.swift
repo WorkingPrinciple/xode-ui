@@ -20,6 +20,9 @@ enum DiscoverShelfChecks {
         try classificationChecks(check: check)
         try shelfChecks(check: check)
         accessBadgeChecks(check: check)
+        check(!RecentActivityCopy.findAction.contains("Store")
+              && !RecentActivityCopy.findLabel("Fixture").contains("Store"),
+              "REQ-60: recent-activity cards name the in-app Discover search, not a Store or source")
     }
 
     private static func accessBadgeChecks(check: (Bool, String) -> Void) {

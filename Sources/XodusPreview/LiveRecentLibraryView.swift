@@ -19,6 +19,12 @@ private final class RecentLibrarySelection: ObservableObject {
     @Published var platform: RecentPlatformFilter = .all
 }
 
+/// REQ-60: recent-activity cards carry no source or Store wording; the action searches Discover in Ode.
+enum RecentActivityCopy {
+    static let findAction = "Find in Discover"
+    static func findLabel(_ name: String) -> String { "Find \(name) in Discover" }
+}
+
 struct LiveRecentLibraryView: View {
     let query: String
     let openAccount: () -> Void
@@ -83,11 +89,11 @@ struct LiveRecentLibraryView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
                                 Text(title.name).font(.headline).lineLimit(2)
                                     .frame(minHeight: 40, alignment: .topLeading)
-                                Text("Reported: \(title.platform.label)").font(.caption).foregroundStyle(.secondary)
                                 storeAction(for: title)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityElement(children: .contain)
+                            .accessibilityValue(title.platform.label)
                         }
                     }
                 }
@@ -131,12 +137,12 @@ struct LiveRecentLibraryView: View {
     }
 
     private func storeAction(for title: RecentLibraryTitle) -> some View {
-        Button("Find in Store") { findInStore(title.name) }
+        Button(RecentActivityCopy.findAction) { findInStore(title.name) }
             .buttonStyle(.bordered)
             .controlSize(.small)
             .disabled(!session.isReady || (!session.supports(.query) && !session.supports(.search)))
-            .accessibilityLabel("Find \(title.name) in Store")
-            .accessibilityHint("Search Microsoft Store for this game name.")
+            .accessibilityLabel(RecentActivityCopy.findLabel(title.name))
+            .accessibilityHint("Search Discover for this game name.")
             .accessibilityIdentifier("xodus.library.findInStore")
     }
 
