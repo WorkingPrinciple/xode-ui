@@ -50,7 +50,7 @@ The output records the metadata superset and distinguishes compiler-artifact
 packages, including host/build/proc-macro dependencies. It is not a claim that
 every recorded package is linked into the shipping executable.
 
-For the beta producer (`99e20addf88932de7796fc966fe09e00b71e4981`, tree
+For the prior -04 beta producer (`99e20addf88932de7796fc966fe09e00b71e4981`, tree
 `7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`), the initial generated inventory
 was SHA-256 `ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066`.
 It covered 479 package identities, 462 compiler-artifact identities and 326
@@ -76,6 +76,27 @@ both package and release receipts record these pins. The inventory and
 evidence establish provenance and notice-text identity, not legal clearance.
 Do not publish the draft or source archive before the source asset is attached
 and the owner makes the publication decision.
+
+The current -06 producer is `1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb`
+(tree `5ebdba190998fa2c719885dc53cf3e7d2b5c00e1`), with signed manifest
+`04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b`, CLI
+`146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3`, and
+Windows helper `7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed`.
+Its corresponding-source archive
+`xodus-cli-beta-1bcc1c42-source.tar` is SHA-256
+`6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87`
+(8,980,480 bytes; 589 members), from that exact commit and excluding
+`docs/private-ai/` and `docs/private-checkpoints/`.
+The regenerated inventory SHA-256 is
+`3ff49520c8eef04343806c75ab699084a670e2f21ee7adc9194cf8bb1979c425`;
+the matching source-bound supplemental evidence SHA-256 is
+`2d5b88033c9ca273148e13b3e4f1336680b3010bc113f514f4b13caad3e858bb`.
+It covers 479 package identities and 462 compiler-artifact identities, with
+one unresolved corresponding-source delivery and applicable licence/notice
+review obligation. The evidence establishes provenance and notice-text
+identity only, not legal clearance or an X Ode release. Do not publish the
+draft or source archive before the asset is attached and the owner makes the
+publication decision.
 
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are

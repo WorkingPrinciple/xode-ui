@@ -10,16 +10,17 @@ import re
 import stat
 import sys
 
-PRODUCER = "99e20addf88932de7796fc966fe09e00b71e4981"
-PRODUCER_TREE = "7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91"
-CLI_SHA256 = "ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9"
+PRODUCER = "1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb"
+PRODUCER_TREE = "5ebdba190998fa2c719885dc53cf3e7d2b5c00e1"
+CLI_SHA256 = "146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3"
 CLI_BYTES = 28_974_448
-WINDOWS_HELPER_SHA256 = "6564914f1219364fb236eda37bba4d280e6115c2b8f23c20097dc19b8692f929"
+WINDOWS_HELPER_SHA256 = "7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed"
 WINDOWS_HELPER_BYTES = 20_480
-PRODUCER_MANIFEST_SHA256 = "3df7bfcb6c4e2fa082cce67cc7f906d7010d15cedee123ec705dc08c51245e35"
+PRODUCER_MANIFEST_SHA256 = "04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b"
 CARGO_LOCK_SHA256 = "b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868"
-SOURCE_ARCHIVE_SHA256 = "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd"
-SOURCE_ARCHIVE_BYTES = 9_574_400
+SOURCE_ARCHIVE_NAME = "xodus-cli-beta-1bcc1c42-source.tar"
+SOURCE_ARCHIVE_SHA256 = "6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87"
+SOURCE_ARCHIVE_BYTES = 8_980_480
 FEATURES = {"xodus": [], "xodus-cli": [], "xodus-management": ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,
@@ -106,7 +107,7 @@ def validate_producer_inventory(path, expected_digest):
             "Producer-notice inventory has no corresponding-source delivery record")
     source_archive = source_delivery.get("sourceArchive")
     require(type(source_archive) is dict
-            and source_archive.get("file") == "xodus-cli-beta-99e20add-source.tar"
+            and source_archive.get("file") == SOURCE_ARCHIVE_NAME
             and source_archive.get("sha256") == SOURCE_ARCHIVE_SHA256
             and source_archive.get("bytes") == SOURCE_ARCHIVE_BYTES
             and source_archive.get("producer") == expected_producer,

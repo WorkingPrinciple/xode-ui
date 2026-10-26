@@ -11,7 +11,8 @@ import tarfile
 import tomllib
 import urllib.parse
 
-from shipping_pair import owned_bytes, require, unique_object
+from shipping_pair import (SOURCE_ARCHIVE_BYTES, SOURCE_ARCHIVE_NAME, SOURCE_ARCHIVE_SHA256,
+                           owned_bytes, require, unique_object)
 
 
 def digest(data):
@@ -487,9 +488,9 @@ def add_supplement(output, report_directory, report_sha256, evidence_directory,
     require(resolved <= set(inventory["unresolved"]),
             "Supplemental evidence attempted to resolve an unknown obligation")
     source_delivery = evidence["sourceDelivery"]
-    require(source_delivery["sourceArchive"]["sha256"]
-            == "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd"
-            and source_delivery["sourceArchive"]["bytes"] == 9_574_400
+    require(source_delivery["sourceArchive"]["file"] == SOURCE_ARCHIVE_NAME
+            and source_delivery["sourceArchive"]["sha256"] == SOURCE_ARCHIVE_SHA256
+            and source_delivery["sourceArchive"]["bytes"] == SOURCE_ARCHIVE_BYTES
             and source_delivery["sourceArchive"]["producer"] == inventory["producer"],
             "Corresponding-source archive differs from the approved producer source")
     channel_status = {channel["id"]: channel["status"]

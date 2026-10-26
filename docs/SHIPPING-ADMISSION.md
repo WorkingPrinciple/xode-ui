@@ -37,30 +37,32 @@ manifest SHA-256
 (1,871 entries). The exact archive and signing evidence are in the producer
 handoff; its last Forza qualification/publication is still pending.
 
-The replacement backend producer is source commit
-`99e20addf88932de7796fc966fe09e00b71e4981`, tree
-`7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`. Its producer pin was externally
-approved. The signed build manifest is
-`3df7bfcb6c4e2fa082cce67cc7f906d7010d15cedee123ec705dc08c51245e35`; the
-paired CLI and Windows helper hashes are `ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9`
-and `6564914f1219364fb236eda37bba4d280e6115c2b8f23c20097dc19b8692f929`.
-The app lane generated the matching producer-notice inventory
-(`5c27f9e24c78f7499fc5cf230b4a9e053c8e079f7880f4ddbfcc9f7a155d457e`) and
-corresponding-source archive
-(`d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd`, 9,574,400
-bytes, 589 members, from the exact commit). The archive excludes
+The current backend producer is source commit
+`1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb`, tree
+`5ebdba190998fa2c719885dc53cf3e7d2b5c00e1`. Its signed build manifest is
+`04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b`; the
+paired CLI and Windows helper hashes are
+`146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3` and
+`7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed`.
+The regenerated producer-notice inventory is
+`3ff49520c8eef04343806c75ab699084a670e2f21ee7adc9194cf8bb1979c425`; its
+source-bound supplemental evidence is
+`2d5b88033c9ca273148e13b3e4f1336680b3010bc113f514f4b13caad3e858bb`. The
+corresponding-source archive is
+`6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87`
+(8,980,480 bytes, 589 members, from the exact commit). It excludes
 `docs/private-ai/` and `docs/private-checkpoints/`. The inventory covers 479
 packages and 462 compiler-artifact identities; its one unresolved obligation
 covers final corresponding-source delivery and applicable licence/notice
 review. The source asset is pending the integrated commit for the GitHub draft
-release. The matching supplemental evidence digest is
-`77601f7da9cb9298973e568c0882230f1059e233b5118089ad3535bfed25d5a2`. Ode
-independently approved both digests. `package_beta.py` pins both notice
-digests, the source commit/tree, and exact source archive bytes; package and
-release receipts record both notice digests. The source tar contains
-`DO_NOT_UPSTREAM`; it is private-tester-only. The GitHub draft asset remains
-pending the final integrated target commit for tag `v0.2.0-beta.1`. Do not
-publish the draft or source archive.
+release. `package_beta.py` pins both notice digests, the source commit/tree,
+and exact source archive bytes; package and release receipts record both
+notice digests. The source tar contains `DO_NOT_UPSTREAM.md` and is
+private-tester-only. The GitHub draft asset remains pending the final
+integrated target commit for tag `v0.2.0-beta.1`. Do not publish the draft or
+source archive.
+The prior 99e20add / -04 backend tuple remains historical; it is not a
+shipping candidate.
 Do not use `-03` descriptor/manifest pins or the earlier backend
 `1fd1341` / `84682aa8…` tuple.
 
@@ -189,18 +191,18 @@ claims Apple acceptance. There is no independent stale exception tuple.
 Existing r7 build/source receipts resolve its provenance rather than requiring
 reconstruction of older evidence. Outer app/DMG acceptance remains mandatory.
 
-The active Xodus shipping pair is the approved producer commit
-`99e20addf88932de7796fc966fe09e00b71e4981`, tree
-`7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`, signed CLI
-`ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9`
+The active Xodus shipping pair is producer commit
+`1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb`, tree
+`5ebdba190998fa2c719885dc53cf3e7d2b5c00e1`, signed CLI
+`146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3`
 (28,974,448 bytes), Windows helper
-`6564914f1219364fb236eda37bba4d280e6115c2b8f23c20097dc19b8692f929`
+`7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed`
 (20,480 bytes), producer manifest
-`3df7bfcb6c4e2fa082cce67cc7f906d7010d15cedee123ec705dc08c51245e35`, and
+`04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b`, and
 Cargo.lock `b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868`.
 The pinned inventory checks these values and binds the corresponding-source
-archive `d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd`
-(9,574,400 bytes) to the same producer. Supplemental-provenance report
+archive `6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87`
+(8,980,480 bytes) to the same producer. Supplemental-provenance report
 metadata naming the prior producer is historical, not an active shipping pin.
 
 Known test-only build issue: release-mode
@@ -710,7 +712,7 @@ python3 tools/release_candidate.py \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
   --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664" \
   --producer-source /absolute/frozen-xodus-macos-checkout \
-  --producer-source-archive /absolute/xodus-cli-beta-99e20add-source.tar \
+  --producer-source-archive /absolute/xodus-cli-beta-1bcc1c42-source.tar \
   --notary-profile notary \
   --dry-run
 ```
@@ -778,7 +780,7 @@ python3 tools/release_candidate.py \
   --resume-receipt /absolute/Ode-release-SESSION/release-receipt.json \
   --producer-notices-sha256 INDEPENDENTLY_APPROVED_SHA256 \
   --dmg-background /absolute/reviewed/dmg-background.tiff \
-  --producer-source-archive /absolute/xodus-cli-beta-99e20add-source.tar \
+  --producer-source-archive /absolute/xodus-cli-beta-1bcc1c42-source.tar \
   --notary-profile notary
 ```
 

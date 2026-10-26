@@ -13,16 +13,20 @@ import tarfile
 import tempfile
 from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, COMMAND, FEATURES, PROFILE,
                            PRODUCER, PRODUCER_MANIFEST_SHA256, PRODUCER_TREE, SOURCE_ARCHIVE_BYTES,
-                           SOURCE_ARCHIVE_SHA256, WINDOWS_HELPER_BYTES, WINDOWS_HELPER_SHA256,
+                           SOURCE_ARCHIVE_NAME, SOURCE_ARCHIVE_SHA256, WINDOWS_HELPER_BYTES,
+                           WINDOWS_HELPER_SHA256, require,
                            main as generate_pair, swift_pins, swift_producer_pins,
                            validate_producer_inventory, verify_input)
 from verify_shipping_package import main as verify_package
 from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_capsule
 from python_runtime import approved_pin, inventory
 from package_resources import RUNTIME_RESOURCES
+from package_beta import PRODUCER_NOTICES_SHA256
 
-SUPERSEDED_PRODUCER = "01d4" + "cfd6" + "25764c2a8ec4d60824ef4f277b30b9e9"
-SUPERSEDED_PRODUCER_PREFIX = SUPERSEDED_PRODUCER[:8]
+SUPERSEDED_PRODUCERS = (
+    "01d4" + "cfd6" + "25764c2a8ec4d60824ef4f277b30b9e9",
+    "99e20" + "addf88932de7796fc966fe09e00b71e4981",
+)
 
 
 def require_current_producer_pins(source_root):
@@ -31,30 +35,87 @@ def require_current_producer_pins(source_root):
             if path.is_file() and not path.is_symlink() and path.suffix in {
                     ".swift", ".py", ".json", ".plist"}:
                 data = path.read_bytes()
-                if SUPERSEDED_PRODUCER.encode() in data or SUPERSEDED_PRODUCER_PREFIX.encode() in data:
+                if any(producer.encode() in data or producer[:8].encode() in data
+                       for producer in SUPERSEDED_PRODUCERS):
                     raise ValueError("Superseded producer pin found in " + str(path.relative_to(source_root)))
+
+
+def require_app_shipping_pins(source_root):
+    producer_pins = (source_root / "Sources/XodusPreview/ShippingProducerPins.swift").read_text(
+        encoding="utf-8")
+    require(f'static let commit = "{PRODUCER}"' in producer_pins
+            and f'static let tree = "{PRODUCER_TREE}"' in producer_pins,
+            "App producer commit/tree differs from the approved shipping pair")
+
+    lifecycle = (source_root / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text(encoding="utf-8")
+    require(f'static let cliSHA256 = "{CLI_SHA256}"' in lifecycle,
+            "Lifecycle CLI digest differs from the approved shipping pair")
+
+    runtime_path = source_root / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    runtime_bytes = runtime_path.read_bytes()
+    runtime = json.loads(runtime_bytes)
+    require(runtime.get("cliSha256") == CLI_SHA256,
+            "Runtime catalogue CLI digest differs from the approved shipping pair")
+    runtime_hash = hashlib.sha256(runtime_bytes).hexdigest()
+    launch_configuration = (source_root / "Sources/XodusPreview/NativeLaunchConfiguration.swift").read_text(
+        encoding="utf-8")
+    require(f'== "{runtime_hash}" else' in launch_configuration,
+            "Runtime catalogue file digest is not pinned in the app")
+
+    acknowledgments = (source_root / "Sources/XodusPreview/Acknowledgments.swift").read_text(encoding="utf-8")
+    require(f'pinnedProducerInventorySHA256 = "{PRODUCER_NOTICES_SHA256}"' in acknowledgments,
+            "App producer-notice inventory digest differs from the packaging pin")
 
 
 count = 0
 project = Path(__file__).resolve().parent.parent
 require_current_producer_pins(project)
+require_app_shipping_pins(project)
 count += 1
 with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     root = Path(temporary).resolve()
     stale_source = root / "stale-source"
     stale_pin = stale_source / "Sources/XodusPreview/ShippingProducerPins.swift"
     stale_pin.parent.mkdir(parents=True)
-    stale_pin.write_text("static let commit = \"" + SUPERSEDED_PRODUCER + "\"", encoding="utf-8")
+    for producer in SUPERSEDED_PRODUCERS:
+        stale_pin.write_text("static let commit = \"" + producer + "\"", encoding="utf-8")
+        try:
+            require_current_producer_pins(stale_source)
+            raise AssertionError("Superseded producer source pin accepted")
+        except ValueError:
+            count += 1
+        stale_pin.write_text("static let commit = \"" + producer[:8] + "\"", encoding="utf-8")
+        try:
+            require_current_producer_pins(stale_source)
+            raise AssertionError("Superseded producer prefix accepted")
+        except ValueError:
+            count += 1
+    for relative in (
+            "Sources/XodusPreview/ShippingProducerPins.swift",
+            "Sources/XodusPreview/NativeGameLifecycle.swift",
+            "Sources/XodusPreview/Acknowledgments.swift",
+            "Sources/XodusPreview/NativeLaunchConfiguration.swift",
+            "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"):
+        destination = stale_source / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(project / relative, destination)
+    stale_app_pin = stale_source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    stale_app_pin.write_text(
+        "enum ShippingProducerPins { static let commit = \"" + SUPERSEDED_PRODUCERS[1] + "\" }",
+        encoding="utf-8")
     try:
-        require_current_producer_pins(stale_source)
-        raise AssertionError("Superseded producer source pin accepted")
+        require_app_shipping_pins(stale_source)
+        raise AssertionError("Mismatched app producer source pin accepted")
     except ValueError:
         count += 1
-    stale_pin.unlink()
-    stale_pin.write_text("static let commit = \"" + SUPERSEDED_PRODUCER_PREFIX + "\"", encoding="utf-8")
+    shutil.copy2(project / "Sources/XodusPreview/ShippingProducerPins.swift", stale_app_pin)
+    stale_runtime = stale_source / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    runtime_data = json.loads(stale_runtime.read_text(encoding="utf-8"))
+    runtime_data["cliSha256"] = "0" * 64
+    stale_runtime.write_text(json.dumps(runtime_data), encoding="utf-8")
     try:
-        require_current_producer_pins(stale_source)
-        raise AssertionError("Superseded producer prefix accepted")
+        require_app_shipping_pins(stale_source)
+        raise AssertionError("Mismatched runtime catalogue CLI pin accepted")
     except ValueError:
         count += 1
     inventory_path = root / "inventory.json"
@@ -64,7 +125,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         "producerManifestSHA256": PRODUCER_MANIFEST_SHA256,
         "cargoLockSHA256": CARGO_LOCK_SHA256,
         "sourceDelivery": {"sourceArchive": {
-            "file": "xodus-cli-beta-99e20add-source.tar",
+            "file": SOURCE_ARCHIVE_NAME,
             "sha256": SOURCE_ARCHIVE_SHA256, "bytes": SOURCE_ARCHIVE_BYTES,
             "producer": {"commit": PRODUCER, "tree": PRODUCER_TREE},
         }},
