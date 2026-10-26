@@ -152,6 +152,11 @@ enum CalimochoReleaseInstallerChecks {
         try FileManager.default.createDirectory(at: stale, withIntermediateDirectories: false,
                                                 attributes: [.posixPermissions: 0o700])
         try Data("interrupted download".utf8).write(to: stale.appendingPathComponent("release.zip"))
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(-660)],
+                                               ofItemAtPath: stale.path)
+        let youngStage = engines.appendingPathComponent(".calimocho-install-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: youngStage, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
         let preserved = engines.appendingPathComponent(".calimocho-install-not-an-owned-uuid")
         try FileManager.default.createDirectory(at: preserved, withIntermediateDirectories: false)
         let staleLink = engines.appendingPathComponent(".calimocho-install-\(UUID().uuidString)")
@@ -188,8 +193,10 @@ enum CalimochoReleaseInstallerChecks {
         }
         check(!FileManager.default.fileExists(atPath: stale.path)
               && FileManager.default.fileExists(atPath: preserved.path)
+              && FileManager.default.fileExists(atPath: youngStage.path)
               && (try? FileManager.default.destinationOfSymbolicLink(atPath: staleLink.path)) == preserved.path,
-              "REQ115: stale private UUID staging is reclaimed without following links or deleting unrelated folders")
+              "REQ115: old private UUID staging is reclaimed, preserving young stages, links and unrelated folders")
+        try FileManager.default.removeItem(at: youngStage)
         try FileManager.default.removeItem(at: staleLink)
         try FileManager.default.removeItem(at: preserved)
         let verified = FileManager.default.fileExists(atPath: installResult.appendingPathComponent("engine.bin").path)
@@ -236,6 +243,17 @@ enum CalimochoReleaseInstallerChecks {
                   "REQ115: an existing engine folder is never overwritten")
         }
         try FileManager.default.removeItem(at: folder)
+
+        let heldLock = open(engines.appendingPathComponent(".calimocho-install.lock").path, O_RDWR | O_CLOEXEC)
+        guard heldLock >= 0, flock(heldLock, LOCK_EX | LOCK_NB) == 0 else { throw GameScriptError.storage }
+        do {
+            _ = try await successful.install { _ in }
+            check(false, "REQ115: a held install lock reports another install in progress")
+        } catch {
+            check(error as? CalimochoInstallError == .installInProgress,
+                  "REQ115: a held install lock reports another install in progress")
+        }
+        close(heldLock)
 
         let lowSpace = service(archive: valid, root: engines, session: session,
                               availableSpace: { _ in Int64(valid.archive.count + valid.expandedBytes) - 1 })
@@ -367,6 +385,41 @@ enum CalimochoReleaseInstallerChecks {
             check(error is CancellationError && dittoTask.isCancelled,
                   "REQ115: cancellation terminates and reaps the actual ditto process")
         }
+        let readyMarker = root.appendingPathComponent("stubborn-extractor-ready")
+        let stubbornTask = Task {
+            try await CalimochoReleaseInstallService.runExtractionProcess(
+                executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "trap '' TERM; /usr/bin/touch '\(readyMarker.path)'; exec /bin/sleep 30"],
+                didStart: { _ in })
+        }
+        let readyDeadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while !FileManager.default.fileExists(atPath: readyMarker.path) {
+            guard ContinuousClock.now < readyDeadline else {
+                stubbornTask.cancel()
+                _ = try? await stubbornTask.value
+                throw CalimochoInstallError.extraction
+            }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let canceledAt = ContinuousClock.now
+        stubbornTask.cancel()
+        do {
+            try await stubbornTask.value
+            check(false, "REQ115: SIGTERM-ignoring extraction is killed and reaped within the shutdown budget")
+        } catch {
+            check(error is CancellationError && canceledAt.duration(to: .now) < .seconds(5),
+                  "REQ115: SIGTERM-ignoring extraction is killed and reaped within the shutdown budget")
+        }
+        let linked = fixture(includeInternalSymlink: true)
+        let canonicalLinksRoot = root.appendingPathComponent("SymlinkEngines")
+        try FileManager.default.createDirectory(at: canonicalLinksRoot, withIntermediateDirectories: false)
+        let caseVariant = root.appendingPathComponent("sYMLINKeNGINES")
+        let linksRoot = FileManager.default.fileExists(atPath: caseVariant.path) ? caseVariant : canonicalLinksRoot
+        CalimochoInstallerURLProtocol.configure(linked.archive)
+        let linkedEngine = try await service(archive: linked, root: linksRoot, session: session).install { _ in }
+        check((try FileManager.default.destinationOfSymbolicLink(atPath:
+                    linkedEngine.appendingPathComponent("bin/wine-link").path)) == "wine",
+              "REQ115: a real ditto install accepts valid internal links, including a case-variant root where supported")
 
         let installed = InstalledGamesController()
         var releaseFirst: CheckedContinuation<Void, Never>?
@@ -401,7 +454,8 @@ enum CalimochoReleaseInstallerChecks {
 
     private static func fixture(topLevel: String = CalimochoReleasePin.release04.engineName,
                                 includeTraversal: Bool = false,
-                                includeEscapingSymlink: Bool = false) -> ArchiveFixture {
+                                includeEscapingSymlink: Bool = false,
+                                includeInternalSymlink: Bool = false) -> ArchiveFixture {
         let files: [(String, Data, UInt32)] = [
             ("\(topLevel)/", Data(), 0x41ed),
             ("\(topLevel)/bin/", Data(), 0x41ed),
@@ -416,6 +470,9 @@ enum CalimochoReleaseInstallerChecks {
         }
         if includeEscapingSymlink {
             entries.append(FixtureEntry(name: "\(topLevel)/escape", data: Data("../../outside".utf8), mode: 0xa1ff))
+        }
+        if includeInternalSymlink {
+            entries.append(FixtureEntry(name: "\(topLevel)/bin/wine-link", data: Data("wine".utf8), mode: 0xa1ff))
         }
         let archive = zip(entries)
         let expanded = entries.reduce(0) { $0 + $1.data.count }

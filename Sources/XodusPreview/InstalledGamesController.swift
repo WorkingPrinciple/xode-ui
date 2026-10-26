@@ -1389,9 +1389,10 @@ final class InstalledGamesController: ObservableObject {
     func refreshEngineOverrides(force: Bool = true, retryFailed: Bool = false) async {
         guard loaded, force || !checkingEngineOverrides, !applicationTerminating,
               force || !engineOverridesChecked || (retryFailed && !failedEngineOverrides.isEmpty),
-              let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
+              unifiedSession?.nativeLifecycleConfiguration != nil else { return }
         await withEngineOverrideCheck {
-            guard !applicationTerminating, !Task.isCancelled else { return }
+            guard !applicationTerminating, !accountDisconnecting, !Task.isCancelled,
+                  let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
             await inspectEngineOverrides(configuration: configuration, force: force)
         }
     }

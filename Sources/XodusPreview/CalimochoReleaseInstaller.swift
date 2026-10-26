@@ -5,28 +5,6 @@ import Darwin
 import Foundation
 import SwiftUI
 
-private final class CalimochoInstallerProcessHandle: @unchecked Sendable {
-    private let lock = NSLock()
-    private var process: Process?
-    private var cancellationRequested = false
-
-    func set(_ process: Process) {
-        lock.lock()
-        self.process = process
-        let shouldTerminate = cancellationRequested
-        lock.unlock()
-        if shouldTerminate, process.isRunning { process.terminate() }
-    }
-
-    func terminate() {
-        lock.lock()
-        cancellationRequested = true
-        let process = process
-        lock.unlock()
-        if let process, process.isRunning { process.terminate() }
-    }
-}
-
 enum CalimochoInstallProgress: Equatable, Sendable {
     case preparing
     case downloading(received: Int64, total: Int64)
@@ -63,6 +41,8 @@ enum CalimochoInstallError: LocalizedError, Equatable {
     case engineMissing
     case engineBusy
     case extraction
+    case extractionShutdownFailed
+    case installInProgress
     case stagingCleanup(String)
     case trash(String)
 
@@ -92,6 +72,10 @@ enum CalimochoInstallError: LocalizedError, Equatable {
             "Quit the running game and finish any game or engine operation before removing Calimocho."
         case .extraction:
             "Calimocho couldn't be unpacked. Temporary files were removed; try again."
+        case .extractionShutdownFailed:
+            "Calimocho extraction hasn't stopped. Keep the app open and try quitting again. Temporary files were kept."
+        case .installInProgress:
+            "Another Calimocho install is in progress. Wait for it to finish, then try again."
         case .stagingCleanup(let detail):
             "The install failed and temporary files couldn't be removed: \(detail)"
         case .trash(let detail):
@@ -149,9 +133,12 @@ struct CalimochoReleaseInstallService: Sendable {
         defer { close(lockFD) }
         var lockInfo = stat()
         guard fstat(lockFD, &lockInfo) == 0, lockInfo.st_mode & S_IFMT == S_IFREG,
-              lockInfo.st_uid == getuid(), lockInfo.st_nlink == 1,
-              flock(lockFD, LOCK_EX | LOCK_NB) == 0 else {
-            throw CalimochoInstallError.invalidArchive("Another install is active or its lock is unsafe.")
+              lockInfo.st_uid == getuid(), lockInfo.st_nlink == 1 else {
+            throw CalimochoInstallError.invalidArchive("The install lock is unsafe.")
+        }
+        guard flock(lockFD, LOCK_EX | LOCK_NB) == 0 else {
+            if errno == EWOULDBLOCK { throw CalimochoInstallError.installInProgress }
+            throw GameScriptError.storage
         }
         try removeStaleStaging()
         guard !existsWithoutFollowingLinks(engineURL) else { throw CalimochoInstallError.engineAlreadyExists }
@@ -205,6 +192,7 @@ struct CalimochoReleaseInstallService: Sendable {
             }
             return engineURL
         } catch {
+            if error as? CalimochoInstallError == .extractionShutdownFailed { throw error }
             do {
                 if existsWithoutFollowingLinks(staging) { try FileManager.default.removeItem(at: staging) }
             } catch {
@@ -247,7 +235,8 @@ struct CalimochoReleaseInstallService: Sendable {
             let candidate = root.appendingPathComponent(name, isDirectory: true)
             var info = stat()
             guard lstat(candidate.path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR,
-                  info.st_uid == getuid(), info.st_mode & 0o777 == 0o700 else { continue }
+                  info.st_uid == getuid(), info.st_mode & 0o777 == 0o700,
+                  Date().timeIntervalSince1970 - Double(info.st_mtimespec.tv_sec) >= 600 else { continue }
             do { try FileManager.default.removeItem(at: candidate) }
             catch { throw CalimochoInstallError.stagingCleanup(error.localizedDescription) }
         }
@@ -299,35 +288,41 @@ struct CalimochoReleaseInstallService: Sendable {
 
     static func dittoExtract(_ archive: URL, _ destination: URL,
                              didStart: @escaping @Sendable (Int32) -> Void) async throws {
-        let processHandle = CalimochoInstallerProcessHandle()
+        try await runExtractionProcess(executable: URL(fileURLWithPath: "/usr/bin/ditto"),
+                                       arguments: ["-x", "-k", archive.path, destination.path], didStart: didStart)
+    }
+
+    static func runExtractionProcess(executable: URL, arguments: [String],
+                                     didStart: @escaping @Sendable (Int32) -> Void) async throws {
+        let process = Process()
+        process.executableURL = executable
+        process.arguments = arguments
         do {
-            try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            try process.run()
+            didStart(process.processIdentifier)
+            while process.isRunning {
                 try Task.checkCancellation()
-                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                    let process = Process()
-                    process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-                    process.arguments = ["-x", "-k", archive.path, destination.path]
-                    process.terminationHandler = { process in
-                        guard process.terminationReason == .exit, process.terminationStatus == 0 else {
-                            continuation.resume(throwing: CalimochoInstallError.extraction)
-                            return
-                        }
-                        continuation.resume(returning: ())
-                    }
-                    do {
-                        try process.run()
-                        processHandle.set(process)
-                        didStart(process.processIdentifier)
-                        if Task.isCancelled { processHandle.terminate() }
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                }
-                try Task.checkCancellation()
-            } onCancel: {
-                processHandle.terminate()
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            try Task.checkCancellation()
+            guard process.terminationReason == .exit, process.terminationStatus == 0 else {
+                throw CalimochoInstallError.extraction
             }
         } catch {
+            if process.isRunning {
+                process.terminate()
+                let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                while process.isRunning, ContinuousClock.now < deadline {
+                    await Task.detached { try? await Task.sleep(for: .milliseconds(10)) }.value
+                }
+                if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+                let killDeadline = ContinuousClock.now.advanced(by: .seconds(2))
+                while process.isRunning, ContinuousClock.now < killDeadline {
+                    await Task.detached { try? await Task.sleep(for: .milliseconds(10)) }.value
+                }
+                guard !process.isRunning else { throw CalimochoInstallError.extractionShutdownFailed }
+            }
             if Task.isCancelled { throw CancellationError() }
             throw error
         }
@@ -526,6 +521,11 @@ struct CalimochoReleaseInstallService: Sendable {
 
     static func verifyExtractedEntries(_ entries: [ArchiveEntry], under root: URL,
                                                engineName: String) throws {
+        guard let engineRoot = realpath(root.appendingPathComponent(engineName).path, nil) else {
+            throw CalimochoInstallError.invalidArchive("The extracted engine folder couldn't be resolved.")
+        }
+        defer { free(engineRoot) }
+        let enginePath = String(cString: engineRoot)
         for entry in entries {
             let url = root.appendingPathComponent(entry.path)
             var info = stat()
@@ -551,7 +551,6 @@ struct CalimochoReleaseInstallService: Sendable {
                     throw CalimochoInstallError.invalidArchive("An extracted symlink leaves the engine folder.")
                 }
                 defer { free(resolved) }
-                let enginePath = root.appendingPathComponent(engineName).path
                 let resolvedPath = String(cString: resolved)
                 guard resolvedPath == enginePath || resolvedPath.hasPrefix(enginePath + "/") else {
                     throw CalimochoInstallError.invalidArchive("An extracted symlink leaves the engine folder.")
@@ -575,6 +574,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
     private let service: CalimochoReleaseInstallService
     private var task: Task<Void, Never>?
     private var terminating = false
+    private var extractionShutdownFailed = false
     private let releaseCheck: CalimochoReleaseCheck
     private let updateDefaults: UserDefaults
     private let now: () -> Date
@@ -626,6 +626,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
                 noticeSymbol = "info.circle"
                 notice = "Download canceled. Temporary files were removed."
             } catch {
+                extractionShutdownFailed = error as? CalimochoInstallError == .extractionShutdownFailed
                 errorMessage = error.localizedDescription
             }
             progress = nil
@@ -635,13 +636,14 @@ final class CalimochoReleaseInstallController: ObservableObject {
 
     func cancel() { task?.cancel() }
 
-    func shutdownForApplicationTermination() async {
+    func shutdownForApplicationTermination() async -> Bool {
         terminating = true
         checkTask?.cancel()
         await checkTask?.value
         let pending = task
         pending?.cancel()
         await pending?.value
+        return !extractionShutdownFailed
     }
 
     func resumeAfterTerminationRefusal() { terminating = false }
@@ -729,6 +731,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
                 notice = "The pinned Calimocho update is installed and admitted."
             } catch {
                 let failure = error
+                extractionShutdownFailed = failure as? CalimochoInstallError == .extractionShutdownFailed
                 if installedNew {
                     do {
                         let target = try service.removalTarget(isBusy: false)
