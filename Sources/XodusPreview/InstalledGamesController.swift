@@ -249,7 +249,7 @@ final class InstalledGamesController: ObservableObject {
             }
             discoveringMounts = false
             if let volumes {
-                let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes).map(\.path))
+                let mounted = Set(Self.mountedDiscoveryRoots(volumes).map(\.path))
                 pendingDiscoveryRoots.formIntersection(mounted)
                 if root == nil { pendingDiscoveryRoots.formUnion(mounted) }
                 undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes)
@@ -261,7 +261,7 @@ final class InstalledGamesController: ObservableObject {
             }
             pendingDiscoveryRoots.subtract(observation.scannedRoots)
             if root == nil {
-                for library in GameInstallationDiscovery.mountedLibraryRoots(volumes) {
+                for library in Self.mountedDiscoveryRoots(volumes) {
                     try Task.checkCancellation()
                     guard loaded, !accountDisconnecting, !applicationTerminating,
                           unifiedSession?.accountHash == account else { return }
@@ -531,13 +531,26 @@ final class InstalledGamesController: ObservableObject {
 
     static func retainingMountedCandidates(_ candidates: [String: String], volumes: [String],
                                           home: String = NSHomeDirectory()) -> [String: String] {
-        let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes, home: home).map(\.path))
+        let mounted = Set(mountedDiscoveryRoots(volumes, home: home).map(\.path))
         return candidates.filter { folder, _ in
             let parent = URL(fileURLWithPath: folder).deletingLastPathComponent()
-            let possible = GameInstallationDiscovery.mountedLibraryRoots(
+            let possible = mountedDiscoveryRoots(
                 [parent.deletingLastPathComponent().path], home: home).map(\.path)
             return !possible.contains(parent.path) || mounted.contains(parent.path)
         }
+    }
+
+    static func mountedDiscoveryRoots(_ volumes: [String]?, home: String = NSHomeDirectory()) -> [URL] {
+        var roots = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes, home: home).map(\.path))
+        let mountDirectory = URL(fileURLWithPath: home).appendingPathComponent("Mounts").standardizedFileURL.path
+        for path in volumes ?? [] {
+            let volume = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+            guard volume.path == path,
+                  (path.hasPrefix(mountDirectory + "/") || path.hasPrefix("/Volumes/")),
+                  ["Xode", "Xodus"].contains(volume.lastPathComponent) else { continue }
+            roots.insert(path)
+        }
+        return roots.sorted().map { URL(fileURLWithPath: $0, isDirectory: true) }
     }
 
     func remove(_ game: InstalledGame) async {
