@@ -309,8 +309,48 @@ final class LiveSession: ObservableObject {
         }
     }
 
+    /// REQ-121: the last Xbox-verified country for an account, as a bare country code keyed by the
+    /// account hash. Applied provisionally at launch so artwork draws at once; re-confirmed in the
+    /// background; removed on sign-out.
+    static func lastVerifiedCountryKey(_ account: String) -> String { "Xodus.accountCountry.lastVerified.\(account)" }
+    @Published private(set) var accountCountryProvisional = false
+
+    /// Uses the last verified country for this account until the profile read confirms it.
+    func applyProvisionalAccountCountry() {
+        guard hasConfirmedSignIn, let account = accountHash, countryAccountHash != account,
+              let code = countryDefaults.string(forKey: Self.lastVerifiedCountryKey(account))
+                .flatMap(XboxAccountCountry.normalized) else { return }
+        countryAccountHash = account
+        countryCode = code
+        market = code
+        accountCountryVerified = false
+        accountCountryNeedsConfirmation = false
+        accountCountryError = nil
+        accountCountryProvisional = true
+        let token = countryGeneration
+        Task { [weak self] in
+            // Behind the library read; a different country re-scopes and refetches the library.
+            guard let self, token == self.countryGeneration else { return }
+            for _ in 0..<300 where self.yieldsToLibraryRead || self.accountBusy {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard token == self.countryGeneration else { return }
+            }
+            await self.refreshAccountCountry()
+        }
+    }
+
+    /// Forgets the saved countries for an account; part of signing out.
+    func forgetAccountCountry(_ account: String) {
+        countryDefaults.removeObject(forKey: Self.lastVerifiedCountryKey(account))
+        countryDefaults.removeObject(forKey: "Xodus.accountCountry.\(account)")
+    }
+
     func applyAccountCountry(_ value: XboxAccountCountry?, account: String) {
         guard hasConfirmedSignIn, accountHash == account else { return }
+        accountCountryProvisional = false
+        if let verified = value?.countryCode.flatMap(XboxAccountCountry.normalized) {
+            countryDefaults.set(verified, forKey: Self.lastVerifiedCountryKey(account))
+        }
         countryAccountHash = account
         accountCountryVerified = value?.countryCode != nil
         accountCountryNeedsConfirmation = !accountCountryVerified
@@ -332,6 +372,7 @@ final class LiveSession: ObservableObject {
 
     private func retireAccountCountry() {
         countryGeneration = UUID()
+        accountCountryProvisional = false
         countryAccountHash = nil
         countryCode = nil
         accountCountryChecking = false
@@ -1386,6 +1427,7 @@ final class LiveSession: ObservableObject {
             failedAccountAction = nil
             errorMessage = nil
             initialStatusSettled = true
+            applyProvisionalAccountCountry()
             restoreExpectedSince = nil
         } catch {
             guard token == generation, authToken == authenticationGeneration else { return }
@@ -1646,6 +1688,7 @@ final class LiveSession: ObservableObject {
     @discardableResult
     func signOut(beforeDisconnect: @MainActor () async -> String? = { nil }) async -> Bool {
         guard !signingOut else { return false }
+        let signedOutAccount = accountHash
         guard let client, canDisconnectAccount else {
             errorMessage = "Check the current saved sign-in before disconnecting. No credentials were removed."
             accountError = errorMessage
@@ -1693,6 +1736,7 @@ final class LiveSession: ObservableObject {
             }
             accountStatusCurrent = true
             diagnosticPreview = nil
+            if let signedOutAccount { forgetAccountCountry(signedOutAccount) }
             return true
         } catch {
             guard token == generation else { return false }

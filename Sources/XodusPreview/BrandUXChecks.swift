@@ -1087,6 +1087,21 @@ enum BrandUXChecks {
         _ = droppedHero.target([.init(kind: .hero, id: "9HERO0000002", reference: nil, resolved: dropped)])
         check(dropped && !inFlight && !unasked && droppedHero.settled,
               "REQ-119 review L2: A dropped hero descriptor (e.g. PACKAGE_UNAVAILABLE) counts as resolved with fallback art, so hand-over doesn't wait 20 s")
+        let countryStore = UserDefaults(suiteName: "req121.country.\(UUID().uuidString)")!
+        let countryAccount = String(repeating: "c", count: 64)
+        countryStore.set("GB", forKey: LiveSession.lastVerifiedCountryKey(countryAccount))
+        countryStore.set("FR", forKey: "Xodus.accountCountry.\(countryAccount)")
+        let countrySession = LiveSession(countryDefaults: countryStore)
+        countrySession.applyProvisionalAccountCountry()
+        let ignoredSignedOut = !countrySession.accountCountryReady && !countrySession.accountCountryProvisional
+        countrySession.forgetAccountCountry(countryAccount)
+        check(ignoredSignedOut && LiveSession.lastVerifiedCountryKey(countryAccount).hasSuffix(countryAccount)
+              && countryStore.string(forKey: LiveSession.lastVerifiedCountryKey(countryAccount)) == nil
+              && countryStore.string(forKey: "Xodus.accountCountry.\(countryAccount)") == nil,
+              "REQ-121 hook: The provisional launch country is only a country code keyed by the account hash, never applied without a confirmed sign-in, and removed on sign-out")
+        check(LibraryFirstLoad.gamesReady(Inputs(loading: true, gamesFound: 3, libraryComplete: true))
+              && !LibraryFirstLoad.gamesReady(Inputs(loading: true, gamesFound: 3, libraryComplete: false)),
+              "REQ-121 hook: A complete library counts as ready even while a background revalidation keeps it busy")
         let windowState = AppState()
         windowState.firstLoadCovering = true
         windowState.endFirstLoadCovering()

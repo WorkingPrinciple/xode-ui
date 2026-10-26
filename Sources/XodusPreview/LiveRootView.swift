@@ -152,7 +152,7 @@ struct LiveRootView: View {
         return LibraryFirstLoadInputs(
             signedIn: session.hasConfirmedSignIn, loading: library.busy || library.restoringPresence,
             gamesFound: library.representedGames.count,
-            libraryComplete: library.snapshot != nil && !library.busy, error: library.error,
+            libraryComplete: library.snapshot.map { !library.busy || $0.isComplete } ?? false, error: library.error,
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
             artworkTotal: firstScreenArtwork.total, artworkReady: firstScreenArtwork.ready,

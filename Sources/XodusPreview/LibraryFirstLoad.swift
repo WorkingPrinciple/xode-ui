@@ -105,7 +105,8 @@ struct LibraryFirstLoad: Equatable {
     static func shouldBegin(signedIn: Bool) -> Bool { signedIn }
 
     static func gamesReady(_ inputs: LibraryFirstLoadInputs) -> Bool {
-        inputs.gamesFound >= firstScreenSize || (inputs.libraryComplete && !inputs.loading)
+        // A complete snapshot counts even while a background revalidation keeps the library busy.
+        inputs.gamesFound >= firstScreenSize || inputs.libraryComplete
     }
 
     static func firstScreenReady(_ inputs: LibraryFirstLoadInputs) -> Bool {
