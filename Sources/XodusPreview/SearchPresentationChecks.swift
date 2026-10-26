@@ -128,19 +128,17 @@ enum SearchPresentationChecks {
             }
             host.cacheDisplay(in: host.bounds, to: bitmap)
             guard let image = bitmap.cgImage else { throw PCGamesError.transport }
-            let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .accurate
-            try VNImageRequestHandler(cgImage: image).perform([request])
-            let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let observations = try NativeCheckOCR.observations(image)
+            let labels = observations.compactMap { $0.topCandidates(1).first?.string }
             check(labels.contains { $0.contains("Results for") }
                   && labels.contains { $0.contains("In your library") }
                   && labels.contains { $0.contains("Games (1)") }
                   && labels.contains { $0.contains("All games") },
                   "REQ-73: Actual grouped search/header/scope render at \(Int(size.width))x\(Int(size.height)): \(labels)")
-            let heading = request.results?.first {
+            let heading = observations.first {
                 $0.topCandidates(1).first?.string.contains("Results for") == true
             }
-            let scope = request.results?.first {
+            let scope = observations.first {
                 $0.topCandidates(1).first?.string.contains("All games") == true
             }
             check(heading != nil && scope != nil
@@ -183,10 +181,7 @@ enum SearchPresentationChecks {
             try await Task.sleep(for: .milliseconds(100))
             host.cacheDisplay(in: host.bounds, to: bitmap)
             guard let scopedImage = bitmap.cgImage else { throw PCGamesError.transport }
-            let scopedText = VNRecognizeTextRequest()
-            scopedText.recognitionLevel = .accurate
-            try VNImageRequestHandler(cgImage: scopedImage).perform([scopedText])
-            let scopedLabels = (scopedText.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let scopedLabels = try NativeCheckOCR.recognize(scopedImage)
             check(scopedLabels.contains { $0 == "Installed" }
                   && !scopedLabels.contains { $0.contains("In your library") || $0.contains("Neutral Game 1") },
                   "REQ-73: Changing the actual scope binding filters uninstalled local rows without changing query")
@@ -228,10 +223,7 @@ enum SearchPresentationChecks {
                 }
                 host.cacheDisplay(in: host.bounds, to: bitmap)
                 guard let image = bitmap.cgImage else { throw PCGamesError.transport }
-                let request = VNRecognizeTextRequest()
-                request.recognitionLevel = .accurate
-                try VNImageRequestHandler(cgImage: image).perform([request])
-                let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                let labels = try NativeCheckOCR.recognize(image)
                 let renderedText = labels.joined(separator: " ").lowercased()
                 check(labels.contains { $0.localizedCaseInsensitiveContains("Installed") }
                       && labels.contains { $0.filter { !$0.isWhitespace } == session.products[0].title.filter { !$0.isWhitespace } }
@@ -319,10 +311,7 @@ enum SearchPresentationChecks {
             try png.write(to: root.appendingPathComponent(
                 "req10-search-recovery-\(library.representedGames.count)-1619x1231.png"), options: .atomic)
         }
-        let recoveryText = VNRecognizeTextRequest()
-        recoveryText.recognitionLevel = .accurate
-        try VNImageRequestHandler(cgImage: recoveryImage).perform([recoveryText])
-        let recoveryLabels = (recoveryText.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        let recoveryLabels = try NativeCheckOCR.recognize(recoveryImage)
         check(!offlineMatches.isEmpty && recoveryLabels.contains { $0.contains("In your library") }
               && recoveryLabels.contains { $0.contains("Neutral Game 1") }
               && recoveryLabels.contains { $0.localizedCaseInsensitiveContains("Search isn't available") }

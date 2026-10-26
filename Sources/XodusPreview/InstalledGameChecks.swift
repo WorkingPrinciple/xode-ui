@@ -241,11 +241,7 @@ enum InstalledGameChecks {
         if let bitmap = offlineHost.bitmapImageRepForCachingDisplay(in: offlineHost.bounds) {
             offlineHost.cacheDisplay(in: offlineHost.bounds, to: bitmap)
             if let image = bitmap.cgImage {
-                let request = VNRecognizeTextRequest()
-                request.recognitionLevel = .accurate
-                try VNImageRequestHandler(cgImage: image).perform([request])
-                let text = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-                    .joined(separator: " ")
+                let text = try NativeCheckOCR.recognize(image).joined(separator: " ")
                 check(text.contains("drive is unavailable") && text.contains("Reconnect the drive")
                       && text.contains("Retry") && text.contains(mountedGame.folder),
                       "COR177: Mounted attention visibly explains the disconnected drive with recovery and the retained location, without hover: \(text)")
