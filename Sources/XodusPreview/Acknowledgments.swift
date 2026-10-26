@@ -243,10 +243,9 @@ struct AcknowledgmentsInventory: Sendable {
     }
 }
 
-/// Credits for the top of the window. Descriptions are curated, but each project appears only when
-/// its marker is present in what actually ships (see `AcknowledgmentsInventory.markers`).
-/// REQ-122: the one source for the Wine and Xodus credits shown in Acknowledgments, About, the sign-in
-/// window, the menus and README.
+/// Shared wording for Wine and Xodus credits; bundled-project rows are gated by the shipped markers.
+/// External provider credits are separate and explicitly do not claim to ship or qualify compatibility.
+/// REQ-122: the one source for wording shown in Acknowledgments, About, sign-in and README.
 enum FeaturedCredits {
     struct Credit: Hashable {
         let name: String
@@ -269,10 +268,39 @@ enum FeaturedCredits {
                role: "The Xbox library and install engine \(AppBrand.displayName)'s backend builds on", license: "GPL-3.0",
                thanks: "Thank you to the Xodus contributors for the open Xbox library and install work \(AppBrand.displayName) grows from.")
     }
+
+    struct ExternalProvider: Hashable {
+        let name: String
+        let url: URL
+        let linkText: String
+        let role: String
+        let license: String
+    }
+
+    /// These are optional external providers, not dependencies shipped by X Ode.
+    static let externalProviders = [
+        ExternalProvider(name: "Highball", url: URL(string: "https://github.com/gauthierpiarrette/highball")!,
+                         linkText: "github.com/gauthierpiarrette/highball",
+                         role: "User-installed Wine engine provider", license: "GPL-3.0"),
+        ExternalProvider(name: "CrossOver", url: URL(string: "https://www.codeweavers.com/crossover")!,
+                         linkText: "codeweavers.com/crossover",
+                         role: "Commercial Wine distribution by CodeWeavers", license: "Proprietary")
+    ]
+    static let externalProviderDisclosure =
+        "These are external provider credits only: users install them separately; neither is bundled or installed by X Ode, and listing them does not imply game compatibility."
+    static var readmeExternalProvidersLine: String {
+        let providers = externalProviders.map {
+            "[\($0.name)](\($0.url.absoluteString)) (\($0.license); \($0.role))"
+        }.joined(separator: "; ")
+        return "External engine-provider credits: \(providers). \(externalProviderDisclosure)"
+    }
+
     static var all: [Credit] { [wine, xodus] }
 
-    /// One line for About X Ode.
-    static let aboutLine = "Runs Windows games with Wine and is built on Xodus. Thank you to both projects."
+    /// One line for About X Ode, derived from the same project names used throughout the credits.
+    static var aboutLine: String {
+        "Runs Windows games with \(wine.name) and is built on \(xodus.name). Thank you to both projects."
+    }
     /// The sign-in window's two short lines: Wine first, then where the credits are.
     static var signInLine: String { "\(AppBrand.displayName) runs Windows games with Wine and is built on Xodus." }
     static var menuPath: String { "\(AppBrand.displayName) menu › Acknowledgments" }
@@ -464,6 +492,12 @@ struct AppAcknowledgmentsView: View {
                     ProgressView("Loading notices…").controlSize(.small)
                 }
             }
+            Section("External engine providers") {
+                Text(FeaturedCredits.externalProviderDisclosure)
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                ForEach(FeaturedCredits.externalProviders, id: \.self) { externalProviderRow($0) }
+            }
+            .accessibilityIdentifier("xodus.acknowledgments.external-providers")
             if let inventory, let apple = KeyOpenSourceProjects.separate(shipping: inventory.markers) {
                 Section("Separately licensed") {
                     projectRow(apple)
@@ -552,6 +586,21 @@ struct AppAcknowledgmentsView: View {
         }
         .padding(.vertical, 2)
         .accessibilityIdentifier("xodus.acknowledgments.featured.\(credit.name.lowercased())")
+    }
+
+    private func externalProviderRow(_ provider: FeaturedCredits.ExternalProvider) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(provider.name).font(.headline)
+                Spacer()
+                Text(provider.license).foregroundStyle(.secondary)
+            }
+            Text(provider.role)
+            Link(provider.linkText, destination: provider.url)
+                .accessibilityLabel("\(provider.name) website, \(provider.linkText)")
+        }
+        .padding(.vertical, 2)
+        .accessibilityIdentifier("xodus.acknowledgments.external-provider.\(provider.name.lowercased())")
     }
 
     private func projectRow(_ project: KeyOpenSourceProjects.Project) -> some View {
