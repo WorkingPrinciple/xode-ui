@@ -34,12 +34,30 @@ and is not valid for this release. Calimocho `-03` is superseded by the frozen
 manifest SHA-256
 `5ce80d16347304d2cd5d149072fed4aeed848e854fe17e20c3bd45c5013b2aba`
 (1,871 entries). The exact archive and signing evidence are in the producer
-handoff; its last Forza qualification/publication is still pending, and the
-matching backend admission/rebuild and notice review are not complete. No
-current producer-notice digest is pinned. Do not use `-03` descriptor/manifest
-pins or the earlier backend `1fd1341` / `84682aa8…` tuple for packaging: the
-tools fail closed until the matching producer inventory is regenerated and
-independently approved.
+handoff; its last Forza qualification/publication is still pending.
+
+The replacement backend producer is source commit
+`99e20addf88932de7796fc966fe09e00b71e4981`, tree
+`7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`. Its producer pin was externally
+approved. The signed build manifest is
+`3df7bfcb6c4e2fa082cce67cc7f906d7010d15cedee123ec705dc08c51245e35`; the
+paired CLI and Windows helper hashes are `ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9`
+and `6564914f1219364fb236eda37bba4d280e6115c2b8f23c20097dc19b8692f929`.
+The app lane generated the matching producer-notice inventory
+(`ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066`) and
+corresponding-source archive
+(`d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd`, 9,574,400
+bytes, 589 members, from the exact commit). The archive excludes
+`docs/private-ai/` and `docs/private-checkpoints/`. The inventory has 14
+explicit unresolved obligations; neither artifact is rights clearance. Ode
+independently approved both digests. `package_beta.py` now pins the inventory,
+source commit/tree, and exact source archive bytes, and labels its output and
+paired source as private-tester-only. The source tar contains `DO_NOT_UPSTREAM`;
+neither artifact is for public upload. Packaging/build remains held for the UX
+PASS, the 135c `-04` pin freeze, and resolution of the inventory's remaining
+obligations.
+Do not use `-03` descriptor/manifest pins or the earlier backend
+`1fd1341` / `84682aa8…` tuple.
 
 The package builder accepts only CFBundleVersion values above the installed
 0.2.0 build 2, so the beta installs as an update rather than a downgrade.
@@ -54,14 +72,13 @@ binding: another Mac without the exact tested engine reports it missing, and
 X Ode does not substitute a different engine.
 
 The inventory's own hashes and packaged resource seal do not establish
-completeness. Before approving its digest, independently compare every package
-identity/licence and compiler-artifact membership with the frozen producer
-manifest's hash-bound metadata/artifact evidence and exact-commit `Cargo.lock`,
-and retain unresolved notice/source/rights obligations. Do not derive approval
-from an inventory supplied by the same builder. Distribution and dry-run resume
-require that digest again as `--producer-notices-sha256`; they never take
-approval from a receipt or the packaged manifest. Removing packages or
-obligations and resealing the manifest cannot bypass the external expected hash.
+completeness. The independently approved digest binds the exact producer
+manifest, CLI, helper, hash-bound metadata/artifact evidence and `Cargo.lock`;
+the 14 unresolved notice/source/rights obligations remain explicit. Distribution
+and dry-run resume require that digest again as `--producer-notices-sha256`;
+they never take approval from a receipt or the packaged manifest. Removing
+packages or obligations and resealing the manifest cannot bypass the external
+expected hash.
 
 Production preflight enumerates optional Python runtime files, the exact
 launch-association capsule and credential-broker reference separately from the
@@ -102,10 +119,13 @@ For an approved beta package that must not be submitted or installed, use
 `tools/package_beta.py --app "/absolute/path/to/X Ode.app" --source
 /absolute/clean/main-or-release-checkout --output-root /absolute/existing/output
 --format zip` (or `dmg`) and the new independently approved
-`--producer-notices-sha256` value. Final packaging remains blocked until the
-frozen Calimocho `-04` candidate passes its remaining producer gate and the
-matching backend producer-notice inventory is admitted, independently
-reviewed and pinned.
+`--producer-notices-sha256` value plus `--producer-source-archive` pointing to
+the exact pinned tar. It writes a private-tester-only package and a separate,
+mode-restricted `PRIVATE-TESTER-SOURCE.tar` with its checksum in the package
+receipt directory; ZIPs also carry that tar internally, while DMGs must remain
+paired with the sidecar. Keep these together and never upload them publicly.
+Packaging/build remains blocked until the UX PASS, 135c `-04` pin freeze and
+all applicable unresolved producer-notice obligations are cleared.
 For `--format dmg`, combine the reviewed 660x400 and 1320x800 artwork in
 `design/installer/` with
 `tiffutil -cathidpicheck design/installer/dmg-background.png

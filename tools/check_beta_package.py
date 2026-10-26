@@ -16,7 +16,18 @@ from package_beta import (IDENTITY, TEAM_ID,
                          package_beta as create_beta_package)
 
 PRODUCER_NOTICES_SHA256 = "a" * 64
+PRODUCER_SOURCE_ARCHIVE_BYTES = b"Neutral private tester source archive"
+PRODUCER_SOURCE_ARCHIVE_SHA256 = hashlib.sha256(PRODUCER_SOURCE_ARCHIVE_BYTES).hexdigest()
+assert beta.PRODUCER_NOTICES_SHA256 == (
+    "ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066")
+assert beta.PRODUCER_SOURCE_COMMIT == "99e20addf88932de7796fc966fe09e00b71e4981"
+assert beta.PRODUCER_SOURCE_TREE == "7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91"
+assert beta.PRODUCER_SOURCE_ARCHIVE_SHA256 == (
+    "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd")
+assert beta.PRODUCER_SOURCE_ARCHIVE_BYTES == 9_574_400
 beta.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
+beta.PRODUCER_SOURCE_ARCHIVE_SHA256 = PRODUCER_SOURCE_ARCHIVE_SHA256
+beta.PRODUCER_SOURCE_ARCHIVE_BYTES = len(PRODUCER_SOURCE_ARCHIVE_BYTES)
 
 settings = runpy.run_path(str(Path(__file__).with_name("xode_dmg_settings.py")),
                           init_globals={"defines": {
@@ -72,7 +83,9 @@ def fixture(root):
     output = root / "output"
     output.mkdir(mode=0o700)
     output.chmod(0o700)
-    return app, output, source
+    producer_source_archive = root / "producer-source.tar"
+    producer_source_archive.write_bytes(PRODUCER_SOURCE_ARCHIVE_BYTES)
+    return app, output, source, producer_source_archive
 
 
 def signatures():
@@ -100,6 +113,8 @@ def fake_runner(calls):
             assert (payload / "INSTALL.txt").is_file()
             assert (payload / "RELEASE-NOTES.txt").read_text(encoding="utf-8") == beta.RELEASE_NOTES
             assert (payload / "X Ode.app").is_dir()
+            assert (payload / "PRIVATE-TESTER-SOURCE.tar").read_bytes() == (
+                PRODUCER_SOURCE_ARCHIVE_BYTES)
             Path(arguments[-1]).write_bytes(b"Neutral beta archive")
         elif arguments[0] == "dmgbuild":
             assert "-s" in arguments and "app=" in " ".join(arguments)
@@ -120,18 +135,21 @@ def rejected(operation):
 
 with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     root = Path(temporary).resolve()
-    app, output, source = fixture(root)
+    app, output, source, producer_source_archive = fixture(root)
     commands = []
     with patch.object(beta, "distribution_blockers", return_value=[]) as blockers, \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         receipt_path = create_beta_package(app, output, "zip", source,
                                            producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                           run_command=fake_runner(commands))
+                                           run_command=fake_runner(commands),
+                                           producer_source_archive=producer_source_archive)
         assert blockers.call_args.args == (app, PRODUCER_NOTICES_SHA256)
     receipt = json.loads(receipt_path.read_text())
-    artifact_path = output / "X-Ode-0.2.0-beta-submission.zip"
+    artifact_path = output / "X-Ode-0.2.0-beta-private-testers.zip"
     checksum_path = output / (artifact_path.name + ".sha256")
     assert receipt["state"] == "prepared_not_submitted"
+    assert receipt["distributionScope"] == "private-testers-only"
+    assert receipt["publicUpload"] is False
     assert receipt["appVersion"] == "0.2.0"
     assert receipt["releaseChannel"] == "Beta"
     assert receipt["releaseTag"] == "v0.2.0-beta.1"
@@ -139,6 +157,20 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert receipt["notarization"] == "NOT_SUBMITTED"
     assert receipt["installed"] is False and receipt["launched"] is False
     assert receipt["producerNoticesSHA256"] == PRODUCER_NOTICES_SHA256
+    assert receipt["producerSourceArchive"] == {
+        "file": "PRIVATE-TESTER-SOURCE.tar",
+        "sourceCommit": beta.PRODUCER_SOURCE_COMMIT,
+        "sourceTree": beta.PRODUCER_SOURCE_TREE,
+        "sha256": PRODUCER_SOURCE_ARCHIVE_SHA256,
+        "bytes": len(PRODUCER_SOURCE_ARCHIVE_BYTES),
+        "audience": "private-testers-only",
+        "checksumFile": "PRIVATE-TESTER-SOURCE.tar.sha256",
+    }
+    private_source = receipt_path.parent / "PRIVATE-TESTER-SOURCE.tar"
+    assert private_source.read_bytes() == PRODUCER_SOURCE_ARCHIVE_BYTES
+    assert (receipt_path.parent / "PRIVATE-TESTER-SOURCE.tar.sha256").read_text() == (
+        PRODUCER_SOURCE_ARCHIVE_SHA256 + "  PRIVATE-TESTER-SOURCE.tar\n")
+    assert private_source.stat().st_mode & 0o777 == 0o600
     assert "developer-local engine binding" in beta.RELEASE_NOTES
     assert "does not substitute another engine" in beta.RELEASE_NOTES
     assert "In-game voice chat and microphone input aren't supported in this beta." in beta.RELEASE_NOTES
@@ -148,6 +180,16 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
                    or command[0] == "/usr/bin/open" for command in commands)
     assert (receipt_path.parent / "package-receipt.json").exists()
 
+    wrong_source = root / "wrong-producer-source.tar"
+    wrong_source.write_bytes(b"Not the approved source archive")
+    rejected(lambda: create_beta_package(app, output, "zip", source,
+                                         producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                         run_command=fake_runner([]),
+                                         producer_source_archive=wrong_source))
+    rejected(lambda: create_beta_package(app, output, "zip", source,
+                                         producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                         run_command=fake_runner([])))
+
     inventory_path = app / "Contents/Resources/ProducerNotices/inventory.json"
     inventory_bytes = inventory_path.read_bytes()
     inventory_path.unlink()
@@ -155,7 +197,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         rejected(lambda: create_beta_package(app, output, "zip", source,
                                              producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                             run_command=fake_runner([])))
+                                             run_command=fake_runner([]),
+                                             producer_source_archive=producer_source_archive))
     inventory_path.write_bytes(inventory_bytes)
 
     info_path = app / "Contents/Info.plist"
@@ -168,7 +211,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         rejected(lambda: create_beta_package(app, output, "zip", source,
                                              producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                             run_command=fake_runner([])))
+                                             run_command=fake_runner([]),
+                                             producer_source_archive=producer_source_archive))
     info_path.write_bytes(info_bytes)
 
     commands.clear()
@@ -182,10 +226,13 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
         dmg_receipt_path = create_beta_package(app, output, "dmg", source,
                                                producer_notices_sha256=PRODUCER_NOTICES_SHA256,
                                                run_command=fake_runner(commands),
-                                               dmg_background=background)
+                                               dmg_background=background,
+                                               producer_source_archive=producer_source_archive)
     dmg_receipt = json.loads(dmg_receipt_path.read_text())
     assert dmg_receipt["format"] == "dmg"
-    assert (output / "X-Ode-0.2.0-beta.dmg").is_file()
+    assert (output / "X-Ode-0.2.0-beta-private-testers.dmg").is_file()
+    assert (dmg_receipt_path.parent / "PRIVATE-TESTER-SOURCE.tar").read_bytes() == (
+        PRODUCER_SOURCE_ARCHIVE_BYTES)
     assert dmg_receipt["artifacts"]["background"]["sha256"] == hashlib.sha256(
         background.read_bytes()).hexdigest()
     assert dmg_receipt["artifacts"]["volumeIcon"]["sha256"] == hashlib.sha256(
@@ -203,16 +250,19 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         rejected(lambda: create_beta_package(app, output, "zip", source,
                                              producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                             run_command=fake_runner([])))
+                                             run_command=fake_runner([]),
+                                             producer_source_archive=producer_source_archive))
 
     rejected(lambda: create_beta_package(app, output, "dmg", source,
                                          producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                         run_command=fake_runner([])))
+                                         run_command=fake_runner([]),
+                                         producer_source_archive=producer_source_archive))
 
     with patch.object(beta, "PRODUCER_NOTICES_SHA256", None):
         rejected(lambda: create_beta_package(app, output, "zip", source,
                                              producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                             run_command=fake_runner([])))
+                                             run_command=fake_runner([]),
+                                             producer_source_archive=producer_source_archive))
 
     with (app / "Contents/Info.plist").open("wb") as output_file:
         plistlib.dump({"CFBundleName": "X Ode", "CFBundleDisplayName": "X Ode",
@@ -223,7 +273,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):
         rejected(lambda: create_beta_package(app, output, "zip", source,
                                              producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                             run_command=fake_runner([])))
+                                             run_command=fake_runner([]),
+                                             producer_source_archive=producer_source_archive))
 
 print("PASS plist-derived beta archive names, source-bound build number/update gate, optional timestamped DMG, "
       "rights blocker, and no-submit/no-install behavior. "

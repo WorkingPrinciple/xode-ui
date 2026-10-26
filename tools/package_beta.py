@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 
 from distribution_manifest import distribution_blockers
-from shipping_pair import hex_value, owned_bytes, require, unique_object
+from shipping_pair import hex_value, owned_bytes, positive, require, unique_object
 from signing_identity import (IDENTIFIERS, verify_developer_id_bundle,
                               verify_developer_id_component)
 
@@ -22,8 +22,15 @@ IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.development"
 APP_SIGNING_IDENTIFIER = IDENTIFIERS["app"]
-PRODUCER_NOTICES_SHA256 = None
+PRODUCER_NOTICES_SHA256 = "ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066"
+PRODUCER_SOURCE_COMMIT = "99e20addf88932de7796fc966fe09e00b71e4981"
+PRODUCER_SOURCE_TREE = "7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91"
+PRODUCER_SOURCE_ARCHIVE_SHA256 = "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd"
+PRODUCER_SOURCE_ARCHIVE_BYTES = 9_574_400
 INSTALL_NOTE = """X Ode beta
+
+PRIVATE TESTER PACKAGE ONLY. Do not upload or redistribute this package publicly.
+It is paired with PRIVATE-TESTER-SOURCE.tar, which must stay private as well.
 
 Verify the adjacent SHA-256 file before opening this archive. The app is signed
 with Developer ID, but this package has not been submitted to Apple for
@@ -34,6 +41,10 @@ After notarization is completed, move "X Ode.app" into Applications and
 launch it from there. Keep this archive and its checksum with the beta record.
 """
 RELEASE_NOTES = """X Ode beta release notes
+
+Private-tester package only. Do not upload or redistribute publicly. The exact
+producer source is inside ZIP packages and paired with DMG packages as
+PRIVATE-TESTER-SOURCE.tar.
 
 The eappx, msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and
 xodus-service workspace crates are licensed under GPL-3.0-only as stated by
@@ -124,7 +135,8 @@ def create_installer_dmg(payload, artifact, product_name, identity,
 
 
 def package_beta(app, output_root, package_format, source, identity=IDENTITY,
-                 producer_notices_sha256=None, run_command=run, dmg_background=None):
+                 producer_notices_sha256=None, run_command=run, dmg_background=None,
+                 producer_source_archive=None):
     app = Path(app)
     output_root = Path(output_root)
     require(app.is_absolute() and app.resolve(strict=True) == app and app.is_dir()
@@ -161,7 +173,16 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "No current producer-notice inventory is pinned; await the admitted producer rebuild")
+            "Producer-notice inventory digest differs from the independently approved pin")
+    require(isinstance(PRODUCER_SOURCE_ARCHIVE_SHA256, str)
+            and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_SOURCE_ARCHIVE_SHA256) is not None
+            and isinstance(PRODUCER_SOURCE_ARCHIVE_BYTES, int)
+            and producer_source_archive is not None,
+            "Pinned private-tester corresponding-source archive is required")
+    source_archive_identity, source_archive_data = owned_bytes(
+        producer_source_archive, PRODUCER_SOURCE_ARCHIVE_SHA256,
+        positive(PRODUCER_SOURCE_ARCHIVE_BYTES), bounded=PRODUCER_SOURCE_ARCHIVE_BYTES)
+    require(source_archive_data is not None, "Could not read pinned source archive")
     build_number = info.get("CFBundleVersion")
     source_identity = app_source(app)
     release_source = release_identity(source, source_identity)
@@ -182,9 +203,10 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     signatures = verify_developer_id_bundle(app, identity, TEAM_ID, run_command)
 
     artifact_name = (f"{product_name.replace(' ', '-')}-{version}-{channel_slug}"
-                     + ("-submission.zip" if package_format == "zip" else ".dmg"))
+                     + ("-private-testers.zip" if package_format == "zip"
+                        else "-private-testers.dmg"))
     artifact_stem = artifact_name.removesuffix("." + package_format)
-    package_dir = output_root / (artifact_stem + "-package")
+    package_dir = output_root / (artifact_stem + "-" + package_format + "-package")
     package_dir.mkdir(mode=0o700, exist_ok=False)
     package_dir.chmod(0o700)
     receipt_path = package_dir / "package-receipt.json"
@@ -195,8 +217,18 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
         "buildNumber": release_source["buildNumber"],
         "releaseChannel": channel,
         "releaseTag": f"v{version}-{channel_slug}.1",
+        "distributionScope": "private-testers-only",
+        "publicUpload": False,
         "appSource": source_identity,
         "producerNoticesSHA256": producer_notices_sha256,
+        "producerSourceArchive": {
+            "file": "PRIVATE-TESTER-SOURCE.tar",
+            "sourceCommit": PRODUCER_SOURCE_COMMIT,
+            "sourceTree": PRODUCER_SOURCE_TREE,
+            **source_archive_identity,
+            "audience": "private-testers-only",
+            "checksumFile": "PRIVATE-TESTER-SOURCE.tar.sha256",
+        },
         "engineNotice": engine_notice_identity,
         "certificateSha1": identity.upper(),
         "teamIdentifier": TEAM_ID,
@@ -213,12 +245,34 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
             staging = Path(temporary)
             payload = staging / artifact_stem
             payload.mkdir(mode=0o700)
+            private_source = package_dir / "PRIVATE-TESTER-SOURCE.tar"
+            with private_source.open("xb") as destination:
+                destination.write(source_archive_data)
+                destination.flush()
+                os.fsync(destination.fileno())
+            private_source.chmod(0o600)
+            owned_bytes(private_source, PRODUCER_SOURCE_ARCHIVE_SHA256,
+                        PRODUCER_SOURCE_ARCHIVE_BYTES)
+            private_source_checksum = package_dir / "PRIVATE-TESTER-SOURCE.tar.sha256"
+            with private_source_checksum.open("x", encoding="ascii") as checksum:
+                checksum.write(PRODUCER_SOURCE_ARCHIVE_SHA256 + "  "
+                               + private_source.name + "\n")
+            private_source_checksum.chmod(0o600)
             packaged_app = payload / (product_name + ".app")
             run_command(["/usr/bin/ditto", str(app), str(packaged_app)])
             run_command(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(packaged_app)])
             signatures = verify_developer_id_bundle(packaged_app, identity, TEAM_ID, run_command)
             (payload / "INSTALL.txt").write_text(INSTALL_NOTE, encoding="utf-8")
             (payload / "RELEASE-NOTES.txt").write_text(RELEASE_NOTES, encoding="utf-8")
+            if package_format == "zip":
+                archive_in_package = payload / "PRIVATE-TESTER-SOURCE.tar"
+                with archive_in_package.open("xb") as destination:
+                    destination.write(source_archive_data)
+                    destination.flush()
+                    os.fsync(destination.fileno())
+                archive_in_package.chmod(0o600)
+                owned_bytes(archive_in_package, PRODUCER_SOURCE_ARCHIVE_SHA256,
+                            PRODUCER_SOURCE_ARCHIVE_BYTES)
 
             artifact = output_root / artifact_name
             if package_format == "zip":
@@ -294,12 +348,15 @@ def main():
     parser.add_argument("--identity", default=IDENTITY)
     parser.add_argument("--producer-notices-sha256", required=True,
                         help="Independently reviewed exact producer inventory digest")
+    parser.add_argument("--producer-source-archive", type=Path, required=True,
+                help="Exact privately approved producer source tar; never publicly upload")
     parser.add_argument("--dmg-background", type=Path,
                         help="Reviewed combined HiDPI TIFF required when --format dmg")
     arguments = parser.parse_args()
     receipt = package_beta(arguments.app, arguments.output_root, arguments.format, arguments.source,
                            arguments.identity,
-                           arguments.producer_notices_sha256, dmg_background=arguments.dmg_background)
+                           arguments.producer_notices_sha256, dmg_background=arguments.dmg_background,
+                           producer_source_archive=arguments.producer_source_archive)
     print(receipt)
 
 

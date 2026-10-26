@@ -49,6 +49,22 @@ The output records the metadata superset and distinguishes compiler-artifact
 packages, including host/build/proc-macro dependencies. It is not a claim that
 every recorded package is linked into the shipping executable.
 
+For the current beta producer (`99e20addf88932de7796fc966fe09e00b71e4981`,
+tree `7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`), the generated inventory is
+SHA-256 `ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066`.
+It covers 479 package identities, 462 compiler-artifact identities and 326
+content-addressed notice texts, and retains 14 explicit unresolved obligations.
+The corresponding-source archive is SHA-256
+`d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd` (9,574,400
+bytes; 589 members); it is from that exact commit and omits
+`docs/private-ai/` and `docs/private-checkpoints/`. These generated artifacts
+were independently approved by Ode as exact producer evidence. Their hashes
+and contents are not a rights opinion or a claim that the 14 unresolved
+obligations are cleared. The source tar contains `DO_NOT_UPSTREAM` and is
+private-tester-only; the builder binds its exact hash and refuses a substituted
+archive. The approved notice inventory is copied into the app only after the
+builder verifies its exact digest.
+
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are
 `eappx` and the six Xodus workspace crates; their repository licence texts are
