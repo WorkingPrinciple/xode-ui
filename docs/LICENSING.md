@@ -65,6 +65,17 @@ private-tester-only; the builder binds its exact hash and refuses a substituted
 archive. The approved notice inventory is copied into the app only after the
 builder verifies its exact digest.
 
+A successor notice candidate for the same producer commit is SHA-256
+`5c27f9e24c78f7499fc5cf230b4a9e053c8e079f7880f4ddbfcc9f7a155d457e`. It
+retains the 479 package and 462 compiler-artifact identities and now has one
+unresolved obligation: exact corresponding-source delivery and applicable
+licence/notice review for distributed components. The private-tester ZIP and
+DMG builders bind the source archive, but its GitHub draft-release asset is
+still pending because no draft release/tag target is present. This candidate
+has not been independently approved or pinned by the builders; it is not
+release evidence or legal clearance. Keep the earlier approved digest separate
+until the exact draft target and its source asset are verified.
+
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are
 `eappx` and the six Xodus workspace crates; their repository licence texts are

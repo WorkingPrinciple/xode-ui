@@ -9,17 +9,43 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from producer_notices import digest, notice_members, prepare, verify
+from producer_notices import (
+    _crate_manifest,
+    add_supplement,
+    digest,
+    git_blob_sha1,
+    notice_members,
+    prepare,
+    verify,
+)
 
 
 class NoticeChecks(unittest.TestCase):
+    def test_crate_manifest_uses_archive_root_not_vcs_workspace_path(self):
+        archive = io.BytesIO()
+        with tarfile.open(fileobj=archive, mode="w") as stream:
+            for name, data in {
+                "objc2-foundation-0.3.2/.cargo_vcs_info.json":
+                    json.dumps({"git": {"sha1": "f" * 40},
+                                "path_in_vcs": "framework-crates/objc2-foundation"}).encode(),
+                "objc2-foundation-0.3.2/Cargo.toml":
+                    b'[package]\nname = "objc2-foundation"\nversion = "0.3.2"\nlicense = "MIT"\n',
+            }.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                stream.addfile(member, io.BytesIO(data))
+        self.assertEqual(_crate_manifest(archive.getvalue())["name"], "objc2-foundation")
+
     def fixture(self, root):
         archive = io.BytesIO()
         with tarfile.open(fileobj=archive, mode="w:gz") as stream:
             for name, data in {"neutral-1.0.0/LICENSE": b"Neutral licence fixture",
                                "neutral-1.0.0/src/copying.rs": b"#![cfg(test)]",
                                "neutral-1.0.0/src/license.rs": b"not a notice",
-                               "neutral-1.0.0/src/lib.rs": b"not a notice"}.items():
+                               "neutral-1.0.0/src/lib.rs": b"not a notice",
+                               "neutral-1.0.0/.cargo_vcs_info.json":
+                                   json.dumps({"git": {"sha1": "f" * 40},
+                                               "path_in_vcs": ""}).encode()}.items():
                 member = tarfile.TarInfo(name)
                 member.size = len(data)
                 stream.addfile(member, io.BytesIO(data))
@@ -135,6 +161,114 @@ class NoticeChecks(unittest.TestCase):
             stream.addfile(member, io.BytesIO(b"x"))
         with self.assertRaisesRegex(ValueError, "Unsafe dependency"):
             notice_members(archive.getvalue())
+
+    def test_upstream_notice_reuse_checks_current_lock_and_vcs_revision(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            args, git, manifest = self.fixture(root)
+            with patch("producer_notices.git_bytes", side_effect=git):
+                result = prepare(*args)
+                upstream = root / "upstream"
+                (upstream / "texts").mkdir(parents=True)
+                text = b"Neutral exact-revision upstream notice\n"
+                sha = digest(text)
+                (upstream / "texts" / (sha + ".txt")).write_bytes(text)
+                report = {
+                    "version": 1,
+                    "producer": {"commit": "9" * 40, "tree": "8" * 40},
+                    "groups": [{
+                        "repository": "https://github.com/neutral/project",
+                        "revision": "f" * 40,
+                        "packages": ["neutral@1.0.0"],
+                        "notices": [{
+                            "sourceURL": "https://raw.githubusercontent.com/neutral/project/"
+                                         + "f" * 40 + "/LICENSE",
+                            "gitBlob": git_blob_sha1(text),
+                            "path": "texts/" + sha + ".txt",
+                            "sha256": sha,
+                            "bytes": len(text),
+                        }],
+                    }],
+                }
+                report_path = upstream / "inventory.json"
+                report_path.write_text(json.dumps(report))
+                report_sha = digest(report_path.read_bytes())
+                from producer_notices import _merge_upstream_notices
+                _merge_upstream_notices(root / "notices", result, root, root,
+                                        upstream, report_sha)
+            self.assertFalse(any("neutral@1.0.0: exact source notice" in item
+                                for item in result["unresolved"]))
+            self.assertEqual(result["packages"][0]["notices"][-1]["sourceRevision"], "f" * 40)
+            self.assertEqual(result["supplementalProvenance"]["reportSHA256"], report_sha)
+
+    def test_supplemental_evidence_is_content_addressed_and_verified(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            args, git, manifest = self.fixture(root)
+            with patch("producer_notices.git_bytes", side_effect=git):
+                result = prepare(*args)
+                upstream = root / "upstream"
+                upstream.mkdir()
+                report = {"version": 1, "producer": result["producer"], "groups": []}
+                report_path = upstream / "inventory.json"
+                report_path.write_text(json.dumps(report))
+                report_sha = digest(report_path.read_bytes())
+
+                evidence_dir = root / "evidence"
+                (evidence_dir / "texts").mkdir(parents=True)
+                text = b"Neutral supplementary attribution\n"
+                sha = digest(text)
+                relative = "texts/" + sha + ".txt"
+                (evidence_dir / relative).write_bytes(text)
+                evidence = {
+                    "producer": result["producer"],
+                    "documents": [{
+                        "id": "neutral-attribution",
+                        "path": relative,
+                        "sha256": sha,
+                        "bytes": len(text),
+                        "source": {
+                            "kind": "upstream-git",
+                            "revision": "f" * 40,
+                            "sourcePath": "README.md",
+                            "sourceURL": "https://raw.githubusercontent.com/neutral/project/"
+                                         + "f" * 40 + "/README.md",
+                            "gitBlobSHA1": git_blob_sha1(text),
+                        },
+                    }],
+                    "packages": [],
+                    "components": [{
+                        "id": "neutral-component",
+                        "name": "Neutral component",
+                        "licenseEvidence": {"basis": "exact upstream attribution"},
+                        "documents": ["neutral-attribution"],
+                        "resolvesObligations": [],
+                    }],
+                    "sourceDelivery": {
+                        "sourceArchive": {
+                            "sha256": "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd",
+                            "bytes": 9_574_400,
+                            "producer": result["producer"],
+                        },
+                        "channels": [
+                            {"id": "private-tester-zip", "status": "workflow-bound"},
+                            {"id": "release-dmg", "status": "workflow-bound"},
+                            {"id": "github-draft-release", "status": "pending-target"},
+                        ],
+                    },
+                }
+                evidence_path = evidence_dir / "evidence.json"
+                evidence_path.write_text(json.dumps(evidence))
+                evidence_sha = digest(evidence_path.read_bytes())
+                result = add_supplement(root / "notices", upstream, report_sha,
+                                        evidence_dir, evidence_sha, root, root)
+            inventory_path = root / "notices/inventory.json"
+            expected = digest(inventory_path.read_bytes())
+            verified = verify(root / "notices", result["producer"],
+                              manifest["binary_sha256"], manifest["helper_sha256"], expected)
+            self.assertEqual(verified["components"][0]["notices"][0]["sha256"], sha)
+            self.assertEqual(verified["sourceDelivery"]["channels"][-1]["status"],
+                             "pending-target")
 
 
 if __name__ == "__main__":

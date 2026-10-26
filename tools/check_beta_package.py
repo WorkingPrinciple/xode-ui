@@ -181,10 +181,23 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert "WalkingCat and dalion619" in beta.RELEASE_NOTES
     assert "has not been submitted to Apple for" in beta.INSTALL_NOTE
     assert "PRIVATE TESTER PACKAGE ONLY" in beta.INSTALL_NOTE
-    assert "signed with Developer ID and notarized by Apple" in beta.RELEASE_INSTALL_NOTE
+    assert "X Ode.app is signed with Developer ID and notarized by Apple" in beta.RELEASE_INSTALL_NOTE
+    assert "installer are signed" not in beta.RELEASE_INSTALL_NOTE
+    assert "disk image are stapled" not in beta.RELEASE_INSTALL_NOTE
     assert "PRIVATE-TESTER-SOURCE.tar" not in beta.RELEASE_INSTALL_NOTE
     assert "xodus-cli-beta-99e20add-source.tar" in beta.RELEASE_INSTALL_NOTE
+    assert "Attach that exact archive to the GitHub draft release before publication" in beta.RELEASE_INSTALL_NOTE
     assert "Acknowledge every open-source project" not in beta.PUBLIC_RELEASE_NOTES
+    assert "must be attached to" in beta.PUBLIC_RELEASE_NOTES
+    assert "is attached as" not in beta.PUBLIC_RELEASE_NOTES
+    assert "GPL-3.0-only" not in beta.PUBLIC_RELEASE_NOTES
+    assert "Games tested on Calimocho 0.1120.4.4" in beta.PUBLIC_RELEASE_NOTES
+    assert "signed with Developer ID and notarized" not in beta.PUBLIC_RELEASE_NOTES
+    assert "[Permission prompts:" not in beta.PUBLIC_RELEASE_NOTES
+    assert "Acknowledgments are available from Account settings." in beta.PUBLIC_RELEASE_NOTES
+    assert "| Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. |" in beta.PUBLIC_RELEASE_NOTES
+    assert "In-game voice chat and microphone input aren't supported in this beta. Updates keep the same app identity" in beta.PUBLIC_RELEASE_NOTES
+    assert "from the sign-in screen" not in beta.PUBLIC_RELEASE_NOTES
     homebrew_template = (Path(__file__).parent.parent / "docs/homebrew/x-ode.rb.in").read_text()
     assert "strategy :github_releases" in homebrew_template
     assert "strategy :github_latest" not in homebrew_template

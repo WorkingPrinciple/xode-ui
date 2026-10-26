@@ -42,13 +42,14 @@ launch it from there. Keep this archive and its checksum with the beta record.
 """
 RELEASE_INSTALL_NOTE = """X Ode 0.2.0 beta
 
-This app and installer are signed with Developer ID and notarized by Apple.
-The app and disk image are stapled and Gatekeeper-validated.
+X Ode.app is signed with Developer ID and notarized by Apple. The app's
+notarization ticket is stapled.
 
 The corresponding source archive for the bundled backend is provided next to
-this disk image and attached to this draft release as
-xodus-cli-beta-99e20add-source.tar. Keep it paired with this release; do not
-publish the app without its corresponding source.
+this disk image as xodus-cli-beta-99e20add-source.tar (SHA-256
+d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd).
+Attach that exact archive to the GitHub draft release before publication; do
+not publish the app without its corresponding source.
 """
 RELEASE_NOTES = """X Ode beta release notes
 
@@ -70,46 +71,75 @@ In-game voice chat and microphone input aren't supported in this beta.
 """
 PUBLIC_RELEASE_NOTES = """## X Ode 0.2.0 (Beta)
 
-X Ode is a native macOS app for managing Xbox PC games. It requires an Apple
-silicon Mac running macOS Sonoma 14 or later and a Microsoft account with the
-games you want to play.
+X Ode lets you browse, install and play your Xbox PC games on a Mac. It's free
+and open source, made by Working Principle.
+
+**Requirements:** a Mac with Apple silicon running macOS Sonoma 14 or later,
+and a Microsoft account with the games you want to play (owned or through PC
+Game Pass).
 
 ### Install
 
-1. Download the disk image from this release and, optionally, verify it against
-   its SHA-256 checksum.
+1. Download `X-Ode-0.2.0-beta.dmg` and, optionally, check it against
+   `X-Ode-0.2.0-beta.dmg.sha256`.
 2. Open the disk image and drag **X Ode** to **Applications**.
 3. Open X Ode from Applications and sign in with your Microsoft account.
-4. When a game needs it, X Ode offers to download Calimocho 0.1120.4.4. If
-   CrossOver is installed, X Ode also detects it.
+4. When a game needs it, X Ode offers to download **Calimocho 0.1120.4.4**
+   ([release](https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-0.1120.4.4)).
+   If CrossOver is installed, X Ode also detects it.
 
-### Tested with Calimocho 0.1120.4.4
+### What works in this beta
 
-- Brotato and Halls of Torment completed with a clean quit.
-- Forza Horizon 6 reached its title screen; continuing into free roam was not
-  verified.
+- Library, Discover and game pages for your Xbox PC games.
+- Install, cancel and uninstall with progress; a space check before downloading.
+- Games tested on Calimocho 0.1120.4.4: **Brotato**, **Halls of Torment**.
+- Acknowledgments are available from Account settings.
 
 ### Known issues
 
 - An interrupted download starts over from the beginning; X Ode says so and
   lets you discard the partial download.
-- Vampire Survivors and Balatro do not start yet.
-- No Man's Sky needs a developer engine that is not part of this beta; X Ode
+- **Forza Horizon 6** reaches its title screen but isn't verified to play in
+  this beta.
+- **Vampire Survivors** and **Balatro** don't start yet.
+- **No Man's Sky** needs a developer engine that isn't part of this beta; X Ode
   shows the engine as missing.
-- In-game voice chat and microphone input are not supported.
-- X Ode does not update itself yet; download new betas from this page.
+- X Ode doesn't update itself yet; download new betas from this page.
+
+### What X Ode may ask permission for, and why
+
+macOS asks the first time each one is needed. If you said no, open System Settings ▸ Privacy & Security, or use the Open System Settings button X Ode shows next to the problem.
+
+| Permission | When and why |
+|---|---|
+| Local network | Only when you choose Find consoles, so X Ode can look for Xbox consoles on your network. |
+| External drives | When your games folder or an installed game is on an external drive. |
+| Network drives | When your games folder or an installed game is on a network drive. |
+| Documents folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
+| Downloads folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
+| Desktop folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
+| Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. |
+| Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. |
+
+In-game voice chat and microphone input aren't supported in this beta. Updates keep the same app identity, so permissions you already granted and your saved sign-in carry over.
 
 ### Open source
 
-- X Ode is licensed under GPL-3.0-only. The six local backend workspace crates
-  (msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and xodus-service)
-  are governed by the GNU General Public License version 3, as provided in the producer repository's root LICENSE; that LICENSE and the producer README state no version grant. The external eappx dependency is MIT-licensed; its README credits WalkingCat and dalion619.
-- The corresponding source archive for the backend binary is attached as
-  `xodus-cli-beta-99e20add-source.tar` (SHA-256
-  `d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd`).
-- The Calimocho engine is distributed separately; see its
-  [0.1120.4.4 release](https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-0.1120.4.4).
+- X Ode and its backend are **GPL-3.0**; the backend builds on
+  [Xodus](https://github.com/xodus-gaming/xodus). The corresponding source
+  archive for the backend binary must be attached to the draft release before
+  publication as `xodus-cli-beta-99e20add-source.tar`.
+- The Calimocho engine is **LGPL-2.1-or-later** (based on Wine). It includes
+  Apple's D3DMetal under Apple's Game Porting Toolkit licence, which allows
+  free, non-commercial distribution only. Engine source is attached to its own
+  release.
 - "X Ode" and "Working Principle" are trademarks; see TRADEMARKS.
+
+### Checksums
+
+| File | SHA-256 |
+|---|---|
+| xodus-cli-beta-99e20add-source.tar | d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd |
 """
 def run(arguments, timeout=1800):
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)

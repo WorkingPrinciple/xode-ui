@@ -316,7 +316,14 @@ class ReleaseCandidateChecks(unittest.TestCase):
                         public_notes = (root / "distribution/RELEASE-NOTES.txt").read_text()
                         self.assertEqual(install_note, package_beta.RELEASE_INSTALL_NOTE)
                         self.assertEqual(public_notes, package_beta.PUBLIC_RELEASE_NOTES)
-                        self.assertIn("notarized by Apple", install_note)
+                        self.assertIn("X Ode.app is signed with Developer ID and notarized by Apple", install_note)
+                        self.assertNotIn("installer are signed", install_note)
+                        self.assertNotIn("disk image are stapled", install_note)
+                        self.assertIn("Attach that exact archive to the GitHub draft release before publication",
+                                      install_note)
+                        self.assertIn("must be attached to the draft release before publication",
+                                      " ".join(public_notes.split()))
+                        self.assertNotIn("is attached as", public_notes)
                         self.assertNotIn("has not been submitted", install_note)
                         self.assertNotIn("PRIVATE TESTER PACKAGE ONLY", install_note)
                         labels_in_order = [record.get("label") for record in receipt["commands"]]
