@@ -441,7 +441,9 @@ struct AppAcknowledgmentsView: View {
         } detail: {
             detail
         }
-        .searchable(text: $query, placement: .sidebar, prompt: "Search components and licences")
+        .searchable(text: $query, placement: .sidebar,
+                    prompt: Text("Search components and licences")
+                        .foregroundStyle(Color(nsColor: AccessiblePalette.placeholder)))
         .onChange(of: navigation.request, initial: true) { _, request in
             guard let request else { return }
             selection = Self.selection(for: request)
@@ -523,7 +525,7 @@ struct AppAcknowledgmentsView: View {
                 }
                 Text("Choose any component in the sidebar to read its full licence and notices.")
                     .font(.callout).foregroundStyle(.secondary)
-                Link("\(AppBrand.displayName) source code", destination: AppLegalCopy.source)
+                Link("\(AppBrand.displayName) source code", destination: AppLegalCopy.source).accessibleLink()
             }
             .accessibilityIdentifier(AcknowledgmentsNavigation.licencesAnchor)
             Section("Trademarks") {
@@ -581,7 +583,7 @@ struct AppAcknowledgmentsView: View {
             Text(credit.thanks).font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             // Opens the browser; the credit itself shows signed out and offline.
-            Link(credit.linkText, destination: credit.url)
+            Link(credit.linkText, destination: credit.url).accessibleLink()
                 .accessibilityLabel("\(credit.name) website, \(credit.linkText)")
         }
         .padding(.vertical, 2)
@@ -596,7 +598,7 @@ struct AppAcknowledgmentsView: View {
                 Text(provider.license).foregroundStyle(.secondary)
             }
             Text(provider.role)
-            Link(provider.linkText, destination: provider.url)
+            Link(provider.linkText, destination: provider.url).accessibleLink()
                 .accessibilityLabel("\(provider.name) website, \(provider.linkText)")
         }
         .padding(.vertical, 2)

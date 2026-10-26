@@ -585,8 +585,8 @@ struct XboxConsolesView: View {
                     Text(XboxCompanionCopy.remotePlay)
                         .font(.callout).foregroundStyle(.secondary)
                     HStack {
-                        Link("Play now", destination: remotePlay)
-                        Link("Setup and support", destination: setup)
+                        Link("Play now", destination: remotePlay).accessibleLink()
+                        Link("Setup and support", destination: setup).accessibleLink()
                     }
                 }
                 .padding(.top, 2)

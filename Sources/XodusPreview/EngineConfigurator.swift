@@ -960,7 +960,7 @@ struct CrossOverLocationRow: View {
                 HStack(spacing: 10) {
                     Text(installedVersion.map { "\(status) · \($0)" } ?? status).foregroundStyle(.secondary)
                     if settings.crossOverDependency.offersTrialDownload {
-                        Link("Get CrossOver", destination: CrossOverDependencyState.trialDownloadURL)
+                        Link("Get CrossOver", destination: CrossOverDependencyState.trialDownloadURL).accessibleLink()
                             .accessibilityIdentifier("xodus.engines.crossover.get")
                     }
                 }

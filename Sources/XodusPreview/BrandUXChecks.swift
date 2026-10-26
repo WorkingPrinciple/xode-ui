@@ -911,16 +911,26 @@ enum BrandUXChecks {
               && GameReadyNotifier.step(status: .provisional, deferred: false) == .add
               && postBody.contains("case .explainThenAsk:") && postBody.contains("PermissionPrompt.confirmFirstUse(.notifications")
               && postBody.contains("defaults.set(true, forKey: Self.deferredKey)")
-              && postBody.contains("defaults.set(true, forKey: PrivacyPermission.notificationsDeniedKey)"),
-              "REQ-118: The first ready notice explains before macOS asks; Not now is remembered (no nagging) and a denial is recorded for Settings")
+              && postBody.contains("defaults.set(true, forKey: PrivacyPermission.notificationsDeniedKey)")
+              && postBody.contains("guard !explaining else { waiting.append(request); return }")
+              && ((try? String(contentsOfFile: "Sources/XodusPreview/PrivacyPermissions.swift", encoding: .utf8)) ?? "")
+                .components(separatedBy: "GameReadyNotifier.refreshRecordedStatus()").count == 3,
+              "REQ-118: The first ready notice explains once (concurrent notices wait for that answer); Not now is remembered; Settings re-reads the real status")
         let account = (try? String(contentsOfFile: "Sources/XodusPreview/LiveAccountView.swift", encoding: .utf8)) ?? ""
         let findConsoles = account.range(of: "Button(\"Find consoles\")").map { String(account[$0.lowerBound...].prefix(200)) } ?? ""
         let rootView = (try? String(contentsOfFile: "Sources/XodusPreview/LiveRootView.swift", encoding: .utf8)) ?? ""
-        check(findConsoles.contains("PermissionPrompt.confirmFirstUse(.localNetwork)")
-              && findConsoles.range(of: "confirmFirstUse")!.lowerBound < findConsoles.range(of: "discovery.search()")!.lowerBound
+        let consoleExplainAt = findConsoles.range(of: "PermissionPrompt.confirmFirstUse(.localNetwork)")?.lowerBound
+        let consoleSearchAt = findConsoles.range(of: "discovery.search()")?.lowerBound
+        check(consoleExplainAt != nil && consoleSearchAt != nil && consoleExplainAt! < consoleSearchAt!
               && rootView.components(separatedBy: "LocalNetworkDiscovery.shared.search()").count == 2
               && rootView.contains("Xodus.localNetwork.requestOnce"),
               "REQ-118: Local network discovery starts only after Find consoles and its explanation (plus the one-shot requestOnce test flag), never by itself at launch")
+        let pcGames = (try? String(contentsOfFile: "Sources/XodusPreview/PCGamesView.swift", encoding: .utf8)) ?? ""
+        let approve = pcGames.range(of: "Button(\"Approve Keychain access\")").map { String(pcGames[$0.lowerBound...].prefix(220)) } ?? ""
+        let explainAt = approve.range(of: "PermissionPrompt.confirmFirstUse(.keychain)")?.lowerBound
+        let migrateAt = approve.range(of: "library.approveKeychain()")?.lowerBound
+        check(explainAt != nil && migrateAt != nil && explainAt! < migrateAt!,
+              "REQ-118: X Ode explains Keychain access before the only call that can show the macOS Keychain dialog (broker migrate); presence reads stay non-interactive")
         let panelSources = ["GameInstallLocationSettings.swift": "PermissionPrompt.fileSelectionMessage",
                             "InstalledGamesController.swift": "PermissionPrompt.fileSelectionMessage",
                             "LiveSession.swift": "PermissionPrompt.saveMessage"]

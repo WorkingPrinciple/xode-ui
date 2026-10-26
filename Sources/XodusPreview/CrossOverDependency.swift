@@ -193,7 +193,7 @@ struct RuntimeDependencyStatus: View {
                 .disabled(!allowsCheck || settings.checkingDependency || settings.applicationTerminating || settings.planning)
             if !settings.crossOverDependency.isVerified {
                 Link("Install CrossOver or start a trial",
-                     destination: CrossOverDependencyState.trialDownloadURL)
+                     destination: CrossOverDependencyState.trialDownloadURL).accessibleLink()
                     .accessibilityIdentifier("xodus.runtime.installCrossOver")
                 Text("Opens CodeWeavers in your browser. Install CrossOver in Applications, then return here. \(AppBrand.displayName) checks again when you return; licensing stays with CodeWeavers.")
                     .font(.callout).foregroundStyle(.secondary)

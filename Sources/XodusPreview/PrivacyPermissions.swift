@@ -48,7 +48,7 @@ enum PrivacyPermission: String, CaseIterable, Identifiable {
         case .removableVolumes, .networkVolumes, .documents, .downloads, .desktop:
             "When \(app) or a game it runs first reads or writes a folder or drive you chose here."
         case .notifications: "After the first game install or repair finishes and \(app) explains why; never at launch."
-        case .keychain: "When you sign in, or when \(app) first reads your saved Microsoft sign-in on this Mac."
+        case .keychain: "When you sign in, or after \(app) explains it and you choose Approve Keychain access."
         }
     }
 
@@ -174,6 +174,10 @@ struct PrivacyPermissionsSection: View {
         } footer: {
             Text("macOS asks the first time each one is needed. You can change your answer in System Settings at any time.")
                 .font(.callout).foregroundStyle(.secondary)
+        }
+        .onAppear { GameReadyNotifier.refreshRecordedStatus() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            GameReadyNotifier.refreshRecordedStatus()
         }
     }
 }

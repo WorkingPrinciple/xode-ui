@@ -163,6 +163,9 @@ final class GameOperationsController: ObservableObject {
     @Published private(set) var setupLog: URL?
     @Published var installConsent: GameInstallConsent?
     @Published var uninstallConsent: InstalledGame?
+    /// REQ-41: Remove from Library (Keep Files) awaiting confirmation; presented by GameOperationPresentation
+    /// because menu content cannot present dialogs.
+    @Published var removalConsent: InstalledGame?
     @Published private(set) var preparingConsent = false
     @Published private(set) var preparingInstallProductID: String?
     @Published private(set) var choosingInstallLocation = false
@@ -1310,6 +1313,17 @@ final class GameOperationsController: ObservableObject {
             compatibility[productID] = nil
             compatibilityErrors[productID] = "Mac support details couldn't be read. Choose Install to check again."
         }
+    }
+
+    func prepareRemoval(_ game: InstalledGame) {
+        guard installed.games.contains(game), installed.runningGameID != game.id, !installed.mutationActive else { return }
+        removalConsent = game
+    }
+
+    func confirmRemoval(_ game: InstalledGame) async {
+        guard removalConsent?.id == game.id else { return }
+        removalConsent = nil
+        await installed.remove(game)
     }
 
     func prepareUninstall(_ game: InstalledGame) {

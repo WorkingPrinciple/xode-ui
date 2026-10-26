@@ -754,6 +754,16 @@ struct GameOperationPresentation: View {
                 GameInstallConsentView(operations: operations, consent: consent)
                     .interactiveDismissDisabled(operations.checkingCompatibility)
             }
+            .confirmationDialog(operations.removalConsent.map { InstalledGameActionCopy.removeKeepingFilesTitle($0.title) } ?? "",
+                                isPresented: Binding(get: { operations.removalConsent != nil },
+                                                     set: { if !$0 { operations.removalConsent = nil } }),
+                                presenting: operations.removalConsent) { game in
+                Button(InstalledGameActionCopy.removeKeepingFilesConfirm, role: .destructive) {
+                    Task { await operations.confirmRemoval(game) }
+                }
+                .accessibilityIdentifier("xodus.installed.confirmRemove")
+                Button("Cancel", role: .cancel) { operations.removalConsent = nil }
+            } message: { game in Text(InstalledGameActionCopy.removeKeepingFilesMessage(folder: game.folder)) }
             .sheet(item: $operations.uninstallConsent) { game in
                 VStack(alignment: .leading, spacing: 18) {
                     Text("Uninstall \(game.title)?").font(.title2.bold())
@@ -846,8 +856,6 @@ struct InstalledGameManagement: View {
     @ObservedObject var operations: GameOperationsController
     let game: InstalledGame
 
-    @State private var confirmingRemoval = false
-
     var body: some View {
         Group {
             if library.updateStatus(for: game).hasUpdate {
@@ -864,7 +872,7 @@ struct InstalledGameManagement: View {
             }
             .disabled(!canRepair)
             .accessibilityIdentifier("xodus.installed.repair")
-            Button(InstalledGameActionCopy.removeKeepingFiles) { confirmingRemoval = true }
+            Button(InstalledGameActionCopy.removeKeepingFiles) { operations.prepareRemoval(game) }
                 .help(InstalledGameActionCopy.removeKeepingFilesHelp)
                 .disabled(library.editing || library.choosing || library.mutationActive
                           || library.accountDisconnecting || library.applicationTerminating
@@ -875,13 +883,6 @@ struct InstalledGameManagement: View {
                 .disabled(!operations.canStartMutation || library.runningGameID == game.id)
                 .accessibilityIdentifier("xodus.installed.uninstall")
         }
-        .confirmationDialog(InstalledGameActionCopy.removeKeepingFilesTitle(game.title), isPresented: $confirmingRemoval) {
-            Button(InstalledGameActionCopy.removeKeepingFilesConfirm, role: .destructive) {
-                Task { await library.remove(game) }
-            }
-            .accessibilityIdentifier("xodus.installed.confirmRemove")
-            Button("Cancel", role: .cancel) {}
-        } message: { Text(InstalledGameActionCopy.removeKeepingFilesMessage(folder: game.folder)) }
     }
 
     private var canRepair: Bool {

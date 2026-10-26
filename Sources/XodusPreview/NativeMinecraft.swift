@@ -196,7 +196,7 @@ struct NativeMinecraftDetailsContent<SaveLocation: View>: View {
                     ProgressView("Checking launcher").controlSize(.small)
                 }
                 if minecraft.installation.state == .missing || minecraft.installation.state == .repair {
-                    Link(minecraft.installation.action, destination: NativeMinecraft.downloadURL)
+                    Link(minecraft.installation.action, destination: NativeMinecraft.downloadURL).accessibleLink()
                         .accessibilityIdentifier("xodus.native.minecraft.recover")
                     Text(NativeMinecraftDetailsCopy.worldPreservation)
                 }

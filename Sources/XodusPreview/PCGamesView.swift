@@ -40,7 +40,10 @@ struct PCGamesView: View {
                         ProgressView("Waiting for Keychain approval").controlSize(.small)
                         Button("Cancel approval") { Task { await library.cancelKeychainApproval() } }
                     } else {
-                        Button("Approve Keychain access") { library.approveKeychain() }
+                        Button("Approve Keychain access") {
+                            guard PermissionPrompt.confirmFirstUse(.keychain) else { return }
+                            library.approveKeychain()
+                        }
                             .buttonStyle(.borderedProminent)
                             .disabled(library.busy || library.restoringPresence || library.presenceUnavailable)
                             .accessibilityIdentifier("xodus.pcGames.approveKeychain")

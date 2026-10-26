@@ -98,7 +98,7 @@ struct GameSaveLocationView: View {
                 Text("Published Windows save location").font(.subheadline.weight(.medium))
                 Text(cited.path).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                 Text(cited.scope).font(.caption).foregroundStyle(.secondary)
-                Link("Save-location source", destination: cited.source)
+                Link("Save-location source", destination: cited.source).accessibleLink()
             }
             if observed == nil && cited == nil && errorMessage == nil {
                 Text("No save location recorded for this title.").foregroundStyle(.secondary)

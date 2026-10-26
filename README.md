@@ -126,7 +126,7 @@ macOS asks the first time each one is needed, never all at launch. Before Find c
 | Downloads folder | When X Ode stores games in your Downloads folder, or a game it runs reads or saves files there. | When X Ode or a game it runs first reads or writes a folder or drive you chose here. |
 | Desktop folder | When X Ode stores games on your Desktop, or a game it runs reads or saves files there. | When X Ode or a game it runs first reads or writes a folder or drive you chose here. |
 | Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. | After the first game install or repair finishes and X Ode explains why; never at launch. |
-| Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. | When you sign in, or when X Ode first reads your saved Microsoft sign-in on this Mac. |
+| Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. | When you sign in, or after X Ode explains it and you choose Approve Keychain access. |
 
 To change an answer, use System Settings ▸ Privacy & Security for local network and folders, and System Settings ▸ Notifications for notifications. X Ode also shows an Open System Settings button next to a problem it can fix. Keychain asks separately for each saved sign-in; there's no System Settings switch for it. If X Ode says local network access is off right after the prompt appeared, answer the prompt, then choose Find consoles again.
 

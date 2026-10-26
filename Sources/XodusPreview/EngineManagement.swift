@@ -133,7 +133,7 @@ struct EngineProviderOverview: View {
                     $0.ready && $0.admittedProvider == "calimocho"
                 }) ? "Admitted local build" : "Identification unavailable")
                     .font(.headline)
-                Link("Calimocho official source", destination: EngineManagementPolicy.calimochoSource)
+                Link("Calimocho official source", destination: EngineManagementPolicy.calimochoSource).accessibleLink()
                     .accessibilityIdentifier("xodus.engines.calimocho.source")
             }
             .accessibilityElement(children: .contain)
@@ -172,7 +172,7 @@ struct EngineProviderOverview: View {
             .disabled(!allowsCheck || settings.checkingDependency || settings.planning || settings.applicationTerminating)
             .accessibilityIdentifier("xodus.engines.refresh")
         if !settings.crossOverDependency.isVerified {
-            Link("Get CrossOver from CodeWeavers", destination: CrossOverDependencyState.trialDownloadURL)
+            Link("Get CrossOver from CodeWeavers", destination: CrossOverDependencyState.trialDownloadURL).accessibleLink()
                 .accessibilityIdentifier("xodus.engines.crossover.get")
         }
     }

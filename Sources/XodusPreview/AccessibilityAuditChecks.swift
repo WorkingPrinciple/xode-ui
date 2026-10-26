@@ -12,6 +12,7 @@ import Vision
 enum AccessibilityAuditChecks {
     static func run(check: (Bool, String) -> Void) {
         accessibilityNames(check: check)
+        ownedColours(check: check)
         renderedContrast(check: check)
         motionAndTransparency(check: check)
         keyboardFocus(check: check)
@@ -154,9 +155,39 @@ enum AccessibilityAuditChecks {
     /// 4.5:1 are REQ-19 gaps: they are listed in the result and written to the render directory, never passed
     /// silently. Increase Contrast is not simulated here: an injected high-contrast appearance does not reproduce
     /// the system setting, so it stays a live REQ-20 step.
-    /// Native search-field placeholders use the system placeholder colour and the field has its own accessibility
-    /// name; they are reported as gaps rather than failed.
-    static let systemPlaceholders = ["Search components and licen"]
+    /// Native search-field placeholders still in the system placeholder colour, reported as gaps rather than
+    /// failed. None: the Acknowledgments search prompt uses AccessiblePalette.placeholder.
+    static let systemPlaceholders: [String] = []
+
+    /// Files owned by the Library/Discover lane keep the system link colour until that lane adopts the palette.
+    static let routedLinkFiles: Set<String> = ["LibraryPresentation.swift", "LiveCatalogView.swift"]
+
+    static func ownedColours(check: (Bool, String) -> Void) {
+        func ratio(_ a: AccessiblePalette.RGB, _ b: AccessiblePalette.RGB) -> Double {
+            BrandUXChecks.contrast(a.color, against: b.color)
+        }
+        let light = [AccessiblePalette.RGB(red: 255, green: 255, blue: 255), .init(red: 0xEC, green: 0xEC, blue: 0xEC),
+                     .init(red: 0xE5, green: 0xE5, blue: 0xE5)]
+        let dark = [AccessiblePalette.RGB(red: 0x1E, green: 0x1E, blue: 0x1E), .init(red: 0x2A, green: 0x2A, blue: 0x2A),
+                    .init(red: 0x32, green: 0x32, blue: 0x32)]
+        let worst = [light.map { ratio(AccessiblePalette.linkLight, $0) }, light.map { ratio(AccessiblePalette.placeholderLight, $0) },
+                     dark.map { ratio(AccessiblePalette.linkDark, $0) }, dark.map { ratio(AccessiblePalette.placeholderDark, $0) }]
+            .map { $0.min() ?? 0 }
+        check(worst.allSatisfy { $0 >= 4.5 }
+              && AccessiblePalette.link.resolved(.darkAqua) == AccessiblePalette.linkDark.color.usingColorSpace(.sRGB)
+              && AccessiblePalette.link.resolved(.aqua) == AccessiblePalette.linkLight.color.usingColorSpace(.sRGB),
+              "REQ-19: X Ode's own link and placeholder colours reach 4.5:1 on window, form and field backings in both appearances (worst \(worst.map { String(format: "%.2f", $0) }))")
+        let lines = sourceLines()
+        let bare = lines.filter { entry in
+            !routedLinkFiles.contains(entry.file)
+                && (entry.text.range(of: #"(^|[^A-Za-z_])Link\("#, options: .regularExpression) != nil
+                    || entry.text.contains(".buttonStyle(.link)"))
+                && !lines.filter({ $0.file == entry.file && $0.line >= entry.line && $0.line <= entry.line + 2 })
+                    .contains { $0.text.contains(".accessibleLink()") }
+        }
+        check(bare.isEmpty,
+              "REQ-19: Every link outside the routed Library/Discover files uses the accessible link colour (bare: \(bare.map { "\($0.file):\($0.line)" }))")
+    }
 
     static func renderedContrast(check: (Bool, String) -> Void) {
         var gaps: [String] = []
@@ -255,17 +286,21 @@ enum AccessibilityAuditChecks {
     static func lifecycleConsent(check: (Bool, String) -> Void) {
         let view = (try? String(contentsOfFile: "Sources/XodusPreview/GameOperationsView.swift", encoding: .utf8)) ?? ""
         let attention = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledGameAttentionView.swift", encoding: .utf8)) ?? ""
-        let menu = view.range(of: "struct InstalledGameActions").map { String(view[$0.lowerBound...]) } ?? ""
-        let dialog = menu.range(of: ".confirmationDialog(").map { String(menu[$0.lowerBound...]) } ?? ""
-        let beforeDialog = menu.range(of: ".confirmationDialog(").map { String(menu[..<$0.lowerBound]) } ?? menu
+        let management = view.range(of: "struct InstalledGameManagement").map { String(view[$0.lowerBound...]) } ?? ""
+        let host = view.range(of: "struct GameOperationPresentation").map { String(view[$0.lowerBound...].prefix(2_400)) } ?? ""
+        let controller = (try? String(contentsOfFile: "Sources/XodusPreview/GameOperationsController.swift", encoding: .utf8)) ?? ""
         let message = InstalledGameActionCopy.removeKeepingFilesMessage(folder: "/Volumes/Games/Halls")
-        check(!menu.isEmpty && !beforeDialog.contains("library.remove(") && dialog.contains("library.remove(game)")
-              && menu.contains("Button(InstalledGameActionCopy.removeKeepingFiles)")
+        // Menu and context-menu content cannot present dialogs, so the item only asks the controller and the
+        // always-mounted GameOperationPresentation shows the confirmation (as for Uninstall).
+        check(management.contains("Button(InstalledGameActionCopy.removeKeepingFiles) { operations.prepareRemoval(game) }")
+              && !management.contains("library.remove(") && !management.contains(".confirmationDialog(")
+              && host.contains("presenting: operations.removalConsent") && host.contains("operations.confirmRemoval(game)")
+              && controller.contains("@Published var removalConsent: InstalledGame?")
               && !view.contains("\"Remove from list\"")
               && attention.contains("InstalledGameActionCopy.removeKeepingFilesConfirm")
               && message.contains("No files are deleted") && message.contains("/Volumes/Games/Halls")
               && message.contains("use Uninstall") && InstalledGameActionCopy.removeKeepingFiles.contains("Keep Files"),
-              "REQ-41: Remove from Library keeps files, says so and confirms in both the menu and the attention view; it never deletes")
+              "REQ-41: Remove from Library keeps files, says so and confirms from a mounted host (menus cannot present dialogs); it never deletes")
         let consent = view.range(of: "Text(\"Uninstall \\(game.title)?\")").map { String(view[$0.lowerBound...].prefix(1_200)) } ?? ""
         check(consent.contains("Deletes this game's installation folder") && consent.contains("Deletes the game files")
               && consent.contains("Button(\"Cancel\")") && consent.contains(".keyboardShortcut(.cancelAction)")
@@ -299,6 +334,13 @@ enum AccessibilityAuditChecks {
               "REQ-18/19: Every extra keyboard stop (.focusable) carries its own accessibility name (unlabeled: \(unlabeled))")
         check(noReturn.isEmpty,
               "REQ-18: Focusable plain buttons open with Return, or are reviewed routed gaps (\(reviewedFocusGaps.values.joined(separator: "; "))); missing: \(noReturn)")
+    }
+}
+private extension NSColor {
+    func resolved(_ name: NSAppearance.Name) -> NSColor? {
+        var color: NSColor?
+        NSAppearance(named: name)?.performAsCurrentDrawingAppearance { color = usingColorSpace(.sRGB) }
+        return color
     }
 }
 #endif

@@ -13,6 +13,9 @@ final class GameReadyNotifier: NSObject, UNUserNotificationCenterDelegate {
     /// Called with the installed folder when the user chooses Play.
     var play: ((String) -> Void)?
     private var configured = false
+    /// One explanation at a time: notices that finish while it is up wait for its answer instead of stacking alerts.
+    private var explaining = false
+    private var waiting: [UNNotificationRequest] = []
 
     /// UNUserNotificationCenter requires a bundled app; unbundled tool runs post nothing.
     static var available: Bool {
@@ -77,11 +80,33 @@ final class GameReadyNotifier: NSObject, UNUserNotificationCenterDelegate {
         case .skipDeferred:
             break
         case .explainThenAsk:
-            guard PermissionPrompt.confirmFirstUse(.notifications, defaults: defaults) else {
+            guard !explaining else { waiting.append(request); return }
+            explaining = true
+            let confirmed = PermissionPrompt.confirmFirstUse(.notifications, defaults: defaults)
+            let requests = [request] + waiting
+            waiting = []
+            explaining = false
+            guard confirmed else {
                 defaults.set(true, forKey: Self.deferredKey)
                 return
             }
-            Self.ask(defaults: defaults) { granted in if granted { center.add(request) } }
+            Self.ask(defaults: defaults) { granted in
+                if granted { requests.forEach { center.add($0) } }
+            }
+        }
+    }
+
+    /// Re-reads the real authorization so Settings never shows a stale "off" or "Not now" after the user
+    /// changes Notifications in System Settings.
+    static func refreshRecordedStatus() {
+        guard available else { return }
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let status = settings.authorizationStatus
+            Task { @MainActor in
+                let defaults = UserDefaults.standard
+                defaults.set(status == .denied, forKey: PrivacyPermission.notificationsDeniedKey)
+                if status != .notDetermined { defaults.set(false, forKey: deferredKey) }
+            }
         }
     }
 
