@@ -155,6 +155,28 @@ the engine's shared public raw-descriptor provider, also used by discovery/query
 Keys are product ID, normalized market and language, never account authority.
 The engine owns persistent raw caching; the app keeps at most 512 records/32 MiB
 and preserves each original five-minute expiry instead of extending it on reuse.
+REQ-121 adds a saved public copy for restarts: each verified public product
+record (product ID, market, language; schema version 1) is written to
+`~/Library/Caches/Xodus/PublicDescriptors` (0700 folder, 0600 files, at most
+64 MiB, 2,048 entries and seven days old, written with fsync before rename).
+It stores public descriptors keyed by product, market and language: no
+account, entitlement or token data, but the saved product IDs reflect what the
+library and Discover showed and the market reflects the account country, so
+sign-out clears it together with saved artwork
+(`CatalogArtworkStore.clearForSignOut()`). Checks and previews never use it. A
+saved record is served stale-while-revalidate: tiles and library resolution use
+it at once, it is never reported as fresh, and one background revalidation per
+key replaces it in memory and on disk, then republishes only changed tiles; the
+library's final snapshot waits for that revalidation. A product the
+revalidation no longer returns (delisted or unavailable) loses its saved copy
+and stays unresolved. A failed revalidation keeps the saved copy without an
+error banner and is asked again after 60 seconds. Unreadable, foreign-schema,
+wrong product/market/language, bad-digest, future or week-old records are
+deleted and refetched.
+Descriptor network reads from every consumer share one cap: two managed
+operations (inside the producer's four) or four direct HTTP requests, admitting
+queued foreground batches in caller order before revalidation. Library artwork
+keeps the caller's visible order, so the first screen is in the first batches.
 Requests contain 1–20 IDs, not raw records in CLI arguments. The existing 1 MiB
 frame ceiling is unchanged; `LIMIT_EXCEEDED` records are retried in strictly
 smaller batches, terminating with an explicit error at a single oversized record.
@@ -278,8 +300,22 @@ scale and source aspect ratio (including fill versus fit cropping). Zero-size
 layout requests no image; hero decoding remains capped at 2400. Bitmap identity
 includes validated URL, bucket and processing version. Concurrent variants
 coalesce the encoded byte read by URL; decode is per variant, not per card.
-Only two fetch/decode pipelines run at once. The existing 64 MiB/40-bitmap
-NSCache is charged `CGImage.bytesPerRow * height`, not NSImage point dimensions.
+Only two fetch/decode pipelines run at once. The 256 MiB/200-bitmap NSCache
+(REQ-121; previously 64 MiB/40) is charged `CGImage.bytesPerRow * height`, not
+NSImage point dimensions, and is emptied on a memory-pressure warning. A tile
+keeps its current artwork only while the same artwork identity changes (a
+resize, or a refreshed URL the catalogue published for the same product, or an
+explicit `identity` such as a product ID), so refreshes don't return drawn
+tiles to placeholders. Another product's artwork never borrows it: that tile
+shows the loading or failure placeholder, and a withdrawn reference (for
+example while artwork isn't allowed) removes art already drawn. A new or
+resized tile draws an already decoded copy of the same URL on its first frame. The artwork disk cache sweeps once per
+session, when its running total passes 512 MiB and every ten minutes, not after
+every save, and skips entries another instance removed mid-sweep.
+Load-latency signposts (`log stream --signpost --predicate 'subsystem ==
+"io.github.dragoshont.xodus" AND category == "load-latency"'`) mark each
+`DescriptorBatch` (hit, stale or miss), `DescriptorFetch`, `FirstTilesDrawn`
+(12 tiles) and each `VisibleArtworkDrawn` burst, with milliseconds since launch.
 Admission queues at most 64 jobs; excess requests surface the ordinary artwork
 unavailable state. Each shared variant tracks its live consumers. Losing the
 last consumer cancels its queued admission immediately; withdrawing one of
