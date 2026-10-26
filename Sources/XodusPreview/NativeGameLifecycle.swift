@@ -279,6 +279,7 @@ final class NativeGameLifecycle {
              launchEnvironment: [String: String] = [:],
              unsetLaunchEnvironment: [String] = [],
              engineSelection: AdmittedEngineSelection? = nil,
+             prepareAdmittedPrefix: () async throws -> Void = {},
              onStarted: () -> Void = {},
              onProgress: (GameScriptProgress) -> Void = { _ in }) async throws -> NativeGameResult {
         guard !active, ["install", "repair", "uninstall", "launch"].contains(operation),
@@ -304,6 +305,11 @@ final class NativeGameLifecycle {
                 arguments: launchArguments, selection: engineSelection)
             try NativeLifecycleCancellation.check(operation: operation,
                 cancelled: cancellationRequested || Task.isCancelled)
+            if operation == "launch" {
+                try await prepareAdmittedPrefix()
+                try NativeLifecycleCancellation.check(operation: operation,
+                    cancelled: cancellationRequested || Task.isCancelled)
+            }
         }
         try GameScriptFiles.checkPath(gameDirectory, allowMissing: operation == "install")
         let state = stateRoot ?? Self.directory(runID: runID)

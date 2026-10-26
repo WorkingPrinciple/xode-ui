@@ -1113,6 +1113,7 @@ final class InstalledGamesController: ObservableObject {
             guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
             let arguments = try await launch.arguments()
             let prefixNotice = try await launch.prefixNotice()
+            let legacyPrefixIDs = try await store.prefixInstallationIDs(productID: game.storeId) + [game.id]
             if preparation.isCancelled { throw CancellationError() }
             let executables = config.executables
             let existingWindows = NativeGameForeground.windowIDs()
@@ -1133,7 +1134,13 @@ final class InstalledGamesController: ObservableObject {
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
                         launchArguments: arguments, launchEnvironment: launch.profile?.launchEnvironment ?? [:],
                         unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [],
-                        engineSelection: launch.admittedSelection, onStarted: {
+                        engineSelection: launch.admittedSelection, prepareAdmittedPrefix: {
+                            guard let selection = launch.admittedSelection else { throw NativeLaunchError.providerNotAdmitted }
+                            try await Task.detached {
+                                try CalimochoPrefixContinuity.prepare(prefix: launch.prefix, selection: selection,
+                                    productID: game.storeId, legacyIDs: legacyPrefixIDs)
+                            }.value
+                        }, onStarted: {
                             Self.launchLog.notice("Launcher started: \(game.storeId, privacy: .public), engine \(launch.engine, privacy: .public)")
                             launchStarted = true
                             playState = .playing

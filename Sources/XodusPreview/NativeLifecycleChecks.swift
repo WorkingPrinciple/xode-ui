@@ -901,7 +901,7 @@ enum NativeLifecycleChecks {
                 defaults: defaults, evidence: hallsEvidence)
         }
         check(resolvedHalls.engine == CalimochoRelease.engineID
-              && resolvedHalls.prefix.path.hasSuffix("/\(hallsGame.id.uuidString)/\(CalimochoRelease.engineID)")
+              && resolvedHalls.prefix.path.hasSuffix("/\(hallsGame.storeId)/calimocho-11.20")
               && resolvedHalls.admittedSelection?.inspection.engineName == CalimochoRelease.engineID
               && resolvedHalls.admittedSelection?.inspection.qualified == false
               && resolvedHalls.profile?.environment.isEmpty == true
@@ -1243,7 +1243,7 @@ enum NativeLifecycleChecks {
                   && launch.profile?.wineSha256 == CalimochoReleasePin.release06.wineSha256
                   && launch.profile?.wineserverSha256 == CalimochoReleasePin.release06.wineserverSha256
                   && launch.shims.directory.path.hasSuffix("/Ode to X/Engines/profiles/native-web-shims-v1")
-                  && launch.prefix.path.hasSuffix("/\(brotato.id.uuidString)/\(CalimochoRelease.engineID)")
+                  && launch.prefix.path.hasSuffix("/\(brotato.storeId)/calimocho-11.20")
                   && launch.admittedSelection?.inspection.engineName == CalimochoRelease.engineID,
                   "Brotato selects admitted Calimocho -06 with exact Wine/server pins, not a conflicting default provider")
         }

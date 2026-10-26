@@ -727,6 +727,8 @@ enum CalimochoReleaseInstallerChecks {
             wineserverSha256: activePin.wineserverSha256, error: nil)
         let selection = AdmittedEngineSelection(registryPath: root.appendingPathComponent("registry.json").path,
                                                  inspection: inspection)
+        try prefixContinuityCheck(root: root.appendingPathComponent("bundled-default"), selection: selection,
+                                  label: "bundled -04 to -06 default switch", check: check)
         defaults.set(try JSONEncoder().encode(oldSelection), forKey: NativeEngineDefaults.preferenceKey)
         try library.reserveMutation(gameID: nil)
         try await library.activateCalimochoUpdate(selection, replacing: old.engineName, defaults: defaults)
@@ -737,6 +739,10 @@ enum CalimochoReleaseInstallerChecks {
         check(savedDefault == selection && savedGames.prefix(2).allSatisfy { $0.engineOverrideV2?.selection == selection }
               && savedGames.last?.engineOverrideV2?.selection == oldSelection,
               "REQ123: admitted activation switches the default and only Brotato/Halls stored profiles")
+        try prefixContinuityCheck(root: root.appendingPathComponent("update-activation"), selection: savedDefault,
+                                  label: "REQ123 update activation", check: check)
+        try await reinstallPrefixCheck(root: root.appendingPathComponent("reinstall-prefix"), selection: savedDefault,
+                                       check: check)
         var customGames = games
         customGames[0].engineOverride = .crossover
         let customInspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
@@ -772,6 +778,105 @@ enum CalimochoReleaseInstallerChecks {
                   "REQ123: a failed title-selection save restores the previous default")
         }
         library.releaseMutation()
+    }
+
+    private static func prefixContinuityCheck(root: URL, selection: AdmittedEngineSelection,
+                                             label: String, check: (Bool, String) -> Void) throws {
+        let id = UUID()
+        let parent = root.appendingPathComponent(id.uuidString)
+        let old = parent.appendingPathComponent(CalimochoReleasePin.release04.engineName)
+        let product = "9NMNMS626R59"
+        let target = CalimochoPrefixContinuity.location(productID: product, installationID: id,
+            engine: selection.inspection.engineName!, root: root)
+        let save = "drive_c/users/player/AppData/Local/game/save.dat"
+        try FileManager.default.createDirectory(at: old.appendingPathComponent(save).deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        let bytes = Data("retained progress".utf8)
+        try bytes.write(to: old.appendingPathComponent(save))
+        try FileManager.default.createSymbolicLink(atPath: old.appendingPathComponent("z:").path,
+                                                  withDestinationPath: "/")
+        let markerBytes = try JSONSerialization.data(withJSONObject: [
+            "version": 1, "engine": CalimochoReleasePin.release04.engineName,
+            "wine_sha256": CalimochoReleasePin.release04.wineSha256
+        ])
+        try Data("{}".utf8).write(to: CalimochoPrefixContinuity.marker(for: old))
+        do {
+            try CalimochoPrefixContinuity.prepare(prefix: target, selection: selection, productID: product, legacyIDs: [id])
+            check(false, "S9: invalid legacy ownership refuses adoption")
+        } catch NativeLaunchError.prefixConflict {
+            check(!FileManager.default.fileExists(atPath: target.path),
+                  "S9: invalid legacy ownership refuses adoption without creating a stable prefix")
+        }
+        try markerBytes.write(to: CalimochoPrefixContinuity.marker(for: old))
+        let secondID = UUID()
+        let second = root.appendingPathComponent(secondID.uuidString).appendingPathComponent(CalimochoReleasePin.release04.engineName)
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+        do {
+            try CalimochoPrefixContinuity.prepare(prefix: target, selection: selection,
+                                                  productID: product, legacyIDs: [id, secondID])
+            check(false, "S9: ambiguous legacy installations refuse adoption")
+        } catch NativeLaunchError.prefixConflict {
+            check(!FileManager.default.fileExists(atPath: target.path),
+                  "S9: ambiguous legacy installations refuse adoption without selecting arbitrary saves")
+        }
+        try FileManager.default.removeItem(at: second.deletingLastPathComponent())
+        try CalimochoPrefixContinuity.prepare(prefix: target, selection: selection, productID: product, legacyIDs: [id])
+        check(try Data(contentsOf: old.appendingPathComponent(save)) == bytes
+              && Data(contentsOf: target.appendingPathComponent(save)) == bytes
+              && Data(contentsOf: CalimochoPrefixContinuity.marker(for: old)) == markerBytes,
+              "S9: \(label) clones prefix-local saves while preserving the old prefix and ownership bytes")
+        let marker = try JSONValue.decodeUnique(Data(contentsOf: CalimochoPrefixContinuity.marker(for: target)),
+                                                maximumBytes: 4_096)
+        let link = try FileManager.default.destinationOfSymbolicLink(atPath: target.appendingPathComponent("z:").path)
+        check(marker["engine"]?.string == selection.inspection.engineName
+              && marker["wine_sha256"]?.string == selection.inspection.wineSha256
+              && link == "/",
+              "S9: \(label) binds the new marker to admitted -06 and preserves external Wine links as links")
+        let progressed = Data("new progress".utf8)
+        try progressed.write(to: target.appendingPathComponent(save))
+        try CalimochoPrefixContinuity.prepare(prefix: target, selection: selection, productID: product, legacyIDs: [id])
+        check(try Data(contentsOf: target.appendingPathComponent(save)) == progressed
+              && Data(contentsOf: old.appendingPathComponent(save)) == bytes,
+              "S9: \(label) never recopies over an existing new prefix or changes the old saves")
+    }
+
+    private static func reinstallPrefixCheck(root: URL, selection: AdmittedEngineSelection,
+                                            check: (Bool, String) -> Void) async throws {
+        let store = InstalledGameStore(file: root.appendingPathComponent("installed-games.json"))
+        let first = InstalledGame(id: UUID(), title: "Halls", identityName: "Halls", version: "1.0.0.0",
+            storeId: "9NMNMS626R59", folder: root.appendingPathComponent("game").path,
+            launcher: "", importedAt: Date(), usesNativeLifecycle: true)
+        try await store.save([first])
+        let prefixes = root.appendingPathComponent("Prefixes")
+        let old = prefixes.appendingPathComponent(first.id.uuidString)
+            .appendingPathComponent(CalimochoReleasePin.release04.engineName)
+        try FileManager.default.createDirectory(at: old, withIntermediateDirectories: true)
+        let save = Data("saved before uninstall".utf8)
+        try save.write(to: old.appendingPathComponent("save.dat"))
+        _ = try await store.remove(id: first.id)
+        let reinstalled = InstalledGame(id: UUID(), title: first.title, identityName: first.identityName,
+            version: first.version, storeId: first.storeId, folder: first.folder, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        try await store.save([reinstalled])
+        let history = try await store.prefixInstallationIDs(productID: first.storeId)
+        let target = CalimochoPrefixContinuity.location(productID: first.storeId, installationID: reinstalled.id,
+            engine: selection.inspection.engineName!, root: prefixes)
+        try CalimochoPrefixContinuity.prepare(prefix: target, selection: selection,
+            productID: first.storeId, legacyIDs: history + [reinstalled.id])
+        let restored = try Data(contentsOf: target.appendingPathComponent("save.dat"))
+        check(history == [first.id] && restored == save
+              && FileManager.default.fileExists(atPath: old.appendingPathComponent("save.dat").path),
+              "S9: uninstall persists UUID-to-product provenance and reinstall restores prefix saves without deleting the old copy")
+        let sameGame = CalimochoPrefixContinuity.location(productID: first.storeId, installationID: UUID(),
+            engine: CalimochoReleasePin.release04.engineName, root: prefixes)
+        let otherGame = CalimochoPrefixContinuity.location(productID: "9P9VNSQK1W3K", installationID: UUID(),
+            engine: selection.inspection.engineName!, root: prefixes)
+        check(target.path == sameGame.path && target.path != otherGame.path,
+              "S9: stable product/Wine-family prefix survives installation UUID and release changes without sharing between games")
+        let privateEngine = "calimocho-wine11.20-gptk4b3-tls-vulkan-private"
+        check(CalimochoPrefixContinuity.location(productID: first.storeId, installationID: first.id,
+            engine: privateEngine, root: prefixes) == prefixes.appendingPathComponent(first.id.uuidString).appendingPathComponent(privateEngine),
+              "S9: developer-local NMS and non-release prefix keys are unchanged")
     }
 
     private static func finish(_ controller: CalimochoReleaseInstallController) async throws {

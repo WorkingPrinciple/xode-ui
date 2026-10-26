@@ -422,18 +422,21 @@ enum EngineManagementChecks {
 
             """.utf8).write(to: mockCLI)
             let lifecycle = NativeGameLifecycle()
+            var preparedPrefix = false
             do {
                 _ = try await lifecycle.run(configuration: backend, accountHash: String(repeating: "a", count: 64),
                     operation: "launch", product: "FIXTURE00001", gameDirectory: root,
                     runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent(UUID().uuidString),
                     launchArguments: ["--engine", "candidate", "--registry", registryURL.path,
-                                      "--expected-registry-sha256", digest], engineSelection: selection)
+                                      "--expected-registry-sha256", digest], engineSelection: selection,
+                    prepareAdmittedPrefix: { preparedPrefix = true })
                 check(false, "REQ95 fresh inspection failure must stop lifecycle before launch")
             } catch {
                 let message = InstalledGamesController.nativeLaunchFailureMessage(error)
                 check(error is EngineInspectionError && error.localizedDescription.contains(reason)
                       && message == error.localizedDescription && message != InstalledGameActionCopy.launchUnavailable
                       && InstalledGamesController.launchFailureOpensEngines(error)
+                      && !preparedPrefix
                       && !FileManager.default.fileExists(atPath: launched.path) && lifecycle.stateDirectory == nil,
                       "REQ95 native lifecycle rejection retains \(reason) diagnostically with its specific Play failure and Engines action before spawn or state writes")
             }

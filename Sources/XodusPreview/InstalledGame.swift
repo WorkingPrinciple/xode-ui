@@ -308,6 +308,9 @@ actor InstalledGameStore {
             updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
             updated.storageVolume = game.storageVolume ?? previous.storageVolume
         }
+        for previous in games where previous.folder == game.folder && previous.id != game.id {
+            try rememberPrefixInstallation(previous)
+        }
         games.removeAll { $0.folder == game.folder }
         games.append(updated)
         try save(games)
@@ -316,9 +319,43 @@ actor InstalledGameStore {
 
     func remove(id: UUID) throws -> [InstalledGame] {
         var games = try load()
+        if let game = games.first(where: { $0.id == id }) { try rememberPrefixInstallation(game) }
         games.removeAll { $0.id == id }
         try save(games)
         return games
+    }
+
+    func prefixInstallationIDs(productID: String) throws -> [UUID] {
+        try prefixIdentities()[productID] ?? []
+    }
+
+    private func prefixIdentities() throws -> [String: [UUID]] {
+        let history = file.appendingPathExtension("prefix-identities-v1.json")
+        var info = stat()
+        if lstat(history.path, &info) != 0 {
+            guard errno == ENOENT else { throw InstalledGameError.invalidRegistry }
+            return [:]
+        }
+        let bytes = try InstalledGameFiles.readRegular(history, maximumBytes: 1_048_576, privateFile: true)
+        let records = try JSONDecoder().decode([String: [UUID]].self, from: bytes)
+        guard records.count <= 1024, records.allSatisfy({
+            PCGamesClient.validProductID($0.key) && $0.value.count <= 64
+                && Set($0.value).count == $0.value.count
+        }) else { throw InstalledGameError.invalidRegistry }
+        return records
+    }
+
+    private func rememberPrefixInstallation(_ game: InstalledGame) throws {
+        guard PCGamesClient.validProductID(game.storeId) else { return }
+        var records = try prefixIdentities()
+        var ids = records[game.storeId] ?? []
+        if !ids.contains(game.id) { ids.append(game.id) }
+        guard ids.count <= 64, records.count < 1024 || records[game.storeId] != nil else {
+            throw InstalledGameError.invalidRegistry
+        }
+        records[game.storeId] = ids
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records),
+            to: file.appendingPathExtension("prefix-identities-v1.json"))
     }
 
     func recordSession(id: UUID, startedAt: Date, seconds: Double?) throws {

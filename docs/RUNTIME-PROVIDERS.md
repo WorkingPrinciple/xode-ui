@@ -151,6 +151,18 @@ unmarked prefix is explicitly displayed as `legacy-unclaimed`; it is used as-is,
 not claimed, migrated or moved. The CLI repeats its own ownership checks.
 No prefix or save is inspected during source checks except synthetic fixtures.
 
+Compiled Calimocho releases use stable `Prefixes/<product ID>/calimocho-<Wine version>`
+keys, independent of installation UUID and release revision. Only after fresh backend
+admission, launch can clone a single known same-Wine-line release prefix from a
+proven installation UUID into that stable location. The previous tree and ownership
+record remain untouched; the new ownership record binds the admitted release and
+Wine digest. Wine's external symlinks are copied as links, not followed. Existing
+stable prefixes are never overwritten. Unknown or conflicting ownership and
+ambiguous installation histories refuse adoption rather than guessing. Uninstall
+retains prefixes and records UUID-to-product provenance before removing the Library
+row, so reinstall can find the old saves. Already-orphaned UUIDs with no product
+provenance are not guessed. Apple4, lp and preserved NMS prefixes are unchanged.
+
 The owner-directed NMS free recipe binds only product `BQVQTL3PCH05` at the
 confirmed `~/Games/Xodus/NoMansSky-Xbox` folder: exact PERF registry digest
 `170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609`,
