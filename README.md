@@ -66,16 +66,16 @@ Use an Apple Silicon Mac. The package and app manifests declare macOS 14 minimum
 that is not fresh-Mac certification across supported operating systems.
 Development evidence uses Xcode/macOS SDK 27 or newer and Swift 6.4.
 Gameplay needs a matching reviewed Xodus engine/runtime, legitimate game
-entitlement and explicit human sign-in/Keychain consent. Official CrossOver,
-installed and licensed separately, remains the documented first-release
-dependency; other Wine/graphics recipes remain experimental. CrossOver detection
-does not verify its license or certify a game.
+entitlement and explicit human sign-in/Keychain consent. Calimocho is the
+default engine and can be installed from inside X Ode. CrossOver is optional;
+X Ode detects an installed copy, but detection does not verify its license or
+certify a game. Other Wine/graphics recipes remain experimental.
 
-**Installation:** no public installer is recommended yet. Use only an
-independently admitted, source-matched package with rollback preserved; close the
-app normally and ensure games and mutations have ended before replacement.
-Never force Quit to bypass an installation hold, disable macOS protections, or
-replace the credential helper silently. See the [release checklist](docs/LAUNCH-READINESS.md#release-checklist).
+**Installation:** use the X Ode DMG installer and keep a rollback copy before
+replacing an existing build. Close the app normally and ensure games and
+mutations have ended before replacement. Never force Quit to bypass an
+installation hold, disable macOS protections, or replace the credential helper
+silently. See the [release checklist](docs/LAUNCH-READINESS.md#release-checklist).
 
 ### Build the UI source (macOS only)
 
@@ -103,14 +103,15 @@ unpaired build. See [controlled pair admission](docs/SHIPPING-ADMISSION.md).
 - [Native integration](docs/NATIVE-INTEGRATION.md) and [verification](docs/VERIFICATION.md)
 - [Runtime providers](docs/RUNTIME-PROVIDERS.md) and [launch readiness](docs/LAUNCH-READINESS.md)
 
-Exact installed-engine selection through the UI and a sanitized resource-bundle
-allowlist are not finished. Catalogue projections and private-origin evidence
-remain subject to redistribution review; merging source does not clear those
-rights. Install/cancel/resume acceptance on the latest candidate remains
-incomplete without an eligible uninstalled test target. Broader gameplay,
-online multiplayer, signing/notarization and distribution need separate evidence.
-Heroic integration, Cuphead/Celeste success and UWP/EAppx gameplay are not launch
-claims. Documentation does not hide or disable existing controls.
+The in-app Calimocho installer and allowlisted runtime resource bundle are
+included. The DMG includes a hash-bound `RESOURCE-INVENTORY.json`. Catalogue
+projections and private-origin evidence remain subject to redistribution
+review; merging source does not clear those rights. Install/cancel/resume
+acceptance on the latest candidate remains incomplete without an eligible
+uninstalled test target. Broader gameplay, online multiplayer, notarization and
+distribution need separate evidence. Heroic integration, Cuphead/Celeste
+success and UWP/EAppx gameplay are not launch claims. Documentation does not
+hide or disable existing controls.
 
 ## What X Ode may ask permission for, and why
 

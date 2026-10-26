@@ -1,77 +1,74 @@
-# X Ode launch readiness
+# X Ode 0.2.0 (Beta) launch readiness
 
-Evidence snapshot: **2026-10-12**. This documentation pass read immutable source,
-tests and GitHub metadata; it did not sign, package, install or launch anything.
-The owner's [immutable recovery handoff](https://github.com/dragoshont/xodus-macos-app/blob/00cff3d624ee4ce40c308128eccd3e9d213e0433/docs/PAUSE-HANDOFF.md)
-records bounded read-only recovery and selected-source backup with no game runs. Its recovered identities and
-historical observations below are attributed, not freshly reproduced here.
+Snapshot: **2026-10-26**. This records the interim build and source gates
+observed for this candidate. It is not a release qualification, notarization
+record or gameplay approval.
 
-## Which version?
+## Candidate identity
 
-| Role | Exact source / evidence | What it establishes |
+| Item | Verified state |
+| --- | --- |
+| Product | X Ode 0.2.0 (Beta), build 502 |
+| App source | `a6a45549550471bf8d8be92aee98eb37d8fce35d`; tree `73307652fdd8149a89f2b778a48a9913041146ff` |
+| App bundle ID | `io.github.dragoshont.xodus.development` |
+| Signing identifier | `io.github.dragoshont.xodus` |
+| Signature | Developer ID Application, team `M62Z4M5EUY`; deep strict verification passed |
+| Producer pair | Calimocho -04 source `99e20addf88932de7796fc966fe09e00b71e4981`, tree `7f9e8cc5…` |
+| Bundled CLI | `ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9` |
+| Local installation | Installed over the existing development candidate after the explicit lane-clear and Wine guard; the existing rollback copy was retained |
+| Account state | A read-only Account status check confirmed the saved sign-in; no sign-in or sign-out action was taken |
+| Distribution | No DMG or notarization was produced for this interim candidate |
+
+The signed app was launched from its existing development location. Its product
+name changed to **X Ode**; the bundle ID and signing identifier remained
+unchanged. The local install does not establish a public release or a clean-Mac
+installation result.
+
+## Product and runtime boundaries
+
+Calimocho is the default engine and has an in-app installation flow. CrossOver
+is optional and detected when installed; detection does not establish license
+status or game compatibility. The project supports a DMG installer workflow,
+but this snapshot has no generated or notarized DMG.
+
+The -04 Forza Horizon 6 title-screen check did not establish gameplay
+qualification. “Sign In Required” also occurred with the old -01-fh6 engine,
+so account state remains a separate blocker. Continue and free roam were not
+verified. Do not infer title qualification from the installer, engine pin,
+account status or synthetic checks.
+
+The app source now uses an explicit runtime resource allowlist. The DMG
+packaging path emits a hash-bound `RESOURCE-INVENTORY.json`; QA/inspection
+queues, package-only receipts and machine-local proof paths are not allowed in
+the distributed app bundle. Their required admission hashes remain in the
+package receipt. The inventory lists the approved NMS developer-local registry
+binding in `engine-defaults-v1.json` as the sole explicit path exception.
+
+## Verification and remaining gates
+
+On the exact interim source, the shipping-pair checks (64), beta-package
+checks, release-candidate tests (18), local-candidate tests (7), management
+checks (10,910), game-operation checks (1,310), preview checks (454), auth-host
+checks (152) and credential checks (19) passed. The preview checks require the
+configured UX render directory. The broader `sh tools/check.sh` run retained a
+separate native-session failure:
+`e5rt_execution_stream_operation_create_precompiled_compute_operation_with_options`,
+code 13 (857 checks, one failure). The native-session issue is not reported as
+fixed by the packaging or documentation changes.
+
+| Gate | Status | Boundary |
 | --- | --- | --- |
-| Historical reference | [`02e67f8`](https://github.com/dragoshont/xodus-macos-app/commit/02e67f89c01dbd9ea3549a1fc628adbfcfbad29a) | Package and deployment receipts recovered; superseded by later `fac58d6` deployment evidence, not identified as current |
-| Later historical deployment | [`fac58d6`](https://github.com/dragoshont/xodus-macos-app/commit/fac58d6f501c356a0e763d397263e5a0a30b3477), [successful native-fixtures CI](https://github.com/dragoshont/xodus-macos-app/actions/runs/38065402103) | Package and deployment receipts recovered; later installation supersedes the early Quit hold. CI success independently read |
-| Current app | Generic version 0.2.0/build 2 | Current executable/source identity unestablished; Info.plist alone cannot identify its commit |
-| Newer development source | [`87110738`](https://github.com/dragoshont/xodus-macos-app/commit/87110738e4d90449b748f3a8a809f407d41b830f) on `dragoshont-xodus-app-foundation` | Separate from historical deployments; not a release or current-install receipt |
-| Backend source | `87ccc73af0811e7bc007a2ad97035d39e8eed96b`, branch `private/ai-hogwarts-runtime`, plus dirty working script | 165 selected working-source files preserved in a private local Windows archive, all hashes verified. Not a full build closure or remote publication: provenance findings need human review. Historical `a3036bf` full SHA/ancestry unresolved |
-| `main` / documentation branch | Initial `45a1596` ancestry plus documentation-only updates | Not the Swift application source; never use the documentation checkout as a packaging input |
+| Signed interim candidate | Verified | Build 502; Developer ID signature passed deep strict verification |
+| Local in-place deployment | Verified | Existing app identity preserved; rollback copy retained |
+| Read-only account status | Verified | Saved sign-in was confirmed; no credentials were changed |
+| Resource sanitization | Source gate | The allowlist and path/QA checks apply to the next build, not the installed interim build |
+| DMG and notarization | Pending | No DMG or notarization for the interim candidate |
+| Fresh-Mac installation | Pending | Local installation does not establish first-run behavior or Gatekeeper acceptance |
+| Forza Horizon 6 gameplay | Not qualified | Title screen only; sign-in blocked Continue and free roam |
+| Install/cancel/resume acceptance | Pending | Requires an eligible uninstalled test target |
+| Broader gameplay and multiplayer | Pending | No general compatibility or online-multiplayer claim |
 
-GitHub reports [#12](https://github.com/dragoshont/xodus-macos-app/pull/12)
-(M10), [#13](https://github.com/dragoshont/xodus-macos-app/pull/13) and
-[#15](https://github.com/dragoshont/xodus-macos-app/pull/15) (M1/M3), and
-[#14](https://github.com/dragoshont/xodus-macos-app/pull/14) (M7) merged on
-2026-10-10 into **the foundation branch, not `main`**. Historical dashboard
-"open" labels are stale. These merges do not establish an installed package,
-backend protocol support, live queue acceptance or available-version coverage.
-
-## Qualification boundaries
-
-Pinned [game-operation checks](https://github.com/dragoshont/xodus-macos-app/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/XodusPreview/GameOperationChecks.swift)
-exercise synthetic script receipts, progress, cancellation, support checks and
-Stop results. [Library checks](https://github.com/dragoshont/xodus-macos-app/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/XodusPreview/LibraryAccessChecks.swift)
-keep imported installation, ownership and subscription evidence distinct.
-[Shipping checks](https://github.com/dragoshont/xodus-macos-app/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Tests/ShippingChecks/ShippingChecks.swift)
-assert neutral startup and dependency/experimental boundaries. These are not
-retail gameplay or completed-release percentages.
-
-No Man's Sky single-player is owner-confirmed on the CrossOver-backed path.
-Pinned [historical acceptance notes](https://github.com/dragoshont/xodus-macos-app/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/README.md)
-also record bounded Lara install/repair/uninstall/main-menu and Hogwarts
-Play/Continue Playing observations; they do not certify the current app or all
-games. Celeste's recorded unsupported-package result is **not** success.
-Cuphead, UWP/EAppx and online multiplayer have no success claim here.
-
-Both recovered package receipts agree on the bundled management CLI and frozen
-broker hashes/byte counts recorded in the recovery handoff. The separately read
-current service hash is **not** certified against those historical receipts or a
-backend build commit. The NMS registered launcher digest and delegation were
-recovered: it uses `Runtime-NMS-BQVQTL3PCH05-76`, not the generic runtime.
-Its current script bytes are not bound to the historical successful run.
-Prior Cuphead experiments modified the same CrossOver vendor tree used by NMS;
-historical restoration receipts do not establish isolation or fresh NMS
-qualification. Reconfirm the exact runtime before release acceptance.
-
-## Release checklist
-
-| State | Gate | Required evidence |
-| --- | --- | --- |
-| Verified source evidence | Pinned source exists; native-fixtures CI succeeded; minimum OS is declared | Immutable commit, CI run and manifests linked above |
-| Recovered owner evidence | Both historical packages/deployments, management CLI/broker pins, current service hash and NMS launcher delegation | Immutable recovery handoff; not current-app identity or backend/service/game-success pairing |
-| Historical owner report | NMS single-player; bounded earlier UI/game acceptance | Keep title, package/runtime version and observed mode separate from current candidate qualification |
-| Pending | Reproducible backend and exact package pair | Selected working source is backed up locally. Resolve historical `a3036bf` identity; map source/build to the service, establish full build closure and paired-inputs evidence, and review provenance before remote upload |
-| Pending | Current app identity and safe future installation | Identify installed executable/source; do not reinstate the superseded Quit blocker. Future replacement still needs normal Quit, no gameplay/mutation, preserved rollback, authorization and installed-byte verification |
-| Pending | Fresh-Mac prerequisites and UX | Clean Apple Silicon Mac: qualify supported OS, licensed CrossOver, runtime setup, sign-in/Keychain consent, empty/error/recovery states and all advertised operations |
-| Pending | Signing, notarization and distribution | Developer ID/notarization and Gatekeeper evidence for the exact artifact, component/license/source manifest, reviewed installer/update/rollback channel; a local signed candidate is insufficient |
-| Pending | Title-specific launch qualification | Authorized entitled MSIXVC install, NMS single-player start/exit and saves; separately verify Play/Stop, update/repair/uninstall and cancellation on the exact release pair |
-| Pending | Publication hygiene and visuals | Review exact source/archive for secrets, real-account captures and proprietary runtime/game binaries; obtain a sanitized current UI capture with consent |
-
-The README embeds only the inspected **historical Library fixture mockup** with
-original fictional art. No usable current live screenshot has been established.
-No sensitive content was found in that image; the exact release archive has
-**not** been audited. Do not publish private scripts, credentials, entitled game
-packages or third-party runtime binaries without an explicit redistribution
-review. No release, tag, runtime rename or feature gate is created by these docs.
-
-Backend owner: [regrouping and paused scope](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
-and [publication precautions](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).
+The README mockup remains historical UI artwork, not a current live capture.
+Third-party runtime, game-package, redistribution-rights and corresponding-source
+obligations remain separate release gates; source changes or a local signature
+do not satisfy them.
