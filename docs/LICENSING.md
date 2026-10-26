@@ -78,20 +78,20 @@ evidence establish provenance and notice-text identity, not legal clearance.
 Do not publish the draft or source archive before the source asset is attached
 and the owner makes the publication decision.
 
-The current -06 producer is `1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb`
-(tree `5ebdba190998fa2c719885dc53cf3e7d2b5c00e1`), with signed manifest
-`04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b`, CLI
-`146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3`, and
-Windows helper `7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed`.
+The current -06 producer is `600fb1f2f1cc82e7519c965a5589269ba2c99008`
+(tree `d75e88da420bed5c0537edde44721a28323a21e3`), with signed manifest
+`2d9ff63cf71e212da895c7c55ad88b8d8504e7fe3aacb1844bc4be812d42a479`, CLI
+`de8e6fb21068c0d60479a5634091d23a6977d865f5b9d26343caecdfe00d44a9`, and
+Windows helper `13199ebc15f23001fd2d87488f758f7856512872726c90ca5111c793eeb47c29`.
 Its corresponding-source archive
-`xodus-cli-beta-1bcc1c42-source.tar` is SHA-256
-`6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87`
-(8,980,480 bytes; 589 members), from that exact commit and excluding
+`xodus-cli-beta-600fb1f2-source.tar` is SHA-256
+`7573a629d1a14c98424530d40572dbd638920b4b5a269a8d7df823b7863ce003`
+(9,216,000 bytes; 589 members), from that exact commit and excluding
 `docs/private-ai/` and `docs/private-checkpoints/`.
 The regenerated inventory SHA-256 is
-`3ff49520c8eef04343806c75ab699084a670e2f21ee7adc9194cf8bb1979c425`;
+`e9f8eb634044f34eba1a9437b7b8a69fe6777c8ea5d469aeef4a7fd738fbcd9e`;
 the matching source-bound supplemental evidence SHA-256 is
-`2d5b88033c9ca273148e13b3e4f1336680b3010bc113f514f4b13caad3e858bb`.
+`5f6e6ae4e195ffb4d52d064b86a99a41c70f90c71de87dd9362f0940696191e8`.
 It covers 479 package identities and 462 compiler-artifact identities, with
 one unresolved corresponding-source delivery and applicable licence/notice
 review obligation. The evidence establishes provenance and notice-text
