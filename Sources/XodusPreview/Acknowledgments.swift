@@ -87,7 +87,9 @@ struct AcknowledgmentsInventory: Sendable {
     /// The pinned release engine that's installed, preferring the active pin; nil when none is installed.
     static func installedReleaseEngine(root: URL = CalimochoReleaseEngines.defaultEnginesRoot) -> URL? {
         let installed = CalimochoReleaseEngines.installedNames(root: root)
-        let name = installed.contains(CalimochoRelease.engineID) ? CalimochoRelease.engineID : installed.last
+        let name = installed.contains(CalimochoRelease.engineID) ? CalimochoRelease.engineID
+            : CalimochoReleasePin.all.filter { installed.contains($0.engineName) }
+                .max { ($0.releaseVersion?.revision ?? 0) < ($1.releaseVersion?.revision ?? 0) }?.engineName
         return name.map { root.appendingPathComponent($0, isDirectory: true) }
     }
 
