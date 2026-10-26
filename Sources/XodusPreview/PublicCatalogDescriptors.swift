@@ -582,12 +582,20 @@ actor PublicCatalogDescriptors {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         var invalid = checked.invalid
+        // REQ-121 diagnosis: name why records are rejected (no product IDs), so a live run can attribute them.
+        var reasons: [String: Int] = [:]
+        let checkedAt = now()
+        for record in response.descriptors where checked.invalid.contains(record.productID) {
+            reasons[CatalogDescriptors.rejection(record, market: market, language: language, now: checkedAt)
+                    ?? "unknown", default: 0] += 1
+        }
         for record in checked.valid {
             guard let bytes = try? encoder.encode(record.product),
                   let wrapped = try? JSONEncoder().encode(JSONValue.object(["Products": .array([record.product])])),
                   (try? JSONDecoder().decode(PCGamesCatalog.self, from: wrapped)) != nil,
                   let expiry = try? record.expiration() else {
                 invalid.insert(record.productID)
+                reasons["productDecode", default: 0] += 1
                 continue
             }
             result.entries[record.productID] = Entry(bytes: bytes, expiresAt: expiry, usedAt: now())
@@ -595,7 +603,7 @@ actor PublicCatalogDescriptors {
         for id in invalid { result.failures[id] = Self.unreadableRecord }
         if !invalid.isEmpty {
             Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
-                .warning("Public descriptor records rejected individually: \(invalid.count) of \(ids.count)")
+                .warning("Public descriptor records rejected individually: \(invalid.count) of \(ids.count); reasons=\(reasons.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: ","), privacy: .public) requestedMarket=\(market, privacy: .public) requestedLanguage=\(language, privacy: .public) recordMarkets=\(Set(response.descriptors.map(\.market)).sorted().joined(separator: "/"), privacy: .public) recordLanguages=\(Set(response.descriptors.map(\.language)).sorted().joined(separator: "/"), privacy: .public)")
         }
         let oversized = response.failures.filter {
             $0.error.code == "LIMIT_EXCEEDED" && !$0.error.retryable

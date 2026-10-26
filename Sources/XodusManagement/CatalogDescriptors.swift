@@ -36,18 +36,29 @@ public struct CatalogDescriptors: Decodable, Sendable {
         }
         var valid: [Record] = [], invalid = Set<String>()
         for record in descriptors {
-            guard let checked = try? Self.date(record.checkedAt), let expiry = try? record.expiration(),
-                  record.market == market, record.language == language,
-                  record.product.object != nil, record.product["ProductId"]?.string == record.productID,
-                  ["live", "cached"].contains(record.freshness),
-                  checked <= now.addingTimeInterval(skew), expiry > now,
-                  expiry.timeIntervalSince(checked) == 300 else {
+            guard Self.rejection(record, market: market, language: language, now: now, skew: skew) == nil else {
                 invalid.insert(record.productID)
                 continue
             }
             valid.append(record)
         }
         return (valid, invalid)
+    }
+
+    /// Why one record fails `validRecords`, as a short non-identifying reason, or nil when it's valid.
+    public static func rejection(_ record: Record, market: String, language: String, now: Date,
+                                 skew: TimeInterval = 30) -> String? {
+        guard let checked = try? date(record.checkedAt) else { return "checkedAtFormat" }
+        guard let expiry = try? record.expiration() else { return "expiresAtFormat" }
+        if record.market != market { return "market" }
+        if record.language != language { return "language" }
+        if record.product.object == nil { return "productShape" }
+        if record.product["ProductId"]?.string != record.productID { return "productIdentity" }
+        if !["live", "cached"].contains(record.freshness) { return "freshness" }
+        if checked > now.addingTimeInterval(skew) { return "checkedInFuture" }
+        if expiry <= now { return "expired" }
+        if expiry.timeIntervalSince(checked) != 300 { return "lifetime" }
+        return nil
     }
 
     public func validate(ids: [String], market: String, language: String, now: Date) throws {
