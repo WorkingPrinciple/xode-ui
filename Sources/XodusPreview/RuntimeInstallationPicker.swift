@@ -12,6 +12,7 @@ struct RuntimeInstallationPicker: View {
     var backendPath = ""
     var embeddedInSettings = false
     var showsAdvanced = true
+    var checkUpdatesOnOpen: Bool
     @ObservedObject var userEngineModel: UserEngineModel
     @AppStorage(NativeEngineDefaults.preferenceKey) private var savedAdmission = Data()
     @ObservedObject private var registryObservation: EngineRegistryObservation
@@ -25,7 +26,8 @@ struct RuntimeInstallationPicker: View {
          showsAdvanced: Bool = true, registryObservation: EngineRegistryObservation? = nil,
          userEngineModel: UserEngineModel = UserEngineModel(),
          operations: GameOperationsController? = nil,
-         calimochoInstaller: CalimochoReleaseInstallController? = nil) {
+         calimochoInstaller: CalimochoReleaseInstallController? = nil,
+         checkUpdatesOnOpen: Bool = false) {
         self.settings = settings
         self.backendPath = backendPath
         let installedController = installed ?? InstalledGamesController()
@@ -36,6 +38,7 @@ struct RuntimeInstallationPicker: View {
             calimochoInstaller ?? CalimochoReleaseInstallController())
         self.embeddedInSettings = embeddedInSettings
         self.showsAdvanced = showsAdvanced
+        self.checkUpdatesOnOpen = checkUpdatesOnOpen
         self.userEngineModel = userEngineModel
         _registryObservation = ObservedObject(wrappedValue:
             registryObservation ?? EngineRegistryObservation(inspector: settings.providerInspector))
@@ -55,7 +58,7 @@ struct RuntimeInstallationPicker: View {
             error: error ?? (defaultID == nil ? "The default engine selection couldn't be read. Refresh engines and try again." : nil),
             settings: settings, allowsFileReads: allowsFileReads, userEngineModel: userEngineModel,
             setDefault: { name in
-                guard !settingDefault, allowsFileReads else { return }
+                guard !settingDefault, !calimochoInstaller.isWorking, allowsFileReads else { return }
                 settingDefault = true
                 Task {
                     defer { settingDefault = false }
@@ -96,6 +99,39 @@ struct RuntimeInstallationPicker: View {
                 return installed.availableEngineOverrides.contains {
                     $0.inspection.engineName == CalimochoRelease.engineID
                 }
+            },
+            showsCalimochoUpdates: true,
+            checkCalimochoUpdatesOnOpen: checkUpdatesOnOpen,
+            beginCalimochoUpdate: { old in
+                calimochoInstaller.update(from: old, isBusy: {
+                    !allowsFileReads || installed.runningGameID != nil || installed.stoppingGameID != nil
+                        || installed.mutationActive || operations.isBusy || operations.serviceBusy
+                        || operations.setupRepairing || operations.orphanRunning || operations.recoveryRequired
+                        || operations.checkingRecovery || settingDefault
+                }, reserve: {
+                    try installed.reserveMutation(gameID: nil)
+                }, release: {
+                    installed.releaseMutation()
+                }, admit: {
+                    await installed.refreshEngineOverrides(force: true)
+                    releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(root: calimochoInstaller.enginesRoot)
+                    return installed.availableEngineOverrides.contains {
+                        $0.inspection.engineName == CalimochoRelease.engineID
+                    }
+                }, activate: {
+                    guard let selection = installed.availableEngineOverrides.first(where: {
+                        $0.inspection.engineName == CalimochoRelease.engineID
+                    }) else { throw CalimochoUpdateError.admission }
+                    try await installed.activateCalimochoUpdate(selection)
+                })
+            }, removeOldCalimocho: {
+                calimochoInstaller.removeOld(isBusy: {
+                    !allowsFileReads || installed.runningGameID != nil || installed.stoppingGameID != nil
+                        || installed.mutationActive || operations.isBusy || operations.serviceBusy
+                        || operations.setupRepairing || operations.orphanRunning || operations.recoveryRequired
+                        || operations.checkingRecovery || settingDefault
+                }, reserve: { try installed.reserveMutation(gameID: nil) },
+                   release: { installed.releaseMutation() })
             }) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)

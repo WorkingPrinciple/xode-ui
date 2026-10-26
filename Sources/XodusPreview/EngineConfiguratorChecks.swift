@@ -242,7 +242,7 @@ extension EngineConfiguratorChecks {
         let state = AppState(settingsDefaults: settingsDefaults)
         let session = LiveSession()
         SettingsPaneSelection.select(.engines, defaults: settingsDefaults)
-        let host = NSHostingView(rootView: LiveSettingsView(engineModel: model)
+        let host = NSHostingView(rootView: LiveSettingsView(engineModel: model, allowsUpdateChecks: false)
             .environmentObject(state)
             .environmentObject(session)
             .defaultAppStorage(settingsDefaults)

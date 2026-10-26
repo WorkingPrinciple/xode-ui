@@ -18,12 +18,12 @@ final class ApplicationTerminationCoordinator {
         runtime?.beginApplicationTermination()
         session?.applicationTerminating = true
         let pending = Task {
-            await calimochoInstaller?.shutdownForApplicationTermination()
+            let installerClosed = await calimochoInstaller?.shutdownForApplicationTermination() ?? true
             async let runtimeClosed = runtime?.shutdownForApplicationTermination() ?? true
             async let managementClosed = session?.disconnect() ?? true
             async let foregroundClosed = installedGames?.shutdownForegroundHandoff() ?? true
             let results = await (runtimeClosed, managementClosed, foregroundClosed)
-            return results.0 && results.1 && results.2
+            return installerClosed && results.0 && results.1 && results.2
         }
         operation = pending
         let closed = await pending.value
