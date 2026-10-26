@@ -162,10 +162,16 @@ enum BrandUXChecks {
         check(CalimochoAvailability.verifiedRelease(root: emptyRoot, admission: nil) == .missing
               && CalimochoAvailability.from(choices: [failed], checking: false,
                     release: CalimochoAvailability.verifiedRelease(root: emptyRoot, admission: nil)) == .missing
-              && CalimochoAvailability.neutralizingAdmission(.invalid(CalimochoAvailability.notAdmittedReason))
-                == .pendingVerification
-              && CalimochoAvailability.neutralizingAdmission(.invalid("Damaged.")) == .invalid("Damaged."),
+              && CalimochoAvailability.neutralizingAdmission(.invalid(CalimochoAvailability.notAdmittedReason),
+                                                             rejected: false) == .pendingVerification
+              && CalimochoAvailability.neutralizingAdmission(.invalid("Damaged."), rejected: false) == .invalid("Damaged."),
               "REQ-115: The Engines pane maps 135c's release verification of an empty Engines folder to Missing")
+        let rejected = CalimochoAvailability.neutralizingAdmission(.invalid(CalimochoAvailability.notAdmittedReason),
+                                                                    rejected: true)
+        check(rejected == .invalid(CalimochoAvailability.rejectedReason) && rejected.needsDownload
+              && rejected.message?.contains("Check Again") == true && rejected.message?.contains("will be ready") == false
+              && CalimochoAvailability.from(choices: [failed], checking: false, release: rejected) == rejected,
+              "REVIEW M2: Check completed and the pin failed → Invalid with Check Again/reinstall, never pending")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
         let pinned = CalimochoReleasePin.all.last!.engineName
         check(CalimochoRelease.engineID == pinned && CalimochoReleasePin.named(CalimochoRelease.engineID) != nil

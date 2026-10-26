@@ -543,17 +543,28 @@ enum CalimochoAvailability: Equatable, Sendable {
     }
 
     /// Runs the active pin's release verification off the main actor (it reads and hashes the engine).
-    /// A verified engine the backend hasn't admitted yet is neutral, not invalid.
-    static func verifyReleaseInBackground(admission: EngineInspection?) async -> Self {
+    /// `rejected` is true when a completed engine check failed this pin.
+    static func verifyReleaseInBackground(admission: EngineInspection?, rejected: Bool) async -> Self {
         let pin = CalimochoReleasePin.all.last!
         let result = await Task.detached(priority: .utility) {
             CalimochoAvailability.verifiedRelease(pin, admission: admission)
         }.value
-        return neutralizingAdmission(result)
+        return neutralizingAdmission(result, rejected: rejected)
     }
 
-    static func neutralizingAdmission(_ status: Self) -> Self {
-        status == .invalid(notAdmittedReason) ? .pendingVerification : status
+    static var rejectedReason: String {
+        "\(AppBrand.displayName)'s engine check couldn't confirm it. Choose Check Again, or reinstall Calimocho."
+    }
+
+    /// "Not admitted" is neutral only while no completed check has rejected this pin; a rejection stays invalid.
+    static func neutralizingAdmission(_ status: Self, rejected: Bool) -> Self {
+        guard status == .invalid(notAdmittedReason) else { return status }
+        return rejected ? .invalid(rejectedReason) : .pendingVerification
+    }
+
+    /// True when a completed engine check failed the active pinned release.
+    @MainActor static func rejected(in installed: InstalledGamesController) -> Bool {
+        installed.failedEngineOverrides.contains(CalimochoRelease.engineID)
     }
 
     /// The backend inspection for the active pinned release, if the engine check has one.
