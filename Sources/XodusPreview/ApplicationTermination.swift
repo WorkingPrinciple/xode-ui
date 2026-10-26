@@ -1,5 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import AppKit
+
+@MainActor
+enum RunningGameQuitConfirmation {
+    static func alert(title: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = "\(title) is running."
+        alert.informativeText = "Quitting \(AppBrand.displayName) will close it; unsaved progress may be lost."
+        alert.addButton(withTitle: "Cancel").keyEquivalent = "\r"
+        alert.addButton(withTitle: "Quit and Close Game").keyEquivalent = ""
+        return alert
+    }
+
+    static func confirm(title: String, respond: (NSAlert) -> NSApplication.ModalResponse = { $0.runModal() }) -> Bool {
+        respond(alert(title: title)) == .alertSecondButtonReturn
+    }
+}
 
 @MainActor
 final class ApplicationTerminationCoordinator {

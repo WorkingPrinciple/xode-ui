@@ -44,9 +44,9 @@ struct LocalCalimochoRelease: Equatable, Codable, Sendable {
             let descriptor = folder.appendingPathComponent("calimocho-engine.json")
             let bytes = try InstalledGameFiles.readRegular(descriptor, maximumBytes: 65_536)
             let manifest = try JSONDecoder().decode(CalimochoReleaseManifest.self, from: bytes)
+            guard let version = CalimochoVersion(manifest.version), version == expectedVersion else { return nil }
             guard manifest.schema == "calimocho-engine/1", manifest.engine_id == name,
-                  manifest.provider.id == "calimocho", manifest.provider.contract_version == 1,
-                  let version = CalimochoVersion(manifest.version), version == expectedVersion else {
+                  manifest.provider.id == "calimocho", manifest.provider.contract_version == 1 else {
                 throw CalimochoUpdateError.invalidResponse
             }
             // Discovery is display-only. It does not admit this engine for launch.

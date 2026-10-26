@@ -551,10 +551,10 @@ enum CalimochoAvailability: Equatable, Sendable {
     /// Runs the active pin's raw release verification off the main actor (it reads and hashes the engine).
     /// `status(results:verification:)` applies the engine check's admission and rejection.
     static func verifyReleaseInBackground(
+        _ pin: CalimochoReleasePin = CalimochoReleasePin.all.last!,
         admission: EngineInspection?, root: URL = CalimochoReleaseEngines.defaultEnginesRoot
     ) async -> Self {
-        let pin = CalimochoReleasePin.all.last!
-        return await Task.detached(priority: .utility) {
+        await Task.detached(priority: .utility) {
             CalimochoAvailability.verifiedRelease(pin, root: root, admission: admission)
         }.value
     }
