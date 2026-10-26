@@ -732,10 +732,19 @@ struct PCGamesClient: Sendable {
               let items = root["Products"] as? [Any] else { throw PCGamesError.invalidResponse }
         var seen = Set<String>(), kept: [PCGamesCatalog.Product] = [], dropped = 0
         var droppedIDs = Set<String>()
+        // REQ-121 diagnosis: why items drop. Product IDs are public catalogue identifiers.
+        var undecodable = 0, duplicates = 0, foreign: [String] = []
         for item in items {
             guard let one = try? JSONSerialization.data(withJSONObject: ["Products": [item]]),
-                  let product = try? JSONDecoder().decode(PCGamesCatalog.self, from: one).Products.first,
-                  batch.contains(product.ProductId), seen.insert(product.ProductId).inserted else {
+                  let product = try? JSONDecoder().decode(PCGamesCatalog.self, from: one).Products.first else {
+                undecodable += 1
+                dropped += 1
+                if let id = (item as? [String: Any])?["ProductId"] as? String, batch.contains(id) { droppedIDs.insert(id) }
+                continue
+            }
+            if !batch.contains(product.ProductId) { foreign.append(product.ProductId) }
+            else if seen.contains(product.ProductId) { duplicates += 1 }
+            guard batch.contains(product.ProductId), seen.insert(product.ProductId).inserted else {
                 dropped += 1
                 if let id = (item as? [String: Any])?["ProductId"] as? String, batch.contains(id) { droppedIDs.insert(id) }
                 continue
@@ -747,7 +756,7 @@ struct PCGamesClient: Sendable {
         do { _ = try JSONDecoder().decode(PCGamesCatalog.self, from: data); strictError = "foreign, duplicate or excess products" }
         catch { strictError = String(describing: error).prefix(300).description }
         Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
-            .warning("Public PC descriptor batch kept \(kept.count) products and dropped \(dropped); strict decode: \(strictError, privacy: .public)")
+            .warning("Public PC descriptor batch kept \(kept.count) products and dropped \(dropped); strict decode: \(strictError, privacy: .public); batch=\(batch.count) items=\(items.count) undecodable=\(undecodable) duplicates=\(duplicates) foreign=\(foreign.count) foreignSample=\(foreign.prefix(3).joined(separator: "/"), privacy: .public) batchSample=\(batch.prefix(3).joined(separator: "/"), privacy: .public)")
         guard !kept.isEmpty || items.isEmpty else { throw PCGamesError.invalidResponse }
         return (kept, droppedIDs)
     }

@@ -633,6 +633,23 @@ enum PublicDescriptorChecks {
             }
         }
 
+        func rejection(_ field: String?, _ value: JSONValue? = nil, now: Date? = nil) throws -> String? {
+            var record = validRecord
+            if let field, let value { record[field] = value }
+            let decoded = try JSONValue.object(record).decode(CatalogDescriptors.Record.self)
+            return CatalogDescriptors.rejection(decoded, market: "GB", language: "en-GB",
+                                               now: now ?? wireTime.addingTimeInterval(1))
+        }
+        let reasons = [
+            try rejection(nil), try rejection("market", .string("US")), try rejection("language", .string("en-US")),
+            try rejection("product", .object(["ProductId": .string(sample[1])])),
+            try rejection("freshness", .string("stale")),
+            try rejection("expiresAt", .string(formatter.string(from: wireTime.addingTimeInterval(301)))),
+            try rejection(nil, now: wireTime.addingTimeInterval(300)), try rejection(nil, now: wireTime.addingTimeInterval(-31))
+        ]
+        check(reasons == [nil, "market", "language", "productIdentity", "freshness", "lifetime", "expired", "checkedInFuture"],
+              "REQ-121 diagnosis: each managed descriptor rejection is named without product identifiers: \(reasons)")
+
         if let path = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_CHECK_CLI"] {
             let state = root.appendingPathComponent("source-descriptor-envelope")
             try FileManager.default.createDirectory(at: state, withIntermediateDirectories: false,
