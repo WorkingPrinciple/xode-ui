@@ -40,6 +40,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var unavailableDriveIDs: Set<UUID> = []
     @Published private(set) var availableEngineOverrides: [AdmittedEngineSelection] = []
     @Published private(set) var checkingEngineOverrides = false
+    private var engineOverrideWaiters: [CheckedContinuation<Void, Never>] = []
     private var engineOverridesChecked = false
     @Published private(set) var failedEngineOverrides: Set<String> = []
     @Published private(set) var undiscoveredInstallations: [String: String] = [:]
@@ -1386,11 +1387,30 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func refreshEngineOverrides(force: Bool = true, retryFailed: Bool = false) async {
-        guard loaded, !checkingEngineOverrides, !applicationTerminating,
+        guard loaded, force || !checkingEngineOverrides, !applicationTerminating,
               force || !engineOverridesChecked || (retryFailed && !failedEngineOverrides.isEmpty),
               let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
+        await withEngineOverrideCheck {
+            guard !applicationTerminating, !Task.isCancelled else { return }
+            await inspectEngineOverrides(configuration: configuration, force: force)
+        }
+    }
+
+    func withEngineOverrideCheck(_ inspection: @MainActor () async -> Void) async {
+        while checkingEngineOverrides {
+            await withCheckedContinuation { engineOverrideWaiters.append($0) }
+        }
         checkingEngineOverrides = true
-        defer { checkingEngineOverrides = false }
+        defer {
+            checkingEngineOverrides = false
+            let waiters = engineOverrideWaiters
+            engineOverrideWaiters.removeAll()
+            for waiter in waiters { waiter.resume() }
+        }
+        await inspection()
+    }
+
+    private func inspectEngineOverrides(configuration: BackendConfiguration, force: Bool) async {
         do {
             let catalog = try NativeEngineDefaults.read()
             let names = Self.engineInspectionNames(all: Set(catalog.bindings.map(\.engineName)),

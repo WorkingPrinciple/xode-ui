@@ -356,6 +356,29 @@ enum CalimochoReleaseInstallerChecks {
             check(error is CancellationError && dittoTask.isCancelled,
                   "REQ115: cancellation terminates and reaps the actual ditto process")
         }
+
+        let installed = InstalledGamesController()
+        var releaseFirst: CheckedContinuation<Void, Never>?
+        var inspectionOrder: [Int] = []
+        let firstInspection = Task {
+            await installed.withEngineOverrideCheck {
+                inspectionOrder.append(1)
+                await withCheckedContinuation { releaseFirst = $0 }
+                inspectionOrder.append(2)
+            }
+        }
+        while releaseFirst == nil { await Task.yield() }
+        let forcedInspection = Task {
+            await installed.withEngineOverrideCheck { inspectionOrder.append(3) }
+        }
+        await Task.yield()
+        check(installed.checkingEngineOverrides && inspectionOrder == [1],
+              "REQ115: post-install admission waits for an in-flight engine inspection")
+        releaseFirst?.resume()
+        await firstInspection.value
+        await forcedInspection.value
+        check(inspectionOrder == [1, 2, 3] && !installed.checkingEngineOverrides,
+              "REQ115: queued admission runs a fresh inspection rather than skipping it")
     }
 
     private struct ArchiveFixture: Sendable {
