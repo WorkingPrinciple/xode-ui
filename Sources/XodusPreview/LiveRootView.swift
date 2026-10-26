@@ -156,8 +156,9 @@ struct LiveRootView: View {
             libraryComplete: LibraryFirstLoad.libraryComplete(snapshot: library.representedSnapshot,
                                                               busy: library.busy,
                                                               retriesLeft: library.detailRetriesLeft),
-            // REQ-75: an installed-games load failure is surfaced too, never hidden behind setup.
-            error: library.error ?? (library.representedGames.isEmpty ? state.installedGames.error : nil),
+            error: LibraryFirstLoad.surfacedError(library: library.surfacedError,
+                                                  installed: state.installedGames.error,
+                                                  hasGames: !library.representedGames.isEmpty),
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
             artworkTotal: firstScreenArtwork.total, artworkReady: firstScreenArtwork.ready,
@@ -216,7 +217,7 @@ struct LiveRootView: View {
         var outcome = "cancelled"
         defer {
             LoadSignposts.end("HeroTop8ViewTask", span,
-                "outcome=\(outcome, privacy: .public) ready=\(firstScreenArtwork.ready) total=\(firstScreenArtwork.total)")
+                "outcome=\(outcome) ready=\(firstScreenArtwork.ready) total=\(firstScreenArtwork.total)")
         }
         let ids = items.map(\.id).filter(PCGamesClient.validProductID)
         await LibraryCatalogArtwork.shared.load(ids: ids, market: session.market, language: session.language,

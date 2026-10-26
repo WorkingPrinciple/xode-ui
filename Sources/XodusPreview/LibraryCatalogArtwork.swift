@@ -3,6 +3,21 @@ import Foundation
 import OSLog
 import XodusManagement
 
+enum CatalogArtworkLoadPriority: String, Hashable, Sendable {
+    case foreground
+    case background
+}
+
+/// Per-load tallies; foreground and background loads run side by side, so nothing here is shared.
+@MainActor
+private final class CatalogArtworkLoadTally {
+    var requested = 0
+    var kept = 0
+    var dropped = 0
+    /// Products skipped as unreadable during this load; they make `error` retryable.
+    var skipped = Set<String>()
+}
+
 @MainActor
 final class LibraryCatalogArtwork: ObservableObject {
     static let shared = LibraryCatalogArtwork()
@@ -21,16 +36,14 @@ final class LibraryCatalogArtwork: ObservableObject {
     private(set) var revision: UInt64 = 0
     @Published private(set) var error: String?
     @Published private(set) var detailErrors: [String: String] = [:]
-    /// Products skipped as unreadable during the current load; they make `error` retryable.
-    private var skippedInLoad = Set<String>()
     /// Product IDs whose public details are requested but not yet settled in this scope.
     @Published private(set) var pendingIDs: Set<String> = []
     private var pendingCounts: [String: Int] = [:]
     private var requested: [String: Date] = [:]
-    private var pending: Task<Void, Never>?
+    private var pendingLoads: [CatalogArtworkLoadPriority: Task<Void, Never>] = [:]
+    private var pendingLoadIDs: [CatalogArtworkLoadPriority: UUID] = [:]
     private var scope: String?
     private var generation = UUID()
-    private var pendingID = UUID()
     private var detailPending: [String: Task<Void, Never>] = [:]
     private var revalidations: [UUID: Task<Void, Never>] = [:]
     private let descriptors: PublicCatalogDescriptors
@@ -47,8 +60,9 @@ final class LibraryCatalogArtwork: ObservableObject {
         if scope != next {
             generation = UUID()
             scope = next
-            pending?.cancel()
-            pending = nil
+            pendingLoads.values.forEach { $0.cancel() }
+            pendingLoads = [:]
+            pendingLoadIDs = [:]
             for task in detailPending.values { task.cancel() }
             detailPending = [:]
             for task in revalidations.values { task.cancel() }
@@ -111,18 +125,26 @@ final class LibraryCatalogArtwork: ObservableObject {
         if generation == epoch { detailPending[id] = nil }
     }
 
-    func load(ids: [String], market: String, language: String, refresh: Bool = false) async {
+    func load(ids: [String], market: String, language: String, refresh: Bool = false,
+              priority: CatalogArtworkLoadPriority = .foreground) async {
         guard let market = PCGamesClient.market(market) else {
             retireScope()
             error = "Confirm your account country before loading game details."
             return
+        }
+        let span = LoadSignposts.begin("LibraryCatalogArtwork.load",
+            "priority=\(priority.rawValue) inputIDs=\(Set(ids.filter(PCGamesClient.validProductID)).count)")
+        let tally = CatalogArtworkLoadTally()
+        defer {
+            LoadSignposts.end("LibraryCatalogArtwork.load", span,
+                "priority=\(priority.rawValue) requestedIDs=\(tally.requested) keptIDs=\(tally.kept) droppedIDs=\(tally.dropped) unresolvedIDs=\(tally.requested - tally.kept - tally.dropped)")
         }
         let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
         let epoch = enterScope(nextScope)
         let marked = Set(ids.filter { PCGamesClient.validProductID($0) && (refresh || images[$0] == nil) })
         markPending(marked)
         defer { if generation == epoch { settlePending(marked) } }
-        while let pending {
+        while let pending = pendingLoads[priority] {
             await pending.value
             guard !Task.isCancelled, generation == epoch else { return }
         }
@@ -133,13 +155,16 @@ final class LibraryCatalogArtwork: ObservableObject {
         let ids = ids.filter { PCGamesClient.validProductID($0) && seen.insert($0).inserted }
             .filter { refresh || (requested[$0].map { $0 <= time } ?? true) }
         guard !ids.isEmpty else { return }
+        tally.requested = ids.count
         let batches = stride(from: 0, to: ids.count, by: 20).map { Array(ids[$0..<min($0 + 20, ids.count)]) }
         let descriptors = descriptors
         let token = UUID()
-        skippedInLoad = []
         let task = Task {
             defer {
-                if generation == epoch, pendingID == token { pending = nil }
+                if generation == epoch, pendingLoadIDs[priority] == token {
+                    pendingLoads[priority] = nil
+                    pendingLoadIDs[priority] = nil
+                }
             }
             var failure: (any Error)?
             do {
@@ -152,7 +177,8 @@ final class LibraryCatalogArtwork: ObservableObject {
                         group.addTask {
                             do {
                                 return (index, .success(try await descriptors.read(ids: batch, market: market,
-                                                                                  language: language, refresh: refresh)))
+                                                                                  language: language, refresh: refresh,
+                                                                                  background: priority == .background)))
                             } catch { return (index, .failure(error)) }
                         }
                     }
@@ -161,8 +187,13 @@ final class LibraryCatalogArtwork: ObservableObject {
                         guard !Task.isCancelled, generation == epoch else { throw CancellationError() }
                         do {
                             let read = try result.get()
-                            try await apply(read.data, batch: batches[index], staleIDs: read.staleIDs,
-                                            market: market, language: language, epoch: epoch)
+                            let counts = try await apply(read.data, batch: batches[index], staleIDs: read.staleIDs,
+                                                         market: market, language: language, epoch: epoch)
+                            tally.kept += counts.kept
+                            tally.dropped += counts.dropped
+                            tally.skipped.formUnion(counts.skipped)
+                            LoadSignposts.event("descriptorIDs",
+                                "requestedIDs=\(counts.requested) keptIDs=\(counts.kept) droppedIDs=\(counts.dropped)")
                             if let revalidation = read.revalidation {
                                 follow(revalidation, staleIDs: read.staleIDs, market: market, language: language, epoch: epoch)
                             }
@@ -177,7 +208,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                 } else {
                     let failures = await descriptors.failures(ids: ids, market: market, language: language)
                     guard generation == epoch else { return }
-                    error = failures.isEmpty && skippedInLoad.isEmpty
+                    error = failures.isEmpty && tally.skipped.isEmpty
                         ? nil : "Some public game details couldn't be loaded. Try again."
                 }
             } catch is CancellationError { }
@@ -186,8 +217,8 @@ final class LibraryCatalogArtwork: ObservableObject {
                 self.error = Self.message(error)
             }
         }
-        pending = task
-        pendingID = token
+        pendingLoads[priority] = task
+        pendingLoadIDs[priority] = token
         await task.value
     }
 
@@ -199,12 +230,14 @@ final class LibraryCatalogArtwork: ObservableObject {
     /// Publishes one batch. Saved (stale) entries are asked for again after `staleRetryDelay` unless their
     /// revalidation lands first.
     private func apply(_ data: Data, batch: [String], staleIDs: Set<String>, market: String, language: String,
-                       epoch: UUID) async throws {
+                       epoch: UUID) async throws -> (requested: Int, kept: Int, dropped: Int, skipped: Set<String>) {
         let expirations = await descriptors.expirations(ids: batch, market: market, language: language)
         let failures = await descriptors.failures(ids: batch, market: market, language: language)
         guard !Task.isCancelled, generation == epoch else { throw CancellationError() }
         let parsed = try await Self.parseResponse(data, batch: batch, market: market, language: language)
         guard !Task.isCancelled, generation == epoch else { throw CancellationError() }
+        let keptIDs = Set(parsed.keptProductIDs)
+        let dropped = Set(batch).subtracting(keptIDs).count
         if parsed.rejectedDetailPayload {
             logger.warning("Optional public detail payload was rejected; library identity and artwork remain separate.")
         }
@@ -216,7 +249,6 @@ final class LibraryCatalogArtwork: ObservableObject {
         for id in parsed.images.keys { batchErrors[id] = parsed.errors[id] }
         for id in parsed.skipped {
             batchErrors[id] = "Game details are temporarily unavailable. Try again."
-            skippedInLoad.insert(id)
         }
         if !parsed.images.isEmpty {
             for (id, image) in parsed.images {
@@ -228,6 +260,7 @@ final class LibraryCatalogArtwork: ObservableObject {
         if batchErrors != detailErrors { detailErrors = batchErrors }
         let retry = now().addingTimeInterval(PublicCatalogDescriptors.staleRetryDelay)
         for id in parsed.images.keys { requested[id] = staleIDs.contains(id) ? retry : expirations[id] }
+        return (batch.count, keptIDs.count, dropped, parsed.skipped)
     }
 
     /// When a revalidation lands, adopts fresh expiries and republishes only the tiles whose details changed.
@@ -246,7 +279,8 @@ final class LibraryCatalogArtwork: ObservableObject {
             guard !updated.isEmpty else { return }
             do {
                 let data = try await descriptors.load(ids: updated, market: market, language: language)
-                try await apply(data, batch: updated, staleIDs: [], market: market, language: language, epoch: epoch)
+                _ = try await apply(data, batch: updated, staleIDs: [], market: market,
+                                    language: language, epoch: epoch)
             } catch is CancellationError { }
             catch {
                 logger.warning("Revalidated public game details couldn't be shown; saved details remain.")
@@ -263,6 +297,7 @@ final class LibraryCatalogArtwork: ObservableObject {
         let images: [String: Images]
         let errors: [String: String]
         let rejectedDetailPayload: Bool
+        let keptProductIDs: [String]
         /// Present but unreadable products; retryable, never silently dropped (review M2).
         var skipped: Set<String> = []
     }
@@ -359,7 +394,8 @@ final class LibraryCatalogArtwork: ObservableObject {
                 detail: detailFacts, product: detail)
         }
         return ParsedResponse(images: batchImages, errors: batchErrors,
-            rejectedDetailPayload: rejectedDetailPayload, skipped: skipped)
+            rejectedDetailPayload: rejectedDetailPayload, keptProductIDs: products.map(\.ProductId).filter { !skipped.contains($0) },
+            skipped: skipped)
     }
 
     func retry(id: String, market: String, language: String) async {

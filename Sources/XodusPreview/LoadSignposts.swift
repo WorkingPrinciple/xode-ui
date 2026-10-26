@@ -9,6 +9,22 @@ enum LoadSignposts {
     static let signposter = OSSignposter(subsystem: "io.github.dragoshont.xodus", category: "load-latency")
     static let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "load-latency")
 
+    static func begin(_ name: StaticString, _ fields: String = "") -> OSSignpostIntervalState {
+        let elapsed = sinceLaunch()
+        return signposter.beginInterval(name, id: signposter.makeSignpostID(),
+            "sinceLaunchMs=\(elapsed) \(fields, privacy: .public)")
+    }
+
+    static func end(_ name: StaticString, _ state: OSSignpostIntervalState, _ fields: String = "") {
+        let elapsed = sinceLaunch()
+        signposter.endInterval(name, state, "sinceLaunchMs=\(elapsed) \(fields, privacy: .public)")
+    }
+
+    static func event(_ stage: String, _ fields: String = "") {
+        let elapsed = sinceLaunch()
+        logger.notice("stage=\(stage, privacy: .public) \(fields, privacy: .public) sinceLaunchMs=\(elapsed)")
+    }
+
     /// Milliseconds since this process started, so intervals can be compared with launch time.
     static func sinceLaunch() -> Int {
         Int((Date().timeIntervalSince1970 - processStart) * 1000)
