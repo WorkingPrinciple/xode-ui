@@ -144,9 +144,9 @@ struct XodusPreviewApp: App {
 
     private var navigationAllowed: Bool {
 #if !XODUS_SHIPPING
-        state.fixtureMode || session.hasConfirmedSignIn
+        (state.fixtureMode || session.hasConfirmedSignIn) && !state.firstLoadCovering
 #else
-        session.hasConfirmedSignIn
+        session.hasConfirmedSignIn && !state.firstLoadCovering
 #endif
     }
 
@@ -298,11 +298,11 @@ struct XodusPreviewApp: App {
                 Button(NativeToolbarImportButton.title + "…") { Task { await state.installedGames.chooseGame() } }
                     .keyboardShortcut("i", modifiers: [.command, .shift])
 #if !XODUS_SHIPPING
-                    .disabled(!session.hasConfirmedSignIn || state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
+                    .disabled(!session.hasConfirmedSignIn || state.firstLoadCovering || state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
                               state.installedGames.editing || state.installedGames.choosing ||
                               state.installedGames.mutationActive)
 #else
-                    .disabled(!session.hasConfirmedSignIn || !state.installedGames.loaded || state.installedGames.editing ||
+                    .disabled(!session.hasConfirmedSignIn || state.firstLoadCovering || !state.installedGames.loaded || state.installedGames.editing ||
                               state.installedGames.choosing || state.installedGames.mutationActive)
 #endif
             }
@@ -315,6 +315,7 @@ struct XodusPreviewApp: App {
                     .disabled(!navigationAllowed)
             }
             CommandMenu("Account") {
+                Group {
 #if !XODUS_SHIPPING
                 Button("Account") { state.openAccount() }
                     .disabled(state.fixtureMode)
@@ -345,6 +346,8 @@ struct XodusPreviewApp: App {
                     .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
 #endif
+                            }
+                .disabled(state.firstLoadCovering)
             }
         }
         Settings {

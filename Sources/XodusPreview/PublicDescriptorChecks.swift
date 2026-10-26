@@ -28,6 +28,9 @@ private actor DescriptorTransport: PCGamesTransport {
     var foreign = false
     var failureStatus = 400
     var retryAfter: String?
+    var sharedTitle: String?
+    private(set) var inFlight = 0
+    private(set) var peakInFlight = 0
 
     func configure(blocked: Set<Int> = [], failures: Set<Int> = [], omitted: Set<String> = [], foreign: Bool = false,
                    failureStatus: Int = 400, retryAfter: String? = nil, nonPC: Set<String> = []) {
@@ -39,10 +42,14 @@ private actor DescriptorTransport: PCGamesTransport {
     }
 
     func release(_ index: Int) { continuations.removeValue(forKey: index)?.resume() }
+    func useSharedTitle(_ title: String?) { sharedTitle = title }
 
     func send(_ request: URLRequest) async throws -> PCGamesHTTPResponse {
         let index = requests.count
         requests.append(request)
+        inFlight += 1
+        peakInFlight = max(peakInFlight, inFlight)
+        defer { inFlight -= 1 }
         if blocked.contains(index) { await withCheckedContinuation { continuations[index] = $0 } }
         if failures.contains(index) {
             return PCGamesHTTPResponse(status: failureStatus, data: Data(), retryAfter: retryAfter)
@@ -51,7 +58,7 @@ private actor DescriptorTransport: PCGamesTransport {
         let ids = items.first { $0.name == "bigIds" }!.value!.split(separator: ",").map(String.init)
         let products: [[String: Any]] = ids.filter { !omitted.contains($0) }.map {
             ["ProductId": foreign ? "FIXTURE99999" : $0, "ProductType": "Game", "ProductKind": "Game",
-             "LocalizedProperties": [["ProductTitle": "Game \($0)", "Images": [],
+             "LocalizedProperties": [["ProductTitle": sharedTitle ?? "Game \($0)", "Images": [],
                                       "ProductDescription": "Synthetic descriptor"]],
              "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": [
                 ["PlatformDependencies": [["PlatformName": nonPC.contains($0) ? "Windows.Xbox" : "Windows.Desktop"]]]
@@ -715,6 +722,49 @@ enum PublicDescriptorChecks {
               && boundedResult.games.count == 100 && boundedResult.isComplete
               && totalRequests == 5,
               "REQ-119: Collection resolution reads two descriptor batches at a time, inside the producer's four-operation limit, and merges out-of-order results completely")
+
+        // REQ-119 review L4: collection resolution plus a concurrent artwork read stay inside the
+        // producer's four-operation limit with one license read alongside, and equal titles keep a stable order.
+        let limitTransport = DescriptorTransport()
+        await limitTransport.configure(blocked: [0, 1])
+        let limitStore = PublicCatalogDescriptors(transport: limitTransport)
+        let limitResolution = Task {
+            try await PCGamesClient(transport: limitTransport, descriptors: limitStore)
+                .resolveCollection(ids: ids(100, offset: 20_000), kinds: [:], candidateCount: 100, market: "US", language: "en-US")
+        }
+        try await wait(limitTransport, count: 2)
+        let limitArtwork = LibraryCatalogArtwork(descriptors: limitStore)
+        let artworkRead = Task { await limitArtwork.load(ids: ids(20, offset: 30_000), market: "US", language: "en-US") }
+        try await wait(limitTransport, count: 3)
+        try await Task.sleep(for: .milliseconds(30))
+        let licenseReads = 1
+        let peakWithBlocked = await limitTransport.peakInFlight
+        await limitTransport.release(0)
+        await limitTransport.release(1)
+        _ = try await limitResolution.value
+        await artworkRead.value
+        let peak = await limitTransport.peakInFlight
+        check(peakWithBlocked == 3 && peak + licenseReads <= 4,
+              "REQ-119 review L4: Two collection batches, an artwork read and a license read never exceed the producer's four operations (peak \(peak) + \(licenseReads))")
+        var orders: [[String]] = []
+        for reversed in [false, true] {
+            let tieTransport = DescriptorTransport()
+            await tieTransport.useSharedTitle("Same Title")
+            await tieTransport.configure(blocked: [0, 1])
+            let tieIDs = ids(40, offset: 40_000)
+            let resolution = Task {
+                try await PCGamesClient(transport: tieTransport, descriptors: PublicCatalogDescriptors(transport: tieTransport))
+                    .resolveCollection(ids: tieIDs, kinds: [:], candidateCount: 40, market: "US", language: "en-US")
+            }
+            try await wait(tieTransport, count: 2)
+            for index in reversed ? [1, 0] : [0, 1] {
+                await tieTransport.release(index)
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            orders.append(try await resolution.value.games.map(\.id))
+        }
+        check(orders.count == 2 && orders[0] == orders[1] && orders[0] == orders[0].sorted(),
+              "REQ-119 review L4: Games with equal titles keep the same display order whichever batch finishes first")
 
         for count in [36, 300, 512] {
             let baselineTransport = DescriptorTransport()

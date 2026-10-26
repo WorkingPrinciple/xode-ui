@@ -591,6 +591,12 @@ final class LiveSession: ObservableObject {
             await operation.task.value
             return
         }
+        // REQ-119: queued, not skipped, while the library's collection read goes first.
+        let generationAtEntry = generation
+        for _ in 0..<300 where yieldsToLibraryRead {
+            do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+            guard generation == generationAtEntry else { return }
+        }
         guard !applicationTerminating, canLoadRecentLibrary,
               !automatically || recentLibraryEntryGeneration != generation else { return }
         let token = generation
@@ -1334,6 +1340,9 @@ final class LiveSession: ObservableObject {
 
     private func refreshAccountState() async {
         guard isReady, supports(.authStatus), let client, !accountOperationBusy else { return }
+        let firstCheck = !initialStatusSettled
+        if firstCheck { FirstLoadTimeline.launchMark("signInCheckStart") }
+        defer { if firstCheck, initialStatusSettled { FirstLoadTimeline.launchMark("signInCheckDone") } }
         let token = generation
         clearRecentLibrary()
         authenticationGeneration += 1

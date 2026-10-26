@@ -733,7 +733,11 @@ struct PCGamesClient: Sendable {
         var excluded = 0
         var completedBatches = 0
         func snapshot() -> PCGamesSnapshot {
-            PCGamesSnapshot(games: games.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending },
+            // Ties break by ID so the display order doesn't depend on which batch finished first.
+            PCGamesSnapshot(games: games.sorted {
+                    let order = $0.title.localizedStandardCompare($1.title)
+                    return order == .orderedSame ? $0.id < $1.id : order == .orderedAscending
+                },
                 excludedCount: excluded, updatedAt: Date(), accountID: accountID, boundAccountHash: accountHash,
                 unresolvedIDs: unresolved, unresolvedCount: candidateCount - ids.count + unresolved.count,
                 unresolvedKinds: kinds.filter { unresolved.contains($0.key) },
