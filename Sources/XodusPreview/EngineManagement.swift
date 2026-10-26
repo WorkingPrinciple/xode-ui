@@ -30,7 +30,9 @@ enum CalimochoRelease {
         URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-"
             + (EngineDisplayName.releaseVersion(engineID)?.version ?? engineID))!
     }
-    static let downloadPublished = false
+    /// Release engines whose download asset is live (owner-published). The button appears only for these.
+    static let publishedEngineIDs: Set<String> = ["calimocho-11.20-4.0b3-04"]
+    static var downloadPublished: Bool { publishedEngineIDs.contains(engineID) }
     static let unpublishedNotice = "Calimocho isn't available for download yet — ask the person who invited you to the beta."
 }
 

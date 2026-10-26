@@ -198,10 +198,11 @@ enum BrandUXChecks {
               && CalimochoRelease.downloadURL.absoluteString
                 == "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-"
                     + EngineDisplayName.releaseVersion(pinned)!.version
-              && !CalimochoRelease.downloadPublished
+              && CalimochoRelease.downloadPublished == CalimochoRelease.publishedEngineIDs.contains(pinned)
+              && !CalimochoRelease.publishedEngineIDs.contains("calimocho-11.20-4.0b3-01")
               && CalimochoRelease.unpublishedNotice
                 == "Calimocho isn't available for download yet — ask the person who invited you to the beta.",
-              "REVIEW H2a: The release keeps one URL constant but shows no download control until the asset is published")
+              "REVIEW H2a: The download control appears only for a pinned release whose asset is published (pinned \(pinned), published \(CalimochoRelease.downloadPublished))")
         check(AppLegalCopy.d3dMetal.contains("Apple D3DMetal") && AppLegalCopy.d3dMetal.contains("non-commercial")
               && AppLegalCopy.d3dMetal.contains("downloaded separately"),
               "COR187: Licenses state that Calimocho bundles Apple D3DMetal under Apple's non-commercial license, downloaded separately")
@@ -240,14 +241,16 @@ enum BrandUXChecks {
                       && !joined.contains("Private") && !joined.contains("Use App"),
                       "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
                 let noDownloadControl = !joined.contains("Get Calimocho")
+                let downloadState = CalimochoRelease.downloadPublished
+                    ? joined.contains("Get Calimocho (beta)") && !joined.contains("isn't available for download yet")
+                    : joined.contains("isn't available for download yet") && noDownloadControl
                 switch scenario {
                 case "missing":
-                    check(joined.contains("Calimocho isn't installed") && joined.contains("isn't available for download yet")
-                          && joined.contains("Check Again") && noDownloadControl,
-                          "REVIEW H2a: Missing Calimocho says so, explains the download isn't available yet and offers no dead-end button (\(scheme))")
+                    check(joined.contains("Calimocho isn't installed") && joined.contains("Check Again") && downloadState,
+                          "REVIEW H2a: Missing Calimocho says so and offers Get Calimocho only when the pinned asset is published (\(scheme))")
                 case "invalid":
-                    check(joined.contains("couldn't be verified") && joined.contains("isn't available for download yet")
-                          && joined.contains("Not Verified") && !labels.contains("Default") && noDownloadControl,
+                    check(joined.contains("couldn't be verified") && downloadState
+                          && joined.contains("Not Verified") && !labels.contains("Default"),
                           "REQ-114(4): Invalid Calimocho gives the verification reason and marks the engine Not Verified (\(scheme))")
                 case "pending":
                     check(joined.contains("will be ready once") && !joined.contains("isn't available for download")
