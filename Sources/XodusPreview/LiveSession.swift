@@ -317,6 +317,11 @@ final class LiveSession: ObservableObject {
     /// background; removed on sign-out.
     static func lastVerifiedCountryKey(_ account: String) -> String { "Xodus.accountCountry.lastVerified.\(account)" }
     @Published private(set) var accountCountryProvisional = false
+    /// REQ-121: after a confirmed sign-out, saved artwork and saved public descriptors (whose product IDs
+    /// reflect the library and whose market reflects the country) are removed. Injectable for checks.
+    var signOutCleanup: @MainActor () async -> Void = {
+        try? await CatalogArtworkStore.shared.clearForSignOut()
+    }
 
     /// Uses the last verified country for this account until the profile read confirms it.
     func applyProvisionalAccountCountry() {
@@ -1746,6 +1751,7 @@ final class LiveSession: ObservableObject {
             accountStatusCurrent = true
             diagnosticPreview = nil
             if let signedOutAccount { forgetAccountCountry(signedOutAccount) }
+            await signOutCleanup()
             return true
         } catch {
             guard token == generation else { return false }

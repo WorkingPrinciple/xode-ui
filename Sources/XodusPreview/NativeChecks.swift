@@ -571,7 +571,11 @@ enum NativeChecks {
             check(expired.accountJourneyTitle == "Sign-in needs reconnecting"
                   && expired.accountJourneyMessage == "Your saved Xbox Live sign-in needs to be refreshed. Choose Sign in with Microsoft.",
                   "Expired account copy explains the existing sign-out then sign-in recovery in plain language")
+            var signOutCleanups = 0
+            expired.signOutCleanup = { signOutCleanups += 1 }
             await expired.signOut()
+            check(signOutCleanups == 1,
+                  "REQ-121 hook 3: A confirmed sign-out clears saved artwork and saved public descriptors exactly once")
             check(!expired.hasConfirmedSignIn && !expired.canStartWelcomeSignIn,
                   "Signed-out status and advertised capabilities cannot bypass missing helper admission")
             check(expired.authentication?.state == .signedOut && expired.canSignIn,
