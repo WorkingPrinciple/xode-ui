@@ -170,7 +170,7 @@ actor EngineInspectionClient {
     }
 
     func validateLaunch(configuration: BackendConfiguration, arguments: [String],
-                        selection: AdmittedEngineSelection?) async throws {
+                        selection: AdmittedEngineSelection?, product: String? = nil) async throws {
         guard arguments.contains("--expected-registry-sha256") else { return }
         func argument(_ key: String) throws -> String {
             let positions = arguments.indices.filter { arguments[$0] == key }
@@ -188,6 +188,29 @@ actor EngineInspectionClient {
                                       executableIdentity: configuration.executableIdentity)
         if !fresh.ready, let failure = fresh.error { throw EngineInspectionError.rejected(failure) }
         guard fresh == selection.inspection else { throw NativeLaunchError.selectionChanged }
+        if engine == NativeFH6Recipe.engineName {
+            guard product == NativeFH6Recipe.productID,
+                  try argument("--title-recipe") == NativeFH6Recipe.id,
+                  try argument("--package-identity") == NativeFH6Recipe.packageIdentity,
+                  !arguments.contains("--shim-dir") else { throw NativeLaunchError.titleRecipeUnavailable }
+            let probe = try await run(executable: configuration.executable,
+                arguments: ["title-recipe-inspect", "--contract-version", "1"],
+                executableIdentity: configuration.executableIdentity)
+            let capability = try JSONValue.decodeUnique(probe.0, maximumBytes: 32_768)
+            guard probe.1 == 0, case .object(let fields) = capability,
+                  Set(fields.keys) == ["schemaVersion", "capability", "supported"],
+                  capability["schemaVersion"]?.uint64 == 1,
+                  capability["capability"]?.string == "titleRecipeV1",
+                  capability["supported"] == .bool(true) else { throw EngineInspectionError.unsupported }
+            let result = try await run(executable: configuration.executable, arguments: [
+                "title-recipe-inspect", "--recipe", NativeFH6Recipe.id,
+                "--product", NativeFH6Recipe.productID, "--package-identity", NativeFH6Recipe.packageIdentity,
+                "--engine", engine, "--registry", registry, "--expected-registry-sha256", digest
+            ], executableIdentity: configuration.executableIdentity)
+            _ = try NativeTitleRecipeInspection.decode(result.0, selection: selection, exitCode: result.1)
+        } else if arguments.contains("--title-recipe") || arguments.contains("--package-identity") {
+            throw NativeLaunchError.titleRecipeUnavailable
+        }
     }
 
     func inspect(executable: URL, registry: URL, engine: String, expectedDigest: String? = nil,

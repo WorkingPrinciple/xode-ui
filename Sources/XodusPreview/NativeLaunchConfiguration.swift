@@ -14,7 +14,7 @@ struct NativeEngineRegistry: Decodable {
         let wineserver: String?
         let sha256: String?
         let wineserver_sha256: String?
-        let smoke_test: SmokeTest
+        let smoke_test: SmokeTest?
         let presentation_validation: SmokeTest?
         let engine_label: String?
         let environment: [String: String]?
@@ -23,7 +23,11 @@ struct NativeEngineRegistry: Decodable {
         let provider: Provider?
         var id: String { name }
         var isAvailable: Bool {
-            smoke_test.status == "pass" && presentation_validation?.status != "failed"
+            (smoke_test?.status == "pass"
+                || name == NativeFH6Recipe.engineName && provider?.id == "calimocho"
+                    && sha256 == CalimochoReleasePin.release06.wineSha256
+                    && wineserver_sha256 == CalimochoReleasePin.release06.wineserverSha256)
+                && presentation_validation?.status != "failed"
                 && wine.hasPrefix("/") && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: wine))
         }
     }
@@ -355,10 +359,14 @@ struct NativeTitleLaunchProfile: Codable {
         }
         let mirrored = crossOverEnvironment ?? [:]
         if wineSha256 != nil || wineserverSha256 != nil {
-            guard let engine, let pin = CalimochoReleasePin.named(engine),
+            guard let engine, let pin = engine == NativeFH6Recipe.engineName
+                    ? CalimochoReleasePin.release06 : CalimochoReleasePin.named(engine),
                   wineSha256 == pin.wineSha256, wineserverSha256 == pin.wineserverSha256 else {
                 throw NativeLaunchError.invalidProfile
             }
+        }
+        if self.productID == NativeFH6Recipe.productID || engine == NativeFH6Recipe.engineName {
+            try NativeFH6Recipe.validate(profile: self)
         }
         if preservedPrefixPath != nil || registrySHA256 != nil {
             guard productID == "BQVQTL3PCH05",
@@ -487,6 +495,9 @@ struct NativeLaunchConfiguration {
 
     static func validateOverride(_ selection: AdmittedEngineSelection, game: InstalledGame,
                                  defaults: UserDefaults = .standard) throws {
+        if let engine = selection.inspection.engineName {
+            try NativeFH6Recipe.validate(game: game, engine: engine)
+        }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho)
         if let profile {
@@ -533,9 +544,11 @@ struct NativeLaunchConfiguration {
         }
         guard let engine = selection.inspection.engineName,
               let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+        try NativeFH6Recipe.validate(game: game, engine: engine)
         try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
             "--registry", selection.registryPath, "--engine", engine, "--expected-registry-sha256", digest
-        ], selection: selection)
+        ] + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : []),
+            selection: selection, product: game.storeId)
         if game.engineOverrideV2 == nil, saved == nil {
             guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
                 throw NativeLaunchError.engineNotSelected
@@ -673,6 +686,7 @@ struct NativeLaunchConfiguration {
             profile = fallback
         }
         let engineName = entry.name
+        try NativeFH6Recipe.validate(game: game, engine: engineName)
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable
         }
@@ -684,11 +698,14 @@ struct NativeLaunchConfiguration {
                 throw NativeLaunchError.configurationConflict
             }
         }
+        let prefixRoot = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+            "Library/Application Support/Xodus/Prefixes")
+        let titlePrefix = engineName == NativeFH6Recipe.engineName
+            ? NativeFH6Recipe.prefix(root: prefixRoot) : nil
         let prefix = profile?.preservedPrefixPath.map { URL(fileURLWithPath: NativeTitleLaunchProfile.expand($0)) }
-            ?? qualified?.prefix ?? CalimochoPrefixContinuity.location(
+            ?? qualified?.prefix ?? titlePrefix ?? CalimochoPrefixContinuity.location(
                 productID: game.storeId, installationID: game.id, engine: engineName,
-                root: URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
-                    "Library/Application Support/Xodus/Prefixes"))
+                root: prefixRoot)
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         if let selected = profile?.shimDirectory, selected != shims.directory.path {
             throw NativeLaunchError.invalidProfile
@@ -738,7 +755,12 @@ struct NativeLaunchConfiguration {
                   profile?.dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
         }
         let dll = try await runtime.validate()
-        try await shims.validate()
+        if engine == NativeFH6Recipe.engineName {
+            guard let profile, admittedSelection != nil else { throw NativeLaunchError.titleRecipeUnavailable }
+            try NativeFH6Recipe.validate(profile: profile)
+        } else {
+            try await shims.validate()
+        }
         let selectedRegistry = try await profile?.registryForLaunch(base: registry, engine: engine) ?? registry
         if let admittedSelection {
             guard selectedRegistry == registry, let digest = admittedSelection.inspection.registrySha256 else {
@@ -746,7 +768,9 @@ struct NativeLaunchConfiguration {
             }
             return ["--engine", engine, "--registry", selectedRegistry.path,
                     "--expected-registry-sha256", digest, "--prefix", prefix.path,
-                    "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+                    "--runtime-dll", dll.path]
+                + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : ["--shim-dir", shims.directory.path])
+                + (profile?.arguments ?? [])
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
                 "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
@@ -790,6 +814,7 @@ struct NativeLaunchConfiguration {
 }
 
 enum NativeLaunchError: Error, LocalizedError {
+    case titleRecipeUnavailable
     case prefixContinuity(String)
     case candidateBlocked(String)
     case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable,
@@ -797,6 +822,8 @@ enum NativeLaunchError: Error, LocalizedError {
          selectionChanged, providerNotAdmitted
     var errorDescription: String? {
         switch self {
+        case .titleRecipeUnavailable:
+            "Forza Horizon 6 needs its verified Calimocho title recipe and prefix preparation support. Refresh Engines or install the matching app update. No game was started or plain Calimocho engine substituted."
         case .prefixContinuity(let detail):
             "The previous Calimocho prefix couldn't be preserved: \(detail). The game wasn't started. The previous prefix was kept."
         case .candidateBlocked(let reason): reason

@@ -35,10 +35,12 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     var wineExitCode: Int32? = nil
     var wineTerminationSignal: Int32? = nil
     var downloadResume: DownloadResume? = nil
+    var titleRecipe: NativeTitleRecipeReceipt? = nil
 
     private enum CodingKeys: String, CodingKey {
         case version, operation, product, success, error, warnings
         case downloadResume = "download_resume"
+        case titleRecipe = "title_recipe"
         case popupMonitorError = "popup_monitor_error"
         case wineExitCode = "wine_exit_code", wineTerminationSignal = "wine_termination_signal"
         case runID = "run_id", exitCode = "exit_code", errorCode = "error_code"
@@ -300,9 +302,13 @@ final class NativeGameLifecycle {
         }
         try NativeLifecycleCancellation.check(operation: operation,
             cancelled: cancellationRequested || Task.isCancelled)
+        if operation == "launch", product == NativeFH6Recipe.productID,
+           !launchArguments.contains("--expected-registry-sha256") {
+            throw NativeLaunchError.titleRecipeUnavailable
+        }
         if launchArguments.contains("--expected-registry-sha256") {
             try await EngineInspectionClient().validateLaunch(configuration: configuration,
-                arguments: launchArguments, selection: engineSelection)
+                arguments: launchArguments, selection: engineSelection, product: product)
             try NativeLifecycleCancellation.check(operation: operation,
                 cancelled: cancellationRequested || Task.isCancelled)
             if operation == "launch" {
@@ -370,6 +376,24 @@ final class NativeGameLifecycle {
         try output.synchronize()
         let result = try Self.readResult(state: state, operation: operation, product: product,
                                         gameDirectory: gameDirectory, exitCode: child.terminationStatus)
+        if launchArguments.contains("--title-recipe"), result.success {
+            guard product == NativeFH6Recipe.productID, let receipt = result.titleRecipe,
+                  let engineSelection,
+                  receipt.registrySha256 == engineSelection.inspection.registrySha256,
+                  let prefixIndex = launchArguments.firstIndex(of: "--prefix"), prefixIndex + 1 < launchArguments.count,
+                  receipt.destinationPath == URL(fileURLWithPath: launchArguments[prefixIndex + 1])
+                    .appendingPathComponent(NativeFH6Recipe.overlayDestination).path else {
+                throw GameScriptError.invalidReceipt
+            }
+            let registry = try NativeEngineRegistry.read(URL(fileURLWithPath: engineSelection.registryPath))
+            guard let entry = registry.engines.first(where: { $0.name == NativeFH6Recipe.engineName }),
+                  receipt.sourcePath == URL(fileURLWithPath: entry.wine).deletingLastPathComponent()
+                    .deletingLastPathComponent().appendingPathComponent(NativeFH6Recipe.overlaySource).path else {
+                throw GameScriptError.invalidReceipt
+            }
+        } else if !launchArguments.contains("--title-recipe"), result.titleRecipe != nil {
+            throw GameScriptError.invalidReceipt
+        }
         completedResult = result
         try NativeLifecycleCancellation.check(operation: operation,
             cancelled: cancellationRequested || Task.isCancelled)
@@ -381,6 +405,24 @@ final class NativeGameLifecycle {
         let bytes = try InstalledGameFiles.readRegular(state.appendingPathComponent("launcher-result.json"),
                                                        maximumBytes: 1_048_576, privateFile: true)
         let value = try JSONDecoder().decode(NativeGameResult.self, from: bytes)
+        let document = try JSONValue.decodeUnique(bytes, maximumBytes: 1_048_576)
+        if document["title_recipe"] != nil, value.titleRecipe == nil { throw GameScriptError.invalidReceipt }
+        if let receipt = value.titleRecipe {
+            guard operation == "launch", product == NativeFH6Recipe.productID else {
+                throw GameScriptError.invalidReceipt
+            }
+            guard let titleReceipt = document["title_recipe"] else { throw GameScriptError.invalidReceipt }
+            try NativeTitleRecipeReceipt.validateShape(titleReceipt, includesPath: true)
+            try receipt.validate(logDirectory: value.logDirectory)
+            guard let path = receipt.receiptPath else { throw GameScriptError.invalidReceipt }
+            try GameScriptFiles.checkPath(URL(fileURLWithPath: path))
+            let file = try InstalledGameFiles.readRegular(URL(fileURLWithPath: path), maximumBytes: 32_768, privateFile: true)
+            let json = try JSONValue.decodeUnique(file, maximumBytes: 32_768)
+            try NativeTitleRecipeReceipt.validateShape(json, includesPath: false)
+            var persistedReceipt = try json.decode(NativeTitleRecipeReceipt.self)
+            persistedReceipt.receiptPath = path
+            guard persistedReceipt == receipt else { throw GameScriptError.statusMismatch }
+        }
         try value.validate(operation: operation, product: product, gameDirectory: gameDirectory,
                            stateDirectory: state, exitCode: exitCode ?? value.exitCode)
         try GameScriptFiles.checkPath(URL(fileURLWithPath: value.resultPath))

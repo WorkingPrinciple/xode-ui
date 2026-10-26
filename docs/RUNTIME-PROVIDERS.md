@@ -116,7 +116,29 @@ evidence, installed delivery and product acceptance are separate gates.
 - Version discovery accepts only exact release-shaped engine names matching their descriptor version; title-specific folders such as `calimocho-11.20-4.0b3-01-fh6` are ignored. Older release versions remain display-only update sources, never download authorization. Acknowledgments selects the installed active pin, then the newest installed compiled pin, never an unpinned folder.
 - If this app pins a newer release than the installed engine, Update Calimocho uses the same pinned installer alongside the old folder while holding the game-operation reservation. Backend admission must succeed before changing any selections, and only a default or Brotato/Halls override pointing at the old Calimocho release is changed. CrossOver, custom choices and other titles, including FH6 and NMS, are untouched. Admission refusal or cancellation removes the newly installed folder and preserves the old engine and selections. Only after success is a confirmed Move Old Engine to Trash action offered; that offer survives relaunch. An interrupted update with the new folder already installed offers Finish Update when Engines opens, reusing the folder but requiring admission before activation. Refusal in that recovery path preserves the existing folder for retry. Future-dated check timestamps are stale and cannot suppress the daily check. An unpinned newer release instead shows its version, release notes and next-app-update guidance, never an install action. Independently signed engine updates are not implemented.
 - **Temporary developer-local exception:** No Man's Sky keeps its private `calimocho-wine11.20-gptk4b3-tls-vulkan-private` binding (`developerLocal: true`). It resolves only when the exact pinned registry exists and hash-verifies on this Mac. On any other Mac it reports that the tested engine isn't installed, without substitution. NMS moves to the release engine only after a save-backed qualification, which is a separate decision. Release notes for the first beta must state this exception.
-- **FH6 deferred to 0.2.1:** The -06 repin changes only Brotato and Halls. FH6's CLI recipe needs a title-specific `-06-fh6` registry identity and a `d3d12_tsshim.dll` prefix overlay, with no native `windows.web` override. The existing admitted-selection launch path refuses prefix overlays and requires the unchanged admitted registry; supporting that recipe is not configuration-only. FH6's existing app binding and opt-in remain untouched.
+- **FH6 title contract (REQ-125, source candidate):** FH6 requires `calimocho-06-fh6-v1`, Store ID `9NR1R1XWLCNB`, package identity `Microsoft.ForteBaseGame`, executable `forzahorizon6.exe` and the `calimocho-11.20-4.0b3-06-fh6` alias. Plain -06 is refused for FH6; the alias is refused for every other title. The alias is rendered locally only from the fully verified -06 release, with the exact 19-key Forza environment and a single pinned tsshim overlay. Its actual registry digest remains bound at inspection and launch. It cannot become the global default.
+
+FH6 additionally requires the producer's `titleRecipeV1` capability and fresh
+`title-recipe-inspect` evidence, separate from unchanged `engineAdmissionV1`.
+Launch passes `--title-recipe` and `--package-identity`; the producer independently
+checks the installed package, explicitly completes Wine prefix update and server
+synchronization on every launch, then reasserts and verifies
+`d3d12_tsshim.dll` in `drive_c/windows/system32/d3d12.dll` before spawning the game.
+The expected SHA-256 is
+`c72b5cae6d3da617b482086193ffeb99616a07c18383e629f4bbec0a4b16c1f5`.
+Wine update can replace that destination with builtin d3d12; copying only before
+wineboot or only on prefix creation is insufficient. Preparation failures prevent
+game start. The app requires the bounded private `title-recipe.json` evidence
+to agree with the result receipt, registry, prefix, source and final overlay hash.
+This attests staged bytes, not loaded modules or gameplay qualification.
+
+The title prefix is `Prefixes/9NR1R1XWLCNB/calimocho-06-fh6-v1`; existing release,
+private and UUID prefixes are not adopted or changed. No shim directory is passed
+for this recipe, and `windows.web=b` requires Wine's builtin implementation.
+Other titles retain their existing runtime/shim contracts and the blanket refusal
+of arbitrary admitted overlays/imports/DLL overrides. The app-pinned runtime pair
+still needs a70's fresh-prefix sign-in/free-roam and forced-update live checks;
+source/mock checks do not establish that product gate or a signed producer rebind.
 
 ## Persisted launch selection (M3)
 

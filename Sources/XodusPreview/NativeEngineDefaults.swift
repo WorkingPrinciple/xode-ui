@@ -21,13 +21,22 @@ struct NativeEngineDefaults: Decodable {
             return pin
         }
 
+        var isFH6Recipe: Bool {
+            registryPath == nil && registrySha256 == nil && developerLocal != true
+                && engineName == NativeFH6Recipe.engineName
+                && wineSha256 == CalimochoReleasePin.release06.wineSha256
+                && wineserverSha256 == CalimochoReleasePin.release06.wineserverSha256
+        }
+
         /// Path and expected bytes digest of the registry to inspect, rendering it for release engines.
         func registry(enginesRoot: URL = CalimochoReleaseEngines.defaultEnginesRoot,
                       registries: URL = CalimochoReleaseEngines.defaultRegistriesRoot,
                       signature: (URL, String) -> Bool = CalimochoReleaseEngines.codeSignatureValid) throws -> (path: String, digest: String) {
-            if let pin = release {
-                let rendered = try CalimochoReleaseEngines.renderRegistry(
-                    try CalimochoReleaseEngines.verify(pin, root: enginesRoot, signature: signature), registries: registries)
+            if let pin = release ?? (isFH6Recipe ? .release06 : nil) {
+                let verified = try CalimochoReleaseEngines.verify(pin, root: enginesRoot, signature: signature)
+                let rendered = try isFH6Recipe
+                    ? NativeFH6Recipe.renderRegistry(verified, registries: registries)
+                    : CalimochoReleaseEngines.renderRegistry(verified, registries: registries)
                 return (rendered.url.path, rendered.digest)
             }
             guard let registryPath, let registrySha256 else { throw NativeLaunchError.engineUnavailable }
@@ -66,11 +75,12 @@ struct NativeEngineDefaults: Decodable {
         guard bytes.count <= 65_536 else { throw NativeLaunchError.invalidProfile }
         let value = try JSONDecoder().decode(Self.self, from: bytes)
         guard value.version == 1, (1...16).contains(value.bindings.count),
+              value.defaultEngine != NativeFH6Recipe.engineName,
               Set(value.bindings.map(\.engineName)).count == value.bindings.count,
               value.bindings.contains(where: { $0.engineName == value.defaultEngine }),
               value.bindings.allSatisfy({ binding in
                   EngineInspection.validDigest(binding.wineSha256) && EngineInspection.validDigest(binding.wineserverSha256)
-                    && (binding.release != nil && binding.developerLocal != true
+                    && (binding.isFH6Recipe || binding.release != nil && binding.developerLocal != true
                         || binding.developerLocal == true
                             && binding.registryPath.map { NativeTitleLaunchProfile.expand($0).hasPrefix("/") } == true
                             && EngineInspection.validDigest(binding.registrySha256))
