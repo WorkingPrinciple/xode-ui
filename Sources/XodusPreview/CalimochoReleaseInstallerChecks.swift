@@ -538,6 +538,14 @@ enum CalimochoReleaseInstallerChecks {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let valid = fixture()
+        let titleFolder = root.appendingPathComponent("calimocho-11.20-4.0b3-01-fh6")
+        try FileManager.default.createDirectory(at: titleFolder, withIntermediateDirectories: false)
+        try descriptor(name: titleFolder.lastPathComponent, version: "0.1120.4.1-fh6")
+            .write(to: titleFolder.appendingPathComponent("calimocho-engine.json"))
+        check(try LocalCalimochoRelease.installed(root: root) == [old],
+              "REQ123: a title-specific -01-fh6 folder cannot break release discovery")
+        check(AcknowledgmentsInventory.installedReleaseEngine(root: root) == nil,
+              "REQ123: Acknowledgments never falls back to an unpinned engine folder")
         var date = Date(timeIntervalSince1970: 1_800_000_000)
         CalimochoInstallerURLProtocol.configure(Data())
         let controller = CalimochoReleaseInstallController(
