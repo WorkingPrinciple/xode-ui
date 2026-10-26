@@ -99,7 +99,14 @@ actor CalimochoSignedUpdateClient {
         self.fetch = fetch
     }
 
-    func check(appVersion: String, installedVersion: String?, now: Date) async throws -> [CalimochoIndexVerifier.Engine] {
+    struct Result: Sendable {
+        /// Engines this app version may accept.
+        let eligible: [CalimochoIndexVerifier.Engine]
+        /// Newer unrevoked engines, including those that need a newer app (release information only).
+        let announced: [CalimochoIndexVerifier.Engine]
+    }
+
+    func check(appVersion: String, installedVersion: String?, now: Date) async throws -> Result {
         guard !checking else { throw CalimochoUpdateError.busy }
         checking = true
         defer { checking = false }
@@ -122,9 +129,10 @@ actor CalimochoSignedUpdateClient {
         try Task.checkCancellation()
         let accepted = try CalimochoIndexVerifier.verify(envelope: envelope, trust: trust, state: prior, now: now)
         let eligible = try accepted.eligible(appVersion: appVersion, installedVersion: installedVersion)
+        let announced = try accepted.announced(installedVersion: installedVersion)
         try Task.checkCancellation()
         try persist(accepted.state)
-        return eligible
+        return Result(eligible: eligible, announced: announced)
     }
 
     private func readState() throws -> Data? {

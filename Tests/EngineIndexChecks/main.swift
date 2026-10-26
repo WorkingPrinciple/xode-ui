@@ -138,6 +138,13 @@ let accepted = try CalimochoIndexVerifier.verify(envelope: validEnvelope, trust:
 check(try accepted.eligible(appVersion: "0.2.0", installedVersion: "0.1120.4.4",
                            persistedRevocations: Set(accepted.engines.map(\.id))).isEmpty,
       "Persisted revocations independently suppress all revoked offerings")
+check(try accepted.eligible(appVersion: "0.1.0", installedVersion: "0.1120.4.4", persistedRevocations: []).isEmpty
+      && accepted.announced(installedVersion: "0.1120.4.4", persistedRevocations: []).map(\.id)
+        == accepted.engines.map(\.id)
+      && accepted.announced(installedVersion: accepted.engines.first?.version, persistedRevocations: []).isEmpty
+      && accepted.announced(installedVersion: "0.1120.4.4",
+                            persistedRevocations: Set(accepted.engines.map(\.id))).isEmpty,
+      "Engines needing a newer app are announced but not eligible; nothing newer than installed is announced")
 rejects("Oversized envelope fails before parsing") {
     _ = try CalimochoIndexVerifier.verify(envelope: Data(repeating: 32, count: 1_572_865),
                                          trust: validTrust, highWater: nil, now: now)

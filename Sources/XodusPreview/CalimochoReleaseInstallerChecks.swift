@@ -667,7 +667,7 @@ enum CalimochoReleaseInstallerChecks {
             check(!FileManager.default.fileExists(atPath: root.path)
                   && CalimochoInstallerURLProtocol.requests == 0,
                   "REQ123 signed: construction performs no launch-time fetch or state mutation")
-            let entries = try await client.check(appVersion: "0.2.0", installedVersion: nil, now: date)
+            let entries = try await client.check(appVersion: "0.2.0", installedVersion: nil, now: date).eligible
             let stateBytes = try Data(contentsOf: stateURL)
             let state = try CalimochoIndexVerifier.State.decode(stateBytes)
             check(entries.isEmpty && state.highWater.version == 1
@@ -695,6 +695,17 @@ enum CalimochoReleaseInstallerChecks {
                 _ = try await client.check(appVersion: "0.2.0", installedVersion: nil, now: date)
                 check(false, "REQ123 signed: streamed bytes cannot exceed the envelope cap")
             } catch { check(true, "REQ123 signed: streamed bytes cannot exceed the envelope cap") }
+            let notes = "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-0.1120.4.9"
+            let future = CalimochoIndexVerifier.Engine(id: "calimocho-11.20-4.0b3-09", version: "0.1120.4.9",
+                minimumAppVersion: "9.0.0", fields: ["release_notes_url": .string(notes)])
+            let pinVersion = CalimochoVersion("0.1120.4.6")!
+            let current = [LocalCalimochoRelease(engineName: "calimocho-11.20-4.0b3-06", version: pinVersion)]
+            check(try CalimochoReleaseInstallController.signedOutcome(eligible: [], announced: [future],
+                      pinEngine: "calimocho-11.20-4.0b3-06", installed: current, pinned: pinVersion)
+                    == .signedAppUpdate(version: "0.1120.4.9", notes: URL(string: notes)!)
+                  && (try CalimochoReleaseInstallController.signedOutcome(eligible: [], announced: [],
+                      pinEngine: "calimocho-11.20-4.0b3-06", installed: current, pinned: pinVersion)) == .upToDate,
+                  "REQ123 signed: a newer engine that needs a newer app is announced with notes, not reported up to date")
             let suite = "REQ123-Signed-\(UUID().uuidString)"
             let defaults = UserDefaults(suiteName: suite)!
             defer { defaults.removePersistentDomain(forName: suite) }

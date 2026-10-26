@@ -90,6 +90,19 @@ enum CalimochoIndexVerifier {
             }
 
         }
+
+        /// Newer, unrevoked engines regardless of minimum app version: release information only,
+        /// so an engine that needs a newer app is announced rather than reported as up to date.
+        func announced(installedVersion: String?, persistedRevocations: Set<String>) throws -> [Engine] {
+            let installed = try installedVersion.map { try version($0, engine: true) }
+            let revoked = Set((declaredRevocations + embeddedRevocations).map(\.engineID))
+                .union(persistedRevocations)
+            return try engines.filter {
+                let candidate = try version($0.version, engine: true)
+                return !revoked.contains($0.id)
+                    && (installed.map { $0.lexicographicallyPrecedes(candidate) } ?? true)
+            }
+        }
     }
 
     struct Accepted {
@@ -99,6 +112,11 @@ enum CalimochoIndexVerifier {
         func eligible(appVersion: String, installedVersion: String?) throws -> [Engine] {
             try verified.eligible(appVersion: appVersion, installedVersion: installedVersion,
                                   persistedRevocations: Set(state.revokedEngines.map(\.engineID)))
+        }
+
+        func announced(installedVersion: String?) throws -> [Engine] {
+            try verified.announced(installedVersion: installedVersion,
+                                   persistedRevocations: Set(state.revokedEngines.map(\.engineID)))
         }
     }
 

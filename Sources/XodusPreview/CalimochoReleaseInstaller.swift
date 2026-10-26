@@ -717,10 +717,11 @@ final class CalimochoReleaseInstallController: ObservableObject {
                     guard let version = appVersion() else {
                         throw CalimochoIndexError.invalid("the app bundle version is unavailable")
                     }
-                    let entries = try await signedClient.check(
+                    let result = try await signedClient.check(
                         appVersion: version, installedVersion: installedReleases.first?.version.description, now: date)
                     try Task.checkCancellation()
-                    updateOutcome = try signedOutcome(entries, pinned: pinned)
+                    updateOutcome = try Self.signedOutcome(eligible: result.eligible, announced: result.announced,
+                        pinEngine: service.pin.engineName, installed: installedReleases, pinned: pinned)
                     updateMessage = updateOutcome?.message
                     applyPendingUpdateOutcome()
                     return
@@ -746,16 +747,18 @@ final class CalimochoReleaseInstallController: ObservableObject {
         await pending.value
     }
 
-    private func signedOutcome(_ entries: [CalimochoIndexVerifier.Engine],
-                               pinned: CalimochoVersion) throws -> CalimochoUpdateOutcome {
+    static func signedOutcome(eligible: [CalimochoIndexVerifier.Engine],
+                              announced: [CalimochoIndexVerifier.Engine], pinEngine: String,
+                              installed installedReleases: [LocalCalimochoRelease],
+                              pinned: CalimochoVersion) throws -> CalimochoUpdateOutcome {
         // An index may announce a release, but only the compiled pin can authorize its installer.
-        if entries.contains(where: { $0.id == service.pin.engineName }),
+        if eligible.contains(where: { $0.id == pinEngine }),
            let old = installedReleases.first, old.version < pinned {
             return .pinnedUpdate(old)
         }
-        let ordered = try entries.map { ($0, try CalimochoIndexVerifier.version($0.version, engine: true)) }
+        let ordered = try announced.map { ($0, try CalimochoIndexVerifier.version($0.version, engine: true)) }
             .sorted { $1.1.lexicographicallyPrecedes($0.1) }
-        if let latest = ordered.first?.0, latest.id != service.pin.engineName {
+        if let latest = ordered.first?.0, latest.id != pinEngine {
             let text = try latest.fields.field("release_notes_url").text()
             guard let notes = URL(string: text) else { throw CalimochoIndexError.invalid("release notes URL") }
             return .signedAppUpdate(version: latest.version, notes: notes)
