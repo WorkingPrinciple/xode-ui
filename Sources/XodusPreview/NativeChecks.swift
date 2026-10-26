@@ -437,6 +437,7 @@ enum NativeChecks {
                 return failures == 0
             }
             if gameOperationsOnly {
+                try await ApplicationTerminationChecks.run(check: check)
                 try await NativeLifecycleChecks.run(check: check)
                 try await EngineManagementChecks.run(check: check)
                 try await GameOperationChecks.run(check: check)

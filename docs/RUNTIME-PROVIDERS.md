@@ -163,6 +163,10 @@ retains prefixes and records UUID-to-product provenance before removing the Libr
 row, so reinstall can find the old saves. Already-orphaned UUIDs with no product
 provenance are not guessed. Apple4, lp and preserved NMS prefixes are unchanged.
 
+Quit, logout and shutdown ask for confirmation when a game is running, before
+closing runtime activity. The warning names the game and explains that unsaved
+progress may be lost. Cancel is the default; only **Quit and Close Game** proceeds.
+
 The owner-directed NMS free recipe binds only product `BQVQTL3PCH05` at the
 confirmed `~/Games/Xodus/NoMansSky-Xbox` folder: exact PERF registry digest
 `170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609`,

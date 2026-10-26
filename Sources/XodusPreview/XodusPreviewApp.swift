@@ -65,6 +65,7 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     }
     let readyNotifier = GameReadyNotifier()
     let termination = ApplicationTerminationCoordinator()
+    private var terminationRequested = false
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         readyNotifier.play = { [weak self] folder in
@@ -76,8 +77,18 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !terminationRequested else { return .terminateLater }
+        terminationRequested = true
         let systemQuit = Self.systemSessionEnding
         Task {
+            defer { terminationRequested = false }
+            if let installedGames, let id = installedGames.runningGameID {
+                let title = installedGames.games.first { $0.id == id }?.title ?? "A game"
+                guard RunningGameQuitConfirmation.confirm(title: title) else {
+                    sender.reply(toApplicationShouldTerminate: false)
+                    return
+                }
+            }
             if let gameOperations, let download = gameOperations.stoppableDownloadForQuit {
                 if !systemQuit {
                     let alert = NSAlert()
