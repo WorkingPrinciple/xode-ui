@@ -597,9 +597,11 @@ struct GameCompatibilityFacts: View {
             ForEach(issues) { issue in
                 Text(issue.browseDetail).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // TODO(L8 merge, REQ-19): apply L10 AccessiblePalette `.accessibleLink()` to this Link.
                 if let source = issue.source { Link("Learn more", destination: source) }
             }
             if let publisherEvidence {
+                // TODO(L8 merge, REQ-19): apply L10 AccessiblePalette `.accessibleLink()` to this Link.
                 Link("Publisher anti-cheat information", destination: publisherEvidence.source)
             }
         }

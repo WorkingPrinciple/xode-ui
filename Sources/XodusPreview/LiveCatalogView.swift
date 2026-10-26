@@ -634,6 +634,7 @@ struct LiveCatalogView: View {
                     }
                 }
                 if query.isEmpty {
+                    // TODO(L8 merge, REQ-19): apply L10 AccessiblePalette `.accessibleLink()` to this Link.
                     Link("Game Pass benefits", destination: SubscriberBenefits.officialURL)
                         .font(.callout)
                         .foregroundStyle(.primary)
