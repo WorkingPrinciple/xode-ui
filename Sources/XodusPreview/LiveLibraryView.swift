@@ -538,6 +538,10 @@ struct LiveLibraryView: View {
                             .focusable()
                             .focused($focusedGameID, equals: "installed-\(game.id)")
                             .focusEffectDisabled()
+                            .onKeyPress(.return) {
+                                open(recentGame(game), focusID: "installed-\(game.id)")
+                                return .handled
+                            }
                             .modifier(SearchResultFocusRing(focused: focusedGameID == "installed-\(game.id)"))
                             .accessibilityLabel("View \(game.title)")
                             .contextMenu {

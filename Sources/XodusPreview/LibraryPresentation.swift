@@ -1026,16 +1026,20 @@ struct GameCard<Artwork: View, Status: View>: View {
             artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .bottomLeading) {
-                    if showsGamePassCatalogBadge {
-                        Text("GAME PASS")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 3)
-                            .background(Color(white: 0.12).opacity(0.9),
-                                        in: RoundedRectangle(cornerRadius: 4))
-                            .padding(8)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+                    if !artworkBadges.isEmpty {
+                        HStack(spacing: 4) {
+                            ForEach(artworkBadges, id: \.self) { badge in
+                                Text(badge.uppercased())
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6).padding(.vertical, 3)
+                                    .background(Color(white: 0.12).opacity(0.9),
+                                                in: RoundedRectangle(cornerRadius: 4))
+                            }
+                        }
+                        .padding(8)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                     }
                 }
                 .overlay(alignment: .bottomTrailing) {
@@ -1075,8 +1079,18 @@ struct GameCard<Artwork: View, Status: View>: View {
         .onKeyPress(.return, action: openFromKeyboard)
     }
 
+    /// REQ-63: purchase and Game Pass catalogue membership are independent facts; either, both or neither show.
+    var ownershipBadge: String? {
+        guard gameFacts.accessIsCurrent, case .purchased = gameFacts.ownership else { return nil }
+        return "Owned"
+    }
+
+    var artworkBadges: [String] {
+        (ownershipBadge.map { [$0] } ?? []) + (showsGamePassCatalogBadge ? ["Game Pass"] : [])
+    }
+
     var coverStatusDescription: String {
-        ((showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
+        ((ownershipBadge.map { [$0] } ?? []) + (showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
             + compatibilityIssues.map { "\($0.browseTitle). \($0.browseDetail)" })
             .joined(separator: ", ")
     }

@@ -77,7 +77,7 @@ struct CatalogProjection {
     let hiddenCount: Int
     let artworkIDs: [String]
     var unresolvedClassificationCount: Int {
-        index.results.storeProducts.filter { facts[$0.id]?.isBaseGame == nil }.count
+        GameSurfaceFilter.counts(index.results.storeProducts, facts: facts).unresolved
     }
 
     static let empty = Self(index: CatalogCardIndex(query: "", owned: [], products: [], gamePass: [],
@@ -91,7 +91,7 @@ struct CatalogProjection {
             accessIsCurrent: key.accessIsCurrent)
         self.index = index
         self.facts = facts
-        let games = index.results.storeProducts.filter { facts[$0.id]?.isBaseGame == true }
+        let games = GameSurfaceFilter.games(index.results.storeProducts, facts: facts)
         genres = DiscoverBrowse.genres(products: games, facts: facts)
         var first: [String: CatalogProduct] = [:]
         for product in games {

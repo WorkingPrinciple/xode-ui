@@ -16,6 +16,7 @@ enum LibraryAccessChecks {
               && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
                   operationNotice: nil) == nil,
               "COR88: Actual Game Pass action caption covers operation-only, account, startup and ready gates")
+        try DiscoverShelfChecks.run(check: check)
         let utc = TimeZone(secondsFromGMT: 0)!
         func seasonalDate(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0,
                           timeZone: TimeZone = TimeZone(secondsFromGMT: 0)!) -> Date {
