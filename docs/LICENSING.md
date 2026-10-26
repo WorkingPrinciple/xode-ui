@@ -23,11 +23,12 @@ text. The AWACY-derived compatibility data retains its MIT notice at
 graphics shims and games are user-installed dependencies, not bundled engines;
 their presence on a development machine grants no redistribution rights.
 
-Packaging now allowlists the resources consumed by the management readers and
-excludes `next-30-queue.json` and `queue-inspection-v1.json`, which are private QA
-inputs rather than runtime policy. Required launch policies are retained
-byte-for-byte; removing or rewriting their identity-bound engine paths is not a
-safe portability fix. The current `engine-defaults-v1.json` still references
+Packaging now allowlists the resources consumed by the management readers.
+Private queue and candidate-inspection JSON lives outside the runtime resource
+directories, so it is excluded from every build configuration rather than only
+the shipping build. Required launch policies are retained byte-for-byte;
+removing or rewriting their identity-bound engine paths is not a safe
+portability fix. The current `engine-defaults-v1.json` still references
 development worktrees, so a portable final distribution remains blocked until
 the engine owners provide a reviewed portable binding.
 

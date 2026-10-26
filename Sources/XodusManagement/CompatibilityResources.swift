@@ -10,14 +10,16 @@ public enum CompatibilityResources {
     }
 
     public static func catalogueURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "game-compatibility-v1", withExtension: "json") else {
+        guard let url = Bundle.module.url(forResource: "game-compatibility-v1", withExtension: "json",
+                                          subdirectory: "CompatibilityData") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
     }
 
     public static func publisherEvidenceURL() throws -> URL {
-        guard let url = Bundle.module.url(forResource: "publisher-anti-cheat-v1", withExtension: "json") else {
+        guard let url = Bundle.module.url(forResource: "publisher-anti-cheat-v1", withExtension: "json",
+                                          subdirectory: "CompatibilityData") else {
             throw CocoaError(.fileNoSuchFile)
         }
         return url
@@ -25,6 +27,7 @@ public enum CompatibilityResources {
 
     /// The AreWeAntiCheatYet MIT notice shipped with the compatibility data.
     public static func antiCheatReferenceLicenseURL() -> URL? {
-        Bundle.module.url(forResource: "AWACY-LICENSE", withExtension: "txt")
+        Bundle.module.url(forResource: "AWACY-LICENSE", withExtension: "txt",
+                          subdirectory: "CompatibilityData")
     }
 }

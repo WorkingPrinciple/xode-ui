@@ -106,7 +106,11 @@ package lacks provenance. It is nevertheless not a production distribution.
 `tools/package_resources.py` copies an explicit runtime resource allowlist in
 both packaging paths, retains the AWACY MIT notice, and rejects unknown,
 missing or linked inputs. Private QA queue/inspection JSON is excluded before
-signing. `verify_shipping_package.py` independently enforces that same list.
+signing. SwiftPM copies the allowlisted launch and compatibility directories
+with their subdirectory structure intact; the runtime readers resolve from
+those same subdirectories. The QA queue and candidate JSON is stored outside
+the runtime resources and is excluded from all build configurations.
+`verify_shipping_package.py` independently enforces that same list.
 Run `python3 tools/check_package_resources.py` for neutral regressions.
 
 The release workflow is `tools/release_candidate.py --dry-run` followed by its

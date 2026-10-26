@@ -1002,6 +1002,17 @@ enum NativeLifecycleChecks {
               && resolvedHogwarts.prefix.path.hasSuffix("/XodusCLI/prefixes/s3-hogwarts-apple4-v1")
               && hogwartsEvidence.verifiedWorkingEvidence != nil,
               "Qualified Hogwarts uses exact published Apple4/STA1/direct exe/existing save prefix with Play eligibility and Working badge")
+        var hogwartsWithoutProof = hogwartsDocument
+        var unprovenRows = hogwartsWithoutProof["games"] as? [[String: Any]] ?? []
+        unprovenRows[0]["screenshots"] = []
+        hogwartsWithoutProof["games"] = unprovenRows
+        let unprovenHogwarts = try MacGameEvidence.decode(
+            JSONSerialization.data(withJSONObject: hogwartsWithoutProof)).games[0]
+        check(NativeWorkingLaunchRecipe.admitted(productID: hogwartsGame.storeId,
+                                                  evidence: unprovenHogwarts) == nil
+              && NativeCandidateLaunchCatalogue.issue(productID: hogwartsGame.storeId,
+                                                       evidence: unprovenHogwarts) != nil,
+              "Hogwarts pinned run IDs without a screenshot proof reference cannot admit the working recipe")
         hogwartsRows[0]["normalQuitRunId"] = "00000000-0000-0000-0000-000000000001"
         hogwartsDocument["games"] = hogwartsRows
         let wrongQuit = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: hogwartsDocument)).games[0]

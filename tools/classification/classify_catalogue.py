@@ -19,9 +19,10 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "Sources/XodusManagement/Resources/CompatibilityData"
+QA_DIR = ROOT / "Sources/XodusManagement/QA/CompatibilityData"
 CATALOGUE = DATA_DIR / "game-compatibility-v1.json"
 PUBLISHER_EVIDENCE = DATA_DIR / "publisher-anti-cheat-v1.json"
-NEXT_30_QUEUE = DATA_DIR / "next-30-queue.json"
+NEXT_30_QUEUE = QA_DIR / "next-30-queue.json"
 CATALOGUE_ENDPOINT = "https://displaycatalog.mp.microsoft.com/v7.0/products"
 USER_AGENT = "XodusCompatibilityClassification/1.0"
 FORMATS = {
@@ -694,7 +695,7 @@ def validate_next30_queue(database: dict[str, Any]) -> None:
     ):
         raise RuntimeError("next-30-queue.json must mirror the 30-title catalogue queue")
     products = database["products"]
-    inspection_path = DATA_DIR / "queue-inspection-v1.json"
+    inspection_path = QA_DIR / "queue-inspection-v1.json"
     inspection = load_json(inspection_path)
     if (
         not isinstance(inspection, dict)

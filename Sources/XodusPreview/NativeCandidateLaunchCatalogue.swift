@@ -142,6 +142,7 @@ struct NativeWorkingLaunchRecipe {
         guard let recipe = recipes.first(where: { $0.productID == productID }),
               let evidence, evidence.productId == productID, evidence.verdict == .working,
               evidence.engine == engine, evidence.hasVerifiedWorkingQualification,
+              evidence.verifiedWorkingEvidence != nil,
               evidence.runId == recipe.initialRun, evidence.retentionRunId == recipe.retentionRun,
               recipe.quitRun.map({ evidence.normalQuitRunId == $0 }) ?? true,
               evidence.saveObservation?.retentionVerified == true,

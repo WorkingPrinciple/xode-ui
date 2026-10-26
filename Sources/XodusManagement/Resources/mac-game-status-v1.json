@@ -17,6 +17,12 @@
         "retentionVerified": true,
         "normalMenuQuitObserved": true
       },
+      "screenshots": [
+        {
+          "referenceID": "s3-hades-checkpoint-reload-02",
+          "caption": "Fresh-process retained checkpoint; evidence reference only, no QA image bundled."
+        }
+      ],
       "app_e2e": "unobserved"
     },
     {
@@ -34,6 +40,12 @@
         "retentionVerified": true,
         "normalMenuQuitObserved": true
       },
+      "screenshots": [
+        {
+          "referenceID": "s3-abiotic-qualification-reload-01",
+          "caption": "Fresh-process retained inventory; evidence reference only, no QA image bundled."
+        }
+      ],
       "app_e2e": "unobserved"
     },
     {
@@ -51,6 +63,12 @@
         "retentionVerified": true,
         "normalMenuQuitObserved": true
       },
+      "screenshots": [
+        {
+          "referenceID": "s3-mixtape-extended-reload-01",
+          "caption": "Fresh-process retained chapter; evidence reference only, no QA image bundled."
+        }
+      ],
       "app_e2e": "unobserved"
     }
   ]
