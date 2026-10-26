@@ -161,7 +161,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
-            "No current producer-notice inventory is pinned; await the -03 admission rebuild")
+            "No current producer-notice inventory is pinned; await the admitted producer rebuild")
     build_number = info.get("CFBundleVersion")
     source_identity = app_source(app)
     release_source = release_identity(source, source_identity)

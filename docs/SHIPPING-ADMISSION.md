@@ -25,12 +25,14 @@ Both copy and bind the inventory/notices before signing, rejecting a different
 producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
 
-The prior producer tuple and its notice inventory were superseded by the
-Calimocho `-03` admission rebuild. The replacement source, signed binaries and
-manifest are not yet admitted here, so no current producer-notice digest is
-pinned. Do not reuse the earlier `1fd1341` / `84682aa8…` tuple for packaging:
-the tools fail closed until the new inventory is regenerated and independently
-approved.
+The backend producer-notice inventory remains tied to an older producer tuple
+and is not valid for this release. Calimocho `-03` was only a provisional
+engine input; it is superseded by the announced `-04` / 0.1120.4.4
+license-and-manifest successor. Its frozen tuple and matching backend
+admission are still pending. No current producer-notice digest is pinned. Do
+not use either Calimocho `-03` or the earlier backend `1fd1341` /
+`84682aa8…` tuple for packaging: the tools fail closed until the current
+producer inventory is regenerated and independently approved.
 
 The package builder accepts only CFBundleVersion values above the installed
 0.2.0 build 2, so the beta installs as an update rather than a downgrade.
@@ -94,8 +96,8 @@ For an approved beta package that must not be submitted or installed, use
 /absolute/clean/main-or-release-checkout --output-root /absolute/existing/output
 --format zip` (or `dmg`) and the new independently approved
 `--producer-notices-sha256` value. Final packaging is currently blocked until
-Calimocho `calimocho-11.20-4.0b3-03` (0.1120.4.3) and its matching notice
-inventory are admitted and pinned.
+the Calimocho `-04` successor and matching producer-notice inventory are
+frozen, admitted and pinned.
 For `--format dmg`, combine the reviewed 660x400 and 1320x800 artwork in
 `design/installer/` with
 `tiffutil -cathidpicheck design/installer/dmg-background.png
@@ -108,13 +110,19 @@ Applications drop link, the 660x400 Finder layout, 128-pixel icons and artwork,
 then signs and verifies the final image. The image builder writes the layout
 metadata without opening Finder or triggering Apple Events.
 Both local-candidate builders and `build_app.sh` accept the plain-text
-Calimocho `-03` NOTICE (`--engine-notice`) and place it at
+admitted Calimocho NOTICE (`--engine-notice`) and place it at
 `Contents/Resources/EngineNotices/NOTICE.txt`; final beta packaging refuses to
 proceed without that resource. The complete engine binaries and full licence
 tree remain a separate download and are never put in the app notarization
 payload. `release_candidate.py --dry-run` also requires `--engine-notice` and
 `--dmg-background`; the exact NOTICE digest is carried into the dry-run receipt
 and checked again before submission.
+The unpublished Homebrew cask draft is
+[`homebrew/x-ode.rb.in`](homebrew/x-ode.rb.in). It is deliberately not a
+publishable cask until a notarized DMG is released and its exact SHA-256
+replaces the template marker. It targets Apple silicon and macOS 14 or later;
+its zap scope is limited to the app-bundle-ID preferences plist so shared
+sign-in, engine, runtime and game data are preserved.
 `build_app.sh` copies the app's `LICENSE`, `NOTICE` and `TRADEMARKS.md` into
 their `Contents/Resources` acknowledgment paths; bundled Python runtime
 admission independently verifies its `lib/python3.14/LICENSE.txt`, and the
