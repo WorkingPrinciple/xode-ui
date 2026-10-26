@@ -715,6 +715,12 @@ enum PublicDescriptorChecks {
               && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
               && !failedController.accessIsCurrent,
               "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim; P0: it retries silently before any notice")
+        let retryScheduled = failedController.detailRetryPending
+            && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
+        await failedController.retireUnifiedAccount()
+        check(retryScheduled && !failedController.detailRetryPending
+              && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count,
+              "Review Low: A failed library read schedules one bounded silent retry, and sign-out cancels it and restores the budget")
         check(await session.disconnect(), "Descriptor retirement check joins its isolated management child")
 
         let invalidTransport = DescriptorTransport()

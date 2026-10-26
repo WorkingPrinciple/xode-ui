@@ -182,7 +182,16 @@ final class InstalledProductAccess: ObservableObject {
                 guard installed.contains(id) else { continue }
                 attempts[id] = now
                 do {
-                    let response = try await read(id)
+                    let licenseSpan = LoadSignposts.begin("LicenseRead",
+                        "operation=installedProductAccess")
+                    let response: OdeAccountRead
+                    do {
+                        response = try await read(id)
+                        LoadSignposts.end("LicenseRead", licenseSpan, "outcome=success")
+                    } catch {
+                        LoadSignposts.end("LicenseRead", licenseSpan, "outcome=failed")
+                        throw error
+                    }
                     try response.validate(section: .license, accountHash: account)
                     let value = try response.payload.decode(OdeProductAccess.self)
                     try value.validate(productID: id, checkedAt: response.checkedAt)

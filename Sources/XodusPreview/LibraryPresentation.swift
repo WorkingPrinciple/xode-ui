@@ -337,6 +337,17 @@ struct LibraryGame: Identifiable {
         }
     }
 
+    /// REQ-66: only real, recorded install-completion dates order this shelf; games without one (older or
+    /// manually imported installs) are left out, and no dates means no shelf.
+    static func recentlyInstalled(_ installed: [InstalledGame], limit: Int = 12) -> [InstalledGame] {
+        Array(installed.filter { $0.installedOn != nil }
+            .sorted {
+                if $0.installedOn != $1.installedOn { return ($0.installedOn ?? .distantPast) > ($1.installedOn ?? .distantPast) }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+            .prefix(limit))
+    }
+
     static func continuing(_ qualified: [Self], launchableIDs: Set<UUID>) -> [InstalledGame] {
         qualified.compactMap(\.installed)
             .filter { $0.lastPlayedAt != nil && launchableIDs.contains($0.id) }

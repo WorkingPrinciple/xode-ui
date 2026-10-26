@@ -151,6 +151,7 @@ struct LiveLibraryView: View {
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
+                if query.isEmpty, !recentlyInstalled.isEmpty { recentlyInstalledShelf }
                 GameOperationSlimRow(operations: operations)
                 if OfflineGameCompatibility.unavailable {
                     Text("The offline compatibility catalogue couldn't be read. Live package checks remain available.")
@@ -510,6 +511,51 @@ struct LiveLibraryView: View {
             let id = game.installed?.storeId ?? game.id
             return PCGamesClient.validProductID(id) && seen.insert(id).inserted ? id : nil
         }
+    }
+
+    private var recentlyInstalled: [InstalledGame] {
+        LibraryGame.recentlyInstalled(installed.games)
+    }
+
+    /// REQ-66: Recently Installed, ordered by real install-completion dates. Absent without any.
+    private var recentlyInstalledShelf: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Recently Installed").font(.title2.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 20) {
+                    ForEach(recentlyInstalled) { game in
+                        VStack(alignment: .leading, spacing: 10) {
+                            Button {
+                                open(recentGame(game), focusID: "installed-\(game.id)")
+                            } label: {
+                                LibraryLandscapeView(references: art.images[game.storeId]?.landscape ?? [],
+                                                     installed: game, allowsLoading: artworkAllowed)
+                                    .frame(width: 260, height: 110).clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .focusable()
+                            .focused($focusedGameID, equals: "installed-\(game.id)")
+                            .focusEffectDisabled()
+                            .modifier(SearchResultFocusRing(focused: focusedGameID == "installed-\(game.id)"))
+                            .accessibilityLabel("View \(game.title)")
+                            .contextMenu {
+                                Button("View details") { open(recentGame(game), focusID: "installed-\(game.id)") }
+                            }
+                            Text(game.title).font(.headline).lineLimit(1)
+                            if let date = game.installedOn {
+                                Text("Installed \(Text(date, style: .relative)) ago")
+                                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                        }.frame(width: 260, alignment: .leading)
+                    }
+                }
+            }
+            .scrollIndicators(.never)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("xodus.library.recentlyInstalled")
     }
 
     private var continuePlaying: some View {

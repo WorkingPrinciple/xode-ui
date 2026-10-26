@@ -1165,6 +1165,19 @@ enum BrandUXChecks {
               && LibraryFirstLoad.libraryComplete(snapshot: clean, busy: true, retriesLeft: 3)
               && partialLoad.covers,
               "Review 2: A 4-game snapshot with failed reads pending retry isn't ready, so setup keeps covering (Show library now after 20 s); genuinely unlisted items don't block")
+        func installedGame(_ title: String, installedOn: Date?) -> InstalledGame {
+            var game = InstalledGame(id: UUID(), title: title, identityName: "Fixture.\(title)", version: "1.0.0.0",
+                                     storeId: "FIXTURE00020", folder: "/tmp/\(title)", launcher: "", importedAt: Date(),
+                                     usesNativeLifecycle: true)
+            game.installedOn = installedOn
+            return game
+        }
+        let older = installedGame("Older", installedOn: Date(timeIntervalSince1970: 1_800_000_000))
+        let newer = installedGame("Newer", installedOn: Date(timeIntervalSince1970: 1_800_100_000))
+        let legacy = installedGame("Legacy", installedOn: nil)
+        check(LibraryGame.recentlyInstalled([older, legacy, newer]).map(\.title) == ["Newer", "Older"]
+              && LibraryGame.recentlyInstalled([legacy]).isEmpty,
+              "REQ-66: Recently Installed lists only games with a recorded install-completion date, newest first; without any, the shelf is absent")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)
