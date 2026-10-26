@@ -5,6 +5,7 @@ import XodusCore
 import XodusManagement
 import AppKit
 import SwiftUI
+import CryptoKit
 
 private final class CalimochoInstallerFixtureState: @unchecked Sendable {
     struct Reply {
@@ -528,6 +529,7 @@ enum CalimochoReleaseInstallerChecks {
     private static func updateChecks(root: URL, session: URLSession,
                                       check: (Bool, String) -> Void) async throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        try await signedUpdateChecks(root: root.appendingPathComponent("signed-checks"), check: check)
         let old = LocalCalimochoRelease(engineName: CalimochoReleasePin.release04.engineName,
                                         version: CalimochoReleasePin.release04.releaseVersion!)
         let oldFolder = root.appendingPathComponent(old.engineName)
@@ -629,6 +631,96 @@ enum CalimochoReleaseInstallerChecks {
         while CalimochoInstallerURLProtocol.requests == 0 {
             guard ContinuousClock.now < deadline else { throw CalimochoInstallError.extraction }
             try await Task.sleep(for: .milliseconds(5))
+        }
+
+        func signedUpdateChecks(root: URL, check: (Bool, String) -> Void) async throws {
+            check(CalimochoSignedUpdates.permitsRedirect(URL(string: "https://release-assets.githubusercontent.com/asset"), hop: 5)
+                  && !CalimochoSignedUpdates.permitsRedirect(URL(string: "https://github.com/asset"), hop: 6)
+                  && !CalimochoSignedUpdates.permitsRedirect(URL(string: "http://github.com/asset"), hop: 1),
+                  "REQ123 signed: redirect policy allows at most five HTTPS hops, never HTTP")
+            let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: Data((0..<32).map(UInt8.init)))
+            let publicBytes = privateKey.publicKey.rawRepresentation
+            let keyID = CalimochoIndexVerifier.digest(publicBytes)
+            let trust = try JSONSerialization.data(withJSONObject: [
+                "schema": "calimocho-engine-index-trust/1",
+                "keys": [["keyid": keyID, "public_key": publicBytes.base64EncodedString(), "epoch": 1,
+                          "status": "active", "created": "2026-10-26"]],
+                "revoked_keyids": [], "floor": ["epoch": 1, "index_version": 1], "revoked_engines": []
+            ])
+            let payload = try JSONSerialization.data(withJSONObject: [
+                "schema": "calimocho-engine-index/1", "epoch": 1, "index_version": 1,
+                "generated_at": "2026-10-26T12:00:00Z", "expires_at": "2026-10-27T12:00:00Z",
+                "publisher": "WorkingPrinciple/calimocho", "engines": [], "revoked": []
+            ])
+            let envelope = try JSONSerialization.data(withJSONObject: [
+                "payloadType": CalimochoIndexVerifier.payloadType, "payload": payload.base64EncodedString(),
+                "signatures": [["keyid": keyID,
+                                "sig": privateKey.signature(for: CalimochoIndexVerifier.pae(payload)).base64EncodedString()]]
+            ])
+            let date = Date(timeIntervalSince1970: 1_793_016_000) // 2026-10-26 12:00 UTC
+            let stateURL = root.appendingPathComponent("index-state.json")
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [CalimochoInstallerURLProtocol.self]
+            CalimochoInstallerURLProtocol.configure(envelope)
+            let client = CalimochoSignedUpdateClient(stateURL: stateURL, trust: trust,
+                fetch: { try await CalimochoSignedUpdates.fetch(configuration: configuration) })
+            check(!FileManager.default.fileExists(atPath: root.path)
+                  && CalimochoInstallerURLProtocol.requests == 0,
+                  "REQ123 signed: construction performs no launch-time fetch or state mutation")
+            let entries = try await client.check(appVersion: "0.2.0", installedVersion: nil, now: date)
+            let stateBytes = try Data(contentsOf: stateURL)
+            let state = try CalimochoIndexVerifier.State.decode(stateBytes)
+            check(entries.isEmpty && state.highWater.version == 1
+                  && CalimochoInstallerURLProtocol.requests == 1,
+                  "REQ123 signed: bounded anonymous transport verifies then persists the exact high-water mark")
+            var info = stat()
+            check(lstat(stateURL.path, &info) == 0 && info.st_mode & 0o777 == 0o600,
+                  "REQ123 signed: persisted state is a private regular file")
+            CalimochoInstallerURLProtocol.configure(Data("{}".utf8))
+            do {
+                _ = try await client.check(appVersion: "0.2.0", installedVersion: nil, now: date)
+                check(false, "REQ123 signed: an invalid envelope is refused")
+            } catch { check(true, "REQ123 signed: an invalid envelope is refused") }
+            check(try Data(contentsOf: stateURL) == stateBytes,
+                  "REQ123 signed: invalid index leaves the prior state byte-for-byte unchanged")
+            CalimochoInstallerURLProtocol.configure(envelope, status: 429)
+            do {
+                _ = try await client.check(appVersion: "0.2.0", installedVersion: nil, now: date)
+                check(false, "REQ123 signed: rate limiting is explicit")
+            } catch CalimochoUpdateError.rateLimited {
+                check(true, "REQ123 signed: rate limiting is explicit")
+            }
+            CalimochoInstallerURLProtocol.configure(Data(repeating: 32, count: 1_572_865), declaredLength: -1)
+            do {
+                _ = try await client.check(appVersion: "0.2.0", installedVersion: nil, now: date)
+                check(false, "REQ123 signed: streamed bytes cannot exceed the envelope cap")
+            } catch { check(true, "REQ123 signed: streamed bytes cannot exceed the envelope cap") }
+            let suite = "REQ123-Signed-\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suite)!
+            defer { defaults.removePersistentDomain(forName: suite) }
+            let emptyRoot = root.appendingPathComponent("engines")
+            let service = CalimochoReleaseInstallService(root: emptyRoot)
+            let controller = CalimochoReleaseInstallController(
+                service: service, updateDefaults: defaults, now: { date },
+                signedClient: client, appVersion: { "0.2.0" })
+            CalimochoInstallerURLProtocol.configure(envelope)
+            await controller.checkForUpdates(automatic: true)
+            await controller.checkForUpdates(automatic: true)
+            check(CalimochoInstallerURLProtocol.requests == 1 && controller.updateOutcome == .notInstalled,
+                  "REQ123 signed: Settings pane checks at most daily without inventing an install")
+            CalimochoInstallerURLProtocol.configure(Data("{}".utf8))
+            await controller.checkForUpdates(automatic: false)
+            check(controller.updateOutcome == nil
+                  && controller.updateMessage?.contains("Installed engines haven't changed") == true
+                  && !FileManager.default.fileExists(atPath: emptyRoot.path),
+                  "REQ123 signed: failed verification offers no update and never creates or removes an engine")
+            do {
+                _ = try CalimochoIndexVerifier.verify(envelope: envelope, trust: CalimochoSignedUpdates.trust,
+                                                     state: nil, now: date)
+                check(false, "REQ123 signed: the embedded production anchor never trusts a fixture key")
+            } catch {
+                check(true, "REQ123 signed: the embedded production anchor never trusts a fixture key")
+            }
         }
         controller.cancel()
         try await finish(controller)

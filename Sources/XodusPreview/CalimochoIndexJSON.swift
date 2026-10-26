@@ -20,7 +20,7 @@ enum CalimochoIndexError: Error, LocalizedError {
     }
 }
 
-indirect enum CalimochoIndexJSON: Equatable {
+indirect enum CalimochoIndexJSON: Equatable, Sendable {
     case object([String: Self]), array([Self]), string(String), number(String), boolean(Bool), null
 
     static func parse(_ data: Data, limit: Int) throws -> Self {

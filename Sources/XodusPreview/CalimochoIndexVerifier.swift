@@ -10,7 +10,7 @@ enum CalimochoIndexVerifier {
     static let enginePattern = #"calimocho-[0-9]+\.[0-9]+-[0-9A-Za-z.]+-[0-9]{2,}"#
     static let tagPattern = #"engine-[0-9]+(?:\.[0-9]+)*(?:-[0-9A-Za-z.]+)*"#
 
-    struct HighWater: Equatable, Codable {
+    struct HighWater: Equatable, Codable, Sendable {
         let epoch: Int
         let version: Int
         let payloadSHA256: String
@@ -24,7 +24,7 @@ enum CalimochoIndexVerifier {
         }
     }
 
-    struct Revocation: Equatable, Codable {
+    struct Revocation: Equatable, Codable, Sendable {
         let engineID: String
         let reason: String
 
@@ -34,7 +34,7 @@ enum CalimochoIndexVerifier {
         }
     }
 
-    struct State: Equatable, Codable {
+    struct State: Equatable, Codable, Sendable {
         let schema: String
         let highWater: HighWater
         let revokedEngines: [Revocation]
@@ -62,7 +62,7 @@ enum CalimochoIndexVerifier {
         }
     }
 
-    struct Engine: Equatable {
+    struct Engine: Equatable, Sendable {
         let id: String
         let version: String
         let minimumAppVersion: String
