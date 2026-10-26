@@ -3,6 +3,18 @@ import Foundation
 import XodusManagement
 
 enum NativeFH6Recipe {
+  static var enabled: Bool {
+    #if XODUS_FH6_QUALIFICATION
+      true
+    #else
+      false
+    #endif
+  }
+
+  static func requireEnabled(productID: String) throws {
+    if productID == self.productID, !enabled { throw NativeLaunchError.titleRecipeUnavailable }
+  }
+
   static let id = "calimocho-06-fh6-v1"
   static let productID = "9NR1R1XWLCNB"
   static let packageIdentity = "Microsoft.ForteBaseGame"
