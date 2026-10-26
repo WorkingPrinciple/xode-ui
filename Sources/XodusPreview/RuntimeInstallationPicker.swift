@@ -114,7 +114,8 @@ struct RuntimeInstallationPicker: View {
                     installed.releaseMutation()
                 }, admit: {
                     await installed.refreshEngineOverrides(force: true)
-                    releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(root: calimochoInstaller.enginesRoot)
+                    releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(
+                        admission: CalimochoAvailability.admission(in: installed), root: calimochoInstaller.enginesRoot)
                     return installed.availableEngineOverrides.contains {
                         $0.inspection.engineName == CalimochoRelease.engineID
                     }
