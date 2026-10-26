@@ -38,7 +38,7 @@ enum AppBrandPresentation {
 
     /// Options for the standard About panel: "X Ode", "Version 0.2.0 Beta (412)", "© Working Principle".
     static func aboutPanelOptions(_ version: AppVersion = AppBrand.current) -> [NSApplication.AboutPanelOptionKey: Any] {
-        let credits = NSAttributedString(string: AppBrand.copyright, attributes: [
+        let credits = NSAttributedString(string: FeaturedCredits.aboutLine + "\n" + AppBrand.copyright, attributes: [
             .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
             .foregroundColor: NSColor.secondaryLabelColor
         ])

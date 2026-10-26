@@ -263,8 +263,10 @@ struct XodusPreviewApp: App {
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About \(AppBrand.displayName)") { AppBrandPresentation.orderFrontAboutPanel() }
-                Button("Licenses") { openWindow(id: "licenses") }
-                Button("Acknowledgments") { openWindow(id: "acknowledgments") }
+                ForEach(AcknowledgmentsNavigation.appMenu, id: \.title) { item in
+                    Button(item.title) { AcknowledgmentsNavigation.shared.open(item.focus) { openWindow(id: $0) } }
+                }
+                Button("\(AppBrand.displayName) Licence…") { openWindow(id: "licenses") }
             }
             CommandGroup(after: .appSettings) {
                 Button("Engines…") { openSettingsPane(.engines) }
@@ -287,6 +289,10 @@ struct XodusPreviewApp: App {
             CommandGroup(replacing: .help) {
                 Button(AppBrand.supportTitle) { openWindow(id: AppBrandPresentation.supportWindowID) }
                 Button("Send Feedback…") { openWindow(id: AppBrandPresentation.supportWindowID) }
+                Divider()
+                ForEach(AcknowledgmentsNavigation.helpMenu, id: \.title) { item in
+                    Button(item.title) { AcknowledgmentsNavigation.shared.open(item.focus) { openWindow(id: $0) } }
+                }
             }
             CommandGroup(after: .newItem) {
                 Button(NativeToolbarImportButton.title + "…") { Task { await state.installedGames.chooseGame() } }

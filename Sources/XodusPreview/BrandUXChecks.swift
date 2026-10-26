@@ -29,6 +29,7 @@ enum BrandUXChecks {
         firstLoad(check: check)
         support(check: check)
         acknowledgments(check: check)
+        credits(check: check)
         permissions(check: check)
         jargon(check: check)
     }
@@ -52,7 +53,8 @@ enum BrandUXChecks {
         let about = AppBrandPresentation.aboutPanelOptions(packaged)
         check(about[.applicationName] as? String == "X Ode"
               && about[.applicationVersion] as? String == "0.2.0 Beta" && about[.version] as? String == "412"
-              && (about[.credits] as? NSAttributedString)?.string == "© Working Principle"
+              && (about[.credits] as? NSAttributedString)?.string
+                == "Runs Windows games with Wine and is built on Xodus. Thank you to both projects.\n© Working Principle"
               && AppBrandPresentation.aboutPanelOptions(AppVersion(info: nil))[.applicationVersion] as? String
                 == "Development build",
               "COR186/COR198/L1: About shows X Ode, Version 0.2.0 Beta (412) and © Working Principle, without xode.win")
@@ -447,7 +449,8 @@ enum BrandUXChecks {
 
     static func welcome(check: (Bool, String) -> Void) {
         check(WelcomeCopy.signIn == "Sign in with Microsoft"
-              && WelcomeCopy.technology == "X Ode runs Windows games with Wine and other open-source libraries."
+              && WelcomeCopy.technology == "X Ode runs Windows games with Wine and is built on Xodus."
+              && WelcomeCopy.credits == "Acknowledgments and licences: X Ode menu › Acknowledgments."
               && WelcomeCopy.keychain.contains("Keychain") && XOdeLockup.accessibilityName == "X Ode",
               "COR186 M7: The login screen is the X Ode lockup, Sign in with Microsoft and the Wine/open-source line")
         for scheme in [ColorScheme.light, .dark] {
@@ -458,7 +461,8 @@ enum BrandUXChecks {
                                 name: "welcome-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
             check(labels.contains("Ode") && joined.contains("Sign in with Microsoft")
-                  && joined.contains("Wine") && joined.contains("Acknowledgments")
+                  && joined.contains("Wine") && joined.contains("Acknowledgments") && joined.contains("Xodus")
+                  && joined.contains("menu") && joined.contains("licences")
                   && !joined.contains("Keychain") && !joined.contains("PC Game Pass") && !joined.contains("Beta")
                   && !joined.contains("Xbox Live") && !joined.contains("Xode") && !joined.contains("Welcome"),
                   "COR186 M7: Rendered login (\(scheme)) keeps only the lockup, Microsoft sign-in, state notices and the Wine line: \(labels)")
@@ -647,12 +651,64 @@ enum BrandUXChecks {
               && AppAcknowledgmentsView.windowID == "acknowledgments",
               "REQ-117: The login screen's Acknowledgments link opens the Acknowledgments window")
         for scheme in [ColorScheme.light, .dark] {
-            let labels = render(AppAcknowledgmentsView(inventory: loaded), size: CGSize(width: 860, height: 600),
+            let labels = render(AppAcknowledgmentsView(inventory: loaded), size: CGSize(width: 860, height: 1200),
                                 scheme: scheme, name: "acknowledgments-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
             check(joined.contains("Built on open source") && joined.contains("Key projects") && joined.contains("MoltenVK")
+                  && joined.contains(FeaturedCredits.sectionTitle) && joined.contains("winehq.org")
+                  && joined.contains("github.com/xodus-gaming/xodus") && joined.contains("CodeWeavers")
+                  && (joined.range(of: FeaturedCredits.sectionTitle)?.lowerBound ?? joined.endIndex)
+                    < (joined.range(of: "Key projects")?.lowerBound ?? joined.startIndex)
                   && joined.contains("Apple D3DMetal") && !joined.contains("DXVK"),
                   "REQ-117: The Acknowledgments window (\(scheme)) leads with the derived key projects and the separate D3DMetal note: \(labels)")
+        }
+    }
+
+    // MARK: Wine and Xodus credits (REQ-122, COR-209)
+
+    static func credits(check: (Bool, String) -> Void) {
+        let wine = FeaturedCredits.wine, xodus = FeaturedCredits.xodus
+        check(FeaturedCredits.sectionTitle == "Built on Wine and Xodus"
+              && wine.url.absoluteString == "https://www.winehq.org" && wine.organisation == "WineHQ"
+              && wine.license == "LGPL-2.1-or-later" && wine.role == "Runs Windows games on your Mac"
+              && wine.thanks.contains("Wine authors") && wine.thanks.contains("CodeWeavers")
+              && xodus.url.absoluteString == "https://github.com/xodus-gaming/xodus" && xodus.license == "GPL-3.0"
+              && xodus.role.contains("Xbox library and install backend") && xodus.thanks.contains("Xodus contributors"),
+              "REQ-122: Wine (WineHQ, LGPL-2.1-or-later) and Xodus (xodus-gaming, GPL-3.0) each have a role, a thank-you and a working link")
+        let about = (AppBrandPresentation.aboutPanelOptions()[.credits] as? NSAttributedString)?.string ?? ""
+        check(about.components(separatedBy: "\n").first == FeaturedCredits.aboutLine
+              && FeaturedCredits.aboutLine.contains("Wine") && FeaturedCredits.aboutLine.contains("Xodus"),
+              "REQ-122: About X Ode credits Wine and Xodus in one line above the copyright")
+        let line = WelcomeCopy.technology
+        check(line.hasPrefix("X Ode runs Windows games with Wine") && line.contains("Xodus")
+              && WelcomeCopy.credits.contains("X Ode menu › Acknowledgments") && line.count <= 70
+              && WelcomeCopy.credits.count <= 70,
+              "COR-209: The sign-in window names Wine first, then Xodus, and says where credits and licences are, in two short lines")
+        let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
+        check(readme.contains(FeaturedCredits.readmeLine) && readme.contains(FeaturedCredits.helpMenu),
+              "REQ-122: README's credits use the app's exact Wine and Xodus line (fails if README.md is missing)")
+        check(AcknowledgmentsNavigation.appMenu.map(\.title) == ["Acknowledgments…", "Open-Source Licences…"]
+              && AcknowledgmentsNavigation.appMenu.map(\.focus) == [.overview, .licences]
+              && AcknowledgmentsNavigation.helpMenu.map(\.title) == ["Acknowledgments and Licences"],
+              "COR-209: The X Ode menu has Acknowledgments… and Open-Source Licences…; Help has Acknowledgments and Licences")
+        let navigation = AcknowledgmentsNavigation()
+        var windows: [String] = []
+        var focuses: [AcknowledgmentsNavigation.Focus?] = []
+        for item in AcknowledgmentsNavigation.appMenu + AcknowledgmentsNavigation.helpMenu {
+            navigation.open(item.focus) { windows.append($0) }
+            focuses.append(navigation.request)
+        }
+        check(windows == Array(repeating: AppAcknowledgmentsView.windowID, count: 3)
+              && focuses == [.overview, .licences, .overview],
+              "COR-209: Each menu item opens the Acknowledgments window; Open-Source Licences asks for the licence list")
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let labels = render(AppAcknowledgmentsView(inventory: AcknowledgmentsInventory()),
+                                size: CGSize(width: 860, height: 1100), scheme: scheme,
+                                name: "req122-acknowledgments-\(suffix)").joined(separator: " ")
+            check(labels.contains(FeaturedCredits.sectionTitle) && labels.contains("winehq.org")
+                  && labels.contains("github.com/xodus-gaming/xodus") && labels.contains("All components and licences"),
+                  "REQ-122 render (\(suffix)): Built on Wine and Xodus leads Acknowledgments with both links, offline and signed out: \(labels)")
         }
     }
 

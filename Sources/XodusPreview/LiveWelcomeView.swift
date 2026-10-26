@@ -4,9 +4,8 @@ import SwiftUI
 /// The login screen is the X Ode lockup, Sign in with Microsoft and one line about the technology.
 enum WelcomeCopy {
     static let signIn = "Sign in with Microsoft"
-    static var technology: String {
-        "\(AppBrand.displayName) runs Windows games with Wine and other open-source libraries."
-    }
+    static var technology: String { FeaturedCredits.signInLine }
+    static var credits: String { FeaturedCredits.whereToFind }
     static let acknowledgments = "Acknowledgments"
     static let acknowledgmentsAccessibility = "Open-source acknowledgments"
     static let checking = "Checking your Microsoft account"
@@ -85,9 +84,13 @@ struct LiveWelcomeView: View {
                     }
                     VStack(spacing: 4) {
                         Text(WelcomeCopy.technology)
-                            .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                            .font(.callout).multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("xodus.welcome.technology")
+                        Text(WelcomeCopy.credits)
+                            .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("xodus.welcome.credits")
                         // Works signed out and offline: the notices ship with the app.
                         Button(WelcomeCopy.acknowledgments, action: openAcknowledgmentsAction)
                             .buttonStyle(.link).font(.footnote)
