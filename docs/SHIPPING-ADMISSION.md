@@ -25,9 +25,10 @@ Both copy and bind the inventory/notices before signing, rejecting a different
 producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
 
-The backend producer-notice inventory remains tied to an older producer tuple
-and is not valid for this release. Calimocho `-03` is superseded by the frozen
-`-04` / 0.1120.4.4 tuple: release tag `engine-0.1120.4.4`, commit
+The initial backend producer-notice inventory was tied to an older producer
+tuple; it was superseded by the approved successor below. Calimocho `-03` is
+superseded by the frozen `-04` / 0.1120.4.4 tuple: release tag
+`engine-0.1120.4.4`, commit
 `8a9b354ec1909508627461c02373c695cc357d82`, tree
 `b6a2edde60bb1670207e6bac94302c3a371345de`; descriptor SHA-256
 `98473033e8b1e4f02a1986749b684d0becd5e2be7d0ff388f7a2049566296425` and
@@ -78,8 +79,9 @@ X Ode does not substitute a different engine.
 The inventory's own hashes and packaged resource seal do not establish
 completeness. The independently approved digest binds the exact producer
 manifest, CLI, helper, hash-bound metadata/artifact evidence and `Cargo.lock`;
-the 14 unresolved notice/source/rights obligations remain explicit. Distribution
-and dry-run resume require that digest again as `--producer-notices-sha256`;
+the one unresolved corresponding-source/rights-review obligation remains
+explicit. Distribution and dry-run resume require that digest again as
+`--producer-notices-sha256`;
 they never take approval from a receipt or the packaged manifest. Removing
 packages or obligations and resealing the manifest cannot bypass the external
 expected hash.
@@ -187,9 +189,33 @@ claims Apple acceptance. There is no independent stale exception tuple.
 Existing r7 build/source receipts resolve its provenance rather than requiring
 reconstruction of older evidence. Outer app/DMG acceptance remains mandatory.
 
-### REQ103 r7 source candidate: Stop lifecycle and orphan safety
+The active Xodus shipping pair is the approved producer commit
+`99e20addf88932de7796fc966fe09e00b71e4981`, tree
+`7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`, signed CLI
+`ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9`
+(28,974,448 bytes), Windows helper
+`6564914f1219364fb236eda37bba4d280e6115c2b8f23c20097dc19b8692f929`
+(20,480 bytes), producer manifest
+`3df7bfcb6c4e2fa082cce67cc7f906d7010d15cedee123ec705dc08c51245e35`, and
+Cargo.lock `b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868`.
+The pinned inventory checks these values and binds the corresponding-source
+archive `d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd`
+(9,574,400 bytes) to the same producer. Supplemental-provenance report
+metadata naming the prior producer is historical, not an active shipping pin.
 
-The current reviewed producer source is
+Known test-only build issue: release-mode
+`swift build -c release --product XodusManagementChecks` fails identically on
+`8b58bb07`, `ae6b4ad4`, and `5a6a5802`, because
+`AccountTierChecks.swift:3` cannot resolve a compatible `XodusManagement`
+module. The `XodusManagement` module itself builds and imports directly, and
+the release `XodusPreview` product builds. This test-product failure predates
+the producer merge and does not block packaging; the debug management suite
+(10,910 checks, 0 failures) remains the gate.
+
+### Historical REQ103 r7 source candidate: Stop lifecycle and orphan safety
+
+This superseded producer is retained only to explain historical receipts. Its
+source was
 `01d4cfd625764c2a8ec4d60824ef4f277b30b9e9`, tree
 `97a18c1f2c680cd4bce32a9bc2f0818b48977e64`. It includes the separate broker
 process group, owner Stop classification, bounded parent-death pipe regression,
@@ -201,8 +227,8 @@ The sealed signed CLI is
 `847ad6f535cc5a32cd33cdc687c330aa66cad45d4c2577fd4c035033b029c78d`
 (20,480 bytes), and producer manifest
 `4945099d043aed748d25e5908f7c6be26136ad67be18de8cd97c01161deac1fe`
-(19,730 bytes). The app source and current runtime-recipe CLI binding use this
-exact producer; historical gameplay identities remain unchanged. The management
+(19,730 bytes). The app source and runtime-recipe CLI binding no longer use this
+producer; historical gameplay identities remain unchanged. The management
 schema is unchanged. Artifact verification and source checks are not installation,
 native Stop acceptance, notarization, or title qualification.
 

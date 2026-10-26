@@ -7,6 +7,7 @@ recorded, not reconstructed. The preserved CLI never gains lifecycle admission
 unless its digest independently matches the app's lifecycle pin.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -19,8 +20,10 @@ import tempfile
 
 from build_local_candidate import (copy_engine_notice, copy_release_notices, run, source_build_number,
                                    source_identity, validate_host)
-from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
-                           owned_bytes, require, swift_pins)
+from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, WINDOWS_HELPER_BYTES,
+                           WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE,
+                           PRODUCER_MANIFEST_SHA256, owned_bytes, require, swift_pins,
+                           swift_producer_pins, validate_producer_inventory)
 from signing_identity import command, preflight, sign, verify_designated_requirement
 from package_resources import copy_resources
 from distribution_manifest import write_manifest
@@ -28,8 +31,9 @@ from distribution_manifest import write_manifest
 
 def validate_payload_pair(cli, helper, producer, tree):
     require(producer == PRODUCER and tree == PRODUCER_TREE, "Selected producer differs from the approved pin")
-    cli_record, cli_bytes = owned_bytes(cli, CLI_SHA256, bounded=512 * 1024 * 1024)
-    helper_record, helper_bytes = owned_bytes(helper, WINDOWS_HELPER_SHA256, bounded=16 * 1024 * 1024)
+    cli_record, cli_bytes = owned_bytes(cli, CLI_SHA256, CLI_BYTES, bounded=512 * 1024 * 1024)
+    helper_record, helper_bytes = owned_bytes(helper, WINDOWS_HELPER_SHA256,
+                                               WINDOWS_HELPER_BYTES, bounded=16 * 1024 * 1024)
     require(helper_bytes in cli_bytes, "Selected Windows helper differs from actual embedded CLI bytes")
     return cli_record, helper_record
 
@@ -62,10 +66,16 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         producer_tree = subprocess.check_output(
             ["git", "rev-parse", producer + "^{tree}"], cwd=producer_source, text=True).strip()
         require(producer_tree == PRODUCER_TREE, "Selected producer tree differs from the approved pin")
+        cargo_lock = subprocess.check_output(
+            ["git", "show", producer + ":Cargo.lock"], cwd=producer_source)
+        require(hashlib.sha256(cargo_lock).hexdigest() == CARGO_LOCK_SHA256,
+                "Selected producer Cargo.lock differs from the approved pin")
         contract = subprocess.check_output(
             ["git", "show", producer + ":docs/contracts/management-v1.schema.json"], cwd=producer_source)
         require(contract == (project / "Sources/XodusManagement/Resources/management-v1.schema.json").read_bytes(),
                 "Selected CLI producer and app management contracts differ")
+    if producer_notices is not None:
+        validate_producer_inventory(Path(producer_notices) / "inventory.json", producer_notices_sha256)
     old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/XodusEngine/xodus-cli"
     old_helper = selected_helper.resolve(strict=True) if selected_helper else old_cli.parent / "xodus-window-monitor.exe"
     cli_record, windows_helper_record = validate_payload_pair(old_cli, old_helper, producer, producer_tree)
@@ -116,10 +126,9 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     (source / "Sources/XodusPreview/ShippingPairPins.swift").write_text(swift_pins(
         source_identity_before["commit"], source_identity_before["tree"], cli_record, helper_record,
         producer, producer_tree))
-    (source / "Sources/XodusPreview/ShippingProducerPins.swift").write_text(
-        '// Generated for this local candidate only.\nenum ShippingProducerPins {\n'
-        f'    static let commit = "{producer}"\n'
-        f'    static let tree = "{producer_tree}"\n}}\n')
+    require(producer == PRODUCER and producer_tree == PRODUCER_TREE,
+            "Selected producer differs from the approved shipping tuple")
+    (source / "Sources/XodusPreview/ShippingProducerPins.swift").write_text(swift_producer_pins())
     run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
         source, log, environment)
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
@@ -149,6 +158,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         "producerSourceIndependentlyVerified": False,
         "preservedProducerDeclaration": {"commit": producer, "tree": producer_tree},
         "preservedProducerManifest": producer_manifest,
+        "producerCargoLockSHA256": CARGO_LOCK_SHA256,
         "explicitFrozenCLISelected": selected_cli is not None,
         "signedHelper": helper_record,
         "preservedWindowsHelper": windows_helper_record,

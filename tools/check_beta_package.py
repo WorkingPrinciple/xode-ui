@@ -12,11 +12,10 @@ import tempfile
 from unittest.mock import patch
 
 import package_beta as beta
+import shipping_pair as shipping
 from package_beta import (IDENTITY, TEAM_ID,
                          package_beta as create_beta_package)
 
-PRODUCER_NOTICES_SHA256 = "a" * 64
-PRODUCER_NOTICES_EVIDENCE_SHA256 = "b" * 64
 PRODUCER_SOURCE_ARCHIVE_BYTES = b"Neutral private tester source archive"
 PRODUCER_SOURCE_ARCHIVE_SHA256 = hashlib.sha256(PRODUCER_SOURCE_ARCHIVE_BYTES).hexdigest()
 assert beta.PRODUCER_NOTICES_SHA256 == (
@@ -28,6 +27,23 @@ assert beta.PRODUCER_SOURCE_TREE == "7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91"
 assert beta.PRODUCER_SOURCE_ARCHIVE_SHA256 == (
     "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd")
 assert beta.PRODUCER_SOURCE_ARCHIVE_BYTES == 9_574_400
+shipping.SOURCE_ARCHIVE_SHA256 = PRODUCER_SOURCE_ARCHIVE_SHA256
+shipping.SOURCE_ARCHIVE_BYTES = len(PRODUCER_SOURCE_ARCHIVE_BYTES)
+INVENTORY = {
+    "producer": {"commit": shipping.PRODUCER, "tree": shipping.PRODUCER_TREE},
+    "cliSHA256": shipping.CLI_SHA256,
+    "helperSHA256": shipping.WINDOWS_HELPER_SHA256,
+    "producerManifestSHA256": shipping.PRODUCER_MANIFEST_SHA256,
+    "cargoLockSHA256": shipping.CARGO_LOCK_SHA256,
+    "sourceDelivery": {"sourceArchive": {
+        "file": "xodus-cli-beta-99e20add-source.tar",
+        "sha256": shipping.SOURCE_ARCHIVE_SHA256, "bytes": shipping.SOURCE_ARCHIVE_BYTES,
+        "producer": {"commit": shipping.PRODUCER, "tree": shipping.PRODUCER_TREE},
+    }},
+}
+INVENTORY_BYTES = (json.dumps(INVENTORY, sort_keys=True) + "\n").encode()
+PRODUCER_NOTICES_SHA256 = hashlib.sha256(INVENTORY_BYTES).hexdigest()
+PRODUCER_NOTICES_EVIDENCE_SHA256 = "b" * 64
 beta.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
 beta.PRODUCER_NOTICES_EVIDENCE_SHA256 = PRODUCER_NOTICES_EVIDENCE_SHA256
 beta.PRODUCER_SOURCE_ARCHIVE_SHA256 = PRODUCER_SOURCE_ARCHIVE_SHA256
@@ -77,10 +93,16 @@ def fixture(root):
                        "CFBundleIdentifier": beta.APP_BUNDLE_IDENTIFIER}, output)
     (app / "Contents/Resources/local-candidate-receipt.json").write_text(json.dumps({
         "appSource": {"commit": commit, "tree": tree},
+        "preservedProducerDeclaration": {"commit": shipping.PRODUCER, "tree": shipping.PRODUCER_TREE},
+        "preservedCLI": {"sha256": shipping.CLI_SHA256, "bytes": shipping.CLI_BYTES},
+        "preservedWindowsHelper": {"sha256": shipping.WINDOWS_HELPER_SHA256,
+                                   "bytes": shipping.WINDOWS_HELPER_BYTES},
+        "preservedProducerManifest": {"sha256": shipping.PRODUCER_MANIFEST_SHA256},
+        "producerCargoLockSHA256": shipping.CARGO_LOCK_SHA256,
     }))
     notices = app / "Contents/Resources/ProducerNotices"
     notices.mkdir()
-    (notices / "inventory.json").write_text("Neutral fixture inventory")
+    (notices / "inventory.json").write_bytes(INVENTORY_BYTES)
     engine_notices = app / "Contents/Resources/EngineNotices"
     engine_notices.mkdir()
     (engine_notices / "NOTICE.txt").write_text("Neutral Calimocho notice fixture\n")
@@ -225,6 +247,25 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
 
     inventory_path = app / "Contents/Resources/ProducerNotices/inventory.json"
     inventory_bytes = inventory_path.read_bytes()
+    inventory_value = json.loads(inventory_bytes)
+    inventory_value["producer"]["commit"] = "0" * 40
+    inventory_path.write_text(json.dumps(inventory_value), encoding="utf-8")
+    rejected(lambda: create_beta_package(app, output, "zip", source,
+                                         producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                         run_command=fake_runner([]),
+                                         producer_source_archive=producer_source_archive))
+    inventory_path.write_bytes(inventory_bytes)
+    app_receipt_path = app / "Contents/Resources/local-candidate-receipt.json"
+    app_receipt_bytes = app_receipt_path.read_bytes()
+    app_receipt_value = json.loads(app_receipt_bytes)
+    app_receipt_value["preservedCLI"]["sha256"] = "0" * 64
+    app_receipt_path.write_text(json.dumps(app_receipt_value), encoding="utf-8")
+    rejected(lambda: create_beta_package(app, output, "zip", source,
+                                         producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                         run_command=fake_runner([]),
+                                         producer_source_archive=producer_source_archive))
+    app_receipt_path.write_bytes(app_receipt_bytes)
+
     inventory_path.unlink()
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()):

@@ -13,7 +13,11 @@ import subprocess
 import tempfile
 
 from distribution_manifest import distribution_blockers
-from shipping_pair import hex_value, owned_bytes, positive, require, unique_object
+from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, PRODUCER,
+                           PRODUCER_MANIFEST_SHA256, PRODUCER_TREE, SOURCE_ARCHIVE_BYTES,
+                           SOURCE_ARCHIVE_SHA256, WINDOWS_HELPER_BYTES,
+                           WINDOWS_HELPER_SHA256, hex_value, owned_bytes, positive, require,
+                           unique_object, validate_producer_inventory)
 from signing_identity import (IDENTIFIERS, verify_developer_id_bundle,
                               verify_developer_id_component)
 
@@ -24,10 +28,10 @@ APP_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.development"
 APP_SIGNING_IDENTIFIER = IDENTIFIERS["app"]
 PRODUCER_NOTICES_SHA256 = "5c27f9e24c78f7499fc5cf230b4a9e053c8e079f7880f4ddbfcc9f7a155d457e"
 PRODUCER_NOTICES_EVIDENCE_SHA256 = "77601f7da9cb9298973e568c0882230f1059e233b5118089ad3535bfed25d5a2"
-PRODUCER_SOURCE_COMMIT = "99e20addf88932de7796fc966fe09e00b71e4981"
-PRODUCER_SOURCE_TREE = "7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91"
-PRODUCER_SOURCE_ARCHIVE_SHA256 = "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd"
-PRODUCER_SOURCE_ARCHIVE_BYTES = 9_574_400
+PRODUCER_SOURCE_COMMIT = PRODUCER
+PRODUCER_SOURCE_TREE = PRODUCER_TREE
+PRODUCER_SOURCE_ARCHIVE_SHA256 = SOURCE_ARCHIVE_SHA256
+PRODUCER_SOURCE_ARCHIVE_BYTES = SOURCE_ARCHIVE_BYTES
 INSTALL_NOTE = """X Ode beta
 
 PRIVATE TESTER PACKAGE ONLY. Do not upload or redistribute this package publicly.
@@ -162,6 +166,25 @@ def app_source(app):
     return {"commit": commit, "tree": tree}
 
 
+def validate_candidate_producer_pair(app):
+    receipt = read_json(app / "Contents/Resources/local-candidate-receipt.json")
+    declaration = receipt.get("preservedProducerDeclaration")
+    cli = receipt.get("preservedCLI")
+    helper = receipt.get("preservedWindowsHelper")
+    manifest = receipt.get("preservedProducerManifest")
+    require(type(declaration) is dict
+            and type(cli) is dict and type(helper) is dict and type(manifest) is dict
+            and declaration.get("commit") == PRODUCER_SOURCE_COMMIT
+            and declaration.get("tree") == PRODUCER_SOURCE_TREE
+            and cli.get("sha256") == CLI_SHA256
+            and type(cli.get("bytes")) is int and cli.get("bytes") == CLI_BYTES
+            and helper.get("sha256") == WINDOWS_HELPER_SHA256
+            and type(helper.get("bytes")) is int and helper.get("bytes") == WINDOWS_HELPER_BYTES
+            and manifest.get("sha256") == PRODUCER_MANIFEST_SHA256
+            and receipt.get("producerCargoLockSHA256") == CARGO_LOCK_SHA256,
+            "Candidate receipt does not bind the complete approved producer pair")
+
+
 def release_identity(source, expected_source):
     source = Path(source)
     require(source.is_absolute() and source.resolve(strict=True) == source and source.is_dir(),
@@ -243,6 +266,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
 
     _, info_bytes = owned_bytes(app / "Contents/Info.plist", bounded=1_048_576)
     info = plistlib.loads(info_bytes)
+    validate_candidate_producer_pair(app)
     version = info.get("CFBundleShortVersionString")
     require(isinstance(version, str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version),
             "App version must use exactly x.y.z")
@@ -281,6 +305,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
             and (notices / "inventory.json").is_file()
             and not (notices / "inventory.json").is_symlink(),
             "Pinned producer notice inventory is required in the app bundle")
+    validate_producer_inventory(notices / "inventory.json", PRODUCER_NOTICES_SHA256)
     engine_notice = app / "Contents/Resources/EngineNotices/NOTICE.txt"
     engine_notice_identity, engine_notice_data = owned_bytes(engine_notice, bounded=2 * 1024 * 1024)
     engine_notice_text = engine_notice_data.decode("utf-8")

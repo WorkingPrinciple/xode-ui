@@ -13,7 +13,8 @@ import subprocess
 import tarfile
 import tempfile
 
-from shipping_pair import FEATURES, PROFILE, hex_value, owned_bytes, require, swift_pins
+from shipping_pair import (CARGO_LOCK_SHA256, FEATURES, PRODUCER, PRODUCER_TREE, PROFILE,
+                           hex_value, owned_bytes, require, swift_pins, swift_producer_pins)
 from signing_identity import preflight, sign, verify_designated_requirement
 
 
@@ -101,6 +102,9 @@ def build(engine_root, output_root, identity, engine_notice=None):
             "Output directory must be owned and not group/world writable")
     preflight(identity)
     app_source, engine_source = source_identity(project), source_identity(engine_root)
+    require(engine_source == {"commit": PRODUCER, "tree": PRODUCER_TREE},
+            "Engine source differs from the approved shipping producer")
+    cargo_lock = owned_bytes(engine_root / "Cargo.lock", CARGO_LOCK_SHA256)[0]
     contract = engine_root / "docs/contracts/management-v1.schema.json"
     consumer = project / "Sources/XodusManagement/Resources/management-v1.schema.json"
     require(contract.read_bytes() == consumer.read_bytes(),
@@ -153,10 +157,7 @@ def build(engine_root, output_root, identity, engine_notice=None):
     pins.write_text(swift_pins(app_source["commit"], app_source["tree"],
                               signed_engine, signed_helper, engine_source["commit"], engine_source["tree"]))
     producer_pins = source / "Sources/XodusPreview/ShippingProducerPins.swift"
-    producer_pins.write_text(
-        '// Generated for this local candidate only.\nenum ShippingProducerPins {\n'
-        f'    static let commit = "{engine_source["commit"]}"\n'
-        f'    static let tree = "{engine_source["tree"]}"\n}}\n')
+    producer_pins.write_text(swift_producer_pins())
     run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
         source, log, environment)
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
@@ -197,7 +198,8 @@ def build(engine_root, output_root, identity, engine_notice=None):
                  for path in sorted(app.rglob("*")) if path.is_file()}
     receipt = {
         "kind": "local-development-candidate", "productionQualified": False, "notarized": False,
-        "appSource": app_source, "engineSource": engine_source, "engineBuildCommand": command,
+        "appSource": app_source, "engineSource": engine_source, "engineCargoLock": cargo_lock,
+        "engineBuildCommand": command,
         "actualCargoProfile": artifact["profile"], "unsignedEngine": unsigned,
         "actualNativeResolvedFeatures": native_features,
         "signedEngine": signed_engine, "signedHelper": signed_helper,

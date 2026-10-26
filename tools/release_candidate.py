@@ -17,6 +17,7 @@ import tempfile
 from build_local_candidate import source_identity
 from refresh_local_candidate import refresh
 from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
+                           CLI_BYTES as CLI_SIZE, WINDOWS_HELPER_BYTES as HELPER_SIZE,
                            PRODUCER as PRODUCER_COMMIT, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
                            hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
@@ -63,8 +64,9 @@ def frozen_payloads(candidate, approved_unnotarized_cli=None):
             and manifest["helper_embedded_bytes_verified"] is True,
             "Frozen payload receipts do not agree")
     cli, helper = candidate / "xodus-cli", candidate / "xodus-window-monitor.exe"
-    cli_identity, cli_bytes = owned_bytes(cli, CLI_SHA256, bounded=512 * 1024 * 1024)
-    helper_identity, helper_bytes = owned_bytes(helper, HELPER_SHA256, bounded=16 * 1024 * 1024)
+    cli_identity, cli_bytes = owned_bytes(cli, CLI_SHA256, CLI_SIZE, bounded=512 * 1024 * 1024)
+    helper_identity, helper_bytes = owned_bytes(helper, HELPER_SHA256, HELPER_SIZE,
+                                                bounded=16 * 1024 * 1024)
     require(helper_bytes in cli_bytes, "Adjacent Windows helper differs from actual embedded CLI bytes")
     if not (candidate / "notarization/receipt.json").exists():
         require(manifest.get("notarization", {}).get("status") == "NOT_SUBMITTED",

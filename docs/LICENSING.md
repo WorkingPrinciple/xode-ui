@@ -14,8 +14,9 @@ Signing, notarization, installer/updater channel and the detailed component redi
 
 ## COR176 package boundary
 
-The source-bound 2794e68 local candidate includes the app, AuthHost, r7 CLI
-(producer `01d4cfd625764c2a8ec4d60824ef4f277b30b9e9`), Windows monitor,
+The source-bound 2794e68 local candidate is historical and includes the app,
+AuthHost, r7 CLI (producer `01d4cfd625764c2a8ec4d60824ef4f277b30b9e9`),
+Windows monitor,
 management schemas, launch policy, compatibility data, original icon and GPL
 text. The AWACY-derived compatibility data retains its MIT notice at
 `CompatibilityData/AWACY-LICENSE.txt`. Wine/Calimocho, CrossOver, GPTK,

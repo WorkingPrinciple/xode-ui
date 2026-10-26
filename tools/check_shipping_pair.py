@@ -11,7 +11,11 @@ import struct
 import sys
 import tarfile
 import tempfile
-from shipping_pair import COMMAND, FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, main as generate_pair, swift_pins, verify_input
+from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, COMMAND, FEATURES, PROFILE,
+                           PRODUCER, PRODUCER_MANIFEST_SHA256, PRODUCER_TREE, SOURCE_ARCHIVE_BYTES,
+                           SOURCE_ARCHIVE_SHA256, WINDOWS_HELPER_BYTES, WINDOWS_HELPER_SHA256,
+                           main as generate_pair, swift_pins, swift_producer_pins,
+                           validate_producer_inventory, verify_input)
 from verify_shipping_package import main as verify_package
 from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_capsule
 from python_runtime import approved_pin, inventory
@@ -20,6 +24,60 @@ from package_resources import RUNTIME_RESOURCES
 count = 0
 with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     root = Path(temporary).resolve()
+    inventory_path = root / "inventory.json"
+    producer_inventory = {
+        "producer": {"commit": PRODUCER, "tree": PRODUCER_TREE},
+        "cliSHA256": CLI_SHA256, "helperSHA256": WINDOWS_HELPER_SHA256,
+        "producerManifestSHA256": PRODUCER_MANIFEST_SHA256,
+        "cargoLockSHA256": CARGO_LOCK_SHA256,
+        "sourceDelivery": {"sourceArchive": {
+            "file": "xodus-cli-beta-99e20add-source.tar",
+            "sha256": SOURCE_ARCHIVE_SHA256, "bytes": SOURCE_ARCHIVE_BYTES,
+            "producer": {"commit": PRODUCER, "tree": PRODUCER_TREE},
+        }},
+    }
+    def write_inventory(value):
+        inventory_path.write_text(json.dumps(value, sort_keys=True), encoding="utf-8")
+        inventory_path.chmod(0o600)
+        return hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+
+    validate_producer_inventory(inventory_path, write_inventory(producer_inventory))
+    assert CLI_BYTES == 28_974_448 and WINDOWS_HELPER_BYTES == 20_480
+    producer_pins = swift_producer_pins()
+    assert PRODUCER in producer_pins and PRODUCER_TREE in producer_pins
+    count += 1
+    for field, value in (("cliSHA256", "0" * 64), ("helperSHA256", "0" * 64),
+                         ("producerManifestSHA256", "0" * 64), ("cargoLockSHA256", "0" * 64)):
+        malformed = copy.deepcopy(producer_inventory)
+        malformed[field] = value
+        try:
+            validate_producer_inventory(inventory_path, write_inventory(malformed))
+            raise AssertionError("Mismatched producer inventory pin accepted: " + field)
+        except ValueError:
+            count += 1
+    for field, value in (("file", "wrong-source.tar"), ("sha256", "0" * 64),
+                         ("bytes", SOURCE_ARCHIVE_BYTES + 1)):
+        malformed = copy.deepcopy(producer_inventory)
+        malformed["sourceDelivery"]["sourceArchive"][field] = value
+        try:
+            validate_producer_inventory(inventory_path, write_inventory(malformed))
+            raise AssertionError("Mismatched source archive pin accepted: " + field)
+        except ValueError:
+            count += 1
+    malformed = copy.deepcopy(producer_inventory)
+    malformed["producer"]["tree"] = "0" * 40
+    try:
+        validate_producer_inventory(inventory_path, write_inventory(malformed))
+        raise AssertionError("Wrong producer source accepted")
+    except ValueError:
+        count += 1
+    malformed = copy.deepcopy(producer_inventory)
+    malformed["sourceDelivery"]["sourceArchive"]["producer"]["commit"] = "0" * 40
+    try:
+        validate_producer_inventory(inventory_path, write_inventory(malformed))
+        raise AssertionError("Wrong source archive producer accepted")
+    except ValueError:
+        count += 1
     engine = root / "neutral-engine"
     proof = Path(str(engine) + ".provenance.json")
     data = b"Neutral packaging bytes. Never executed or represented as a real CLI."

@@ -51,6 +51,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
         cli = b"Neutral CLI containing " + helper
         (root / "xodus-cli").write_bytes(cli)
         (root / "xodus-window-monitor.exe").write_bytes(helper)
+        release.CLI_SIZE = refresh_tool.CLI_BYTES = len(cli)
+        release.HELPER_SIZE = refresh_tool.WINDOWS_HELPER_BYTES = len(helper)
         notarization = root / "notarization"
         notarization.mkdir()
         cli_hash, helper_hash = hashlib.sha256(cli).hexdigest(), hashlib.sha256(helper).hexdigest()
@@ -212,6 +214,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
         self.assertIn(f'static let tree = "{pins.PRODUCER_TREE}"', producer)
         self.assertIn(hashlib.sha256(recipe_bytes).hexdigest(), configuration)
         self.assertEqual(recipe["cliSha256"], pins.CLI_SHA256)
+        self.assertNotEqual(recipe["cliSha256"], "358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9")
         self.assertEqual(recipe["evidenceCliSha256"],
                          "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604")
         self.assertEqual(release.CLI_SHA256, refresh_tool.CLI_SHA256)
