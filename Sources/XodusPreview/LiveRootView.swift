@@ -31,6 +31,7 @@ struct LiveRootView: View {
     @State private var readinessAfterFirstLoad = false
     @State private var firstLoadDoneFor: String?
     @State private var firstScreenRequested = Set<String>()
+    @State private var windowID = UUID()
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
@@ -152,7 +153,8 @@ struct LiveRootView: View {
         return LibraryFirstLoadInputs(
             signedIn: session.hasConfirmedSignIn, loading: library.busy || library.restoringPresence,
             gamesFound: library.representedGames.count,
-            libraryComplete: library.snapshot.map { !library.busy || $0.isComplete } ?? false, error: library.error,
+            libraryComplete: library.representedSnapshot.map { !library.busy || $0.isComplete } ?? false,
+            error: library.error,
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
             artworkTotal: firstScreenArtwork.total, artworkReady: firstScreenArtwork.ready,
@@ -193,7 +195,7 @@ struct LiveRootView: View {
             FirstLoadTimeline.mark("handover", "reason=\(handover)")
             firstLoadDoneFor = session.accountHash
         }
-        state.firstLoadCovering = firstLoad.covers
+        state.setFirstLoadCovering(firstLoad.covers, window: windowID)
         if old.covers, !firstLoad.covers {
             // Hand VoiceOver and keyboard focus back to the library underneath.
             NSAccessibility.post(element: NSApp as Any, notification: .layoutChanged)
@@ -279,7 +281,7 @@ struct LiveRootView: View {
         .onChange(of: firstLoadInputs, initial: true) { _, inputs in
             applyFirstLoad { $0.update(inputs, now: .now) }
         }
-        .onDisappear { state.endFirstLoadCovering() }
+        .onDisappear { state.setFirstLoadCovering(false, window: windowID) }
         .onChange(of: firstLoad.active) { _, active in
             guard !active, readinessAfterFirstLoad else { return }
             readinessAfterFirstLoad = false

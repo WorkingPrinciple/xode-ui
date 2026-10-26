@@ -279,6 +279,8 @@ struct XodusPreviewApp: App {
                 Button("Quit \(AppBrand.displayName)") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
+            // The standard Edit menu: Spelling and Grammar, Substitutions, Transformations and Speech.
+            TextEditingCommands()
             GameSearchCommands(navigationAllowed: navigationAllowed)
             CommandGroup(before: .toolbar) {
                 Button("Refresh") { Task { await state.refreshCurrentDestination(session: session) } }

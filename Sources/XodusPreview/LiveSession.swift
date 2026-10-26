@@ -285,7 +285,10 @@ final class LiveSession: ObservableObject {
             return accountCountryChecking ? "Checking Xbox account" : "Not confirmed"
         }
         let name = Locale.current.localizedString(forRegionCode: market) ?? market
-        return "\(name) (\(market)) — \(accountCountryVerified ? "verified by Xbox" : "confirmed by you")"
+        return "\(name) (\(market)) — \(Self.countrySource(verified: accountCountryVerified, provisional: accountCountryProvisional))"
+    }
+    static func countrySource(verified: Bool, provisional: Bool) -> String {
+        verified ? "verified by Xbox" : provisional ? "last confirmed by Xbox" : "confirmed by you"
     }
 
     func refreshAccountCountry() async {
@@ -336,8 +339,14 @@ final class LiveSession: ObservableObject {
                 guard token == self.countryGeneration else { return }
             }
             await self.refreshAccountCountry()
+            // One later retry if the re-check failed and the country is still provisional.
+            guard token == self.countryGeneration, self.accountCountryProvisional else { return }
+            try? await Task.sleep(for: .seconds(Self.provisionalCountryRetry))
+            guard token == self.countryGeneration, self.accountCountryProvisional, !self.accountBusy else { return }
+            await self.refreshAccountCountry()
         }
     }
+    static let provisionalCountryRetry: TimeInterval = 60
 
     /// Forgets the saved countries for an account; part of signing out.
     func forgetAccountCountry(_ account: String) {

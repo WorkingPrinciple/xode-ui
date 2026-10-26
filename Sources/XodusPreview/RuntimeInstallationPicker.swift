@@ -49,7 +49,10 @@ struct RuntimeInstallationPicker: View {
     private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
         let defaultID = try? NativeEngineSettings.defaultAdmissionName()
         let choices = installed.availableEngineOverrides.compactMap { selection in
-            selection.inspection.engineName.map { EngineChoice.named($0, ready: true) }
+            selection.inspection.engineName.map {
+                EngineChoice.named($0, ready: true,
+                                   playable: EngineChoice.playsInBeta(admittedProvider: selection.inspection.admittedProvider))
+            }
         } + installed.failedEngineOverrides.sorted().map { EngineChoice.named($0, ready: false) }
         return EngineConfiguratorForm(
             choices: choices,

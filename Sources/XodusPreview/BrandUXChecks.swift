@@ -1022,11 +1022,25 @@ enum BrandUXChecks {
               && !unresolved.settled && unresolved.ready == 0,
               "REQ-119 review M1: First-screen artwork includes the hero, keeps settled images when a later batch reorders the grid, ignores a superseded run, and never treats an unread descriptor as ready")
 
+        let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
+        check(appSource.contains("TextEditingCommands()") && !appSource.contains("replacing: .textEditing")
+              && !appSource.contains("replacing: .textFormatting"),
+              "QA U1: The Edit menu keeps the system Spelling and Grammar, Substitutions, Transformations and Speech submenus (TextEditingCommands, nothing replaces .textEditing); fails if the source is missing")
+        let custom = EngineChoice.named("wine-custom-11", ready: true,
+                                        playable: EngineChoice.playsInBeta(admittedProvider: "wine"))
+        let release = EngineChoice.named(CalimochoRelease.engineID, ready: true,
+                                         playable: EngineChoice.playsInBeta(admittedProvider: "calimocho"))
+        check(!custom.playable && release.playable && RuntimeProviderSettings.providerChoices == [.calimocho]
+              && EnginesCopy.lead.contains("for testing; in this beta, games play with Calimocho")
+              && EnginesCopy.testingOnly.contains("Calimocho")
+              && NativeLaunchError.providerPolicy.localizedDescription.contains("Calimocho"),
+              "COR-201 E7: Added engines are kept for testing: the default and per-game choices offer only Calimocho, other engines say testing only, and Play refuses anything else with a clear message")
         let chrome = AppState()
-        chrome.firstLoadCovering = true
+        let chromeWindow = UUID()
+        chrome.setFirstLoadCovering(true, window: chromeWindow)
         chrome.openAccount()
         let accountBlocked = !chrome.showingAccount
-        chrome.firstLoadCovering = false
+        chrome.setFirstLoadCovering(false, window: chromeWindow)
         chrome.openAccount()
         check(accountBlocked && chrome.showingAccount,
               "REQ-119 review M2: While the setup view covers the window, Account (and the toolbar, Navigate and Import, which share the flag) wait; afterwards they work")
@@ -1103,11 +1117,20 @@ enum BrandUXChecks {
               && !LibraryFirstLoad.gamesReady(Inputs(loading: true, gamesFound: 3, libraryComplete: false)),
               "REQ-121 hook: A complete library counts as ready even while a background revalidation keeps it busy")
         let windowState = AppState()
-        windowState.firstLoadCovering = true
-        windowState.endFirstLoadCovering()
+        let windowA = UUID(), windowB = UUID()
+        windowState.setFirstLoadCovering(true, window: windowA)
+        windowState.setFirstLoadCovering(true, window: windowB)
+        windowState.setFirstLoadCovering(false, window: windowB)
+        let stillCovered = windowState.firstLoadCovering
+        windowState.setFirstLoadCovering(false, window: windowA)
         windowState.openAccount()
-        check(!windowState.firstLoadCovering && windowState.showingAccount,
-              "REQ-119 review M-B: Closing the window during setup clears the app-wide covering, so a reopened window's Account, Navigate and Import work")
+        check(stillCovered && !windowState.firstLoadCovering && windowState.showingAccount,
+              "REQ-119 review M-B: Closing a window during setup ends only its own covering; once none cover, Account, Navigate and Import work in a reopened window")
+        check(LiveSession.countrySource(verified: false, provisional: true) == "last confirmed by Xbox"
+              && LiveSession.countrySource(verified: true, provisional: false) == "verified by Xbox"
+              && LiveSession.countrySource(verified: false, provisional: false) == "confirmed by you"
+              && LiveSession.provisionalCountryRetry > 0,
+              "REQ-121 review L2: A provisional country reads \"last confirmed by Xbox\", never \"confirmed by you\", and the failed re-check is retried once later")
 
         let still = LibraryFirstLoadMotion(reduceMotion: true)
         let moving = LibraryFirstLoadMotion(reduceMotion: false)

@@ -121,9 +121,12 @@ final class AppState: ObservableObject {
     /// Set when the user signs in from the welcome screen; the sheet then shows the readiness checklist.
     @Published var showingReadiness = false
     /// REQ-119: the setup view covers the window; navigation, Import and Account wait.
-    @Published var firstLoadCovering = false
-    /// A window that showed the setup view went away; its covering ends with it.
-    func endFirstLoadCovering() { firstLoadCovering = false }
+    @Published private(set) var firstLoadCoveringWindows = Set<UUID>()
+    var firstLoadCovering: Bool { !firstLoadCoveringWindows.isEmpty }
+    /// Each window reports its own setup view; closing one never uncovers another still in setup.
+    func setFirstLoadCovering(_ covering: Bool, window: UUID) {
+        if covering { firstLoadCoveringWindows.insert(window) } else { firstLoadCoveringWindows.remove(window) }
+    }
     @Published var destination: Destination = .library
     @Published var query = ""
     @Published private(set) var unifiedSignInRequested = false

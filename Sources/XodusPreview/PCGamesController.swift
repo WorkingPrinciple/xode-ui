@@ -78,16 +78,18 @@ final class PCGamesController: ObservableObject {
         usesUnifiedAccount = true
     }
 
-    var representedGames: [PCGame] {
-        guard !needsSignIn else { return [] }
+    /// The snapshot only while it belongs to the current account, country and market.
+    var representedSnapshot: PCGamesSnapshot? {
+        guard !needsSignIn else { return nil }
         if usesUnifiedAccount {
             guard unifiedSession?.hasConfirmedSignIn == true,
                   unifiedSession?.accountCountryReady == true,
                   snapshotScope == unifiedSession?.accountCatalogScope,
-                  accountHash == unifiedSession?.accountHash else { return [] }
+                  accountHash == unifiedSession?.accountHash else { return nil }
         }
-        return snapshot?.games ?? []
+        return snapshot
     }
+    var representedGames: [PCGame] { representedSnapshot?.games ?? [] }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var resolutionNotice: String? {
         guard !busy, let snapshot, snapshot.detailFailureCount > 0 else { return nil }
