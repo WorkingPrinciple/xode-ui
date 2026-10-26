@@ -50,15 +50,17 @@ enum DiscoverShelfChecks {
             "FIXTURE00005": LibraryCatalogFacts(genres: ["Strategy"], isBaseGame: true)
         ]
         let products = try facts.keys.sorted().map { try product($0) } + [try product("FIXTURE00006")]
-        check(GameSurfaceFilter.games(products, facts: facts).map(\.id) == ["FIXTURE00001"]
+        let admitted = GameSurfaceFilter.games(products, facts: facts)
+        check(admitted.map(\.id) == ["FIXTURE00001"]
               && GameSurfaceFilter.counts(products, facts: facts)
                   == GameSurfaceFilter.Counts(games: 1, excluded: 2, unresolved: 3)
-              && DiscoverBrowse.genres(products: GameSurfaceFilter.games(products, facts: facts), facts: facts)
+              && DiscoverBrowse.genres(products: admitted, facts: facts)
                   == ["Puzzle"],
               "REQ-5: base-game plus Windows Desktop facts keep games, exclude apps and non-PC products, and leave missing or partial classification unresolved before genre aggregation")
         let candidate = try product("FIXTURE00005", pcCandidate: true)
+        let nonPC = try product("FIXTURE00003", pcCandidate: true)
         check(GameSurfaceFilter.classification(candidate, facts: facts) == .game
-              && GameSurfaceFilter.classification(try product("FIXTURE00003", pcCandidate: true), facts: facts) == .notGame,
+              && GameSurfaceFilter.classification(nonPC, facts: facts) == .notGame,
               "REQ-5: the existing PC package evidence seam fills only a missing listing; observed non-PC listing still excludes")
         let key = CatalogProjectionKey(accountHash: nil, query: "", owned: [], products: products,
             gamePass: [], gamePassIDs: [], installed: [], accessIsCurrent: false, metadataRevision: 0,
