@@ -26,13 +26,20 @@ producer, CLI or Windows helper. An older signed stage cannot be augmented
 without building/signing a new exact candidate.
 
 The backend producer-notice inventory remains tied to an older producer tuple
-and is not valid for this release. Calimocho `-03` was only a provisional
-engine input; it is superseded by the announced `-04` / 0.1120.4.4
-license-and-manifest successor. Its frozen tuple and matching backend
-admission are still pending. No current producer-notice digest is pinned. Do
-not use either Calimocho `-03` or the earlier backend `1fd1341` /
-`84682aa8…` tuple for packaging: the tools fail closed until the current
-producer inventory is regenerated and independently approved.
+and is not valid for this release. Calimocho `-03` is superseded by the frozen
+`-04` / 0.1120.4.4 tuple: release tag `engine-0.1120.4.4`, commit
+`8a9b354ec1909508627461c02373c695cc357d82`, tree
+`b6a2edde60bb1670207e6bac94302c3a371345de`; descriptor SHA-256
+`98473033e8b1e4f02a1986749b684d0becd5e2be7d0ff388f7a2049566296425` and
+manifest SHA-256
+`5ce80d16347304d2cd5d149072fed4aeed848e854fe17e20c3bd45c5013b2aba`
+(1,871 entries). The exact archive and signing evidence are in the producer
+handoff; its last Forza qualification/publication is still pending, and the
+matching backend admission/rebuild and notice review are not complete. No
+current producer-notice digest is pinned. Do not use `-03` descriptor/manifest
+pins or the earlier backend `1fd1341` / `84682aa8…` tuple for packaging: the
+tools fail closed until the matching producer inventory is regenerated and
+independently approved.
 
 The package builder accepts only CFBundleVersion values above the installed
 0.2.0 build 2, so the beta installs as an update rather than a downgrade.
@@ -95,9 +102,10 @@ For an approved beta package that must not be submitted or installed, use
 `tools/package_beta.py --app "/absolute/path/to/X Ode.app" --source
 /absolute/clean/main-or-release-checkout --output-root /absolute/existing/output
 --format zip` (or `dmg`) and the new independently approved
-`--producer-notices-sha256` value. Final packaging is currently blocked until
-the Calimocho `-04` successor and matching producer-notice inventory are
-frozen, admitted and pinned.
+`--producer-notices-sha256` value. Final packaging remains blocked until the
+frozen Calimocho `-04` candidate passes its remaining producer gate and the
+matching backend producer-notice inventory is admitted, independently
+reviewed and pinned.
 For `--format dmg`, combine the reviewed 660x400 and 1320x800 artwork in
 `design/installer/` with
 `tiffutil -cathidpicheck design/installer/dmg-background.png
