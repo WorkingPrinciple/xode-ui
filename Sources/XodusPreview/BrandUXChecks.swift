@@ -172,6 +172,18 @@ enum BrandUXChecks {
               && rejected.message?.contains("Check Again") == true && rejected.message?.contains("will be ready") == false
               && CalimochoAvailability.from(choices: [failed], checking: false, release: rejected) == rejected,
               "REVIEW M2: Check completed and the pin failed → Invalid with Check Again/reinstall, never pending")
+        // Review L1: the real status path, driven through EngineCheckResults.
+        let notAdmitted = CalimochoAvailability.invalid(CalimochoAvailability.notAdmittedReason)
+        let failedCheck = FakeEngineCheck(failed: [CalimochoRelease.engineID])
+        let recheckedClean = FakeEngineCheck(failed: [])
+        check(CalimochoAvailability.rejected(in: failedCheck) && !CalimochoAvailability.rejected(in: recheckedClean)
+              && CalimochoAvailability.status(results: failedCheck, verification: notAdmitted)
+                == .invalid(CalimochoAvailability.rejectedReason)
+              && CalimochoAvailability.status(results: recheckedClean, verification: notAdmitted) == .pendingVerification
+              && CalimochoAvailability.status(results: FakeEngineCheck(failed: [], checking: true), verification: notAdmitted)
+                == .checking
+              && CalimochoAvailability.status(results: recheckedClean, verification: nil) == .notChecked,
+              "REVIEW L1: A failed engine check makes readiness Invalid; a clean re-check returns it to pending")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
         let pinned = CalimochoReleasePin.all.last!.engineName
         check(CalimochoRelease.engineID == pinned && CalimochoReleasePin.named(CalimochoRelease.engineID) != nil
@@ -640,6 +652,17 @@ enum BrandUXChecks {
     static func save(_ bitmap: NSBitmapImageRep, name: String) {
         guard let renderDirectory, let png = bitmap.representation(using: .png, properties: [:]) else { return }
         try? png.write(to: renderDirectory.appendingPathComponent(name + ".png"))
+    }
+}
+@MainActor
+private struct FakeEngineCheck: EngineCheckResults {
+    var availableEngineOverrides: [AdmittedEngineSelection] = []
+    var failedEngineOverrides: Set<String>
+    var checkingEngineOverrides = false
+
+    init(failed: Set<String>, checking: Bool = false) {
+        failedEngineOverrides = failed
+        checkingEngineOverrides = checking
     }
 }
 #endif

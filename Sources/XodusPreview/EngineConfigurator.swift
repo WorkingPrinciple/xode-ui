@@ -542,14 +542,13 @@ enum CalimochoAvailability: Equatable, Sendable {
         }
     }
 
-    /// Runs the active pin's release verification off the main actor (it reads and hashes the engine).
-    /// `rejected` is true when a completed engine check failed this pin.
-    static func verifyReleaseInBackground(admission: EngineInspection?, rejected: Bool) async -> Self {
+    /// Runs the active pin's raw release verification off the main actor (it reads and hashes the engine).
+    /// `status(results:verification:)` applies the engine check's admission and rejection.
+    static func verifyReleaseInBackground(admission: EngineInspection?) async -> Self {
         let pin = CalimochoReleasePin.all.last!
-        let result = await Task.detached(priority: .utility) {
+        return await Task.detached(priority: .utility) {
             CalimochoAvailability.verifiedRelease(pin, admission: admission)
         }.value
-        return neutralizingAdmission(result, rejected: rejected)
     }
 
     static var rejectedReason: String {
@@ -563,13 +562,25 @@ enum CalimochoAvailability: Equatable, Sendable {
     }
 
     /// True when a completed engine check failed the active pinned release.
-    @MainActor static func rejected(in installed: InstalledGamesController) -> Bool {
-        installed.failedEngineOverrides.contains(CalimochoRelease.engineID)
+    @MainActor static func rejected(in results: some EngineCheckResults) -> Bool {
+        results.failedEngineOverrides.contains(CalimochoRelease.engineID)
+    }
+
+    /// The engine choices a completed check produced.
+    @MainActor static func choices(in results: some EngineCheckResults) -> [EngineChoice] {
+        results.availableEngineOverrides.compactMap { $0.inspection.engineName.map { EngineChoice.named($0, ready: true) } }
+            + results.failedEngineOverrides.sorted().map { EngineChoice.named($0, ready: false) }
+    }
+
+    /// The status the Engines pane and readiness show, from the engine check and the raw release verification.
+    @MainActor static func status(results: some EngineCheckResults, verification: Self?, checking: Bool = false) -> Self {
+        from(choices: choices(in: results), checking: checking || results.checkingEngineOverrides,
+             release: verification.map { neutralizingAdmission($0, rejected: rejected(in: results)) })
     }
 
     /// The backend inspection for the active pinned release, if the engine check has one.
-    @MainActor static func admission(in installed: InstalledGamesController) -> EngineInspection? {
-        installed.availableEngineOverrides.first { $0.inspection.engineName == CalimochoRelease.engineID }?.inspection
+    @MainActor static func admission(in results: some EngineCheckResults) -> EngineInspection? {
+        results.availableEngineOverrides.first { $0.inspection.engineName == CalimochoRelease.engineID }?.inspection
     }
 
     var needsDownload: Bool {
@@ -600,6 +611,15 @@ enum CalimochoAvailability: Equatable, Sendable {
         }
     }
 }
+
+/// What a completed engine check found; InstalledGamesController provides it, checks use a fake.
+@MainActor protocol EngineCheckResults {
+    var availableEngineOverrides: [AdmittedEngineSelection] { get }
+    var failedEngineOverrides: Set<String> { get }
+    var checkingEngineOverrides: Bool { get }
+}
+
+extension InstalledGamesController: EngineCheckResults {}
 
 /// The download control, or a plain notice while no release asset is published.
 struct CalimochoDownloadAction: View {

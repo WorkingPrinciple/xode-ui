@@ -70,8 +70,7 @@ struct RuntimeInstallationPicker: View {
                 Task { await installed.refreshEngineOverrides(force: true) }
             },
             showsAdvanced: showsAdvanced,
-            calimochoStatus: .from(choices: choices, checking: installed.checkingEngineOverrides || settingDefault,
-                                   release: releaseStatus)) {
+            calimochoStatus: .status(results: installed, verification: releaseStatus, checking: settingDefault)) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)
         }
@@ -91,8 +90,7 @@ struct RuntimeInstallationPicker: View {
             guard allowsFileReads else { return }
             releaseStatus = .checking
             let status = await CalimochoAvailability.verifyReleaseInBackground(
-                admission: CalimochoAvailability.admission(in: installed),
-                rejected: CalimochoAvailability.rejected(in: installed))
+                admission: CalimochoAvailability.admission(in: installed))
             guard !Task.isCancelled else { return }
             releaseStatus = status
         }

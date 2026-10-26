@@ -167,13 +167,10 @@ struct ReadinessChecklistView: View {
     @State private var space: GamesFolderSpace?
     @State private var probe = GameStorageProbe()
     @State private var releaseStatus: CalimochoAvailability?
+    @State private var recheck = 0
 
     private var engine: CalimochoAvailability {
-        CalimochoAvailability.from(
-            choices: installed.availableEngineOverrides.compactMap { $0.inspection.engineName }
-                .map { EngineChoice.named($0, ready: true) }
-                + installed.failedEngineOverrides.map { EngineChoice.named($0, ready: false) },
-            checking: installed.checkingEngineOverrides, release: releaseStatus)
+        .status(results: installed, verification: releaseStatus)
     }
 
     static func engineStatus(_ availability: CalimochoAvailability) -> (Status, String) {
@@ -202,7 +199,15 @@ struct ReadinessChecklistView: View {
                     detail: engine.needsDownload ? engine.message : nil) {
                     if engine.needsDownload {
                         CalimochoDownloadAction()
-                        Button("Open Engines Settings") { openSettingsPane(.engines) }
+                        HStack(spacing: 12) {
+                            Button("Check Again") {
+                                recheck += 1
+                                Task { await installed.refreshEngineOverrides(force: true) }
+                            }
+                            .disabled(!allowsStatusReads || installed.checkingEngineOverrides)
+                            .accessibilityIdentifier("xodus.readiness.checkAgain")
+                            Button("Open Engines Settings") { openSettingsPane(.engines) }
+                        }
                     }
                 }
                 .accessibilityIdentifier("xodus.readiness.engine")
@@ -230,12 +235,11 @@ struct ReadinessChecklistView: View {
             guard allowsStatusReads else { return }
             await installed.refreshEngineOverrides(force: false)
         }
-        .task(id: "\(allowsStatusReads):\(installed.availableEngineOverrides.count):\(CalimochoAvailability.rejected(in: installed))") {
+        .task(id: "\(allowsStatusReads):\(installed.availableEngineOverrides.count):\(CalimochoAvailability.rejected(in: installed)):\(recheck)") {
             guard allowsStatusReads else { return }
             releaseStatus = .checking
             let status = await CalimochoAvailability.verifyReleaseInBackground(
-                admission: CalimochoAvailability.admission(in: installed),
-                rejected: CalimochoAvailability.rejected(in: installed))
+                admission: CalimochoAvailability.admission(in: installed))
             guard !Task.isCancelled else { return }
             releaseStatus = status
         }
