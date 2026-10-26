@@ -18,21 +18,16 @@ enum EngineObservationStatus: String, CaseIterable {
 /// The released Calimocho engine X Ode points users to. Verification lives in
 /// CalimochoReleaseEngine.swift; launch admission belongs to backend engine inspection.
 enum CalimochoRelease {
-    /// The active pinned release (the newest pin 135c admits); everything else derives from it, so the
+    /// The active pinned release; everything else derives from it, so the
     /// Engines pane, readiness, Acknowledgments and Play never point at different engine folders.
     static var engineID: String { CalimochoReleasePin.all.last!.engineName }
     static var displayName: String { EngineDisplayName.name(engineID) }
     static let getTitle = "Get Calimocho (beta)"
-    /// Release tag page. Its asset isn't published yet (owner decision), so no download control is
-    /// shown until `downloadPublished` is true.
-    static var downloadURL: URL {
-        // Release tags are named by engine version, e.g. engine-0.1120.4.4.
-        URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-"
-            + (EngineDisplayName.releaseVersion(engineID)?.version ?? engineID))!
+    static var downloadURL: URL? {
+        guard let pin = CalimochoReleasePin.all.last, pin.archiveSha256 != nil else { return nil }
+        return pin.downloadURL
     }
-    /// Release engines whose download asset is live (owner-published). The button appears only for these.
-    static let publishedEngineIDs: Set<String> = ["calimocho-11.20-4.0b3-04"]
-    static var downloadPublished: Bool { publishedEngineIDs.contains(engineID) }
+    static var downloadPublished: Bool { downloadURL != nil }
     static let unpublishedNotice = "Calimocho isn't available for download yet — ask the person who invited you to the beta."
 }
 

@@ -14,19 +14,23 @@ struct CalimochoReleasePin: Equatable, Sendable {
     let manifestSha256: String
     let teamID: String
     let renderer: String
+    let downloadURL: URL?
+    let archiveSha256: String?
     let attestation: String
 
-    static let release01 = Self(
-        engineName: "calimocho-11.20-4.0b3-01",
-        wineSha256: "c2eb2810540eb32e1d99df0279a05868bf36c562cbeb71ec37be31d1bb153437",
-        wineserverSha256: "05a3193d0bce401bdcba653161e54824ea8924951ff0ecb80f6f8ba0a0539639",
-        engineJSONSha256: "fb6c79da22153aaa70810fa1349663ebd6cf48f4130dc9c9ba57c930a5689fe8",
-        manifestSha256: "7c9e08a9154e04f23a979d53b9c4b28f0c0487b175aa44374cdf55e2b7dd33c5",
+    static let release04 = Self(
+        engineName: "calimocho-11.20-4.0b3-04",
+        wineSha256: "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0",
+        wineserverSha256: "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9",
+        engineJSONSha256: "98473033e8b1e4f02a1986749b684d0becd5e2be7d0ff388f7a2049566296425",
+        manifestSha256: "5ce80d16347304d2cd5d149072fed4aeed848e854fe17e20c3bd45c5013b2aba",
         teamID: "M62Z4M5EUY",
         renderer: "apple-4.0b3",
-        attestation: "Calimocho release engine-11.20-4.0b3-01 (REQ-115 release smoke run)")
+        downloadURL: URL(string: "https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip"),
+        archiveSha256: "193420eff603e05e9c76344de14e961ed230f016fd129f00667a176251a2fb6b",
+        attestation: "Calimocho release engine-0.1120.4.4 (REQ-115 release smoke run)")
 
-    static let all: [Self] = [.release01]
+    static let all: [Self] = [.release04]
     static func named(_ name: String) -> Self? { all.first { $0.engineName == name } }
 }
 
@@ -244,12 +248,13 @@ extension CalimochoAvailability {
     /// Ready only when the fast local pre-filter (descriptor, MANIFEST.sha256 file, Wine digests, Team ID) passes
     /// AND backend `engine-inspect` admitted this exact engine. The backend verifies every manifest entry and the
     /// tree; the app does not. Reads and hashes the engine, so call it off the main actor.
-    static func verifiedRelease(_ pin: CalimochoReleasePin = .release01,
+    static func verifiedRelease(_ pin: CalimochoReleasePin = .release04,
                                 root: URL = CalimochoReleaseEngines.defaultEnginesRoot,
                                 signature: (URL, String) -> Bool = CalimochoReleaseEngines.codeSignatureValid,
-                                admission: EngineInspection?) -> Self {
+                                admission: EngineInspection? = nil) -> Self {
         do {
             let engine = try CalimochoReleaseEngines.verify(pin, root: root, signature: signature)
+            guard let admission else { return .pendingVerification }
             return CalimochoReleaseEngines.admits(admission, engine: engine) ? .ready : .invalid(notAdmittedReason)
         } catch CalimochoReleaseError.notInstalled {
             return .missing
