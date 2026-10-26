@@ -136,6 +136,15 @@ enum CalimochoReleaseInstallerChecks {
             catch { check(false, "REQ115 removes only its temporary installer fixture") }
         }
         let engines = root.appendingPathComponent("Engines", isDirectory: true)
+        try FileManager.default.createDirectory(at: engines, withIntermediateDirectories: false)
+        let stale = engines.appendingPathComponent(".calimocho-install-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: stale, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        try Data("interrupted download".utf8).write(to: stale.appendingPathComponent("release.zip"))
+        let preserved = engines.appendingPathComponent(".calimocho-install-not-an-owned-uuid")
+        try FileManager.default.createDirectory(at: preserved, withIntermediateDirectories: false)
+        let staleLink = engines.appendingPathComponent(".calimocho-install-\(UUID().uuidString)")
+        try FileManager.default.createSymbolicLink(at: staleLink, withDestinationURL: preserved)
         let session = makeSession()
         defer { session.invalidateAndCancel() }
 
@@ -166,6 +175,12 @@ enum CalimochoReleaseInstallerChecks {
             throw NSError(domain: "Calimocho installer fixture", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Initial install failed: \(error.localizedDescription)"])
         }
+        check(!FileManager.default.fileExists(atPath: stale.path)
+              && FileManager.default.fileExists(atPath: preserved.path)
+              && (try? FileManager.default.destinationOfSymbolicLink(atPath: staleLink.path)) == preserved.path,
+              "REQ115: stale private UUID staging is reclaimed without following links or deleting unrelated folders")
+        try FileManager.default.removeItem(at: staleLink)
+        try FileManager.default.removeItem(at: preserved)
         let verified = FileManager.default.fileExists(atPath: installResult.appendingPathComponent("engine.bin").path)
         let byteProgress = await progress.values.compactMap { value -> Int64? in
             if case .downloading(let received, let total) = value, total == Int64(valid.archive.count) {
@@ -284,6 +299,86 @@ enum CalimochoReleaseInstallerChecks {
                   && CalimochoReleaseEngines.installedNames(root: engines).isEmpty,
                   "REQ115: cancel interrupts the download and removes staging")
         }
+
+        let chainRoot = root.appendingPathComponent("chain")
+        let chainEngine = chainRoot.appendingPathComponent(valid.pin.engineName)
+        try FileManager.default.createDirectory(at: chainEngine.appendingPathComponent("a/b"),
+                                                withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(atPath: chainEngine.appendingPathComponent("a/b/L").path,
+                                                   withDestinationPath: "..")
+        try Data("outside".utf8).write(to: root.appendingPathComponent("outside"))
+        try FileManager.default.createSymbolicLink(atPath: chainEngine.appendingPathComponent("M").path,
+                                                   withDestinationPath: "a/b/L/../../../outside")
+        do {
+            try CalimochoReleaseInstallService.verifyExtractedEntries([
+                .init(path: "\(valid.pin.engineName)/M", kind: .symlink, uncompressedSize: 0)
+            ], under: chainRoot, engineName: valid.pin.engineName)
+            check(false, "REQ115: a symlink chain cannot escape by changing how dot-dot resolves")
+        } catch {
+            check(error is CalimochoInstallError,
+                  "REQ115: a symlink chain cannot escape by changing how dot-dot resolves")
+        }
+
+        let extractionStarted = InstallProgressCapture()
+        let shutdownService = CalimochoReleaseInstallService(pin: valid.pin, root: engines, session: session,
+            availableSpace: { _ in Int64.max },
+            extractArchive: { _, _ in
+                await extractionStarted.append(.extracting)
+                try await Task.sleep(for: .seconds(30))
+            }, verifyEngine: { _, _ in })
+        CalimochoInstallerURLProtocol.configure(valid.archive)
+        let controller = CalimochoReleaseInstallController(service: shutdownService)
+        controller.install { false }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+        while await extractionStarted.values.isEmpty {
+            guard ContinuousClock.now < deadline else { throw CalimochoInstallError.extraction }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let closed = await ApplicationTerminationCoordinator().shutdown(
+            session: nil, runtime: nil, calimochoInstaller: controller)
+        check(closed && !controller.isWorking && tryNoStaging(in: engines),
+              "REQ115: normal quit cancels extraction and waits for staging cleanup")
+
+        let archiveURL = root.appendingPathComponent("ditto.zip")
+        try valid.archive.write(to: archiveURL)
+        let extractionURL = root.appendingPathComponent("ditto-output")
+        let cancelDitto = InstallCancellation()
+        let dittoTask = Task {
+            try await CalimochoReleaseInstallService.dittoExtract(archiveURL, extractionURL,
+                                                                  didStart: { _ in cancelDitto.cancel() })
+            return extractionURL
+        }
+        cancelDitto.register(dittoTask)
+        do {
+            _ = try await dittoTask.value
+            check(false, "REQ115: cancellation terminates and reaps the actual ditto process")
+        } catch {
+            check(error is CancellationError && dittoTask.isCancelled,
+                  "REQ115: cancellation terminates and reaps the actual ditto process")
+        }
+
+        let installed = InstalledGamesController()
+        var releaseFirst: CheckedContinuation<Void, Never>?
+        var inspectionOrder: [Int] = []
+        let firstInspection = Task {
+            await installed.withEngineOverrideCheck {
+                inspectionOrder.append(1)
+                await withCheckedContinuation { releaseFirst = $0 }
+                inspectionOrder.append(2)
+            }
+        }
+        while releaseFirst == nil { await Task.yield() }
+        let forcedInspection = Task {
+            await installed.withEngineOverrideCheck { inspectionOrder.append(3) }
+        }
+        await Task.yield()
+        check(installed.checkingEngineOverrides && inspectionOrder == [1],
+              "REQ115: post-install admission waits for an in-flight engine inspection")
+        releaseFirst?.resume()
+        await firstInspection.value
+        await forcedInspection.value
+        check(inspectionOrder == [1, 2, 3] && !installed.checkingEngineOverrides,
+              "REQ115: queued admission runs a fresh inspection rather than skipping it")
     }
 
     private struct ArchiveFixture: Sendable {
@@ -345,7 +440,10 @@ enum CalimochoReleaseInstallerChecks {
 
     private static func tryNoStaging(in root: URL) -> Bool {
         guard let children = try? FileManager.default.contentsOfDirectory(atPath: root.path) else { return false }
-        return children.allSatisfy { !$0.hasPrefix(".calimocho-install-") }
+        return children.allSatisfy {
+            !$0.hasPrefix(".calimocho-install-")
+                || UUID(uuidString: String($0.dropFirst(".calimocho-install-".count))) == nil
+        }
     }
 
     private static func zip(_ entries: [FixtureEntry]) -> Data {

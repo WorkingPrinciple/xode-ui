@@ -143,6 +143,17 @@ struct CalimochoReleaseInstallService: Sendable {
         }
         try Task.checkCancellation()
         try prepareRoot()
+        let lockURL = root.appendingPathComponent(".calimocho-install.lock")
+        let lockFD = open(lockURL.path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK, 0o600)
+        guard lockFD >= 0 else { throw GameScriptError.storage }
+        defer { close(lockFD) }
+        var lockInfo = stat()
+        guard fstat(lockFD, &lockInfo) == 0, lockInfo.st_mode & S_IFMT == S_IFREG,
+              lockInfo.st_uid == getuid(), lockInfo.st_nlink == 1,
+              flock(lockFD, LOCK_EX | LOCK_NB) == 0 else {
+            throw CalimochoInstallError.invalidArchive("Another install is active or its lock is unsafe.")
+        }
+        try removeStaleStaging()
         guard !existsWithoutFollowingLinks(engineURL) else { throw CalimochoInstallError.engineAlreadyExists }
         let (requiredSpace, overflow) = archiveBytes.addingReportingOverflow(expandedBytes)
         guard !overflow else { throw CalimochoInstallError.unavailable }
@@ -229,6 +240,19 @@ struct CalimochoReleaseInstallService: Sendable {
         }
     }
 
+    private func removeStaleStaging() throws {
+        for name in try FileManager.default.contentsOfDirectory(atPath: root.path) {
+            let prefix = ".calimocho-install-"
+            guard name.hasPrefix(prefix), UUID(uuidString: String(name.dropFirst(prefix.count))) != nil else { continue }
+            let candidate = root.appendingPathComponent(name, isDirectory: true)
+            var info = stat()
+            guard lstat(candidate.path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR,
+                  info.st_uid == getuid(), info.st_mode & 0o777 == 0o700 else { continue }
+            do { try FileManager.default.removeItem(at: candidate) }
+            catch { throw CalimochoInstallError.stagingCleanup(error.localizedDescription) }
+        }
+    }
+
     private func download(_ url: URL, to destination: URL, expectedSize: Int64,
                          progress: @escaping @Sendable (CalimochoInstallProgress) async -> Void) async throws {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData,
@@ -269,7 +293,12 @@ struct CalimochoReleaseInstallService: Sendable {
         await progress(.downloading(received: received, total: expectedSize))
     }
 
-    private static func dittoExtract(_ archive: URL, _ destination: URL) async throws {
+    static func dittoExtract(_ archive: URL, _ destination: URL) async throws {
+        try await dittoExtract(archive, destination, didStart: { _ in })
+    }
+
+    static func dittoExtract(_ archive: URL, _ destination: URL,
+                             didStart: @escaping @Sendable (Int32) -> Void) async throws {
         let processHandle = CalimochoInstallerProcessHandle()
         do {
             try await withTaskCancellationHandler {
@@ -288,6 +317,7 @@ struct CalimochoReleaseInstallService: Sendable {
                     do {
                         try process.run()
                         processHandle.set(process)
+                        didStart(process.processIdentifier)
                         if Task.isCancelled { processHandle.terminate() }
                     } catch {
                         continuation.resume(throwing: error)
@@ -494,7 +524,7 @@ struct CalimochoReleaseInstallService: Sendable {
         return resolved.first == engineName && resolved.count > 1
     }
 
-    private static func verifyExtractedEntries(_ entries: [ArchiveEntry], under root: URL,
+    static func verifyExtractedEntries(_ entries: [ArchiveEntry], under root: URL,
                                                engineName: String) throws {
         for entry in entries {
             let url = root.appendingPathComponent(entry.path)
@@ -516,7 +546,14 @@ struct CalimochoReleaseInstallService: Sendable {
                 let length = readlink(targetURL.path, &buffer, buffer.count - 1)
                 guard length > 0, length < buffer.count - 1,
                       let target = String(bytes: buffer.prefix(length).map { UInt8(bitPattern: $0) }, encoding: .utf8),
-                      symlinkStaysInEngine(target, path: entry.path, engineName: engineName) else {
+                      symlinkStaysInEngine(target, path: entry.path, engineName: engineName),
+                      let resolved = realpath(url.path, nil) else {
+                    throw CalimochoInstallError.invalidArchive("An extracted symlink leaves the engine folder.")
+                }
+                defer { free(resolved) }
+                let enginePath = root.appendingPathComponent(engineName).path
+                let resolvedPath = String(cString: resolved)
+                guard resolvedPath == enginePath || resolvedPath.hasPrefix(enginePath + "/") else {
                     throw CalimochoInstallError.invalidArchive("An extracted symlink leaves the engine folder.")
                 }
             }
@@ -529,8 +566,10 @@ final class CalimochoReleaseInstallController: ObservableObject {
     @Published private(set) var progress: CalimochoInstallProgress?
     @Published private(set) var errorMessage: String?
     @Published private(set) var notice: String?
+    @Published private(set) var noticeSymbol = "info.circle"
     private let service: CalimochoReleaseInstallService
     private var task: Task<Void, Never>?
+    private var terminating = false
 
     init(service: CalimochoReleaseInstallService = CalimochoReleaseInstallService()) {
         self.service = service
@@ -545,7 +584,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
     }
 
     func install(refreshAdmission: @escaping @MainActor () async -> Bool) {
-        guard task == nil else { return }
+        guard task == nil, !terminating else { return }
         errorMessage = nil
         notice = nil
         progress = .preparing
@@ -557,10 +596,12 @@ final class CalimochoReleaseInstallController: ObservableObject {
                 }
                 progress = .checkingAdmission
                 let admitted = await refreshAdmission()
+                noticeSymbol = admitted ? "checkmark.circle" : "hourglass"
                 notice = admitted
                     ? "Calimocho is installed and admitted by the game service."
                     : "Calimocho is installed, but the game service hasn't admitted it. It isn't ready to play."
             } catch is CancellationError {
+                noticeSymbol = "info.circle"
                 notice = "Download canceled. Temporary files were removed."
             } catch {
                 errorMessage = error.localizedDescription
@@ -572,6 +613,15 @@ final class CalimochoReleaseInstallController: ObservableObject {
 
     func cancel() { task?.cancel() }
 
+    func shutdownForApplicationTermination() async {
+        terminating = true
+        let pending = task
+        pending?.cancel()
+        await pending?.value
+    }
+
+    func resumeAfterTerminationRefusal() { terminating = false }
+
     func remove(isBusy: @escaping @MainActor @Sendable () -> Bool,
                 refreshAdmission: @escaping @MainActor () async -> Void) {
         remove(isBusy: isBusy, refreshAdmission: refreshAdmission, recycle: Self.moveToTrash)
@@ -580,7 +630,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
     func remove(isBusy: @escaping @MainActor @Sendable () -> Bool,
                 refreshAdmission: @escaping @MainActor () async -> Void,
                 recycle: @escaping @MainActor @Sendable (URL) async throws -> Void) {
-        guard task == nil else { return }
+        guard task == nil, !terminating else { return }
         guard !isBusy() else { errorMessage = CalimochoInstallError.engineBusy.localizedDescription; return }
         errorMessage = nil
         notice = nil
@@ -594,6 +644,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
                 progress = .checkingAdmission
                 await refreshAdmission()
                 notice = "Calimocho was moved to the Trash. Game prefixes and saves weren't changed."
+                noticeSymbol = "info.circle"
             } catch {
                 errorMessage = error.localizedDescription
             }
