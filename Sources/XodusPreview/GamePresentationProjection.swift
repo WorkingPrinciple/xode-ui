@@ -152,6 +152,7 @@ struct LibraryProjectionKey: Equatable {
     let filter: LibraryFilter
     let sort: LibrarySort
     let showsUnsupported: Bool
+    var gamePassPlanActive = false
 }
 
 struct LibraryProjection {
@@ -170,7 +171,7 @@ struct LibraryProjection {
          recommendable: (LibraryGame) -> Bool) {
         collection = LibraryGame.collection(installed: key.installed, owned: key.owned, products: key.products,
             gamePass: key.gamePass, active: key.active, accessIsCurrent: key.accessIsCurrent,
-            permittedInstalledIDs: key.permitted)
+            permittedInstalledIDs: key.permitted, gamePassPlanActive: key.gamePassPlanActive)
         byID = Dictionary(collection.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         candidates = LibraryGame.visible(collection.filter { $0.installed == nil },
             query: key.query, filter: key.filter, sort: key.sort)

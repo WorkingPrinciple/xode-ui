@@ -25,9 +25,23 @@ public struct OdeAccountCollection: Decodable, Sendable {
   }
 
   public let items: [Item]
+  /// REQ-7: active, current Game Pass plan product IDs from the same licence read. Absent from older
+  /// producers. Game Pass-licensed titles are not collection rows, so this is their access evidence.
+  public let activeSubscriptions: [String]?
+
+  public init(items: [Item], activeSubscriptions: [String]? = nil) {
+    self.items = items
+    self.activeSubscriptions = activeSubscriptions
+  }
 
   public func validate() throws {
-    guard items.count <= 10_000,
+    let plans = activeSubscriptions ?? []
+    guard plans.count <= 32, Set(plans).count == plans.count,
+      plans.allSatisfy({ plan in
+        plan.utf8.count == 12
+          && plan.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) }
+      }),
+      items.count <= 10_000,
       Set(items.map(\.productID)).count == items.count,
       items.allSatisfy({ item in
         item.productID.utf8.count == 12

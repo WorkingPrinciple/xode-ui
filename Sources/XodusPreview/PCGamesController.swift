@@ -54,6 +54,9 @@ final class PCGamesController: ObservableObject {
     @Published private(set) var presenceUnavailable = false
     /// REQ-119: this scope's collection read has been sent, or can't be; background account reads wait for it.
     @Published private(set) var collectionReadStarted = false
+    /// REQ-7/63: active Game Pass plan IDs from the last collection read, bound to the account that read it.
+    @Published private(set) var activeGamePassPlans: Set<String> = []
+    private var activeGamePassPlansAccount: String?
     private(set) var accountDisconnecting = false
     private let store: any PCGamesRefreshStore
     private let client: PCGamesClient
@@ -163,6 +166,13 @@ final class PCGamesController: ObservableObject {
             return snapshot?.unresolvedIDs.contains(productID) == true ? .refreshLibrary : .accountSettings
         }
     }
+    /// A current, same-account licence read reported an active Game Pass plan. Never inferred from Play,
+    /// installed files or catalogue membership; a different or unready account reads as no plan.
+    var gamePassPlanActive: Bool {
+        accountAccessIsCurrent && activeGamePassPlansAccount != nil
+            && activeGamePassPlansAccount == accountHash && !activeGamePassPlans.isEmpty
+    }
+
     func accessIsCurrent(for productID: String) -> Bool {
         accountAccessIsCurrent && snapshot?.hasResolvedGame(productID) == true
     }
@@ -402,6 +412,8 @@ final class PCGamesController: ObservableObject {
                 try current(token)
                 logger.notice("Account collection candidates: \(collection.items.count), purchased: \(collection.items.filter { $0.acquisitionKind == .purchased }.count), subscription: \(collection.items.filter { $0.acquisitionKind == .subscription }.count), unknown: \(collection.items.filter { $0.acquisitionKind == .unknown }.count)")
                 FirstLoadTimeline.mark("collectionCandidates", "count=\(collection.items.count)")
+                activeGamePassPlans = Set(collection.activeSubscriptions ?? [])
+                activeGamePassPlansAccount = read.accountHash
                 let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,

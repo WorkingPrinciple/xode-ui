@@ -113,7 +113,8 @@ struct LiveLibraryView: View {
                     || installed.productAccess.pending($0, account: session.accountHash)
             }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
-            filter: filter, sort: sort, showsUnsupported: showsUnsupported)
+            filter: filter, sort: sort, showsUnsupported: showsUnsupported,
+            gamePassPlanActive: library.gamePassPlanActive)
     }
 
     private func changeScope(filter nextFilter: LibraryFilter, showsUnsupported: Bool) {

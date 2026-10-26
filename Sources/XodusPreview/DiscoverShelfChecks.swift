@@ -20,6 +20,7 @@ enum DiscoverShelfChecks {
         try classificationChecks(check: check)
         try shelfChecks(check: check)
         accessBadgeChecks(check: check)
+        try gamePassAvailabilityChecks(check: check)
         check(!RecentActivityCopy.findAction.contains("Store")
               && !RecentActivityCopy.findLabel("Fixture").contains("Store"),
               "REQ-60: recent-activity cards name the in-app Discover search, not a Store or source")
@@ -148,5 +149,58 @@ enum DiscoverShelfChecks {
                   }
               },
               "REQ-24/25/60: shelf titles carry no commerce, Store or invented tier wording")
+    }
+
+    private static func gamePassAvailabilityChecks(check: (Bool, String) -> Void) throws {
+        func collection(_ json: String) throws -> OdeAccountCollection {
+            let value = try JSONDecoder().decode(OdeAccountCollection.self, from: Data(json.utf8))
+            try value.validate()
+            return value
+        }
+        let items = #"[{"productID":"FIXTURE00031","acquisitionKind":"purchased"}]"#
+        let legacy = try collection(#"{"items":\#(items)}"#)
+        let current = try collection(#"{"items":\#(items),"activeSubscriptions":["CFQ7TTC0KHS0"]}"#)
+        var rejected = 0
+        for plans in [#"["cfq7ttc0khs0"]"#, #"["CFQ7TTC0KHS0","CFQ7TTC0KHS0"]"#,
+                      "[" + (0..<33).map { #""PLAN\#(String(format: "%08d", $0))""# }.joined(separator: ",") + "]"] {
+            do { _ = try collection(#"{"items":\#(items),"activeSubscriptions":\#(plans)}"#) } catch { rejected += 1 }
+        }
+        check(legacy.activeSubscriptions == nil && current.activeSubscriptions == ["CFQ7TTC0KHS0"] && rejected == 3,
+              "REQ-7: Library reads accept optional activeSubscriptions and reject malformed, duplicate or excessive plan IDs")
+        check(!PCGamesController(market: "GB").gamePassPlanActive,
+              "REQ-7: no licence read means no active Game Pass plan")
+
+        let brotato = try product("FIXTURE00032", pcCandidate: true)
+        let purchased = try product("FIXTURE00033", pcCandidate: true)
+        let outside = try product("FIXTURE00034", pcCandidate: true)
+        func installed(_ id: String) -> InstalledGame {
+            InstalledGame(id: UUID(), title: id, identityName: "Fixture.\(id)", version: "1.0.0.0", storeId: id,
+                          folder: "/synthetic/\(id)", launcher: "", importedAt: Date(), usesNativeLifecycle: true)
+        }
+        let local = [installed(brotato.id), installed(purchased.id), installed(outside.id)]
+        let held = [PCGame(id: purchased.id, title: purchased.id, artwork: nil, acquisitionKind: .purchased)]
+        func rows(planActive: Bool) -> [LibraryGame] {
+            LibraryGame.collection(installed: local, owned: held, products: [], gamePass: [brotato, purchased],
+                                   active: planActive, accessIsCurrent: true, gamePassPlanActive: planActive)
+        }
+        let active = rows(planActive: true)
+        let row = active.first { $0.id == brotato.id }
+        check(row?.availableWithGamePass == true && row?.eligibility == .gamePass
+              && row?.facts.badgeLabels() == [GameFacts.availableWithGamePassLabel]
+              && row?.facts.heroAccessLabels() == [GameFacts.availableWithGamePassLabel]
+              && LibraryGame.visible(active, query: "", filter: .gamePass, sort: .title).contains { $0.id == brotato.id }
+              && !LibraryGame.visible(active, query: "", filter: .owned, sort: .title).contains { $0.id == brotato.id },
+              "REQ-7/63: an installed Game Pass title that isn't a collection row is available with Game Pass, in the Game Pass filter, never Owned or missing")
+        let owned = active.first { $0.id == purchased.id }
+        check(owned?.availableWithGamePass == false
+              && owned?.facts.badgeLabels() == ["Owned", "Game Pass"],
+              "REQ-63: a purchased Game Pass title stays Owned plus Game Pass, not merely available")
+        check(!active.contains { $0.id == outside.id } && !rows(planActive: false).contains { $0.id == brotato.id },
+              "REQ-7: without an active plan or public PC Game Pass membership, nothing is presented as Game Pass access")
+        let noPlan = LibraryGame(id: brotato.id, title: brotato.id, installed: nil, pc: nil, product: brotato,
+                                 owned: false, gamePass: true, accessIsCurrent: true)
+        check(!noPlan.facts.badgeLabels().contains(GameFacts.availableWithGamePassLabel)
+              && noPlan.facts.heroAccessLabels() == ["In PC Game Pass catalog"],
+              "REQ-63: catalogue membership alone never claims the account can play it")
     }
 }
