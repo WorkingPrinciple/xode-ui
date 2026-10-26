@@ -246,9 +246,9 @@ class NoticeChecks(unittest.TestCase):
                     }],
                     "sourceDelivery": {
                         "sourceArchive": {
-                            "file": "xodus-cli-beta-1bcc1c42-source.tar",
-                            "sha256": "6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87",
-                            "bytes": 8_980_480,
+                            "file": "xodus-cli-beta-85f38a5e-source.tar",
+                            "sha256": "49f2216015be2546b36faa409cf9e09de345bb8b086601398f5486b3f7e4c9e4",
+                            "bytes": 9_041_920,
                             "producer": result["producer"],
                         },
                         "channels": [

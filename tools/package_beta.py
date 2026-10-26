@@ -27,8 +27,8 @@ IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.development"
 APP_SIGNING_IDENTIFIER = IDENTIFIERS["app"]
-PRODUCER_NOTICES_SHA256 = "3ff49520c8eef04343806c75ab699084a670e2f21ee7adc9194cf8bb1979c425"
-PRODUCER_NOTICES_EVIDENCE_SHA256 = "2d5b88033c9ca273148e13b3e4f1336680b3010bc113f514f4b13caad3e858bb"
+PRODUCER_NOTICES_SHA256 = "6852cb5688f400b7bb6e3312bed2758101bdda2d8b76b205099dc72e637ffceb"
+PRODUCER_NOTICES_EVIDENCE_SHA256 = "ed8c38acf463065a24a31ccaa574c9e1481415076aaad87aac532b67a82038ad"
 PRODUCER_SOURCE_COMMIT = PRODUCER
 PRODUCER_SOURCE_TREE = PRODUCER_TREE
 PRODUCER_SOURCE_ARCHIVE_SHA256 = SOURCE_ARCHIVE_SHA256
@@ -52,8 +52,8 @@ X Ode.app is signed with Developer ID and notarized by Apple. The app's
 notarization ticket is stapled.
 
 The corresponding source archive for the bundled backend is provided next to
-this disk image as xodus-cli-beta-1bcc1c42-source.tar (SHA-256
-6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87).
+this disk image as xodus-cli-beta-85f38a5e-source.tar (SHA-256
+49f2216015be2546b36faa409cf9e09de345bb8b086601398f5486b3f7e4c9e4).
 Attach that exact archive to the GitHub draft release before publication; do
 not publish the app without its corresponding source.
 """
@@ -134,7 +134,7 @@ In-game voice chat and microphone input aren't supported in this beta. Updates k
 - X Ode and its backend are **GPL-3.0**; the backend builds on
   [Xodus](https://github.com/xodus-gaming/xodus). The corresponding source
   archive for the backend binary must be attached to the draft release before
-  publication as `xodus-cli-beta-1bcc1c42-source.tar`.
+  publication as `xodus-cli-beta-85f38a5e-source.tar`.
 - The Calimocho engine is **LGPL-2.1-or-later** (based on Wine). It includes
   Apple's D3DMetal under Apple's Game Porting Toolkit licence, which allows
   free, non-commercial distribution only. Engine source is attached to its own
@@ -145,7 +145,7 @@ In-game voice chat and microphone input aren't supported in this beta. Updates k
 
 | File | SHA-256 |
 |---|---|
-| xodus-cli-beta-1bcc1c42-source.tar | 6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87 |
+| xodus-cli-beta-85f38a5e-source.tar | 49f2216015be2546b36faa409cf9e09de345bb8b086601398f5486b3f7e4c9e4 |
 """
 def run(arguments, timeout=1800):
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)
