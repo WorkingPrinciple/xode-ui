@@ -94,6 +94,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
         "Identifier=neutral.component\n"
         "Format=Mach-O thin (arm64)\n"
         "CodeDirectory v=20500 size=123 flags=0x10000(runtime) hashes=1+2 location=embedded\n"
+        "CDHash=0123456789abcdef0123456789abcdef01234567\n"
         "TeamIdentifier=M62Z4M5EUY\n"
         "Timestamp=Oct 25, 2026 at 12:00:00 PM\n"
         "Authority=Developer ID Application: Neutral (M62Z4M5EUY)\n"
@@ -122,6 +123,9 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
     neutral_code.write_bytes(b"Neutral signed Mach-O test fixture")
     assert verify_developer_id_component(
         neutral_code, component_identity, run=signed_component_command())["hardenedRuntime"]
+    assert verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command())["cdhash"] == \
+        "0123456789abcdef0123456789abcdef01234567"
     no_runtime = signed_metadata.replace("flags=0x10000(runtime)", "flags=0x0")
     assert verify_developer_id_component(
         neutral_code, component_identity, run=signed_component_command(metadata=no_runtime),
@@ -134,6 +138,13 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
     rejected(lambda: verify_developer_id_component(
         neutral_code, component_identity, run=signed_component_command(metadata=signed_metadata.replace(
             "flags=0x10000(runtime)", "flags=0x0"))))
+    rejected(lambda: verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command(metadata=signed_metadata.replace(
+            "CDHash=0123456789abcdef0123456789abcdef01234567\n", ""))))
+    rejected(lambda: verify_developer_id_component(
+        neutral_code, component_identity, run=signed_component_command(metadata=signed_metadata.replace(
+            "CDHash=0123456789abcdef0123456789abcdef01234567",
+            "CDHash=invalid"))))
 
     app = Path(temporary).resolve() / "Neutral.app"
     for relative in ("Contents/MacOS/Xodus", "Contents/MacOS/XodusAuthHost",
@@ -143,6 +154,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
         target.write_bytes(b"\xcf\xfa\xed\xfe" + b"Neutral signed Mach-O test fixture")
     signature_inventory = verify_developer_id_bundle(
         app, component_identity, run=signed_component_command())
+    assert signature_inventory["app"]["cdhash"] == \
+        "0123456789abcdef0123456789abcdef01234567"
     assert {"app", "Contents/MacOS/Xodus", "Contents/MacOS/XodusAuthHost",
             "Contents/Resources/XodusEngine/xodus-cli"} == set(signature_inventory)
     (app / "Contents/Resources/Linked").symlink_to("missing")

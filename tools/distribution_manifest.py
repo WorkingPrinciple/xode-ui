@@ -3,12 +3,14 @@
 """Seal exact component identities and unresolved source/rights obligations."""
 import json
 from pathlib import Path
+import re
 import shutil
 
 from package_resources import resource_layout, verify_resources
 from producer_notices import verify as verify_producer_notices
 from resource_inventory import (NMS_DEVELOPER_LOCAL_REGISTRY, QA_JSON_NAMES,
                                 developer_path_present)
+from signing_identity import IDENTIFIERS, TEAM_ID, verify_developer_id_bundle
 from shipping_pair import owned_bytes, require, unique_object
 
 COMPONENT_PATHS = {
@@ -17,6 +19,12 @@ COMPONENT_PATHS = {
     "cli": "Contents/Resources/XodusEngine/xodus-cli",
     "windowsHelper": "Contents/Resources/XodusEngine/xodus-window-monitor.exe",
 }
+APP_SIGNATURE_BINDING = {
+    "identifier": IDENTIFIERS["app"],
+    "teamIdentifier": TEAM_ID,
+}
+
+
 def optional_payloads(app):
     resources = app / "Contents/Resources"
     result = {}
@@ -124,15 +132,19 @@ def write_manifest(app, source, producer, archive, producer_notices=None,
     resources = app / "Contents/Resources"
     records = {}
     for name, relative in COMPONENT_PATHS.items():
-        identity, _ = owned_bytes(app / relative)
-        records[name] = {
-            **identity, "path": relative,
+        component = {
+            "path": relative,
             "source": source if name in ("app", "authHost") else producer,
             "license": "GPL-3.0-only" if name in ("app", "authHost") else "unresolved",
             "notice": "LICENSE.txt" if name in ("app", "authHost") else None,
             "correspondingSource": "delivery-unresolved",
             "rightsReview": "unresolved",
         }
+        if name == "app":
+            component["signatureVerification"] = APP_SIGNATURE_BINDING
+        else:
+            component.update(owned_bytes(app / relative)[0])
+        records[name] = component
     management = resources / "XodusAppFoundation_XodusManagement.bundle"
     verify_resources(management)
     layout = resource_layout(management)
@@ -183,7 +195,8 @@ def write_manifest(app, source, producer, archive, producer_notices=None,
         stream.write("\n")
 
 
-def distribution_blockers(app, approved_producer_notices_sha256=None):
+def distribution_blockers(app, approved_producer_notices_sha256=None,
+                          expected_signing_identity=None):
     resources = app / "Contents/Resources"
     _, data = owned_bytes(resources / "distribution-components.json", bounded=4 * 1024 * 1024)
     metadata = json.loads(data, object_pairs_hook=unique_object)
@@ -232,7 +245,25 @@ def distribution_blockers(app, approved_producer_notices_sha256=None):
     for name, relative in COMPONENT_PATHS.items():
         component = metadata["components"][name]
         require(component["path"] == relative, "Unexpected component path")
-        owned_bytes(app / relative, component["sha256"], component["bytes"])
+        if name == "app":
+            require(component.get("signatureVerification") == APP_SIGNATURE_BINDING
+                    and "sha256" not in component and "bytes" not in component,
+                    "Main executable must be verified by code signature, not a pre-sign hash")
+            if expected_signing_identity is None:
+                blockers.append("Expected Developer ID identity for app signature verification not supplied")
+            else:
+                signatures = verify_developer_id_bundle(
+                    app, expected_signing_identity, APP_SIGNATURE_BINDING["teamIdentifier"])
+                signature = signatures.get("app")
+                require(type(signature) is dict
+                        and signature.get("identifier") == APP_SIGNATURE_BINDING["identifier"]
+                        and signature.get("teamIdentifier") == APP_SIGNATURE_BINDING["teamIdentifier"]
+                        and signature.get("certificateSha1") == expected_signing_identity.upper()
+                        and isinstance(signature.get("cdhash"), str)
+                        and re.fullmatch(r"[0-9a-f]{40}", signature["cdhash"]) is not None,
+                        "Signed app identity or cdhash differs from the expected identity")
+        else:
+            owned_bytes(app / relative, component["sha256"], component["bytes"])
         if component["rightsReview"] != "resolved" or component["correspondingSource"] == "delivery-unresolved":
             blockers.append("Unresolved source/rights: " + name)
     notice = metadata["compatibilityDataNotice"]
@@ -244,6 +275,8 @@ def distribution_blockers(app, approved_producer_notices_sha256=None):
     return blockers
 
 
-def require_distribution_ready(app, approved_producer_notices_sha256=None):
-    blockers = distribution_blockers(app, approved_producer_notices_sha256)
+def require_distribution_ready(app, approved_producer_notices_sha256=None,
+                               expected_signing_identity=None):
+    blockers = distribution_blockers(app, approved_producer_notices_sha256,
+                                     expected_signing_identity)
     require(not blockers, "Distribution preflight blocked: " + "; ".join(blockers))

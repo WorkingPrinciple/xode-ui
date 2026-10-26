@@ -24,9 +24,10 @@ from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, WINDOWS_HEL
                            WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE,
                            PRODUCER_MANIFEST_SHA256, owned_bytes, require, swift_pins,
                            swift_producer_pins, validate_producer_inventory)
-from signing_identity import command, preflight, sign, verify_designated_requirement
+from signing_identity import (command, preflight, sign, verify_developer_id_bundle,
+                              verify_designated_requirement)
 from package_resources import copy_resources
-from distribution_manifest import write_manifest
+from distribution_manifest import distribution_blockers, write_manifest
 
 
 def validate_payload_pair(cli, helper, producer, tree):
@@ -180,8 +181,16 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     verify_cli(cli)
     for path, kind in ((helper, "helper"), (app, "app")):
         verify_designated_requirement(path, kind, identity)
+    blockers = distribution_blockers(
+        app, producer_notices_sha256, expected_signing_identity=identity)
+    signature = verify_developer_id_bundle(app, identity)["app"]
     owned_bytes(old_cli, cli_record["sha256"], cli_record["bytes"])
     require(source_identity(project) == source_identity_before, "App source changed during refresh")
+    print("Distribution manifest integrity: PASS")
+    print("Signed app CDHash: " + signature["cdhash"])
+    print("Signed app team: " + signature["teamIdentifier"])
+    if blockers:
+        print("Remaining distribution blockers: " + json.dumps(blockers, sort_keys=True))
     print(app)
     print(stage / "candidate-receipt.json")
     return app, stage / "candidate-receipt.json"

@@ -17,6 +17,7 @@ IDENTIFIERS = {"app": "io.github.dragoshont.xodus",
                "cli": "io.github.dragoshont.xodus.cli",
                "helper": "io.github.dragoshont.xodus.auth-host",
                "broker": "io.github.dragoshont.xodus.credential-broker"}
+TEAM_ID = "M62Z4M5EUY"
 COMPARISON_RESULT = (
     "Different signed artifacts share the fixed certificate-bound designated requirement. "
     "Independent-build qualification requires distinct compilations and live access checks; "
@@ -120,7 +121,7 @@ def _certificate_fingerprints(path, run):
         return result
 
 
-def verify_developer_id_component(path, identity, team_id="M62Z4M5EUY", run=command,
+def verify_developer_id_component(path, identity, team_id=TEAM_ID, run=command,
                                   hardened_runtime=True):
     require(re.fullmatch(r"[0-9a-fA-F]{40}", identity or "") is not None,
             "Exact Developer ID certificate SHA1 is required")
@@ -130,11 +131,12 @@ def verify_developer_id_component(path, identity, team_id="M62Z4M5EUY", run=comm
     run(["/usr/bin/codesign", "--verify", "--strict", "--verbose=2", str(path)])
     metadata = run(["/usr/bin/codesign", "--display", "--verbose=4", str(path)])
     identifiers = re.findall(r"^Identifier=(.+)$", metadata, re.MULTILINE)
+    cdhashes = re.findall(r"^CDHash=([0-9A-Fa-f]{40})$", metadata, re.MULTILINE)
     teams = re.findall(r"^TeamIdentifier=(.+)$", metadata, re.MULTILINE)
     authorities = re.findall(r"^Authority=(.+)$", metadata, re.MULTILINE)
     timestamps = re.findall(r"^Timestamp=(.+)$", metadata, re.MULTILINE)
     runtime_flags = re.findall(r"^.*\bflags=.*\bruntime\b.*$", metadata, re.MULTILINE)
-    require(len(identifiers) == len(teams) == len(timestamps) == 1 and authorities,
+    require(len(identifiers) == len(cdhashes) == len(teams) == len(timestamps) == 1 and authorities,
             "Developer ID signature metadata is incomplete")
     require(teams[0] == team_id and authorities[0].startswith("Developer ID Application: "),
             "Component is not signed by the required Developer ID team")
@@ -146,6 +148,7 @@ def verify_developer_id_component(path, identity, team_id="M62Z4M5EUY", run=comm
             "Component certificate leaf differs from the approved Developer ID identity")
     return {
         "identifier": identifiers[0],
+        "cdhash": cdhashes[0].lower(),
         "teamIdentifier": teams[0],
         "authority": authorities[0],
         "certificateSha1": fingerprints[0],
@@ -154,7 +157,7 @@ def verify_developer_id_component(path, identity, team_id="M62Z4M5EUY", run=comm
     }
 
 
-def verify_developer_id_bundle(app, identity, team_id="M62Z4M5EUY", run=command):
+def verify_developer_id_bundle(app, identity, team_id=TEAM_ID, run=command):
     app = Path(app)
     require(app.is_dir() and app.suffix == ".app" and not app.is_symlink(),
             "Expected a regular app bundle")

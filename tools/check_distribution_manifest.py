@@ -15,13 +15,37 @@ from resource_inventory import (inspect_resources, inventory as resource_invento
 from resource_inventory import developer_path_findings
 import release_candidate as release
 
+TEST_SIGNING_IDENTITY = "C" * 40
+
 
 class DistributionChecks(unittest.TestCase):
     def setUp(self):
         self.approved_inventory_sha = None
 
+    def fake_signature_inventory(self, app, identity, team_id):
+        self.assertEqual(identity, TEST_SIGNING_IDENTITY)
+        self.assertEqual(team_id, "M62Z4M5EUY")
+        if (app / COMPONENT_PATHS["app"]).read_bytes() != b"Never executed neutral component":
+            raise ValueError("Signed app verification failed")
+        return {"app": {
+            "identifier": "io.github.dragoshont.xodus",
+            "teamIdentifier": team_id,
+            "certificateSha1": identity,
+            "cdhash": "d" * 40,
+        }}
+
     def blockers(self, app):
-        return distribution_blockers(app, self.approved_inventory_sha)
+        with patch("distribution_manifest.verify_developer_id_bundle",
+                   side_effect=self.fake_signature_inventory):
+            return distribution_blockers(app, self.approved_inventory_sha,
+                                         expected_signing_identity=TEST_SIGNING_IDENTITY)
+
+    def require_ready(self, app, approved_inventory_sha=None):
+        with patch("distribution_manifest.verify_developer_id_bundle",
+                   side_effect=self.fake_signature_inventory):
+            return require_distribution_ready(
+                app, approved_inventory_sha,
+                expected_signing_identity=TEST_SIGNING_IDENTITY)
 
     def fixture(self, root):
         app = root / "Neutral.app"
@@ -72,7 +96,61 @@ class DistributionChecks(unittest.TestCase):
             self.assertEqual(data["components"]["cli"]["license"], "unresolved")
             self.assertTrue(data["unresolved"])
             with self.assertRaisesRegex(ValueError, "source/rights"):
-                require_distribution_ready(app)
+                self.require_ready(app)
+
+    def test_signed_main_executable_is_not_bound_to_a_presign_hash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            metadata = json.loads(
+                (app / "Contents/Resources/distribution-components.json").read_text())
+            component = metadata["components"]["app"]
+            self.assertNotIn("sha256", component)
+            self.assertNotIn("bytes", component)
+            self.assertEqual(component["signatureVerification"], {
+                "identifier": "io.github.dragoshont.xodus",
+                "teamIdentifier": "M62Z4M5EUY",
+            })
+
+    def test_signed_main_executable_is_verified_after_its_signature_changes_the_bytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            self.resolve_fixture_obligations(app)
+            executable = app / COMPONENT_PATHS["app"]
+            executable.write_bytes(b"Executable after code signing")
+            with patch("distribution_manifest.verify_developer_id_bundle",
+                       return_value={"app": {
+                           "identifier": "io.github.dragoshont.xodus",
+                           "teamIdentifier": "M62Z4M5EUY",
+                           "certificateSha1": TEST_SIGNING_IDENTITY,
+                           "cdhash": "d" * 40,
+                       }}) as verify:
+                blockers = distribution_blockers(
+                    app, self.approved_inventory_sha,
+                    expected_signing_identity=TEST_SIGNING_IDENTITY)
+            self.assertEqual(blockers, [])
+            verify.assert_called_once_with(
+                app, TEST_SIGNING_IDENTITY, "M62Z4M5EUY")
+
+    def test_old_presign_hash_schema_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            path = app / "Contents/Resources/distribution-components.json"
+            metadata = json.loads(path.read_text())
+            executable = app / COMPONENT_PATHS["app"]
+            from shipping_pair import owned_bytes
+            metadata["components"]["app"].update(owned_bytes(executable)[0])
+            path.write_text(json.dumps(metadata))
+            with self.assertRaisesRegex(ValueError, "not a pre-sign hash"):
+                self.blockers(app)
+
+    def test_distribution_preflight_requires_an_expected_signing_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = self.fixture(Path(tmp).resolve())
+            self.resolve_fixture_obligations(app)
+            blockers = distribution_blockers(app, self.approved_inventory_sha)
+            self.assertIn(
+                "Expected Developer ID identity for app signature verification not supplied",
+                blockers)
 
     def test_engine_notice_is_optional_but_bound_when_present(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -115,7 +193,7 @@ class DistributionChecks(unittest.TestCase):
                 self.assertIn("engine-defaults-v1.json", str(error.exception))
                 self.assertNotIn(private, str(error.exception))
                 with self.assertRaisesRegex(ValueError, "Development-machine"):
-                    require_distribution_ready(app)
+                    self.require_ready(app)
 
     def test_only_the_recorded_nms_developer_local_binding_is_allowed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -351,10 +429,12 @@ class DistributionChecks(unittest.TestCase):
             manifest["unresolved"] = []
             manifest_path.write_text(json.dumps(manifest))
             with self.assertRaises(ValueError):
-                require_distribution_ready(app, self.approved_inventory_sha)
+                self.require_ready(app, approved_inventory_sha=self.approved_inventory_sha)
             with self.assertRaises(ValueError), patch.object(release, "execute") as execute, \
-                    patch.object(release, "notarize") as notarize:
-                release.distribute(app, root, {}, root / "receipt.json", "c" * 40, "notary",
+                    patch.object(release, "notarize") as notarize, \
+                    patch("distribution_manifest.verify_developer_id_bundle",
+                          side_effect=self.fake_signature_inventory):
+                release.distribute(app, root, {}, root / "receipt.json", TEST_SIGNING_IDENTITY, "notary",
                                    self.approved_inventory_sha)
             execute.assert_not_called()
             notarize.assert_not_called()
@@ -366,7 +446,7 @@ class DistributionChecks(unittest.TestCase):
             self.assertIn("Independently approved producer inventory SHA-256 not supplied",
                           distribution_blockers(app))
             with self.assertRaises(ValueError):
-                require_distribution_ready(app)
+                self.require_ready(app, approved_inventory_sha=None)
 
 
 if __name__ == "__main__":

@@ -168,7 +168,8 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
     require(receipt.get("producerNoticesSHA256") == PRODUCER_NOTICES_SHA256
             and receipt.get("producerNoticesEvidenceSHA256") == PRODUCER_NOTICES_EVIDENCE_SHA256,
             "Producer-notice approval pins differ from the signed dry-run receipt")
-    require_distribution_ready(app, producer_notices_sha256)
+    require_distribution_ready(
+        app, producer_notices_sha256, expected_signing_identity=identity)
     source_identity, source_bytes = validate_producer_source_archive(producer_source_archive)
     require(receipt.get("producerSourceArchive") == {
         "file": PRODUCER_SOURCE_ARCHIVE_NAME,
@@ -432,7 +433,8 @@ def build(args):
         owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli", CLI_SHA256)
         owned_bytes(app / "Contents/Resources/XodusEngine/xodus-window-monitor.exe", HELPER_SHA256)
         if args.dry_run:
-            receipt["distributionBlockers"] = distribution_blockers(app, notices_sha)
+            receipt["distributionBlockers"] = distribution_blockers(
+                app, notices_sha, expected_signing_identity=args.identity)
             receipt["state"] = "signed_dry_run_complete"
             receipt["unexecutedGates"] = ["app notarization", "app stapling and Gatekeeper",
                                           "DMG creation/signing/notarization/stapling/Gatekeeper",

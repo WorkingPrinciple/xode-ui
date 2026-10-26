@@ -138,6 +138,11 @@ The distribution gate also requires the external approved digest: an inventory
 cannot remove package records or obligations and approve its own replacement
 hash, even if a new app signature seals that reduced inventory.
 
+The main Xodus executable is not raw-hash-bound in this in-bundle manifest:
+macOS signing rewrites its Mach-O signature after resource assembly. Post-sign
+preflight verifies the app's code signature, cdhash, signing identifier, team
+and expected certificate instead. Other signed components remain hash-bound.
+
 Optional Python runtimes, launch-association capsules and separately installed
 credential-broker references have independent source/licence/rights entries.
 Python's exact file manifest and archive pin are revalidated; the broker entry

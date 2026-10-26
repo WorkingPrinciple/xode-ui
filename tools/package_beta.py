@@ -325,7 +325,8 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     engine_notice_text = engine_notice_data.decode("utf-8")
     require(bool(engine_notice_text.strip()) and "\x00" not in engine_notice_text,
             "Calimocho NOTICE must be non-empty UTF-8 text in the app bundle")
-    blockers = distribution_blockers(app, producer_notices_sha256)
+    blockers = distribution_blockers(
+        app, producer_notices_sha256, expected_signing_identity=identity)
     require(not blockers, "Distribution preflight blocked: " + "; ".join(blockers))
     signatures = verify_developer_id_bundle(app, identity, TEAM_ID, run_command)
 
