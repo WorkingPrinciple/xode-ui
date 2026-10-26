@@ -720,25 +720,35 @@ struct PCGamesClient: Sendable {
             candidateCount: candidateIDs.count, market: market, language: language, accountID: xid, progress: progress)
     }
 
-    static func tolerantProducts(_ data: Data, batch: [String]) throws -> [PCGamesCatalog.Product] {
+    /// Readable products in a batch, and the batch IDs whose items were present but unreadable (failures to
+    /// retry). Batch IDs the response simply didn't include aren't failures. All items unreadable → throws.
+    static func tolerantProducts(_ data: Data, batch: [String]) throws
+        -> (products: [PCGamesCatalog.Product], dropped: Set<String>) {
         if let products = try? JSONDecoder().decode(PCGamesCatalog.self, from: data).Products,
            products.count <= batch.count, Set(products.map(\.ProductId)).count == products.count,
-           products.allSatisfy({ batch.contains($0.ProductId) }) { return products }
+           products.allSatisfy({ batch.contains($0.ProductId) }) { return (products, []) }
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let items = root["Products"] as? [Any] else { throw PCGamesError.invalidResponse }
         var seen = Set<String>(), kept: [PCGamesCatalog.Product] = [], dropped = 0
+        var droppedIDs = Set<String>()
         for item in items {
             guard let one = try? JSONSerialization.data(withJSONObject: ["Products": [item]]),
                   let product = try? JSONDecoder().decode(PCGamesCatalog.self, from: one).Products.first,
-                  batch.contains(product.ProductId), seen.insert(product.ProductId).inserted else { dropped += 1; continue }
+                  batch.contains(product.ProductId), seen.insert(product.ProductId).inserted else {
+                dropped += 1
+                if let id = (item as? [String: Any])?["ProductId"] as? String, batch.contains(id) { droppedIDs.insert(id) }
+                continue
+            }
             kept.append(product)
         }
+        droppedIDs.subtract(kept.map(\.ProductId))
         let strictError: String
         do { _ = try JSONDecoder().decode(PCGamesCatalog.self, from: data); strictError = "foreign, duplicate or excess products" }
         catch { strictError = String(describing: error).prefix(300).description }
         Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
             .warning("Public PC descriptor batch kept \(kept.count) products and dropped \(dropped); strict decode: \(strictError, privacy: .public)")
-        return kept
+        guard !kept.isEmpty || items.isEmpty else { throw PCGamesError.invalidResponse }
+        return (kept, droppedIDs)
     }
 
     static let descriptorConcurrency = 2
@@ -783,7 +793,7 @@ struct PCGamesClient: Sendable {
         }
         // P0: one unreadable, duplicate or foreign product never fails its whole batch. Valid products are
         // kept; the rest stay unresolved and are retried.
-        func products(_ data: Data, batch: [String]) throws -> [PCGamesCatalog.Product] {
+        func products(_ data: Data, batch: [String]) throws -> (products: [PCGamesCatalog.Product], dropped: Set<String>) {
             try Self.tolerantProducts(data, batch: batch)
         }
         if !ids.isEmpty { await progress?(snapshot()) }
@@ -808,8 +818,11 @@ struct PCGamesClient: Sendable {
                 let batch = batches[index]
                 do {
                     let read = try result.get()
-                    resolved[index] = try products(read.data, batch: batch)
+                    let readable = try products(read.data, batch: batch)
+                    resolved[index] = readable.products
+                    // Unreadable items count as failures, so the library retries them and stays truthful.
                     failed[index] = Set(await descriptors.failures(ids: batch, market: market, language: language).keys)
+                        .union(readable.dropped)
                     if let revalidation = read.revalidation { revalidations[index] = revalidation }
                     completedBatches += 1
                 } catch is CancellationError { throw CancellationError() }
@@ -839,7 +852,8 @@ struct PCGamesClient: Sendable {
             do {
                 let fresh = try products(try await descriptors.load(ids: updated, market: market, language: language),
                                          batch: updated)
-                resolved[index] = (resolved[index] ?? []).filter { !changed.contains($0.ProductId) } + fresh
+                resolved[index] = (resolved[index] ?? []).filter { !changed.contains($0.ProductId) } + fresh.products
+                failed[index, default: []].formUnion(fresh.dropped)
                 revised = true
             } catch is CancellationError { throw CancellationError() }
             catch {

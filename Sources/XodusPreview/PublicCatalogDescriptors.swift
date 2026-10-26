@@ -483,6 +483,8 @@ actor PublicCatalogDescriptors {
         return parser.date(from: text).map { max(0, $0.timeIntervalSince(now())) }
     }
 
+    static let unreadableRecord = "Game details are temporarily unavailable. Try again."
+
     private func direct(ids: [String], market: String, language: String) async throws -> Batch {
         try Task.checkCancellation()
         if let retryNotBefore, retryNotBefore > now() {
@@ -516,15 +518,19 @@ actor PublicCatalogDescriptors {
               let products = object["Products"] as? [[String: Any]], products.count <= ids.count else {
             throw PCGamesError.invalidResponse
         }
-        _ = try JSONDecoder().decode(PCGamesCatalog.self, from: response.data)
         var result = Batch()
         let time = now()
         for product in products {
             guard let id = product["ProductId"] as? String, ids.contains(id),
-                  result.entries[id] == nil else { throw PCGamesError.invalidResponse }
-            result.entries[id] = Entry(
-                bytes: try JSONSerialization.data(withJSONObject: product, options: [.sortedKeys]),
-                expiresAt: time.addingTimeInterval(300), usedAt: time)
+                  result.entries[id] == nil, result.failures[id] == nil else { throw PCGamesError.invalidResponse }
+            // P0 review: an unreadable product fails only itself.
+            guard let bytes = try? JSONSerialization.data(withJSONObject: product, options: [.sortedKeys]),
+                  let one = try? JSONSerialization.data(withJSONObject: ["Products": [product]]),
+                  (try? JSONDecoder().decode(PCGamesCatalog.self, from: one)) != nil else {
+                result.failures[id] = Self.unreadableRecord
+                continue
+            }
+            result.entries[id] = Entry(bytes: bytes, expiresAt: time.addingTimeInterval(300), usedAt: time)
         }
         return result
     }
@@ -537,16 +543,26 @@ actor PublicCatalogDescriptors {
             "language": .string(language), "refresh": .string(refresh ? "network" : "cache")
         ])
         let response = try value.decode(CatalogDescriptors.self)
-        try response.validate(ids: ids, market: market, language: language, now: now())
+        // P0 review: per-record validation and decoding; one unreadable record only fails itself.
+        let checked = try response.validRecords(ids: ids, market: market, language: language, now: now())
         var result = Batch()
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
-        for record in response.descriptors {
-            let bytes = try encoder.encode(record.product)
-            let wrapped = try JSONEncoder().encode(JSONValue.object(["Products": .array([record.product])]))
-            _ = try JSONDecoder().decode(PCGamesCatalog.self, from: wrapped)
-            result.entries[record.productID] = Entry(bytes: bytes,
-                expiresAt: try record.expiration(), usedAt: now())
+        var invalid = checked.invalid
+        for record in checked.valid {
+            guard let bytes = try? encoder.encode(record.product),
+                  let wrapped = try? JSONEncoder().encode(JSONValue.object(["Products": .array([record.product])])),
+                  (try? JSONDecoder().decode(PCGamesCatalog.self, from: wrapped)) != nil,
+                  let expiry = try? record.expiration() else {
+                invalid.insert(record.productID)
+                continue
+            }
+            result.entries[record.productID] = Entry(bytes: bytes, expiresAt: expiry, usedAt: now())
+        }
+        for id in invalid { result.failures[id] = Self.unreadableRecord }
+        if !invalid.isEmpty {
+            Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                .warning("Public descriptor records rejected individually: \(invalid.count) of \(ids.count)")
         }
         let oversized = response.failures.filter {
             $0.error.code == "LIMIT_EXCEEDED" && !$0.error.retryable

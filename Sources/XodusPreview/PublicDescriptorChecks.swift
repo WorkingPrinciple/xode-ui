@@ -812,8 +812,63 @@ enum PublicDescriptorChecks {
             product(tolerantIDs[0]), ["ProductId": 42, "LocalizedProperties": "broken"],
             product("FIXTURE99999"), product(tolerantIDs[0]), product(tolerantIDs[2])]])
         let tolerant = try PCGamesClient.tolerantProducts(mixed, batch: tolerantIDs)
-        check(tolerant.map(\.ProductId) == [tolerantIDs[0], tolerantIDs[2]],
+        check(tolerant.products.map(\.ProductId) == [tolerantIDs[0], tolerantIDs[2]] && tolerant.dropped.isEmpty,
               "P0: One unreadable, foreign or duplicate product is dropped on its own; the rest of the batch still resolves")
+        let brokenOne = try JSONSerialization.data(withJSONObject: ["Products": [
+            product(tolerantIDs[0]), ["ProductId": tolerantIDs[1], "LocalizedProperties": "broken"]]])
+        let partialBatch = try PCGamesClient.tolerantProducts(brokenOne, batch: tolerantIDs)
+        let allBroken = try JSONSerialization.data(withJSONObject: ["Products": tolerantIDs.map {
+            ["ProductId": $0, "LocalizedProperties": "broken"] as [String: Any] }])
+        var allBrokenThrows = false
+        do { _ = try PCGamesClient.tolerantProducts(allBroken, batch: tolerantIDs) } catch { allBrokenThrows = true }
+        check(partialBatch.products.map(\.ProductId) == [tolerantIDs[0]] && partialBatch.dropped == [tolerantIDs[1]]
+              && allBrokenThrows,
+              "Review H: An unreadable item is reported as a failure to retry (not silently dropped), and an all-unreadable batch fails instead of counting as complete")
+
+        struct UnreadableTransport: PCGamesTransport {
+            let broken: @Sendable (String) -> Bool
+            func send(_ request: URLRequest) async throws -> PCGamesHTTPResponse {
+                let items = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!.queryItems!
+                let ids = items.first { $0.name == "bigIds" }!.value!.split(separator: ",").map(String.init)
+                let products: [[String: Any]] = ids.map { id in
+                    broken(id) ? ["ProductId": id, "LocalizedProperties": "broken"] : [
+                        "ProductId": id, "ProductType": "Game", "ProductKind": "Game",
+                        "LocalizedProperties": [["ProductTitle": "Game \(id)", "Images": []]],
+                        "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": [
+                            ["PlatformDependencies": [["PlatformName": "Windows.Desktop"]]]]]]]]]
+                }
+                return PCGamesHTTPResponse(status: 200, data: try JSONSerialization.data(withJSONObject: ["Products": products]))
+            }
+        }
+        func unreadableClient(_ broken: @escaping @Sendable (String) -> Bool) -> PCGamesClient {
+            let transport = UnreadableTransport(broken: broken)
+            return PCGamesClient(transport: transport, descriptors: PublicCatalogDescriptors(transport: transport))
+        }
+        var unreadableFailures = -1
+        do {
+            let all = try await unreadableClient { _ in true }.resolveCollection(ids: ids(3, offset: 60_000), kinds: [:],
+                candidateCount: 3, market: "US", language: "en-US")
+            unreadableFailures = all.games.isEmpty ? all.detailFailureCount : -2
+        } catch { unreadableFailures = 3 }
+        let mixedIDs = ids(25, offset: 61_000)
+        let brokenSet = Set(mixedIDs.prefix(20).suffix(2))
+        let mixedResult = try await unreadableClient { brokenSet.contains($0) }.resolveCollection(ids: mixedIDs, kinds: [:],
+            candidateCount: 25, market: "US", language: "en-US")
+        print("REVIEW-H mixed games \(mixedResult.games.count) failures \(mixedResult.detailFailureCount) unreadable \(unreadableFailures)")
+        check(unreadableFailures == 3 && mixedResult.games.count == 23 && mixedResult.detailFailureCount == 2
+              && brokenSet.isSubset(of: mixedResult.unresolvedIDs),
+              "Review H: Unreadable items are counted as detail failures (so the library retries them); an all-unreadable library counts every item as failed instead of a clean zero-game library")
+        let artTransport = UnreadableTransport { brokenSet.contains($0) }
+        let skipArtwork = LibraryCatalogArtwork(transport: artTransport)
+        await skipArtwork.load(ids: Array(mixedIDs.prefix(20)), market: "US", language: "en-US")
+        check(skipArtwork.error != nil && brokenSet.allSatisfy { skipArtwork.detailErrors[$0] != nil && skipArtwork.images[$0] == nil }
+              && skipArtwork.images.count == 18,
+              "Review M2: Unreadable artwork/details items are recorded as retryable failures, so the Library's silent retry runs")
+        let budget = PCGamesController(store: UnavailableDescriptorCredentials(), client: PCGamesClient(transport: DescriptorTransport()))
+        let full = budget.detailRetriesLeft
+        budget.resetDetailRetries()
+        check(full == PCGamesController.detailRetryDelays.count && budget.detailRetriesLeft == full,
+              "Review M3: The silent-retry budget starts full and is restored by a user, explicit or foreground refresh")
 
         for count in [36, 300, 512] {
             let baselineTransport = DescriptorTransport()

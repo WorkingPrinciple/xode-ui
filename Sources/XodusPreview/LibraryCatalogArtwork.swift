@@ -21,6 +21,8 @@ final class LibraryCatalogArtwork: ObservableObject {
     private(set) var revision: UInt64 = 0
     @Published private(set) var error: String?
     @Published private(set) var detailErrors: [String: String] = [:]
+    /// Products skipped as unreadable during the current load; they make `error` retryable.
+    private var skippedInLoad = Set<String>()
     /// Product IDs whose public details are requested but not yet settled in this scope.
     @Published private(set) var pendingIDs: Set<String> = []
     private var pendingCounts: [String: Int] = [:]
@@ -134,6 +136,7 @@ final class LibraryCatalogArtwork: ObservableObject {
         let batches = stride(from: 0, to: ids.count, by: 20).map { Array(ids[$0..<min($0 + 20, ids.count)]) }
         let descriptors = descriptors
         let token = UUID()
+        skippedInLoad = []
         let task = Task {
             defer {
                 if generation == epoch, pendingID == token { pending = nil }
@@ -174,7 +177,8 @@ final class LibraryCatalogArtwork: ObservableObject {
                 } else {
                     let failures = await descriptors.failures(ids: ids, market: market, language: language)
                     guard generation == epoch else { return }
-                    error = failures.isEmpty ? nil : "Some public game details couldn't be loaded. Try again."
+                    error = failures.isEmpty && skippedInLoad.isEmpty
+                        ? nil : "Some public game details couldn't be loaded. Try again."
                 }
             } catch is CancellationError { }
             catch {
@@ -210,6 +214,10 @@ final class LibraryCatalogArtwork: ObservableObject {
         var batchErrors = detailErrors
         for (id, message) in failures { batchErrors[id] = message }
         for id in parsed.images.keys { batchErrors[id] = parsed.errors[id] }
+        for id in parsed.skipped {
+            batchErrors[id] = "Game details are temporarily unavailable. Try again."
+            skippedInLoad.insert(id)
+        }
         if !parsed.images.isEmpty {
             for (id, image) in parsed.images {
                 CatalogArtworkIdentity.register([image.cover, image.hero].compactMap { $0 } + image.landscape + image.logos,
@@ -255,6 +263,8 @@ final class LibraryCatalogArtwork: ObservableObject {
         let images: [String: Images]
         let errors: [String: String]
         let rejectedDetailPayload: Bool
+        /// Present but unreadable products; retryable, never silently dropped (review M2).
+        var skipped: Set<String> = []
     }
 
     nonisolated static func parseResponse(_ data: Data, batch: [String], market: String,
@@ -273,7 +283,9 @@ final class LibraryCatalogArtwork: ObservableObject {
                                              language: String) throws -> ParsedResponse {
         try Task.checkCancellation()
         // P0: per-item tolerance; an unreadable product skips only itself.
-        let products = try PCGamesClient.tolerantProducts(data, batch: batch)
+        let readable = try PCGamesClient.tolerantProducts(data, batch: batch)
+        let products = readable.products
+        var skipped = readable.dropped
         var details: [String: CatalogDetailPayload.Product] = [:]
         var rejectedDetailPayload = false
         do {
@@ -323,7 +335,10 @@ final class LibraryCatalogArtwork: ObservableObject {
             guard let detail = try? LibraryGame.details(id: product.ProductId, title: title,
                 artwork: (heroes.first.map { [$0] } ?? []) + (cover.map { [$0] } ?? []),
                 market: market, language: language, source: "MicrosoftDisplayCatalog:v7",
-                pcCandidate: product.isBaseGame == true && product.isPC) else { continue }
+                pcCandidate: product.isBaseGame == true && product.isPC) else {
+                skipped.insert(product.ProductId)
+                continue
+            }
             var detailFacts: CatalogDetailFacts?
             do {
                 guard let value = details[product.ProductId] else { throw PCGamesError.invalidResponse }
@@ -344,7 +359,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                 detail: detailFacts, product: detail)
         }
         return ParsedResponse(images: batchImages, errors: batchErrors,
-            rejectedDetailPayload: rejectedDetailPayload)
+            rejectedDetailPayload: rejectedDetailPayload, skipped: skipped)
     }
 
     func retry(id: String, market: String, language: String) async {

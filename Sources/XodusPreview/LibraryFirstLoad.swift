@@ -104,6 +104,15 @@ struct LibraryFirstLoad: Equatable {
     /// cached between launches, so whether it ever covers depends only on how fast the library arrives.
     static func shouldBegin(signedIn: Bool) -> Bool { signedIn }
 
+    /// Review: a snapshot counts as complete only with no failed detail reads, or once its silent detail retries are
+    /// used up and nothing is loading; a partial snapshot waits (Show library now is offered after 20 s).
+    static func libraryComplete(snapshot: PCGamesSnapshot?, busy: Bool, retriesLeft: Int) -> Bool {
+        guard let snapshot else { return false }
+        // Items the catalogue genuinely doesn't list aren't failures; only failed reads keep it incomplete.
+        if snapshot.detailFailureCount == 0 { return true }
+        return !busy && retriesLeft == 0
+    }
+
     static func gamesReady(_ inputs: LibraryFirstLoadInputs) -> Bool {
         // A complete snapshot counts even while a background revalidation keeps the library busy.
         inputs.gamesFound >= firstScreenSize || inputs.libraryComplete

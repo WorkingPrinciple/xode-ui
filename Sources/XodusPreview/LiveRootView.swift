@@ -153,7 +153,9 @@ struct LiveRootView: View {
         return LibraryFirstLoadInputs(
             signedIn: session.hasConfirmedSignIn, loading: library.busy || library.restoringPresence,
             gamesFound: library.representedGames.count,
-            libraryComplete: library.representedSnapshot.map { !library.busy || $0.isComplete } ?? false,
+            libraryComplete: LibraryFirstLoad.libraryComplete(snapshot: library.representedSnapshot,
+                                                              busy: library.busy,
+                                                              retriesLeft: library.detailRetriesLeft),
             error: library.error,
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),

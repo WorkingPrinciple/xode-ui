@@ -25,6 +25,31 @@ public struct CatalogDescriptors: Decodable, Sendable {
     public let descriptors: [Record]
     public let failures: [Failure]
 
+    /// Envelope checks stay strict; each record is checked on its own, so one bad record (or a few seconds
+    /// of clock skew between the app and the backend) never rejects the whole batch. Returns invalid IDs.
+    public func validRecords(ids: [String], market: String, language: String, now: Date,
+                             skew: TimeInterval = 30) throws -> (valid: [Record], invalid: Set<String>) {
+        let received = descriptors.map(\.productID) + failures.map(\.productID)
+        guard (1...20).contains(ids.count), Set(ids).count == ids.count,
+              received.count == ids.count, Set(received) == Set(ids) else {
+            throw ManagementError.invalidPayload
+        }
+        var valid: [Record] = [], invalid = Set<String>()
+        for record in descriptors {
+            guard let checked = try? Self.date(record.checkedAt), let expiry = try? record.expiration(),
+                  record.market == market, record.language == language,
+                  record.product.object != nil, record.product["ProductId"]?.string == record.productID,
+                  ["live", "cached"].contains(record.freshness),
+                  checked <= now.addingTimeInterval(skew), expiry > now,
+                  expiry.timeIntervalSince(checked) == 300 else {
+                invalid.insert(record.productID)
+                continue
+            }
+            valid.append(record)
+        }
+        return (valid, invalid)
+    }
+
     public func validate(ids: [String], market: String, language: String, now: Date) throws {
         let received = descriptors.map(\.productID) + failures.map(\.productID)
         guard (1...20).contains(ids.count), Set(ids).count == ids.count,

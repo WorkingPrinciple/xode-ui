@@ -223,6 +223,13 @@ final class PCGamesController: ObservableObject {
         refresh()
     }
 
+    /// A user, explicit or foreground refresh restarts the bounded silent-retry budget (review M3).
+    func resetDetailRetries() {
+        detailRetry?.cancel()
+        detailRetry = nil
+        detailRetriesLeft = Self.detailRetryDelays.count
+    }
+
     func refreshInBackground(now: Date = Date()) async {
         guard usesUnifiedAccount, !busy, !accountDisconnecting, !terminating,
               let session = unifiedSession, session.hasConfirmedSignIn,
@@ -234,11 +241,13 @@ final class PCGamesController: ObservableObject {
         needsSignIn = false
         restored = true
         lastAutomaticAttempt = (account, now)
+        resetDetailRetries()
         refreshUnifiedAccount()
         await waitForLoad()
     }
 
     func retryLibraryLoad() async {
+        resetDetailRetries()
         guard !busy, !restoringPresence, !accountDisconnecting, !terminating else { return }
         restored = false
         await restorePresence()
@@ -294,6 +303,7 @@ final class PCGamesController: ObservableObject {
     }
 
     func refresh() {
+        resetDetailRetries()
         if usesUnifiedAccount {
             refreshUnifiedAccount()
             return

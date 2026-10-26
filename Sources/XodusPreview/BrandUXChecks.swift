@@ -1150,6 +1150,21 @@ enum BrandUXChecks {
         let installedCard = cardSize(true), plainCard = cardSize(false)
         check(installedCard == plainCard && installedCard.height > 0,
               "P1: An Installed card (badge on the art) and a plain card have the same size, so artwork and title baselines line up (\(installedCard) vs \(plainCard))")
+        let partial4 = PCGamesSnapshot(games: [], excludedCount: 15, updatedAt: Date(), unresolvedIDs: Set(["9AAAA0000001"]),
+                                       unresolvedCount: 72, detailFailureCount: 72)
+        let clean = PCGamesSnapshot(games: [], excludedCount: 70, updatedAt: Date(), unresolvedIDs: [],
+                                    unresolvedCount: 8, detailFailureCount: 0)
+        var partialLoad = LibraryFirstLoad()
+        partialLoad.begin(at: t0, immediate: true)
+        partialLoad.update(Inputs(gamesFound: 4,
+            libraryComplete: LibraryFirstLoad.libraryComplete(snapshot: partial4, busy: false, retriesLeft: 3),
+            artworkTotal: 4, artworkReady: 4, artworkSettled: true), now: t0 + .seconds(6))
+        check(!LibraryFirstLoad.libraryComplete(snapshot: partial4, busy: false, retriesLeft: 3)
+              && LibraryFirstLoad.libraryComplete(snapshot: partial4, busy: false, retriesLeft: 0)
+              && !LibraryFirstLoad.libraryComplete(snapshot: partial4, busy: true, retriesLeft: 0)
+              && LibraryFirstLoad.libraryComplete(snapshot: clean, busy: true, retriesLeft: 3)
+              && partialLoad.covers,
+              "Review 2: A 4-game snapshot with failed reads pending retry isn't ready, so setup keeps covering (Show library now after 20 s); genuinely unlisted items don't block")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)
