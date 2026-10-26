@@ -789,6 +789,26 @@ enum NativeLifecycleChecks {
         let profile = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == NativeFH6Recipe.productID }
         guard let profile else { throw NativeLaunchError.invalidProfile }
         try NativeFH6Recipe.validate(profile: profile)
+        check(profile.runtime?.primarySHA256 == "e4c1085b4991e7af50e7e6a06245a7948d9911ae2d12b87e8fc035aacd671cb2"
+              && profile.runtime?.legacySHA256 == "1fb7b7c81a64c82ca2f4ea1bdc260826fe8ced3b09738e987d836eabb488b768",
+              "REQ125: FH6 alone binds a70's frozen Gaming Services and per-thread TLS runtime pair")
+        let otherProfiles = try NativeTitleLaunchProfile.bundledProfiles().filter {
+            $0.productID != NativeFH6Recipe.productID && $0.runtime != nil
+        }
+        check(!otherProfiles.isEmpty && otherProfiles.allSatisfy {
+            $0.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
+                && $0.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+        }, "REQ125: no non-FH6 title inherits the pair without a separate smoke gate")
+        var oldRuntime = profile
+        oldRuntime.runtime = try JSONDecoder().decode(NativeLocalRuntime.self, from: Data("""
+        {"primaryPath":"/synthetic/xgameruntime.dll",
+         "primarySHA256":"6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+         "legacySHA256":"cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"}
+        """.utf8))
+        do {
+            try NativeFH6Recipe.validate(profile: oldRuntime)
+            check(false, "REQ125: the failed old FH6 runtime pair cannot be readmitted")
+        } catch { check(true, "REQ125: the failed old FH6 runtime pair cannot be readmitted") }
         if !NativeFH6Recipe.enabled {
             do {
                 try NativeFH6Recipe.requireEnabled(productID: NativeFH6Recipe.productID)

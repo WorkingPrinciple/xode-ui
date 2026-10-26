@@ -383,6 +383,24 @@ device/backend preflight, exact per-game/version results, authorized content,
 licensed RPS/runtime pairing and supervised launch remain separate release
 gates. No trial certificate transfers across an engine/backend generation.
 
+## FH6-only runtime replacement (REQ-125)
+
+The separate REQ-125 FH6 runtime pin is primary
+`e4c1085b4991e7af50e7e6a06245a7948d9911ae2d12b87e8fc035aacd671cb2`
+and legacy `1fb7b7c81a64c82ca2f4ea1bdc260826fe8ced3b09738e987d836eabb488b768`,
+bound only to FH6. a70's frozen provenance SHA-256 is
+`762ba5431a3c2471f97a6a65892d12e27312ddb1b528549b769b7f0e12992e00`;
+its source-tree manifest is
+`ffce9cbf41b2813cba12602be6bf3a584ac82e3fc638bd50a9f90169d2f54220`
+(untracked `xgr-01` source, not a source Git commit). The reported fresh-prefix
+run reached free roam for roughly 9.5–10 minutes, with a preparation receipt,
+stable overlay digest and no observed asserts/crash reports. This is not
+installed-app or non-FH6 qualification. The app-support candidate path requires
+separate authorized staging; no runtime is copied by this source change.
+The failed `6c9d…/cfe7…` FH6 pair and retracted `da60235f…` primary are not used
+for this recipe. Other titles retain their existing pairs. Ordinary FH6 builds
+remain default-closed pending coordinator acceptance.
+
 ## Signed update index verifier (REQ-123/124, isolated candidate)
 
 `CalimochoIndexVerifier` implements the stable verifier contract from Calimocho
