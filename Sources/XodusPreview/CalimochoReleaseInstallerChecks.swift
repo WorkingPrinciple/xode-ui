@@ -544,6 +544,12 @@ enum CalimochoReleaseInstallerChecks {
             .write(to: titleFolder.appendingPathComponent("calimocho-engine.json"))
         check(try LocalCalimochoRelease.installed(root: root) == [old],
               "REQ123: a title-specific -01-fh6 folder cannot break release discovery")
+        let mismatchedFolder = root.appendingPathComponent("calimocho-11.20-4.0b3-02")
+        try FileManager.default.createDirectory(at: mismatchedFolder, withIntermediateDirectories: false)
+        try descriptor(name: mismatchedFolder.lastPathComponent, version: "0.1120.4.3")
+            .write(to: mismatchedFolder.appendingPathComponent("calimocho-engine.json"))
+        check(try LocalCalimochoRelease.installed(root: root) == [old],
+              "REQ123: a release folder with a mismatched descriptor version cannot break update discovery")
         check(AcknowledgmentsInventory.installedReleaseEngine(root: root)?.lastPathComponent == old.engineName,
               "REQ123: Acknowledgments falls back to the older compiled pin, never the FH6 folder")
         var date = Date(timeIntervalSince1970: 1_800_000_000)
