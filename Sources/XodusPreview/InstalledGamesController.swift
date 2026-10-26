@@ -1520,7 +1520,8 @@ final class InstalledGamesController: ObservableObject {
                       let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
                 try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
                     "--registry", selection.registryPath, "--engine", name, "--expected-registry-sha256", digest
-                ], selection: selection)
+                ] + (name == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : []),
+                    selection: selection, product: game.storeId)
             }
             guard !applicationTerminating, !accountDisconnecting else { throw GameScriptError.busy }
             applySavedGames(try await store.setEngineOverrideV2(id: game.id, selection: selection))

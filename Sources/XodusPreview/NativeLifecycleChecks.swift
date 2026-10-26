@@ -780,8 +780,164 @@ enum NativeLifecycleChecks {
             check(false, "A changed local legacy DLL requires selecting the updated pair")
         } catch { check(true, "A changed local legacy DLL requires selecting the updated pair") }
         try await installationStatusChecks(root: root, check: check)
+        try await fh6RecipeChecks(root: root, check: check)
         try await titleRecipeChecks(root: root, check: check)
         try await candidateRecipeChecks(root: root, runtime: reference, shims: shims, check: check)
+    }
+
+    private static func fh6RecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let profile = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == NativeFH6Recipe.productID }
+        guard let profile else { throw NativeLaunchError.invalidProfile }
+        try NativeFH6Recipe.validate(profile: profile)
+        check(profile.engine == NativeFH6Recipe.engineName && profile.prefixOverlays == nil
+              && profile.environment.isEmpty && profile.executable == "forzahorizon6.exe",
+              "REQ125: immutable FH6 profile selects the isolated title contract, never arbitrary admitted overlays")
+        var altered = profile
+        altered.prefixOverlays = []
+        do {
+            try NativeFH6Recipe.validate(profile: altered)
+            check(false, "REQ125: even empty arbitrary overlay declarations are refused")
+        } catch { check(true, "REQ125: even empty arbitrary overlay declarations are refused") }
+        let env = NativeFH6Recipe.environment(root: root)
+        check(env.count == 19 && env["WINEDLLOVERRIDES"] == "mscoree,mshtml=;windows.web=b"
+              && env["D3DM_MTL4"] == "0" && env["CALIMOCHO_FIX_FIBER_GS"] == "1"
+              && env["HB_D3D12_REAL"] == "Z:" + root.path.replacingOccurrences(of: "/", with: "\\")
+                + "\\lib\\wine\\x86_64-windows\\d3d12.dll",
+              "REQ125: exact Forza environment derives relocated paths and keeps windows.web builtin")
+        let game = InstalledGame(id: UUID(), title: "FH6", identityName: NativeFH6Recipe.packageIdentity,
+            version: "1.0.0.0", storeId: NativeFH6Recipe.productID, folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        try NativeFH6Recipe.validate(game: game, engine: NativeFH6Recipe.engineName)
+        do {
+            try NativeFH6Recipe.validate(game: game, engine: CalimochoReleasePin.release06.engineName)
+            check(false, "REQ125: plain -06 cannot silently launch FH6")
+        } catch { check(true, "REQ125: plain -06 cannot silently launch FH6") }
+        let other = InstalledGame(id: UUID(), title: "Other", identityName: game.identityName,
+            version: game.version, storeId: "9P9VNSQK1W3K", folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        do {
+            try NativeFH6Recipe.validate(game: other, engine: NativeFH6Recipe.engineName)
+            check(false, "REQ125: another product cannot borrow the FH6 alias")
+        } catch { check(true, "REQ125: another product cannot borrow the FH6 alias") }
+        let digest = String(repeating: "a", count: 64)
+        let inspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: digest, engineName: NativeFH6Recipe.engineName,
+            declaredProvider: "calimocho", admittedProvider: "calimocho", admission: "admitted",
+            ready: true, qualified: false, wineSha256: CalimochoReleasePin.release06.wineSha256,
+            wineserverSha256: CalimochoReleasePin.release06.wineserverSha256, error: nil)
+        let selection = AdmittedEngineSelection(registryPath: root.appendingPathComponent("fh6-registry.json").path,
+                                                inspection: inspection)
+        let title: [String: Any] = [
+            "schemaVersion": 1, "capability": "titleRecipeV1", "recipeID": NativeFH6Recipe.id,
+            "productID": NativeFH6Recipe.productID, "packageIdentity": NativeFH6Recipe.packageIdentity,
+            "engineName": NativeFH6Recipe.engineName, "registrySha256": digest,
+            "wineSha256": CalimochoReleasePin.release06.wineSha256,
+            "wineserverSha256": CalimochoReleasePin.release06.wineserverSha256,
+            "overlaySha256": NativeFH6Recipe.overlaySHA256, "postWinebootPreparation": true,
+            "ready": true, "error": NSNull()
+        ]
+        _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: title),
+                                                   selection: selection, exitCode: 0)
+        for key in ["productID", "packageIdentity", "engineName", "registrySha256", "overlaySha256",
+                    "postWinebootPreparation", "ready", "extra"] {
+            var invalid = title
+            invalid[key] = ["postWinebootPreparation", "ready"].contains(key) ? false : "wrong"
+            do {
+                _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: invalid),
+                                                           selection: selection, exitCode: 0)
+                check(false, "REQ125: title inspection refuses mismatched \(key)")
+            } catch { check(true, "REQ125: title inspection refuses mismatched \(key)") }
+        }
+        let engineJSON = String(decoding: try JSONEncoder().encode(inspection), as: UTF8.self)
+        let titleJSON = String(decoding: try JSONSerialization.data(withJSONObject: title), as: UTF8.self)
+        let mock = root.appendingPathComponent("fh6-inspection-cli")
+        let mockSource = """
+        #!/bin/sh
+        if [ "$1" = "engine-inspect" ]; then
+          if [ "$2" = "--contract-version" ]; then
+            printf '%s\\n' '{"schemaVersion":1,"capability":"engineAdmissionV1","supported":true}'
+          else
+            printf '%s\\n' '\(engineJSON)'
+          fi
+        elif [ "$1" = "title-recipe-inspect" ]; then
+          if [ "$2" = "--contract-version" ]; then
+            printf '%s\\n' '{"schemaVersion":1,"capability":"titleRecipeV1","supported":true}'
+          else
+            printf '%s\\n' '\(titleJSON)'
+          fi
+        else
+          exit 91
+        fi
+
+        """
+        try Data(mockSource.utf8).write(to: mock)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: mock.path)
+        let backend = BackendConfiguration(executable: mock, stateDirectory: root)
+        let arguments = ["--engine", NativeFH6Recipe.engineName, "--registry", selection.registryPath,
+                         "--expected-registry-sha256", digest] + NativeFH6Recipe.arguments
+        try await EngineInspectionClient().validateLaunch(configuration: backend, arguments: arguments,
+            selection: selection, product: NativeFH6Recipe.productID)
+        check(true, "REQ125: fresh engine admission and separate title capability are both required before launch")
+        do {
+            try await EngineInspectionClient().validateLaunch(configuration: backend,
+                arguments: arguments + ["--shim-dir", root.path], selection: selection, product: NativeFH6Recipe.productID)
+            check(false, "REQ125: title launch refuses the unqualified native shim directory")
+        } catch { check(true, "REQ125: title launch refuses the unqualified native shim directory") }
+        for (label, source) in [
+            ("unsupported capability", mockSource.replacingOccurrences(
+                of: "\"capability\":\"titleRecipeV1\",\"supported\":true",
+                with: "\"capability\":\"titleRecipeV1\",\"supported\":false")),
+            ("unprepared inspection", mockSource.replacingOccurrences(
+                of: "\"postWinebootPreparation\":true", with: "\"postWinebootPreparation\":false"))
+        ] {
+            try Data(source.utf8).write(to: mock)
+            var prepared = false
+            let lifecycle = NativeGameLifecycle()
+            do {
+                _ = try await lifecycle.run(configuration: backend, accountHash: String(repeating: "a", count: 64),
+                    operation: "launch", product: NativeFH6Recipe.productID, gameDirectory: root,
+                    runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent(UUID().uuidString),
+                    launchArguments: arguments, engineSelection: selection, prepareAdmittedPrefix: { prepared = true })
+                check(false, "REQ125: \(label) must block before preparation")
+            } catch {
+                check((error is EngineInspectionError || error is NativeLaunchError)
+                      && !prepared && lifecycle.stateDirectory == nil,
+                      "REQ125: \(label) blocks before prefix preparation, state writes or child spawn")
+            }
+        }
+        let receiptFile = root.appendingPathComponent("title-recipe.json")
+        let receipt: [String: Any] = [
+            "schemaVersion": 1, "capability": "titleRecipeV1", "recipeID": NativeFH6Recipe.id,
+            "productID": NativeFH6Recipe.productID, "packageIdentity": NativeFH6Recipe.packageIdentity,
+            "engineName": NativeFH6Recipe.engineName, "registrySha256": digest,
+            "wineSha256": CalimochoReleasePin.release06.wineSha256,
+            "wineserverSha256": CalimochoReleasePin.release06.wineserverSha256,
+            "overlaySha256": NativeFH6Recipe.overlaySHA256,
+            "sourcePath": root.appendingPathComponent(NativeFH6Recipe.overlaySource).path,
+            "destinationRelativePath": NativeFH6Recipe.overlayDestination,
+            "sourceSha256": NativeFH6Recipe.overlaySHA256,
+            "destinationPath": root.appendingPathComponent("prefix").appendingPathComponent(NativeFH6Recipe.overlayDestination).path,
+            "destinationSha256Before": NSNull(),
+            "destinationSha256AfterUpdate": "02aa673497ff8694b41f976e194a920468e54897f3546ed1cd4c1b3a97179735",
+            "destinationSha256BeforeFinalCheck": NativeFH6Recipe.overlaySHA256,
+            "destinationSha256After": NativeFH6Recipe.overlaySHA256,
+            "updateRan": true, "preparationCompleted": true, "status": "pre_exec_verified",
+            "attestation": "staged bytes, not in-memory loaded modules", "receiptPath": receiptFile.path
+        ]
+        let receiptValue = try JSONValue.decodeUnique(JSONSerialization.data(withJSONObject: receipt), maximumBytes: 32_768)
+        try NativeTitleRecipeReceipt.validateShape(receiptValue, includesPath: true)
+        try receiptValue.decode(NativeTitleRecipeReceipt.self).validate(logDirectory: root.path)
+        check(true, "REQ125: preparation receipt distinguishes Wine's builtin overwrite from the final verified shim")
+        for key in ["preparationCompleted", "updateRan", "destinationSha256After", "recipeID", "receiptPath", "extra"] {
+            var invalid = receipt
+            invalid[key] = ["preparationCompleted", "updateRan"].contains(key) ? false : "wrong"
+            do {
+                let value = try JSONValue.decodeUnique(JSONSerialization.data(withJSONObject: invalid), maximumBytes: 32_768)
+                try NativeTitleRecipeReceipt.validateShape(value, includesPath: true)
+                try value.decode(NativeTitleRecipeReceipt.self).validate(logDirectory: root.path)
+                check(false, "REQ125: preparation receipt refuses invalid \(key)")
+            } catch { check(true, "REQ125: preparation receipt refuses invalid \(key)") }
+        }
     }
 
     private static func installCalimochoRouteFixture(root: URL, defaults: UserDefaults,
