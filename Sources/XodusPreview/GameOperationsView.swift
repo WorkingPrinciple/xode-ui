@@ -260,6 +260,8 @@ struct GameOperationProgressView: View {
         if operations.orphanRunning { return GameDownloadCopy.stopDownload }
         return presentedOperation?.kind == .repair ? GameDownloadCopy.stopRepair : GameDownloadCopy.stopDownload
     }
+    /// Stop controls this view shows for its operation: never more than one.
+    var stopControlCount: Int { installCancelTitle == nil ? 0 : 1 }
     var showsGameSignIn: Bool {
         includesFeedback && !privacyRestricted && operations.failureCode == 11 && operations.downloadNeedsSignIn
     }
@@ -310,13 +312,24 @@ struct GameOperationProgressView: View {
                             Text("\(Self.bytes(value.bytesDone)) downloaded").font(.callout).foregroundStyle(.secondary)
                         }
                     }
+                    // QA U3: one Stop control per operation; "Stop and Delete" is its menu option.
                     if let title = installCancelTitle {
-                        Button(title) { Task { await operations.cancelInstall() } }
+                        if operations.canStopAndDiscard {
+                            Menu(title) {
+                                Button(GameDownloadCopy.stopAndDelete) { confirmingStopAndDelete = true }
+                                    .accessibilityIdentifier("xodus.install.stopAndDelete")
+                            } primaryAction: {
+                                Task { await operations.cancelInstall() }
+                            }
+                            .fixedSize()
                             .accessibilityIdentifier("xodus.install.cancel")
+                        } else {
+                            Button(title) { Task { await operations.cancelInstall() } }
+                                .accessibilityIdentifier("xodus.install.cancel")
+                        }
                     }
                     if installCancelTitle != nil, operations.canStopAndDiscard, let operation = presentedOperation {
-                        Button(GameDownloadCopy.stopAndDelete) { confirmingStopAndDelete = true }
-                            .accessibilityIdentifier("xodus.install.stopAndDelete")
+                        Color.clear.frame(width: 0, height: 0)
                             .confirmationDialog("Stop and delete the download of \(operation.title)?",
                                                 isPresented: $confirmingStopAndDelete) {
                                 Button("Stop and Delete", role: .destructive) {

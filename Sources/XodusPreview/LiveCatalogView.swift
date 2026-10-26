@@ -418,7 +418,7 @@ struct LiveCatalogView: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 28) {
             if showsOperationFeedback {
-                GameOperationProgressView(operations: operations)
+                GameOperationSlimRow(operations: operations)
                     .padding(.horizontal, 56).padding(.top, 24)
                     .accessibilityIdentifier("xodus.catalog.installStatus")
             }

@@ -1191,6 +1191,12 @@ enum GameOperationChecks {
               && operations.downloadIndicator?.status == operations.progress?.phase.title
               && operations.downloadIndicator?.percent == GameDownloadCopy.percent(operations.progress),
               "REQ114 UX-M2: the toolbar indicator and the game's card show the running download's real phase and percent")
+        let slim = NSHostingView(rootView: GameOperationSlimRow(operations: operations).frame(width: 900))
+        slim.layoutSubtreeIfNeeded()
+        let detailed = GameOperationProgressView(operations: operations)
+        check(slim.fittingSize.height > 0 && slim.fittingSize.height <= GameOperationSlimRow.maximumHeight
+              && detailed.stopControlCount == 1 && GameOperationProgressView(operations: operations, productID: game.id).stopControlCount == 1,
+              "QA U3: during a download Library and Discover show one slim line (\(Int(slim.fittingSize.height)) pt, at most \(Int(GameOperationSlimRow.maximumHeight))); Downloads and the game page keep full progress with exactly one Stop control")
         let activeID = operations.operation?.id
         await operations.prepareInstall(game)
         operations.signInForGames()

@@ -1116,6 +1116,19 @@ enum BrandUXChecks {
         check(LibraryFirstLoad.gamesReady(Inputs(loading: true, gamesFound: 3, libraryComplete: true))
               && !LibraryFirstLoad.gamesReady(Inputs(loading: true, gamesFound: 3, libraryComplete: false)),
               "REQ-121 hook: A complete library counts as ready even while a background revalidation keeps it busy")
+        let installedFixtures = (0..<3).map {
+            InstalledGame(id: UUID(), title: "Installed \($0)", identityName: "Fixture.Installed\($0)", version: "1.0.0.0",
+                          storeId: String(format: "FIXTURE%05d", $0 + 10), folder: "/tmp/installed-\($0)", launcher: "",
+                          importedAt: Date(), usesNativeLifecycle: true)
+        }
+        let localFixtures = LibraryGame.localRecords(installed: installedFixtures, qualified: [], query: "", sort: .title)
+        let missingLauncher = NativeMinecraftInstallation(state: .missing)
+        let readyLauncher = NativeMinecraftInstallation(state: .ready)
+        check(missingLauncher.appears(in: .all, query: "")
+              && LibraryGame.installedCount(local: localFixtures, native: missingLauncher.countsAsInstalled) == 3
+              && LibraryGame.installedCount(local: localFixtures, native: readyLauncher.countsAsInstalled) == 4
+              && !NativeMinecraftInstallation(state: .checking).countsAsInstalled,
+              "QA REQ-64: \"Installed games\" counts only completed installs; the Minecraft card offered in All while its launcher is missing or still checking isn't counted, and partial downloads stay in the resume journal")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)
