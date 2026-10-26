@@ -21,6 +21,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var choosing = false
     @Published private(set) var loaded = false
     @Published private(set) var error: String?
+    /// Set only when the installed-games registry itself couldn't be read, unlike `error`, which other work shares.
+    @Published private(set) var loadError: String?
     @Published private(set) var discoveryError: String?
     @Published private(set) var runningGameID: UUID?
     @Published private(set) var playState: InstalledGamePlayState?
@@ -173,8 +175,12 @@ final class InstalledGamesController: ObservableObject {
             games = try await store.load()
             loaded = true
             error = nil
+            loadError = nil
             await refreshLaunchableGames()
-        } catch { self.error = InstalledGameError.invalidRegistry.localizedDescription }
+        } catch {
+            self.error = InstalledGameError.invalidRegistry.localizedDescription
+            loadError = self.error
+        }
     }
 
     func importGame(folder: URL, launcher: URL) async {

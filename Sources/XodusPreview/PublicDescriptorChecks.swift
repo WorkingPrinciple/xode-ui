@@ -740,6 +740,15 @@ enum PublicDescriptorChecks {
               "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim; P0: it retries silently before any notice")
         let retryScheduled = failedController.detailRetryPending
             && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
+        check(retryScheduled && failedController.surfacedError == nil && failedController.error != nil,
+              "Review M2/P0: While a silent retry is scheduled the library error stays quiet")
+        failedController.scheduleDetailRetry(account: "another-account")
+        let staleRetryPending = failedController.detailRetryPending
+        try await Task.sleep(for: PCGamesController.detailRetryDelays[0] + .milliseconds(400))
+        check(staleRetryPending && !failedController.detailRetryPending
+              && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
+              && failedController.surfacedError == failedController.error,
+              "Review M1: A retry that wakes for another account doesn't fire, stops counting as pending, and lets the error surface")
         await failedController.retireUnifiedAccount()
         check(retryScheduled && !failedController.detailRetryPending
               && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count,
@@ -1190,6 +1199,30 @@ extension PublicDescriptorChecks {
               "REQ-121: Descriptor network reads from every consumer stay within the cap of four direct requests")
         check(fifth == ids(20, offset: 8_080) && sixth == urgent && Set(seventh) == Set(sample),
               "REQ-121: Queued foreground reads are admitted in order and before saved-copy revalidation")
+
+        let promoteTransport = DescriptorTransport()
+        await promoteTransport.configure(blocked: Set(0..<8))
+        let promoteStore = store(promoteTransport)
+        var promoteFill: [Task<Data, Error>] = []
+        for batch in 0..<4 {
+            let batchIDs = ids(20, offset: 12_000 + batch * 20)
+            promoteFill.append(Task { try await promoteStore.load(ids: batchIDs, market: "US", language: "en-US") })
+            try await wait(promoteTransport, count: batch + 1)
+        }
+        let sharedIDs = ids(4, offset: 12_500)
+        let warmupRead = Task {
+            try await promoteStore.read(ids: sharedIDs, market: "US", language: "en-US", background: true)
+        }
+        try await queued(promoteStore, foreground: 0, background: 1)
+        let firstScreenRead = Task { try await promoteStore.read(ids: sharedIDs, market: "US", language: "en-US") }
+        try await queued(promoteStore, foreground: 1, background: 0)
+        try await drain(promoteTransport, through: 5)
+        for task in promoteFill { _ = try await task.value }
+        let joined = try await firstScreenRead.value, warmed = try await warmupRead.value
+        let promoteRequests = await promoteTransport.requests.count, promotedIDs = await promoteTransport.requestedIDs(4)
+        check(promoteRequests == 5 && promotedIDs == sharedIDs
+              && !joined.data.isEmpty && !warmed.data.isEmpty,
+              "REQ-121 review L6: A first-screen read joining a queued background warmup promotes it ahead of other background work, with one shared request")
 
         // Each defect below is planted in an otherwise valid, in-age record, so each check stands alone.
         let corruptDirectory = root.appendingPathComponent("corrupt")

@@ -176,6 +176,7 @@ struct PCGamesHTTP: PCGamesTransport {
     func send(_ request: URLRequest) async throws -> PCGamesHTTPResponse {
         do {
             try Task.checkCancellation()
+            try DebugFaultInjection.checkHTTP()
             let (bytes, response) = try await session.bytes(for: request)
             defer { bytes.task.cancel() }
             guard let http = response as? HTTPURLResponse, response.url == request.url else {
