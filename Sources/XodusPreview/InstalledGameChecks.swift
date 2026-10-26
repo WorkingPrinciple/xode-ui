@@ -32,6 +32,32 @@ enum InstalledGameChecks {
             storeId: "FIXTURE00001", folder: local.path, launcher: launcher.path, importedAt: Date())
         let store = InstalledGameStore(file: root.appendingPathComponent("registry/games.json"))
         try await store.save([game])
+        let installationStore = InstalledGameStore(file: root.appendingPathComponent("install-dates/games.json"))
+        let installationController = InstalledGamesController(store: installationStore, inspectPackage: { _ in .win32 })
+        await installationController.load()
+        try installationController.reserveMutation(gameID: nil)
+        try await installationController.registerInstallation(folder: local, launcher: launcher, expectedStoreID: game.storeId)
+        installationController.releaseMutation()
+        guard let installed = installationController.games.first, let installedOn = installed.installedOn else {
+            check(false, "REQ66: backend-confirmed installation records its completion date")
+            return
+        }
+        check(installedOn <= Date(), "REQ66: backend-confirmed installation records its completion date")
+        try installationController.reserveMutation(gameID: installed.id)
+        try await installationController.registerInstallation(folder: local, launcher: launcher, expectedStoreID: game.storeId)
+        installationController.releaseMutation()
+        var updated = installed
+        updated.installedOn = Date().addingTimeInterval(60)
+        let upserted = try await installationStore.upsert(updated)
+        check(installationController.games.first?.installedOn == installedOn && upserted.first?.installedOn == installedOn,
+              "REQ66: repair and upsert preserve the first confirmed installation date")
+        guard var legacy = try JSONSerialization.jsonObject(with: JSONEncoder().encode(game)) as? [String: Any] else {
+            throw InstalledGameError.invalidRegistry
+        }
+        legacy.removeValue(forKey: "installedOn")
+        let decodedLegacy = try JSONDecoder().decode(InstalledGame.self, from: JSONSerialization.data(withJSONObject: legacy))
+        check(decodedLegacy.installedOn == nil && game.installedOn == nil,
+              "REQ66: legacy records and manual imports have no guessed installation date")
         let completeness = DiscoveryCompletenessFixture()
         let controller = InstalledGamesController(store: store, inspectPackage: { _ in .win32 },
             mountedStorageRoots: { [] }, discoveryRoot: remote.deletingLastPathComponent(),

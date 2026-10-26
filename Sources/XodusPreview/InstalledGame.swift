@@ -24,6 +24,7 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
     var engineOverrideV2: GameEngineOverride? = nil
     var usesNativeLifecycle: Bool? = nil
     var storageVolume: GameStorageVolume? = nil
+    var installedOn: Date? = nil
 }
 
 struct GameEngineOverride: Codable, Equatable, Sendable {
@@ -261,7 +262,8 @@ actor InstalledGameStore {
                   && !$0.storeId.isEmpty && $0.folder.hasPrefix("/")
                   && ($0.usesNativeLifecycle == true ? $0.launcher.isEmpty : $0.launcher.hasPrefix("/"))
                   && ($0.lastSessionSeconds.map { $0.isFinite && $0 >= 0 } ?? true)
-                  && ($0.lastPlayedAt.map { $0.timeIntervalSince1970.isFinite } ?? true) }) else {
+                  && ($0.lastPlayedAt.map { $0.timeIntervalSince1970.isFinite } ?? true)
+                  && ($0.installedOn.map { $0.timeIntervalSince1970.isFinite } ?? true) }) else {
             throw InstalledGameError.invalidRegistry
         }
         return games.map { game in
@@ -314,6 +316,7 @@ actor InstalledGameStore {
             updated.engineSelection = game.engineSelection ?? previous.engineSelection
             updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
             updated.storageVolume = game.storageVolume ?? previous.storageVolume
+            updated.installedOn = previous.installedOn
         }
         for previous in games where previous.folder == game.folder && previous.id != game.id {
             try rememberPrefixInstallation(previous)
