@@ -107,12 +107,42 @@ final class GamePassCollections: ObservableObject {
     @Published private(set) var loading = false
     @Published private(set) var error: String?
     private var scope: String?
+    /// Scope of the members in `collections`; survives cancellation so an interrupted reload keeps shelves.
+    private var collectionsScope: String?
     private var revision = UUID()
     private let transport: any PCGamesTransport
     private let artwork: LibraryCatalogArtwork
-    init(transport: any PCGamesTransport = PCGamesHTTP()) {
+    private let keys: [String]?
+    /// `keys` limits loading to those official collections, in that order; nil loads every PC collection.
+    init(transport: any PCGamesTransport = PCGamesHTTP(), artwork: LibraryCatalogArtwork? = nil,
+         keys: [String]? = nil) {
         self.transport = transport
-        artwork = LibraryCatalogArtwork(transport: transport)
+        self.artwork = artwork ?? LibraryCatalogArtwork(transport: transport)
+        self.keys = keys
+    }
+
+    /// Restricts official definitions to the requested keys, retaining previously loaded members so a
+    /// failed or partial refresh never removes a game from a shelf.
+    static func select(_ definitions: [GamePassCollection], keys: [String]?,
+                       retaining previous: [GamePassCollection]) -> [GamePassCollection] {
+        let chosen = keys.map { keys in keys.compactMap { key in definitions.first { $0.key == key } } }
+            ?? definitions
+        return chosen.map { definition in
+            guard let prior = previous.first(where: { $0.key == definition.key }) else { return definition }
+            var value = definition
+            value.products = prior.products
+            value.loadedCount = prior.products.count
+            return value
+        }
+    }
+
+    /// Fresh feed order wins; a prior member that is still listed but unresolved this time is kept.
+    static func merged(_ fresh: [CatalogProduct], retaining prior: [CatalogProduct], ids: [String]) -> [CatalogProduct] {
+        let listed = Set(ids)
+        let freshIDs = Set(fresh.map(\.id))
+        let kept = prior.filter { listed.contains($0.id) && !freshIDs.contains($0.id) }
+        let order = Dictionary(ids.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        return (fresh + kept).sorted { (order[$0.id] ?? .max) < (order[$1.id] ?? .max) }
     }
 
     private func fetch(_ url: URL) async throws -> Data {
@@ -127,6 +157,7 @@ final class GamePassCollections: ObservableObject {
         guard let market = PCGamesClient.market(market) else {
             revision = UUID()
             scope = nil
+            collectionsScope = nil
             collections = []
             loading = false
             error = "Confirm your account country before loading Game Pass."
@@ -136,8 +167,9 @@ final class GamePassCollections: ObservableObject {
         guard refresh || scope != nextScope else { return }
         let owner = UUID()
         revision = owner
+        let previous = collectionsScope == nextScope ? collections : []
         scope = nextScope
-        collections = []
+        collections = previous
         loading = true
         error = nil
         defer { if revision == owner { loading = false } }
@@ -146,10 +178,12 @@ final class GamePassCollections: ObservableObject {
             guard let html = String(data: page, encoding: .utf8) else { throw PCGamesError.invalidResponse }
             let script = try await fetch(GamePassCollectionSource.scriptURL(in: html))
             guard let source = String(data: script, encoding: .utf8) else { throw PCGamesError.invalidResponse }
-            let definitions = try GamePassCollectionSource.definitions(html: html, script: source)
+            let definitions = Self.select(try GamePassCollectionSource.definitions(html: html, script: source),
+                                          keys: keys, retaining: previous)
             try Task.checkCancellation()
             guard revision == owner else { return }
             collections = definitions
+            collectionsScope = nextScope
             for definition in definitions {
                 try Task.checkCancellation()
                 guard revision == owner else { return }
@@ -190,9 +224,11 @@ final class GamePassCollections: ObservableObject {
             await artwork.load(ids: Array(ids.prefix(limit)), market: market, language: language)
             try Task.checkCancellation()
             guard revision == owner else { return }
-            guard artwork.error == nil else { throw PCGamesError.invalidResponse }
+            let products = ids.prefix(limit).compactMap { artwork.images[$0]?.product }
+            // A shared metadata cache can carry another request's error; only fail when this page resolved nothing.
+            guard artwork.error == nil || (keys != nil && !products.isEmpty) else { throw PCGamesError.invalidResponse }
             collections[index].productIDs = ids
-            collections[index].products = ids.prefix(limit).compactMap { artwork.images[$0]?.product }
+            collections[index].products = Self.merged(products, retaining: definition.products, ids: ids)
             collections[index].loadedCount = limit
         } catch is CancellationError {
         } catch {

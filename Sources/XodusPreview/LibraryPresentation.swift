@@ -233,6 +233,13 @@ struct LibraryGame: Identifiable {
     let owned: Bool
     let gamePass: Bool
     var accessIsCurrent = true
+    /// REQ-7/63: the signed-in account's current licence read reports an active Game Pass plan.
+    var gamePassPlanActive = false
+    /// Game Pass-licensed titles are not collection rows; with an active plan and public PC Game Pass
+    /// membership they are available with Game Pass, never a missing purchase.
+    var availableWithGamePass: Bool {
+        gamePassPlanActive && gamePass && pc?.acquisitionKind != .purchased && !owned
+    }
     static func displayedCount(qualified: [Self], local: [Self], native: Bool) -> Int {
         qualified.count + installedCount(local: local, native: native)
     }
@@ -276,7 +283,8 @@ struct LibraryGame: Identifiable {
 
     static func collection(installed: [InstalledGame], owned: [PCGame], products: [CatalogProduct],
                            gamePass: [CatalogProduct], active: Bool,
-                           accessIsCurrent: Bool = true, permittedInstalledIDs: Set<String> = []) -> [Self] {
+                           accessIsCurrent: Bool = true, permittedInstalledIDs: Set<String> = [],
+                           gamePassPlanActive: Bool = false, deniedInstalledIDs: Set<String> = []) -> [Self] {
         var result: [Self] = []
         var seen = Set<String>()
         let catalog = Dictionary(products.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -288,23 +296,27 @@ struct LibraryGame: Identifiable {
         let held = Dictionary(owned.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         for game in installed {
             let id = game.storeId.isEmpty ? game.id.uuidString : game.storeId
-            if held[id] == nil, permittedInstalledIDs.contains(id), seen.insert(id).inserted {
+            // An active plan plus public PC Game Pass membership qualifies an installed title that the
+            // collection doesn't list (Game Pass licences aren't collection rows). A settled per-title
+            // access answer for this account wins over the general plan.
+            let passQualified = gamePassPlanActive && pass[id] != nil && !deniedInstalledIDs.contains(id)
+            if held[id] == nil, permittedInstalledIDs.contains(id) || passQualified, seen.insert(id).inserted {
                 result.append(Self(id: id, title: game.title, installed: game, pc: nil,
                     product: catalog[id] ?? pass[id], owned: false, gamePass: pass[id] != nil,
-                    accessIsCurrent: accessIsCurrent))
+                    accessIsCurrent: accessIsCurrent, gamePassPlanActive: gamePassPlanActive))
                 continue
             }
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
             result.append(Self(id: id, title: game.title, installed: game, pc: entitlement,
                                product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind == .purchased,
                                gamePass: pass[id] != nil,
-                               accessIsCurrent: accessIsCurrent))
+                               accessIsCurrent: accessIsCurrent, gamePassPlanActive: gamePassPlanActive))
         }
         for game in owned where seen.insert(game.id).inserted {
             result.append(Self(id: game.id, title: game.title, installed: nil, pc: game,
                                product: catalog[game.id] ?? pass[game.id], owned: game.acquisitionKind == .purchased,
                                gamePass: pass[game.id] != nil,
-                               accessIsCurrent: accessIsCurrent))
+                               accessIsCurrent: accessIsCurrent, gamePassPlanActive: gamePassPlanActive))
         }
         return result
     }
@@ -382,7 +394,7 @@ struct LibraryGame: Identifiable {
         LibraryEligibility.evaluate(
             entitlement: pc?.acquisitionKind ?? (owned ? .purchased : nil),
             accessIsCurrent: accessIsCurrent && (pc != nil || owned),
-            verifiedGamePassAccess: false, installed: installed != nil)
+            verifiedGamePassAccess: availableWithGamePass, installed: installed != nil)
     }
 
     static func visible(_ games: [Self], query: String, filter: LibraryFilter, sort: LibrarySort) -> [Self] {
@@ -586,9 +598,11 @@ struct GameCompatibilityFacts: View {
             ForEach(issues) { issue in
                 Text(issue.browseDetail).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // TODO(L8 merge, REQ-19): apply L10 AccessiblePalette `.accessibleLink()` to this Link.
                 if let source = issue.source { Link("Learn more", destination: source) }
             }
             if let publisherEvidence {
+                // TODO(L8 merge, REQ-19): apply L10 AccessiblePalette `.accessibleLink()` to this Link.
                 Link("Publisher anti-cheat information", destination: publisherEvidence.source)
             }
         }
@@ -1026,16 +1040,20 @@ struct GameCard<Artwork: View, Status: View>: View {
             artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .bottomLeading) {
-                    if showsGamePassCatalogBadge {
-                        Text("GAME PASS")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 3)
-                            .background(Color(white: 0.12).opacity(0.9),
-                                        in: RoundedRectangle(cornerRadius: 4))
-                            .padding(8)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+                    if !artworkBadges.isEmpty {
+                        HStack(spacing: 4) {
+                            ForEach(artworkBadges, id: \.self) { badge in
+                                Text(badge.uppercased())
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6).padding(.vertical, 3)
+                                    .background(Color(white: 0.12).opacity(0.9),
+                                                in: RoundedRectangle(cornerRadius: 4))
+                            }
+                        }
+                        .padding(8)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                     }
                 }
                 .overlay(alignment: .bottomTrailing) {
@@ -1075,8 +1093,18 @@ struct GameCard<Artwork: View, Status: View>: View {
         .onKeyPress(.return, action: openFromKeyboard)
     }
 
+    /// REQ-63: purchase and Game Pass catalogue membership are independent facts; either, both or neither show.
+    var ownershipBadge: String? {
+        guard gameFacts.accessIsCurrent, case .purchased = gameFacts.ownership else { return nil }
+        return "Owned"
+    }
+
+    var artworkBadges: [String] {
+        (ownershipBadge.map { [$0] } ?? []) + (showsGamePassCatalogBadge ? ["Game Pass"] : [])
+    }
+
     var coverStatusDescription: String {
-        ((showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
+        ((ownershipBadge.map { [$0] } ?? []) + (showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
             + compatibilityIssues.map { "\($0.browseTitle). \($0.browseDetail)" })
             .joined(separator: ", ")
     }
